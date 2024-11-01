@@ -1548,57 +1548,6 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             priority=0
         )
 
-
-class HSI_CervicalCancer_Screening(HSI_Event, IndividualScopeEventMixin):
-    """
-        This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following screening using VIA or XPERT.
-        This event begins the investigation that may result in diagnosis of Cervical Cancer and the scheduling
-        of treatment or palliative care.
-        """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = "CervicalCancer_Screening"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        person = df.loc[person_id]
-        hs = self.sim.modules["HealthSystem"]
-
-        # Ignore this event if the person is no longer alive:
-        if not person.is_alive:
-            return hs.get_blank_appt_footprint()
-
-        # If the person is already diagnosed, then take no action:
-        if not pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
-            return hs.get_blank_appt_footprint()
-
-        if df.at[person_id, 'ce_selected_for_via_this_month'] == True:
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_AceticAcidScreening(
-                    module=self.module,
-                    person_id=person_id
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
-
-        if df.at[person_id, 'ce_selected_for_xpert_this_month'] == True:
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_XpertHPVScreening(
-                    module=self.module,
-                    person_id=person_id
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
-
-
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
