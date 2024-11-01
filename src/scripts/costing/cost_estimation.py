@@ -660,7 +660,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
 ####################################################
 # 1. Stacked bar plot (Total cost + Cost categories)
 #----------------------------------------------------
-def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year = 'all', _draws = None, _outputfilepath: Path = None):
+def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _disaggregate_by_subgroup: bool = False,_year = 'all', _draws = None, _outputfilepath: Path = None):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Make a copy of the dataframe to avoid modifying the original
     _df = _df[_df.stat == 'mean'].copy()
@@ -677,14 +677,44 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year =
         subset_df = subset_df[subset_df['year'].isin(_year)]
 
     if _cost_category == 'all':
-        subset_df = subset_df
-        pivot_df = subset_df.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
+        if (_disaggregate_by_subgroup == True):
+            raise ValueError(f"Invalid input for _disaggregate_by_subgroup: '{_disaggregate_by_subgroup}'. "
+                             f"Value can be True only when plotting a specific _cost_category")
+        else:
+            pivot_df = subset_df.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
+            plt_name_suffix = ''
     else:
         subset_df = subset_df[subset_df['cost_category'] == _cost_category]
-        pivot_df = subset_df.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
+        if (_disaggregate_by_subgroup == True):
+            # If sub-groups are more than 10 in number, then disaggregate the top 10 and group the rest into an 'other' category
+            if (len(subset_df['cost_subgroup']) > 10):
+                # Calculate total cost per subgroup
+                subgroup_totals = subset_df.groupby('cost_subgroup')['cost'].sum()
+                # Identify the top 10 subgroups by cost
+                top_10_subgroups = subgroup_totals.nlargest(10).index.tolist()
+                # Label the remaining subgroups as 'other'
+                subset_df['cost_subgroup'] = subset_df['cost_subgroup'].apply(
+                    lambda x: x if x in top_10_subgroups else 'other'
+                )
 
-    # Plot a stacked bar chart
-    pivot_df.plot(kind='bar', stacked=True)
+                pivot_df = subset_df.pivot_table(index=['draw', 'cost_subcategory'], columns='cost_subgroup',
+                                                 values='cost', aggfunc='sum')
+
+            else:
+                pivot_df = subset_df.pivot_table(index=['draw', 'cost_subcategory'], columns='cost_subgroup',
+                                                 values='cost', aggfunc='sum')
+
+            plt_name_suffix = '_by_subgroup'
+        else:
+            pivot_df = subset_df.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
+            plt_name_suffix = ''
+
+    # Sort pivot_df columns in ascending order by total cost
+    sorted_columns = pivot_df.sum(axis=0).sort_values().index
+    pivot_df = pivot_df[sorted_columns]  # Rearrange columns by sorted order
+
+    # Plot the stacked bar chart
+    ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6))
 
     # Period included for plot title and name
     if _year == 'all':
@@ -697,61 +727,106 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year =
     # Save plot
     plt.xlabel('Scenario')
     plt.ylabel('Cost (2023 USD), millions')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper right')
+
+    # Arrange the legend in the same ascending order
+    handles, labels = plt.gca().get_legend_handles_labels()
+    plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.05, 1), loc='upper right')
+
     plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
-    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}.png', dpi=100,
+    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
 
 # 2. Line plots of total costs
 #----------------------------------------------------
-def do_line_plot_of_cost(_df, _cost_category = 'all', _year = 'all', _draws = None, _outputfilepath: Path = None):
-    # Filter the dataframe based on the selected draw
-    if _draws == None:
-        subset_df = _df
-    else:
-        subset_df = _df[_df.draw.isin(_draws)]
+def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, disaggregate_by=None,
+                         _outputfilepath: Path = None):
+    # Validate disaggregation options
+    valid_disaggregations = ['cost_category', 'cost_subcategory', 'cost_subgroup']
+    if disaggregate_by not in valid_disaggregations and disaggregate_by is not None:
+        raise ValueError(f"Invalid disaggregation option: {disaggregate_by}. Choose from {valid_disaggregations}.")
 
-    if _cost_category != 'all':
-        subset_df = subset_df[subset_df['cost_category'] == _cost_category]
+    # If more than 1 draw, disaggregations can't be applied
+    if ((_draws is None) or (len(_draws) > 1)) & (disaggregate_by is not None):
+        raise ValueError(f"Invalid: disaggregate_by can be applied only when a single draw is plotted. For example, _draws = [0]")
 
-    if _year == 'all':
-        subset_df = subset_df
-    else:
+    # Filter the dataframe by draws, if specified
+    subset_df = _df if _draws is None else _df[_df.draw.isin(_draws)]
+
+    # Filter by year if specified
+    if _year != 'all':
         subset_df = subset_df[subset_df['year'].isin(_year)]
 
-    # Reset the index for plotting purposes
-    subset_df = subset_df.reset_index()
+    # Handle scenarios based on `_cost_category` and `disaggregate_by` conditions
+    if _cost_category == 'all':
+        if disaggregate_by == 'cost_subgroup':
+            raise ValueError("Cannot disaggregate by 'cost_subgroup' when `_cost_category='all'` due to data size. If "
+                             "you wish to plot by 'cost_subgroup', choose a specific _cost_category such as 'medical consumables'")
+    else:
+        # Filter subset_df by specific cost category if specified
+        subset_df = subset_df[subset_df['cost_category'] == _cost_category]
+
+    # Set grouping columns based on the disaggregation level
+    if disaggregate_by == 'cost_category':
+        groupby_columns = ['year', 'cost_category']
+    elif disaggregate_by == 'cost_subcategory':
+        groupby_columns = ['year', 'cost_subcategory']
+    elif disaggregate_by == 'cost_subgroup':
+        # If disaggregating by 'cost_subgroup' and there are more than 10 subgroups, limit to the top 10 + "Other"
+        if len(subset_df['cost_subgroup'].unique()) > 10:
+            # Calculate total cost per subgroup
+            subgroup_totals = subset_df[subset_df.stat == 'mean'].groupby('cost_subgroup')['cost'].sum()
+            # Identify the top 10 subgroups by cost
+            top_10_subgroups = subgroup_totals.nlargest(10).index.tolist()
+            # Reassign smaller subgroups to an "Other" category
+            subset_df['cost_subgroup'] = subset_df['cost_subgroup'].apply(
+                lambda x: x if x in top_10_subgroups else 'Other'
+            )
+        groupby_columns = ['year', 'cost_subgroup']
+    else:
+        groupby_columns = ['year']
 
     # Extract mean, lower, and upper values for the plot
-    mean_values = subset_df[subset_df.stat == 'mean'].groupby(['year'])['cost'].sum() / 1e6
-    lower_values = subset_df[subset_df.stat == 'lower'].groupby(['year'])['cost'].sum() / 1e6
-    upper_values = subset_df[subset_df.stat == 'upper'].groupby(['year'])['cost'].sum() / 1e6
+    mean_values = subset_df[subset_df.stat == 'mean'].groupby(groupby_columns)['cost'].sum() / 1e6
+    lower_values = subset_df[subset_df.stat == 'lower'].groupby(groupby_columns)['cost'].sum() / 1e6
+    upper_values = subset_df[subset_df.stat == 'upper'].groupby(groupby_columns)['cost'].sum() / 1e6
 
-    # Plot the line for 'mean'
-    plt.plot(mean_values.index.get_level_values(0), mean_values, marker='o', linestyle='-', color='b', label='Mean')
+    # Plot each line for the disaggregated values
+    if disaggregate_by:
+        plt_name_suffix = f'_by{disaggregate_by}'
+        for disaggregate_value in mean_values.index.get_level_values(disaggregate_by).unique():
+            # Get mean, lower, and upper values for each disaggregated group
+            value_mean = mean_values.xs(disaggregate_value, level=disaggregate_by)
+            value_lower = lower_values.xs(disaggregate_value, level=disaggregate_by)
+            value_upper = upper_values.xs(disaggregate_value, level=disaggregate_by)
 
-    # Add confidence interval using fill_between
-    plt.fill_between(mean_values.index.get_level_values(0), lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
-
-    # Period included for plot title and name
-    if _year == 'all':
-        period = (f"{min(_df['year'].unique())} - {max(_df['year'].unique())}")
-    elif (len(_year) == 1):
-        period = (f"{_year[0]}")
+            # Plot line for mean and shaded region for 95% CI
+            plt.plot(value_mean.index, value_mean, marker='o', linestyle='-', label=f'{disaggregate_value}')
+            plt.fill_between(value_mean.index, value_lower, value_upper, alpha=0.2)
     else:
-        period = (f"{min(_year)} - {max(_year)}")
+        plt_name_suffix = ''
+        plt.plot(mean_values.index, mean_values, marker='o', linestyle='-', color='b', label='Mean')
+        plt.fill_between(mean_values.index, lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
 
-    # Set plot labels and title
+    # Define period for plot title
+    if _year == 'all':
+        period = f"{min(subset_df['year'].unique())}-{max(subset_df['year'].unique())}"
+    elif len(_year) == 1:
+        period = str(_year[0])
+    else:
+        period = f"{min(_year)}-{max(_year)}"
+
+    # Set labels, legend, and title
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper right')
-    plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Draw = {_draws}; Period = {period})')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plot_title = f'Costs by Scenario \n (Category = {_cost_category}, Period = {period})'
+    plt.title(plot_title)
 
-    # Save the plot
-    plt.savefig(_outputfilepath / f'trend_{_cost_category}_{period}.png',
-                dpi=100,
-                bbox_inches='tight')
+    # Save plot
+    filename = f'trend_{_cost_category}_{period}{plt_name_suffix}.png'
+    print(f"Saved figure {_outputfilepath} / {filename}")
+    plt.savefig(_outputfilepath / f'{filename}', dpi=100, bbox_inches='tight')
     plt.close()
 
 # 3. Return on Investment Plot

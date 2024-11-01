@@ -70,7 +70,8 @@ district_dict = dict(zip(district_dict['District_Num'], district_dict['District'
 # Estimate standard input costs of scenario
 #-----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , cost_only_used_staff=True) # summarise = True
-#input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , draws = [0], runs = [0], cost_only_used_staff=True, summarize = True)
+#draws_included = [0,1,2,6,7]
+#input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath , draws = draws_included, cost_only_used_staff=True, summarize = True)
 
 # Add additional costs pertaining to simulation
 #-----------------------------------------------------------------------------------------------------------------------
@@ -78,6 +79,14 @@ input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath 
 # Load primary costing resourcefile
 workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
                               sheet_name=None)
+# Read parameters for consumables costs
+# Load consumables cost data
+unit_price_consumable = workbook_cost["consumables"]
+unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
+    drop=True).iloc[1:]
+unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+
 # Assume that the cost of procurement, warehousing and distribution is a fixed proportion of consumable purchase costs
 # The fixed proportion is based on Resource Mapping Expenditure data from 2018
 resource_mapping_data = workbook_cost["resource_mapping_r7_summary"]
@@ -187,6 +196,7 @@ for df, label in malaria_scaleup_costs:
     new_df = melt_and_label_malaria_scaleup_cost(df, label)
     input_costs = pd.concat([input_costs, new_df], ignore_index=True)
 
+input_costs = input_costs[input_costs.draw.isin(draws_included)]
 
 # Calculate incremental cost
 #-----------------------------------------------------------------------------------------------------------------------
@@ -258,17 +268,20 @@ max_ability_to_pay_for_implementation = monetary_value_of_incremental_health - i
 
 # Plot costs
 #-----------------------------------------------------------------------------------------------------------------------
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical consumables', _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical consumables', _disaggregate_by_subgroup = True, _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _disaggregate_by_subgroup = True, _year = [2018], _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _disaggregate_by_subgroup = True, _year = [2018], _outputfilepath = figurespath)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other', _year = [2018], _outputfilepath = figurespath)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _year = list(range(2020, 2030)), _outputfilepath = figurespath)
 
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical consumables', _year = 'all', _draws = None, _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical consumables', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
+
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = None, _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical equipment', _year = 'all', _draws = None, _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = None, _outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'all', _year = 'all', _draws = None, _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'all', _year = 'all', disaggregate_by= 'cost_category', _draws = None, _outputfilepath = figurespath)
 
 '''
 #years_with_no_malaria_scaleup = set(TARGET_PERIOD).symmetric_difference(set(TARGET_PERIOD_MALARIA_SCALEUP))
