@@ -67,7 +67,7 @@ log_config = {
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
-popsize = 10000
+popsize = 17000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed

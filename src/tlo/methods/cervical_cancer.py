@@ -224,7 +224,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         "ce_stage_at_diagnosis": Property(
             Types.CATEGORICAL,
             "the cancer stage at which cancer diagnosis was made",
-            categories=[ "stage1", "stage2a", "stage2b", "stage3", "stage4"],
+            categories=[ "none", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
         ),
         "ce_date_cin_removal": Property(
             Types.DATE,
