@@ -660,16 +660,22 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
 ####################################################
 # 1. Stacked bar plot (Total cost + Cost categories)
 #----------------------------------------------------
-def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year = 'all', _outputfilepath: Path = None):
+def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year = 'all', _draws = None, _outputfilepath: Path = None):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Make a copy of the dataframe to avoid modifying the original
     _df = _df[_df.stat == 'mean'].copy()
     # Convert 'value' to millions
     _df['cost'] = _df['cost'] / 1e6
-    if _year == 'all':
+    if _draws == None:
         subset_df = _df
     else:
-        subset_df = _df[_df['year'].isin(_year)]
+        subset_df = _df[_df.draw.isin(_draws)]
+
+    if _year == 'all':
+        subset_df = subset_df
+    else:
+        subset_df = subset_df[subset_df['year'].isin(_year)]
+
     if _cost_category == 'all':
         subset_df = subset_df
         pivot_df = subset_df.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
@@ -699,15 +705,15 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year =
 
 # 2. Line plots of total costs
 #----------------------------------------------------
-def do_line_plot(_df, cost_category = 'all', _draw = None, _year = 'all'):
+def do_line_plot_of_cost(_df, _cost_category = 'all', _year = 'all', _draws = None, _outputfilepath: Path = None):
     # Filter the dataframe based on the selected draw
-    if _draw == None:
+    if _draws == None:
         subset_df = _df
     else:
-        subset_df = _df[_df.draw.isin(_draw)]
+        subset_df = _df[_df.draw.isin(_draws)]
 
-    if cost_category != 'all':
-        subset_df = subset_df[subset_df['Cost_Category'] == cost_category]
+    if _cost_category != 'all':
+        subset_df = subset_df[subset_df['cost_category'] == _cost_category]
 
     if _year == 'all':
         subset_df = subset_df
@@ -718,33 +724,35 @@ def do_line_plot(_df, cost_category = 'all', _draw = None, _year = 'all'):
     subset_df = subset_df.reset_index()
 
     # Extract mean, lower, and upper values for the plot
-    mean_values = subset_df[subset_df.stat == 'mean'].groupby(['Cost_Category', 'year'])['value'].sum() / 1e6
-    lower_values = subset_df[subset_df.stat == 'lower'].groupby(['Cost_Category', 'year'])['value'].sum() / 1e6
-    upper_values = subset_df[subset_df.stat == 'upper'].groupby(['Cost_Category', 'year'])['value'].sum() / 1e6
-    years = subset_df[subset_df.stat == 'mean']['year']
+    mean_values = subset_df[subset_df.stat == 'mean'].groupby(['year'])['cost'].sum() / 1e6
+    lower_values = subset_df[subset_df.stat == 'lower'].groupby(['year'])['cost'].sum() / 1e6
+    upper_values = subset_df[subset_df.stat == 'upper'].groupby(['year'])['cost'].sum() / 1e6
 
     # Plot the line for 'mean'
-    plt.plot(mean_values.index.get_level_values(1), mean_values, marker='o', linestyle='-', color='b', label='Mean')
+    plt.plot(mean_values.index.get_level_values(0), mean_values, marker='o', linestyle='-', color='b', label='Mean')
 
     # Add confidence interval using fill_between
-    plt.fill_between(mean_values.index.get_level_values(1), lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
+    plt.fill_between(mean_values.index.get_level_values(0), lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
+
+    # Period included for plot title and name
+    if _year == 'all':
+        period = (f"{min(_df['year'].unique())} - {max(_df['year'].unique())}")
+    elif (len(_year) == 1):
+        period = (f"{_year[0]}")
+    else:
+        period = (f"{min(_year)} - {max(_year)}")
 
     # Set plot labels and title
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper right')
-    plt.title(f'Costs by Scenario \n (Cost Category = {cost_category} ; Draw = {_draw})')
+    plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Draw = {_draws}; Period = {period})')
 
     # Save the plot
-    plt.savefig(figurespath / f'trend_{cost_category}_{min(_year)}-{max(_year)}.png',
+    plt.savefig(_outputfilepath / f'trend_{_cost_category}_{period}.png',
                 dpi=100,
                 bbox_inches='tight')
     plt.close()
-
-do_line_plot(_df = scenario_cost, cost_category = 'Medical consumables', _draw = 0, actual_expenditure = 206_747_565)
-do_line_plot(_df = scenario_cost, cost_category = 'Human Resources for Health',  _draw = 0, actual_expenditure = 128_593_787)
-do_line_plot(_df = scenario_cost, cost_category = 'Equipment purchase and maintenance',  _draw = 0, actual_expenditure = 6_048_481)
-do_line_plot(_df = scenario_cost, cost_category = 'all',  _draw = 0, actual_expenditure = 624_054_027)
 
 # 3. Return on Investment Plot
 #----------------------------------------------------

@@ -30,7 +30,8 @@ from tlo.analysis.utils import (
 )
 
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             do_stacked_bar_plot_of_cost_by_category)
+                                             do_stacked_bar_plot_of_cost_by_category,
+                                             do_line_plot_of_cost)
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 
@@ -262,6 +263,12 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'hum
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _year = [2018], _outputfilepath = figurespath)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other', _year = [2018], _outputfilepath = figurespath)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _year = list(range(2020, 2030)), _outputfilepath = figurespath)
+
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical consumables', _year = 'all', _draws = None, _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = None, _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical equipment', _year = 'all', _draws = None, _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = None, _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'all', _year = 'all', _draws = None, _outputfilepath = figurespath)
 
 '''
 #years_with_no_malaria_scaleup = set(TARGET_PERIOD).symmetric_difference(set(TARGET_PERIOD_MALARIA_SCALEUP))
