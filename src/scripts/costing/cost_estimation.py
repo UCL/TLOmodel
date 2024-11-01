@@ -680,23 +680,39 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _year =
     # Plot a stacked bar chart
     pivot_df.plot(kind='bar', stacked=True)
 
+    # Period included for plot title and name
+    if _year == 'all':
+        period = (f"{min(_df['year'].unique())} - {max(_df['year'].unique())}")
+    elif (len(_year) == 1):
+        period = (f"{_year[0]}")
+    else:
+        period = (f"{min(_year)} - {max(_year)}")
+
     # Save plot
     plt.xlabel('Scenario')
     plt.ylabel('Cost (2023 USD), millions')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper right')
-    plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Year = {_year})')
-    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_year_{_year}.png', dpi=100,
+    plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
+    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
 
 # 2. Line plots of total costs
 #----------------------------------------------------
-def do_line_plot(_df, cost_category, actual_expenditure, _draw):
+def do_line_plot(_df, cost_category = 'all', _draw = None, _year = 'all'):
     # Filter the dataframe based on the selected draw
-    subset_df = _df[_df.draw == _draw]
+    if _draw == None:
+        subset_df = _df
+    else:
+        subset_df = _df[_df.draw.isin(_draw)]
 
     if cost_category != 'all':
         subset_df = subset_df[subset_df['Cost_Category'] == cost_category]
+
+    if _year == 'all':
+        subset_df = subset_df
+    else:
+        subset_df = subset_df[subset_df['year'].isin(_year)]
 
     # Reset the index for plotting purposes
     subset_df = subset_df.reset_index()
@@ -713,9 +729,6 @@ def do_line_plot(_df, cost_category, actual_expenditure, _draw):
     # Add confidence interval using fill_between
     plt.fill_between(mean_values.index.get_level_values(1), lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
 
-    # Add a horizontal red line to represent the actual expenditure
-    plt.axhline(y=actual_expenditure / 1e6, color='red', linestyle='--', label='Actual expenditure recorded in 2018')
-
     # Set plot labels and title
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
@@ -723,7 +736,7 @@ def do_line_plot(_df, cost_category, actual_expenditure, _draw):
     plt.title(f'Costs by Scenario \n (Cost Category = {cost_category} ; Draw = {_draw})')
 
     # Save the plot
-    plt.savefig(figurespath / f'trend_{cost_category}_{first_year_of_simulation}-{final_year_of_simulation}.png',
+    plt.savefig(figurespath / f'trend_{cost_category}_{min(_year)}-{max(_year)}.png',
                 dpi=100,
                 bbox_inches='tight')
     plt.close()

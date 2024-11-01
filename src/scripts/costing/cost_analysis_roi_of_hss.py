@@ -261,8 +261,7 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'med
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _year = [2018], _outputfilepath = figurespath)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _year = [2018], _outputfilepath = figurespath)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other', _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other', _year = list(range(2020, 2030)), _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _year = list(range(2020, 2030)), _outputfilepath = figurespath)
 
 '''
 #years_with_no_malaria_scaleup = set(TARGET_PERIOD).symmetric_difference(set(TARGET_PERIOD_MALARIA_SCALEUP))
