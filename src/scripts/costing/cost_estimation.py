@@ -746,10 +746,6 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
     if disaggregate_by not in valid_disaggregations and disaggregate_by is not None:
         raise ValueError(f"Invalid disaggregation option: {disaggregate_by}. Choose from {valid_disaggregations}.")
 
-    # If more than 1 draw, disaggregations can't be applied
-    if ((_draws is None) or (len(_draws) > 1)) & (disaggregate_by is not None):
-        raise ValueError(f"Invalid: disaggregate_by can be applied only when a single draw is plotted. For example, _draws = [0]")
-
     # Filter the dataframe by draws, if specified
     subset_df = _df if _draws is None else _df[_df.draw.isin(_draws)]
 
@@ -760,8 +756,7 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
     # Handle scenarios based on `_cost_category` and `disaggregate_by` conditions
     if _cost_category == 'all':
         if disaggregate_by == 'cost_subgroup':
-            raise ValueError("Cannot disaggregate by 'cost_subgroup' when `_cost_category='all'` due to data size. If "
-                             "you wish to plot by 'cost_subgroup', choose a specific _cost_category such as 'medical consumables'")
+            raise ValueError("Cannot disaggregate by 'cost_subgroup' when `_cost_category='all'` due to data size.")
     else:
         # Filter subset_df by specific cost category if specified
         subset_df = subset_df[subset_df['cost_category'] == _cost_category]
@@ -791,42 +786,70 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
     lower_values = subset_df[subset_df.stat == 'lower'].groupby(groupby_columns)['cost'].sum() / 1e6
     upper_values = subset_df[subset_df.stat == 'upper'].groupby(groupby_columns)['cost'].sum() / 1e6
 
+    # Prepare to store lines and labels for the legend
+    lines = []
+    labels = []
+
+    # Define a list of colors to rotate through
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'gray']  # Add more colors as needed
+    color_cycle = iter(colors)  # Create an iterator from the color list
+
     # Plot each line for the disaggregated values
     if disaggregate_by:
-        plt_name_suffix = f'_by{disaggregate_by}'
         for disaggregate_value in mean_values.index.get_level_values(disaggregate_by).unique():
             # Get mean, lower, and upper values for each disaggregated group
             value_mean = mean_values.xs(disaggregate_value, level=disaggregate_by)
             value_lower = lower_values.xs(disaggregate_value, level=disaggregate_by)
             value_upper = upper_values.xs(disaggregate_value, level=disaggregate_by)
 
+            # Get the next color from the cycle
+            color = next(color_cycle)
+
             # Plot line for mean and shaded region for 95% CI
-            plt.plot(value_mean.index, value_mean, marker='o', linestyle='-', label=f'{disaggregate_value}')
-            plt.fill_between(value_mean.index, value_lower, value_upper, alpha=0.2)
+            line, = plt.plot(value_mean.index, value_mean, marker='o', linestyle='-', color=color, label=f'{disaggregate_value} - Mean')
+            plt.fill_between(value_mean.index, value_lower, value_upper, color=color, alpha=0.2)
+
+            # Append to lines and labels for sorting later
+            lines.append(line)
+            labels.append(disaggregate_value)
     else:
-        plt_name_suffix = ''
-        plt.plot(mean_values.index, mean_values, marker='o', linestyle='-', color='b', label='Mean')
+        line, = plt.plot(mean_values.index, mean_values, marker='o', linestyle='-', color='b', label='Mean')
         plt.fill_between(mean_values.index, lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
+
+        # Append to lines and labels for sorting later
+        lines.append(line)
+        labels.append('Mean')
+
+    # Sort the legend based on total costs
+    total_costs = {label: mean_values.xs(label, level=disaggregate_by).sum() for label in labels}
+    sorted_labels = sorted(total_costs.keys(), key=lambda x: total_costs[x])
+
+    # Reorder lines based on sorted labels
+    handles = [lines[labels.index(label)] for label in sorted_labels]
 
     # Define period for plot title
     if _year == 'all':
-        period = f"{min(subset_df['year'].unique())}-{max(subset_df['year'].unique())}"
+        period = f"{min(subset_df['year'].unique())} - {max(subset_df['year'].unique())}"
     elif len(_year) == 1:
         period = str(_year[0])
     else:
-        period = f"{min(_year)}-{max(_year)}"
+        period = f"{min(_year)} - {max(_year)}"
 
     # Set labels, legend, and title
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.legend(handles[::-1], sorted_labels[::-1], bbox_to_anchor=(1.05, 1), loc='upper left')
     plot_title = f'Costs by Scenario \n (Category = {_cost_category}, Period = {period})'
     plt.title(plot_title)
 
-    # Save plot
-    filename = f'trend_{_cost_category}_{period}{plt_name_suffix}.png'
-    print(f"Saved figure {_outputfilepath} / {filename}")
-    plt.savefig(_outputfilepath / f'{filename}', dpi=100, bbox_inches='tight')
+    # Save plot with a proper filename
+    if disaggregate_by is None:
+        filename_suffix = "="
+    else:
+        filename_suffix = f"_by_{disaggregate_by}"
+
+    filename = f'trend_{_cost_category}_{period}{filename_suffix}.png'
+    plt.savefig(_outputfilepath / filename, dpi=100, bbox_inches='tight')
     plt.close()
 
 # 3. Return on Investment Plot
