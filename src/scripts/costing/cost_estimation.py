@@ -739,12 +739,17 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _disagg
 
 # 2. Line plots of total costs
 #----------------------------------------------------
+# TODO: Check why line plot get save without a file name
 def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, disaggregate_by=None,
                          _outputfilepath: Path = None):
     # Validate disaggregation options
     valid_disaggregations = ['cost_category', 'cost_subcategory', 'cost_subgroup']
     if disaggregate_by not in valid_disaggregations and disaggregate_by is not None:
         raise ValueError(f"Invalid disaggregation option: {disaggregate_by}. Choose from {valid_disaggregations}.")
+
+    #
+    if ((_draws is None) or (len(_draws) > 1)) & (disaggregate_by is not None):
+        raise ValueError(f"The disaggregate_by option only works if only one draw is plotted, for exmaple _draws = [0]")
 
     # Filter the dataframe by draws, if specified
     subset_df = _df if _draws is None else _df[_df.draw.isin(_draws)]
@@ -814,7 +819,7 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
             labels.append(disaggregate_value)
     else:
         line, = plt.plot(mean_values.index, mean_values, marker='o', linestyle='-', color='b', label='Mean')
-        plt.fill_between(mean_values.index, lower_values, upper_values, color='b', alpha=0.2, label='95% CI')
+        plt.fill_between(mean_values.index, lower_values, upper_values, color='b', alpha=0.2)
 
         # Append to lines and labels for sorting later
         lines.append(line)
@@ -839,12 +844,12 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
     plt.legend(handles[::-1], sorted_labels[::-1], bbox_to_anchor=(1.05, 1), loc='upper left')
-    plot_title = f'Costs by Scenario \n (Category = {_cost_category}, Period = {period})'
+    plot_title = f'Total input cost \n (Category = {_cost_category}, Period = {period})'
     plt.title(plot_title)
 
     # Save plot with a proper filename
     if disaggregate_by is None:
-        filename_suffix = "="
+        filename_suffix = ""
     else:
         filename_suffix = f"_by_{disaggregate_by}"
 
