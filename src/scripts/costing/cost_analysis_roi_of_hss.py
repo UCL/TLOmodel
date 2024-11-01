@@ -215,10 +215,12 @@ def find_difference_relative_to_comparison(_ser: pd.Series,
         .drop(columns=([comparison] if drop_comparison else [])) \
         .stack()
 
+total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
+
 # TODO the following calculation should first capture the different by run and then be summarised
 incremental_scenario_cost = (pd.DataFrame(
             find_difference_relative_to_comparison(
-                total_scenario_cost_wide.loc[0],
+                total_input_cost,
                 comparison= 0) # sets the comparator to 0 which is the Actual scenario
         ).T.iloc[0].unstack()).T
 
@@ -246,19 +248,20 @@ num_dalys = extract_results(
         do_scaling=True
     )
 
-num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
+#num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 #num_dalys_summarized['scenario'] = scenarios.to_list() # add when scenarios have names
 #num_dalys_summarized = num_dalys_summarized.set_index('scenario')
 
 # Get absolute DALYs averted
-num_dalys_averted = summarize(
-        -1.0 *
+num_dalys_averted =(-1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys.loc[0],
                 comparison= 0) # sets the comparator to 0 which is the Actual scenario
-        ).T
-    ).iloc[0].unstack()
+        ).T.iloc[0].unstack(level = 'run'))
+
+#num_dalys = num_dalys.loc[0].unstack()
+num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values(0).isin(draws_included)]
 #num_dalys_averted['scenario'] = scenarios.to_list()[1:12]
 #num_dalys_averted = num_dalys_averted.set_index('scenario')
 
@@ -277,8 +280,7 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _year = list(range(20
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical consumables', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
-
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = None, _outputfilepath = figurespath)
+do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = [0], disaggregate_by= 'cost_subcategory', _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical equipment', _year = 'all', _draws = None, _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = None, _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'all', _year = 'all', disaggregate_by= 'cost_category', _draws = None, _outputfilepath = figurespath)
