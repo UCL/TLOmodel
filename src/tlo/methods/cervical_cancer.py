@@ -219,7 +219,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "ce_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnosis of cervical cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of cervical cancer stage (pd.NaT if never diagnosed)"
         ),
         "ce_stage_at_diagnosis": Property(
             Types.CATEGORICAL,
