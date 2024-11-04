@@ -28,8 +28,8 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
     # cons_dict['cervical_cancer_screening_via_optional'] = \
     #     {get_item_code("Gloves"): 2}
 
-    cons_dict['cervical_cancer_screening_via'] = \
-        {get_item_code("Clean delivery kit"): 1}
+    # cons_dict['cervical_cancer_screening_via'] = \
+    #     {get_item_code("Clean delivery kit"): 1}
 
     cons_dict['treatment_surgery_core'] = \
         {get_item_code("Halothane (fluothane)_250ml_CMST"): 100,
@@ -74,6 +74,35 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
 
         cons_dict['screening_cystoscopy_core'] = \
             {get_item_code("Cystoscope"): 1}
+
+    elif 'CervicalCancer' == self.name:
+        cons_dict['cervical_cancer_screening_via'] = \
+            {get_item_code("Acetic acid, 5% dilute, 5 ml"): 1,
+             # get_item_code("Speculum"): 1,
+             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+
+        cons_dict['cervical_cancer_screening_xpert'] = \
+        {get_item_code("Specimen container"): 1,
+        #     get_item_code("Xpert HPV test cartridge"): 1,
+        #      get_item_code("PCR machine"): 1,
+        #      get_item_code("Speculum"): 1,
+             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+
+        cons_dict['cervical_cancer_thermoablation'] = {
+            # {get_item_code("Thermoablation Device"): 1,
+            #  get_item_code("Thermoablation Probes"): 1,
+            # get_item_code("Speculum"): 1,
+             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+
+        cons_dict['cervical_cancer_cryotherapy'] = \
+            {get_item_code("Cryotherapy unit with cryotips, use for one patient"): 1,
+             get_item_code("Compressed gas, 25 kg cylinder"): 1,
+            # get_item_code("Speculum"): 1,
+             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
 
     elif 'OesophagealCancer' == self.name:
 
