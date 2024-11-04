@@ -85,14 +85,14 @@ class BitsetDtype(ExtensionDtype):
         if not isinstance(string, str):
             raise TypeError(f"'construct_from_string' expects a string, got {type(string)}")
 
-        string_has_bitset_prefix = re.match("bitset\((\d+)\):", string)
+        string_has_bitset_prefix = re.match(r"bitset\((\d+)\):", string)
         n_elements = None
         if string_has_bitset_prefix:
             prefix = string_has_bitset_prefix.group(0)
             # Remove prefix
             string = string.removeprefix(prefix)
             # Extract number of elements if provided though
-            n_elements = int(re.search("(\d+)", prefix).group(0))
+            n_elements = int(re.search(r"(\d+)", prefix).group(0))
         if "," not in string:
             raise TypeError(
                 "Need at least 2 (comma-separated) elements in string to construct bitset."
