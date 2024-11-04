@@ -342,7 +342,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'mean']/1e6, color='black', alpha=0.5)
+    ax.axhline(num_dalys_summarized.loc['Baseline', 'median']/1e6, color='black', alpha=0.5)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()

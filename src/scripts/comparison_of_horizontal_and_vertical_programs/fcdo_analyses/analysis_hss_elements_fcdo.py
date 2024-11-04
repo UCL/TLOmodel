@@ -7,9 +7,8 @@ outputs/hss_elements-2024-08-21T125348Z
 full run:
 /Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-09-04T142900Z
 
-updated run 19th Oct 2024
-/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-10-12T111649Z
-NOTE: 1 failed run draw 3 run 1, draw 5 run 0, draw 7 run 3
+updated run 22nd Oct 2024
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk//hss_elements-2024-10-22T163857Z
 
 """
 
