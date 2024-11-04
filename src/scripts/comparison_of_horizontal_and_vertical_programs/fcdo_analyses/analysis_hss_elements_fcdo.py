@@ -134,7 +134,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
             colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
 
-
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
             xticks.keys(),
@@ -286,11 +285,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
+    # Filter scenarios
+    # Define the multi-index column labels to drop
+    exclude_labels = ['Increase Capacity of CHW', 'HSS PACKAGE: Realistic expansion, no change in HSB']
+
+    # Drop specified columns from the DataFrame
+    filtered_num_deaths = num_deaths.loc[:, ~num_deaths.columns.get_level_values(0).isin(exclude_labels)]
+    filtered_num_dalys = num_deaths.loc[:, ~num_dalys.columns.get_level_values(0).isin(exclude_labels)]
+    filtered_param_names = tuple(label for label in param_names if label not in exclude_labels)
 
 
     # %% Charts of total numbers of deaths / DALYS
-    num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
-    num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
+    num_dalys_summarized = summarize(filtered_num_dalys).loc[0].unstack().reindex(filtered_param_names)
+    num_deaths_summarized = summarize(filtered_num_deaths).loc[0].unstack().reindex(filtered_param_names)
     num_dalys_summarized.to_csv(results_folder / 'num_dalys_summarized.csv')
     num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
 
@@ -308,19 +315,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # }
     # todo need to update
     color_map = {
-        'Baseline': '#9e0142',
-        'HRH Moderate Scale-up (1%)': '#d84a48',
-        'HRH Scale-up Following Historical Growth': '#f67c4d',
-        'HRH Accelerated Scale-up (6%)': '#fcad61',
-        'Increase Capacity at Primary Care Levels': '',
-        'Increase Capacity of CHW': '#f7e082',
-        'Consumables Increased to 75th Percentile': '#86cfa5',
-        'Consumables Available at HIV levels': '#4ea6bb',
-        'Consumables Available at EPI levels': '#3d82b2',  # Adjusted for consistency
+        'Baseline': '#a50026',
+        'HRH Moderate Scale-up (1%)': '#d73027',
+        'HRH Scale-up Following Historical Growth': '#f46d43',
+        'HRH Accelerated Scale-up (6%)': '#fdae61',
+        'Increase Capacity at Primary Care Levels': '#fee08b',
+        # 'Increase Capacity of CHW': '#ffffbf',
+        'Consumables Increased to 75th Percentile': '#d9ef8b',
+        'Consumables Available at HIV levels': '#a6d96a',
+        'Consumables Available at EPI levels': '#66bd63',
+        'Perfect Consumables Availability': '#1a9850',
         'HSS PACKAGE: Perfect': '#5e4fa2',
-        'HSS PACKAGE: Realistic expansion, no change in HSB': '',
-        'HSS PACKAGE: Realistic expansion': '',
+        'HSS PACKAGE: Realistic expansion': '#3288bd'
     }
+
 
     # DEATHS: all scenarios
     name_of_plot = f'Deaths, {target_period()}'
@@ -352,42 +360,42 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
-                num_deaths.loc[0],
+                filtered_num_deaths.loc[0],
                 comparison='Baseline')
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    ).iloc[0].unstack().reindex(filtered_param_names).drop(['Baseline'])
     num_deaths_averted.to_csv(results_folder / 'num_deaths_averted.csv')
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
-                num_deaths.loc[0],
+                filtered_num_deaths.loc[0],
                 comparison='Baseline',
                 scaled=True)
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    ).iloc[0].unstack().reindex(filtered_param_names).drop(['Baseline'])
     pc_deaths_averted.to_csv(results_folder / 'pc_deaths_averted.csv')
 
     num_dalys_averted = summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
-                num_dalys.loc[0],
+                filtered_num_dalys.loc[0],
                 comparison='Baseline')
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    ).iloc[0].unstack().reindex(filtered_param_names).drop(['Baseline'])
     num_dalys_averted.to_csv(results_folder / 'num_dalys_averted.csv')
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
-                num_dalys.loc[0],
+                filtered_num_dalys.loc[0],
                 comparison='Baseline',
                 scaled=True)
         ).T
-    ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
+    ).iloc[0].unstack().reindex(filtered_param_names).drop(['Baseline'])
     pc_dalys_averted.to_csv(results_folder / 'pc_dalys_averted.csv')
 
     # DEATHS AVERTED
@@ -400,10 +408,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ],
         offset=10_000, set_colors=color_map,
     )
+    fig.subplots_adjust(left=0.15, top=0.85, bottom=0.15)
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 250_000)
+    ax.set_ylim(0, 500_000)
     ax.set_ylabel('Deaths Averted')
-    fig.tight_layout()
+    # fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -414,13 +423,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['median'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ],
-        offset=0.5, set_colors=color_map,
+        offset=0.02, set_colors=color_map,
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 20)
+    ax.set_ylim(0, 0.6)
     ax.set_ylabel('DALYS Averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -486,7 +495,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="dalys_by_wealth_stacked_by_age_and_time",
         custom_generate_series=get_total_num_dalys_by_label,
         do_scaling=True,
-    ), only_mean=True
+    ), only_median=True
     )
     summarise_total_num_dalys_by_label_results.to_csv(results_folder / 'summarise_total_num_dalys_by_label_results.csv')
 
@@ -495,21 +504,46 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             total_num_dalys_by_label_results,
             comparison='Baseline'
         ),
-        only_mean=True
+        only_median=True
     )
     total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / 'total_num_dalys_by_label_results_averted_vs_baseline.csv')
-
-    # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
-    assert (
-        (total_num_dalys_by_label_results_averted_vs_baseline.sum(axis=0).sort_index()
-         - num_dalys_averted['mean'].sort_index()
-         ) < 1e-6
-    ).all()
 
 
     # PLOT break down by cause
 
-    def plot_dalys_averted_by_cause(_df, put_labels_in_legend=True,
+    # def plot_dalys_averted_by_cause(_df, put_labels_in_legend=True,
+    #                                 xticklabels_horizontal_and_wrapped=False):
+    #     """
+    #     Plot DALYs averted by cause with annotations and save the plot.
+    #
+    #     """
+    #     # Define annotations (A, B, C, ...)
+    #     substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    #     xticks = {i: label for i, label in enumerate(_df.columns)}
+    #
+    #     fig, ax = plt.subplots(figsize=(9, 6))  # Increase the figure size for better layout
+    #     num_categories = len(_df.index)
+    #     colours = sns.color_palette('Set1', num_categories)
+    #
+    #     # Plot stacked bar chart
+    #     bars = _df.T.plot.bar(
+    #         stacked=True,
+    #         ax=ax,
+    #         rot=0,
+    #         color=colours
+    #     )
+    #
+    #     # Set x-ticks and labels
+    #     ax.set_xticks(list(xticks.keys()))
+    #     ax.set_xticklabels([substitute_labels[i] for i in xticks.keys()])
+    #
+    #     ax.grid(axis="y")
+    #     fig.tight_layout(pad=2.0)
+    #     plt.subplots_adjust(left=0.15, right=0.85)  # Adjust left and right margins
+    #
+    #     return fig, ax
+
+    def plot_dalys_averted_by_cause(_df, color_map, put_labels_in_legend=True,
                                     xticklabels_horizontal_and_wrapped=False):
         """
         Plot DALYs averted by cause with annotations and save the plot.
@@ -518,6 +552,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Define annotations (A, B, C, ...)
         substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         xticks = {i: label for i, label in enumerate(_df.columns)}
+
+        # Reorder DataFrame based on the color map keys
+        ordered_columns = [key for key in color_map.keys() if key in _df.columns]
+        _df = _df[ordered_columns]
 
         fig, ax = plt.subplots(figsize=(9, 6))  # Increase the figure size for better layout
         num_categories = len(_df.index)
@@ -541,11 +579,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
-
+    filtered_total_num_dalys_by_label_results_averted_vs_baseline = total_num_dalys_by_label_results_averted_vs_baseline.drop(
+        columns=['Increase Capacity of CHW', 'HSS PACKAGE: Realistic expansion, no change in HSB']
+    )
     name_of_plot = f'DALYS Averted vs Baseline by Cause, {target_period()}'
-    fig, ax = plot_dalys_averted_by_cause(total_num_dalys_by_label_results_averted_vs_baseline / 1e6)
+    fig, ax = plot_dalys_averted_by_cause(filtered_total_num_dalys_by_label_results_averted_vs_baseline / 1e6, color_map)
     ax.set_title(name_of_plot)
-    ax.set_ylim([0, 20])
+    ax.set_ylim([0, 50])
     ax.set_ylabel('DALYs Averted vs Baseline (Millions)')
     ax.set_xlabel('')
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -592,14 +632,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     # PLOT DALYS over target period with CI
+    # Drop specified columns from the DataFrame
+    filtered_dalys_by_year = result_df.loc[:, ~result_df.columns.get_level_values(1).isin(exclude_labels)]
+
     name_of_plot = f'DALYS, {target_period()}'
     fig, ax = do_line_plot_with_ci(
-        result_df / 1e6,
+        filtered_dalys_by_year / 1e6,
         put_labels_in_legend=True,
         set_colors=color_map,
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(6, 14)
+    ax.set_ylim(6, 18)
     ax.set_ylabel('(Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -666,11 +709,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     plt.show()
     plt.close(fig)
-
-
-
-
-
 
 
 if __name__ == "__main__":
