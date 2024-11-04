@@ -51,7 +51,7 @@ yrs_between_screen_hv_neg = 5
 hpv_cin_options = ['hpv', 'cin1', 'cin2', 'cin3']
 hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
 
-def screen_subset_population(year, p, eligible_population, df, rng, sim, module):
+def screen_population(year, p, eligible_population, df, rng, sim, module):
     screening_methods = {
         'VIA': {
             'prob_key': 'prob_via_screen',
@@ -80,7 +80,7 @@ def screen_subset_population(year, p, eligible_population, df, rng, sim, module)
             topen=sim.date,
             tclose=None
         )
-def schedule_cin_procedure(year, p, person_id, hs, module, sim):
+def perform_cin_procedure(year, p, person_id, hs, module, sim):
     treatment_methods = {
         'Thermoablation': {
             'event_class': HSI_CervicalCancer_Thermoablation_CIN
@@ -971,7 +971,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        screen_subset_population(year, p, eligible_population, df, rng, self.sim, self.module)
+        screen_population(year, p, eligible_population, df, rng, self.sim, self.module)
 
         # xpert_select_ind_id = df.loc[df['ce_selected_for_xpert_this_month']].index
             # self.module.onset_xpert_properties(xpert_select_ind_id)
@@ -1081,7 +1081,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
                             ):
-                    schedule_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
+                    perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
 
                 elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
@@ -1260,7 +1260,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "ce_biopsy"] = True
 
         if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
-            schedule_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
+            perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
 
         elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
                         or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
