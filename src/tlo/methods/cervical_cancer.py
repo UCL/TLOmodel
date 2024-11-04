@@ -985,16 +985,19 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Define the eligible population
         eligible_population = (
-            (df.is_alive) &
-            (df.sex == 'F') &
-            (df.age_years >= screening_min_age) &
-            (df.age_years < screening_max_age) &
-            (~df.ce_current_cc_diagnosed) &
-            (
-                pd.isna(df.ce_date_last_screened) |
-                ((days_since_last_via > 1825) & (days_since_last_xpert > 1825)) |
-                ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
-            )
+                (df.is_alive) &
+                (df.sex == 'F') &
+                (~df.ce_current_cc_diagnosed) &
+                (df.age_years >= age_min) &
+                (df.age_years < age_max) &
+                (
+                        pd.isna(df.ce_date_last_screened) |
+                        (days_since_last_screen > screening_interval) |
+                        (
+                                (days_since_last_screen > yrs_between_screen_cin_treated * 365) &
+                                (days_since_last_cin_treatment < yrs_between_cin_treatment * 365)
+                        )
+                )
         )
 
         # todo: consider fact that who recommend move towards xpert screening away from via
