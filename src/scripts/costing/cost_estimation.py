@@ -857,115 +857,8 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
     plt.savefig(_outputfilepath / filename, dpi=100, bbox_inches='tight')
     plt.close()
 
-# 3. Return on Investment Plot
-#----------------------------------------------------
-# Plot ROI at various levels of cost
-roi_outputs_folder = Path(figurespath / 'roi')
-if not os.path.exists(roi_outputs_folder):
-    os.makedirs(roi_outputs_folder)
-
-# Loop through each row and plot mean, lower, and upper values divided by costs
-for index, row in monetary_value_of_incremental_health.iterrows():
-    # Step 1: Create an array of implementation costs ranging from 0 to the max value of the max ability to pay
-    implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation.loc[index]['mean'], 50)
-
-    plt.figure(figsize=(10, 6))
-
-    # Retrieve the corresponding row from incremental_scenario_cost for the same 'index'
-    scenario_cost_row = incremental_scenario_cost.loc[index]
-    # Divide rows by the sum of implementation costs and incremental input cost
-    mean_values = row['mean'] / (implementation_costs + scenario_cost_row['mean'])
-    lower_values = row['lower'] / (implementation_costs + scenario_cost_row['lower'])
-    upper_values = row['upper'] / (implementation_costs + scenario_cost_row['upper'])
-    # Plot mean line
-    plt.plot(implementation_costs/1e6, mean_values, label=f'Draw {index}')
-    # Plot the confidence interval as a shaded region
-    plt.fill_between(implementation_costs/1e6, lower_values, upper_values, alpha=0.2)
-
-    # Step 4: Set plot labels and title
-    plt.xlabel('Implementation cost, millions')
-    plt.ylabel('Return on Investment')
-    plt.title('Return on Investment of scenarios at different levels of implementation cost')
-
-    plt.text(x=0.95, y=0.8, s=f"Monetary value of incremental health = USD {round(monetary_value_of_incremental_health.loc[index]['mean']/1e6,2)}m (USD {round(monetary_value_of_incremental_health.loc[index]['lower']/1e6,2)}m-{round(monetary_value_of_incremental_health.loc[index]['upper']/1e6,2)}m);\n "
-                             f"Incremental input cost of scenario = USD {round(scenario_cost_row['mean']/1e6,2)}m (USD {round(scenario_cost_row['lower']/1e6,2)}m-{round(scenario_cost_row['upper']/1e6,2)}m)",
-             horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes, fontsize=9, weight='bold', color='black')
-
-
-    # Show legend
-    plt.legend()
-    # Save
-    plt.savefig(figurespath / f'roi/ROI_draw{index}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-# 4. Plot Maximum ability-to-pay
-#----------------------------------------------------
-def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
-    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-    extent of the error bar."""
-
-    yerr = np.array([
-        (_df['mean'] - _df['lower']).values,
-        (_df['upper'] - _df['mean']).values,
-    ])
-
-    xticks = {(i+1): k for i, k in enumerate(_df.index)}
-
-    fig, ax = plt.subplots()
-    ax.bar(
-        xticks.keys(),
-        _df['mean'].values,
-        yerr=yerr,
-        alpha=1,
-        ecolor='black',
-        capsize=10,
-        label=xticks.values()
-    )
-    '''
-    if annotations:
-        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=11)
-
-    ax.set_xticks(list(xticks.keys()))
-    if not xticklabels_horizontal_and_wrapped:
-        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs, rotation=45, ha='right', fontsize=10)
-    else:
-        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs, fontsize=10)
-    '''
-
-    # Set font size for y-tick labels
-    ax.tick_params(axis='y', labelsize=12)
-    ax.tick_params(axis='x', labelsize=11)
-
-    ax.grid(axis="y")
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    fig.tight_layout()
-
-    return fig, ax
-
-# Plot Max ability to pay
-name_of_plot = f'Maximum ability to pay, 2020-2030' #f'Maximum ability to pay, {first_year_of_simulation} - {final_year_of_simulation}'
-fig, ax = do_bar_plot_with_ci(
-    (max_ability_to_pay_for_implementation / 1e6).clip(lower=0.0),
-    annotations=[
-        f"{round(row['mean']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
-        for _, row in max_ability_to_pay_for_implementation.clip(lower=0.0).iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-)
-ax.set_title(name_of_plot)
-#ax.set_ylim(0, 120)
-#ax.set_yticks(np.arange(0, 120, 10))
-ax.set_ylabel('Maximum ability to pay \n(Millions)')
-fig.tight_layout()
-fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
-fig.show()
-plt.close(fig)
-
+'''
+# Scratch pad
 # TODO all these HR plots need to be looked at
 # 1. HR
 # Stacked bar chart of salaries by cadre
@@ -1131,8 +1024,6 @@ plt.ylabel('Total Salary')
 plt.title('Total Salary by Facility_Level')
 plt.savefig(costing_outputs_folder /  'total_salary_by_level.png')
 
-'''
-# Scratch pad
 
 log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_By_Facility_ID'] # for district disaggregation
 
