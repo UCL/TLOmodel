@@ -236,3 +236,26 @@ ax.set_ylabel('Maximum ability to pay \n(Millions)')
 fig.tight_layout()
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
+
+# 4. Plot costs
+# ----------------------------------------------------
+input_costs_for_plot = input_costs[input_costs.draw.isin(hss_scenarios_for_gf_report)]
+# First summarize all input costs
+input_costs_for_plot_summarized = input_costs_for_plot.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category']).agg(
+    mean=('cost', 'mean'),
+    lower=('cost', lambda x: x.quantile(0.025)),
+    upper=('cost', lambda x: x.quantile(0.975))
+).reset_index()
+input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
+    id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
+    value_vars=['mean', 'lower', 'upper'],
+    var_name='stat',
+    value_name='cost'
+)
+
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
