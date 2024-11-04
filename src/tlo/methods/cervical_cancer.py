@@ -955,11 +955,35 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
         days_since_last_thermoabl = (self.sim.date - df.ce_date_thermoabl).dt.days
+        days_since_last_cryotherapy = (self.sim.date - df.ce_date_cryotherapy).dt.days
+        days_since_last_cin_treatment = pd.DataFrame({
+            'thermoabl': days_since_last_thermoabl,
+            'cryotherapy': days_since_last_cryotherapy
+        }).min(axis=1)
         days_since_last_via = (self.sim.date - df.ce_date_via).dt.days
         days_since_last_xpert = (self.sim.date - df.ce_date_xpert).dt.days
 
         # todo: screening probability depends on date last screen and result (who guidelines)
 
+        # eligible_population = (
+        #     (df.is_alive) &
+        #     (df.sex == 'F') &
+        #     (df.age_years >= screening_min_age) &
+        #     (df.age_years < screening_max_age) &
+        #     (~df.ce_current_cc_diagnosed) &
+        #     (
+        #         pd.isna(df.ce_date_last_screened) |
+        #         ((days_since_last_via > 1825) & (days_since_last_xpert > 1825)) |
+        #         ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
+        #     )
+        # )
+
+        # Define screening age and interval criteria based on HIV status
+        age_min = np.where(df.hv_diagnosed, screening_min_age_hv_pos, screening_min_age_hv_neg)
+        age_max = np.where(df.hv_diagnosed, screening_max_age_hv_pos, screening_max_age_hv_neg)
+        screening_interval = np.where(df.hv_diagnosed, yrs_between_screen_hv_pos, yrs_between_screen_hv_neg) * 365
+
+        # Define the eligible population
         eligible_population = (
             (df.is_alive) &
             (df.sex == 'F') &
