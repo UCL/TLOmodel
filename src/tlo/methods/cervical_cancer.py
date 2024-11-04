@@ -37,7 +37,9 @@ if TYPE_CHECKING:
 
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 
-# Set parameters
+# todo: Write these values into the ResourceFile rather than defining at top of script
+
+# Define thresholds
 screening_min_age = 25
 screening_max_age = 50
 screening_min_age_hv_neg = 30
@@ -47,9 +49,15 @@ screening_max_age_hv_pos = 50
 yrs_between_screen_hv_pos = 3
 yrs_between_screen_hv_neg = 5
 
+# If someone is undergoing cin treatment, can repeat screening every 3yrs
+yrs_between_screen_cin_treated = 2
+yrs_between_cin_treatment = 3
+
 
 hpv_cin_options = ['hpv', 'cin1', 'cin2', 'cin3']
 hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
+
+# todo: Align on where is the best place to define these functions
 
 def screen_population(year, p, eligible_population, df, rng, sim, module):
     screening_methods = {
