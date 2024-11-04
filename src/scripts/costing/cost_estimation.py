@@ -876,6 +876,75 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
     plt.savefig(_outputfilepath / filename, dpi=100, bbox_inches='tight')
     plt.close()
 
+# Plot ROI
+def generate_roi_plots(_monetary_value_of_incremental_health, _incremental_input_cost, _scenario_dict, _outputfilepath):
+    # Calculate maximum ability to pay for implementation
+    max_ability_to_pay_for_implementation = (_monetary_value_of_incremental_health - _incremental_input_cost).clip(
+        lower=0.0)  # monetary value - change in costs
+
+    # Iterate over each draw in monetary_value_of_incremental_health
+    for draw_index, row in _monetary_value_of_incremental_health.iterrows():
+        # Initialize an empty DataFrame to store values for each 'run'
+        all_run_values = pd.DataFrame()
+
+        # Create an array of implementation costs ranging from 0 to the max value of max ability to pay for the current draw
+        implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation.loc[draw_index].max(), 50)
+
+        # Retrieve the corresponding row from incremental_scenario_cost for the same draw
+        scenario_cost_row = _incremental_input_cost.loc[draw_index]
+
+        # Calculate the values for each individual run
+        for run in scenario_cost_row.index:  # Assuming 'run' columns are labeled by numbers
+            # Calculate the cost-effectiveness metric for the current run
+            run_values = (row[run] - (implementation_costs + scenario_cost_row[run])) / (
+                    implementation_costs + scenario_cost_row[run])
+
+            # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
+            run_df = pd.DataFrame([run_values], index=pd.MultiIndex.from_tuples([(draw_index, run)], names=['draw', 'run']),
+                                  columns=implementation_costs)
+
+            # Append the run DataFrame to all_run_values
+            all_run_values = pd.concat([all_run_values, run_df])
+
+        collapsed_data = all_run_values.groupby(level='draw').agg([
+                'mean',
+                ('lower', lambda x: x.quantile(0.025)),
+                ('upper', lambda x: x.quantile(0.975))
+            ])
+
+        collapsed_data = collapsed_data.unstack()
+        collapsed_data.index = collapsed_data.index.set_names('implementation_cost', level=0)
+        collapsed_data.index = collapsed_data.index.set_names('stat', level=1)
+        collapsed_data = collapsed_data.reset_index().rename(columns = {0: 'roi'})
+        #collapsed_data = collapsed_data.reorder_levels(['draw', 'stat', 'implementation_cost'])
+
+        # Divide rows by the sum of implementation costs and incremental input cost
+        mean_values = collapsed_data[collapsed_data['stat'] == 'mean'][['implementation_cost', 'roi']]
+        lower_values = collapsed_data[collapsed_data['stat'] == 'lower'][['implementation_cost', 'roi']]
+        upper_values = collapsed_data[collapsed_data['stat']  == 'upper'][['implementation_cost', 'roi']]
+
+        # Plot mean line
+        plt.plot(implementation_costs / 1e6, mean_values['roi'], label=f'{_scenario_dict[draw_index]}')
+        # Plot the confidence interval as a shaded region
+        plt.fill_between(implementation_costs / 1e6, lower_values['roi'], upper_values['roi'], alpha=0.2)
+
+        plt.xlabel('Implementation cost, millions')
+        plt.ylabel('Return on Investment')
+        plt.title('Return on Investment of scenario at different levels of implementation cost')
+
+        #plt.text(x=0.95, y=0.8,
+        #         s=f"Monetary value of incremental health = USD {round(monetary_value_of_incremental_health.loc[draw_index]['mean'] / 1e6, 2)}m (USD {round(monetary_value_of_incremental_health.loc[draw_index]['lower'] / 1e6, 2)}m-{round(monetary_value_of_incremental_health.loc[draw_index]['upper'] / 1e6, 2)}m);\n "
+        #           f"Incremental input cost of scenario = USD {round(scenario_cost_row['mean'] / 1e6, 2)}m (USD {round(scenario_cost_row['lower'] / 1e6, 2)}m-{round(scenario_cost_row['upper'] / 1e6, 2)}m)",
+        #         horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes, fontsize=9,
+        #         weight='bold', color='black')
+
+        # Show legend
+        plt.legend()
+        # Save
+        plt.savefig(_outputfilepath / f'draw{draw_index}_{_scenario_dict[draw_index]}_ROI.png', dpi=100,
+                    bbox_inches='tight')
+        plt.close()
+
 '''
 # Scratch pad
 # TODO all these HR plots need to be looked at
