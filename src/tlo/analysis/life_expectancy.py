@@ -259,7 +259,7 @@ def get_life_expectancy_estimates(
         return output
 
     else:
-        return summarize(results=output, only_mean=False, collapse_columns=False)
+        return summarize(results=output, only_median=False, collapse_columns=False)
 
 
 def _calculate_probability_of_premature_death_for_single_run(

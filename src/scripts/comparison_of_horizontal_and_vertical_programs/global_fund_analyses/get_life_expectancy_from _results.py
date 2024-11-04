@@ -57,6 +57,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
         "2010": (datetime.date(2010, 1, 1), datetime.date(2010, 12, 31)),
         "2024": (datetime.date(2024, 1, 1), datetime.date(2024, 12, 31)),
         "2030": (datetime.date(2030, 1, 1), datetime.date(2030, 12, 31)),
+        "2035": (datetime.date(2035, 1, 1), datetime.date(2035, 12, 31)),
     }
 
     summaries = {}
@@ -97,9 +98,9 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
 
         # Define the columns to select
         column_labels = ['Baseline',
-                         'FULL HSS PACKAGE',
-                         'HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE',
-                         'HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE']
+                         'HSS PACKAGE: Realistic',
+                         'HTM Programs Scale-up WITHOUT HSS PACKAGE',
+                         'HTM Programs Scale-up WITH REALISTIC HSS PACKAGE']
         filtered_df = df.loc[:, column_labels]
 
         # Define the draws (the unique values from level 'draw' of the column MultiIndex)
@@ -119,7 +120,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
         # Loop through the rows ('M' and 'F') and plot each with error bars
         for i, sex in enumerate(filtered_df.index):
             # Extract the mean, lower, and upper values for this gender
-            means = filtered_df.loc[sex, (slice(None), 'mean')]
+            means = filtered_df.loc[sex, (slice(None), 'median')]
             lower = filtered_df.loc[sex, (slice(None), 'lower')]
             upper = filtered_df.loc[sex, (slice(None), 'upper')]
 
@@ -137,7 +138,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
         # Customize plot
         ax.set_xlabel('')
         ax.set_ylabel('Life expectancy estimate, years')
-        ax.set_title('2030 Life Expectancy Estimates')
+        ax.set_title('2035 Life Expectancy Estimates')
         ax.set_ylim(50, 80)
 
         # Set custom x-tick labels
@@ -162,7 +163,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
 
     # Plot life expectancy for 2030
     baseline2024 = summaries['2024']['Baseline']
-    plot_le(summaries['2030'], baseline2024)
+    plot_le(summaries['2035'], baseline2024)
 
 
 if __name__ == "__main__":
