@@ -1602,31 +1602,34 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
 
         # Check that the person is in stage4
-        # assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
+        assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
 
-        # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
-            df.at[person_id, "ce_date_palliative_care"] = self.sim.date
+        # Check consumables are available
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_cervical_can['palliation'])
 
+        if cons_available:
+            # If consumables are available and the treatment will go ahead - add the used equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
+            # Record the start of palliative care if this is first appointment
+            if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
+                df.at[person_id, "ce_date_palliative_care"] = self.sim.date
 
-        # todo:
-        # for scheduling the same class of HSI_Event to multiple people, more
-        # efficient to use schedule_batch_of_individual_hsi_events
+            # todo:
+            # for scheduling the same class of HSI_Event to multiple people, more
+            # efficient to use schedule_batch_of_individual_hsi_events
 
-
-
-
-        # Schedule another instance of the event for one month
-        hs.schedule_hsi_event(
-            hsi_event=HSI_CervicalCancer_PalliativeCare(
-                module=self.module,
-                person_id=person_id
-            ),
-            topen=self.sim.date + DateOffset(months=1),
-            tclose=None,
-            priority=0
-        )
+            # Schedule another instance of the event for one month
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CervicalCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=None,
+                priority=0
+            )
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
