@@ -36,8 +36,8 @@ timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 #%%
-def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Path = None, draws = None, runs = None,
-                                     summarize: bool = False, cost_only_used_staff: bool = True):
+def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Path = None, _draws = None, _runs = None,
+                                     summarize: bool = False, _years = None, cost_only_used_staff: bool = True):
     # Useful common functions
     def drop_outside_period(_df):
         """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
@@ -57,10 +57,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     #-------------------------------------
     log = load_pickled_dataframes(results_folder, 0, 0)  # read from 1 draw and run
     info = get_scenario_info(results_folder)  # get basic information about the results
-    if draws is None:
-        draws = range(0, info['number_of_draws'])
-    if runs is None:
-        runs = range(0, info['runs_per_draw'])
+    if _draws is None:
+        _draws = range(0, info['number_of_draws'])
+    if _runs is None:
+        _runs = range(0, info['runs_per_draw'])
     final_year_of_simulation = max(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
     first_year_of_simulation = min(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
     years = list(range(first_year_of_simulation, final_year_of_simulation + 1))
@@ -333,10 +333,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     human_resource_costs = prepare_cost_dataframe(human_resource_costs, _category_specific_group = 'OfficerType', _cost_category = 'human resources for health')
 
     # Only preserve the draws and runs requested
-    if draws is not None:
-        human_resource_costs = human_resource_costs[human_resource_costs.draw.isin(draws)]
-    if runs is not None:
-        human_resource_costs = human_resource_costs[human_resource_costs.run.isin(runs)]
+    if _draws is not None:
+        human_resource_costs = human_resource_costs[human_resource_costs.draw.isin(_draws)]
+    if _runs is not None:
+        human_resource_costs = human_resource_costs[human_resource_costs.run.isin(_runs)]
 
     # %%
     # 2. Consumables cost
@@ -510,12 +510,12 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     other_costs = prepare_cost_dataframe(other_costs, _category_specific_group = 'consumable', _cost_category = 'other')
 
     # Only preserve the draws and runs requested
-    if draws is not None:
-        consumable_costs = consumable_costs[consumable_costs.draw.isin(draws)]
-        other_costs = other_costs[other_costs.draw.isin(draws)]
-    if runs is not None:
-        consumable_costs = consumable_costs[consumable_costs.run.isin(runs)]
-        other_costs = other_costs[other_costs.run.isin(runs)]
+    if _draws is not None:
+        consumable_costs = consumable_costs[consumable_costs.draw.isin(_draws)]
+        other_costs = other_costs[other_costs.draw.isin(_draws)]
+    if _runs is not None:
+        consumable_costs = consumable_costs[consumable_costs.run.isin(_runs)]
+        other_costs = other_costs[other_costs.run.isin(_runs)]
 
 
     # %%
@@ -546,8 +546,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     equipment_cost_across_sim = pd.DataFrame()
 
     # Extract equipment cost for each draw and run
-    for d in draws:
-        for r in runs:
+    for d in _draws:
+        for r in _runs:
             print(f"Processing draw {d} and run {r} of equipment costs")
             # Extract a list of equipment which was used at each facility level within each district
             equipment_used = {district: {level: [] for level in fac_levels} for district in list(district_dict.values())} # create a dictionary with a key for each district and facility level
@@ -654,7 +654,26 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
                   var_name='stat',  # New column name for the 'sub-category' of cost
                   value_name='cost')
 
-    return scenario_cost
+    if _years is None:
+        return scenario_cost
+    else:
+        return scenario_cost[scenario_cost.year.isin(_years)]
+
+# Define a function to summarize cost data from
+# Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as index, then
+# first unstack the dataframe and subsequently apply the summarize function
+def summarize_cost_data(_df):
+    _df = _df.stack()
+    collapsed_df = _df.groupby(level='draw').agg([
+            'mean',
+            ('lower', lambda x: x.quantile(0.025)),
+            ('upper', lambda x: x.quantile(0.975))
+        ])
+
+    collapsed_df = collapsed_df.unstack()
+    collapsed_df.index = collapsed_df.index.set_names('stat', level=0)
+    collapsed_df = collapsed_df.unstack(level='stat')
+    return collapsed_df
 
 # Plot costs
 ####################################################
