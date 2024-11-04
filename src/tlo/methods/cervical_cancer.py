@@ -1187,7 +1187,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         hpv_stage_options = ['stage1','stage2a','stage2b','stage3','stage4']
 
         # If HIV negative, do VIA
-        if not person['hv_inf']:
+        if not person['hv_diagnosed']:
             if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options+hpv_stage_options)
                             ):
                     hs.schedule_hsi_event(
@@ -1200,7 +1200,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
                         tclose=None
                                )
         # IF HIV positive,
-        if person['hv_inf']:
+        if person['hv_diagnosed']:
             if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options+hpv_stage_options)
                             ):
                 if year >= p['transition_testing_year']:
