@@ -40,6 +40,14 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 # Set parameters
 screening_min_age = 25
 screening_max_age = 50
+screening_min_age_hv_neg = 30
+screening_max_age_hv_neg = 50
+screening_min_age_hv_pos = 25
+screening_max_age_hv_pos = 50
+yrs_between_screen_hv_pos = 3
+yrs_between_screen_hv_neg = 5
+
+
 hpv_cin_options = ['hpv', 'cin1', 'cin2', 'cin3']
 hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
 
