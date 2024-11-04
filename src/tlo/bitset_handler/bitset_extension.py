@@ -19,7 +19,6 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-from numpy.dtypes import BytesDType  # pylint: disable=E0611
 from numpy.typing import NDArray
 from pandas._typing import TakeIndexer, type_t
 from pandas.core.arrays.base import ExtensionArray
@@ -130,8 +129,8 @@ class BitsetDtype(ExtensionDtype):
         return self.__str__()
 
     @property
-    def np_array_dtype(self) -> BytesDType:
-        return BytesDType(self.fixed_width)
+    def np_array_dtype(self) -> np.dtype:
+        return np.dtype((bytes, self.fixed_width))
 
     @property
     def type(self) -> Type[np.bytes_]:
@@ -374,7 +373,7 @@ class BitsetArray(ExtensionArray):
 
     def __init__(
         self,
-        data: Iterable[BytesDType] | np.ndarray[BytesDType],
+        data: Iterable | np.ndarray,
         dtype: BitsetDtype,
         copy: bool = False,
     ) -> None:
@@ -688,7 +687,7 @@ class BitsetArray(ExtensionArray):
         indices: TakeIndexer,
         *,
         allow_fill: bool = False,
-        fill_value: Optional[BytesDType | Set[ElementType]] = None,
+        fill_value: Optional[np.bytes_ | Set[ElementType]] = None,
     ) -> BitsetArray:
         if allow_fill:
             if isinstance(fill_value, set):
