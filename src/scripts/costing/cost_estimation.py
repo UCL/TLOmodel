@@ -488,7 +488,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Pat
     expenditure_column = ['EXPENDITURE (USD) (Jul 2018 - Jun 2019)']
     resource_mapping_data[expenditure_column] = resource_mapping_data[expenditure_column].apply(lambda x: pd.to_numeric(x, errors='coerce'))
     supply_chain_expenditure = resource_mapping_data[resource_mapping_data['Cost Type'] == 'Supply Chain'][expenditure_column].sum()[0]
-    consumables_purchase_expenditure = resource_mapping_data[resource_mapping_data['Cost Type'] == 'Drugs and Commodities'][expenditure_column].sum()[0]
+    consumables_purchase_expenditure = resource_mapping_data[resource_mapping_data['Cost Type'] == 'Drugs and Commodities'][expenditure_column].sum()[
+            0] + \
+        resource_mapping_data[resource_mapping_data['Cost Type'] == 'HIV Drugs and Commodities'][
+            expenditure_column].sum()[0]
     supply_chain_cost_proportion = supply_chain_expenditure / consumables_purchase_expenditure
 
     # Estimate supply chain costs based on the total consumable purchase cost calculated above
