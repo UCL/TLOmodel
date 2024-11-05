@@ -114,7 +114,8 @@ resource_mapping_data[expenditure_column] = resource_mapping_data[expenditure_co
 supply_chain_expenditure = \
 resource_mapping_data[resource_mapping_data['Cost Type'] == 'Supply Chain'][expenditure_column].sum()[0]
 consumables_purchase_expenditure = \
-resource_mapping_data[resource_mapping_data['Cost Type'] == 'Drugs and Commodities'][expenditure_column].sum()[0]
+resource_mapping_data[resource_mapping_data['Cost Type'] == 'Drugs and Commodities'][expenditure_column].sum()[0] + \
+resource_mapping_data[resource_mapping_data['Cost Type'] == 'HIV Drugs and Commodities'][expenditure_column].sum()[0]
 supply_chain_cost_proportion = supply_chain_expenditure / consumables_purchase_expenditure
 
 # In this case malaria intervention scale-up costs were not included in the standard estimate_input_cost_of_scenarios function
@@ -289,6 +290,7 @@ monetary_value_of_incremental_health = monetary_value_of_incremental_health[mone
 # Plot ROI at various levels of cost
 generate_roi_plots(_monetary_value_of_incremental_health = monetary_value_of_incremental_health,
                    _incremental_input_cost = incremental_scenario_cost,
+                   _scenario_dict = htm_scenarios,
                    _outputfilepath = roi_outputs_folder)
 
 # 4. Plot Maximum ability-to-pay
@@ -359,13 +361,27 @@ fig.tight_layout()
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
-# Plot costs
-#-----------------------------------------------------------------------------------------------------------------------
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical consumables', _disaggregate_by_subgroup = True, _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _disaggregate_by_subgroup = True, _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _disaggregate_by_subgroup = True, _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other', _year = [2018], _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _year = list(range(2020, 2030)), _outputfilepath = figurespath)
+# 4. Plot costs
+# ----------------------------------------------------
+input_costs_for_plot = input_costs[input_costs.draw.isin(htm_scenarios_for_gf_report)]
+# First summarize all input costs
+input_costs_for_plot_summarized = input_costs_for_plot.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category']).agg(
+    mean=('cost', 'mean'),
+    lower=('cost', lambda x: x.quantile(0.025)),
+    upper=('cost', lambda x: x.quantile(0.975))
+).reset_index()
+input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
+    id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
+    value_vars=['mean', 'lower', 'upper'],
+    var_name='stat',
+    value_name='cost'
+)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
 
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical consumables', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
