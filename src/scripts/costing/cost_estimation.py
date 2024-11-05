@@ -679,7 +679,10 @@ def summarize_cost_data(_df):
 ####################################################
 # 1. Stacked bar plot (Total cost + Cost categories)
 #----------------------------------------------------
-def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _disaggregate_by_subgroup: bool = False,_year = 'all', _draws = None, _outputfilepath: Path = None):
+def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
+                                            _disaggregate_by_subgroup: bool = False,
+                                            _year = 'all', _draws = None,
+                                            _outputfilepath: Path = None):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Make a copy of the dataframe to avoid modifying the original
     _df = _df[_df.stat == 'mean'].copy()
@@ -735,6 +738,10 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _disagg
     # Plot the stacked bar chart
     ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6))
 
+    # Format the x-tick labels to wrap text
+    labels = [textwrap.fill(label.get_text(), 10) for label in ax.get_xticklabels()]
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+
     # Period included for plot title and name
     if _year == 'all':
         period = (f"{min(_df['year'].unique())} - {max(_df['year'].unique())}")
@@ -759,7 +766,9 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all', _disagg
 # 2. Line plots of total costs
 #----------------------------------------------------
 # TODO: Check why line plot get save without a file name
-def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, disaggregate_by=None,
+def do_line_plot_of_cost(_df, _cost_category='all',
+                         _year='all', _draws=None,
+                         disaggregate_by=None,
                          _outputfilepath: Path = None):
     # Validate disaggregation options
     valid_disaggregations = ['cost_category', 'cost_subcategory', 'cost_subgroup']
@@ -877,7 +886,10 @@ def do_line_plot_of_cost(_df, _cost_category='all', _year='all', _draws=None, di
     plt.close()
 
 # Plot ROI
-def generate_roi_plots(_monetary_value_of_incremental_health, _incremental_input_cost, _scenario_dict, _outputfilepath):
+def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
+                       _incremental_input_cost: pd.DataFrame,
+                       _scenario_dict: dict,
+                       _outputfilepath: Path):
     # Calculate maximum ability to pay for implementation
     max_ability_to_pay_for_implementation = (_monetary_value_of_incremental_health - _incremental_input_cost).clip(
         lower=0.0)  # monetary value - change in costs

@@ -73,11 +73,11 @@ calibration_data = calibration_data.set_index(['calibration_category', 'stat'])
 # Load result files
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
-results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-10-12T111720Z.py', outputfilepath)[0]
+results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-10-22T163743Z.py', outputfilepath)[0]
 
 # Estimate costs for 2018
-input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, draws = [0], summarize = True, cost_only_used_staff=False)
-input_costs = input_costs[input_costs.year == 2018]
+input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _years = [2018], _draws = [0], summarize = True, cost_only_used_staff=False)
+#input_costs = input_costs[input_costs.year == 2018]
 
 # Manually create a dataframe of model costs and relevant calibration values
 def assign_item_codes_to_consumables(_df):
@@ -161,7 +161,7 @@ calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calib
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = antimalarials, _calibration_category = 'Antimalarials'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = malaria_rdts, _calibration_category = 'Malaria RDTs'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = [191, 196], _calibration_category = 'HIV Screening/Diagnostic Tests') +
-                                                                       get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = [190], _calibration_category = 'HIV Screening/Diagnostic Tests')/4)
+                                                                       get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = [190], _calibration_category = 'HIV Screening/Diagnostic Tests'))
 # TODO update above when VL test quantity is adjusted in the module - currently 4 tests per year are assumed
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = condoms, _calibration_category = 'Condoms and Lubricants'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = tb_tests, _calibration_category = 'TB Tests (including RDTs)'))
@@ -297,6 +297,20 @@ do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
 do_cost_calibration_plot(calibration_data,all_calibration_costs)
 calibration_data.to_csv(figurespath / 'calibration/calibration.csv')
+
+# Stacked bar charts to represent all cost sub-groups
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical consumables',
+                                        _disaggregate_by_subgroup = True,
+                                        _outputfilepath = calibration_outputs_folder)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health',
+                                        _disaggregate_by_subgroup = True,
+                                        _outputfilepath = calibration_outputs_folder)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment',
+                                        _disaggregate_by_subgroup = True,
+                                        _outputfilepath = calibration_outputs_folder)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other',
+                                        _disaggregate_by_subgroup = True,
+                                        _outputfilepath = calibration_outputs_folder)
 
 '''
 
