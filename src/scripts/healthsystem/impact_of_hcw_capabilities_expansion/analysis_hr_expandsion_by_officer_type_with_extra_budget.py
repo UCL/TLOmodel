@@ -742,14 +742,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     hcw_time_increased_by_treatment_type = get_hcw_time_by_treatment().reindex(num_dalys_summarized.index).drop(['s_0'])
 
-    # num_services_increased_percent = summarize(
-    #     pd.DataFrame(
-    #         find_difference_relative_to_comparison_series(
-    #             num_services.loc[0],
-    #             comparison='s_1',
-    #             scaled=True)
-    #     ).T
-    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_services_increased_percent = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_services.loc[0],
+                comparison='s_0',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
 
     num_deaths_averted = summarize(
         -1.0 *
@@ -1380,25 +1380,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    # # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
+    # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
     # outcome_data = num_dalys_averted_percent['mean']
-    # # outcome = num_services_increased_percent['mean']
-    # # outcome = num_treatments_total_increased_percent['mean']
-    # regression_data = pd.merge(outcome_data,
-    #                            extra_budget_allocation,
-    #                            left_index=True, right_index=True, how='inner')
-    # regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
-    # regression_data['C*N'] = regression_data['Clinical'] * regression_data['Nursing_and_Midwifery']
-    # regression_data['N*P'] = regression_data['Pharmacy'] * regression_data['Nursing_and_Midwifery']
-    # regression_data['C*N*P'] = (regression_data['Clinical'] * regression_data['Pharmacy']
-    #                             * regression_data['Nursing_and_Midwifery'])
-    # cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography', 'Other']
-    # regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
-    # predictor = regression_data[regression_data.columns[1:]]
-    # outcome = regression_data['mean']
-    # predictor = sm.add_constant(predictor)
-    # est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
-    # print(est.summary())
+    outcome_data = num_services_increased_percent['mean']
+    # outcome_data = num_treatments_total_increased_percent['mean']
+    regression_data = pd.merge(outcome_data,
+                               extra_budget_allocation,
+                               left_index=True, right_index=True, how='inner')
+    regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
+    regression_data['C*N'] = regression_data['Clinical'] * regression_data['Nursing_and_Midwifery']
+    regression_data['N*P'] = regression_data['Pharmacy'] * regression_data['Nursing_and_Midwifery']
+    regression_data['C*N*P'] = (regression_data['Clinical'] * regression_data['Pharmacy']
+                                * regression_data['Nursing_and_Midwifery'])
+    cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography', 'Other']
+    regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
+    predictor = regression_data[regression_data.columns[1:]]
+    outcome = regression_data['mean']
+    predictor = sm.add_constant(predictor)
+    est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
+    print(est.summary())
 
     # todo: could do regression analysis of DALYs averted and Services increased
 
@@ -1858,37 +1858,37 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    name_of_plot = f'Average fractions of HCW time used (CNP, level 1a), {target_period()}'
-    data_to_plot = hcw_time_usage_summarized.xs('1a', axis=1, level=1, drop_level=True) * 100
-    fig, ax = plt.subplots(figsize=(12, 8))
-    data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
-    #ax.set_ylim(0, 100)
-    ax.set_ylabel('Percentage %')
-    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
-    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90)
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Average fractions of HCW time used (CNP, level 1a), {target_period()}'
+    # data_to_plot = hcw_time_usage_summarized.xs('1a', axis=1, level=1, drop_level=True) * 100
+    # fig, ax = plt.subplots(figsize=(12, 8))
+    # data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    # #ax.set_ylim(0, 100)
+    # ax.set_ylabel('Percentage %')
+    # ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    # xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90)
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
-    name_of_plot = f'Average fractions of HCW time used (CNP, level 2), {target_period()}'
-    data_to_plot = hcw_time_usage_summarized.xs('2', axis=1, level=1, drop_level=True) * 100
-    fig, ax = plt.subplots(figsize=(12, 8))
-    data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
-    # ax.set_ylim(0, 100)
-    ax.set_ylabel('Percentage %')
-    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
-    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90)
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
-    plt.title(name_of_plot)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
+    # name_of_plot = f'Average fractions of HCW time used (CNP, level 2), {target_period()}'
+    # data_to_plot = hcw_time_usage_summarized.xs('2', axis=1, level=1, drop_level=True) * 100
+    # fig, ax = plt.subplots(figsize=(12, 8))
+    # data_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    # # ax.set_ylim(0, 100)
+    # ax.set_ylabel('Percentage %')
+    # ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    # xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    # ax.set_xticklabels(xtick_labels, rotation=90)
+    # plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
+    # plt.title(name_of_plot)
+    # fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    # fig.show()
+    # plt.close(fig)
 
     name_of_plot = f'Extra budget allocation among cadres, {target_period()}'
     cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA', 'Other']
