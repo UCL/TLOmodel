@@ -36,8 +36,11 @@ timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 #%%
-def estimate_input_cost_of_scenarios(results_folder: Path, resourcefilepath: Path = None, _draws = None, _runs = None,
-                                     summarize: bool = False, _years = None, cost_only_used_staff: bool = True):
+def estimate_input_cost_of_scenarios(results_folder: Path,
+                                     resourcefilepath: Path = None,
+                                     _draws = None, _runs = None,
+                                     summarize: bool = False, _years = None,
+                                     cost_only_used_staff: bool = True):
     # Useful common functions
     def drop_outside_period(_df):
         """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
@@ -685,6 +688,7 @@ def summarize_cost_data(_df):
 def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
                                             _disaggregate_by_subgroup: bool = False,
                                             _year = 'all', _draws = None,
+                                            _scenario_dict: dict = None,
                                             _outputfilepath: Path = None):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Make a copy of the dataframe to avoid modifying the original
@@ -741,9 +745,15 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
     # Plot the stacked bar chart
     ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6))
 
-    # Format the x-tick labels to wrap text
-    labels = [textwrap.fill(label.get_text(), 10) for label in ax.get_xticklabels()]
-    ax.set_xticklabels(labels, rotation=45, ha='right')
+    # Set custom x-tick labels if _scenario_dict is provided
+    if _scenario_dict:
+        labels = [_scenario_dict.get(label, label) for label in pivot_df.index]
+    else:
+        labels = pivot_df.index.astype(str)
+
+    # Wrap x-tick labels for readability
+    wrapped_labels = [textwrap.fill(label, 10) for label in labels]
+    ax.set_xticklabels(wrapped_labels, rotation=45, ha='right')
 
     # Period included for plot title and name
     if _year == 'all':
@@ -911,8 +921,8 @@ def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
         # Calculate the values for each individual run
         for run in scenario_cost_row.index:  # Assuming 'run' columns are labeled by numbers
             # Calculate the cost-effectiveness metric for the current run
-            run_values = (row[run] - (implementation_costs + scenario_cost_row[run])) / (
-                    implementation_costs + scenario_cost_row[run])
+            run_values = np.clip((row[run] - (implementation_costs + scenario_cost_row[run])) / (
+                    implementation_costs + scenario_cost_row[run]),0,None)
 
             # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
             run_df = pd.DataFrame([run_values], index=pd.MultiIndex.from_tuples([(draw_index, run)], names=['draw', 'run']),
