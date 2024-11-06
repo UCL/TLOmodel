@@ -31,7 +31,7 @@ class InlineHTMLBackend(HTMLBackend):
 
     def write_epilogue(self):
         self.output("</ul>\n")
-        
+
     def write_entry(self, _key, _label, text):
         self.output(f"<li>{text}</li>\n")
 
@@ -112,7 +112,7 @@ class AbbreviatedStyle(UnsrtStyle):
         return self._get_summarized_template(e, "publisher")
 
 
-def write_publications_list(stream, bibliography_data, section_names, style):
+def write_publications_list(stream, bibliography_data, section_names, backend, style):
     keys_by_section = defaultdict(list)
     for key, entry in bibliography_data.entries.items():
         note = entry.fields.get("note")
@@ -120,7 +120,6 @@ def write_publications_list(stream, bibliography_data, section_names, style):
             keys_by_section[note].append(key)
         else:
             keys_by_section["Other"].append(key)
-    backend = InlineHTMLBackend()
     for section_name in section_names:
         stream.write(f"<h2>{section_name}</h2>\n")
         formatted_bibliography = style.format_bibliography(
@@ -133,19 +132,28 @@ def write_publications_list(stream, bibliography_data, section_names, style):
 if __name__ == "__main__":
     docs_directory = Path(__file__).parent
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bib_file", type=Path, default=docs_directory / "publications.bib")
-    parser.add_argument("--output_file", type=Path, default=docs_directory / "_publications_list.html")
+    parser.add_argument(
+        "--bib_file",
+        type=Path,
+        default=docs_directory / "publications.bib",
+        help="BibTeX file containing publication details",
+    )
+    parser.add_argument(
+        "--output_file",
+        type=Path,
+        default=docs_directory / "_publications_list.html",
+        help="File to write publication list to in HTML format",
+    )
     args = parser.parse_args()
-    bibliography_data = pybtex.database.parse_file(args.bib_file)
-    style = AbbreviatedStyle()
     with open(args.output_file, "w") as output_file:
         write_publications_list(
-            output_file,
-            bibliography_data,
-            [
+            stream=output_file,
+            bibliography_data=pybtex.database.parse_file(args.bib_file),
+            section_names=[
                 "Overview of the model",
                 "Analyses using the model",
                 "Healthcare seeking behaviour",
             ],
-            style,
+            backend=InlineHTMLBackend(),
+            style=AbbreviatedStyle(),
         )
