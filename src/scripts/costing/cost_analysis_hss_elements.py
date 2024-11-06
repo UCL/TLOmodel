@@ -112,26 +112,28 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     # Retrieve colors from color_map based on the xticks labels
     colors = [color_map.get(label, '#333333') for label in xticks.values()]  # default to grey if not found
 
+    # Generate consecutive x positions for the bars, ensuring no gaps
+    x_positions = np.arange(len(xticks))  # Consecutive integers for each bar position
+
     fig, ax = plt.subplots()
     ax.bar(
-        xticks.keys(),
+        x_positions,
         _df['mean'].values,
         yerr=yerr,
         color=colors,  # Set bar colors
         alpha=1,
         ecolor='black',
         capsize=10,
-        label=xticks.values()
     )
 
     # Add optional annotations above each bar
     if annotations:
-        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+        for xpos, ypos, text in zip(x_positions, _df['upper'].values, annotations):
             ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=8)
 
     # Set x-tick labels with wrapped text if required
-    ax.set_xticks(list(xticks.keys()))
     wrapped_labs = ["\n".join(textwrap.wrap(label, 25)) for label in xticks.values()]
+    ax.set_xticks(x_positions)  # Set x-ticks to consecutive positions
     ax.set_xticklabels(wrapped_labs, rotation=45 if not xticklabels_horizontal_and_wrapped else 0, ha='right',
                        fontsize=8)
 
