@@ -4,6 +4,7 @@ import argparse
 import calendar
 from collections import defaultdict
 from pathlib import Path
+from warnings import warn
 
 import pybtex.database
 from pybtex.backends.html import Backend as HTMLBackend
@@ -119,7 +120,11 @@ def write_publications_list(stream, bibliography_data, section_names, backend, s
         if note in section_names:
             keys_by_section[note].append(key)
         else:
-            keys_by_section["Other"].append(key)
+            msg = (
+                f"BibTeX entry with key {key} does not have a note field corresponding to "
+                f"one of section names {section_names} and so will not be included in output."
+            )
+            warn(msg, stacklevel=2)
     for section_name in section_names:
         stream.write(f"<h2>{section_name}</h2>\n")
         formatted_bibliography = style.format_bibliography(
