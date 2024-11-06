@@ -167,11 +167,16 @@ num_dalys_averted = (-1.0 *
                              num_dalys.loc[0],
                              comparison=0)  # sets the comparator to 0 which is the Actual scenario
                      ).T.iloc[0].unstack(level='run'))
+num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
+
+# Assign discounting to num_dalys_averted
+
 
 # The monetary value of the health benefit is delta health times CET (negative values are set to 0)
-monetary_value_of_incremental_health = (num_dalys_averted * chosen_cet).clip(lower=0.0)
-monetary_value_of_incremental_health = monetary_value_of_incremental_health[
-    monetary_value_of_incremental_health.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
+def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
+    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
+    return monetary_value_of_incremental_health
+
 # TODO check that the above calculation is correct
 
 # 3. Return on Investment Plot
