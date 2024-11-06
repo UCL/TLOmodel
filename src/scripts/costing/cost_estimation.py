@@ -752,7 +752,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
         labels = pivot_df.index.astype(str)
 
     # Wrap x-tick labels for readability
-    wrapped_labels = [textwrap.fill(label, 10) for label in labels]
+    wrapped_labels = [textwrap.fill(label, 20) for label in labels]
     ax.set_xticklabels(wrapped_labels, rotation=45, ha='right')
 
     # Period included for plot title and name
