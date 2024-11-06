@@ -90,6 +90,7 @@ color_map = {
 
 # Cost-effectiveness threshold
 chosen_cet = 77.4  # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
+chosen_value_of_statistical_life = 834
 
 # Discount rate
 discount_rate = 0.03
@@ -135,7 +136,7 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
                        fontsize=8)
 
     # Set y-axis limit to upper max + 500
-    ax.set_ylim(_df['upper'].min() - 400, _df['upper'].max() + 400)
+    ax.set_ylim(_df['lower'].min()*1.25, _df['upper'].max()*1.25)
 
     # Set font size for y-tick labels and grid
     ax.tick_params(axis='y', labelsize=9)
@@ -151,14 +152,16 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True)
+                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _discount_rate = discount_rate)
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
 # TODO Remove the manual fix below once the logging for these is corrected
 input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost'] = \
     input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost']/10
 input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost'] =\
     input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost']/7
-input_costs = apply_discounting_to_cost_data(input_costs, _discount_rate = discount_rate)
+#input_costs = apply_discounting_to_cost_data(input_costs, _discount_rate = discount_rate)
+
 # %%
 # Return on Invesment analysis
 # Calculate incremental cost
@@ -190,9 +193,9 @@ incremental_scenario_cost = (pd.DataFrame(
         comparison=0)  # sets the comparator to 0 which is the Actual scenario
 ).T.iloc[0].unstack()).T
 
+# Keep only scenarios of interest
 incremental_scenario_cost = incremental_scenario_cost[
     incremental_scenario_cost.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
-
 
 # Monetary value of health impact
 # -----------------------------------------------------------------------------------------------------------------------
@@ -241,21 +244,28 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 # 3. Return on Investment Plot
 # ----------------------------------------------------
 # Plot ROI at various levels of cost
-generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = 77.4),
+generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet),
                    _incremental_input_cost=incremental_scenario_cost,
                    _scenario_dict = hss_scenarios,
-                   _outputfilepath=roi_outputs_folder)
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'CET')
 
-# 4. Plot Maximum ability-to-pay
+generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _scenario_dict = hss_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'VSL')
+
+# 4. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------
-max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = 77.4) - incremental_scenario_cost).clip(
+max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
     lower=0.0)  # monetary value - change in costs
 max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
 max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
     max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
 
 # Plot Maximum ability to pay
-name_of_plot = f'Maximum ability to pay, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized / 1e6),
     annotations=[
@@ -266,6 +276,30 @@ fig, ax = do_bar_plot_with_ci(
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+# 4. Plot Maximum ability-to-pay at VSL
+# ----------------------------------------------------
+max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life) - incremental_scenario_cost).clip(
+    lower=0.0)  # monetary value - change in costs
+max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
+max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
+    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
+
+# Plot Maximum ability to pay
+name_of_plot = f'Maximum ability to pay at VSL, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_bar_plot_with_ci(
+    (max_ability_to_pay_for_implementation_summarized / 1e6),
+    annotations=[
+        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
+        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Maximum ability to pay (at VSL) \n(Millions)')
 fig.tight_layout()
 fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)

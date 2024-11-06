@@ -910,10 +910,12 @@ def do_line_plot_of_cost(_df, _cost_category='all',
     plt.close()
 
 # Plot ROI
+# TODO update this function to include an input for the monetary value of DALY
 def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
                        _incremental_input_cost: pd.DataFrame,
                        _scenario_dict: dict,
-                       _outputfilepath: Path):
+                       _outputfilepath: Path,
+                       _value_of_life_suffix = ''):
     # Calculate maximum ability to pay for implementation
     max_ability_to_pay_for_implementation = (_monetary_value_of_incremental_health - _incremental_input_cost).clip(
         lower=0.0)  # monetary value - change in costs
@@ -1009,7 +1011,7 @@ def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
         # Show legend
         plt.legend()
         # Save
-        plt.savefig(_outputfilepath / f'draw{draw_index}_{_scenario_dict[draw_index]}_ROI.png', dpi=100,
+        plt.savefig(_outputfilepath / f'draw{draw_index}_{_scenario_dict[draw_index]}_ROI_at_{_value_of_life_suffix}.png', dpi=100,
                     bbox_inches='tight')
         plt.close()
 
