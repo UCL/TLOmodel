@@ -8,7 +8,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.hsi_event import HSI_Event
-from tlo.util import random_date, sample_outcome, transition_states
+from tlo.util import random_date, sample_outcome, transition_states, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -164,7 +164,7 @@ class Contraception(Module):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        workbook = read_csv_files(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception')
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
@@ -1346,10 +1346,10 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-        parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+        parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].resourcefilepath /
                                             'contraception' /
-                                            'ResourceFile_Contraception.xlsx',
-                                            sheet_name='simplified_labour_parameters')
+                                            'ResourceFile_Contraception',
+                                            files=['simplified_labour_parameters'])
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
