@@ -10,11 +10,20 @@ import pandas as pd
 from netCDF4 import Dataset
 
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/"
-
+scenario = "ssp2_4_5" #"ssp1_1_9"
 #### Multiple files
 file_list = glob.glob(os.path.join(base_dir, "*.nc"))
 data_by_model_and_grid = {}
-models = ["cams_csm1_0", "ipsl_cm6a_lr", "miroc6","miroc_es2l", "mri_esm2_0", "canesm5", "cnrm_esm2_1", "ec_earth3", "ec_earth3_veg_lr", "fgoals_g3", "gfdl_esm4", "ukesm1_0_ll"]
+if scenario == "ssp1_1_9":
+    models = ["cams_csm1_0", "ipsl_cm6a_lr", "miroc6", "miroc_es2l", "mri_esm2_0", "canesm5", "cnrm_esm2_1",
+              "ec_earth3", "ec_earth3_veg_lr", "fgoals_g3", "gfdl_esm4", "ukesm1_0_ll"]
+elif scenario == "ssp2_4_5":
+    models = ["access_cm2", "awi_cm_1_1_mr", "bcc_csm2_mr", "cams_csm1_0", "cmcc_esm2", "hadgem3_gc31_ll",
+                     "iitm_esm", "inm_cm5_0", "ipsl_cm6a_lr", "kiost_esm", "miroc6", "miroc_es2l",
+                     "mri_esm2_0", "noresm2_mm", "canesm5", "cesm2", "cmcc_cm2_sr5", "cnrm_cm6_1", "cnrm_esm2_1",
+                     "ec_earth3_cc", "ec_earth3_veg_lr", "fgoals_g3",
+                     "gfdl_esm4", "inm_cm4_8", "kace_1_0_g", "mpi_esm1_2_lr", "nesm3", "noresm2_lm", "ukesm1_0_ll"]
+
 model = 0
 for file in glob.glob(os.path.join(base_dir, "*.nc")):
     data_per_model  = Dataset(file, mode='r')
@@ -33,4 +42,4 @@ for file in glob.glob(os.path.join(base_dir, "*.nc")):
     model += 1
 print(data_by_model_and_grid)
 data_by_model_and_grid = pd.DataFrame.from_dict(data_by_model_and_grid)
-data_by_model_and_grid.to_csv(Path(scenario_directory)/"data_by_model_and_grid.csv")
+#data_by_model_and_grid.to_csv(Path(scenario_directory)/"data_by_model_and_grid_CMIP6_projections.csv")
