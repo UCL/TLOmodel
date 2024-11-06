@@ -36,11 +36,22 @@ timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 #%%
+
+# Define a function to discount and summarise costs by cost_category
+def apply_discounting_to_cost_data(_df, _discount_rate=0):
+    # Initial year and discount rate
+    initial_year = min(_df['year'].unique())
+
+    # Calculate the discounted values
+    _df['cost'] = _df['cost'] / ((1 + _discount_rate) ** (_df['year'] - initial_year))
+    return _df
+
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path = None,
                                      _draws = None, _runs = None,
                                      summarize: bool = False, _years = None,
-                                     cost_only_used_staff: bool = True):
+                                     cost_only_used_staff: bool = True,
+                                     _discount_rate = 0):
     # Useful common functions
     def drop_outside_period(_df):
         """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
@@ -661,18 +672,9 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                   value_name='cost')
 
     if _years is None:
-        return scenario_cost
+        return apply_discounting_to_cost_data(scenario_cost,_discount_rate)
     else:
-        return scenario_cost[scenario_cost.year.isin(_years)]
-
-# Define a function to discount and summarise costs by cost_category
-def apply_discounting_to_cost_data(_df, _discount_rate = 0.03):
-    # Initial year and discount rate
-    initial_year = min(_df['year'].unique())
-
-    # Calculate the discounted values
-    _df['cost'] = _df['cost'] / ((1 + _discount_rate) ** (_df['year'] - initial_year))
-    return _df
+        return apply_discounting_to_cost_data(scenario_cost[scenario_cost.year.isin(_years)],_discount_rate)
 
 # Define a function to summarize cost data from
 # Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as index, then
@@ -918,6 +920,7 @@ def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
 
     # Iterate over each draw in monetary_value_of_incremental_health
     for draw_index, row in _monetary_value_of_incremental_health.iterrows():
+        print("running draw ", draw_index)
         # Initialize an empty DataFrame to store values for each 'run'
         all_run_values = pd.DataFrame()
 
@@ -925,26 +928,46 @@ def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
         implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation.loc[draw_index].max(), 50)
 
         # Retrieve the corresponding row from incremental_scenario_cost for the same draw
-        scenario_cost_row = _incremental_input_cost.loc[draw_index]
+        incremental_scenario_cost_row = _incremental_input_cost.loc[draw_index]
 
         # Calculate the values for each individual run
-        for run in scenario_cost_row.index:  # Assuming 'run' columns are labeled by numbers
-            # Calculate the cost-effectiveness metric for the current run
-            run_values = np.clip((row[run] - (implementation_costs + scenario_cost_row[run])) / (
-                    implementation_costs + scenario_cost_row[run]),0,None)
+        for run in incremental_scenario_cost_row.index:  # Assuming 'run' columns are labeled by numbers
+            # Calculate the total costs for the current run
+            total_costs = implementation_costs + incremental_scenario_cost_row[run]
+
+            # Initialize run_values as an empty series with the same index as total_costs
+            run_values = pd.Series(index=total_costs, dtype=float)
+
+            # For negative total_costs, set corresponding run_values to infinity
+            run_values[total_costs < 0] = np.inf
+
+            # For non-negative total_costs, calculate the metric and clip at 0
+            non_negative_mask = total_costs >= 0
+            run_values[non_negative_mask] = np.clip(
+                (row[run] - total_costs[non_negative_mask]) / total_costs[non_negative_mask],
+                0,
+                None
+            )
 
             # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
+            run_values = run_values.values # remove index and convert to array
             run_df = pd.DataFrame([run_values], index=pd.MultiIndex.from_tuples([(draw_index, run)], names=['draw', 'run']),
                                   columns=implementation_costs)
 
             # Append the run DataFrame to all_run_values
             all_run_values = pd.concat([all_run_values, run_df])
 
-        collapsed_data = all_run_values.groupby(level='draw').agg([
-                'mean',
-                ('lower', lambda x: x.quantile(0.025)),
-                ('upper', lambda x: x.quantile(0.975))
-            ])
+        # Replace inf with NaN temporarily to handle quantile calculation correctly
+        temp_data = all_run_values.replace([np.inf, -np.inf], np.nan)
+
+        collapsed_data = temp_data.groupby(level='draw').agg([
+            'mean',
+            ('lower', lambda x: x.quantile(0.025)),
+            ('upper', lambda x: x.quantile(0.975))
+        ])
+
+        # Revert the NaNs back to inf
+        collapsed_data = collapsed_data.replace([np.nan], np.inf)
 
         collapsed_data = collapsed_data.unstack()
         collapsed_data.index = collapsed_data.index.set_names('implementation_cost', level=0)
@@ -957,20 +980,31 @@ def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
         lower_values = collapsed_data[collapsed_data['stat'] == 'lower'][['implementation_cost', 'roi']]
         upper_values = collapsed_data[collapsed_data['stat']  == 'upper'][['implementation_cost', 'roi']]
 
+        fig, ax = plt.subplots()  # Create a figure and axis
+
         # Plot mean line
         plt.plot(implementation_costs / 1e6, mean_values['roi'], label=f'{_scenario_dict[draw_index]}')
         # Plot the confidence interval as a shaded region
         plt.fill_between(implementation_costs / 1e6, lower_values['roi'], upper_values['roi'], alpha=0.2)
 
+        # Set y-axis limit to upper max + 500
+        ax.set_ylim(0, mean_values[~np.isinf(mean_values.roi)]['roi'].max()*(1+0.05))
+
         plt.xlabel('Implementation cost, millions')
         plt.ylabel('Return on Investment')
         plt.title('Return on Investment of scenario at different levels of implementation cost')
 
-        #plt.text(x=0.95, y=0.8,
-        #         s=f"Monetary value of incremental health = USD {round(monetary_value_of_incremental_health.loc[draw_index]['mean'] / 1e6, 2)}m (USD {round(monetary_value_of_incremental_health.loc[draw_index]['lower'] / 1e6, 2)}m-{round(monetary_value_of_incremental_health.loc[draw_index]['upper'] / 1e6, 2)}m);\n "
-        #           f"Incremental input cost of scenario = USD {round(scenario_cost_row['mean'] / 1e6, 2)}m (USD {round(scenario_cost_row['lower'] / 1e6, 2)}m-{round(scenario_cost_row['upper'] / 1e6, 2)}m)",
-        #         horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes, fontsize=9,
-        #         weight='bold', color='black')
+        monetary_value_of_incremental_health_summarized = summarize_cost_data(_monetary_value_of_incremental_health)
+        incremental_scenario_cost_row_summarized =  incremental_scenario_cost_row.agg(
+                                                        mean='mean',
+                                                        lower=lambda x: x.quantile(0.025),
+                                                        upper=lambda x: x.quantile(0.975))
+
+        plt.text(x=0.95, y=0.8,
+                 s=f"Monetary value of incremental health = \n USD {round(monetary_value_of_incremental_health_summarized.loc[draw_index]['mean'] / 1e6, 2)}m (USD {round(monetary_value_of_incremental_health_summarized.loc[draw_index]['lower'] / 1e6, 2)}m-{round(monetary_value_of_incremental_health_summarized.loc[draw_index]['upper'] / 1e6, 2)}m);\n "
+                   f"Incremental input cost of scenario = \n USD {round(incremental_scenario_cost_row_summarized['mean'] / 1e6, 2)}m (USD {round(incremental_scenario_cost_row_summarized['lower'] / 1e6, 2)}m-{round(incremental_scenario_cost_row_summarized['upper'] / 1e6, 2)}m)",
+                 horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes, fontsize=9,
+                 weight='bold', color='black')
 
         # Show legend
         plt.legend()

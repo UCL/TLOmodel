@@ -94,6 +94,60 @@ chosen_cet = 77.4  # based on Ochalek et al (2018) - the paper provided the valu
 # Discount rate
 discount_rate = 0.03
 
+# Define a function to create bar plots
+def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
+    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+    extent of the error bar."""
+
+    # Calculate y-error bars
+    yerr = np.array([
+        (_df['mean'] - _df['lower']).values,
+        (_df['upper'] - _df['mean']).values,
+    ])
+
+    # Map xticks based on the hss_scenarios dictionary
+    xticks = {index: hss_scenarios.get(index, f"Scenario {index}") for index in _df.index}
+
+    # Retrieve colors from color_map based on the xticks labels
+    colors = [color_map.get(label, '#333333') for label in xticks.values()]  # default to grey if not found
+
+    fig, ax = plt.subplots()
+    ax.bar(
+        xticks.keys(),
+        _df['mean'].values,
+        yerr=yerr,
+        color=colors,  # Set bar colors
+        alpha=1,
+        ecolor='black',
+        capsize=10,
+        label=xticks.values()
+    )
+
+    # Add optional annotations above each bar
+    if annotations:
+        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=8)
+
+    # Set x-tick labels with wrapped text if required
+    ax.set_xticks(list(xticks.keys()))
+    wrapped_labs = ["\n".join(textwrap.wrap(label, 25)) for label in xticks.values()]
+    ax.set_xticklabels(wrapped_labs, rotation=45 if not xticklabels_horizontal_and_wrapped else 0, ha='right',
+                       fontsize=8)
+
+    # Set y-axis limit to upper max + 500
+    ax.set_ylim(_df['upper'].min() - 400, _df['upper'].max() + 400)
+
+    # Set font size for y-tick labels and grid
+    ax.tick_params(axis='y', labelsize=9)
+    ax.tick_params(axis='x', labelsize=9)
+
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+
+    return fig, ax
+
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
@@ -104,7 +158,7 @@ input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily wit
     input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost']/10
 input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost'] =\
     input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost']/7
-
+input_costs = apply_discounting_to_cost_data(input_costs, _discount_rate = discount_rate)
 # %%
 # Return on Invesment analysis
 # Calculate incremental cost
@@ -112,7 +166,6 @@ input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 
 # Aggregate input costs for further analysis
 input_costs_subset = input_costs[
     (input_costs['year'] >= relevant_period_for_costing[0]) & (input_costs['year'] <= relevant_period_for_costing[1])]
-input_costs_subset = apply_discounting_to_cost_data(input_costs_subset, _discount_rate = discount_rate)
 # TODO the above step may not longer be needed
 total_input_cost = input_costs_subset.groupby(['draw', 'run'])['cost'].sum()
 total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
@@ -188,82 +241,48 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 # 3. Return on Investment Plot
 # ----------------------------------------------------
 # Plot ROI at various levels of cost
-generate_roi_plots(_monetary_value_of_incremental_health=monetary_value_of_incremental_health,
+generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = 77.4),
                    _incremental_input_cost=incremental_scenario_cost,
                    _scenario_dict = hss_scenarios,
                    _outputfilepath=roi_outputs_folder)
 
 # 4. Plot Maximum ability-to-pay
 # ----------------------------------------------------
-max_ability_to_pay_for_implementation = (monetary_value_of_incremental_health - incremental_scenario_cost).clip(
+max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = 77.4) - incremental_scenario_cost).clip(
     lower=0.0)  # monetary value - change in costs
 max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
 max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
     max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
-
-
-def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
-    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-    extent of the error bar."""
-
-    # Calculate y-error bars
-    yerr = np.array([
-        (_df['mean'] - _df['lower']).values,
-        (_df['upper'] - _df['mean']).values,
-    ])
-
-    # Map xticks based on the hss_scenarios dictionary
-    xticks = {index: hss_scenarios.get(index, f"Scenario {index}") for index in _df.index}
-
-    # Retrieve colors from color_map based on the xticks labels
-    colors = [color_map.get(label, '#333333') for label in xticks.values()]  # default to grey if not found
-
-    fig, ax = plt.subplots()
-    ax.bar(
-        xticks.keys(),
-        _df['mean'].values,
-        yerr=yerr,
-        color=colors,  # Set bar colors
-        alpha=1,
-        ecolor='black',
-        capsize=10,
-        label=xticks.values()
-    )
-
-    # Add optional annotations above each bar
-    if annotations:
-        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=8)
-
-    # Set x-tick labels with wrapped text if required
-    ax.set_xticks(list(xticks.keys()))
-    wrapped_labs = ["\n".join(textwrap.wrap(label, 25)) for label in xticks.values()]
-    ax.set_xticklabels(wrapped_labs, rotation=45 if not xticklabels_horizontal_and_wrapped else 0, ha='right',
-                       fontsize=8)
-
-    # Set font size for y-tick labels and grid
-    ax.tick_params(axis='y', labelsize=9)
-    ax.tick_params(axis='x', labelsize=9)
-
-    ax.grid(axis="y")
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    fig.tight_layout()
-
-    return fig, ax
 
 # Plot Maximum ability to pay
 name_of_plot = f'Maximum ability to pay, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized / 1e6),
     annotations=[
-        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-{round(row['upper'] / 1e6, 1)})"
+        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
         for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+# Plot incremental costs
+incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost)
+name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_bar_plot_with_ci(
+    (incremental_scenario_cost_summarized / 1e6),
+    annotations=[
+        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
+        for _, row in incremental_scenario_cost_summarized.iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Cost \n(USD Millions)')
 fig.tight_layout()
 fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
