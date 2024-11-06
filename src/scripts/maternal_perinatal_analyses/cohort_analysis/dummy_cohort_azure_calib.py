@@ -101,7 +101,7 @@ ax.set_ylabel('MMR')
 ax.set_title('Average MMR under each scenario')
 
 # Adjust label size
-plt.xticks(fontsize=8)
+plt.xticks(fontsize=8, rotation=90)
 plt.tight_layout()
 plt.show()
 
