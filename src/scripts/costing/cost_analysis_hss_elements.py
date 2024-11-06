@@ -81,7 +81,11 @@ chosen_cet = 77.4  # based on Ochalek et al (2018) - the paper provided the valu
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True)
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
-# TODO Reduce the cost of Oxygen and Depo-medroxy temporarily which we figure out the issue with this
+# TODO Remove the manual fix below once the logging for these is corrected
+input_costs[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders'] = \
+    input_costs[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders']/10
+input_costs[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly'] = \
+    input_costs[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly']/7
 
 # %%
 # Return on Invesment analysis
