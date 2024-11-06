@@ -31,6 +31,7 @@ from tlo.analysis.utils import (
 
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              summarize_cost_data,
+                                             apply_discounting_to_cost_data,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
                                              generate_roi_plots)
@@ -90,6 +91,9 @@ color_map = {
 # Cost-effectiveness threshold
 chosen_cet = 77.4  # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
 
+# Discount rate
+discount_rate = 0.03
+
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
@@ -108,6 +112,7 @@ input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 
 # Aggregate input costs for further analysis
 input_costs_subset = input_costs[
     (input_costs['year'] >= relevant_period_for_costing[0]) & (input_costs['year'] <= relevant_period_for_costing[1])]
+input_costs_subset = apply_discounting_to_cost_data(input_costs_subset, _discount_rate = discount_rate)
 # TODO the above step may not longer be needed
 total_input_cost = input_costs_subset.groupby(['draw', 'run'])['cost'].sum()
 total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
@@ -145,12 +150,16 @@ def get_num_dalys(_df):
     """
     years_needed = relevant_period_for_costing  # [i.year for i in TARGET_PERIOD_INTERVENTION]
     assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
-    return pd.Series(
-        data=_df
-        .loc[_df.year.between(*years_needed)]
-        .drop(columns=['date', 'sex', 'age_range', 'year'])
-        .sum().sum()
-    )
+    _df = _df.loc[_df.year.between(*years_needed)].drop(columns=['date', 'sex', 'age_range']).groupby('year').sum().sum(axis = 1)
+
+    # Initial year and discount rate
+    initial_year = min(_df.index.unique())
+    discount_rate = _discount_rate
+
+    # Calculate the discounted values
+    discounted_values = _df / (1 + discount_rate) ** (_df.index - initial_year)
+
+    return pd.Series(discounted_values.sum())
 
 num_dalys = extract_results(
     results_folder,
@@ -168,9 +177,6 @@ num_dalys_averted = (-1.0 *
                              comparison=0)  # sets the comparator to 0 which is the Actual scenario
                      ).T.iloc[0].unstack(level='run'))
 num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
-
-# Assign discounting to num_dalys_averted
-
 
 # The monetary value of the health benefit is delta health times CET (negative values are set to 0)
 def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
