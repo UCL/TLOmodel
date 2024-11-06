@@ -50,7 +50,7 @@ class BaselineScenario(BaseScenario):
         else:
             interventions_for_analysis = ['oral_antihypertensives', 'oral_antihypertensives',
                                           'iv_antihypertensives', 'iv_antihypertensives',
-                                          'amtsl', 'amtsl'
+                                          'amtsl', 'amtsl',
                                           'mgso4', 'mgso4',
                                           'post_abortion_care_core', 'post_abortion_care_core',
                                           'caesarean_section', 'caesarean_section',
