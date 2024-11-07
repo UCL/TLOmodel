@@ -7,6 +7,7 @@ from pathlib import Path
 from warnings import warn
 
 import pybtex.database
+import requests
 from pybtex.backends.html import Backend as HTMLBackend
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
 from pybtex.style.names import BaseNameStyle, name_part
@@ -152,18 +153,46 @@ if __name__ == "__main__":
     docs_directory = Path(__file__).parent
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--bib_file",
+        "--bib-file",
         type=Path,
         default=docs_directory / "publications.bib",
         help="BibTeX file containing publication details",
     )
     parser.add_argument(
-        "--output_file",
+        "--output-file",
         type=Path,
         default=docs_directory / "_publications_list.html",
         help="File to write publication list to in HTML format",
     )
+    parser.add_argument(
+        "--update-from-zotero",
+        action="store_true",
+        help="Update BibTeX file at path specified by --bib-file from Zotero group library",
+    )
+    parser.add_argument(
+        "--zotero_group_id",
+        default="5746396",
+        help="Integer identifier for Zotero group library",
+    )
     args = parser.parse_args()
+    if args.update_from_zotero:
+        endpoint_url = f"https://api.zotero.org/groups/{args.zotero_group_id}/items"
+        # Zotero API requires maximum number of results to return (limit parameter)
+        # to be explicitly specified for export formats such as bibtex and allows a
+        # maximum value of 100 - if we exceed this number of publications will need
+        # to switch to making multiple requests with different start indices
+        response = requests.get(
+            endpoint_url, params={"format": "bibtex", "limit": "100"}
+        )
+        if response.ok:
+            with open(args.bib_file, "w") as bib_file:
+                bib_file.write(response.text)
+        else:
+            msg = (
+                f"Request to {endpoint_url} failed with status code "
+                f"{response.status_code} ({response.reason})"
+            )
+            raise RuntimeError(msg)
     with open(args.output_file, "w") as output_file:
         write_publications_list(
             stream=output_file,
