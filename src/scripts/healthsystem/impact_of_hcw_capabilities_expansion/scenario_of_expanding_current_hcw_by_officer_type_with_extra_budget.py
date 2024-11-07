@@ -31,11 +31,11 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 100_000  # todo: TBC
+        self.end_date = Date(2035, 1, 1)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5  # todo: TBC
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -52,7 +52,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
 
     def modules(self):
         return (fullmodel(resourcefilepath=self.resources) +
-                [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)])  # todo: TBC
+                [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)])
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -61,9 +61,10 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_CHANGE = 2019  # This is the year to change run settings and to start hr expansion.
+        self.YEAR_OF_MODE_CHANGE = 2020  # HCW capabilities data are for year of 2019, before the Covid-19 pandemic
 
-        self.scenarios = extra_budget_fracs['s_2'].to_frame()  # test the "best" scenario
+        self.scenarios = extra_budget_fracs['s_0'].to_frame()
+        # run no extra budget allocation scenarios first to get the never ran services and 'gap' allocation strategies
 
         return {
             self.scenarios.columns[i]:
@@ -82,13 +83,14 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
             {'HealthSystem': {
                 'mode_appt_constraints': 1,
                 'mode_appt_constraints_postSwitch': 2,
-                "scale_to_effective_capabilities": True,  # todo: what if set it False?
-                "year_mode_switch": self.YEAR_OF_CHANGE,
+                "scale_to_effective_capabilities": True,
+                # This happens in the year before mode change, as the model calibration is done by that year
+                "year_mode_switch": self.YEAR_OF_MODE_CHANGE,
                 'cons_availability': 'default',
-                'cons_availability_postSwitch': 'all',  # todo: how to argue for this setting?
-                'year_cons_availability_switch': self.YEAR_OF_CHANGE,
-                'yearly_HR_scaling_mode': 'no_scaling',
-                'start_year_HR_expansion_by_officer_type': self.YEAR_OF_CHANGE,
+                'cons_availability_postSwitch': 'all',
+                'year_cons_availability_switch': self.YEAR_OF_MODE_CHANGE,  # todo: or the HRH expansion start year?
+                'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
+                'start_year_HR_expansion_by_officer_type': 2025,  # start expansion from 2025
                 'end_year_HR_expansion_by_officer_type': self.end_date.year,
                 "policy_name": "Naive",
                 "tclose_overwrite": 1,
