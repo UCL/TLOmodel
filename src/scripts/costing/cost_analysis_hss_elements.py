@@ -89,7 +89,8 @@ color_map = {
 }
 
 # Cost-effectiveness threshold
-chosen_cet = 77.4  # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
+chosen_cet = 199.620811947318  # This is based on the estimate from Lomas et al (2023)- $160.595987085533 in 2019 USD coverted to 2023 USD
+# based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is $77.4 in 2023 USD terms
 chosen_value_of_statistical_life = 834
 
 # Discount rate

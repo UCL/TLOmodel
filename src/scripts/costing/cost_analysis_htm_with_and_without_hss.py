@@ -99,7 +99,8 @@ color_map = {
 }
 
 # Cost-effectiveness threshold
-chosen_cet = 77.4  # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
+chosen_cet = 199.620811947318 # This is based on the estimate from Lomas et al (2023)- $160.595987085533 in 2019 USD coverted to 2023 USD
+# based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is $77.4 in 2023 USD terms
 chosen_value_of_statistical_life = 834
 
 # Discount rate
@@ -299,6 +300,8 @@ for df, label in malaria_scaleup_costs:
     input_costs = pd.concat([input_costs, new_df], ignore_index=True)
 
 # TODO Reduce the cost of Oxygen and Depo-medroxy temporarily which we figure out the issue with this
+# Extract input_costs for browsing
+input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_subgroup','year'])['cost'].sum().to_csv(figurespath / 'cost_detailed.csv')
 
 # %%
 # Return on Invesment analysis
