@@ -61,41 +61,116 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
-        self.YEAR_OF_MODE_CHANGE = 2020  # HCW capabilities data are for year of 2019, before the Covid-19 pandemic
+        self.YEAR_OF_MODE_CHANGE = 2020
+        # HCW capabilities from data source are for year 2019,
+        # and we want to rescale to effective capabilities in the end of 2019 considering model calibration
+        self.YEAR_OF_HRH_EXPANSION = 2025
+        # The start year to expand HRH by cadre given the extra budget, which is after the historical HRH scaling
 
         self.scenarios = extra_budget_fracs['s_0'].to_frame()
-        # run no extra budget allocation scenarios first to get the never ran services and 'gap' allocation strategies
+        # Run no extra budget allocation scenarios first to get never ran services and 'gap' allocation strategies
+
+        self.cons_availability = ['all', 'default']
+        self.policy = ['Naive', 'EHP_III']  # TBC, not clear the differences or the implementation/change year
+        self.hr_budget = [0.042, 0.058, 0.026]
+        self.hs_function = [[False, False], [False, True]]
+
+        self.baselines = {
+            'baseline': self._baseline_of_baseline(),
+            'default_cons': self._baseline_default_cons(),
+            'more_budget': self._baseline_more_budget(),
+            'less_budget': self._baseline_less_budget(),
+            'efficient_policy': self._baseline_efficient_policy(),
+            'max_hs_function': self._baseline_max_hs_function(),
+        }
 
         return {
-            self.scenarios.columns[i]:
+            b + ' ' + self.scenarios.columns[i]:
                 mix_scenarios(
-                    self._baseline(),
+                    self.baselines[b],
                     {'HealthSystem': {
                         'HR_expansion_by_officer_type': self.scenarios.iloc[:, i].to_dict()
                     }
                     }
-                ) for i in range(len(self.scenarios.columns))  # run 33 scenarios
+                ) for b in self.baselines.keys() for i in range(len(self.scenarios.columns))
         }
 
-    def _baseline(self) -> Dict:
+    def _baseline_of_baseline(self) -> Dict:
         return mix_scenarios(
             get_parameters_for_status_quo(),
-            {'HealthSystem': {
-                'mode_appt_constraints': 1,
-                'mode_appt_constraints_postSwitch': 2,
-                "scale_to_effective_capabilities": True,
-                # This happens in the year before mode change, as the model calibration is done by that year
-                "year_mode_switch": self.YEAR_OF_MODE_CHANGE,
-                'cons_availability': 'default',
-                'cons_availability_postSwitch': 'all',
-                'year_cons_availability_switch': self.YEAR_OF_MODE_CHANGE,  # todo: or the HRH expansion start year?
-                'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
-                'start_year_HR_expansion_by_officer_type': 2025,  # start expansion from 2025
-                'end_year_HR_expansion_by_officer_type': self.end_date.year,
-                "policy_name": "Naive",
-                "tclose_overwrite": 1,
-                "tclose_days_offset_overwrite": 7,
-            }
+            {
+                'HealthSystem': {
+                    'mode_appt_constraints': 1,
+                    'mode_appt_constraints_postSwitch': 2,
+                    "scale_to_effective_capabilities": True,
+                    # This happens in the year before mode change, as the model calibration is done by that year
+                    "year_mode_switch": self.YEAR_OF_MODE_CHANGE,
+                    'cons_availability': 'default',
+                    'cons_availability_postSwitch': self.cons_availability[0],
+                    'year_cons_availability_switch': self.YEAR_OF_HRH_EXPANSION,  # TBC: or YEAR_OF_MODE_CHANGE?
+                    'HR_budget_growth_rate': self.hr_budget[0],
+                    'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
+                    'start_year_HR_expansion_by_officer_type': self.YEAR_OF_HRH_EXPANSION,
+                    'end_year_HR_expansion_by_officer_type': self.end_date.year,
+                    "policy_name": self.policy[0],
+                    "tclose_overwrite": 1,
+                    "tclose_days_offset_overwrite": 7,
+                },
+                'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                    'max_healthcare_seeking': [False, False],
+                    'max_healthsystem_function': self.hs_function[0],
+                    'year_of_switch': self.YEAR_OF_HRH_EXPANSION,  # TBC: or YEAR_OF_MODE_CHANGE?
+                }
+            },
+        )
+
+    def _baseline_default_cons(self) -> Dict:
+        return mix_scenarios(
+            self._baseline_of_baseline(),
+            {
+                'HealthSystem': {
+                    'cons_availability_postSwitch': self.cons_availability[1],
+                },
+            },
+        )
+
+    def _baseline_more_budget(self) -> Dict:
+        return mix_scenarios(
+            self._baseline_of_baseline(),
+            {
+                'HealthSystem': {
+                    'HR_budget_growth_rate': self.hr_budget[1],
+                },
+            },
+        )
+
+    def _baseline_less_budget(self) -> Dict:
+        return mix_scenarios(
+            self._baseline_of_baseline(),
+            {
+                'HealthSystem': {
+                    'HR_budget_growth_rate': self.hr_budget[2],
+                },
+            },
+        )
+
+    def _baseline_efficient_policy(self) -> Dict:
+        return mix_scenarios(
+            self._baseline_of_baseline(),
+            {
+                'HealthSystem': {
+                    "policy_name": self.policy[1],
+                },
+            },
+        )
+
+    def _baseline_max_hs_function(self) -> Dict:
+        return mix_scenarios(
+            self._baseline_of_baseline(),
+            {
+                'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
+                    'max_healthsystem_function': self.hs_function[1],
+                }
             },
         )
 
