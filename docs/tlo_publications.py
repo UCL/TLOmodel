@@ -182,7 +182,9 @@ def write_publications_list(stream, bibliography_data, section_names, backend, s
 
 if __name__ == "__main__":
     docs_directory = Path(__file__).parent
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "--bib-file",
         type=Path,
@@ -201,7 +203,7 @@ if __name__ == "__main__":
         help="Update BibTeX file at path specified by --bib-file from Zotero group library",
     )
     parser.add_argument(
-        "--zotero_group_id",
+        "--zotero-group-id",
         default="5746396",
         help="Integer identifier for Zotero group library",
     )
