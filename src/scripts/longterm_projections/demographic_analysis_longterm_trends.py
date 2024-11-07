@@ -22,7 +22,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 min_year = "2020"
-max_year = "2059"
+max_year = "2040"
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
@@ -912,46 +912,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     ax.plot(wpp_le['Time'], wpp_le['Value'], marker='o', color=colors['WPP'], label="WPP")
     le_all_years.columns = le_all_years.columns.get_level_values('stat')
-   # Plotting
-    ax.plot(
-        le_all_years.index[1::2],
-        le_all_years.iloc[1::2]['mean'],
-        marker='o',
-        color='#1C6E8C',
-        label="F"
-    )
 
-    ax.fill_between(
-        le_all_years.index[1::2],
-        le_all_years.iloc[1::2]['lower'],
-        le_all_years.iloc[1::2]['upper'],
-        color='#1C6E8C',
-        alpha=0.3
-    )
-
-    ax.plot(
-        le_all_years.index[0::2],
-        le_all_years.iloc[0::2]['mean'],
-        marker='o',
-        color='#9AC4F8',
-        label="M"
-    )
-
-    ax.fill_between(
-        le_all_years.index[0::2],
-        le_all_years.iloc[0::2]['lower'],
-        le_all_years.iloc[0::2]['upper'],
-        color='#9AC4F8',
-        alpha=0.3
-    )
-    ax.legend(loc='lower right')
-    ax.set_xlabel('Year')
-    ax.set_ylim(0, 75)  # Corrected set_ylimylim to set_ylim
-    ax.set_ylabel('Life Expectancy (Years)')
-    ax.set_title('Life Expectancy Over Time')  # Corrected ax.title to ax.set_title
-    fig.tight_layout()
-    plt.savefig(make_graph_file_name("Life_expectancy_over_years"))
-    plt.close(fig)
 
 
     # 5) Deaths and Life Expectancy
