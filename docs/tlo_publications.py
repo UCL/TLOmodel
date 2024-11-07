@@ -43,8 +43,10 @@ class DateSortingStyle(BaseSortingStyle):
 
     def sorting_key(self, entry):
         months = list(calendar.month_name)
-        return -int(entry.fields.get("year")), -months.index(
-            entry.fields.get("month", "")
+        return (
+            -int(entry.fields.get("year")),
+            -months.index(entry.fields.get("month", "")),
+            entry.fields.get("title", ""),
         )
 
 
