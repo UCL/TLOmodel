@@ -13,7 +13,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-import statsmodels.stats as ss
+# import statsmodels.stats as ss
 from matplotlib import pyplot as plt
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
@@ -436,11 +436,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             return _df, _series
 
-        time_by_cadre_treatment_all_scenarios = {
-            f's_{key}': format_time_by_cadre_treatment(
-                pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[key], orient='index')
-            )[0] for key in range(len(param_names))
-        }
+        # time_by_cadre_treatment_all_scenarios = {
+        #     f's_{key}': format_time_by_cadre_treatment(
+        #         pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[key], orient='index')
+        #     )[0] for key in range(len(param_names))
+        # }
 
         time_by_treatment_all_scenarios = {
             f's_{key}': format_time_by_cadre_treatment(

@@ -12,8 +12,6 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
-import statsmodels.api as sm
-import statsmodels.stats as ss
 from matplotlib import pyplot as plt
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
@@ -440,16 +438,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             return _df, _series
 
-        time_by_cadre_treatment_all_scenarios = {
-            f's_{key}': format_time_by_cadre_treatment(
-                pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[key], orient='index')
-            )[0] for key in range(len(param_names))
-        }
-
-        time_increased_by_cadre_treatment = {
-            key: time_by_cadre_treatment_all_scenarios[key] - time_by_cadre_treatment_all_scenarios['s_2']
-            for key in time_by_cadre_treatment_all_scenarios.keys()
-        }
+        # time_by_cadre_treatment_all_scenarios = {
+        #     f's_{key}': format_time_by_cadre_treatment(
+        #         pd.DataFrame.from_dict(time_by_cadre_treatment_per_draw[key], orient='index')
+        #     )[0] for key in range(len(param_names))
+        # }
+        #
+        # time_increased_by_cadre_treatment = {
+        #     key: time_by_cadre_treatment_all_scenarios[key] - time_by_cadre_treatment_all_scenarios['s_2']
+        #     for key in time_by_cadre_treatment_all_scenarios.keys()
+        # }
 
         time_by_treatment_all_scenarios = {
             f's_{key}': format_time_by_cadre_treatment(
@@ -480,7 +478,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     appt_time, appt_cost = format_appt_time_and_cost()
 
     # Get current (year of 2018/2019) hr counts
-    curr_hr = get_current_hr(cadres)[0]
+    # curr_hr = get_current_hr(cadres)[0]
     curr_hr_cap = get_current_hr(cadres)[1]
 
     # Get scale up factors for all scenarios
@@ -716,9 +714,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         num_dalys_summarized.index).fillna(0.0)
     num_never_ran_appts_by_level_summarized = summarize(num_never_ran_appts_by_level, only_mean=True).T.reindex(
         param_names).reindex(num_dalys_summarized.index).fillna(0.0)
-    num_appts_demand_summarized = summarize(num_appts_demand, only_mean=True).T.reindex(param_names).reindex(
-        num_dalys_summarized.index
-    )
+    # num_appts_demand_summarized = summarize(num_appts_demand, only_mean=True).T.reindex(param_names).reindex(
+    #     num_dalys_summarized.index
+    # )
     num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
@@ -726,21 +724,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     num_dalys_summarized.index
     # )
 
-    num_never_ran_services_summarized = summarize(num_never_ran_services).loc[0].unstack().reindex(param_names).reindex(
-        num_dalys_summarized.index
-    )
-    num_never_ran_appts_summarized = summarize(num_never_ran_appts, only_mean=True).T.reindex(param_names).reindex(
-        num_dalys_summarized.index
-    )
+    # num_never_ran_services_summarized = summarize(num_never_ran_services).loc[0].unstack().reindex(param_names).reindex(
+    #     num_dalys_summarized.index
+    # )
+    # num_never_ran_appts_summarized = summarize(num_never_ran_appts, only_mean=True).T.reindex(param_names).reindex(
+    #     num_dalys_summarized.index
+    # )
     # num_never_ran_treatments_summarized = summarize(num_never_ran_treatments, only_mean=True).T.reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
     # num_never_ran_treatments_total_summarized = summarize(num_never_ran_treatments_total).loc[0].unstack().reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
-    num_services_demand_summarized = summarize(num_services_demand).loc[0].unstack().reindex(param_names).reindex(
-        num_dalys_summarized.index
-    )
+    # num_services_demand_summarized = summarize(num_services_demand).loc[0].unstack().reindex(param_names).reindex(
+    #     num_dalys_summarized.index
+    # )
     # ratio_service_summarized = summarize(ratio_services).loc[0].unstack().reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
@@ -818,14 +816,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
 
-    num_dalys_by_cause_averted_percent = summarize(
-        -1.0 * find_difference_relative_to_comparison_dataframe(
-            num_dalys_by_cause,
-            comparison='s_0',
-            scaled=True
-        ),
-        only_mean=True
-    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    # num_dalys_by_cause_averted_percent = summarize(
+    #     -1.0 * find_difference_relative_to_comparison_dataframe(
+    #         num_dalys_by_cause,
+    #         comparison='s_0',
+    #         scaled=True
+    #     ),
+    #     only_mean=True
+    # ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
 
     # num_dalys_by_cause_averted_CNP = num_dalys_by_cause_averted.loc['s_2', :].sort_values(ascending=False)
     # # num_dalys_by_cause_averted_CP = num_dalys_by_cause_averted.loc['s_11', :].sort_values(ascending=False)
@@ -1043,9 +1041,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert (hcw_time_used.index == hcw_time_gap.index).all()
     assert (hcw_time_used.columns == hcw_time_gap.columns).all()
     hcw_time_demand = hcw_time_used + hcw_time_gap
-    hcw_time_demand_increased = pd.DataFrame(
-        hcw_time_demand.subtract(hcw_time_demand.loc['s_0', :], axis=1).drop('s_0', axis=0)
-    )
+    # hcw_time_demand_increased = pd.DataFrame(
+    #     hcw_time_demand.subtract(hcw_time_demand.loc['s_0', :], axis=1).drop('s_0', axis=0)
+    # )
 
     # cost gap proportions of cadres within each scenario
     hcw_cost_gap_percent = pd.DataFrame(index=hcw_cost_gap.index, columns=hcw_cost_gap.columns)
@@ -1184,16 +1182,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     p_count['Other cases'] = 1 - p_count[p_count.columns[0:7]].sum(axis=1)
 
     # define color for the cadres combinations above
-    cadre_comb_color = {
-        'C and P and N&M': 'royalblue',
-        'C and P': 'turquoise',
-        'C and N&M': 'gold',
-        'N&M and P': 'yellowgreen',
-        'Clinical (C)': 'mediumpurple',
-        'Pharmacy (P)': 'limegreen',
-        'Nursing_and_Midwifery (N&M)': 'pink',
-        'Other cases': 'gray',
-    }
+    # cadre_comb_color = {
+    #     'C and P and N&M': 'royalblue',
+    #     'C and P': 'turquoise',
+    #     'C and N&M': 'gold',
+    #     'N&M and P': 'yellowgreen',
+    #     'Clinical (C)': 'mediumpurple',
+    #     'Pharmacy (P)': 'limegreen',
+    #     'Nursing_and_Midwifery (N&M)': 'pink',
+    #     'Other cases': 'gray',
+    # }
 
     # Checked that Number_By_Appt_Type_Code and Number_By_Appt_Type_Code_And_Level have not exactly same results
 
@@ -1215,9 +1213,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # #     CE.loc[i, 'upper'] = extra_cost_all_yrs.loc[i, 'all_cadres'] / num_dalys_averted.loc[i, 'lower']
 
     # prepare colors for plots
-    appt_color = {
-        appt: COARSE_APPT_TYPE_TO_COLOR_MAP.get(appt, np.nan) for appt in num_appts_summarized.columns
-    }
+    # appt_color = {
+    #     appt: COARSE_APPT_TYPE_TO_COLOR_MAP.get(appt, np.nan) for appt in num_appts_summarized.columns
+    # }
     treatment_color = {
         treatment: SHORT_TREATMENT_ID_TO_COLOR_MAP.get(treatment, np.nan)
         for treatment in num_treatments_summarized.columns
