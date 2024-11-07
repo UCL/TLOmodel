@@ -51,20 +51,20 @@ def get_data(df, draw):
 
 
 mmrs = {'baseline':get_data(results_sum['deaths_and_stillbirths'], 0),
-           'oral_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 1),
-           'oral_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 2),
-           'iv_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 3),
-           'iv_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 4),
-           'amtsl_min':get_data(results_sum['deaths_and_stillbirths'], 5),
-           'amtsl_max': get_data(results_sum['deaths_and_stillbirths'], 6),
+           # 'oral_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 1),
+           # 'oral_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 2),
+           # 'iv_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 3),
+           # 'iv_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 4),
+           # 'amtsl_min':get_data(results_sum['deaths_and_stillbirths'], 5),
+           # 'amtsl_max': get_data(results_sum['deaths_and_stillbirths'], 6),
            'mgso4_min':get_data(results_sum['deaths_and_stillbirths'], 7),
            'mgso4_max': get_data(results_sum['deaths_and_stillbirths'], 8),
-           'post_abortion_care_core_min':get_data(results_sum['deaths_and_stillbirths'], 9),
-           'post_abortion_care_core_max': get_data(results_sum['deaths_and_stillbirths'], 10),
-           'caesarean_section_min':get_data(results_sum['deaths_and_stillbirths'], 11),
-           'caesarean_section_max': get_data(results_sum['deaths_and_stillbirths'], 12),
-           'ectopic_pregnancy_treatment_min':get_data(results_sum['deaths_and_stillbirths'], 13),
-           'ectopic_pregnancy_treatment_max': get_data(results_sum['deaths_and_stillbirths'], 14),
+           # 'post_abortion_care_core_min':get_data(results_sum['deaths_and_stillbirths'], 9),
+           # 'post_abortion_care_core_max': get_data(results_sum['deaths_and_stillbirths'], 10),
+           # 'caesarean_section_min':get_data(results_sum['deaths_and_stillbirths'], 11),
+           # 'caesarean_section_max': get_data(results_sum['deaths_and_stillbirths'], 12),
+           # 'ectopic_pregnancy_treatment_min':get_data(results_sum['deaths_and_stillbirths'], 13),
+           # 'ectopic_pregnancy_treatment_max': get_data(results_sum['deaths_and_stillbirths'], 14),
            }
 
 def get_mmr_diffs(df, draws):
@@ -82,23 +82,23 @@ def get_mmr_diffs(df, draws):
 
     return diff_results
 
-diff_results = get_mmr_diffs(results, range(1,15))
+diff_results = get_mmr_diffs(results, [7,8])
 
 
-results_diff = {'oral_antihypertensives_min':get_data(diff_results[1], 1),
-                'oral_antihypertensives_max':get_data(diff_results[2], 2),
-                'iv_antihypertensives_min':get_data(diff_results[3], 3),
-                'iv_antihypertensives_max': get_data(diff_results[4], 4),
-                'amtsl_min':get_data(diff_results[5], 5),
-                'amtsl_max': get_data(diff_results[6], 6),
+results_diff = {#'oral_antihypertensives_min':get_data(diff_results[1], 1),
+#                 'oral_antihypertensives_max':get_data(diff_results[2], 2),
+#                 'iv_antihypertensives_min':get_data(diff_results[3], 3),
+#                 'iv_antihypertensives_max': get_data(diff_results[4], 4),
+#                 'amtsl_min':get_data(diff_results[5], 5),
+#                 'amtsl_max': get_data(diff_results[6], 6),
                 'mgso4_min':get_data(diff_results[7], 7),
                 'mgso4_max':get_data(diff_results[8], 8),
-                'post_abortion_care_core_min':get_data(diff_results[9], 9),
-                'post_abortion_care_core_max': get_data(diff_results[10], 10),
-                'caesarean_section_min':get_data(diff_results[11], 11),
-                'caesarean_section_max': get_data(diff_results[12], 12),
-                'ectopic_pregnancy_treatment_min':get_data(diff_results[13], 13),
-                'ectopic_pregnancy_treatment_max': get_data(diff_results[14], 14)
+                # 'post_abortion_care_core_min':get_data(diff_results[9], 9),
+                # 'post_abortion_care_core_max': get_data(diff_results[10], 10),
+                # 'caesarean_section_min':get_data(diff_results[11], 11),
+                # 'caesarean_section_max': get_data(diff_results[12], 12),
+                # 'ectopic_pregnancy_treatment_min':get_data(diff_results[13], 13),
+                # 'ectopic_pregnancy_treatment_max': get_data(diff_results[14], 14)
                 }
 
 # todo: compare deaths with demography logging...

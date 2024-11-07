@@ -146,7 +146,7 @@ def test_interventions_are_delivered_as_expected_during_analysis(seed):
         sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
         return sim.modules['Labour'].item_codes_lab_consumables['delivery_core']
 
-    for intervention in pparams['all_interventions']:
+    for intervention in sim.modules['PregnancySupervisor'].parameters['all_interventions']:
         pparams['interventions_under_analysis'] = [intervention]
         pparams['intervention_analysis_availability'] = 1.0
 

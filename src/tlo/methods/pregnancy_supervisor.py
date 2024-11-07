@@ -1687,7 +1687,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             "PregnancySupervisor"
         ].abortion_complications
         if abortion_complications.has_any(
-            [person_id], "sepsis", "injury", "haemorrhage", first=True
+            [person_id], "sepsis", "injury", "haemorrhage", "other", first=True
         ):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
@@ -2015,7 +2015,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
 
             else:
-                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
+                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury', 'other')
                 df.at[individual_id, 'ac_received_post_abortion_care'] = False
 
             if individual_id in mni:
