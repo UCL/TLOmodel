@@ -1794,7 +1794,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             # if avail:
 
             iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='oral_antihypertensives', hsi_event=hsi_event,
+                self, int_name='iv_antihypertensives', hsi_event=hsi_event,
                 q_param=None, cons=self.item_codes_lab_consumables['iv_antihypertensives'],
                 opt_cons=self.item_codes_lab_consumables['iv_drug_equipment'])
 

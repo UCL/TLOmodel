@@ -9,7 +9,7 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
-scenario = 'block_intervention_test-2024-10-18T113429Z'
+scenario = 'block_intervention_test-2024-11-06T145016Z'
 
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
@@ -49,13 +49,22 @@ def get_data(df, draw):
             df.loc['direct_mmr', (draw, 'mean')],
             df.loc['direct_mmr', (draw, 'upper')])
 
+
 mmrs = {'baseline':get_data(results_sum['deaths_and_stillbirths'], 0),
-           'blood_transfusion_min':get_data(results_sum['deaths_and_stillbirths'], 1),
-           'blood_transfusion_max': get_data(results_sum['deaths_and_stillbirths'], 2),
-           'pph_treatment_uterotonics_min':get_data(results_sum['deaths_and_stillbirths'], 3),
-           'pph_treatment_uterotonics_max': get_data(results_sum['deaths_and_stillbirths'], 4),
-           'sepsis_treatment_min':get_data(results_sum['deaths_and_stillbirths'], 5),
-           'sepsis_treatment_max': get_data(results_sum['deaths_and_stillbirths'], 6),
+           'oral_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 1),
+           'oral_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 2),
+           'iv_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 3),
+           'iv_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 4),
+           'amtsl_min':get_data(results_sum['deaths_and_stillbirths'], 5),
+           'amtsl_max': get_data(results_sum['deaths_and_stillbirths'], 6),
+           'mgso4_min':get_data(results_sum['deaths_and_stillbirths'], 7),
+           'mgso4_max': get_data(results_sum['deaths_and_stillbirths'], 8),
+           'post_abortion_care_core_min':get_data(results_sum['deaths_and_stillbirths'], 9),
+           'post_abortion_care_core_max': get_data(results_sum['deaths_and_stillbirths'], 10),
+           'caesarean_section_min':get_data(results_sum['deaths_and_stillbirths'], 11),
+           'caesarean_section_max': get_data(results_sum['deaths_and_stillbirths'], 12),
+           'ectopic_pregnancy_treatment_min':get_data(results_sum['deaths_and_stillbirths'], 13),
+           'ectopic_pregnancy_treatment_max': get_data(results_sum['deaths_and_stillbirths'], 14),
            }
 
 def get_mmr_diffs(df, draws):
@@ -73,15 +82,24 @@ def get_mmr_diffs(df, draws):
 
     return diff_results
 
-diff_results = get_mmr_diffs(results, range(1,7))
+diff_results = get_mmr_diffs(results, range(1,15))
 
 
-results_diff = {'blood_transfusion_min':get_data(diff_results[1], 1),
-                'blood_transfusion_max':get_data(diff_results[2], 2),
-                'pph_treatment_uterotonics_min':get_data(diff_results[3], 3),
-                'pph_treatment_uterotonics_max': get_data(diff_results[4], 4),
-                'sepsis_treatment_mins':get_data(diff_results[5], 5),
-                'sepsis_treatment_max': get_data(diff_results[6], 6)}
+results_diff = {'oral_antihypertensives_min':get_data(diff_results[1], 1),
+                'oral_antihypertensives_max':get_data(diff_results[2], 2),
+                'iv_antihypertensives_min':get_data(diff_results[3], 3),
+                'iv_antihypertensives_max': get_data(diff_results[4], 4),
+                'amtsl_min':get_data(diff_results[5], 5),
+                'amtsl_max': get_data(diff_results[6], 6),
+                'mgso4_min':get_data(diff_results[7], 7),
+                'mgso4_max':get_data(diff_results[8], 8),
+                'post_abortion_care_core_min':get_data(diff_results[9], 9),
+                'post_abortion_care_core_max': get_data(diff_results[10], 10),
+                'caesarean_section_min':get_data(diff_results[11], 11),
+                'caesarean_section_max': get_data(diff_results[12], 12),
+                'ectopic_pregnancy_treatment_min':get_data(diff_results[13], 13),
+                'ectopic_pregnancy_treatment_max': get_data(diff_results[14], 14)
+                }
 
 # todo: compare deaths with demography logging...
 
@@ -105,8 +123,56 @@ plt.xticks(fontsize=8, rotation=90)
 plt.tight_layout()
 plt.show()
 
-
 #
+# # Example data with uncertainties
+# parameters = ['Blood Transfusion', 'Uterotonics', 'Sepsis treatment']
+# base_value = results_sum['deaths_and_stillbirths'].at['direct_mmr', (0, 'mean')]  # base case value for the output variable
+# high_values = [results_sum['deaths_and_stillbirths'].at['direct_mmr', (1, 'mean')],
+#               results_sum['deaths_and_stillbirths'].at['direct_mmr', (3, 'mean')],
+#               results_sum['deaths_and_stillbirths'].at['direct_mmr', (5, 'mean')]]  # lower-bound values for each parameter
+# low_values = [results_sum['deaths_and_stillbirths'].at['direct_mmr', (2, 'mean')],
+#               results_sum['deaths_and_stillbirths'].at['direct_mmr', (4, 'mean')],
+#               results_sum['deaths_and_stillbirths'].at['direct_mmr', (6, 'mean')]]  # upper-bound values for each parameter
+#
+# # Calculate deltas from base value
+# low_deltas = [base_value - lv for lv in low_values]
+# high_deltas = [hv - base_value for hv in high_values]
+#
+# # Sort parameters by absolute impact
+# abs_impacts = [abs(low) + abs(high) for low, high in zip(low_deltas, high_deltas)]
+# sorted_indices = np.argsort(abs_impacts)[::-1]
+# parameters = [parameters[i] for i in sorted_indices]
+# low_deltas = [low_deltas[i] for i in sorted_indices]
+# high_deltas = [high_deltas[i] for i in sorted_indices]
+#
+# # Calculate changes from the base case
+# low_deltas = [base_value - lv for lv in low_values]
+# high_deltas = [hv - base_value for hv in high_values]
+#
+# # Sort parameters by absolute impact (for a tornado effect)
+# abs_impacts = [abs(low) + abs(high) for low, high in zip(low_deltas, high_deltas)]
+# sorted_indices = np.argsort(abs_impacts)[::-1]
+# parameters = [parameters[i] for i in sorted_indices]
+# low_deltas = [low_deltas[i] for i in sorted_indices]
+# high_deltas = [high_deltas[i] for i in sorted_indices]
+#
+# # Plotting
+# fig, ax = plt.subplots(figsize=(8, 6))
+#
+# # Plot each bar for the low and high values
+# for i, (param, low, high) in enumerate(zip(parameters, low_deltas, high_deltas)):
+#     ax.barh(param, high, left=base_value, color='skyblue')
+#     ax.barh(param, low, left=base_value + low, color='salmon')
+#
+# # Reference line for base value
+# ax.axvline(base_value, color='black', linestyle='--', label="Base Value")
+#
+# # Labels and title
+# ax.set_xlabel('Output Variable')
+# ax.set_title('Tornado Plot')
+# plt.legend(['Base Value'])
+# plt.show()
+
 # import matplotlib.pyplot as plt
 # import numpy as np
 # # Sample data
