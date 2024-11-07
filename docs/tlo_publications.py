@@ -9,7 +9,9 @@ from warnings import warn
 import pybtex.database
 import requests
 from pybtex.backends.html import Backend as HTMLBackend
+from pybtex.style.formatting import toplevel
 from pybtex.style.formatting.unsrt import Style as UnsrtStyle
+from pybtex.style.formatting.unsrt import date as publication_date
 from pybtex.style.names import BaseNameStyle, name_part
 from pybtex.style.sorting import BaseSortingStyle
 from pybtex.style.template import (
@@ -27,16 +29,16 @@ from pybtex.style.template import (
 
 
 class InlineHTMLBackend(HTMLBackend):
-    """Backend for bibliography output as unordered list suitable for inclusion in a HTML document."""
+    """Backend for bibliography output as plain list suitable for inclusion in a HTML document."""
 
     def write_prologue(self):
-        self.output("<ul>\n")
+        self.output("<ul style='list-style-type: none; padding-left: 0;'>\n")
 
     def write_epilogue(self):
         self.output("</ul>\n")
 
     def write_entry(self, _key, _label, text):
-        self.output(f"<li>{text}</li>\n")
+        self.output(f"<li style='list-style: none;'>{text}</li>\n")
 
 
 class DateSortingStyle(BaseSortingStyle):
@@ -54,7 +56,7 @@ class DateSortingStyle(BaseSortingStyle):
 class LastOnlyNameStyle(BaseNameStyle):
     """Name style showing only last names and associated name particles."""
 
-    def format(self, person, abbr=False):
+    def format(self, person, _abbr=False):
         return join[
             name_part(tie=True)[person.rich_prelast_names],
             name_part[person.rich_last_names],
@@ -63,7 +65,7 @@ class LastOnlyNameStyle(BaseNameStyle):
 
 
 @node
-def abbreviated_names(children, context, role, summarize_limit=3, **kwargs):
+def summarized_names(children, context, role, summarize_limit=3, **kwargs):
     """Return formatted names with et al. summarization when number exceeds specified limit."""
 
     assert not children
@@ -73,51 +75,62 @@ def abbreviated_names(children, context, role, summarize_limit=3, **kwargs):
     except KeyError:
         raise FieldIsMissing(role, context["entry"])
 
-    style = context["style"]
+    name_style = LastOnlyNameStyle()
     if len(persons) > summarize_limit:
-        return words[
-            style.format_name(persons[0], style.abbreviate_names), "et al."
-        ].format_data(context)
+        return words[name_style.format(persons[0]), "et al."].format_data(context)
     else:
-        formatted_names = [
-            style.format_name(person, style.abbreviate_names) for person in persons
-        ]
+        formatted_names = [name_style.format(person) for person in persons]
         return join(**kwargs)[formatted_names].format_data(context)
 
 
-class AbbreviatedStyle(UnsrtStyle):
-    """Abbreviated bibliography style showing summarized names, year, title and journal / publisher."""
+class SummarizedStyle(UnsrtStyle):
+    """
+    Bibliography style showing summarized names, year, title and journal with expandable details.
 
-    default_name_style = LastOnlyNameStyle
+    Not suitable for use with LaTeX backend due to use of details tags.
+    """
+
     default_sorting_style = DateSortingStyle
 
-    def format_abbreviated_names(self, role):
-        return abbreviated_names(role, sep=", ", sep2=" and ", last_sep=", and ")
+    def _format_summarized_names(self, role):
+        return summarized_names(role, sep=", ", sep2=" and ", last_sep=", and ")
 
-    def _get_summarized_template(self, e, venue_field):
+    def _format_label(self, label):
+        return tag("em")[f"{label}: "]
+
+    def _get_summarized_template(self, e, venue_field, type_):
         url = first_of[
             optional[join["https://doi.org/", field("doi", raw=True)]],
             optional[field("url", raw=True)],
             "#",
         ]
-        template = href[
+        summary_template = href[
             url,
             sentence(sep=". ")[
                 words[
-                    self.format_abbreviated_names("author"),
+                    self._format_summarized_names("author"),
                     optional["(", field("year"), ")"],
                 ],
                 self.format_title(e, "title", as_sentence=False),
                 tag("em")[field(venue_field)],
             ],
         ]
-        return template
+        return tag("details")[
+            tag("summary")[summary_template],
+            toplevel[
+                tag("p")[self._format_label("Type"), type_],
+                optional[tag("p")[self._format_label("DOI"), field("doi")]],
+                tag("p")[self._format_label("Publication date"), publication_date],
+                tag("p")[self._format_label("Authors"), self.format_names("author")],
+                tag("p")[self._format_label("Abstract"), field("abstract")],
+            ],
+        ]
 
     def get_article_template(self, e):
-        return self._get_summarized_template(e, "journal")
+        return self._get_summarized_template(e, "journal", "Journal article")
 
     def get_misc_template(self, e):
-        return self._get_summarized_template(e, "publisher")
+        return self._get_summarized_template(e, "publisher", "Pre-print")
 
 
 def write_publications_list(stream, bibliography_data, section_names, backend, style):
@@ -203,5 +216,5 @@ if __name__ == "__main__":
                 "Healthcare seeking behaviour",
             ],
             backend=InlineHTMLBackend(),
-            style=AbbreviatedStyle(),
+            style=SummarizedStyle(),
         )
