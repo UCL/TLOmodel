@@ -98,13 +98,24 @@ class SummarizedStyle(UnsrtStyle):
     def _format_label(self, label):
         return tag("em")[f"{label}: "]
 
-    def _get_summarized_template(self, e, venue_field, type_):
+    def _format_details_as_table(self, details):
+        return tag("table")[
+            toplevel[
+                *(
+                    tag("tr")[toplevel[tag("td")[tag("em")[key]], tag("td")[value]]]
+                    for key, value in details.items()
+                )
+            ]
+        ]
+
+    def _get_summary_template(self, e, type_):
+        venue_field = "journal" if type_ == "article" else "publisher"
         url = first_of[
             optional[join["https://doi.org/", field("doi", raw=True)]],
             optional[field("url", raw=True)],
             "#",
         ]
-        summary_template = href[
+        return href[
             url,
             sentence(sep=". ")[
                 words[
@@ -115,22 +126,29 @@ class SummarizedStyle(UnsrtStyle):
                 tag("em")[field(venue_field)],
             ],
         ]
-        return tag("details")[
-            tag("summary")[summary_template],
-            toplevel[
-                tag("p")[self._format_label("Type"), type_],
-                optional[tag("p")[self._format_label("DOI"), field("doi")]],
-                tag("p")[self._format_label("Publication date"), publication_date],
-                tag("p")[self._format_label("Authors"), self.format_names("author")],
-                tag("p")[self._format_label("Abstract"), field("abstract")],
-            ],
-        ]
+
+    def _get_details_template(self, type_):
+        bibtex_type_to_label = {"article": "Journal article", "misc": "Pre-print"}
+        return self._format_details_as_table(
+            {
+                "Type": bibtex_type_to_label[type_],
+                "DOI": optional[field("doi")],
+                "Date": publication_date,
+                "Authors": self.format_names("author"),
+                "Abstract": field("abstract"),
+            }
+        )
+
+    def _get_summarized_template(self, e, type_):
+        summary_template = self._get_summary_template(e, type_)
+        details_template = self._get_details_template(type_)
+        return tag("details")[tag("summary")[summary_template], details_template]
 
     def get_article_template(self, e):
-        return self._get_summarized_template(e, "journal", "Journal article")
+        return self._get_summarized_template(e, "article")
 
     def get_misc_template(self, e):
-        return self._get_summarized_template(e, "publisher", "Pre-print")
+        return self._get_summarized_template(e, "misc")
 
 
 def write_publications_list(stream, bibliography_data, section_names, backend, style):
