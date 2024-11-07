@@ -25,7 +25,6 @@ from tlo import Date
 from tlo.analysis.utils import (
     APPT_TYPE_TO_COARSE_APPT_TYPE_MAP,
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
-    COARSE_APPT_TYPE_TO_COLOR_MAP,
     SHORT_TREATMENT_ID_TO_COLOR_MAP,
     bin_hsi_event_details,
     compute_mean_across_runs,
@@ -671,14 +670,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get total service demand
     assert len(num_services) == len(num_never_ran_services) == 1
     assert (num_services.columns == num_never_ran_services.columns).all()
-    num_services_demand = num_services + num_never_ran_services
+    # num_services_demand = num_services + num_never_ran_services
     # ratio_services = num_services / num_services_demand
 
     assert (num_appts.columns == num_never_ran_appts.columns).all()
     num_never_ran_appts.loc['Lab / Diagnostics', :] = 0
     num_never_ran_appts = num_never_ran_appts.reindex(num_appts.index).fillna(0.0)
     assert (num_appts.index == num_never_ran_appts.index).all()
-    num_appts_demand = num_appts + num_never_ran_appts
+    # num_appts_demand = num_appts + num_never_ran_appts
 
     hcw_time_usage = extract_results(
         results_folder,
@@ -707,9 +706,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_services_summarized = summarize(num_services).loc[0].unstack().reindex(param_names).reindex(
         num_dalys_summarized.index
     )
-    num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names).reindex(
-        num_dalys_summarized.index
-    )
+    # num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names).reindex(
+    #     num_dalys_summarized.index
+    # )
     num_appts_by_level_summarized = summarize(num_appts_by_level, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index).fillna(0.0)
     num_never_ran_appts_by_level_summarized = summarize(num_never_ran_appts_by_level, only_mean=True).T.reindex(
