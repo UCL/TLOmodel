@@ -26,6 +26,7 @@ from pybtex.style.template import (
 
 
 class InlineHTMLBackend(HTMLBackend):
+    """Backend for bibliography output as unordered list suitable for inclusion in a HTML document."""
 
     def write_prologue(self):
         self.output("<ul>\n")
@@ -38,6 +39,7 @@ class InlineHTMLBackend(HTMLBackend):
 
 
 class DateSortingStyle(BaseSortingStyle):
+    """Sorting style for bibliography in reverse (newest first) publication date order."""
 
     def sorting_key(self, entry):
         months = list(calendar.month_name)
@@ -47,6 +49,7 @@ class DateSortingStyle(BaseSortingStyle):
 
 
 class LastOnlyNameStyle(BaseNameStyle):
+    """Name style showing only last names and associated name particles."""
 
     def format(self, person, abbr=False):
         return join[
@@ -58,7 +61,7 @@ class LastOnlyNameStyle(BaseNameStyle):
 
 @node
 def abbreviated_names(children, context, role, summarize_limit=3, **kwargs):
-    """Return formatted names."""
+    """Return formatted names with et al. summarization when number exceeds specified limit."""
 
     assert not children
 
@@ -70,7 +73,7 @@ def abbreviated_names(children, context, role, summarize_limit=3, **kwargs):
     style = context["style"]
     if len(persons) > summarize_limit:
         return words[
-            style.format_name(persons[0], style.abbreviate_names), "et al"
+            style.format_name(persons[0], style.abbreviate_names), "et al."
         ].format_data(context)
     else:
         formatted_names = [
@@ -80,6 +83,7 @@ def abbreviated_names(children, context, role, summarize_limit=3, **kwargs):
 
 
 class AbbreviatedStyle(UnsrtStyle):
+    """Abbreviated bibliography style showing summarized names, year, title and journal / publisher."""
 
     default_name_style = LastOnlyNameStyle
     default_sorting_style = DateSortingStyle
@@ -114,6 +118,7 @@ class AbbreviatedStyle(UnsrtStyle):
 
 
 def write_publications_list(stream, bibliography_data, section_names, backend, style):
+    """Write bibliography data with given backend and style to a stream splitting in to sections."""
     keys_by_section = defaultdict(list)
     for key, entry in bibliography_data.entries.items():
         note = entry.fields.get("note")
