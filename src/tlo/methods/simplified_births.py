@@ -112,6 +112,7 @@ class SimplifiedBirths(Module):
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
+        # pylint: disable=E1101
         rf = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
