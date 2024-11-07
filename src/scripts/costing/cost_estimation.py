@@ -922,7 +922,7 @@ def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
 
     # Iterate over each draw in monetary_value_of_incremental_health
     for draw_index, row in _monetary_value_of_incremental_health.iterrows():
-        print("running draw ", draw_index)
+        print("Plotting ROI for draw ", draw_index)
         # Initialize an empty DataFrame to store values for each 'run'
         all_run_values = pd.DataFrame()
 
@@ -1014,6 +1014,100 @@ def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
         plt.savefig(_outputfilepath / f'draw{draw_index}_{_scenario_dict[draw_index]}_ROI_at_{_value_of_life_suffix}.png', dpi=100,
                     bbox_inches='tight')
         plt.close()
+
+def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: pd.DataFrame,
+                       _incremental_input_cost: pd.DataFrame,
+                       _draws:None,
+                       _scenario_dict: dict,
+                       _outputfilepath: Path,
+                       _value_of_life_suffix = ''):
+    # Calculate maximum ability to pay for implementation
+    _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
+    _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
+    max_ability_to_pay_for_implementation = (_monetary_value_of_incremental_health - _incremental_input_cost).clip(lower=0.0)  # monetary value - change in costs
+
+    # Create a figure and axis to plot all draws together
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Iterate over each draw in monetary_value_of_incremental_health
+    for draw_index, row in _monetary_value_of_incremental_health.iterrows():
+        print("Plotting ROI for draw ", draw_index)
+        # Initialize an empty DataFrame to store values for each 'run'
+        all_run_values = pd.DataFrame()
+
+        # Create an array of implementation costs ranging from 0 to the max value of max ability to pay for the current draw
+        implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation.loc[draw_index].max(), 50)
+
+        # Retrieve the corresponding row from incremental_scenario_cost for the same draw
+        incremental_scenario_cost_row = _incremental_input_cost.loc[draw_index]
+
+        # Calculate the values for each individual run
+        for run in incremental_scenario_cost_row.index:  # Assuming 'run' columns are labeled by numbers
+            # Calculate the total costs for the current run
+            total_costs = implementation_costs + incremental_scenario_cost_row[run]
+
+            # Initialize run_values as an empty series with the same index as total_costs
+            run_values = pd.Series(index=total_costs, dtype=float)
+
+            # For negative total_costs, set corresponding run_values to infinity
+            run_values[total_costs < 0] = np.inf
+
+            # For non-negative total_costs, calculate the metric and clip at 0
+            non_negative_mask = total_costs >= 0
+            run_values[non_negative_mask] = np.clip(
+                (row[run] - total_costs[non_negative_mask]) / total_costs[non_negative_mask],
+                0,
+                None
+            )
+
+            # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
+            run_values = run_values.values # remove index and convert to array
+            run_df = pd.DataFrame([run_values], index=pd.MultiIndex.from_tuples([(draw_index, run)], names=['draw', 'run']),
+                                  columns=implementation_costs)
+
+            # Append the run DataFrame to all_run_values
+            all_run_values = pd.concat([all_run_values, run_df])
+
+        # Replace inf with NaN temporarily to handle quantile calculation correctly
+        temp_data = all_run_values.replace([np.inf, -np.inf], np.nan)
+
+        collapsed_data = temp_data.groupby(level='draw').agg([
+            'mean',
+            ('lower', lambda x: x.quantile(0.025)),
+            ('upper', lambda x: x.quantile(0.975))
+        ])
+
+        # Revert the NaNs back to inf
+        collapsed_data = collapsed_data.replace([np.nan], np.inf)
+
+        collapsed_data = collapsed_data.unstack()
+        collapsed_data.index = collapsed_data.index.set_names('implementation_cost', level=0)
+        collapsed_data.index = collapsed_data.index.set_names('stat', level=1)
+        collapsed_data = collapsed_data.reset_index().rename(columns = {0: 'roi'})
+
+        # Divide rows by the sum of implementation costs and incremental input cost
+        mean_values = collapsed_data[collapsed_data['stat'] == 'mean'][['implementation_cost', 'roi']]
+        lower_values = collapsed_data[collapsed_data['stat'] == 'lower'][['implementation_cost', 'roi']]
+        upper_values = collapsed_data[collapsed_data['stat']  == 'upper'][['implementation_cost', 'roi']]
+
+        # Plot mean line and confidence interval
+        ax.plot(implementation_costs / 1e6, mean_values['roi'], label=f'{_scenario_dict[draw_index]}')
+        ax.fill_between(implementation_costs / 1e6, lower_values['roi'], upper_values['roi'], alpha=0.2)
+
+    # Set y-axis limit
+    ax.set_ylim(0, mean_values[~np.isinf(mean_values.roi)]['roi'].max() * 1.25)
+    ax.set_xlim(left = 0)
+
+    plt.xlabel('Implementation cost, millions')
+    plt.ylabel('Return on Investment')
+    plt.title('Return on Investment of scenario at different levels of implementation cost')
+
+    # Show legend
+    plt.legend()
+    # Save
+    plt.savefig(_outputfilepath / f'draws_{_draws}_ROI_at_{_value_of_life_suffix}.png', dpi=100,
+                bbox_inches='tight')
+    plt.close()
 
 '''
 # Scratch pad

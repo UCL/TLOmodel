@@ -34,7 +34,8 @@ from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              apply_discounting_to_cost_data,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
-                                             generate_roi_plots)
+                                             generate_roi_plots,
+                                             generate_multiple_scenarios_roi_plot)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -395,6 +396,35 @@ generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_i
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'VSL')
+
+# Combined ROI plot of relevant scenarios
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [2,12,14],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'VSL')
+
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [3,5],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'HIV_VSL')
+
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [6,8],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'TB_VSL')
+
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [9,11],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'Malaria_VSL')
 
 # 4. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------
