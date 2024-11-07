@@ -28,7 +28,8 @@ from tlo.analysis.utils import (
     parse_log_file,
     unflatten_flattened_multi_index_in_logging
 )
-from scripts.costing.cost_estimation import estimate_input_cost_of_scenarios
+from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
+                                             do_stacked_bar_plot_of_cost_by_category)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -214,7 +215,7 @@ calibration_outputs_folder = Path(figurespath / 'calibration')
 if not os.path.exists(calibration_outputs_folder):
     os.makedirs(calibration_outputs_folder)
 
-def do_cost_calibration_plot(_df, _costs_included):
+def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
     # Filter the dataframe
     _df = _df[(_df.model_cost.notna()) & (_df.index.get_level_values(0).isin(_costs_included))]
 
@@ -273,8 +274,10 @@ def do_cost_calibration_plot(_df, _costs_included):
     plt.ylabel('Costs (USD), millions')
     plt.title(f'Model Cost vs Annual Expenditure 2019 and Max(Annual Budget 2020-22)\n {cost_subcategory}')
 
-    # Rotate x-axis labels for readability
-    plt.xticks(rotation=45, ha='right')
+    # Customize x-axis labels for readability
+    max_label_length = 15  # Define a maximum label length for wrapping
+    wrapped_labels = [textwrap.fill(str(label), max_label_length) for label in df_mean.index]
+    plt.xticks(ticks=range(len(wrapped_labels)), labels=wrapped_labels, rotation=45, ha='right', fontsize=_xtick_fontsize)
 
     # Adding a legend
     plt.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=10)
@@ -285,7 +288,6 @@ def do_cost_calibration_plot(_df, _costs_included):
                 bbox_inches='tight')
     plt.close()
 
-
 # Call the function for each variable and cost list
 all_consumable_costs = list_of_consumables_costs_for_calibration_only_hiv + list_of_consumables_costs_for_calibration_without_hiv + ['Supply Chain']
 all_calibration_costs = all_consumable_costs + list_of_hr_costs_for_calibration + list_of_equipment_costs_for_calibration
@@ -295,7 +297,7 @@ do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibrat
 do_cost_calibration_plot(calibration_data,all_consumable_costs)
 do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
-do_cost_calibration_plot(calibration_data,all_calibration_costs)
+do_cost_calibration_plot(calibration_data,all_calibration_costs, _xtick_fontsize = 8)
 calibration_data.to_csv(figurespath / 'calibration/calibration.csv')
 
 # Stacked bar charts to represent all cost sub-groups
@@ -311,6 +313,11 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'med
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'other',
                                         _disaggregate_by_subgroup = True,
                                         _outputfilepath = calibration_outputs_folder)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'all',
+                                        _disaggregate_by_subgroup = False,
+                                        _outputfilepath = calibration_outputs_folder)
+
+
 
 '''
 

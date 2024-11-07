@@ -212,7 +212,6 @@ def get_num_dalys(_df):
 
     # Initial year and discount rate
     initial_year = min(_df.index.unique())
-    discount_rate = _discount_rate
 
     # Calculate the discounted values
     discounted_values = _df / (1 + discount_rate) ** (_df.index - initial_year)

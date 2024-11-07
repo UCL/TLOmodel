@@ -31,9 +31,11 @@ from tlo.analysis.utils import (
 
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              summarize_cost_data,
+                                             apply_discounting_to_cost_data,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
                                              generate_roi_plots)
+
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
 
@@ -68,7 +70,7 @@ district_dict = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 district_dict = dict(zip(district_dict['District_Num'], district_dict['District']))
 
 # Period relevant for costing
-TARGET_PERIOD_INTERVENTION = (Date(2025, 1, 1), Date(2035, 12, 31)) # This is the period that is costed
+TARGET_PERIOD_INTERVENTION = (Date(2025, 1, 1), Date(2035, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD_INTERVENTION]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 
@@ -81,14 +83,96 @@ htm_scenarios = {0:"Baseline", 1: "HSS PACKAGE: Perfect", 2: "HSS PACKAGE: Reali
 # Subset of scenarios included in analysis
 htm_scenarios_for_gf_report = [0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 16]
 
+color_map = {
+    'Baseline': '#9e0142',
+    'HSS PACKAGE: Realistic': '#d8434e',
+    'HIV Programs Scale-up WITHOUT HSS PACKAGE': '#f36b48',
+    'HIV Programs Scale-up WITH REALISTIC HSS PACKAGE': '#fca45c',
+    'TB Programs Scale-up WITHOUT HSS PACKAGE': '#fddc89',
+    'TB Programs Scale-up WITH REALISTIC HSS PACKAGE': '#e7f7a0',
+    'Malaria Programs Scale-up WITHOUT HSS PACKAGE': '#a5dc97',
+    'Malaria Programs Scale-up WITH REALISTIC HSS PACKAGE': '#6dc0a6',
+    'HTM Programs Scale-up WITHOUT HSS PACKAGE': '#438fba',
+    'HTM Programs Scale-up WITH REALISTIC HSS PACKAGE': '#5e4fa2',
+    'HTM Programs Scale-up WITH SUPPLY CHAINS': '#3c71aa',
+    'HTM Programs Scale-up WITH HRH': '#2f6094',
+}
+
 # Cost-effectiveness threshold
-chosen_cet = 77.4 # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
+chosen_cet = 77.4  # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is in 2023 USD terms
+chosen_value_of_statistical_life = 834
+
+# Discount rate
+discount_rate = 0.03
+
+# Define a function to create bar plots
+def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
+    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+    extent of the error bar."""
+
+    # Calculate y-error bars
+    yerr = np.array([
+        (_df['mean'] - _df['lower']).values,
+        (_df['upper'] - _df['mean']).values,
+    ])
+
+    # Map xticks based on the hss_scenarios dictionary
+    xticks = {index: htm_scenarios.get(index, f"Scenario {index}") for index in _df.index}
+
+    # Retrieve colors from color_map based on the xticks labels
+    colors = [color_map.get(label, '#333333') for label in xticks.values()]  # default to grey if not found
+
+    # Generate consecutive x positions for the bars, ensuring no gaps
+    x_positions = np.arange(len(xticks))  # Consecutive integers for each bar position
+
+    fig, ax = plt.subplots()
+    ax.bar(
+        x_positions,
+        _df['mean'].values,
+        yerr=yerr,
+        color=colors,  # Set bar colors
+        alpha=1,
+        ecolor='black',
+        capsize=10,
+    )
+
+    # Add optional annotations above each bar
+    if annotations:
+        for xpos, ypos, text in zip(x_positions, _df['upper'].values, annotations):
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=8)
+
+    # Set x-tick labels with wrapped text if required
+    wrapped_labs = ["\n".join(textwrap.wrap(label,30)) for label in xticks.values()]
+    ax.set_xticks(x_positions)  # Set x-ticks to consecutive positions
+    ax.set_xticklabels(wrapped_labs, rotation=45 if not xticklabels_horizontal_and_wrapped else 0, ha='right',
+                       fontsize=7)
+
+    # Set y-axis limit to upper max + 500
+    ax.set_ylim(_df['lower'].min()*1.25, _df['upper'].max()*1.25)
+
+    # Set font size for y-tick labels and grid
+    ax.tick_params(axis='y', labelsize=9)
+    ax.tick_params(axis='x', labelsize=9)
+
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+
+    return fig, ax
 
 # Estimate standard input costs of scenario
 #-----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years = list_of_relevant_years_for_costing, cost_only_used_staff=True)
+                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _discount_rate = discount_rate)
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
+# TODO Remove the manual fix below once the logging for these is corrected
+input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost'] = \
+    input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost']/10
+input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost'] =\
+    input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost']/7
+#input_costs = apply_discounting_to_cost_data(input_costs, _discount_rate = discount_rate)
 
 # Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
 #-----------------------------------------------------------------------------------------------------------------------
@@ -219,14 +303,13 @@ for df, label in malaria_scaleup_costs:
 # %%
 # Return on Invesment analysis
 # Calculate incremental cost
-#-----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------------
 # Aggregate input costs for further analysis
-input_costs_subset = input_costs[(input_costs['year'] >= relevant_period_for_costing[0]) & (input_costs['year'] <= relevant_period_for_costing[1])]
+input_costs_subset = input_costs[
+    (input_costs['year'] >= relevant_period_for_costing[0]) & (input_costs['year'] <= relevant_period_for_costing[1])]
 # TODO the above step may not longer be needed
-
 total_input_cost = input_costs_subset.groupby(['draw', 'run'])['cost'].sum()
-total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level = 'run'))
-
+total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
 def find_difference_relative_to_comparison(_ser: pd.Series,
                                            comparison: str,
                                            scaled: bool = False,
@@ -241,116 +324,89 @@ def find_difference_relative_to_comparison(_ser: pd.Series,
         .drop(columns=([comparison] if drop_comparison else [])) \
         .stack()
 
+
 incremental_scenario_cost = (pd.DataFrame(
-            find_difference_relative_to_comparison(
-                total_input_cost,
-                comparison= 0) # sets the comparator to 0 which is the Actual scenario
-        ).T.iloc[0].unstack()).T
-incremental_scenario_cost = incremental_scenario_cost[incremental_scenario_cost.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
+    find_difference_relative_to_comparison(
+        total_input_cost,
+        comparison=0)  # sets the comparator to 0 which is the Actual scenario
+).T.iloc[0].unstack()).T
+
+# Keep only scenarios of interest
+incremental_scenario_cost = incremental_scenario_cost[
+    incremental_scenario_cost.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
 
 # Monetary value of health impact
-#-----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------------
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
     results from runs that crashed mid-way through the simulation.
     """
-    years_needed = relevant_period_for_costing # [i.year for i in TARGET_PERIOD_INTERVENTION]
+    years_needed = relevant_period_for_costing  # [i.year for i in TARGET_PERIOD_INTERVENTION]
     assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
-    return pd.Series(
-        data=_df
-        .loc[_df.year.between(*years_needed)]
-        .drop(columns=['date', 'sex', 'age_range', 'year'])
-        .sum().sum()
-    )
+    _df = _df.loc[_df.year.between(*years_needed)].drop(columns=['date', 'sex', 'age_range']).groupby('year').sum().sum(axis = 1)
+
+    # Initial year and discount rate
+    initial_year = min(_df.index.unique())
+
+    # Calculate the discounted values
+    discounted_values = _df / (1 + discount_rate) ** (_df.index - initial_year)
+
+    return pd.Series(discounted_values.sum())
 
 num_dalys = extract_results(
-        results_folder,
-        module='tlo.methods.healthburden',
-        key='dalys_stacked',
-        custom_generate_series=get_num_dalys,
-        do_scaling=True
-    )
+    results_folder,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=get_num_dalys,
+    do_scaling=True
+)
 
 # Get absolute DALYs averted
-num_dalys_averted =(-1.0 *
-        pd.DataFrame(
-            find_difference_relative_to_comparison(
-                num_dalys.loc[0],
-                comparison= 0) # sets the comparator to 0 which is the Actual scenario
-        ).T.iloc[0].unstack(level = 'run'))
+num_dalys_averted = (-1.0 *
+                     pd.DataFrame(
+                         find_difference_relative_to_comparison(
+                             num_dalys.loc[0],
+                             comparison=0)  # sets the comparator to 0 which is the Actual scenario
+                     ).T.iloc[0].unstack(level='run'))
+num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
 
 # The monetary value of the health benefit is delta health times CET (negative values are set to 0)
-monetary_value_of_incremental_health = (num_dalys_averted * chosen_cet).clip(lower = 0.0)
-monetary_value_of_incremental_health = monetary_value_of_incremental_health[monetary_value_of_incremental_health.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
-#TODO check that the above calculation is correct
+def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
+    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
+    return monetary_value_of_incremental_health
+
+# TODO check that the above calculation is correct
 
 # 3. Return on Investment Plot
-#----------------------------------------------------
+# ----------------------------------------------------
 # Plot ROI at various levels of cost
-generate_roi_plots(_monetary_value_of_incremental_health = monetary_value_of_incremental_health,
-                   _incremental_input_cost = incremental_scenario_cost,
+generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet),
+                   _incremental_input_cost=incremental_scenario_cost,
                    _scenario_dict = htm_scenarios,
-                   _outputfilepath = roi_outputs_folder)
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'CET')
 
-# 4. Plot Maximum ability-to-pay
-#----------------------------------------------------
-max_ability_to_pay_for_implementation = (monetary_value_of_incremental_health - incremental_scenario_cost).clip(lower = 0.0) # monetary value - change in costs
+generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'VSL')
+
+# 4. Plot Maximum ability-to-pay at CET
+# ----------------------------------------------------
+max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
+    lower=0.0)  # monetary value - change in costs
 max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
-max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
+max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
+    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
 
-def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
-    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-    extent of the error bar."""
-
-    yerr = np.array([
-        (_df['mean'] - _df['lower']).values,
-        (_df['upper'] - _df['mean']).values,
-    ])
-
-    xticks = {(i+1): k for i, k in enumerate(_df.index)}
-
-    fig, ax = plt.subplots()
-    ax.bar(
-        xticks.keys(),
-        _df['mean'].values,
-        yerr=yerr,
-        alpha=1,
-        ecolor='black',
-        capsize=10,
-        label=xticks.values()
-    )
-    '''
-    if annotations:
-        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=11)
-
-    ax.set_xticks(list(xticks.keys()))
-    if not xticklabels_horizontal_and_wrapped:
-        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs, rotation=45, ha='right', fontsize=10)
-    else:
-        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs, fontsize=10)
-    '''
-
-    # Set font size for y-tick labels
-    ax.tick_params(axis='y', labelsize=12)
-    ax.tick_params(axis='x', labelsize=11)
-
-    ax.grid(axis="y")
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    fig.tight_layout()
-
-    return fig, ax
-
-# Plot Max ability to pay
-name_of_plot = f'Maximum ability to pay, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}' #f'Maximum ability to pay, {first_year_of_simulation} - {final_year_of_simulation}'
+# Plot Maximum ability to pay
+name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized / 1e6),
     annotations=[
-        f"{round(row['mean']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
+        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
         for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -358,7 +414,48 @@ fig, ax = do_bar_plot_with_ci(
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
 fig.tight_layout()
-fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+# 4. Plot Maximum ability-to-pay at VSL
+# ----------------------------------------------------
+max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life) - incremental_scenario_cost).clip(
+    lower=0.0)  # monetary value - change in costs
+max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
+max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
+    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
+
+# Plot Maximum ability to pay
+name_of_plot = f'Maximum ability to pay at VSL, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_bar_plot_with_ci(
+    (max_ability_to_pay_for_implementation_summarized / 1e6),
+    annotations=[
+        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
+        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Maximum ability to pay (at VSL) \n(Millions)')
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+# Plot incremental costs
+incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost)
+name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_bar_plot_with_ci(
+    (incremental_scenario_cost_summarized / 1e6),
+    annotations=[
+        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
+        for _, row in incremental_scenario_cost_summarized.iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Cost \n(USD Millions)')
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
 # 4. Plot costs
@@ -376,17 +473,10 @@ input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
     var_name='stat',
     value_name='cost'
 )
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath)
 
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical consumables', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = [0], disaggregate_by= 'cost_subgroup',_outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'human resources for health', _year = 'all', _draws = [0], disaggregate_by= 'cost_subcategory', _outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'medical equipment', _year = 'all', _draws = None, _outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'other', _year = 'all', _draws = None, _outputfilepath = figurespath)
-do_line_plot_of_cost(_df = input_costs, _cost_category = 'all', _year = 'all', disaggregate_by= 'cost_category', _draws = None, _outputfilepath = figurespath)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = list(range(2025, 2036)), _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
