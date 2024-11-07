@@ -11,6 +11,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods.contraception import get_medium_variant_asfr_from_wpp_resourcefile
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -111,7 +112,7 @@ class SimplifiedBirths(Module):
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
-        rf = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx')
+        rf = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter
