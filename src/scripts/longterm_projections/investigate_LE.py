@@ -57,3 +57,42 @@ plt.legend(title='Age Group')
 plt.tight_layout()
 plt.show()
 
+### All age days, all years?
+below_one_year = demography_details_death[demography_details_death["age_years"] < 1]
+below_one_year['age_days'].plot(kind='hist', bins=30)  # Adjust bins as needed
+plt.xlabel("Days made through year - below age one")
+plt.ylabel("Frequency")
+plt.title("Histogram of Age in Days")
+plt.show()
+
+
+### All age days, above 5 years
+above_five_years = demography_details_death[demography_details_death["age_years"] > 5]
+how_far_in_year = above_five_years['age_days'] % 365
+how_far_in_year.plot(kind='hist', bins=30)  # Adjust bins as needed
+plt.xlabel("Days made through year - above age 5")
+plt.ylabel("Frequency")
+plt.title("Histogram of Age in Days")
+plt.show()
+
+
+### How far into 5 year age groups
+above_five_years = demography_details_death[demography_details_death["age_years"] > 5]
+age_5_year_groups = (above_five_years['age_years'] // 5) * 5  # Group ages in 5-year intervals
+days_in_5_year_group = (above_five_years['age_days'] % (5 * 365))
+days_in_5_year_group.plot(kind='hist', bins=30)
+plt.xlabel("Days into 5-year interval")
+plt.ylabel("Frequency")
+plt.title("Histogram of Days Lived into Each 5-Year Age Group")
+plt.show()
+
+
+### How far into 1-4 year age groups
+below_five_years = demography_details_death[(demography_details_death["age_years"] > 1) & (demography_details_death["age_years"] < 5)]
+days_in_3_year_group = (below_five_years['age_days'] % (3 * 365))
+days_in_3_year_group.plot(kind='hist', bins=30)
+plt.xlabel("Days into 4-year interval")
+plt.ylabel("Frequency")
+plt.title("Histogram of Days Lived into 1-4 Year Age Group")
+plt.show()
+
