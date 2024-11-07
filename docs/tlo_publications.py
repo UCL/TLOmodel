@@ -121,13 +121,20 @@ def write_publications_list(stream, bibliography_data, section_names, backend, s
     """Write bibliography data with given backend and style to a stream splitting in to sections."""
     keys_by_section = defaultdict(list)
     for key, entry in bibliography_data.entries.items():
-        note = entry.fields.get("note")
-        if note in section_names:
-            keys_by_section[note].append(key)
+        keywords = set(k.strip() for k in entry.fields.get("keywords", "").split(","))
+        section_names_in_keywords = keywords & set(section_names)
+        if len(section_names_in_keywords) == 1:
+            keys_by_section[section_names_in_keywords.pop()].append(key)
+        elif len(section_names_in_keywords) == 0:
+            msg = (
+                f"BibTeX entry with key {key} does not have a keyword / tag corresponding to "
+                f"one of section names {section_names} and so will not be included in output."
+            )
+            warn(msg, stacklevel=2)
         else:
             msg = (
-                f"BibTeX entry with key {key} does not have a note field corresponding to "
-                f"one of section names {section_names} and so will not be included in output."
+                f"BibTeX entry with key {key} has multiple keywords / tags corresponding to "
+                f"section names {section_names} and so will not be included in output."
             )
             warn(msg, stacklevel=2)
     for section_name in section_names:
