@@ -9,6 +9,12 @@ from netCDF4 import Dataset
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
 ANC = True
+daily_max = True
+
+if daily_max:
+    multiplier = 1000
+else:
+    multiplier = 86400
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
 else:
@@ -71,7 +77,7 @@ for polygon in malawi_grid["geometry"]:
     index_for_y_max = ((lat_data - maxy)**2).argmin()
 
     precip_data_for_grid = pr_data[:, index_for_y_min,index_for_x_min]  # across all time points
-    precip_data_for_grid = precip_data_for_grid * 86400  # to get from per second to per day
+    precip_data_for_grid = precip_data_for_grid * multiplier  # to get from per second (monthly data) to per day OR m to mm (daily max data)
     weather_by_grid[grid] = precip_data_for_grid
     grid += 1
 
@@ -80,7 +86,6 @@ for polygon in malawi_grid["geometry"]:
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
 facilities_with_lat_long = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
-
 
 weather_data_by_facility = {}
 facilities_with_location = []
@@ -97,7 +102,7 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
         index_for_y= ((lat_data - lat_for_facility)**2).argmin()
 
         precip_data_for_facility = pr_data[:, index_for_y,index_for_x]  # across all time points
-        weather_data_by_facility[reporting_facility]  = precip_data_for_facility * 86400  # to get from per second to per day
+        weather_data_by_facility[reporting_facility]  = precip_data_for_facility * multiplier  # to get from per second to per day
 ## below are not in facilities file?
     elif reporting_facility == "Central East Zone":
         grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0] # furtherst east zone
