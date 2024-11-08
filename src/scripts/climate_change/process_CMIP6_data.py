@@ -1,10 +1,11 @@
 import glob
 import os
+import re
 import shutil
 import zipfile
 from pathlib import Path
-import re
 
+import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
 
@@ -96,6 +97,31 @@ for scenario in scenarios:
     data_by_model_and_grid = pd.DataFrame.from_dict(data_by_model_and_grid)
     data_by_model_and_grid.to_csv(Path(scenario_directory)/"data_by_model_and_grid.csv")
 
+    # now find the modal length of data for each model in the dictionary - this tells us the resolution, and most of the models are at different resolutions
+    non_na_lengths = data_by_model_and_grid.count()
+    # now drop all columns that are not that length, so the rest can be aggregated over
+    modal_non_na_length = non_na_lengths.mode()[0]
+    data_by_model_and_grid_same_length = data_by_model_and_grid.loc[:, non_na_lengths == modal_non_na_length]
+    data_by_model_and_grid_same_length = data_by_model_and_grid_same_length.dropna(axis=0)
+    data_by_model_and_grid_same_length.to_csv(Path(scenario_directory)/"data_by_model_and_grid_modal_resolution.csv")
+
+    # Now average across each time point for each grid square.
+    precip_by_timepoint = {}
+    for grid in range(len(data_by_model_and_grid_same_length)):
+        timepoint_values = []
+        for model in data_by_model_and_grid_same_length.columns:
+            model_data = data_by_model_and_grid_same_length.loc[grid, model]
+            if not timepoint_values:
+                timepoint_values = [[] for _ in range(len(model_data))]
+            for i, value in enumerate(model_data):
+                if not np.ma.is_masked(value):
+                    timepoint_values[i].append(value)
+
+        precip_by_timepoint[grid] = [np.mean(tp_values) if tp_values else np.nan for tp_values in timepoint_values]
+
+    precip_df = pd.DataFrame.from_dict(precip_by_timepoint, orient='index')
+    average_projected_precip = precip_df.mean(axis=0)
+    average_projected_precip.to_csv(Path(scenario_directory)/"mean_projected_precip_by_timepoint_modal_resolution.csv")
 
 
 
