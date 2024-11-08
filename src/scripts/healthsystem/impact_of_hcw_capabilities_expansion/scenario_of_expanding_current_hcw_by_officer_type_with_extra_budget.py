@@ -35,7 +35,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 10  # TBC
 
     def log_configuration(self):
         return {
@@ -70,17 +70,16 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.scenarios = extra_budget_fracs['s_0'].to_frame()
         # Run no extra budget allocation scenarios first to get never ran services and 'gap' allocation strategies
 
+        # Baseline settings for change
         self.cons_availability = ['all', 'default']
-        self.policy = ['Naive', 'EHP_III']  # TBC, not clear the differences or the implementation/change year
         self.hr_budget = [0.042, 0.058, 0.026]
         self.hs_function = [[False, False], [False, True]]
 
         self.baselines = {
             'baseline': self._baseline_of_baseline(),
             'default_cons': self._baseline_default_cons(),
-            'more_budget': self._baseline_more_budget(),
-            'less_budget': self._baseline_less_budget(),
-            'efficient_policy': self._baseline_efficient_policy(),
+            # 'more_budget': self._baseline_more_budget(),  # turn off when run baseline scenarios with no expansion
+            # 'less_budget': self._baseline_less_budget(),
             'max_hs_function': self._baseline_max_hs_function(),
         }
 
@@ -107,19 +106,19 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
                     "year_mode_switch": self.YEAR_OF_MODE_CHANGE,
                     'cons_availability': 'default',
                     'cons_availability_postSwitch': self.cons_availability[0],
-                    'year_cons_availability_switch': self.YEAR_OF_HRH_EXPANSION,  # TBC: or YEAR_OF_MODE_CHANGE?
+                    'year_cons_availability_switch': self.YEAR_OF_HRH_EXPANSION,
                     'HR_budget_growth_rate': self.hr_budget[0],
                     'yearly_HR_scaling_mode': 'historical_scaling',  # for 5 years of 2020-2024; source data year 2019
                     'start_year_HR_expansion_by_officer_type': self.YEAR_OF_HRH_EXPANSION,
                     'end_year_HR_expansion_by_officer_type': self.end_date.year,
-                    "policy_name": self.policy[0],
+                    "policy_name": 'Naive',
                     "tclose_overwrite": 1,
                     "tclose_days_offset_overwrite": 7,
                 },
                 'ImprovedHealthSystemAndCareSeekingScenarioSwitcher': {
                     'max_healthcare_seeking': [False, False],
                     'max_healthsystem_function': self.hs_function[0],
-                    'year_of_switch': self.YEAR_OF_HRH_EXPANSION,  # TBC: or YEAR_OF_MODE_CHANGE?
+                    'year_of_switch': self.YEAR_OF_HRH_EXPANSION,
                 }
             },
         )
@@ -150,16 +149,6 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
             {
                 'HealthSystem': {
                     'HR_budget_growth_rate': self.hr_budget[2],
-                },
-            },
-        )
-
-    def _baseline_efficient_policy(self) -> Dict:
-        return mix_scenarios(
-            self._baseline_of_baseline(),
-            {
-                'HealthSystem': {
-                    "policy_name": self.policy[1],
                 },
             },
         )
