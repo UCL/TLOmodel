@@ -120,8 +120,7 @@ for scenario in scenarios:
         precip_by_timepoint[grid] = [np.mean(tp_values) if tp_values else np.nan for tp_values in timepoint_values]
 
     precip_df = pd.DataFrame.from_dict(precip_by_timepoint, orient='index')
-    average_projected_precip = precip_df.mean(axis=0)
-    average_projected_precip.to_csv(Path(scenario_directory)/"mean_projected_precip_by_timepoint_modal_resolution.csv")
+    precip_df.to_csv(Path(scenario_directory)/"mean_projected_precip_by_timepoint_modal_resolution.csv")
 
 
 
