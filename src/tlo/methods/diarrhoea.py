@@ -505,23 +505,22 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
                                       'provided in the current episode).')
     }
 
-    def __init__(self, name=None, resourcefilepath=None, do_checks=False):
+    def __init__(self, name=None, do_checks=False):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.models = None
         self.daly_wts = dict()
         self.unreported_dalys = list()
         self.consumables_used_in_hsi = dict()
         self.do_checks = do_checks
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """ Setup parameters values used by the module"""
         p = self.parameters
 
         # Read parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Diarrhoea.xlsx', sheet_name='Parameter_values')
+                Path(resourcefilepath) / 'ResourceFile_Diarrhoea.xlsx', sheet_name='Parameter_values')
         )
 
         # Check that every value has been read-in successfully
@@ -1607,7 +1606,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
     def __init__(self, name=None):
         super().__init__(name)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         pass
 
     def initialise_population(self, population):

@@ -30,12 +30,12 @@ def run():
     end_date = Date(2099, 12, 31)
     pop_size = 20_000
 
-    sim = Simulation(start_date=start_date, log_config=log_config)
+    sim = Simulation(start_date=start_date, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Registering all required modules
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+        demography.Demography(),
+        simplified_births.SimplifiedBirths()
     )
 
     sim.make_initial_population(n=pop_size)

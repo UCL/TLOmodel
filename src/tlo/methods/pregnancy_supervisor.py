@@ -46,9 +46,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
      pre-eclampsia, eclampsia), gestational diabetes, maternal death). This module calculates likelihood of care seeking
      for routine antenatal care and emergency obstetric care in the event of severe complications."""
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020) and the linear models
@@ -432,9 +431,9 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                                                    'multiple complications')
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         # load parameters from the resource file
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
+        parameter_dataframe = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 

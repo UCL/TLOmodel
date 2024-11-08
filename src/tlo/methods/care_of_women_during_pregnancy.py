@@ -43,9 +43,8 @@ class CareOfWomenDuringPregnancy(Module):
     Individual interventions are stored as functions within the module to prevent repetition.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020)
@@ -175,8 +174,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                    'caesarean_now', 'caesarean_future', 'avd_now']),
     }
 
-    def read_parameters(self, data_folder):
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
+    def read_parameters(self, resourcefilepath=None):
+        parameter_dataframe = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
