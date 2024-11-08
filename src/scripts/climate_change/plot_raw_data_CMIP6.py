@@ -70,3 +70,23 @@ for i in range(len(facilities_with_bounds)):
 print(diff_northern_lat)
 print(diff_southern_lat)
 print(diff_eastern_lon)
+
+
+### Plot mean precipitation by grid by time point
+
+
+data_by_gridpoint = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/ssp2_4_5/mean_projected_precip_by_timepoint_modal_resolution.csv")
+print(data_by_gridpoint.variables)
+pr_data = data_by_gridpoint.variables['pr'][:] # in kg m-2 s-1 = mm s-1 x 86400 to get to day
+time_data = data_by_gridpoint.variables['time'][:]
+lat_data = data_by_gridpoint.variables['lat'][:]
+long_data = data_by_gridpoint.variables['lon'][:]
+
+for lat in range(len(lat_data)):
+    for long in range(len(long_data)):
+        pr_data_for_square = pr_data[:, lat, long]
+        plt.plot(pr_data_for_square.values)  # Plot the values in the row
+        plt.xlabel("Timepoint")  # Adjust this label based on your data
+        plt.ylabel("Precipitation (mm)")
+
+#plt.show()
