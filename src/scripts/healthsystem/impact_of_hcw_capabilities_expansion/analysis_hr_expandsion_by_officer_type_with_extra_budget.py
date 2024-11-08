@@ -456,7 +456,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return time_increased_by_treatment
 
     # Get parameter/scenario names
-    param_names = get_parameter_names_from_scenario_file()
+    param_names = tuple(extra_budget_fracs.columns)
+    # param_names = get_parameter_names_from_scenario_file()
     # param_names = ('s_0', 's_1', 's_2', 's_3', 's_11', 's_22')
     # param_names = ('s_1', 's_2', 's_3', 's_11', 's_22')
 
