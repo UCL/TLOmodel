@@ -4,7 +4,6 @@ import pandas as pd
 import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
 
-
 ANC = True
 daily_max = False
 min_year_for_analyis = 2011
