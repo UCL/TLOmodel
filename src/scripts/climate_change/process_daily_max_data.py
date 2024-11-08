@@ -7,7 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
 
-ANC = False
+ANC = True
 # facility data
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
@@ -53,7 +53,7 @@ for year in years:
     year_directory = os.path.join(base_dir, str(year))
     precip_datafile = glob.glob(os.path.join(year_directory, "*.nc"))
     data_per_model = Dataset(precip_datafile[0], mode='r')
-    pr_data = data_per_model.variables['tp'][:]  # precipitation data in kg m-2 s-1
+    pr_data = data_per_model.variables['tp'][:]  # precipitation data in m for daily reanalysis
     lat_data = data_per_model.variables['latitude'][:]
     long_data = data_per_model.variables['longitude'][:]
     grid = 0
@@ -72,7 +72,7 @@ for year in years:
                     moving_averages.append(window_average)
 
                 max_moving_average = max(moving_averages)
-                max_average_by_grid[grid].append(max_moving_average* 86400)
+                max_average_by_grid[grid].append(max_moving_average* 1000)
 
                 begin_day += month_length
             grid += 1
