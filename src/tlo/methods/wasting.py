@@ -143,12 +143,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'proportion_oedema_with_WHZ<-2': Parameter(
             Types.REAL, 'proportion of individuals with oedema who are wasted (moderately or severely)'),
         # treatment/interventions
-        'coverage_supplementary_feeding_program': Parameter(
-            Types.REAL, 'coverage of supplementary feeding program for MAM in health centres'),
-        'coverage_outpatient_therapeutic_care': Parameter(
-            Types.REAL, 'coverage of outpatient therapeutic care for SAM in health centres'),
-        'coverage_inpatient_care': Parameter(
-            Types.REAL, 'coverage of inpatient care for complicated SAM in hospitals'),
         'prob_mam_after_care': Parameter(
             Types.REAL, 'probability of returning to MAM after seeking care'),
         'prob_death_after_care': Parameter(
@@ -617,36 +611,28 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             return
 
         # Interventions for MAM
-        if clinical_am == 'MAM':
-            # Check for coverage of supplementary feeding
-            if self.rng.random_sample() < p['coverage_supplementary_feeding_program']:
+        elif clinical_am == 'MAM':
+            # schedule HSI for supplementary feeding program for MAM
+            schedule_hsi_event(
+                hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
+                priority=0, topen=self.sim.date)
+
+        elif clinical_am == 'SAM':
+
+            # Interventions for uncomplicated SAM
+            if not complications:
                 # schedule HSI for supplementary feeding program for MAM
                 schedule_hsi_event(
-                    hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
+                    hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
-            else:
-                return
-        # Interventions for uncomplicated SAM
-        if clinical_am == 'SAM':
-            if not complications:
-                # Check for coverage of outpatient therapeutic care
-                if self.rng.random_sample() < p['coverage_outpatient_therapeutic_care']:
-                    # schedule HSI for supplementary feeding program for MAM
-                    schedule_hsi_event(
-                        hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(
-                            module=self, person_id=person_id), priority=0, topen=self.sim.date)
-                else:
-                    return
+
             # Interventions for complicated SAM
             if complications:
-                # Check for coverage of inpatient care
-                if self.rng.random_sample() < p['coverage_inpatient_care']:
-                    # schedule HSI for supplementary feeding program for MAM
-                    schedule_hsi_event(
-                        hsi_event=HSI_Wasting_InpatientCare_ComplicatedSAM(
-                            module=self, person_id=person_id), priority=0, topen=self.sim.date)
-                else:
-                    return
+                # schedule HSI for supplementary feeding program for MAM
+                schedule_hsi_event(
+                    hsi_event=HSI_Wasting_InpatientCare_ComplicatedSAM(module=self, person_id=person_id),
+                    priority=0, topen=self.sim.date)
+
 
     def do_when_am_treatment(self, person_id, intervention):
         """
