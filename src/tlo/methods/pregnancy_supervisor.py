@@ -27,7 +27,7 @@ from tlo.methods.care_of_women_during_pregnancy import (
 )
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
-from tlo.util import BitsetHandler
+from tlo.util import BitsetHandler, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -434,8 +434,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, data_folder):
         # load parameters from the resource file
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
-                                            sheet_name='parameter_values')
+        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor',
+                                            files=['parameter_values'])
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.
