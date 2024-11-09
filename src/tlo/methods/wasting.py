@@ -17,7 +17,6 @@ from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -290,9 +289,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         * the main logging event.
         """
 
-        sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=HSI_Wasting_GrowthMonitoring(module=self),
-                                                       topen=self.sim.date, tclose=None,
-                                                       priority=2)
+        sim.schedule_event(Wasting_InitiateGrowthMonitoring(self), sim.date)
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=3))
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1) - DateOffset(days=1))
 
@@ -600,7 +597,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                (individual_properties["un_am_treatment_type"] in
                 ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
             return
-        p = self.parameters
+
+        # p = self.parameters
 
         # get the clinical states
         clinical_am = individual_properties['un_clinical_acute_malnutrition']
@@ -632,7 +630,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 schedule_hsi_event(
                     hsi_event=HSI_Wasting_InpatientCare_ComplicatedSAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
-
 
     def do_when_am_treatment(self, person_id, intervention):
         """
@@ -964,6 +961,191 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
         )
 
 
+class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
+    # TODO: will be updated for children 1-5 (monitoring for 0-1 will be integrated in epi module)
+    #  For now, children are only monitored if in population when sim. initiated, but when new child born, it is not
+    #  scheduled for monitoring at all yet, it needs to be done in the epi module, or if better, done in epi for 0-1,
+    #  and scheduled to be done in here from when they are 1y old
+    """
+    Event that schedules HSI_Wasting_GrowthMonitoring for all under-5 children for a random day within the age-dependent
+    frequency.
+    """
+
+    def __init__(self, module):
+        """Runs only once, when simulation is initiated.
+        :param module: the module that created this event
+        """
+        super().__init__(module)
+        assert isinstance(module, Wasting)
+
+    def apply(self, population):
+        """Apply this event to the population.
+        :param population: the current population
+        """
+
+        df = population.props
+        # p = self.module.parameters
+        rng = self.module.rng
+
+        # TODO: including treated children?
+        index_under5 = df.index[df.is_alive & (df.age_exact_years < 5)]
+        # and ~df.un_am_treatment_type.isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'])
+
+        def get_monitoring_frequency_days(age):
+            if age < 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+                return int(365.25 / 5)  # 5 appts a year # TODO: add as parameters p['']
+            else:
+                return int(365.25 / 2)  # 2 appts a year # TODO: add as parameters p['']
+
+        # schedule monitoring within age-dependent frequency
+        for person_id in index_under5:
+            next_event_days = rng.randint(0, (get_monitoring_frequency_days(df.at[person_id, 'age_exact_years']) - 2))
+            if (df.at[person_id, 'age_exact_years'] + (next_event_days / 365.25)) < 5:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module, person_id=person_id),
+                    priority=2, topen=self.sim.date + pd.DateOffset(days=next_event_days)
+                )
+
+
+class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
+    """ Attendance is determined for the HSI. If the child attends, measurements with available equipment are performed
+    for that child. Based on these measurements, the child can be diagnosed as well/MAM/SAM and eventually scheduled
+    for appropriate treatment. If the child (attending or not) is still under 5 at the time of the next growth
+    monitoring, the next event is scheduled with age-dependent frequency.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
+
+        self.attendance = None
+
+        self.TREATMENT_ID = "Undernutrition_GrowthMonitoring"
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    @property
+    def EXPECTED_APPT_FOOTPRINT(self):
+        """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
+        rng = self.module.rng
+        person_id = self.target
+        person_age = self.sim.population.props.loc[person_id].age_exact_years
+
+        def get_attendance_prob(age):
+            if age < 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+                return 0.14  # TODO: add as parameters p['']
+            else:
+                return 0.5  # TODO: add as parameters p['']
+
+        # perform growth monitoring if attending
+        self.attendance = rng.random_sample() < get_attendance_prob(person_age)
+        if self.attendance:
+            return self.make_appt_footprint({'Under5OPD': 1})
+        else:
+            return self.make_appt_footprint({})
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug', data='This is HSI_Wasting_GrowthMonitoring')
+
+        df = self.sim.population.props
+        # p = self.module.parameters
+        rng = self.module.rng
+
+        # TODO: Will they be monitored during the treatment? Can we assume, that after the treatment they will be
+        #  always properly checked (all measurements and oedema checked), or should be the assumed "treatment outcome"
+        #  be also based on equipment availability and probability of checking oedema? Maybe they should be sent for
+        #  after treatment monitoring, where the assumed "treatment outcome" will be determined and follow-up treatment
+        #  based on that? - The easiest way (currently coded) is assuming that after treatment all measurements are
+        #  done, hence correctly diagnosed. The growth monitoring is scheduled for them as usual, ie, for instance, for
+        #  a child 2-5 old, if they were sent for treatment via growth monitoring, they will be on treatment 3 or 4
+        #  weeks, but next monitoring will be done in ~5 months after the treatment. - Or we could schedule for the
+        #  treated children a monitoring sooner after the treatment.
+        if (~df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
+            # or
+            # df.at[person_id, 'un_am_treatment_type'].isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
+            return
+
+        def schedule_next_monitoring():
+            def get_monitoring_frequency_days(age):
+                if age < 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+                    return int(365.25 / 5)  # 5 appts a year # TODO: add as parameters p['']
+                else:
+                    return int(365.25 / 2)  # 2 appts a year # TODO: add as parameters p['']
+
+            person_monitoring_frequency = get_monitoring_frequency_days(df.at[person_id, 'age_exact_years'])
+            if (df.at[person_id, 'age_exact_years'] + (person_monitoring_frequency / 365.25)) < 5:
+                # schedule next growth monitoring
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module, person_id=person_id),
+                    topen=self.sim.date + pd.DateOffset(days=person_monitoring_frequency),
+                    tclose=None,
+                    priority=2
+                )
+
+        # TODO: as stated above, for now we schedule next monitoring for all children, even those sent for treatment
+        schedule_next_monitoring()
+
+        if not self.attendance:
+            return
+
+        # TODO: check availability of equipment and base diagnosis on equipment used
+        available_equipment = ['Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape']
+        self.add_equipment(set(available_equipment))
+
+        def schedule_tx_by_diagnosis(hsi_event):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=hsi_event(module=self.module, person_id=person_id),
+                priority=0, topen=self.sim.date
+            )
+
+        complications = df.at[person_id, 'un_sam_with_complications']
+        oedema_checked = rng.random_sample() < 0.1  # TODO: find correct value & add as parameter p['']
+        # diagnosis based on measurements that can be performed with available equipment
+        if oedema_checked and df.at[person_id, 'un_am_bilateral_oedema']:
+            diagnosis = 'SAM'
+        else:
+            if all(item in available_equipment for item in
+                   ['Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape']):
+                if oedema_checked:
+                    diagnosis = df.at[person_id, 'un_clinical_acute_malnutrition']
+                else:
+                    whz = df.at[person_id, 'un_WHZ_category']
+                    muac = df.at[person_id, 'un_am_MUAC_category']
+                    # if person well
+                    if whz == 'WHZ>=-2' and muac == '>=125mm':
+                        diagnosis = 'well'
+                    elif whz == 'WHZ<-3' or muac == '<115mm':
+                        diagnosis = 'SAM'
+                    else:
+                        diagnosis = 'MAM'
+            else:
+                diagnosis = 'well'
+                # TODO: update the above, define what to do otherwise:
+                #   if height pole or weight scale not available & MUAC tape avail.
+                #     => low MUAC = SAM, middle MUAC = MAM, normal MUAC = well;
+                #   if height pole and weight scale avail & MUAC not avail
+                #     => low WHZ = SAM, middle WHZ = MAM, normal WHZ = well;
+                #   if height pole or weight scale not avail & MUAC not avail
+                #     => ? could we assume that in that case, they will at least check the oedema? or what?
+
+                # TODO: will the presence of complications change the above diagnosis, or will it be taken in account
+                #  only if SAM is diagnosed based on the above?
+
+        if diagnosis == 'well':
+            return
+        elif diagnosis == 'MAM':
+            schedule_tx_by_diagnosis(HSI_Wasting_SupplementaryFeedingProgramme_MAM)
+        elif (diagnosis == 'SAM') and (~complications):
+            schedule_tx_by_diagnosis(HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
+        elif (diagnosis == 'SAM') and complications:
+            schedule_tx_by_diagnosis(HSI_Wasting_InpatientCare_ComplicatedSAM)
+
+    def did_not_run(self):
+        logger.debug(key="HSI_Wasting_GrowthMonitoring",
+                     data="HSI_Wasting_GrowthMonitoring: did not run"
+                     )
+        pass
+
+
 class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEventMixin):
     """
     This is the supplementary feeding programme for MAM without complications
@@ -1116,77 +1298,6 @@ class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMi
 
     def did_not_run(self):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
-        pass
-
-
-class HSI_Wasting_GrowthMonitoring(HSI_Event, PopulationScopeEventMixin):
-    """ Growth Monitoring is conducted every month. MAM/SAM can be diagnosed and children scheduled for appropriate
-     treatment.
-    """
-
-    def __init__(self, module):
-        super().__init__(module)
-        assert isinstance(module, Wasting)
-
-        self.TREATMENT_ID = "Undernutrition_GrowthMonitoring"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
-        # TODO: update the # to smt like #Under5 * prob_attend_growth_monitoring
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-
-    def apply(self, population, squeeze_factor):
-        logger.debug(key='debug', data='This is HSI_Wasting_GrowthMonitoring')
-
-        df = population.props
-        p = self.module.parameters
-        rng = self.module.rng
-
-        wasted_not_treated = df.loc[
-            df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category != 'WHZ>=-2') &
-            ~df.un_am_treatment_type.isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'])
-        ]
-
-        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
-
-        def schedule_events_by_coverage(idx, coverage_prob, hsi_event):
-            if len(idx) > 0:
-                random_samples = rng.random_sample(size=len(idx))
-                coverage = random_samples < coverage_prob
-                for person_id in idx[coverage]:
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=hsi_event(module=self.module, person_id=person_id),
-                        priority=0, topen=random_date(
-                            self.sim.date,
-                            self.sim.date + pd.DateOffset(months=1) - pd.DateOffset(days=1),
-                            rng)
-                    )
-
-        # get the clinical states
-        clinical_am = wasted_not_treated['un_clinical_acute_malnutrition']
-        complications = wasted_not_treated['un_sam_with_complications']
-
-        # MAM diagnoses
-        mam_cases_idx = np.where(clinical_am == 'MAM')[0]
-        schedule_events_by_coverage(mam_cases_idx, p['coverage_supplementary_feeding_program'],
-                                    HSI_Wasting_SupplementaryFeedingProgramme_MAM)
-        # uncomplicated SAM diagnoses
-        uncomplicated_sam_cases_idx = np.where((clinical_am == 'SAM') & (~complications))[0]
-        schedule_events_by_coverage(uncomplicated_sam_cases_idx, p['coverage_outpatient_therapeutic_care'],
-                                    HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
-        # complicated SAM diagnoses
-        complicated_sam_cases_idx = np.where((clinical_am == 'SAM') & complications)[0]
-        assert len(clinical_am) == len(mam_cases_idx) + len(uncomplicated_sam_cases_idx) + len(complicated_sam_cases_idx)
-        schedule_events_by_coverage(complicated_sam_cases_idx, p['coverage_inpatient_care'],
-                                    HSI_Wasting_InpatientCare_ComplicatedSAM)
-
-        # schedule growth monitoring for next month
-        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module),
-                                                            topen=self.sim.date + pd.DateOffset(months=1), tclose=None,
-                                                            priority=2)
-
-    def did_not_run(self):
-        logger.debug(key="HSI_Wasting_GrowthMonitoring",
-                     data="HSI_Wasting_GrowthMonitoring: did not run"
-                     )
         pass
 
 
