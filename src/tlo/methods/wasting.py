@@ -449,9 +449,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df = pop_dataframe
         p = self.parameters
 
+        whz = df.at[person_id, 'un_WHZ_category']
+        muac = df.at[person_id, 'un_am_MUAC_category']
+        oedema_presence = df.at[person_id, 'un_am_bilateral_oedema']
+
         # if person well
-        if ((df.at[person_id, 'un_WHZ_category'] == 'WHZ>=-2') &
-                (df.at[person_id, 'un_am_MUAC_category'] == '>=125mm') & (~df.at[person_id, 'un_am_bilateral_oedema'])):
+        if (whz == 'WHZ>=-2') and (muac == '>=125mm') and (not oedema_presence):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
         # if person not well
         else:
@@ -459,8 +462,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             df.at[person_id, 'un_am_treatment_type'] = 'none'
 
             # severe acute malnutrition (SAM): MUAC < 115 mm and/or WHZ < -3 and/or bilateral oedema
-            if ((df.at[person_id, 'un_am_MUAC_category'] == '<115mm')
-                    | (df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3') | (df.at[person_id, 'un_am_bilateral_oedema'])):
+            if (muac == '<115mm') or (whz == 'WHZ<-3') or oedema_presence:
                 df.at[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
                 # apply symptoms to all SAM cases
                 self.wasting_clinical_symptoms(person_id=person_id)
@@ -482,8 +484,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 person_id=person_id, disease_module=self
             )
 
-        assert not (df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM') & \
-                   (df.at[person_id, 'un_sam_with_complications'])
+        assert not ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM')
+                    and (df.at[person_id, 'un_sam_with_complications']))
 
     def date_of_outcome_for_untreated_wasting(self, person_id):
         """
@@ -1059,7 +1061,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         #  a child 2-5 old, if they were sent for treatment via growth monitoring, they will be on treatment 3 or 4
         #  weeks, but next monitoring will be done in ~5 months after the treatment. - Or we could schedule for the
         #  treated children a monitoring sooner after the treatment.
-        if (~df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
+        if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
             # or
             # df.at[person_id, 'un_am_treatment_type'].isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
             return
@@ -1134,7 +1136,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             return
         elif diagnosis == 'MAM':
             schedule_tx_by_diagnosis(HSI_Wasting_SupplementaryFeedingProgramme_MAM)
-        elif (diagnosis == 'SAM') and (~complications):
+        elif (diagnosis == 'SAM') and (not complications):
             schedule_tx_by_diagnosis(HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
         elif (diagnosis == 'SAM') and complications:
             schedule_tx_by_diagnosis(HSI_Wasting_InpatientCare_ComplicatedSAM)
