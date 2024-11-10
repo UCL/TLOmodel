@@ -72,6 +72,10 @@ hss_scenarios = {0: "Baseline", 1: "HRH Moderate Scale-up (1%)", 2: "HRH Scale-u
                  4: "Increase Capacity at Primary Care Levels", 5: "Increase Capacity of CHW", 6: "Consumables Increased to 75th Percentile",
                  7: "Consumables Available at HIV levels", 8: "Consumables Available at EPI levels", 9: "Perfect Consumables Availability",
                  10: "HSS PACKAGE: Perfect", 11: "HSS PACKAGE: Realistic expansion, no change in HSB", 12: "HSS PACKAGE: Realistic expansion"}
+hs_scenarios_substitutedict = {0:"0", 1: "A", 2: "B", 3: "C",
+4: "D", 5: "5", 6: "E",
+7: "F", 8: "G", 9: "H",
+10: "I", 11: "11", 12: "J"}
 hss_scenarios_for_gf_report = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12]
 color_map = {
     'Baseline': '#a50026',
@@ -84,8 +88,8 @@ color_map = {
     'Consumables Available at HIV levels': '#a6d96a',
     'Consumables Available at EPI levels': '#66bd63',
     'Perfect Consumables Availability': '#1a9850',
-    'HSS PACKAGE: Perfect': '#5e4fa2',
-    'HSS PACKAGE: Realistic expansion': '#3288bd'
+    'HSS PACKAGE: Perfect': '#3288bd',
+    'HSS PACKAGE: Realistic expansion': '#5e4fa2'
 }
 
 # Cost-effectiveness threshold
@@ -149,6 +153,80 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
+
+    return fig, ax
+
+def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
+                        xticklabels_horizontal_and_wrapped=False,
+                        put_labels_in_legend=True,
+                        offset=1e6):
+    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+     extent of the error bar."""
+
+    substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+    yerr = np.array([
+        (_df['mean'] - _df['lower']).values,
+        (_df['upper'] - _df['mean']).values,
+    ])
+# TODO should be above be 'median'
+    xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
+
+    if set_colors:
+        colors = [color_map.get(series, 'grey') for series in _df.index]
+    else:
+        cmap = sns.color_palette('Spectral', as_cmap=True)
+        rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
+        colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(
+        xticks.keys(),
+        _df['mean'].values,
+        yerr=yerr,
+        ecolor='black',
+        color=colors,
+        capsize=10,
+        label=xticks.values()
+    )
+
+    if annotations:
+        for xpos, (ypos, text) in zip(xticks.keys(), zip(_df['upper'].values.flatten(), annotations)):
+            annotation_y = ypos + offset
+
+            ax.text(
+                xpos,
+                annotation_y,
+                '\n'.join(text.split(' ', 1)),
+                horizontalalignment='center',
+                verticalalignment='bottom',  # Aligns text at the bottom of the annotation position
+                fontsize='x-small',
+                rotation='horizontal'
+            )
+
+    ax.set_xticks(list(xticks.keys()))
+
+    if put_labels_in_legend:
+        # Update xticks label with substitute labels
+        # Insert legend with updated labels that shows correspondence between substitute label and original label
+        xtick_values = [letter for letter, label in zip(substitute_labels, xticks.values())]
+        xtick_legend = [f'{letter}: {label}' for letter, label in zip(substitute_labels, xticks.values())]
+        h, legs = ax.get_legend_handles_labels()
+        ax.legend(h, xtick_legend, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
+        ax.set_xticklabels(list(xtick_values))
+    else:
+        if not xticklabels_horizontal_and_wrapped:
+            # xticklabels will be vertical and not wrapped
+            ax.set_xticklabels(list(xticks.values()), rotation=90)
+        else:
+            wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+            ax.set_xticklabels(wrapped_labs)
+
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout(pad=2.0)
+    plt.subplots_adjust(left=0.15, right=0.85)  # Adjust left and right margins
 
     return fig, ax
 
@@ -258,6 +336,30 @@ generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_i
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'VSL')
 
+# Combined ROI plot of relevant scenarios
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [1,2,3,4],
+                   _scenario_dict = hss_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'HR_VSL')
+
+# Combined ROI plot of relevant scenarios
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [6,7,8,9],
+                   _scenario_dict = hss_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'Consumables_VSL')
+
+# Combined ROI plot of relevant scenarios
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [10,12],
+                   _scenario_dict = hss_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'HSS_VSL')
+
 # 4. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------
 max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
@@ -268,7 +370,7 @@ max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implem
 
 # Plot Maximum ability to pay
 name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_bar_plot_with_ci(
+fig, ax = do_standard_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized / 1e6),
     annotations=[
         f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
@@ -309,7 +411,7 @@ plt.close(fig)
 # Plot incremental costs
 incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost)
 name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_bar_plot_with_ci(
+fig, ax = do_standard_bar_plot_with_ci(
     (incremental_scenario_cost_summarized / 1e6),
     annotations=[
         f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
@@ -339,7 +441,7 @@ input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
     value_name='cost'
 )
 
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
