@@ -90,7 +90,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'odds ratio of wasting if born preterm and small for gestational age'),
         # incidence
         'base_inc_rate_wasting_by_agegp': Parameter(
-            Types.LIST, 'List with baseline incidence of wasting by age group'),
+            Types.LIST, 'List with baseline incidence rate of moderate wasting by age group'),
         'rr_wasting_preterm_and_AGA': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and adequate for gestational age'),
         'rr_wasting_SGA_and_term': Parameter(
@@ -111,15 +111,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'prob_complications_in_SAM': Parameter(
             Types.REAL, 'probability of medical complications in SAM '),
         # MUAC distributions
-        'MUAC_distribution_WHZ<-3': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3'),
-        'MUAC_distribution_-3<=WHZ<-2': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2'),
-        'MUAC_distribution_WHZ>=-2': Parameter(
-            Types.LIST,
-            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
         'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
             Types.REAL, 'proportion of individuals with severe wasting who have MUAC < 115 mm'),
         'proportion_-3<=WHZ<-2_with_MUAC<115mm': Parameter(
@@ -134,6 +125,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         ' wasting'),
         'proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC': Parameter(
             Types.REAL, 'proportion of individuals with MAM who have moderate wasting and normal MUAC'),
+        'MUAC_distribution_WHZ<-3': Parameter(
+            Types.LIST,
+            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3'),
+        'MUAC_distribution_-3<=WHZ<-2': Parameter(
+            Types.LIST,
+            'mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2'),
+        'MUAC_distribution_WHZ>=-2': Parameter(
+            Types.LIST,
+            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
         # bilateral oedema
         'prevalence_nutritional_oedema': Parameter(
             Types.REAL, 'prevalence of nutritional oedema in children under 5 in Malawi'),
@@ -141,18 +141,18 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'proportion of individuals with wasting (moderate or severe) who have oedema'),
         'proportion_oedema_with_WHZ<-2': Parameter(
             Types.REAL, 'proportion of individuals with oedema who are wasted (moderately or severely)'),
-        # treatment/interventions
-        'prob_mam_after_care': Parameter(
-            Types.REAL, 'probability of returning to MAM after seeking care'),
-        'prob_death_after_care': Parameter(
-            Types.REAL, 'probability of dying after seeking care'),
+        # detection
+        'growth_monitoring_frequency_days': Parameter(
+            Types.LIST, 'growth monitoring frequency (days), for children [1–2, 2–5] years old'),
+        'growth_monitoring_attendance_prob': Parameter(
+            Types.LIST, 'probability to attend the growth monitoring, for children [1–2, 2–5] years old'),
         # recovery due to treatment/interventions
-        'recovery_rate_with_standard_RUTF': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with standard RUTF'),
         'recovery_rate_with_soy_RUSF': Parameter(
             Types.REAL, 'probability of recovery from wasting following treatment with soy RUSF'),
         'recovery_rate_with_CSB++': Parameter(
             Types.REAL, 'probability of recovery from wasting following treatment with CSB++'),
+        'recovery_rate_with_standard_RUTF': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with standard RUTF'),
         'recovery_rate_with_inpatient_care': Parameter(
             Types.REAL, 'probability of recovery from wasting following treatment with inpatient care'),
         'tx_length_weeks_SuppFeedingMAM': Parameter(
@@ -164,6 +164,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'tx_length_weeks_InpatientSAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
                         ' SAM before being discharged if they do not die beforehand'),
+        # treatment/intervention outcomes
+        'prob_mam_after_care': Parameter(
+            Types.REAL, 'probability of returning to MAM after seeking care'),
+        'prob_death_after_care': Parameter(
+            Types.REAL, 'probability of dying after seeking care'),
     }
 
     PROPERTIES = {
@@ -724,8 +729,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
         # Determine who will be onset with wasting among those who are not currently wasted -------------
-        not_wasted = df.loc[df.is_alive & (df.age_exact_years < 5) & (
-            df.un_WHZ_category == 'WHZ>=-2')]
+        not_wasted = df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == 'WHZ>=-2')]
         incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted, rng=rng)
         mod_wasting_new_cases_idx = not_wasted.index[incidence_of_wasting]
         # update the properties for new cases of wasted children
@@ -986,7 +990,7 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
         """
 
         df = population.props
-        # p = self.module.parameters
+        p = self.module.parameters
         rng = self.module.rng
 
         # TODO: including treated children?
@@ -994,10 +998,10 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
         # and ~df.un_am_treatment_type.isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'])
 
         def get_monitoring_frequency_days(age):
-            if age < 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
-                return int(365.25 / 5)  # 5 appts a year # TODO: add as parameters p['']
+            if age <= 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+                return p['growth_monitoring_frequency_days'][0]
             else:
-                return int(365.25 / 2)  # 2 appts a year # TODO: add as parameters p['']
+                return p['growth_monitoring_frequency_days'][1]
 
         # schedule monitoring within age-dependent frequency
         for person_id in index_under5:
@@ -1028,15 +1032,15 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
+        p = self.module.parameters
         rng = self.module.rng
-        person_id = self.target
-        person_age = self.sim.population.props.loc[person_id].age_exact_years
+        person_age = self.sim.population.props.loc[self.target].age_exact_years
 
         def get_attendance_prob(age):
-            if age < 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
-                return 0.14  # TODO: add as parameters p['']
+            if age <= 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+                return p['growth_monitoring_attendance_prob'][0]
             else:
-                return 0.5  # TODO: add as parameters p['']
+                return p['growth_monitoring_attendance_prob'][1]
 
         # perform growth monitoring if attending
         self.attendance = rng.random_sample() < get_attendance_prob(person_age)
@@ -1049,7 +1053,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug', data='This is HSI_Wasting_GrowthMonitoring')
 
         df = self.sim.population.props
-        # p = self.module.parameters
+        p = self.module.parameters
         rng = self.module.rng
 
         # TODO: Will they be monitored during the treatment? Can we assume, that after the treatment they will be
@@ -1068,10 +1072,10 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         def schedule_next_monitoring():
             def get_monitoring_frequency_days(age):
-                if age < 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
-                    return int(365.25 / 5)  # 5 appts a year # TODO: add as parameters p['']
+                if age <= 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+                    return p['growth_monitoring_frequency_days'][0]
                 else:
-                    return int(365.25 / 2)  # 2 appts a year # TODO: add as parameters p['']
+                    return p['growth_monitoring_frequency_days'][1]
 
             person_monitoring_frequency = get_monitoring_frequency_days(df.at[person_id, 'age_exact_years'])
             if (df.at[person_id, 'age_exact_years'] + (person_monitoring_frequency / 365.25)) < 5:
@@ -1170,6 +1174,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1186,7 +1191,8 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         if self.get_consumables([item_code1]):
             logger.debug(key='debug', data='consumables are available')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
+            df.at[person_id, 'un_am_discharge_date'] = \
+                self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             self.module.do_when_am_treatment(person_id, intervention='SFP')
         else:
@@ -1220,6 +1226,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1240,7 +1247,8 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables are available.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
+            df.at[person_id, 'un_am_discharge_date'] = \
+                self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM'])
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             self.module.do_when_am_treatment(person_id, intervention='OTC')
         else:
@@ -1274,6 +1282,7 @@ class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMi
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        p = self.module.parameters
 
         # Stop the person from dying of acute malnutrition (if they were going to die)
         if not df.at[person_id, 'is_alive']:
@@ -1291,7 +1300,8 @@ class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMi
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables available, so use it.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=4)
+            df.at[person_id, 'un_am_discharge_date'] = \
+                self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM'])
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             self.module.do_when_am_treatment(person_id, intervention='ITC')
         else:
