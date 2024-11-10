@@ -34,7 +34,8 @@ from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              apply_discounting_to_cost_data,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
-                                             generate_roi_plots)
+                                             generate_roi_plots,
+                                             generate_multiple_scenarios_roi_plot)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -48,9 +49,12 @@ outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
 figurespath = Path('./outputs/global_fund_roi_analysis/hss_elements/')
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
-roi_outputs_folder = Path(figurespath / 'roi')
-if not os.path.exists(roi_outputs_folder):
-    os.makedirs(roi_outputs_folder)
+roi_outputs_folder_gf = Path(figurespath / 'gf/roi')
+if not os.path.exists(roi_outputs_folder_gf):
+    os.makedirs(roi_outputs_folder_gf)
+roi_outputs_folder_fcdo = Path(figurespath / 'fcdo/roi')
+if not os.path.exists(roi_outputs_folder_fcdo):
+    os.makedirs(roi_outputs_folder_fcdo)
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
@@ -72,11 +76,16 @@ hss_scenarios = {0: "Baseline", 1: "HRH Moderate Scale-up (1%)", 2: "HRH Scale-u
                  4: "Increase Capacity at Primary Care Levels", 5: "Increase Capacity of CHW", 6: "Consumables Increased to 75th Percentile",
                  7: "Consumables Available at HIV levels", 8: "Consumables Available at EPI levels", 9: "Perfect Consumables Availability",
                  10: "HSS PACKAGE: Perfect", 11: "HSS PACKAGE: Realistic expansion, no change in HSB", 12: "HSS PACKAGE: Realistic expansion"}
-hs_scenarios_substitutedict = {0:"0", 1: "A", 2: "B", 3: "C",
+hs_scenarios_substitutedict_fcdo = {0:"0", 1: "A", 2: "B", 3: "C",
 4: "D", 5: "5", 6: "E",
 7: "F", 8: "G", 9: "H",
 10: "I", 11: "11", 12: "J"}
-hss_scenarios_for_gf_report = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12]
+hs_scenarios_substitutedict_gf = {0:"0", 1: "A", 2: "B", 3: "C",
+4: "D", 5: "E", 6: "F",
+7: "G", 8: "H", 9: "9",
+10: "10", 11: "11", 12: "I"}
+hss_scenarios_for_fcdo_report = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12]
+hss_scenarios_for_gf_report = [0, 1, 2, 3, 4, 5, 6, 7, 8, 12]
 color_map = {
     'Baseline': '#a50026',
     'HRH Moderate Scale-up (1%)': '#d73027',
@@ -274,10 +283,6 @@ incremental_scenario_cost = (pd.DataFrame(
         comparison=0)  # sets the comparator to 0 which is the Actual scenario
 ).T.iloc[0].unstack()).T
 
-# Keep only scenarios of interest
-incremental_scenario_cost = incremental_scenario_cost[
-    incremental_scenario_cost.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
-
 # Monetary value of health impact
 # -----------------------------------------------------------------------------------------------------------------------
 def get_num_dalys(_df):
@@ -312,7 +317,10 @@ num_dalys_averted = (-1.0 *
                              num_dalys.loc[0],
                              comparison=0)  # sets the comparator to 0 which is the Actual scenario
                      ).T.iloc[0].unstack(level='run'))
-num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
+num_dalys_averted_fcdo_scenarios = num_dalys_averted[
+    num_dalys_averted.index.get_level_values(0).isin(hss_scenarios_for_fcdo_report)]
+num_dalys_averted_gf_scenarios = num_dalys_averted[
+    num_dalys_averted.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
 
 # The monetary value of the health benefit is delta health times CET (negative values are set to 0)
 def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
@@ -323,25 +331,13 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 
 # 3. Return on Investment Plot
 # ----------------------------------------------------
-# Plot ROI at various levels of cost
-generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _scenario_dict = hss_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'CET')
-
-generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _scenario_dict = hss_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'VSL')
-
+# FCDO
 # Combined ROI plot of relevant scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [1,2,3,4],
                    _scenario_dict = hss_scenarios,
-                   _outputfilepath=roi_outputs_folder,
+                   _outputfilepath=roi_outputs_folder_fcdo,
                    _value_of_life_suffix = 'HR_VSL')
 
 # Combined ROI plot of relevant scenarios
@@ -349,7 +345,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [6,7,8,9],
                    _scenario_dict = hss_scenarios,
-                   _outputfilepath=roi_outputs_folder,
+                   _outputfilepath=roi_outputs_folder_fcdo,
                    _value_of_life_suffix = 'Consumables_VSL')
 
 # Combined ROI plot of relevant scenarios
@@ -357,7 +353,32 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [10,12],
                    _scenario_dict = hss_scenarios,
-                   _outputfilepath=roi_outputs_folder,
+                   _outputfilepath=roi_outputs_folder_fcdo,
+                   _value_of_life_suffix = 'HSS_VSL')
+
+# Global Fund
+# Combined ROI plot of relevant scenarios
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [1,2,3,4,5],
+                   _scenario_dict = hss_scenarios,
+                   _outputfilepath=roi_outputs_folder_gf,
+                   _value_of_life_suffix = 'HR_VSL')
+
+# Combined ROI plot of relevant scenarios
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [6,7,8],
+                   _scenario_dict = hss_scenarios,
+                   _outputfilepath=roi_outputs_folder_gf,
+                   _value_of_life_suffix = 'Consumables_VSL')
+
+# Combined ROI plot of relevant scenarios
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [12],
+                   _scenario_dict = hss_scenarios,
+                   _outputfilepath=roi_outputs_folder_gf,
                    _value_of_life_suffix = 'HSS_VSL')
 
 # 4. Plot Maximum ability-to-pay at CET
@@ -365,68 +386,110 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
 max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
     lower=0.0)  # monetary value - change in costs
 max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
-max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
+max_ability_to_pay_for_implementation_summarized_fcdo = max_ability_to_pay_for_implementation_summarized[
+    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(hss_scenarios_for_fcdo_report)]
+max_ability_to_pay_for_implementation_summarized_gf = max_ability_to_pay_for_implementation_summarized[
     max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
 
+# FCDO
 # Plot Maximum ability to pay
 name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
-    (max_ability_to_pay_for_implementation_summarized / 1e6),
+    (max_ability_to_pay_for_implementation_summarized_fcdo / 1e6),
     annotations=[
         f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
-        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
+        for _, row in max_ability_to_pay_for_implementation_summarized_fcdo.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
 fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(roi_outputs_folder_fcdo / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
-# 4. Plot Maximum ability-to-pay at VSL
-# ----------------------------------------------------
-max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life) - incremental_scenario_cost).clip(
-    lower=0.0)  # monetary value - change in costs
-max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
-max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
-    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
-
+# Global Fund
 # Plot Maximum ability to pay
-name_of_plot = f'Maximum ability to pay at VSL, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_bar_plot_with_ci(
-    (max_ability_to_pay_for_implementation_summarized / 1e6),
+name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (max_ability_to_pay_for_implementation_summarized_gf / 1e6),
     annotations=[
         f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
-        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
+        for _, row in max_ability_to_pay_for_implementation_summarized_gf.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
 )
 ax.set_title(name_of_plot)
-ax.set_ylabel('Maximum ability to pay (at VSL) \n(Millions)')
+ax.set_ylabel('Maximum ability to pay \n(Millions)')
 fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(roi_outputs_folder_gf / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
 # Plot incremental costs
 incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost)
+# Keep only scenarios of interest
+incremental_scenario_cost_summarized_fcdo = incremental_scenario_cost_summarized[
+    incremental_scenario_cost_summarized.index.get_level_values(0).isin(hss_scenarios_for_fcdo_report)]
+incremental_scenario_cost_summarized_gf = incremental_scenario_cost_summarized[
+    incremental_scenario_cost_summarized.index.get_level_values(0).isin(hss_scenarios_for_gf_report)]
+
+# FCDO
 name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
-    (incremental_scenario_cost_summarized / 1e6),
+    (incremental_scenario_cost_summarized_fcdo / 1e6),
     annotations=[
         f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
-        for _, row in incremental_scenario_cost_summarized.iterrows()
+        for _, row in incremental_scenario_cost_summarized_fcdo.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Cost \n(USD Millions)')
 fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(roi_outputs_folder_fcdo / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+# Global Fund
+name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (incremental_scenario_cost_summarized_gf / 1e6),
+    annotations=[
+        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
+        for _, row in incremental_scenario_cost_summarized_gf.iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Cost \n(USD Millions)')
+fig.tight_layout()
+fig.savefig(roi_outputs_folder_gf / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
 # 4. Plot costs
 # ----------------------------------------------------
+# FCDO
+input_costs_for_plot = input_costs[input_costs.draw.isin(hss_scenarios_for_fcdo_report)]
+# First summarize all input costs
+input_costs_for_plot_summarized = input_costs_for_plot.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category']).agg(
+    mean=('cost', 'mean'),
+    lower=('cost', lambda x: x.quantile(0.025)),
+    upper=('cost', lambda x: x.quantile(0.975))
+).reset_index()
+input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
+    id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
+    value_vars=['mean', 'lower', 'upper'],
+    var_name='stat',
+    value_name='cost'
+)
+
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = Path(figurespath / 'fcdo'), _scenario_dict = hs_scenarios_substitutedict_fcdo)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_fcdo)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_fcdo)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_fcdo)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_fcdo)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_fcdo)
+
+# Global Fund
 input_costs_for_plot = input_costs[input_costs.draw.isin(hss_scenarios_for_gf_report)]
 # First summarize all input costs
 input_costs_for_plot_summarized = input_costs_for_plot.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category']).agg(
@@ -441,9 +504,9 @@ input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
     value_name='cost'
 )
 
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hss_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = Path(figurespath / 'gf'), _scenario_dict = hs_scenarios_substitutedict_gf)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_gf)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_gf)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_gf)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_gf)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = hs_scenarios_substitutedict_gf)
