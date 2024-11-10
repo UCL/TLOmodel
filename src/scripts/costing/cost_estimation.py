@@ -1029,6 +1029,9 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
     # Create a figure and axis to plot all draws together
     fig, ax = plt.subplots(figsize=(10, 6))
 
+    # Generate a list to store max ROI value to set ylim
+    max_roi = []
+
     # Iterate over each draw in monetary_value_of_incremental_health
     for draw_index, row in _monetary_value_of_incremental_health.iterrows():
         print("Plotting ROI for draw ", draw_index)
@@ -1094,8 +1097,11 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         ax.plot(implementation_costs / 1e6, mean_values['roi'], label=f'{_scenario_dict[draw_index]}')
         ax.fill_between(implementation_costs / 1e6, lower_values['roi'], upper_values['roi'], alpha=0.2)
 
+        max_val = mean_values[~np.isinf(mean_values['roi'])]['roi'].max()
+        max_roi.append(max_val)
+
     # Set y-axis limit
-    ax.set_ylim(0, mean_values[~np.isinf(mean_values.roi)]['roi'].max() * 1.25)
+    ax.set_ylim(0, max(max_roi) * 1.25)
     ax.set_xlim(left = 0)
 
     plt.xlabel('Implementation cost, millions')
