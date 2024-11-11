@@ -83,7 +83,7 @@ htm_scenarios = {0:"Baseline", 1: "HSS PACKAGE: Perfect", 2: "HSS PACKAGE: Reali
 10: "Malaria Programs Scale-up WITH FULL HSS PACKAGE", 11: "Malaria Programs Scale-up WITH REALISTIC HSS PACKAGE", 12: "HTM Programs Scale-up WITHOUT HSS PACKAGE",
 13: "HTM Programs Scale-up WITH FULL HSS PACKAGE", 14: "HTM Programs Scale-up WITH REALISTIC HSS PACKAGE", 15: "HTM Programs Scale-up WITH SUPPLY CHAINS", 16: "HTM Programs Scale-up WITH HRH"}
 
-htm_scenarios_substitutedict = {0:"0", 1: "1", 2: "A", 3: "B",
+htm_scenarios_substitutedict_fcdo = {0:"0", 1: "1", 2: "A", 3: "B",
 4: "4", 5: "C", 6: "D",
 7: "7", 8: "E", 9: "F",
 10: "10", 11: "G", 12: "H",
@@ -489,6 +489,13 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
 
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [2,12,14,15,16],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'all_HTM_VSL')
+
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
                    _draws = [3,5],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
@@ -518,7 +525,7 @@ max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implem
 
 # Plot Maximum ability to pay
 name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_bar_plot_with_ci(
+fig, ax = do_standard_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized / 1e6),
     annotations=[
         f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
