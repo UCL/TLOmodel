@@ -28,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020,  1, 1)
-popsize = 200000
+popsize = 50000
 
 # Establish the simulation object
 log_config = {
@@ -43,7 +43,7 @@ log_config = {
     }
 }
 
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
