@@ -104,7 +104,11 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'probability that someone who has had a seizure is started on anti-epileptics. This is '
                         'calibrated to induce the correct proportion of persons with epilepsy currently receiving '
                         'anti-epileptics.'
-        )
+        ),
+        'max_num_of_failed_attempts_before_defaulting': Parameter(
+            Types.INT, 'maximum number of time an HSI can be repeated if the relevant essential consumables are not '
+                       'available.'
+        ),
     }
 
     """
@@ -624,6 +628,9 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
+        self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -655,8 +662,12 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                 priority=0
             )
 
-        else:
+        elif (
+            self._counter_of_failed_attempts_due_to_unavailable_medicines
+            < self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING
+        ):
             # If no medicine is available, run this HSI again next month
+            self._counter_of_failed_attempts_due_to_unavailable_medicines += 1
             self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                        topen=self.sim.date + pd.DateOffset(months=1),
                                                                        tclose=None,
@@ -668,7 +679,7 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = 2
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
         self._DEFAULT_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self._REPEATED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
 
