@@ -590,13 +590,17 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         cum_deaths = (~df.is_alive).sum()
 
+        # Proportion of those with infrequent or frequent seizures currently on anti-epileptics
+        prop_freq_or_infreq_seiz_on_antiep = status_groups[2:].ep_antiep.sum() / status_groups[2:].is_alive.sum() \
+            if status_groups[2:].is_alive.sum() > 0 else 0
+
         logger.info(key='epilepsy_logging',
                     data={
                         'prop_seiz_stat_0': status_groups['prop_seiz_stats'].iloc[0],
                         'prop_seiz_stat_1': status_groups['prop_seiz_stats'].iloc[1],
                         'prop_seiz_stat_2': status_groups['prop_seiz_stats'].iloc[2],
                         'prop_seiz_stat_3': status_groups['prop_seiz_stats'].iloc[3],
-                        'prop_ever_elipsey_on_antiepilepsy_meds': prop_ever_on_antiep,
+                        'prop_freq_or_infreq_seiz_on_antiep': prop_freq_or_infreq_seiz_on_antiep,
                         'prop_antiepilep_seiz_stat_0': status_groups['prop_seiz_stat_on_anti_ep'].iloc[0],
                         'prop_antiepilep_seiz_stat_1': status_groups['prop_seiz_stat_on_anti_ep'].iloc[1],
                         'prop_antiepilep_seiz_stat_2': status_groups['prop_seiz_stat_on_anti_ep'].iloc[2],
