@@ -60,7 +60,7 @@ class Consumables:
         self._item_code_designations = item_code_designations
 
         # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
-        self.item_codes,  self._processed_consumables_data = \
+        self.item_codes, self._processed_consumables_data = \
             self._process_consumables_data(availability_data=availability_data)
 
         # Set the availability based on the argument provided (this can be updated later after the class is initialised)
@@ -199,7 +199,7 @@ class Consumables:
 
     def _request_consumables(self,
                              facility_info: 'FacilityInfo',  # noqa: F821
-                             item_codes: dict,
+                             essential_item_codes: dict,
                              optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
                              treatment_id: Optional[str] = None
@@ -214,8 +214,9 @@ class Consumables:
         :param treatment_id: the TREATMENT_ID of the HSI (which is entered to the log, if provided).
         :return: dict of the form {<item_code>: <bool>} indicating the availability of each item requested.
         """
-
-        _all_item_codes = {**item_codes, **optional_item_codes}
+        # If optional_item_codes is None, treat it as an empty dictionary
+        optional_item_codes = optional_item_codes or {}
+        _all_item_codes = {**essential_item_codes, **optional_item_codes}
 
         # Issue warning if any item_code is not recognised.
         not_recognised_item_codes = _all_item_codes.keys() - self.item_codes
@@ -231,7 +232,7 @@ class Consumables:
             items_not_available = {k: v for k, v in _all_item_codes.items() if not available[k]}
 
             # Log items used if all essential items are available
-            items_used = items_available if all(available.get(k, False) for k in item_codes) else {}
+            items_used = items_available if all(available.get(k, False) for k in essential_item_codes) else {}
 
             logger.info(
                 key='Consumables',
@@ -244,16 +245,16 @@ class Consumables:
                 description="Record of requested and used consumable items."
             )
             self._summary_counter.record_availability(
-            items_available=items_available, 
-            items_not_available=items_not_available, 
-            items_used=items_used,
+                items_available=items_available,
+                items_not_available=items_not_available,
+                items_used=items_used,
             )
 
         # Return the result of the check on availability
         return available
 
     def _lookup_availability_of_consumables(self,
-                                            facility_info: 'FacilityInfo',   # noqa: F821
+                                            facility_info: 'FacilityInfo',  # noqa: F821
                                             item_codes: dict
                                             ) -> dict:
         """Lookup whether a particular item_code is in the set of available items for that facility (in
