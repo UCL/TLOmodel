@@ -1414,13 +1414,6 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         params = self.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        if property_prefix == 'ps':
-            timing = 'intrapartum'
-            current_log = logger
-        else:
-            timing = 'postnatal'
-            current_log = logger_pn
-
         # n.b. on birth women whose hypertension will continue into the postnatal period have their disease state stored
         # in a new property therefore antenatal/intrapartum hypertension is 'ps_htn_disorders' and postnatal is
         # 'pn_htn_disorders' hence the use of property prefix variable (as this function is called before and after
