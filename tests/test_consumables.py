@@ -62,6 +62,7 @@ def test_using_recognised_item_codes(seed):
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
         item_codes={0: 1, 1: 1},
+        optional_item_codes={},
         facility_info=facility_info_0
     )
 
@@ -89,6 +90,7 @@ def test_unrecognised_item_code_is_recorded(seed):
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
         item_codes={99: 1},
+        optional_item_codes={},
         facility_info=facility_info_0
     )
 
@@ -128,7 +130,9 @@ def test_consumables_availability_options(seed):
         cons.on_start_of_day(date=date)
 
         assert _expected_result == cons._request_consumables(
-            item_codes={_item_code: 1 for _item_code in all_items_request}, to_log=False, facility_info=facility_info_0
+            item_codes={_item_code: 1 for _item_code in all_items_request},
+            optional_item_codes={},
+            to_log=False, facility_info=facility_info_0
         )
 
 
@@ -251,6 +255,7 @@ def test_consumables_available_at_right_frequency(seed):
         cons.on_start_of_day(date=date)
         rtn = cons._request_consumables(
             item_codes=requested_items,
+            optional_item_codes={},
             facility_info=facility_info_0,
         )
         for _i in requested_items:
