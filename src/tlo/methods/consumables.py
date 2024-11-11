@@ -231,10 +231,7 @@ class Consumables:
             items_not_available = {k: v for k, v in _all_item_codes.items() if not available[k]}
 
             # Log items used if all essential items are available
-            items_used = {
-                **{k: v for k, v in item_codes.items() if available[k]},
-                **{k: v for k, v in optional_item_codes.items() if available[k]}
-            } if all(available.get(k, False) for k in item_codes) else {}
+            items_used = items_available if all(available.get(k, False) for k in item_codes) else {}
 
             logger.info(
                 key='Consumables',
