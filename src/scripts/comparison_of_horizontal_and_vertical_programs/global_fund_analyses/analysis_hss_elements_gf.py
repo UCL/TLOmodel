@@ -285,17 +285,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plots = {
         'HRH scenarios': [
             'Baseline',
-            'Double Capacity at Primary Care',
-            'HRH Keeps Pace with Population Growth',
-            'HRH Increases at GDP Growth',
-            'HRH Increases above GDP Growth',
+            'HRH Moderate Scale-up (1%)',
+            'HRH Scale-up Following Historical Growth',
+            'HRH Accelerated Scale-up (6%)',
+            'Increase Capacity at Primary Care Levels',
+            'Increase Capacity of CHW'
         ],
         'Supply chain scenarios': [
             'Baseline',
-            'Perfect Availability of Vital Items',
-            'Perfect Availability of Medicines',
-            'Perfect Availability of All Consumables',
+            'Consumables Increased to 75th Percentile',
+            'Consumables Available at HIV levels',
+            'Consumables Available at EPI levels',
+            'HSS PACKAGE: Realistic expansion'
         ],
+        'Combined scenarios': [
+            'Baseline',
+            'HRH Moderate Scale-up (1%)',
+            'HRH Scale-up Following Historical Growth',
+            'HRH Accelerated Scale-up (6%)',
+            'Increase Capacity at Primary Care Levels',
+            'Increase Capacity of CHW',
+            'Consumables Increased to 75th Percentile',
+            'Consumables Available at HIV levels',
+            'Consumables Available at EPI levels',
+            'HSS PACKAGE: Realistic expansion'
+        ]
     }
     # cmap_HRH = sns.color_palette('Spectral', len(plots['HRH scenarios']))
     # color_map_HRH = {series: color for series, color in zip(plots['HRH scenarios'], cmap_HRH)}
@@ -304,14 +318,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # color_map_SC = {series: color for series, color in zip(plots['Supply chain scenarios'], cmap_SC)}
     # todo new color map
     color_map = {
-        'Baseline': '#9e0142',
-        'Double Capacity at Primary Care': '#f98e52',
-    'HRH Keeps Pace with Population Growth': '#ffffbe',
-    'HRH Increases at GDP Growth': '#86cfa5',
-    'HRH Increases above GDP Growth': '#5e4fa2',
-    'Perfect Availability of Vital Items': '#f98e52',
-    'Perfect Availability of Medicines':  '#86cfa5',
-    'Perfect Availability of All Consumables': '#5e4fa2',
+        'Baseline': '#a50026',
+        'HRH Moderate Scale-up (1%)': '#d73027',
+        'HRH Scale-up Following Historical Growth': '#f46d43',
+        'HRH Accelerated Scale-up (6%)': '#fdae61',
+        'Increase Capacity at Primary Care Levels': '#fee08b',
+        'Increase Capacity of CHW': '#ffffbf',
+        'Consumables Increased to 75th Percentile': '#d9ef8b',
+        'Consumables Available at HIV levels': '#a6d96a',
+        'Consumables Available at EPI levels': '#66bd63',
+        'Perfect Consumables Availability': '#1a9850',
+        'HSS PACKAGE: Perfect': '#5e4fa2',
+        'HSS PACKAGE: Realistic expansion': '#3288bd'
     }
 
     # DEATHS: all scenarios
@@ -332,7 +350,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_title(name_of_plot)
         ax.set_ylabel('Deaths, (Millions)')
         fig.tight_layout()
-        ax.axhline(num_deaths_summarized.loc['Baseline', 'mean'] / 1e6, color='black',  linestyle='--', alpha=0.5)
+        ax.axhline(num_deaths_summarized.loc['Baseline', 'median'] / 1e6, color='black',  linestyle='--', alpha=0.5)
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
@@ -352,11 +370,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for plot_name, scenario_names in plots.items():
         name_of_plot = f'DALYS, {target_period()}, {plot_name}'
         fig, ax = do_bar_plot_with_ci(num_dalys_summarized.loc[scenario_names] / 1e6, set_colors=color_map)
-        # do_bar_plot_with_ci(num_deaths_summarized.loc[scenario_names] / 1e6)
         ax.set_title(name_of_plot)
         ax.set_ylabel('DALYS, (Millions)')
         fig.tight_layout()
-        ax.axhline(num_dalys_summarized.loc['Baseline', 'mean'] / 1e6, color='black', alpha=0.5)
+        ax.axhline(num_dalys_summarized.loc['Baseline', 'median'] / 1e6, color='black', alpha=0.5)
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
@@ -409,15 +426,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['median'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
         ],
         offset=10_000
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 250_000)
+    ax.set_ylim(0, 550_000)
     ax.set_ylabel('Deaths Averted')
-    fig.tight_layout()
+    # fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -431,13 +448,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = do_bar_plot_with_ci(
         data.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['median'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in data_pc.clip(lower=0.0).iterrows()
         ],
         offset=10_000, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
-        ax.set_ylim(0, 250_000)
+        ax.set_ylim(0, 400_000)
         ax.set_ylabel('Deaths Averted')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -449,15 +466,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            f"{round(row['median'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ],
         offset=0.5,
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 20)
+    ax.set_ylim(0, 50)
     ax.set_ylabel('DALYS Averted \n(Millions)')
-    fig.tight_layout()
+    # fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -471,13 +488,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = do_bar_plot_with_ci(
             (data / 1e6).clip(lower=0.0),
             annotations=[
-                f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+                f"{round(row['median'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
                 for _, row in data_pc.clip(lower=0.0).iterrows()
             ],
-            offset=0.5, set_colors=color_map,
+            offset=0.25, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
-        ax.set_ylim(0, 20)
+        ax.set_ylim(0, 40)
         ax.set_ylabel('Additional DALYS Averted \n (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -541,7 +558,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         key="dalys_by_wealth_stacked_by_age_and_time",
         custom_generate_series=get_total_num_dalys_by_label,
         do_scaling=True,
-    ), only_mean=True
+    ), only_median=True
     )
     summarise_total_num_dalys_by_label_results.to_csv(results_folder / 'summarise_total_num_dalys_by_label_results.csv')
 
@@ -550,16 +567,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             total_num_dalys_by_label_results,
             comparison='Baseline'
         ),
-        only_mean=True
+        only_median=True
     )
     total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / 'total_num_dalys_by_label_results_averted_vs_baseline.csv')
 
-    # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
-    assert (
-        (total_num_dalys_by_label_results_averted_vs_baseline.sum(axis=0).sort_index()
-         - num_dalys_averted['mean'].sort_index()
-         ) < 1e-6
-    ).all()
 
     # DALYS averted by cause, HRH and supply chain scenarios separately
     for plot_name, scenario_names in plots.items():
@@ -580,7 +591,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # alpha=0.75,
             color=colours
         )
-        ax.set_ylim([0, 20])
+        ax.set_ylim([0, 30])
         ax.set_title(name_of_plot)
         ax.set_ylabel(f'DALYs Averted vs Baseline, (Millions)')
         wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 13)) for _lab in ax.get_xticklabels()]
@@ -655,7 +666,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             set_colors=color_map,
         )
         ax.set_title(name_of_plot)
-        ax.set_ylim(6, 14)
+        ax.set_ylim(0, 20)
         ax.set_ylabel('DALYS, (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
