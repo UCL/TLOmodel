@@ -576,9 +576,6 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_antiep = int((df.is_alive & df.ep_antiep).sum())
 
-        # Proportion of those ever having had epilepsy currently on anti-epileptics
-        prop_ever_on_antiep = n_antiep / n_seiz_stat_1_3 if n_seiz_stat_1_3 > 0 else 0
-
         n_epi_death = int(df.ep_epi_death.sum())
 
         status_groups['prop_seiz_stats'] = status_groups.is_alive / sum(status_groups.is_alive)
