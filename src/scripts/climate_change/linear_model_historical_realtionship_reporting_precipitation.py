@@ -1,13 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pickle
 import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
 
 ANC = True
-daily_max = False
+daily_max = True
 min_year_for_analyis = 2011
 absolute_min_year = 2011
+mask_threshold = 0
 # # data is from 2011 - 2024 - for facility
 if ANC:
     monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
@@ -100,7 +102,11 @@ above_below_average = create_binary_feature(
 above_below_X = create_binary_feature(1000, weather_data_historical, 12)
 
 # Prepare additional facility info
-expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0)
+if ANC:
+    expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv", index_col=0)
+
+else:
+    expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0)
 expanded_facility_info = expanded_facility_info.T.reindex(columns=expanded_facility_info.index)
 
 def repeat_info(info, num_facilities, year_range):
@@ -124,6 +130,8 @@ altitude = np.array(altitude)
 altitude = np.where(altitude < 0, np.nan, altitude)
 altitude = list(altitude)
 
+
+
 X = np.column_stack([
     weather_data,
     year_flattened,
@@ -137,11 +145,10 @@ X = np.column_stack([
     facility_encoded,
     altitude
 ])
-results, y_pred, mask  = build_model(X, y, X_mask_mm = 800)
-#results = build_model(X, y, scale_y=True, beta=True, X_mask_mm = 1000)
+results, y_pred, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
 
-print(results.summary())
-
+if np.nanmin(y) < 1:
+    y += 1e-6  # Shift to ensure positivity
 
 ### Now include only significant predictors
 X = np.column_stack([
@@ -154,10 +161,10 @@ X = np.column_stack([
     # ftype_encoded,
     # lag_1_month,
     # lag_3_month,
-    # altitude
-    above_below_X
+    # altitude,
+    # above_below_X
 ])
-results, y_pred, mask  = build_model(X, y, X_mask_mm = 800)
+results, y_pred, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
 
 print(results.summary())
 
@@ -165,35 +172,36 @@ print(results.summary())
 ##### Plot y_predic
 
 X_filtered = X[mask]
-
-print(len(y_pred))
-print(len(X_filtered))
-print(len(X_filtered)/len(X) * 100)
-print(len(y[mask]))
-print(len(y_pred))
-
-
+print(y_pred)
 if ANC:
-    plt.scatter(X_filtered[:, 0], y[mask], color='red', alpha=0.5)
+    plt.scatter(X_filtered[:, 0], np.log(y) [mask], color='red', alpha=0.5)
     plt.scatter(X_filtered[:, 0], y_pred)
     plt.title(' ')
     plt.ylabel('Number of ANC visits')
     plt.xlabel('Precip (mm)')
-    plt.ylim(0,1000)
+    plt.ylim(0,10)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     plt.show()
 else:
 
-    plt.scatter(X_filtered[:, 0], y[mask], color='red', alpha=0.5)
+    plt.scatter(X_filtered[:, 0], np.log(y)[mask], color='red', alpha=0.5)
     plt.scatter(X_filtered[:, 0], y_pred)
     plt.title(' ')
     plt.ylabel('Reporting (%)')
     plt.xlabel('Precip (mm)')
     plt.ylim(0, 100)
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    plt.show()
+    #plt.show()
 
+# save model
 
+# Save the model using pickle
+with open('linear_model_ANC_daily_max.pkl', 'wb') as file:
+    pickle.dump(results, file)
+
+# Now you can load the model and use it for predictions
+with open('saved_model.pkl', 'rb') as file:
+    loaded_model = pickle.load(file)
 
 
 
