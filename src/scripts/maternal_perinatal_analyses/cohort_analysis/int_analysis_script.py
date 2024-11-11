@@ -112,7 +112,31 @@ def get_diffs(df_key, result_key, ints, draws):
 mmr_diffs = get_diffs('deaths_and_stillbirths', 'direct_mmr', int_analysis, draws)
 dalys_diffs = get_diffs('dalys', 'Maternal Disorders', int_analysis, draws)
 
-dalys_diffs_by_scenario = {k: get_data(dalys_diffs[d], d, d) for k, d in zip(int_analysis, draws)}
 
-mmr_diffs_by_scnario = {k: get_data(results['deaths_and_stillbirths']['summarised'], 'direct_mmr', d) for k, d in zip (
-    int_analysis, draws)}
+def get_diff_plots(data, outcome):
+    categories = list(data.keys())
+    mins = [arr[0] for arr in data.values()]
+    means = [arr[1] for arr in data.values()]
+    maxs = [arr[2] for arr in data.values()]
+
+    # Error bars (top and bottom of the uncertainty interval)
+    errors = [(mean - min_val, max_val - mean) for mean, min_val, max_val in zip(means, mins, maxs)]
+    errors = np.array(errors).T
+
+    # Plotting
+    plt.figure(figsize=(12, 6))
+    plt.errorbar(categories, means, yerr=errors, fmt='o', capsize=5)
+    plt.axhline(0, color='gray', linestyle='--')  # Adding a horizontal line at y=0 for reference
+    plt.xticks(rotation=90)
+    plt.xlabel('Scenarios')
+    plt.ylabel('Crude Difference from Baseline Scenario')
+    plt.title(f'Difference of {outcome} from Baseline Scenario')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+get_diff_plots(mmr_diffs, 'MMR')
+get_diff_plots(dalys_diffs, 'Maternal DALYs')
+
+
+
