@@ -141,11 +141,11 @@ plt.show()
 plt.clf()
 
 
-prop_antiepilep_seiz_ever = pd.Series(
+prop_antiepilep_seiz_infreq_or_freq = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['prop_freq_or_infreq_seiz_on_antiep'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
 )
-prop_antiepilep_seiz_ever.plot()
+prop_antiepilep_seiz_infreq_or_freq.plot(color='r')
 plt.title('Proportion on antiepileptics\namongst people that have infrequent or frequent epileptic seizures')
 plt.ylim(0, 1)
 plt.tight_layout()
