@@ -9,12 +9,8 @@ from netCDF4 import Dataset
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
 ANC = True
-daily_max = True
 
-if daily_max:
-    multiplier = 1000
-else:
-    multiplier = 86400
+multiplier = 86400
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
 else:
@@ -149,4 +145,7 @@ expanded_facility_info.set_index("Fname", inplace=True)
 expanded_facility_info = expanded_facility_info.T
 expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
 
-expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv")
+if ANC:
+    expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv")
+else:
+    expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv")
