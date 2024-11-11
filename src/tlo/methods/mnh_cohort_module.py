@@ -47,15 +47,6 @@ class MaternalNewbornHealthCohort(Module):
         :param population: the population of individuals
         """
 
-        # log_file = parse_log_file(
-        #      '/Users/j_collins/PycharmProjects/TLOmodel/resources/maternal cohort/'
-        #      'fullmodel_200k_cohort__2024-04-24T072516.log',
-        #      level=logging.DEBUG)['tlo.methods.contraception']
-        #
-        # all_pregnancies = log_file['properties_of_pregnant_person'].loc[
-        #     log_file['properties_of_pregnant_person'].date.dt.year == 2024].drop(columns=['date'])
-        # all_pregnancies.index = [x for x in range(len(all_pregnancies))]
-
         # Read in excel sheet with cohort
         all_preg_df = pd.read_excel(Path(f'{self.resourcefilepath}/maternal cohort') /
                                     'ResourceFile_All2024PregnanciesCohortModel.xlsx')
