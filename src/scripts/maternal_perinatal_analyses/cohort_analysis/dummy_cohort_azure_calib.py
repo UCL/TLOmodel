@@ -10,10 +10,14 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
 scenario = 'block_intervention_test-2024-11-06T145016Z'
+ordered_interventions = ['oral_antihypertensives', 'iv_antihypertensives',  'mgso4', 'post_abortion_care_core']
+
+intervention_groups = []
+draws = []
 
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
-def get_data_frames(key, results_folder):
+def get_ps_data_frames(key, results_folder):
     def sort_df(_df):
         _x = _df.drop(columns=['date'], inplace=False)
         return _x.iloc[0]
@@ -25,30 +29,40 @@ def get_data_frames(key, results_folder):
                 custom_generate_series=sort_df,
                 do_scaling=False
             )
-
-    results_df_summ = summarize(extract_results(
-        results_folder,
-        module="tlo.methods.pregnancy_supervisor",
-        key=key,
-        custom_generate_series=sort_df,
-        do_scaling=False
-    ))
+    results_df_summ = summarize(results_df)
 
     return [results_df, results_df_summ]
 
-results = {k:get_data_frames(k, results_folder)[0] for k in
+all_dalys_dfs = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=(
+            lambda df: df.drop(
+                columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
+        do_scaling=True)
+
+mat_disorders_all = all_dalys_dfs.loc[(slice(None), 'Maternal Disorders'), :]
+
+mat_dalys_df = mat_disorders_all.loc[2024]
+mat_dalys_df_sum = summarize(mat_dalys_df)
+
+results = {k:get_ps_data_frames(k, results_folder)[0] for k in
            ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
             'yearly_mnh_counter_dict']}
 
-results_sum = {k:get_data_frames(k, results_folder)[1] for k in
+results_sum = {k:get_ps_data_frames(k, results_folder)[1] for k in
                ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
                 'yearly_mnh_counter_dict']}
 
-def get_data(df, draw):
-    return (df.loc['direct_mmr', (draw, 'lower')],
-            df.loc['direct_mmr', (draw, 'mean')],
-            df.loc['direct_mmr', (draw, 'upper')])
 
+def get_data(df, key, draw):
+    return (df.loc[key, (draw, 'lower')],
+            df.loc[key, (draw, 'mean')],
+            df.loc[key, (draw, 'upper')])
+
+mmrs_min = {f'{k}_min':get_data(results_sum['deaths_and_stillbirths'], d) for k, d in zip (ordered_interventions, draws) }
+mmrs_max = { }
 
 mmrs = {'baseline':get_data(results_sum['deaths_and_stillbirths'], 0),
            # 'oral_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 1),
@@ -67,6 +81,7 @@ mmrs = {'baseline':get_data(results_sum['deaths_and_stillbirths'], 0),
            # 'ectopic_pregnancy_treatment_max': get_data(results_sum['deaths_and_stillbirths'], 14),
            }
 
+
 def get_mmr_diffs(df, draws):
     diff_results = {}
     baseline = results['deaths_and_stillbirths'][0]
@@ -81,6 +96,33 @@ def get_mmr_diffs(df, draws):
         diff_results.update({draw: results_diff})
 
     return diff_results
+
+# MMR
+
+
+
+# Maternal deaths
+# DALYs
+
+
+
+mmrs = {'baseline':get_data(results_sum['deaths_and_stillbirths'], 0),
+           'oral_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 1),
+           'oral_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 2),
+           'iv_antihypertensives_min':get_data(results_sum['deaths_and_stillbirths'], 3),
+           'iv_antihypertensives_max': get_data(results_sum['deaths_and_stillbirths'], 4),
+           'amtsl_min':get_data(results_sum['deaths_and_stillbirths'], 5),
+           'amtsl_max': get_data(results_sum['deaths_and_stillbirths'], 6),
+           'mgso4_min':get_data(results_sum['deaths_and_stillbirths'], 7),
+           'mgso4_max': get_data(results_sum['deaths_and_stillbirths'], 8),
+           'post_abortion_care_core_min':get_data(results_sum['deaths_and_stillbirths'], 9),
+           'post_abortion_care_core_max': get_data(results_sum['deaths_and_stillbirths'], 10),
+           'caesarean_section_min':get_data(results_sum['deaths_and_stillbirths'], 11),
+           'caesarean_section_max': get_data(results_sum['deaths_and_stillbirths'], 12),
+           'ectopic_pregnancy_treatment_min':get_data(results_sum['deaths_and_stillbirths'], 13),
+           'ectopic_pregnancy_treatment_max': get_data(results_sum['deaths_and_stillbirths'], 14),
+           }
+
 
 diff_results = get_mmr_diffs(results, [7,8])
 
