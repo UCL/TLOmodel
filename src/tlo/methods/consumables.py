@@ -200,7 +200,7 @@ class Consumables:
     def _request_consumables(self,
                              facility_info: 'FacilityInfo',  # noqa: F821
                              item_codes: dict,
-                             optional_item_codes: Optional[dict],
+                             optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
                              treatment_id: Optional[str] = None
                              ) -> dict:
