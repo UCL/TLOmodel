@@ -157,7 +157,9 @@ def test_override_cons_availability(seed):
             item_code = [item_code]
 
         return all(cons._request_consumables(
-            item_codes={_i: 1 for _i in item_code}, to_log=False, facility_info=facility_info_0
+            item_codes={_i: 1 for _i in item_code},
+            optional_item_codes={},
+            to_log=False, facility_info=facility_info_0
         ).values())
 
     rng = get_rng(seed)
