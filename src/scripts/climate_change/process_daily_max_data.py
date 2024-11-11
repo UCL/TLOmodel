@@ -7,8 +7,10 @@ import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
 
-ANC = True
+ANC = False
 # facility data
+multiplier = 1000
+
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
 facilities_with_lat_long = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
@@ -72,7 +74,7 @@ for year in years:
                     moving_averages.append(window_average)
 
                 max_moving_average = max(moving_averages)
-                max_average_by_grid[grid].append(max_moving_average* 1000)
+                max_average_by_grid[grid].append(max_moving_average* multiplier)
 
                 begin_day += month_length
             grid += 1
@@ -117,7 +119,7 @@ for year in years:
                     moving_averages.append(window_average)
 
                 max_moving_average = max(moving_averages)
-                max_average_by_facility[reporting_facility].append(max_moving_average * 86400)
+                max_average_by_facility[reporting_facility].append(max_moving_average * multiplier)
 
                 begin_day += month_length
 #
