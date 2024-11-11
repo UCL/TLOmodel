@@ -100,6 +100,11 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         'daly_wt_epilepsy_seizure_free': Parameter(
             Types.REAL, 'disability weight for less severe epilepsy' 'controlled phase - code 862'
         ),
+        'prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt': Parameter(
+            Types.REAL, 'probability that someone who has had a seizure is started on anti-epileptics. This is '
+                        'calibrated to induce the correct proportion of persons with epilepsy currently receiving '
+                        'anti-epileptics.'
+        )
     }
 
     """
@@ -406,8 +411,14 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         **kwargs,
     ) -> None:
         if "seizures" in symptoms:
-            event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
-            schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            # Determine if treatment will start - depends on probability of prescribing, which is calibrated to
+            # induce the right proportion of persons with epilepsy receiving treatment.
+
+            prob_start = self.parameters['prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt']
+
+            if self.rng.random_sample() < prob_start:
+                event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
+                schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
