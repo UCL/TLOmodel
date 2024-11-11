@@ -105,8 +105,12 @@ for scenario in scenarios:
     data_by_model_and_grid_same_length = data_by_model_and_grid_same_length.dropna(axis=0)
     data_by_model_and_grid_same_length.to_csv(Path(scenario_directory)/"data_by_model_and_grid_modal_resolution.csv")
 
-    # Now average across each time point for each grid square.
-    precip_by_timepoint = {}
+    mean_precip_by_timepoint = {}
+    median_precip_by_timepoint = {}
+    percentile_25_by_timepoint = {}
+    percentile_75_by_timepoint = {}
+
+    # Calculate the statistics for each grid
     for grid in range(len(data_by_model_and_grid_same_length)):
         timepoint_values = []
         for model in data_by_model_and_grid_same_length.columns:
@@ -117,11 +121,28 @@ for scenario in scenarios:
                 if not np.ma.is_masked(value):
                     timepoint_values[i].append(value)
 
-        precip_by_timepoint[grid] = [np.mean(tp_values) if tp_values else np.nan for tp_values in timepoint_values]
+        # Calculate and store statistics for each grid and timepoint
+        mean_precip_by_timepoint[grid] = [np.mean(tp_values) if tp_values else np.nan for tp_values in timepoint_values]
+        median_precip_by_timepoint[grid] = [np.median(tp_values) if tp_values else np.nan for tp_values in
+                                            timepoint_values]
+        percentile_25_by_timepoint[grid] = [np.percentile(tp_values, 25) if tp_values else np.nan for tp_values in
+                                            timepoint_values]
+        percentile_75_by_timepoint[grid] = [np.percentile(tp_values, 75) if tp_values else np.nan for tp_values in
+                                            timepoint_values]
 
-    precip_df = pd.DataFrame.from_dict(precip_by_timepoint, orient='index')
-    precip_df.to_csv(Path(scenario_directory)/"mean_projected_precip_by_timepoint_modal_resolution.csv")
+    # Convert each dictionary to a DataFrame and save to CSV
+    mean_df = pd.DataFrame.from_dict(mean_precip_by_timepoint, orient='index')
+    mean_df.to_csv(Path(scenario_directory) / "mean_projected_precip_by_timepoint_modal_resolution.csv")
 
+    median_df = pd.DataFrame.from_dict(median_precip_by_timepoint, orient='index')
+    median_df.to_csv(Path(scenario_directory) / "median_projected_precip_by_timepoint_modal_resolution.csv")
 
+    percentile_25_df = pd.DataFrame.from_dict(percentile_25_by_timepoint, orient='index')
+    percentile_25_df.to_csv(
+        Path(scenario_directory) / "percentile_25_projected_precip_by_timepoint_modal_resolution.csv")
+
+    percentile_75_df = pd.DataFrame.from_dict(percentile_75_by_timepoint, orient='index')
+    percentile_75_df.to_csv(
+        Path(scenario_directory) / "percentile_75_projected_precip_by_timepoint_modal_resolution.csv")
 
 
