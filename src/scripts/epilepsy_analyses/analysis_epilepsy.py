@@ -140,6 +140,19 @@ plt.tight_layout()
 plt.show()
 plt.clf()
 
+
+prop_antiepilep_seiz_ever = pd.Series(
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_ever_elipsey_on_antiepilepsy_meds'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
+prop_antiepilep_seiz_ever.plot()
+plt.title('Proportion on antiepileptics\namongst people that have ever had epileptic seizures')
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
+plt.clf()
+
+
 prop_antiepilep_seiz_stat_1 = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_1'].values,
     index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
