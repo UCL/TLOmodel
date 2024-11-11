@@ -67,6 +67,7 @@ log_config = {
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
+malawi_country_pop = 17000000
 popsize = 17000
 
 def run_sim(service_availability):
@@ -121,7 +122,7 @@ if output_csv_file.exists():
 log_df  = run_sim(service_availability=['*'])
 
 
-scale_factor = 17000000 / popsize
+scale_factor = malawi_country_pop / popsize
 print(scale_factor)
 #
 # plot number of cervical cancer deaths in past year
