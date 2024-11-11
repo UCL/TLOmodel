@@ -246,7 +246,11 @@ class Consumables:
                 },
                 description="Record of requested and used consumable items."
             )
-            self._summary_counter.record_availability(items_available, items_not_available, items_used)
+            self._summary_counter.record_availability(
+            items_available=items_available, 
+            items_not_available=items_not_available, 
+            items_used=items_used,
+            )
 
         # Return the result of the check on availability
         return available
