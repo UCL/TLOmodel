@@ -42,12 +42,19 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 # Define thresholds
 screening_min_age = 25
 screening_max_age = 50
+min_age_hv = 15
 screening_min_age_hv_neg = 30
 screening_max_age_hv_neg = 50
 screening_min_age_hv_pos = 25
 screening_max_age_hv_pos = 50
 yrs_between_screen_hv_pos = 3
 yrs_between_screen_hv_neg = 5
+palliative_care_bed_days = 15
+polling_frequency = 1
+
+stage_1_3_daly_wt = 607
+stage_1_3_treated_daly_wt = 608
+stage4_daly_wt = 609
 
 # If someone is undergoing cin treatment, can repeat screening every 3yrs
 yrs_between_screen_cin_treated = 2
@@ -657,14 +664,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
             self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=607
+                sequlae_code=stage_1_3_daly_wt
                 # "Diagnosis and primary therapy phase of cervical cancer":
                 #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
             # For those with cancer (any stage prior to stage 4) and has been treated
             self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=608
+                sequlae_code=stage_1_3_treated_daly_wt
                 # "Controlled phase of cervical cancer,Generic uncomplicated disease":
                 # "worry and daily medication,has a chronic disease that requires medication every day and causes some
                 #   worry but minimal interference with daily activities".
@@ -672,7 +679,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
             # For those in stage 4: no palliative care
             self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=609
+                sequlae_code = stage4_daly_wt
                 # "Metastatic phase of cervical cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
             )
@@ -845,7 +852,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=polling_frequency))
         # scheduled to run every 1 month: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -862,14 +869,14 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         if self.sim.date < given_date:
 
-            women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
+            women_over_15_nhiv_idx = df.index[(df["age_years"] > min_age_hv) & (df["sex"] == 'F') & ~df["hv_inf"]]
 
             df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
                 ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
                 size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
             )
 
-            women_over_15_hiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & df["hv_inf"]]
+            women_over_15_hiv_idx = df.index[(df["age_years"] > min_age_hv) & (df["sex"] == 'F') & df["hv_inf"]]
 
             df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
                 ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
@@ -1660,17 +1667,17 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Current counts, total
         out.update({
             f'total_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > 15)].ce_hpv_cc_status.value_counts().items()})
+                                               (df['age_years'] > min_age_hv)].ce_hpv_cc_status.value_counts().items()})
 
         # Current counts, total hiv negative
         out.update({
             f'total_hivneg_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > 15) & (~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+                                               (df['age_years'] > min_age_hv) & (~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
 
         # Current counts, total hiv positive
         out.update({
             f'total_hivpos_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > 15) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+                                               (df['age_years'] > min_age_hv) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
 
         out.update({
             f'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
@@ -1765,20 +1772,20 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_women_alive_1549 = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
                               & (df['age_years'] < 50)).sum()
 
-        n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
+        n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > min_age_hv)
                               & df['va_hpv']).sum()
 
-        n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)
+        n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > min_age_hv)
                                     & df['ce_hiv_unsuppressed']).sum()
 
         n_women_hivneg = ((df['is_alive']) &
                           (df['sex'] == 'F') &
-                          (df['age_years'] > 15) &
+                          (df['age_years'] > min_age_hv) &
                           (~df['hv_inf'])).sum()
 
         n_women_hivpos = ((df['is_alive']) &
                           (df['sex'] == 'F') &
-                          (df['age_years'] > 15) &
+                          (df['age_years'] > min_age_hv) &
                           (df['hv_inf'])).sum()
 
         rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
