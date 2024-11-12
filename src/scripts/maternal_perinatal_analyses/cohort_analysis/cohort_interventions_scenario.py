@@ -17,7 +17,7 @@ class BaselineScenario(BaseScenario):
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 30_000
         self.number_of_draws = 41
-        self.runs_per_draw = 15
+        self.runs_per_draw = 14
 
     def log_configuration(self):
         return {
