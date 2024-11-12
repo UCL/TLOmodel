@@ -12,16 +12,16 @@ from tlo.scenario import BaseScenario
 class BaselineScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 562661
+        self.seed = 796967
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
-        self.pop_size = 12_000
-        self.number_of_draws = 9
-        self.runs_per_draw = 30
+        self.pop_size = 30_000
+        self.number_of_draws = 41
+        self.runs_per_draw = 15
 
     def log_configuration(self):
         return {
-            'filename': 'block_intervention_test', 'directory': './outputs',
+            'filename': 'block_intervention_big_pop_test', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -48,12 +48,44 @@ class BaselineScenario(BaseScenario):
             return {'PregnancySupervisor': {
                     'analysis_year': 2024}}
         else:
-            interventions_for_analysis = ['oral_antihypertensives', 'oral_antihypertensives',
+            interventions_for_analysis = ['urine_dipstick','urine_dipstick',
+                                          'bp_measurement','bp_measurement',
+                                          'iron_folic_acid', 'iron_folic_acid',
+                                          'calcium_supplement', 'calcium_supplement',
+                                          'hb_test', 'hb_test',
+                                          'full_blood_count', 'full_blood_count',
+                                          'blood_transfusion', 'blood_transfusion',
+                                          'oral_antihypertensives', 'oral_antihypertensives',
                                           'iv_antihypertensives', 'iv_antihypertensives',
                                           'mgso4', 'mgso4',
-                                          'post_abortion_care_core', 'post_abortion_care_core']
+                                          'abx_for_prom', 'abx_for_prom',
+                                          'post_abortion_care_core', 'post_abortion_care_core',
+                                          'ectopic_pregnancy_treatment', 'ectopic_pregnancy_treatment',
+                                          'birth_kit', 'birth_kit',
+                                          'sepsis_treatment', 'sepsis_treatment',
+                                          'amtsl', 'amtsl',
+                                          'pph_treatment_uterotonics', 'pph_treatment_uterotonics',
+                                          'pph_treatment_mrrp', 'pph_treatment_mrrp',
+                                          'pph_treatment_surgery', 'pph_treatment_surgery',
+                                          'caesarean_section', 'caesarean_section']
 
             avail_for_draw = [0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
                               0.0, 1.0,
                               0.0, 1.0,
                               0.0, 1.0]
