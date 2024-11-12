@@ -165,10 +165,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
                         ' SAM before being discharged if they do not die beforehand'),
         # treatment/intervention outcomes
-        'prob_mam_after_care': Parameter(
-            Types.REAL, 'probability of returning to MAM after seeking care'),
-        'prob_death_after_care': Parameter(
-            Types.REAL, 'probability of dying after seeking care'),
+        'prob_mam_after_SAMcare': Parameter(
+            Types.REAL, 'probability of returning to MAM from SAM after receiving care'),
+        'prob_death_after_SAMcare': Parameter(
+            Types.REAL, 'probability of dying from SAM after receiving care'),
     }
 
     PROPERTIES = {
@@ -686,8 +686,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 # cancel death date
                 df.at[person_id, 'un_sam_death_date'] = pd.NaT
             else:
-                outcome = self.rng.choice(['recovery_to_mam', 'death'], p=[self.parameters['prob_mam_after_care'],
-                                                                           self.parameters['prob_death_after_care']])
+                outcome = self.rng.choice(['recovery_to_mam', 'death'], p=[self.parameters['prob_mam_after_SAMcare'],
+                                                                           self.parameters['prob_death_after_SAMcare']])
                 if outcome == 'death':
                     self.sim.schedule_event(
                         event=Wasting_SevereAcuteMalnutritionDeath_Event(module=self, person_id=person_id),
