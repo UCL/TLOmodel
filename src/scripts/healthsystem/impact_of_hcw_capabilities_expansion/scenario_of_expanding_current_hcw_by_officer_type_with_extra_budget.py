@@ -29,13 +29,13 @@ from tlo.scenario import BaseScenario
 class HRHExpansionByCadreWithExtraBudget(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 0
+        self.seed = 0  # change seed to 1 if to do another 5 runs per draw
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 10  # TBC: considering convergence and cost
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -67,7 +67,10 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.YEAR_OF_HRH_EXPANSION = 2025
         # The start year to expand HRH by cadre given the extra budget, which is after the historical HRH scaling
 
-        self.scenarios = extra_budget_fracs['s_0'].to_frame()
+        self.scenarios = extra_budget_fracs.drop(columns='s_2')
+        # Test historical scaling changes; do not run 'gap' scenario that's based on "no historical scaling"
+
+        # self.scenarios = extra_budget_fracs['s_0'].to_frame()
         # Run no extra budget allocation scenarios first to get never ran services and 'gap' allocation strategies
 
         # Baseline settings for change
@@ -76,11 +79,11 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.hs_function = [[False, False], [False, True]]
 
         self.baselines = {
-            'baseline': self._baseline_of_baseline(),
-            'default_cons': self._baseline_default_cons(),
+            'baseline': self._baseline_of_baseline(),  # test historical scaling changes first
+            # 'default_cons': self._baseline_default_cons(),
             # 'more_budget': self._baseline_more_budget(),  # turn off when run baseline scenarios with no expansion
             # 'less_budget': self._baseline_less_budget(),
-            'max_hs_function': self._baseline_max_hs_function(),
+            # 'max_hs_function': self._baseline_max_hs_function(),
         }
 
         return {
