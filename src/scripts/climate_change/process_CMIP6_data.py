@@ -69,8 +69,6 @@ for scenario in scenarios:
 
 
 # Put all into one csv file
-base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/"
-
 file_list = glob.glob(os.path.join(base_dir, "*.nc"))
 data_by_model_and_grid = {}
 
