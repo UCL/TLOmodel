@@ -2325,24 +2325,24 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             # fractures.)
         }
         self.cons_item_codes['open_fracture_treatment'] = {
-                get_item_codes('Ceftriaxone 1g, PFR_each_CMST'): 2,
-                get_item_codes('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 100,
+                get_item_codes('Ceftriaxone 1g, PFR_each_CMST'): 2000,
+                get_item_codes('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 500,
                 get_item_codes("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
                 get_item_codes('Suture pack'): 1,
             }
         self.cons_item_codes["open_fracture_treatment_additional_if_contaminated"] = {
-                get_item_codes('Metronidazole, injection, 500 mg in 100 ml vial'): 3
+                get_item_codes('Metronidazole, injection, 500 mg in 100 ml vial'): 1500
             }
 
         self.cons_item_codes['laceration_treatment_suture_pack'] = {
-                get_item_codes('Suture pack'): 1,
+                get_item_codes('Suture pack'): 0,
             }
         self.cons_item_codes['laceration_treatment_cetrimide_chlorhexidine'] = {
-                get_item_codes('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 100,
+                get_item_codes('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 500,
             }
         self.cons_item_codes['burn_treatment_per_burn'] = {
-                get_item_codes("Gauze, absorbent 90cm x 40m_each_CMST"): 100,
-                get_item_codes('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 100,
+                get_item_codes("Gauze, absorbent 90cm x 40m_each_CMST"): 0,
+                get_item_codes('Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST'): 0,
             }
         self.cons_item_codes['ringers lactate for multiple burns'] = {
                 get_item_codes("ringer's lactate (Hartmann's solution), 1000 ml_12_IDA"): 4000
@@ -2353,16 +2353,16 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                     get_item_codes("diclofenac sodium 25 mg, enteric coated_1000_IDA"): 300
                 }
         self.cons_item_codes['pain_management_moderate'] = {
-                get_item_codes("tramadol HCl 100 mg/2 ml, for injection_100_IDA"): 3
+                get_item_codes("tramadol HCl 100 mg/2 ml, for injection_100_IDA"): 300
             }
         self.cons_item_codes['pain_management_severe'] = {
-                get_item_codes("morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA"): 12
+                get_item_codes("morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA"): 120
             }
         self.cons_item_codes['major_surgery'] = {
             # request a general anaesthetic
             get_item_codes("Halothane (fluothane)_250ml_CMST"): 100,
             # clean the site of the surgery
-            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 600,
+            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 500,
             # tools to begin surgery
             get_item_codes("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
@@ -2375,7 +2375,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             # administer pain killer
             get_item_codes('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
             # administer antibiotic
-            get_item_codes("Ampicillin injection 500mg, PFR_each_CMST"): 2,
+            get_item_codes("Ampicillin injection 500mg, PFR_each_CMST"): 1000,
             # equipment used by surgeon, gloves and facemask
             get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 1,
             get_item_codes('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
@@ -2386,7 +2386,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             # request a local anaesthetic
             get_item_codes("Halothane (fluothane)_250ml_CMST"): 100,
             # clean the site of the surgery
-            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 300,
+            get_item_codes("Chlorhexidine 1.5% solution_5_CMST"): 500,
             # tools to begin surgery
             get_item_codes("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
             # administer an IV
@@ -2399,7 +2399,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             # administer pain killer
             get_item_codes('Pethidine, 50 mg/ml, 2 ml ampoule'): 6,
             # administer antibiotic
-            get_item_codes("Ampicillin injection 500mg, PFR_each_CMST"): 2,
+            get_item_codes("Ampicillin injection 500mg, PFR_each_CMST"): 1000,
             # equipment used by surgeon, gloves and facemask
             get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 1,
             get_item_codes('surgical face mask, disp., with metal nose piece_50_IDA'): 1,
