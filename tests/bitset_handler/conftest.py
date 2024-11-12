@@ -11,7 +11,6 @@ from typing import List, Set
 
 import numpy as np
 import pytest
-from numpy.dtypes import BytesDType  # pylint: disable=E0611
 from numpy.random import PCG64, Generator
 from numpy.typing import NDArray
 
@@ -89,7 +88,7 @@ def data_for_twos(dtype: BitsetDtype) -> None:
 
 
 @pytest.fixture
-def data_missing(dtype: BitsetDtype) -> np.ndarray[BytesDType]:
+def data_missing(dtype: BitsetDtype) -> np.ndarray:
     data = np.zeros((2,), dtype=dtype.np_array_dtype)
     data[0] = dtype.na_value
     data[1] = dtype.as_bytes({"a"})
