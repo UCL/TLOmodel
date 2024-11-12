@@ -240,7 +240,7 @@ class Consumables:
                     'TREATMENT_ID': treatment_id or "",
                     'Item_Available': str(items_available),
                     'Item_NotAvailable': str(items_not_available),
-                    'Items_Used': str(items_used),
+                    'Item_Used': str(items_used),
                 },
                 description="Record of requested and used consumable items."
             )
