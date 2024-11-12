@@ -7,7 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
 
-ANC = False
+ANC = True
 # facility data
 multiplier = 1000
 
