@@ -510,6 +510,5 @@ def read_csv_files(folder: Path, dtype: DtypeArg | None = None, files: Optional[
     # clean and return the dataframe dictionary
     clean_dataframe(all_data)
     # If only one file loaded return dataframe directly rather than dict
-    print(f'the files is {files} {files == 0}')
     return next(iter(all_data.values())) if len(all_data) == 1 and files is not None else all_data
 
