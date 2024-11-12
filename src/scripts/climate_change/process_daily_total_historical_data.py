@@ -10,11 +10,18 @@ from netCDF4 import Dataset
 ANC = True
 # facility data
 multiplier = 1000
-
+five_day = True
+cumulative = True
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
 facilities_with_lat_long = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
 
+if five_day:
+    window_size = 5
+    if cumulative:
+        window_size_for_average = 1
+    else:
+        window_size_for_average = 5
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
 if ANC:
@@ -70,7 +77,7 @@ for year in years:
                 days_for_grid = pr_data_for_square[begin_day:begin_day + month_length]
                 moving_averages = []
                 for day in range(month_length - window_size + 1):
-                    window_average = sum(days_for_grid[day:day + window_size]) / window_size
+                    window_average = sum(days_for_grid[day:day + window_size]) / window_size_for_average
                     moving_averages.append(window_average)
 
                 max_moving_average = max(moving_averages)
@@ -115,7 +122,7 @@ for year in years:
                 days_for_grid = pr_data_for_square[begin_day:begin_day + month_length]
                 moving_averages = []
                 for day in range(month_length - window_size + 1):
-                    window_average = sum(days_for_grid[day:day + window_size]) / window_size
+                    window_average = sum(days_for_grid[day:day + window_size]) / window_size_for_average
                     moving_averages.append(window_average)
 
                 max_moving_average = max(moving_averages)
@@ -128,8 +135,20 @@ df_of_facilities = pd.DataFrame.from_dict(max_average_by_facility, orient='index
 df_of_facilities = df_of_facilities.iloc[:, :-3] ## THESE ARE OCT/NOV/DEC OF 2024, and for moment don't have that reporting data
 df_of_facilities = df_of_facilities.T
 
-if ANC:
-    df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC.csv")
-else:
-    df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility.csv")
 
+if five_day:
+    if cumulative:
+        if ANC:
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv")
+        else:
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_cumulative.csv")
+    else:
+        if ANC:
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_average.csv")
+        else:
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_average.csv")
+else:
+        if ANC:
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC.csv")
+        else:
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility.csv")
