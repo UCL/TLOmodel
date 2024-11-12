@@ -71,7 +71,10 @@ for year in years:
             pr_data_for_square = pr_data[:, i, j]
             if grid not in max_average_by_grid:
                 max_average_by_grid[grid] = []
-
+            # Aggregate hourly data to daily totals
+            daily_totals = [
+                sum(pr_data_for_square[day*24:(day+1)*24]) for day in range(len(pr_data_for_square) // 24)
+            ]
             begin_day = 0
             for month_idx, month_length in enumerate(month_lengths):
                 days_for_grid = pr_data_for_square[begin_day:begin_day + month_length]
@@ -117,6 +120,9 @@ for year in years:
             index_for_x = ((long_data - long_for_facility) ** 2).argmin()
             index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
             pr_data_for_square = pr_data[:, index_for_y, index_for_x]
+            daily_totals = [
+                sum(pr_data_for_square[day*24:(day+1)*24]) for day in range(len(pr_data_for_square) // 24)
+            ]
             begin_day = 0
             for month_idx, month_length in enumerate(month_lengths):
                 days_for_grid = pr_data_for_square[begin_day:begin_day + month_length]
