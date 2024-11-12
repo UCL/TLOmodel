@@ -24,13 +24,226 @@
           "year_mode_switch": 2019,
           "policy_name": "HTM",
           "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling_moderate"
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling"
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7,
+          "yearly_HR_scaling_mode": "historical_scaling_accelerated"
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
           "tclose_days_offset_overwrite": 7,
           "year_HR_scaling_by_level_and_officer_type": 2019,
-          "HR_scaling_by_level_and_officer_type_mode": "x1.338_dcsa"
+          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1"
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7,
+          "year_cons_availability_switch": 2019,
+          "cons_availability_postSwitch": "scenario6"
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7,
+          "year_cons_availability_switch": 2019,
+          "cons_availability_postSwitch": "scenario10"
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7,
+          "year_cons_availability_switch": 2019,
+          "cons_availability_postSwitch": "scenario11"
+        }
+      }
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all",
+          "mode_appt_constraints_postSwitch": 2,
+          "scale_to_effective_capabilities": true,
+          "year_mode_switch": 2019,
+          "policy_name": "HTM",
+          "tclose_overwrite": 1,
+          "tclose_days_offset_overwrite": 7,
+          "year_HR_scaling_by_level_and_officer_type": 2019,
+          "HR_scaling_by_level_and_officer_type_mode": "x1.338_fac0&1",
+          "yearly_HR_scaling_mode": "historical_scaling_accelerated",
+          "year_cons_availability_switch": 2019,
+          "cons_availability_postSwitch": "scenario6"
+        },
+        "ImprovedHealthSystemAndCareSeekingScenarioSwitcher": {
+          "max_healthcare_seeking": [
+            false,
+            true
+          ],
+          "year_of_switch": 2019
         }
       }
     }
   ],
-  "commit": "e717761716e0faf0fa3b0fac0303964bb6cc5eca",
-  "github": "https://github.com/UCL/TLOmodel/tree/e717761716e0faf0fa3b0fac0303964bb6cc5eca"
+  "commit": "f8726a4ea563168c870e7efb0cfd6c878c4d44e4",
+  "github": "https://github.com/UCL/TLOmodel/tree/f8726a4ea563168c870e7efb0cfd6c878c4d44e4"
 }
