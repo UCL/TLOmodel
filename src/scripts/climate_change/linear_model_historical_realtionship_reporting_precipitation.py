@@ -4,10 +4,11 @@ import pandas as pd
 import pickle
 import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
+from collections import defaultdict
 
 ANC = True
 daily_max = False
-daily_total = True
+daily_total = False
 min_year_for_analyis = 2011
 absolute_min_year = 2011
 mask_threshold = 0
@@ -54,6 +55,36 @@ else:
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv",
             index_col=0)
 
+
+def build_model(X, y, scale_y=False, beta=False, X_mask_mm=0):
+    epsilon = 1e-5
+    if scale_y:
+        y_scaled = np.clip(y / 100, epsilon, 1 - epsilon)
+    else:
+        y_scaled = y
+    mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm)
+    model = BetaModel(y_scaled[mask], X[mask]) if beta else sm.OLS(y_scaled[mask], X[mask])
+    model_fit = model.fit()
+    predictions = model_fit.predict(X[mask])
+    residuals = y_scaled[mask] - predictions
+    return model_fit, predictions, residuals, mask
+
+def create_binary_feature(threshold, weather_data_df, recent_months):
+    binary_feature_list = []
+    for facility in weather_data_df.columns:
+        facility_data = weather_data_df[facility]
+
+        for i in range(len(facility_data)):
+            facility_threshold = threshold[i] if hasattr(threshold, "__len__") else threshold
+
+            if i >= recent_months:
+                last_x_values = facility_data[i - recent_months:i]
+                binary_feature_list.append(1 if (last_x_values > facility_threshold).any() else 0)
+            else:
+                binary_feature_list.append(np.nan)
+
+    return binary_feature_list
+
 ## Drop September 2024 -
 weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1])
 monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
@@ -80,17 +111,6 @@ facility_flattened = list(range(len(weather_data_historical.columns))) * len(mon
 # Flatten data
 weather_data = weather_data_historical.values.flatten()
 y = monthly_reporting_by_facility.values.flatten()
-def build_model(X, y, scale_y=False, beta=False, X_mask_mm = 0):
-    epsilon = 1e-5
-    if scale_y:
-        y_scaled = np.clip(y / 100, epsilon, 1 - epsilon)
-    else:
-        y_scaled = y
-    mask = ~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm)
-    model = BetaModel(y_scaled[mask], X[mask]) if beta else sm.OLS(y_scaled[mask], X[mask])
-    model_fit = model.fit()
-    return model_fit, model_fit.predict(X[mask]), mask
-
 # One-hot encode facilities
 facility_encoded = pd.get_dummies(facility_flattened, drop_first=True)
 
@@ -100,22 +120,6 @@ grouped_data = pd.DataFrame({
     'month': month_flattened,
     'weather_data': weather_data
 }).groupby(['facility', 'month'])['weather_data'].mean().reset_index()
-
-def create_binary_feature(threshold, weather_data_df, recent_months):
-    binary_feature_list = []
-    for facility in weather_data_df.columns:
-        facility_data = weather_data_df[facility]
-
-        for i in range(len(facility_data)):
-            facility_threshold = threshold[i] if hasattr(threshold, "__len__") else threshold
-
-            if i >= recent_months:
-                last_x_values = facility_data[i - recent_months:i]
-                binary_feature_list.append(1 if (last_x_values > facility_threshold).any() else 0)
-            else:
-                binary_feature_list.append(np.nan)
-
-    return binary_feature_list
 
 above_below_average = create_binary_feature(
     grouped_data.groupby(['facility', 'month'])['weather_data'].transform('mean'), weather_data_historical, 0
@@ -151,7 +155,41 @@ altitude = np.array(altitude)
 altitude = np.where(altitude < 0, np.nan, altitude)
 altitude = list(altitude)
 
+#### STEP 1: GENERATE PREDICTIONS OF ANC DATA ###########
+X = np.column_stack([
+    year_flattened,
+    month_flattened,
+    resid_encoded,
+    zone_encoded,
+    owner_encoded,
+    ftype_encoded,
+    facility_encoded,
+    altitude
+])
+results, y_pred, residuals, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
 
+print(results)
+year_month_labels = np.array([f"{y}-{m}" for y, m in zip(year_flattened, month_flattened)])
+X_filtered = X[mask]
+y_filtered = y[mask]
+year_month_labels_filtered = year_month_labels[mask]
+# residuals are the next "y" variable, as they are the defecit in cases
+plt.scatter(year_month_labels_filtered, np.log(y_filtered), color='#1C6E8C', alpha=0.5, label='Actual data')
+plt.scatter(year_month_labels_filtered, y_pred, color='#9AC4F8', alpha=0.7, label='Predicted data')
+#plt.xticks(ticks=, labels=sorted_years, rotation=45, ha='right')
+
+plt.xticks(rotation=45, ha='right')
+plt.xlabel('Year')
+plt.ylabel('Log(Number of ANC visits)')
+plt.title('Monthly ANC Visits vs. Precipitation')
+plt.ylim(0, 10)
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+plt.tight_layout()
+plt.show()
+
+### STEP 2 - USE THESE IN PREDICTIONS###
+
+y = residuals
 
 X = np.column_stack([
     weather_data,
@@ -166,7 +204,7 @@ X = np.column_stack([
     facility_encoded,
     altitude
 ])
-results, y_pred, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
+results, y_pred, residuals, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
 
 if np.nanmin(y) < 1:
     y += 1e-6  # Shift to ensure positivity
@@ -185,7 +223,7 @@ X = np.column_stack([
     altitude,
     above_below_X
 ])
-results, y_pred, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
+results, y_pred, residuals, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
 
 print(results.summary())
 
@@ -193,7 +231,6 @@ print(results.summary())
 ##### Plot y_predic
 
 X_filtered = X[mask]
-print(y_pred)
 if ANC:
     plt.scatter(X_filtered[:, 0], np.log(y) [mask], color='red', alpha=0.5)
     plt.scatter(X_filtered[:, 0], y_pred)
@@ -225,4 +262,36 @@ else:
 #     loaded_model = pickle.load(file)
 
 
+year_month_labels = np.array([f"{y}-{m}" for y, m in zip(year_flattened, month_flattened)])
+X_filtered = X[mask]
+y_filtered = y[mask]
+year_month_labels_filtered = year_month_labels[mask]
+# first_index_by_year = {}
+# years_in_labels = [label[:4] for label in year_month_labels_filtered]
+# year_counts = defaultdict(int)
+# for year in years_in_labels:
+#     year_counts[year] += 1
+# print(year_counts)
+# sorted_years = sorted(year_counts.keys())
+# print(sorted_years)
+# cumulative_counts = []
+# cumulative_sum = 0
+# for year in sorted_years:
+#     cumulative_sum += year_counts[year]
+#     cumulative_counts.append(cumulative_sum)
+# cumulative_counts = [first_index_by_year[year] for year in sorted_years]
+#
+print(year_month_labels_filtered)
+plt.figure(figsize=(12, 6))
+plt.scatter(year_month_labels_filtered, np.log(y_filtered), color='#1C6E8C', alpha=0.5, label='Actual data')
+plt.scatter(year_month_labels_filtered, y_pred, color='#9AC4F8', alpha=0.7, label='Predicted data')
+#plt.xticks(ticks=, labels=sorted_years, rotation=45, ha='right')
 
+plt.xticks(rotation=45, ha='right')
+plt.xlabel('Year')
+plt.ylabel('Log(Number of ANC visits)')
+plt.title('Monthly ANC Visits vs. Precipitation')
+plt.ylim(0, 10)
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+plt.tight_layout()
+plt.show()
