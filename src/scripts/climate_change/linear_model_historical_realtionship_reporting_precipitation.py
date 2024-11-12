@@ -6,17 +6,34 @@ import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
 
 ANC = True
-daily_max = True
+daily_max = False
+daily_total = True
 min_year_for_analyis = 2011
 absolute_min_year = 2011
 mask_threshold = 0
+five_day = True
+cumulative = True
 # # data is from 2011 - 2024 - for facility
 if ANC:
     monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
     if daily_max:
+        if five_day:
+            if cumulative:
+                weather_data_historical = pd.read_csv(
+                    "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
+                    index_col=0)
+            else:
+                weather_data_historical = pd.read_csv(
+                    "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_total_by_facilities_with_ANC_five_day_average.csv",
+                    index_col=0)
+        else:
+            weather_data_historical = pd.read_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_max_by_facilities_with_ANC.csv",
+                index_col=0)
+    elif daily_total:
         weather_data_historical = pd.read_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_max_by_facilities_with_ANC.csv",
-            index_col=0)
+                "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC.csv",
+                index_col=0)
     else:
         weather_data_historical = pd.read_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
@@ -27,6 +44,10 @@ else:
     if daily_max:
         weather_data_historical = pd.read_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/historical_daily_max_by_facility.csv",
+            index_col=0)
+    elif daily_total:
+        weather_data_historical = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facility.csv",
             index_col=0)
     else:
         weather_data_historical = pd.read_csv(
@@ -155,14 +176,14 @@ X = np.column_stack([
     weather_data,
     year_flattened,
     month_flattened,
-    # resid_encoded,
-    # zone_encoded,
-    # owner_encoded,
-    # ftype_encoded,
-    # lag_1_month,
-    # lag_3_month,
-    # altitude,
-    # above_below_X
+    resid_encoded,
+    zone_encoded,
+    owner_encoded,
+    ftype_encoded,
+    lag_1_month,
+    lag_3_month,
+    altitude,
+    above_below_X
 ])
 results, y_pred, mask  = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
 
@@ -194,14 +215,14 @@ else:
     #plt.show()
 
 # save model
-
-# Save the model using pickle
-with open('linear_model_ANC_daily_max.pkl', 'wb') as file:
-    pickle.dump(results, file)
-
-# Now you can load the model and use it for predictions
-with open('saved_model.pkl', 'rb') as file:
-    loaded_model = pickle.load(file)
+#
+# # Save the model using pickle
+# with open('linear_model_ANC_daily_max.pkl', 'wb') as file:
+#     pickle.dump(results, file)
+#
+# # Now you can load the model and use it for predictions
+# with open('saved_model.pkl', 'rb') as file:
+#     loaded_model = pickle.load(file)
 
 
 
