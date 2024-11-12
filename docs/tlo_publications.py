@@ -234,6 +234,7 @@ if __name__ == "__main__":
                 "Overview of the model",
                 "Analyses using the model",
                 "Healthcare seeking behaviour",
+                "Healthcare provision",
             ],
             backend=InlineHTMLBackend(),
             style=SummarizedStyle(),
