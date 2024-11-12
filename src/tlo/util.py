@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, DateOffset
+from pandas._typing import DtypeArg
 
 from tlo import Population, Property, Types
 
@@ -474,7 +475,7 @@ def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, 
             Path(folder/excel_file_path).unlink()
 
 
-def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame | dict[str, DataFrame]:
+def read_csv_files(folder: Path, dtype: DtypeArg | None = None, files: Optional[list[str]] | None | int = 0) -> DataFrame | dict[str, DataFrame]:
     """
     A function to read CSV files in a similar way pandas reads Excel files (:py:func:`pandas.read_excel`).
 
@@ -484,6 +485,7 @@ def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame
     :py:func:`pandas.drop`.
 
     :param folder: Path to folder containing CSV files to read.
+    :param dtype: preferred datatype
     :param files: preferred csv file name(s). This is the same as sheet names in Excel file. Note that if None(no files
                   selected) then all files in the containing folder will be loaded
 
@@ -498,15 +500,15 @@ def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame
         for _key, dataframe in dataframes_dict.items():
             all_data[_key] = dataframe.drop(dataframe.filter(like='Unnamed'), axis=1)  # filter and drop Unnamed columns
 
-    if files is None:
+    if files == 0 or files is None:
         for f_name in folder.rglob("*.csv"):
-            all_data[f_name.stem] = pd.read_csv(f_name)
+            all_data[f_name.stem] = pd.read_csv(f_name, dtype=dtype)
 
     else:
         for f_name in files:
-            all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"))
+            all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"), dtype=dtype)
     # clean and return the dataframe dictionary
     clean_dataframe(all_data)
     # If only one file loaded return dataframe directly rather than dict
-    return next(iter(all_data.values())) if len(all_data) == 1 else all_data
+    return next(iter(all_data.values())) if len(all_data) == 1 and files == 0 else all_data
 

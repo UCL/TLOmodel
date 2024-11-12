@@ -332,8 +332,44 @@ def copy_files_to_temporal_directory_and_return_path(tmpdir):
     return tmpdir_resource_filepath
 
 
-def test_read_csv_method_with_no_file(tmpdir):
-    """ read csv method when no file name is supplied
+def test_pass_datatypes_to_read_csv_method(tmpdir):
+    """ test passing column datatypes to read csv method. Final column datatype should change to what has been passed """
+    # copy and get resource files path in the temporal directory
+    tmpdir_resource_filepath = copy_files_to_temporal_directory_and_return_path(tmpdir)
+    sample_data = pd.DataFrame(data={'numbers1': [5,6,8,4,9,6], 'numbers2': [19,27,53,49,75,56]}, dtype=int)
+    sample_data.to_csv(tmpdir_resource_filepath/'sample_data.csv', index=False)
+    # read from the sample data file
+    read_sample_data = read_csv_files(tmpdir_resource_filepath, files=['sample_data'])
+    # confirm column datatype is what was assigned
+    assert read_sample_data.numbers1.dtype and read_sample_data.numbers2.dtype == 'int'
+    # define new datatypes
+    datatype = {'numbers1': int, 'numbers2': float}
+    # pass the new datatypes to read csv method and confirm datatype has changed to what has been declared now
+    assign_dtype = read_csv_files(tmpdir_resource_filepath, files=['sample_data'], dtype=datatype)
+    assert assign_dtype.numbers1.dtype == 'int' and assign_dtype.numbers2.dtype == 'float'
+
+
+def test_read_csv_file_method_passing_none_to_files_argument(tmpdir):
+    """ test reading csv files with one file in the target resource file and setting to None the files argument
+
+        Expectations
+            1.  should return a dictionary
+            2.  the dictionary key name should match file name
+    """
+    # copy and get resource files path in the temporal directory
+    tmpdir_resource_filepath = copy_files_to_temporal_directory_and_return_path(tmpdir)
+    #  choose an Excel file with one sheet in it and convert it to csv file
+    convert_excel_files_to_csv(tmpdir_resource_filepath, files=['ResourceFile_load-parameters.xlsx'])
+    # get the folder containing the newly converted csv file and check the expected behavior
+    this_csv_resource_folder = tmpdir_resource_filepath/"ResourceFile_load-parameters"
+    file_names = [csv_file_path.stem for csv_file_path in this_csv_resource_folder.rglob("*.csv")]
+    one_csv_file_in_folder_dict = read_csv_files(this_csv_resource_folder, files=None)
+    assert isinstance(one_csv_file_in_folder_dict, dict)
+    assert set(one_csv_file_in_folder_dict.keys()) == set(file_names)
+
+
+def test_read_csv_method_with_default_value_for_files_argument(tmpdir):
+    """ read csv method when no file name(s) is supplied to the files argument
         i)  should return dictionary.
         ii) dictionary keys should match csv file names in resource folder
         iii)  all dictionary values should be dataframes
@@ -350,7 +386,7 @@ def test_read_csv_method_with_no_file(tmpdir):
 
 
 def test_read_csv_method_with_one_file(tmpdir):
-    """ test read csv method when one file name is supplied. should return a dataframe
+    """ test read csv method when one file name is supplied to files argument. should return a dataframe
     :param tmpdir: path to a temporal directory
 
     """
