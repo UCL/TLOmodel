@@ -52,7 +52,27 @@ class MaternalNewbornHealthCohort(Module):
                                     'ResourceFile_All2024PregnanciesCohortModel.xlsx')
 
         # Only select rows equal to the desired population size
-        preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
+        if len(self.sim.population.props) <= len(all_preg_df):
+            preg_pop = all_preg_df.loc[0:(len(self.sim.population.props))-1]
+        else:
+            # Calculate the number of rows needed to reach the desired length
+            additional_rows = len(self.sim.population.props) - len(all_preg_df)
+
+            # Initialize an empty DataFrame for additional rows
+            rows_to_add = pd.DataFrame(columns=all_preg_df.columns)
+
+            # Loop to fill the required additional rows
+            while additional_rows > 0:
+                if additional_rows >= len(all_preg_df):
+                    rows_to_add = pd.concat([rows_to_add, all_preg_df], ignore_index=True)
+                    additional_rows -= len(all_preg_df)
+                else:
+                    rows_to_add = pd.concat([rows_to_add, all_preg_df.iloc[:additional_rows]], ignore_index=True)
+                    additional_rows = 0
+
+            # Concatenate the original DataFrame with the additional rows
+            preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
+
 
         # Set the dtypes and index of the cohort dataframe
         props_dtypes = self.sim.population.props.dtypes
@@ -74,6 +94,23 @@ class MaternalNewbornHealthCohort(Module):
         df.loc[population.index, 'date_of_last_pregnancy'] = self.sim.start_date
         df.loc[population.index, 'co_contraception'] = "not_using"
 
+        # import tableone
+        # columns = ['age_years', 'district_of_residence', 'li_wealth', 'li_bmi', 'li_mar_stat', 'li_ed_lev',
+        #            'li_urban']
+        # categorical = ['district_of_residence', 'li_wealth', 'li_bmi' ,'li_mar_stat', 'li_ed_lev', 'li_urban']
+        # continuous = ['age_years']
+        #
+        # rename = {'age_years': 'Age (years)',
+        #           'district_of_residence': 'District',
+        #           'li_wealth': 'Wealth Qunitle',
+        #           'li_bmi': 'BMI level',
+        #           'li_mar_stat': 'Marital Status',
+        #           'li_ed_lev': 'Education Level',
+        #           'li_urban': 'Urban/Rural'}
+        # from tableone import TableOne
+        #
+        # mytable = TableOne(self.sim.population.props[columns], categorical=categorical,
+        #                    continuous=continuous, rename=rename, pval=False)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
