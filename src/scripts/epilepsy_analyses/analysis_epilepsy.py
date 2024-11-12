@@ -126,7 +126,8 @@ n_seiz_stat_1_3 = pd.Series(
 )
 n_seiz_stat_1_3.plot()
 plt.title('Number with epilepsy (past or current)')
-plt.ylim(0, 800000)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 
@@ -136,7 +137,8 @@ n_seiz_stat_2_3 = pd.Series(
 )
 n_seiz_stat_2_3.plot()
 plt.title('Number with epilepsy (infrequent or frequent seizures)')
-plt.ylim(0, 300000)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 plt.clf()
@@ -193,7 +195,8 @@ n_epi_death = pd.Series(
 )
 n_epi_death.plot()
 plt.title('Number of deaths from epilepsy')
-plt.ylim(0, 50)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 plt.clf()
@@ -204,10 +207,20 @@ n_antiep = pd.Series(
 )
 n_antiep.plot()
 plt.title('Number of people on antiepileptics')
-plt.ylim(0, 50000)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 plt.clf()
+
+(n_antiep / popsize).plot()
+plt.title('Proportion of of people (whole population) on antiepileptics')
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
+plt.tight_layout()
+plt.show()
+plt.clf()
+
 
 epi_death_rate = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['epi_death_rate'].values,
@@ -247,8 +260,7 @@ fig, axs = plt.subplots(nrows=2, ncols=1, sharey=True, sharex=True)
 for _row, period in enumerate(('2010-2014', '2015-2019')):
     ax = axs[_row]
     comparison.loc[(period, slice(None), slice(None), CAUSE_NAME)]\
-              .droplevel([0, 1, 3])\
-              .groupby(axis=0, level=0)\
+              .groupby(axis=0, level=1)\
               .sum()\
               .plot(use_index=True, ax=ax)
     ax.set_ylabel('Deaths per year')
