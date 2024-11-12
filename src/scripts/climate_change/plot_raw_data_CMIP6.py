@@ -83,12 +83,12 @@ for grid in range(len(data_by_gridpoint)):
     for long in range(len(long_data)):
         plt.plot(data_by_gridpoint.columns, data_by_gridpoint.iloc[grid], label=f"Grid {grid + 1}")
 
-plt.xlabel("Timepoint")  # Adjust this label based on your data
-plt.ylabel("Precipitation (mm)")
-print(len(data_by_gridpoint.columns))
-plt.xticks(ticks=np.arange(0, len(data_by_gridpoint.columns), step=365),
-           labels=years)
-#plt.show()
+        plt.xlabel("Timepoint")  # Adjust this label based on your data
+        plt.ylabel("Precipitation (mm)")
+        print(len(data_by_gridpoint.columns))
+        plt.xticks(ticks=np.arange(0, len(data_by_gridpoint.columns), step=365),
+                   labels=years)
+        #plt.show()
 
 
 ### Plot median and IQ range precipitation by grid by time point
@@ -103,19 +103,50 @@ num_grids = len(median_df.index)
 num_cols = math.ceil(math.sqrt(num_grids))
 num_rows = math.ceil(num_grids / num_cols)
 
-fig, axs = plt.subplots(num_rows, num_cols, figsize=(15, 10))
+# first 6
+fig, axs = plt.subplots(2, 2, figsize=(15, 10))
 fig.suptitle("Median Precipitation with IQR Shaded Area by Grid")
 axs = axs.flatten()
 
-for idx, grid in enumerate(median_df.index):
+for idx, grid in enumerate(median_df.index[0:4]):
     median_values = median_df.loc[grid].values
     timepoints = range(len(median_values))
 
     axs[idx].fill_between(timepoints, percentile_25_df.loc[grid], percentile_75_df.loc[grid], alpha=0.5, color = "lightblue")
     axs[idx].plot(timepoints, median_values, color="blue")
 
-    axs[idx].set_ylim(0,10)
-    axs[idx].set_xlim(0,365*10)
+    axs[idx].set_ylim(0,40)
+    #axs[idx].set_xlim(0,365*10)
+
+    axs[idx].set_title(f"Grid {grid}")
+    axs[idx].set_xlabel("Year")
+    axs[idx].set_xticks(ticks=np.arange(0, len(data_by_gridpoint.columns), step=365*10),
+               labels=[year for i, year in enumerate(years) if i % 10 == 0])
+    axs[idx].set_ylabel("Precipitation (mm)")
+
+for ax in axs[num_grids:]:
+    ax.set_visible(False)
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
+
+
+# second 4
+
+
+fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+fig.suptitle("Median Precipitation with IQR Shaded Area by Grid")
+axs = axs.flatten()
+
+for idx, grid in enumerate(median_df.index[4:8]):
+    median_values = median_df.loc[grid].values
+    timepoints = range(len(median_values))
+
+    axs[idx].fill_between(timepoints, percentile_25_df.loc[grid], percentile_75_df.loc[grid], alpha=0.5, color = "lightblue")
+    axs[idx].plot(timepoints, median_values, color="blue")
+
+    axs[idx].set_ylim(0,40)
+    #axs[idx].set_xlim(0,365*10)
 
     axs[idx].set_title(f"Grid {grid}")
     axs[idx].set_xlabel("Year")
@@ -128,46 +159,46 @@ for ax in axs[num_grids:]:
 
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 plt.show()
-
-## film for each grid point?
-
-# Define grid layout
-num_grids = len(median_df.index)
-num_cols = math.ceil(math.sqrt(num_grids))
-num_rows = math.ceil(num_grids / num_cols)
-
-# Set up figure
-fig, ax = plt.subplots(figsize=(10, 8))
-cbar = None
-
-
-# Create an animation function
-def animate(i):
-    global cbar
-    ax.clear()  # Clear the previous frame
-
-    # Reshape median data and IQR data for heat map
-    median_values = median_df.iloc[:, i].values.reshape(num_rows, num_cols)
-    iqr_values = (percentile_75_df.iloc[:, i] - percentile_25_df.iloc[:, i]).values.reshape(num_rows, num_cols)
-
-    # Plot heatmap with IQR as a color gradient
-    heatmap = ax.imshow(median_values, cmap="coolwarm", interpolation="nearest", vmin=0, vmax=40)
-
-    # Remove old colorbar and add a new one
-    if cbar:
-        cbar.remove()
-    cbar = fig.colorbar(heatmap, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label("Precipitation (mm)")
-
-    # Set title
-    ax.set_title(f"Median Precipitation with IQR (Time Point {i + 1})")
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-
-# Create animation
-ani = animation.FuncAnimation(fig, animate, frames=median_df.shape[1], repeat=False)
-
-# Save animation as a movie (e.g., MP4 format)
-ani.save("median_precipitation_movie.mp4", writer="ffmpeg", dpi=100)
-plt.show()
+#
+# ## film for each grid point?
+#
+# # Define grid layout
+# num_grids = len(median_df.index)
+# num_cols = math.ceil(math.sqrt(num_grids))
+# num_rows = math.ceil(num_grids / num_cols)
+#
+# # Set up figure
+# fig, ax = plt.subplots(figsize=(10, 8))
+# cbar = None
+#
+#
+# # Create an animation function
+# def animate(i):
+#     global cbar
+#     ax.clear()  # Clear the previous frame
+#
+#     # Reshape median data and IQR data for heat map
+#     median_values = median_df.iloc[:, i].values.reshape(num_rows, num_cols)
+#     iqr_values = (percentile_75_df.iloc[:, i] - percentile_25_df.iloc[:, i]).values.reshape(num_rows, num_cols)
+#
+#     # Plot heatmap with IQR as a color gradient
+#     heatmap = ax.imshow(median_values, cmap="coolwarm", interpolation="nearest", vmin=0, vmax=40)
+#
+#     # Remove old colorbar and add a new one
+#     if cbar:
+#         cbar.remove()
+#     cbar = fig.colorbar(heatmap, ax=ax, fraction=0.046, pad=0.04)
+#     cbar.set_label("Precipitation (mm)")
+#
+#     # Set title
+#     ax.set_title(f"Median Precipitation with IQR (Time Point {i + 1})")
+#     ax.set_xticks([])
+#     ax.set_yticks([])
+#
+#
+# # Create animation
+# ani = animation.FuncAnimation(fig, animate, frames=median_df.shape[1], repeat=False)
+#
+# # Save animation as a movie (e.g., MP4 format)
+# ani.save("median_precipitation_movie.mp4", writer="ffmpeg", dpi=100)
+# plt.show()
