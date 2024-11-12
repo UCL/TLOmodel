@@ -24,7 +24,7 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2014, 1, 1)
 popsize = 500
 # scenario = 0
 
@@ -38,7 +38,7 @@ log_config = {
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
@@ -46,7 +46,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 32  # set seed for reproducibility
+seed = 3  # set seed for reproducibility
 
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
@@ -57,13 +57,16 @@ sim.register(*fullmodel(
 )
 
 # # set the scenario
+sim.modules['HealthSystem'].parameters['year_cons_availability_switch'] = 2011
+sim.modules['HealthSystem'].parameters['cons_availability_postSwitch'] = 'scenario11'
+
 # sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2023, 1, 1)
-sim.modules["Malaria"].parameters["type_of_scaleup"] = 'target'
-sim.modules["Malaria"].parameters["scaleup_start_year"] = 2011
-
-sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['max_healthcare_seeking'] = [False, True]
-sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['year_of_switch'] = 2011
+# sim.modules["Malaria"].parameters["type_of_scaleup"] = 'target'
+# sim.modules["Malaria"].parameters["scaleup_start_year"] = 2011
+#
+# sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['max_healthcare_seeking'] = [False, True]
+# sim.modules['ImprovedHealthSystemAndCareSeekingScenarioSwitcher'].parameters['year_of_switch'] = 2011
 
 
 # Run the simulation and flush the logger

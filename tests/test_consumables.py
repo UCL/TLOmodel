@@ -653,7 +653,8 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
         elif availability in ('default',
                               'scenario1', 'scenario2', 'scenario3', 'scenario4',
                               'scenario5', 'scenario6', 'scenario7', 'scenario8',
-                            ):
+                              'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                              ):
             continue
         else:
             raise ValueError(f'Unexpected availability: {availability}')
