@@ -43,12 +43,12 @@ substitute_labels = {
     's_3': 'all_cadres_equal_allocation',
     's_4': 'Clinical (C)', 's_5': 'DCSA (D)', 's_6': 'Nursing_and_Midwifery (N&M)', 's_7': 'Pharmacy (P)',
     's_8': 'Other (O)',
-    's_9': 'C + D', 's_10': 'C + N&M', 's_11': 'C + P', 's_12': 'C + O', 's_13': 'D + N&M',
-    's_14': 'D + P', 's_15': 'D + O', 's_16': 'N&M + P', 's_17': 'N&M + O', 's_18': 'P + O',
-    's_19': 'C + D + N&M', 's_20': 'C + D + P', 's_21': 'C + D + O', 's_22': 'C + N&M + P', 's_23': 'C + N&M + O',
-    's_24': 'C + P + O', 's_25': 'D + N&M + P', 's_26': 'D + N&M + O', 's_27': 'D + P + O', 's_28': 'N&M + P + O',
-    's_29': 'C + D + N&M + P', 's_30': 'C + D + N&M + O', 's_31': 'C + D + P + O', 's_32': 'C + N&M + P + O',
-    's_33': 'D + N&M + P + O',
+    's_9': 'C = D', 's_10': 'C = N&M', 's_11': 'C = P', 's_12': 'C = O', 's_13': 'N&M = D',
+    's_14': 'P = D', 's_15': 'D = O', 's_16': 'P = N&M', 's_17': 'N&M = O', 's_18': 'P = O',
+    's_19': 'C = N&M = D', 's_20': 'C = P = D', 's_21': 'C = D = O', 's_22': 'C = P = N&M', 's_23': 'C = N&M = O',
+    's_24': 'C = P = O', 's_25': 'P = N&M = D', 's_26': 'N&M = D = O', 's_27': 'P = D = O', 's_28': 'P = N&M = O',
+    's_29': 'C = P = N&M = D', 's_30': 'C = N&M = D = O', 's_31': 'C = P = D = O', 's_32': 'C = P = N&M = O',
+    's_33': 'P = N&M = D = O',
 }
 
 
@@ -195,16 +195,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def scenario_grouping_coloring(by='effect'):
         if by == 'effect':  # based on DALYs averted/whether to  expand Clinical + Pharmacy
             grouping = {
-                'C + P + D/N&M/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32'},
-                'C + D/N&M/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
-                'P + D/N&M/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
+                'C & P & D/N&M/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32'},
+                'C & D/N&M/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
+                'P & D/N&M/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
                 'D/N&M/O/None': {'s_5', 's_6', 's_8', 's_13', 's_15', 's_17', 's_26', 's_0'}
             }
             grouping_color = {
                 'D/N&M/O/None': 'lightpink',
-                'P + D/N&M/O/None': 'violet',
-                'C + D/N&M/O/None': 'darkorchid',
-                'C + P + D/N&M/O/None': 'darkturquoise',
+                'P & D/N&M/O/None': 'violet',
+                'C & D/N&M/O/None': 'darkorchid',
+                'C & P & D/N&M/O/None': 'darkturquoise',
             }
         elif by == 'expansion':  # based on how many cadres are expanded
             grouping = {
@@ -1084,20 +1084,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # cost/time proportions within never ran appts, in total of all cadres
     p_cost = pd.DataFrame(index=num_services_summarized.index)
-    p_cost['C and P and N&M'] = never_ran_appts_info_that_need_CNP[1]
-    p_cost['C and P'] = never_ran_appts_info_that_need_CP[1]
-    p_cost['C and N&M'] = never_ran_appts_info_that_need_CN[1]
-    p_cost['N&M and P'] = never_ran_appts_info_that_need_NP[1]
+    p_cost['C & P & N&M'] = never_ran_appts_info_that_need_CNP[1]
+    p_cost['C & P'] = never_ran_appts_info_that_need_CP[1]
+    p_cost['C & N&M'] = never_ran_appts_info_that_need_CN[1]
+    p_cost['P & N&M'] = never_ran_appts_info_that_need_NP[1]
     p_cost['Clinical (C)'] = never_ran_appts_info_that_need_C[1]
     p_cost['Pharmacy (P)'] = never_ran_appts_info_that_need_P[1]
     p_cost['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[1]
     p_cost['Other cases'] = 1 - p_cost[p_cost.columns[0:7]].sum(axis=1)
 
     p_time = pd.DataFrame(index=num_services_summarized.index)
-    p_time['C and P and N&M'] = never_ran_appts_info_that_need_CNP[4]
-    p_time['C and P'] = never_ran_appts_info_that_need_CP[4]
-    p_time['C and N&M'] = never_ran_appts_info_that_need_CN[4]
-    p_time['N&M and P'] = never_ran_appts_info_that_need_NP[4]
+    p_time['C & P & N&M'] = never_ran_appts_info_that_need_CNP[4]
+    p_time['C & P'] = never_ran_appts_info_that_need_CP[4]
+    p_time['C & N&M'] = never_ran_appts_info_that_need_CN[4]
+    p_time['P & N&M'] = never_ran_appts_info_that_need_NP[4]
     p_time['Clinical (C)'] = never_ran_appts_info_that_need_C[4]
     p_time['Pharmacy (P)'] = never_ran_appts_info_that_need_P[4]
     p_time['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[4]
@@ -1105,20 +1105,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # absolute cost/time gap within never ran appts
     a_cost = pd.DataFrame(index=num_services_summarized.index)
-    a_cost['C and P and N&M'] = never_ran_appts_info_that_need_CNP[2].sum(axis=1)
-    a_cost['C and P'] = never_ran_appts_info_that_need_CP[2].sum(axis=1)
-    a_cost['C and N&M'] = never_ran_appts_info_that_need_CN[2].sum(axis=1)
-    a_cost['N&M and P'] = never_ran_appts_info_that_need_NP[2].sum(axis=1)
+    a_cost['C & P & N&M'] = never_ran_appts_info_that_need_CNP[2].sum(axis=1)
+    a_cost['C & P'] = never_ran_appts_info_that_need_CP[2].sum(axis=1)
+    a_cost['C & N&M'] = never_ran_appts_info_that_need_CN[2].sum(axis=1)
+    a_cost['P & N&M'] = never_ran_appts_info_that_need_NP[2].sum(axis=1)
     a_cost['Clinical (C)'] = never_ran_appts_info_that_need_C[2].sum(axis=1)
     a_cost['Pharmacy (P)'] = never_ran_appts_info_that_need_P[2].sum(axis=1)
     a_cost['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[2].sum(axis=1)
     a_cost['Other cases'] = hcw_cost_gap.sum(axis=1) - a_cost.sum(axis=1)
 
     a_time = pd.DataFrame(index=num_services_summarized.index)
-    a_time['C and P and N&M'] = never_ran_appts_info_that_need_CNP[5].sum(axis=1)
-    a_time['C and P'] = never_ran_appts_info_that_need_CP[5].sum(axis=1)
-    a_time['C and N&M'] = never_ran_appts_info_that_need_CN[5].sum(axis=1)
-    a_time['N&M and P'] = never_ran_appts_info_that_need_NP[5].sum(axis=1)
+    a_time['C & P & N&M'] = never_ran_appts_info_that_need_CNP[5].sum(axis=1)
+    a_time['C & P'] = never_ran_appts_info_that_need_CP[5].sum(axis=1)
+    a_time['C & N&M'] = never_ran_appts_info_that_need_CN[5].sum(axis=1)
+    a_time['P & N&M'] = never_ran_appts_info_that_need_NP[5].sum(axis=1)
     a_time['Clinical (C)'] = never_ran_appts_info_that_need_C[5].sum(axis=1)
     a_time['Pharmacy (P)'] = never_ran_appts_info_that_need_P[5].sum(axis=1)
     a_time['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[5].sum(axis=1)
@@ -1126,10 +1126,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # appts count proportions within never ran appts, in total of all cadres
     p_count = pd.DataFrame(index=num_services_summarized.index)
-    p_count['C and P and N&M'] = never_ran_appts_info_that_need_CNP[0]
-    p_count['C and P'] = never_ran_appts_info_that_need_CP[0]
-    p_count['C and N&M'] = never_ran_appts_info_that_need_CN[0]
-    p_count['N&M and P'] = never_ran_appts_info_that_need_NP[0]
+    p_count['C & P & N&M'] = never_ran_appts_info_that_need_CNP[0]
+    p_count['C & P'] = never_ran_appts_info_that_need_CP[0]
+    p_count['C & N&M'] = never_ran_appts_info_that_need_CN[0]
+    p_count['P & N&M'] = never_ran_appts_info_that_need_NP[0]
     p_count['Clinical (C)'] = never_ran_appts_info_that_need_C[0]
     p_count['Pharmacy (P)'] = never_ran_appts_info_that_need_P[0]
     p_count['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[0]
@@ -1137,10 +1137,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # define color for the cadres combinations above
     cadre_comb_color = {
-        'C and P and N&M': 'royalblue',
-        'C and P': 'turquoise',
-        'C and N&M': 'gold',
-        'N&M and P': 'yellowgreen',
+        'C & P & N&M': 'royalblue',
+        'C & P': 'turquoise',
+        'C & N&M': 'gold',
+        'P & N&M': 'yellowgreen',
         'Clinical (C)': 'mediumpurple',
         'Pharmacy (P)': 'limegreen',
         'Nursing_and_Midwifery (N&M)': 'pink',
@@ -1191,8 +1191,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Other': 'gray'
     }
     # get scenario color
-    # scenario_groups = scenario_grouping_coloring(by='effect')
-    scenario_groups = scenario_grouping_coloring(by='expansion')
+    scenario_groups = scenario_grouping_coloring(by='effect')
+    # scenario_groups = scenario_grouping_coloring(by='expansion')
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups[1].keys():
@@ -1241,12 +1241,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #ax.invert_xaxis()
     ax.invert_yaxis()
     ax.set_zlabel('Nursing and Midwifery (N&M)')
-    ax.plot3D([0, 1], [0, 1], [0, 1], linestyle='-', color='orange', alpha=1.0, linewidth=2)
-    legend_labels = list(scenario_groups[1].keys()) + ['line of C = P = N&M']
+    legend_labels = list(scenario_groups[1].keys())
     legend_handles = [plt.Line2D([0, 0], [0, 0],
                                  linestyle='none', marker='o', color=scenario_groups[1][label]
-                                 ) for label in legend_labels[0:len(legend_labels) - 1]
-                      ] + [plt.Line2D([0, 1], [0, 0], linestyle='-', color='orange')]
+                                 ) for label in legend_labels
+                      ]
     plt.legend(legend_handles, legend_labels,
                loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2,
                title='Scenario groups')
