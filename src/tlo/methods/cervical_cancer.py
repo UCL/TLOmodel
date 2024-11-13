@@ -1762,8 +1762,21 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month ).sum()
         n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month ).sum()
         n_ever_screened = (
-                (df['is_alive']) & (df['ce_ever_screened']) & (df['age_years'] > screening_min_age) & (df['age_years'] < screening_max_age)).sum()
-
+            (df['is_alive']) &
+            (df['ce_ever_screened']) &
+            (
+                (
+                    (df['age_years'] > screening_min_age_hv_neg) &
+                    (df['age_years'] < screening_max_age_hv_neg) &
+                    (df['hv_diagnosed'] == False)
+                ) |
+                (
+                    (df['age_years'] > screening_min_age_hv_pos) &
+                    (df['age_years'] < screening_max_age_hv_pos) &
+                    (df['hv_diagnosed'] == False)
+                )
+            )
+        ).sum()
 
         # n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month & df.ce_date_via.between(date_30_days_ago, self.sim.date)).sum()
         # n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month & df.ce_date_xpert.between(date_30_days_ago, self.sim.date)).sum()
