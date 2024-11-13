@@ -167,6 +167,7 @@ weather_data = weather_data_historical.values.flatten()
 y = monthly_reporting_by_facility.values.flatten()
 if np.nanmin(y) < 1:
      y += 1e-6  # Shift to ensure positivity as taking log
+y[y > 1e5] = np.nan
 # One-hot encode facilities
 facility_encoded = pd.get_dummies(facility_flattened, drop_first=True)
 
