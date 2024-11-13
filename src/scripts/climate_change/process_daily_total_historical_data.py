@@ -10,7 +10,7 @@ from netCDF4 import Dataset
 ANC = True
 # facility data
 multiplier = 1000
-five_day = True
+five_day = False
 cumulative = True
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
@@ -22,6 +22,10 @@ if five_day:
         window_size_for_average = 1
     else:
         window_size_for_average = 5
+else:
+    window_size = 1
+    window_size_for_average = 1
+
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
 if ANC:
@@ -77,7 +81,7 @@ for year in years:
             ]
             begin_day = 0
             for month_idx, month_length in enumerate(month_lengths):
-                days_for_grid = pr_data_for_square[begin_day:begin_day + month_length]
+                days_for_grid = daily_totals[begin_day:begin_day + month_length]
                 moving_averages = []
                 for day in range(month_length - window_size + 1):
                     window_average = sum(days_for_grid[day:day + window_size]) / window_size_for_average
@@ -125,7 +129,7 @@ for year in years:
             ]
             begin_day = 0
             for month_idx, month_length in enumerate(month_lengths):
-                days_for_grid = pr_data_for_square[begin_day:begin_day + month_length]
+                days_for_grid = daily_totals[begin_day:begin_day + month_length]
                 moving_averages = []
                 for day in range(month_length - window_size + 1):
                     window_average = sum(days_for_grid[day:day + window_size]) / window_size_for_average
