@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pickle
 import statsmodels.api as sm
 from statsmodels.othermod.betareg import BetaModel
-from collections import defaultdict
+import joblib
+
 
 ANC = True
 daily_max = False
@@ -14,6 +14,10 @@ absolute_min_year = 2011
 mask_threshold = 0
 five_day = True
 cumulative = True
+model_fit_ANC_data = True
+model_fit_weather_data = True
+
+log_y = True
 # # data is from 2011 - 2024 - for facility
 if ANC:
     monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
@@ -55,8 +59,10 @@ else:
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv",
             index_col=0)
 
-def build_model(X, y, scale_y=False, beta=False, X_mask_mm = 0):
+def build_model(X, y, scale_y=False, beta=False, log_y=False, X_mask_mm=0):
     epsilon = 1e-5
+    if log_y:
+        y = np.log(np.clip(y, epsilon, None))  # Log-transform y with clipping for positivity
     if scale_y:
         y_scaled = np.clip(y / 100, epsilon, 1 - epsilon)
     else:
@@ -82,7 +88,38 @@ def create_binary_feature(threshold, weather_data_df, recent_months):
 
     return binary_feature_list
 
+def stepwise_selection(X, y):
+    included = list(range(X.shape[1]))
+    current_aic = np.inf
 
+    while True:
+        changed = False
+        excluded = list(set(range(X.shape[1])) - set(included))
+        new_aic = pd.Series(index=excluded, dtype=float)
+        for new_column in excluded:
+            subset_X = X[:, included + [new_column]]
+            results, _, _ = build_model(subset_X, y, log_y=log_y, X_mask_mm=mask_threshold)
+            new_aic[new_column] = results.aic
+        best_aic = new_aic.min()
+        if best_aic < current_aic:
+            best_feature = new_aic.idxmin()
+            included.append(best_feature)
+            current_aic = best_aic
+            changed = True
+        results, _, _ = build_model(X[:, included], y, log_y=log_y, X_mask_mm=mask_threshold)
+        pvalues = results.pvalues
+        pvalues = pd.Series(pvalues)
+        worst_pval = pvalues.max()
+        if worst_pval > 0.05:
+            worst_feature = pvalues.idxmax()
+            if worst_feature in included:
+                included.remove(worst_feature)
+                changed = True
+
+        if not changed:
+            break
+
+    return included
 ###### Tidy data ############
 ## Drop September 2024 -
 weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1])
@@ -156,7 +193,11 @@ altitude = np.array(altitude)
 altitude = np.where(altitude < 0, np.nan, altitude)
 altitude = list(altitude)
 
-#### STEP 1: GENERATE PREDICTIONS OF ANC DATA ###########
+
+##############################################################################################
+########################## STEP 1: GENERATE PREDICTIONS OF ANC DATA ##########################
+##############################################################################################
+
 X = np.column_stack([
     year_flattened,
     month_flattened,
@@ -167,35 +208,72 @@ X = np.column_stack([
     facility_encoded,
     altitude
 ])
-results, y_pred, mask_ANC_data = build_model(X, np.log(y) , X_mask_mm = mask_threshold)
+model_filename = 'best_model_ANC_prediction_monthly_total_precip.pkl'
 
-residuals_percentage = (y[mask_ANC_data] - y_pred)/y[mask_ANC_data]
-print(results.summary())
+if model_fit_ANC_data:
+    best_predictors = stepwise_selection(X, y)
+    X_best = X[:, best_predictors]
+    results, y_pred, mask_ANC_data = build_model(X_best, y, log_y=log_y, X_mask_mm=mask_threshold)
+    model_data = {
+        'model': results,
+        'mask': mask_ANC_data
+    }
+    joblib.dump(model_data, model_filename)
+else:
+    model_data = joblib.load(model_filename)
+    results = model_data['model']
+    mask_ANC_data = model_data['mask']
+
+if log_y:
+    residuals_percentage = (y[mask_ANC_data] - np.exp(y_pred))/y[mask_ANC_data] * 100
+else:
+    residuals_percentage = (y[mask_ANC_data] - y_pred)/y[mask_ANC_data] * 100
+
+print(max(residuals_percentage))
+print(min(residuals_percentage))
+
+# plot
 year_month_labels = np.array([f"{y}-{m}" for y, m in zip(year_flattened, month_flattened)])
 y_filtered = y[mask_ANC_data]
 year_month_labels_filtered = year_month_labels[mask_ANC_data]
-data_ANC_predictions = pd.DataFrame({
-    'Year_Month': year_month_labels_filtered,
-    'y_filtered': y_filtered
-})
+if log_y:
+    data_ANC_predictions = pd.DataFrame({
+        'Year_Month': year_month_labels_filtered,
+        'y_filtered': y_filtered,
+        'y_pred': np.exp(y_pred),
+    })
+else:
+    data_ANC_predictions = pd.DataFrame({
+            'Year_Month': year_month_labels_filtered,
+            'y_filtered': y_filtered,
+            'y_pred': np.exp(y_pred),
+        })
 data_ANC_predictions = data_ANC_predictions.sort_values(by='Year_Month').reset_index(drop=True)
-# # residuals are the next "y" variable, as they are the defecit in cases
-plt.scatter(data_ANC_predictions['Year_Month'], np.log(data_ANC_predictions['y_filtered']), color='#1C6E8C', alpha=0.5, label='Actual data')
-plt.scatter(data_ANC_predictions['Year_Month'], residuals_percentage, color='#9AC4F8', alpha=0.7, label='Residuals')
-plt.xticks(rotation=45, ha='right')
-plt.xlabel('Year')
-plt.ylabel('Log(Number of ANC visits)')
-plt.title('Monthly ANC Visits vs. Precipitation')
-plt.ylim(0, 10)
-plt.legend(loc='upper left')
+fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+
+# Panel A: Actual data and predictions
+axs[0].scatter(data_ANC_predictions['Year_Month'], data_ANC_predictions['y_filtered'], color='#1C6E8C', alpha=0.5, label='Actual data')
+axs[0].scatter(data_ANC_predictions['Year_Month'], data_ANC_predictions['y_pred'], color='#9AC4F8', alpha=0.7, label='Predictions')
+axs[0].set_xticklabels(data_ANC_predictions['Year_Month'], rotation=45, ha='right')
+axs[0].set_xlabel('Year')
+axs[0].set_ylabel('Log(Number of ANC visits)')
+axs[0].set_title('A: Monthly ANC Visits vs. Precipitation')
+axs[0].legend(loc='upper left')
+
+# Panel B: Residuals (in percentage)
+axs[1].scatter(data_ANC_predictions['Year_Month'], residuals_percentage, color='#9AC4F8', alpha=0.7, label='Residuals')
+axs[1].set_xticklabels(data_ANC_predictions['Year_Month'], rotation=45, ha='right')
+axs[1].set_xlabel('Year')
+axs[1].set_ylabel('Residuals (%)')
+axs[1].set_title('B: Residuals as Percentage')
+axs[1].legend(loc='upper left')
 plt.tight_layout()
 plt.show()
-#
-# ### STEP 2 - USE THESE IN PREDICTIONS###
-#
-y = residuals_percentage
 
-#
+##############################################################################################
+########################## STEP 2 - USE THESE IN PREDICTIONS ##########################
+##############################################################################################
+
 X = np.column_stack([
     weather_data[mask_ANC_data],
     np.array(year_flattened)[mask_ANC_data],
@@ -209,91 +287,83 @@ X = np.column_stack([
     facility_encoded[mask_ANC_data],
     np.array(altitude)[mask_ANC_data]
 ])
-results, y_pred, mask  = build_model(X, y, X_mask_mm = mask_threshold)
-print(results.summary())
-# ### Now include only significant predictors
 
-X = np.column_stack([
-    weather_data[mask_ANC_data],
-    np.array(year_flattened)[mask_ANC_data],
-    np.array(month_flattened)[mask_ANC_data],
-    resid_encoded[mask_ANC_data],
-    zone_encoded[mask_ANC_data],
-    owner_encoded[mask_ANC_data],
-    ftype_encoded[mask_ANC_data],
-    lag_1_month[mask_ANC_data],
-    lag_3_month[mask_ANC_data],
-    np.array(altitude)[mask_ANC_data]
-])
-results, y_pred, mask_weather_data  = build_model(X, y, X_mask_mm = mask_threshold)
+model_filename = 'best_model_monthly_total_precip.pkl'
+
+if model_fit_weather_data:
+    best_predictors = stepwise_selection(X, residuals_percentage)
+    X_best = X[:, best_predictors]
+    results, y_pred, mask_ANC_data = build_model(X_best, residuals_percentage, log_y=False, X_mask_mm=mask_threshold)
+    joblib.dump(results, model_filename)
+else:
+    results = joblib.load(model_filename)
 
 print(results.summary())
 
-
-##### Plot y_predic
-
-X_filtered = X[mask]
-if ANC:
-    plt.scatter(X_filtered[:, 0], y [mask], color='red', alpha=0.5)
-    plt.scatter(X_filtered[:, 0], y_pred)
-    plt.title(' ')
-    plt.ylabel('% change in ANC visits')
-    plt.xlabel('Precip (mm)')
-    #plt.ylim(-,10)
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    plt.show()
-# else:
+# ##### Plot y_predic
 #
-#     plt.scatter(X_filtered[:, 0], np.log(y)[mask], color='red', alpha=0.5)
+# X_filtered = X[mask]
+# if ANC:
+#     plt.scatter(X_filtered[:, 0], y[mask], color='red', alpha=0.5)
 #     plt.scatter(X_filtered[:, 0], y_pred)
 #     plt.title(' ')
-#     plt.ylabel('Reporting (%)')
+#     plt.ylabel('% change in ANC visits')
 #     plt.xlabel('Precip (mm)')
-#     plt.ylim(0, 100)
+#     #plt.ylim(-,10)
 #     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-#     #plt.show()
-#
-# # save model
+#     plt.show()
+# # else:
 # #
-# # # Save the model using pickle
-# # with open('linear_model_ANC_daily_max.pkl', 'wb') as file:
-# #     pickle.dump(results, file)
+# #     plt.scatter(X_filtered[:, 0], np.log(y)[mask], color='red', alpha=0.5)
+# #     plt.scatter(X_filtered[:, 0], y_pred)
+# #     plt.title(' ')
+# #     plt.ylabel('Reporting (%)')
+# #     plt.xlabel('Precip (mm)')
+# #     plt.ylim(0, 100)
+# #     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+# #     #plt.show()
 # #
-# # # Now you can load the model and use it for predictions
-# # with open('saved_model.pkl', 'rb') as file:
-# #     loaded_model = pickle.load(file)
-#
-#
-# year_month_labels = np.array([f"{y}-{m}" for y, m in zip(year_flattened, month_flattened)])
-# X_filtered = X[mask]
-# y_filtered = y[mask]
-# year_month_labels_filtered = year_month_labels[mask]
-# # first_index_by_year = {}
-# # years_in_labels = [label[:4] for label in year_month_labels_filtered]
-# # year_counts = defaultdict(int)
-# # for year in years_in_labels:
-# #     year_counts[year] += 1
-# # print(year_counts)
-# # sorted_years = sorted(year_counts.keys())
-# # print(sorted_years)
-# # cumulative_counts = []
-# # cumulative_sum = 0
-# # for year in sorted_years:
-# #     cumulative_sum += year_counts[year]
-# #     cumulative_counts.append(cumulative_sum)
-# # cumulative_counts = [first_index_by_year[year] for year in sorted_years]
+# # # save model
+# # #
+# # # # Save the model using pickle
+# # # with open('linear_model_ANC_daily_max.pkl', 'wb') as file:
+# # #     pickle.dump(results, file)
+# # #
+# # # # Now you can load the model and use it for predictions
+# # # with open('saved_model.pkl', 'rb') as file:
+# # #     loaded_model = pickle.load(file)
 # #
-# print(year_month_labels_filtered)
-# plt.figure(figsize=(12, 6))
-# plt.scatter(year_month_labels_filtered, np.log(y_filtered), color='#1C6E8C', alpha=0.5, label='Actual data')
-# plt.scatter(year_month_labels_filtered, y_pred, color='#9AC4F8', alpha=0.7, label='Predicted data')
-# #plt.xticks(ticks=, labels=sorted_years, rotation=45, ha='right')
-#
-# plt.xticks(rotation=45, ha='right')
-# plt.xlabel('Year')
-# plt.ylabel('Log(Number of ANC visits)')
-# plt.title('Monthly ANC Visits vs. Precipitation')
-# plt.ylim(0, 10)
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-# plt.tight_layout()
-# plt.show()
+# #
+# # year_month_labels = np.array([f"{y}-{m}" for y, m in zip(year_flattened, month_flattened)])
+# # X_filtered = X[mask]
+# # y_filtered = y[mask]
+# # year_month_labels_filtered = year_month_labels[mask]
+# # # first_index_by_year = {}
+# # # years_in_labels = [label[:4] for label in year_month_labels_filtered]
+# # # year_counts = defaultdict(int)
+# # # for year in years_in_labels:
+# # #     year_counts[year] += 1
+# # # print(year_counts)
+# # # sorted_years = sorted(year_counts.keys())
+# # # print(sorted_years)
+# # # cumulative_counts = []
+# # # cumulative_sum = 0
+# # # for year in sorted_years:
+# # #     cumulative_sum += year_counts[year]
+# # #     cumulative_counts.append(cumulative_sum)
+# # # cumulative_counts = [first_index_by_year[year] for year in sorted_years]
+# # #
+# # print(year_month_labels_filtered)
+# # plt.figure(figsize=(12, 6))
+# # plt.scatter(year_month_labels_filtered, np.log(y_filtered), color='#1C6E8C', alpha=0.5, label='Actual data')
+# # plt.scatter(year_month_labels_filtered, y_pred, color='#9AC4F8', alpha=0.7, label='Predicted data')
+# # #plt.xticks(ticks=, labels=sorted_years, rotation=45, ha='right')
+# #
+# # plt.xticks(rotation=45, ha='right')
+# # plt.xlabel('Year')
+# # plt.ylabel('Log(Number of ANC visits)')
+# # plt.title('Monthly ANC Visits vs. Precipitation')
+# # plt.ylim(0, 10)
+# # plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+# # plt.tight_layout()
+# # plt.show()
