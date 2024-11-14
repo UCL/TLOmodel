@@ -283,8 +283,10 @@ curr_staff_distribution.loc[idx_dcsa[1:4], 'Proportion'] = 0.00
 
 # --- Generate assumptions of established/funded staff distribution at facility levels 0&1a&1b&2
 # Read 2018-03-09 Facility-level establishment MOH & CHAM from CHAI auxiliary datasets
-fund_staff_2018_raw = pd.read_excel(path_to_auxiliaryfiles / '2018-03-09 Facility-level establishment MOH & CHAM.xlsx',
-                                    sheet_name='Establishment listing')
+fund_staff_2018_raw = pd.read_csv(resourcefilepath / '2018-03-09 Facility-level establishment MOH & CHAM.csv')
+fund_staff_2018_raw['Number of positions'] = fund_staff_2018_raw['Number of positions'].fillna(0)
+fund_staff_2018_raw['Number of positions'] = fund_staff_2018_raw['Number of positions'].astype(int)
+
 
 # Get relevant columns
 fund_staff_2018 = fund_staff_2018_raw[['Number of positions', 'Facility', 'Facility Type', 'WFOM Cadre']].copy()
@@ -556,7 +558,9 @@ immed_need_distribution.loc[immed_need_distribution[immed_need_distribution['Fac
                                                     'CenHos'].index, 'Facility_Level'] = 'Facility_Level_3'
 
 # Group staff by levels
-immed_need_distribution = pd.DataFrame(immed_need_distribution.groupby(by=['Facility_Level'], sort=False).sum())
+immed_need_distribution = pd.DataFrame(
+    immed_need_distribution.groupby(by=['Facility_Level'], sort=False).sum()
+).drop(columns=['FacilityType', 'FacilityName'])
 # Drop level 3
 immed_need_distribution.drop(index='Facility_Level_3', inplace=True)
 # Reset index
@@ -773,7 +777,8 @@ fund_staffing_table.loc[
 # Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = fund_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
 fund_staffing_table = pd.DataFrame(
-    fund_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
+    fund_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()
+).reset_index().drop(columns=['Is_DistrictLevel'])
 fund_staffing_table.insert(1, 'Is_DistrictLevel', Is_DistrictLevel[:-1])  # Add the column 'Is_DistrictLevel'
 
 # Check that in fund_staffing_table every staff count entry >= 0
@@ -809,7 +814,7 @@ for i in np.arange(0, len(split_districts)):
     record['Is_DistrictLevel'] = True
 
     # get total staff level from the super districts
-    cols = set(fund_staffing_table.columns).intersection(set(officer_types_table.Officer_Type_Code))
+    cols = list(set(fund_staffing_table.columns).intersection(set(officer_types_table.Officer_Type_Code)))
 
     total_staff = fund_staffing_table.loc[
         fund_staffing_table['District_Or_Hospital'] == super_district, cols].values.squeeze()
@@ -823,7 +828,8 @@ for i in np.arange(0, len(split_districts)):
 
     # assign w * 100% staff to the new district
     record.loc[cols] = w * total_staff
-    fund_staffing_table = fund_staffing_table.append(record).reset_index(drop=True)
+    assert (record.to_frame().T.columns == fund_staffing_table.columns).all()
+    fund_staffing_table = pd.concat([fund_staffing_table, record.to_frame().T], axis=0).reset_index(drop=True)
 
     # take staff away from the super district
     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == super_district, cols] = \
@@ -907,7 +913,7 @@ fund_staffing_table.loc[128:132, 'Facility_Level'] = ['Facility_Level_5', 'Facil
                                                       'Facility_Level_4']
 
 # Check that in fund_staffing_table every staff count entry >= 0
-assert (fund_staffing_table.loc[:, 'M01':'R04'].values >= 0).all()
+assert (fund_staffing_table.loc[:, 'M01':'R04'] >= 0).all().all()
 # fund_staffing_table ready!
 
 # Save the table without column 'Is_DistrictLevel'; staff counts in floats
