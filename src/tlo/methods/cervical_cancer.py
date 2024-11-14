@@ -1015,8 +1015,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         pd.isna(df.ce_date_last_screened) |
                         (days_since_last_screen > screening_interval) |
                         (
-                                (days_since_last_screen > yrs_between_screen_cin_treated * 365) &
-                                (days_since_last_cin_treatment < yrs_between_cin_treatment * 365)
                                 (days_since_last_screen > p['yrs_between_screen_cin_treated'] * 365) &
                                 (days_since_last_cin_treatment < p['yrs_between_cin_treatment'] * 365)
                         )
