@@ -921,10 +921,12 @@ class SchistoSpecies:
         correct_status = _get_infection_status(df.loc[idx])
         original_status = df.loc[idx, prop('infection_status')]
 
-        # Impose symptoms for those newly having 'High-infection' status
+        # Impose symptoms for those newly having 'High-infection' or 'Moderate-infection' status
         newly_have_high_infection = (original_status != 'High-infection') & (correct_status == 'High-infection')
-        idx_newly_have_high_infection = newly_have_high_infection.index[newly_have_high_infection]
-        _impose_symptoms_of_high_intensity_infection(idx=idx_newly_have_high_infection)
+        newly_have_moderate_infection = (original_status != 'Moderate-infection') & (correct_status == 'Moderate-infection')
+        idx_newly_high_or_moderate_infection = newly_have_high_infection.index[
+            newly_have_high_infection | newly_have_moderate_infection]
+        _impose_symptoms_of_high_intensity_infection(idx=idx_newly_high_or_moderate_infection)
 
         # Update status for those whose status is changing
         idx_changing = correct_status.index[original_status != correct_status]
@@ -1235,7 +1237,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
         # --------------------- estimate background risk of infection ---------------------
-
 
         current_prevalence = len(df[df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')]
                          ) / len(df[df.is_alive])
@@ -1722,7 +1723,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             description='Counts of treatment occurring in timeperiod'
         )
 
-        # log person-years of infection by low, moderate and high for all, SAC and PSAC separately
+        # log person-days of infection by low, moderate and high for all, SAC and PSAC separately
         logger.info(
             key='Schisto_person_days_infected',
             data=flatten_multi_index_series_into_dict_for_logging(self.module.log_person_days['person_days']),
