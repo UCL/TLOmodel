@@ -8,13 +8,13 @@ import joblib
 
 ANC = True
 daily_max = False
-daily_total = False
+daily_total = True
 min_year_for_analyis = 2011
 absolute_min_year = 2011
 mask_threshold = 0
 five_day = True
 cumulative = True
-model_fit_ANC_data = True
+model_fit_ANC_data = False
 model_fit_weather_data = True
 model_filename = (
     f"best_model_{'ANC' if ANC else 'Reporting'}_prediction_"
@@ -44,12 +44,14 @@ if ANC:
                     index_col=0)
         else:
             weather_data_historical = pd.read_csv(
-                "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_max_by_facilities_with_ANC.csv",
+                "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facility_five_day_cumulative.csv",
                 index_col=0)
     elif daily_total:
-        weather_data_historical = pd.read_csv(
-                "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC.csv",
-                index_col=0)
+        if five_day:
+            if cumulative:
+                weather_data_historical = pd.read_csv(
+                        "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
+                        index_col=0)
     else:
         weather_data_historical = pd.read_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
@@ -79,7 +81,7 @@ def build_model(X, y, scale_y=False, beta=False, log_y=False, X_mask_mm=0):
         y_scaled = np.clip(y / 100, epsilon, 1 - epsilon)
     else:
         y_scaled = y
-    mask = (~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm) & (y <= 1e5))
+    mask = (~np.isnan(X).any(axis=1) & ~np.isnan(y_scaled) & (X[:, 0] >= X_mask_mm) & (y <= 1e4))
     model = BetaModel(y_scaled[mask], X[mask]) if beta else sm.OLS(y_scaled[mask], X[mask])
     model_fit = model.fit()
     return model_fit, model_fit.predict(X[mask]), mask
@@ -135,43 +137,42 @@ def stepwise_selection(X, y, log_y, p_value_threshold=0.05):
             break
 
     return included
-
-
+#
+#
 # def stepwise_selection(X, y, log_y, p_value_threshold=0.05):
-#     included = list(range(X.shape[1]))
-#     current_r2 = -np.inf  # Start with the worst possible R2 value
+#     included = []  # Start with an empty set of features
+#     current_r2 = 0  # Start with a baseline of 0 for R^2
 #     while True:
 #         changed = False
 #         excluded = list(set(range(X.shape[1])) - set(included))
 #         new_r2 = pd.Series(index=excluded, dtype=float)
 #         for new_column in excluded:
-#             print(new_column)
 #             subset_X = X[:, included + [new_column]]
-#             results, _, _ = build_model(subset_X, y, log_y=log_y, X_mask_mm=mask_threshold)
-#             new_r2[new_column] = results.rsquared  # Use R2 instead of AIC
-#         best_r2 = new_r2.max()
-#         #if best_r2 > current_r2:  # Maximize R2
-#         if  1e-6 < (best_r2 - current_r2):  # Maximize R2
+#             results, _, _ = build_model(subset_X, y, log_y=log_y)
+#             new_r2[new_column] = results.rsquared  # Evaluate R^2 with the new feature
 #
+#         best_r2 = new_r2.max()
+#         print(best_r2)
+#         if best_r2 - current_r2 > 1e-4:
 #             best_feature = new_r2.idxmax()
 #             included.append(best_feature)
 #             current_r2 = best_r2
 #             changed = True
-#         # # Evaluate model with current set of included features
-#         # results, _, _ = build_model(X[:, included], y, log_y=log_y, X_mask_mm=mask_threshold)
-#         # pvalues = results.pvalues
-#         # pvalues = pd.Series(pvalues)
-#         # worst_pval = pvalues.max()
-#         #
-#         # if worst_pval > p_value_threshold:  # Remove features with p-value > 0.05
-#         #     worst_feature = pvalues.idxmax()
-#         #     if worst_feature in included:
-#         #         included.remove(worst_feature)
-#         #         changed = True
+#
+#         # Backward elimination: remove features with high p-values
+#         results, _, _ = build_model(X[:, included], y, log_y=log_y)
+#         pvalues = pd.Series(results.pvalues, index=included)
+#         worst_pval = pvalues.max()
+#         if worst_pval > p_value_threshold:
+#             worst_feature = pvalues.idxmax()
+#             included.remove(worst_feature)
+#             changed = True
 #
 #         if not changed:
 #             break
 #     return included
+
+
 ##############################################################################################
 ########################## STEP 0: Tidy data ##########################
 ##############################################################################################
@@ -241,7 +242,7 @@ ftype_encoded = pd.get_dummies(ftype_info_each_month, drop_first=True)
 altitude = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities, year_range)]
 # Lagged weather
 lag_1_month = weather_data_historical.shift(1).values.flatten()
-lag_2_month = weather_data_historical.shift(1).values.flatten()
+lag_2_month = weather_data_historical.shift(2).values.flatten()
 lag_3_month = weather_data_historical.shift(3).values.flatten()
 lag_4_month = weather_data_historical.shift(4).values.flatten()
 
@@ -289,7 +290,7 @@ if log_y:
 else:
     residuals_percentage = (y[mask_ANC_data] - y_pred)
 
-
+print("ANC prediction", results.summary())
 
 # plot
 year_month_labels = np.array([f"{y}-{m}" for y, m in zip(year_flattened, month_flattened)])
@@ -316,7 +317,7 @@ axs[0].scatter(data_ANC_predictions['Year_Month'], data_ANC_predictions['y_filte
 axs[0].scatter(data_ANC_predictions['Year_Month'], data_ANC_predictions['y_pred'], color='#9AC4F8', alpha=0.7, label='Predictions')
 axs[0].set_xticklabels(data_ANC_predictions['Year_Month'], rotation=45, ha='right')
 axs[0].set_xlabel('Year')
-axs[0].set_ylabel('Log(Number of ANC visits)')
+axs[0].set_ylabel('Number of ANC visits')
 axs[0].set_title('A: Monthly ANC Visits vs. Precipitation')
 axs[0].legend(loc='upper left')
 
@@ -324,8 +325,29 @@ axs[0].legend(loc='upper left')
 axs[1].scatter(data_ANC_predictions['Year_Month'], residuals_percentage, color='#9AC4F8', alpha=0.7, label='Residuals')
 axs[1].set_xticklabels(data_ANC_predictions['Year_Month'], rotation=45, ha='right')
 axs[1].set_xlabel('Year')
-axs[1].set_ylabel('Residuals (%)')
-axs[1].set_title('B: Residuals as Percentage')
+axs[1].set_ylabel('Residuals')
+axs[1].set_title('B: Residuals')
+axs[1].legend(loc='upper left')
+plt.tight_layout()
+plt.show()
+
+fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+
+# Panel A: Actual data and predictions
+axs[0].scatter(data_ANC_predictions['Year_Month'], np.log(data_ANC_predictions['y_filtered']), color='#1C6E8C', alpha=0.5, label='Actual data')
+axs[0].scatter(data_ANC_predictions['Year_Month'], np.log(data_ANC_predictions['y_pred']), color='#9AC4F8', alpha=0.7, label='Predictions')
+axs[0].set_xticklabels(data_ANC_predictions['Year_Month'], rotation=45, ha='right')
+axs[0].set_xlabel('Year')
+axs[0].set_ylabel('Log(Number of ANC visits)')
+axs[0].set_title('A: Monthly ANC Visits vs. Precipitation')
+axs[0].legend(loc='upper left')
+
+# Panel B: Residuals (in percentage)
+axs[1].scatter(data_ANC_predictions['Year_Month'], np.log(residuals_percentage), color='#9AC4F8', alpha=0.7, label='Residuals')
+axs[1].set_xticklabels(data_ANC_predictions['Year_Month'], rotation=45, ha='right')
+axs[1].set_xlabel('Year')
+axs[1].set_ylabel('Log(Residual ANC cases)')
+axs[1].set_title('B: Residuals cases')
 axs[1].legend(loc='upper left')
 plt.tight_layout()
 plt.show()
@@ -349,7 +371,7 @@ X = np.column_stack([
     np.array(altitude)[mask_ANC_data]
 ])
 
-
+log_y = False
 if model_fit_weather_data:
     best_predictors = stepwise_selection(X, residuals_percentage, log_y=log_y)
     print(best_predictors)
@@ -365,6 +387,7 @@ else:
     model_data = joblib.load(model_filename_weather_model)
     results_of_weather_model = model_data['model']
     mask_all_data = model_data['mask']
+    best_predictors = model_data['best_predictors']
 results_of_weather_model, y_pred, mask_all_data = build_model(X_best, residuals_percentage, log_y=log_y,
                                                               X_mask_mm=mask_threshold)
 print(results_of_weather_model.summary())
@@ -382,28 +405,58 @@ X = np.column_stack([
     lag_3_month[mask_ANC_data],
     lag_4_month[mask_ANC_data],
     facility_encoded[mask_ANC_data],
-    np.array(altitude)[mask_ANC_data]
+    np.array(altitude)[mask_ANC_data],
+
 ])
-results_of_weather_model, y_pred, mask_all_data = build_model(X, residuals_percentage, log_y=log_y, X_mask_mm=mask_threshold)
+
+X_weather = np.column_stack([
+    weather_data[mask_ANC_data],
+    np.array(month_flattened)[mask_ANC_data],
+    X[:,best_predictors],
+    lag_1_month[mask_ANC_data],
+    lag_2_month[mask_ANC_data],
+    lag_3_month[mask_ANC_data],
+    lag_4_month[mask_ANC_data]
+])
+results_of_weather_model, y_pred, mask_all_data = build_model(X_weather, residuals_percentage, log_y=log_y, X_mask_mm=mask_threshold)
 
 print(results_of_weather_model.summary())
 
 ##### Plot y_predic
 
 X_filtered = X[mask_all_data]
-if ANC:
-    plt.scatter(X_filtered[:, 0], np.log(residuals_percentage[mask_all_data]), color='red', alpha=0.5)
-    plt.scatter(X_filtered[:, 0], y_pred)
-    plt.title(' ')
-    plt.ylabel('log(change in ANC visits)')
-    plt.xlabel('Precip (mm)')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    plt.show()
 
 plt.scatter(X_filtered[:, 0], (residuals_percentage[mask_all_data]), color='red', alpha=0.5)
-plt.scatter(X_filtered[:, 0], np.exp(y_pred))
+plt.scatter(X_filtered[:, 0],y_pred)
 plt.title(' ')
-plt.ylabel('log(change in ANC visits)')
+plt.ylabel('Change in ANC visits')
+plt.xlabel('Precip (mm)')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+plt.show()
+
+
+
+X_weather = np.column_stack([
+    weather_data[mask_ANC_data],
+    X[:,best_predictors],
+    np.array(month_flattened)[mask_ANC_data],
+    lag_1_month[mask_ANC_data],
+    lag_2_month[mask_ANC_data],
+    lag_3_month[mask_ANC_data],
+    lag_4_month[mask_ANC_data]
+])
+results_of_weather_model, y_pred, mask_all_data = build_model(X_weather, residuals_percentage, log_y=log_y, X_mask_mm=mask_threshold)
+
+print(results_of_weather_model.summary())
+
+##### Plot y_predic
+
+X_filtered = X[mask_all_data]
+
+plt.scatter(X_filtered[:, 0], (residuals_percentage[mask_all_data]), color='red', alpha=0.5)
+plt.scatter(X_filtered[:, 0],y_pred)
+plt.title(' ')
+plt.ylabel('Change in ANC visits')
 plt.xlabel('Precip (mm)')
 plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
 plt.show()
