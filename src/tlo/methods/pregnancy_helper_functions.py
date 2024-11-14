@@ -10,6 +10,7 @@ from tlo import logging
 
 
 def generate_mnh_outcome_counter():
+
     outcome_list = [ # early/abortive outcomes
                     'ectopic_unruptured', 'ectopic_ruptured','multiple_pregnancy', 'twin_birth', 'placenta_praevia',
                     'spontaneous_abortion', 'induced_abortion', 'complicated_spontaneous_abortion',
@@ -96,6 +97,8 @@ def check_int_deliverable(self, int_name, hsi_event,
     df = self.sim.population.props
     individual_id = hsi_event.target
     p_params = self.sim.modules['PregnancySupervisor'].current_parameters
+
+    assert int_name in p_params['all_interventions']
 
     # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
     # delivery is being overridden

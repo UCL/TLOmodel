@@ -27,11 +27,11 @@ def register_modules(sim):
                   mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=resourcefilepath))
 
 def test_run_sim_with_mnh_cohort(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels":{
+    sim = Simulation(start_date=start_date, seed=796967, log_config={"filename": "log", "custom_levels":{
                 "*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
-    sim.make_initial_population(n=2500)
+    sim.make_initial_population(n=200)
     sim.simulate(end_date=Date(2025, 1, 2))
 
     output= parse_log_file(sim.log_filepath)

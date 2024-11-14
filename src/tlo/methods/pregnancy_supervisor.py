@@ -1252,6 +1252,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             # Those women who die have InstantaneousDeath scheduled
             for person in at_risk_of_death_htn.loc[at_risk_of_death_htn].index:
                 self.mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
+                self.mnh_outcome_counter['direct_mat_death'] += 1
+
                 self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                         originating_module=self.sim.modules['PregnancySupervisor'])
 
@@ -2006,6 +2008,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 mni[individual_id]['delete_mni'] = True
 
             self.module.mnh_outcome_counter[f'{self.cause}_m_death'] += 1
+            self.module.mnh_outcome_counter['direct_mat_death'] += 1
             self.sim.modules['Demography'].do_death(individual_id=individual_id, cause=f'{self.cause}',
                                                     originating_module=self.sim.modules['PregnancySupervisor'])
 

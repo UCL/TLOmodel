@@ -95,18 +95,25 @@ class MaternalNewbornHealthCohort(Module):
         df.loc[population.index, 'co_contraception'] = "not_using"
 
         # import tableone
-        # columns = ['age_years', 'district_of_residence', 'li_wealth', 'li_bmi', 'li_mar_stat', 'li_ed_lev',
-        #            'li_urban']
-        # categorical = ['district_of_residence', 'li_wealth', 'li_bmi' ,'li_mar_stat', 'li_ed_lev', 'li_urban']
-        # continuous = ['age_years']
+        # columns = ['age_years', 'la_parity', 'region_of_residence', 'li_wealth', 'li_bmi', 'li_mar_stat', 'li_ed_lev',
+        #            'li_urban', 'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
+        # categorical = ['region_of_residence', 'li_wealth', 'li_bmi' ,'li_mar_stat', 'li_ed_lev', 'li_urban',
+        #                'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
+        # continuous = ['age_years', 'la_parity']
         #
         # rename = {'age_years': 'Age (years)',
+        #           'la_parity': 'Parity',
         #           'district_of_residence': 'District',
         #           'li_wealth': 'Wealth Qunitle',
         #           'li_bmi': 'BMI level',
         #           'li_mar_stat': 'Marital Status',
         #           'li_ed_lev': 'Education Level',
-        #           'li_urban': 'Urban/Rural'}
+        #           'li_urban': 'Urban/Rural',
+        #           'ps_prev_spont_abortion': 'Previous Miscarriage',
+        #           'ps_prev_stillbirth': 'Previous Stillbirth',
+        #           'ps_prev_pre_eclamp': 'Previous Pre-eclampsia',
+        #           'ps_prev_gest_diab': 'Previous Gestational Diabetes',
+        #           }
         # from tableone import TableOne
         #
         # mytable = TableOne(self.sim.population.props[columns], categorical=categorical,

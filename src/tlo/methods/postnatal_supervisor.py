@@ -647,6 +647,8 @@ class PostnatalSupervisor(Module):
         # Those women who die the on_death function in demography is applied
         for person in die_from_htn.loc[die_from_htn].index:
             self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['severe_gestational_hypertension_m_death'] += 1
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['direct_mat_death'] += 1
+
             self.sim.modules['Demography'].do_death(individual_id=person, cause='severe_gestational_hypertension',
                                                     originating_module=self.sim.modules['PostnatalSupervisor'])
 

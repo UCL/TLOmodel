@@ -1448,7 +1448,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         # Or from mild to severe gestational hypertension, risk reduced by treatment
         if df.at[individual_id, f'{property_prefix}_htn_disorders'] == 'gest_htn':
-            if df.at[individual_id, 'la_maternal_hypertension_treatment']:
+            if (df.at[individual_id, 'la_maternal_hypertension_treatment'] or
+                df.at[individual_id, 'la_gest_htn_on_treatment'] or
+                df.at[individual_id, 'ac_gest_htn_on_treatment']):
+
                 risk_prog_gh_sgh = params['prob_progression_gest_htn'] * params[
                     'anti_htns_treatment_effect_progression']
             else:
