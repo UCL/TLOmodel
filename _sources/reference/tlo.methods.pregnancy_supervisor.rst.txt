@@ -436,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Lifestyle', 'HealthSystem', 'CareOfWomenDuringPregnancy', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'Contraception', 'Lifestyle', 'HealthSystem', 'Labour'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x128e0d550>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x128f81e50>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x128f81a90>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x128f81d90>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x128f81790>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x128f83490>, 'eclampsia': <tlo.methods.causes.Cause object at 0x128f81b10>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x128f83cd0>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x132599a50>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x1323135d0>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x132310990>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x132313e50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1323112d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x132313f90>, 'eclampsia': <tlo.methods.causes.Cause object at 0x132311350>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x132310190>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x128f810d0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x132312310>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'Malaria', 'CardioMetabolicDisorders', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Malaria', 'Hiv', 'HealthBurden'}
 
      __annotations__ : {}
 

@@ -5,17 +5,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2460+gba5f1b9.d20241009 documentation</title>
+  <title>tlo.methods.rti &mdash; TLOmodel 0.1.dev2469+g28643ea.d20241114 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=7ab3649f" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=a61cc197"></script>
-      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/documentation_options.js?v=fa124278"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -2489,24 +2489,24 @@
             <span class="c1"># fractures.)</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;open_fracture_treatment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2000</span><span class="p">,</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
                 <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
                 <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;open_fracture_treatment_additional_if_contaminated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;</span><span class="p">):</span> <span class="mi">1500</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Metronidazole, injection, 500 mg in 100 ml vial&#39;</span><span class="p">):</span> <span class="mi">3</span>
             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment_suture_pack&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Suture pack&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;laceration_treatment_cetrimide_chlorhexidine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;burn_treatment_per_burn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Gauze, absorbent 90cm x 40m_each_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Cetrimide 15</span><span class="si">% + c</span><span class="s1">hlorhexidine 1.5</span><span class="si">% s</span><span class="s1">olution.for dilution _5_CMST&#39;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;ringers lactate for multiple burns&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">):</span> <span class="mi">4000</span>
@@ -2517,16 +2517,16 @@
                     <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;diclofenac sodium 25 mg, enteric coated_1000_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
                 <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_moderate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;tramadol HCl 100 mg/2 ml, for injection_100_IDA&quot;</span><span class="p">):</span> <span class="mi">300</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;tramadol HCl 100 mg/2 ml, for injection_100_IDA&quot;</span><span class="p">):</span> <span class="mi">3</span>
             <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pain_management_severe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA&quot;</span><span class="p">):</span> <span class="mi">120</span>
+                <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA&quot;</span><span class="p">):</span> <span class="mi">12</span>
             <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;major_surgery&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># request a general anaesthetic</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="c1"># clean the site of the surgery</span>
-            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">600</span><span class="p">,</span>
             <span class="c1"># tools to begin surgery</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="c1"># administer an IV</span>
@@ -2539,7 +2539,7 @@
             <span class="c1"># administer pain killer</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
             <span class="c1"># administer antibiotic</span>
-            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
             <span class="c1"># equipment used by surgeon, gloves and facemask</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
@@ -2550,7 +2550,7 @@
             <span class="c1"># request a local anaesthetic</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Halothane (fluothane)_250ml_CMST&quot;</span><span class="p">):</span> <span class="mi">100</span><span class="p">,</span>
             <span class="c1"># clean the site of the surgery</span>
-            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">):</span> <span class="mi">300</span><span class="p">,</span>
             <span class="c1"># tools to begin surgery</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Scalpel blade size 22 (individually wrapped)_100_CMST&quot;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="c1"># administer an IV</span>
@@ -2563,7 +2563,7 @@
             <span class="c1"># administer pain killer</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">):</span> <span class="mi">6</span><span class="p">,</span>
             <span class="c1"># administer antibiotic</span>
-            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="n">get_item_codes</span><span class="p">(</span><span class="s2">&quot;Ampicillin injection 500mg, PFR_each_CMST&quot;</span><span class="p">):</span> <span class="mi">2</span><span class="p">,</span>
             <span class="c1"># equipment used by surgeon, gloves and facemask</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;Disposables gloves, powder free, 100 pieces per box&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
             <span class="n">get_item_codes</span><span class="p">(</span><span class="s1">&#39;surgical face mask, disp., with metal nose piece_50_IDA&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">,</span>
@@ -6137,7 +6137,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 09, 2024.
+      <span class="lastupdated">Last updated on Nov 14, 2024.
       </span></p>
   </div>
 

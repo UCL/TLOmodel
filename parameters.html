@@ -6,17 +6,17 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parameters &mdash; TLOmodel 0.1.dev2460+gba5f1b9.d20241009 documentation</title>
+  <title>Parameters &mdash; TLOmodel 0.1.dev2469+g28643ea.d20241114 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=7ab3649f" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="_static/favicon.png"/>
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=a61cc197"></script>
-      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/documentation_options.js?v=fa124278"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -3494,13 +3494,13 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Rumphi</p></td>
-<td><p>Mzuzu City</p></td>
-<td><p>Nkhata Bay</p></td>
-<td><p>Chitipa</p></td>
+<tr class="row-even"><td><p>Nkhata Bay</p></td>
 <td><p>Mzimba</p></td>
-<td><p>Likoma</p></td>
 <td><p>Karonga</p></td>
+<td><p>Rumphi</p></td>
+<td><p>Mzuzu City</p></td>
+<td><p>Likoma</p></td>
+<td><p>Chitipa</p></td>
 </tr>
 </tbody>
 </table>
@@ -3522,16 +3522,16 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Dowa</p></td>
-<td><p>Nkhotakota</p></td>
-<td><p>Salima</p></td>
-<td><p>Ntchisi</p></td>
-<td><p>Dedza</p></td>
-<td><p>Mchinji</p></td>
-<td><p>Kasungu</p></td>
-<td><p>Ntcheu</p></td>
+<tr class="row-even"><td><p>Salima</p></td>
 <td><p>Lilongwe</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>Mchinji</p></td>
+<td><p>Dedza</p></td>
+<td><p>Dowa</p></td>
+<td><p>Kasungu</p></td>
+<td><p>Nkhotakota</p></td>
 <td><p>Lilongwe City</p></td>
+<td><p>Ntcheu</p></td>
 </tr>
 </tbody>
 </table>
@@ -3558,21 +3558,21 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Neno</p></td>
-<td><p>Chiradzulu</p></td>
-<td><p>Phalombe</p></td>
-<td><p>Blantyre</p></td>
-<td><p>Nsanje</p></td>
-<td><p>Balaka</p></td>
-<td><p>Mangochi</p></td>
-<td><p>Zomba City</p></td>
-<td><p>Chikwawa</p></td>
-<td><p>Blantyre City</p></td>
-<td><p>Mwanza</p></td>
-<td><p>Machinga</p></td>
-<td><p>Thyolo</p></td>
+<tr class="row-even"><td><p>Thyolo</p></td>
 <td><p>Mulanje</p></td>
 <td><p>Zomba</p></td>
+<td><p>Neno</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>Zomba City</p></td>
+<td><p>Mangochi</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>Phalombe</p></td>
+<td><p>Nsanje</p></td>
+<td><p>Mwanza</p></td>
+<td><p>Blantyre City</p></td>
+<td><p>Balaka</p></td>
+<td><p>Machinga</p></td>
+<td><p>Blantyre</p></td>
 </tr>
 </tbody>
 </table>
@@ -4680,12 +4680,12 @@
 <tr class="row-odd"><td><p>base_prob_3m_stop_antiepileptic</p></td>
 <td><p>base probability per 3 months of stopping antiepileptic, if nonenow seizures</p></td>
 <td><p>Real</p></td>
-<td><p>0.05</p></td>
+<td><p>0.1</p></td>
 </tr>
 <tr class="row-even"><td><p>rr_stop_antiepileptic_seiz_infreq_or_freq</p></td>
 <td><p>relative rate of stopping antiepileptic if infrequent or frequent seizures</p></td>
 <td><p>Real</p></td>
-<td><p>1.0</p></td>
+<td><p>0.5</p></td>
 </tr>
 <tr class="row-odd"><td><p>base_prob_3m_epi_death</p></td>
 <td><p>base probability per 3 months of epilepsy death</p></td>
@@ -4706,6 +4706,16 @@
 <td><p>disability weight for less severe epilepsycontrolled phase - code 862</p></td>
 <td><p>Real</p></td>
 <td><p>0.049</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt</p></td>
+<td><p>probability that someone who has had a seizure is started on anti-epileptics. This is calibrated to induce the correct proportion of persons with epilepsy currently receiving anti-epileptics.</p></td>
+<td><p>Real</p></td>
+<td><p>0.4</p></td>
+</tr>
+<tr class="row-even"><td><p>max_num_of_failed_attempts_before_defaulting</p></td>
+<td><p>maximum number of time an HSI can be repeated if the relevant essential consumables are not available.</p></td>
+<td><p>Integer</p></td>
+<td><p>2</p></td>
 </tr>
 </tbody>
 </table>
@@ -15630,7 +15640,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 09, 2024.
+      <span class="lastupdated">Last updated on Nov 14, 2024.
       </span></p>
   </div>
 

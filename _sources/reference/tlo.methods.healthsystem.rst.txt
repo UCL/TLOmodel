@@ -164,13 +164,13 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     capabilities_today : <property object at 0x117a18c70>
+     capabilities_today : <property object at 0x120f018f0>
 
-     hsi_event_counts : <property object at 0x117a18ea0>
+     hsi_event_counts : <property object at 0x120f01b20>
 
-     never_ran_hsi_event_counts : <property object at 0x117a18ef0>
+     never_ran_hsi_event_counts : <property object at 0x120f01b70>
 
-     use_funded_or_actual_staffing : <property object at 0x117a18d60>
+     use_funded_or_actual_staffing : <property object at 0x120f019e0>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -347,7 +347,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x117a191c0>
+     current_pop_size : <property object at 0x120f01e40>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 
@@ -425,6 +425,31 @@ tlo.methods.healthsystem module
      .. automethod:: __init__
 
      .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HealthSystemLogger
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     **Functions (defined or overridden in class HealthSystemLogger):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: log_number_of_staff
 
 
 

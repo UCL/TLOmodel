@@ -171,7 +171,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x117b4bf60>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x121064db0>
 
      __annotations__ : {}
 

@@ -5,17 +5,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.dev2460+gba5f1b9.d20241009 documentation</title>
+  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.dev2469+g28643ea.d20241114 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=7ab3649f" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=a61cc197"></script>
-      <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../../_static/documentation_options.js?v=fa124278"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -874,7 +874,10 @@
         <span class="c1"># Schedule recurring event which will rescale daily capabilities (at yearly intervals).</span>
         <span class="c1"># The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,</span>
         <span class="c1"># whilst the actual scaling will only take effect from 2011 onwards.</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DynamicRescalingHRCapabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">Date</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">))</span></div>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DynamicRescalingHRCapabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">Date</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">))</span>
+
+        <span class="c1"># Schedule the logger to occur at the start of every year</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HealthSystemLogger</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">Date</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="HealthSystem.on_birth">
@@ -1052,7 +1055,7 @@
 <span class="sd">        This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation</span>
 <span class="sd">         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated&quot;&quot;&quot;</span>
         <span class="c1"># * Store &#39;DailyCapabilities&#39; in correct format and using the specified underlying assumptions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_daily_capabilities</span><span class="p">(</span><span class="n">use_funded_or_actual_staffing</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities_per_staff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_daily_capabilities</span><span class="p">(</span><span class="n">use_funded_or_actual_staffing</span><span class="p">)</span>
 
         <span class="c1"># Also, store the set of officers with non-zero daily availability</span>
         <span class="c1"># (This is used for checking that scheduled HSI events do not make appointment requiring officers that are</span>
@@ -1062,15 +1065,14 @@
 
 <div class="viewcode-block" id="HealthSystem.format_daily_capabilities">
 <a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities">[docs]</a>
-    <span class="k">def</span> <span class="nf">format_daily_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">format_daily_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This will updates the dataframe for the self.parameters[&#39;Daily_Capabilities&#39;] so as to include</span>
-<span class="sd">        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity</span>
+<span class="sd">        This will updates the dataframe for the self.parameters[&#39;Daily_Capabilities&#39;] so as to:</span>
+<span class="sd">        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity</span>
 <span class="sd">        is available.</span>
-
-<span class="sd">        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)</span>
-
+<span class="sd">        2. Give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)</span>
 <span class="sd">        (This is so that its easier to track where demands are being placed where there is no capacity)</span>
+<span class="sd">        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent of assumed efficiency.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Get the capabilities data imported (according to the specified underlying assumptions).</span>
@@ -1078,6 +1080,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Daily_Capabilities_</span><span class="si">{</span><span class="n">use_funded_or_actual_staffing</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
         <span class="p">)</span>
         <span class="n">capabilities</span> <span class="o">=</span> <span class="n">capabilities</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Officer_Category&#39;</span><span class="p">:</span> <span class="s1">&#39;Officer_Type_Code&#39;</span><span class="p">})</span>  <span class="c1"># neaten</span>
+        
+        <span class="c1"># Create new column where capabilities per staff are computed</span>
+        <span class="n">capabilities</span><span class="p">[</span><span class="s1">&#39;Mins_Per_Day_Per_Staff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">capabilities</span><span class="p">[</span><span class="s1">&#39;Total_Mins_Per_Day&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">capabilities</span><span class="p">[</span><span class="s1">&#39;Staff_Count&#39;</span><span class="p">]</span>
+
 
         <span class="c1"># Create dataframe containing background information about facility and officer types</span>
         <span class="n">facility_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">][</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
@@ -1097,7 +1103,10 @@
         <span class="c1"># Merge in information about facility from Master Facilities List</span>
         <span class="n">mfl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Master_Facilities_List&#39;</span><span class="p">]</span>
         <span class="n">capabilities_ex</span> <span class="o">=</span> <span class="n">capabilities_ex</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">mfl</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
-
+        
+        <span class="c1"># Create a copy of this to store staff counts</span>
+        <span class="n">capabilities_per_staff_ex</span> <span class="o">=</span> <span class="n">capabilities_ex</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
         <span class="c1"># Merge in information about officers</span>
         <span class="c1"># officer_types = self.parameters[&#39;Officer_Types_Table&#39;][[&#39;Officer_Type_Code&#39;, &#39;Officer_Type&#39;]]</span>
         <span class="c1"># capabilities_ex = capabilities_ex.merge(officer_types, on=&#39;Officer_Type_Code&#39;, how=&#39;left&#39;)</span>
@@ -1110,9 +1119,24 @@
             <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">capabilities_ex</span> <span class="o">=</span> <span class="n">capabilities_ex</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="n">capabilities_per_staff_ex</span> <span class="o">=</span> <span class="n">capabilities_per_staff_ex</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+            <span class="n">capabilities</span><span class="p">[[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Officer_Type_Code&#39;</span><span class="p">,</span> <span class="s1">&#39;Mins_Per_Day_Per_Staff&#39;</span><span class="p">]],</span>
+            <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">,</span> <span class="s1">&#39;Officer_Type_Code&#39;</span><span class="p">],</span>
+            <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">capabilities_per_staff_ex</span> <span class="o">=</span> <span class="n">capabilities_per_staff_ex</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Give the standard index:</span>
         <span class="n">capabilities_ex</span> <span class="o">=</span> <span class="n">capabilities_ex</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
+            <span class="s1">&#39;FacilityID_&#39;</span>
+            <span class="o">+</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+            <span class="o">+</span> <span class="s1">&#39;_Officer_&#39;</span>
+            <span class="o">+</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Officer_Type_Code&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        
+        <span class="c1"># Give the standard index:</span>
+        <span class="n">capabilities_per_staff_ex</span> <span class="o">=</span> <span class="n">capabilities_per_staff_ex</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
             <span class="s1">&#39;FacilityID_&#39;</span>
             <span class="o">+</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Facility_ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
             <span class="o">+</span> <span class="s1">&#39;_Officer_&#39;</span>
@@ -1125,9 +1149,10 @@
         <span class="c1"># Checks</span>
         <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">capabilities</span><span class="p">[</span><span class="s1">&#39;Total_Mins_Per_Day&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mf">1e-7</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">capabilities_ex</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">facility_ids</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">officer_type_codes</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">capabilities_per_staff_ex</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">facility_ids</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">officer_type_codes</span><span class="p">)</span>
 
         <span class="c1"># return the pd.Series of `Total_Minutes_Per_Day&#39; indexed for each type of officer at each facility</span>
-        <span class="k">return</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">],</span> <span class="n">capabilities_per_staff_ex</span><span class="p">[</span><span class="s1">&#39;Mins_Per_Day_Per_Staff&#39;</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="HealthSystem._rescale_capabilities_to_capture_effective_capability">
@@ -1151,7 +1176,12 @@
                 <span class="n">officer_type</span><span class="o">=</span><span class="n">officer_type</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">level</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">rescaling_factor</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">rescaling_factor</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">*=</span> <span class="n">rescaling_factor</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">*=</span> <span class="n">rescaling_factor</span>
+                
+                <span class="c1"># We assume that increased daily capabilities is a result of each staff performing more</span>
+                <span class="c1"># daily patient facing time per day than contracted (or equivalently performing appts more</span>
+                <span class="c1"># efficiently).</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities_per_staff</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">*=</span> <span class="n">rescaling_factor</span></div>
 
 
 <div class="viewcode-block" id="HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2">
@@ -3279,6 +3309,49 @@
                     <span class="p">)</span></div>
 </div>
 
+
+
+<div class="viewcode-block" id="HealthSystemLogger">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemLogger">[docs]</a>
+<span class="k">class</span> <span class="nc">HealthSystemLogger</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This event runs at the start of each year and does any logging jobs for the HealthSystem module.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HealthSystemLogger.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemLogger.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="HealthSystemLogger.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemLogger.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Things to do at the start of the year&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_number_of_staff</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="HealthSystemLogger.log_number_of_staff">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemLogger.log_number_of_staff">[docs]</a>
+    <span class="k">def</span> <span class="nf">log_number_of_staff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write to the summary log with the counts of staff (by cadre/facility/level) taking into account:</span>
+<span class="sd">         * Any scaling of capabilities that has taken place, year-by-year, or cadre-by-cadre</span>
+<span class="sd">         * Any re-scaling that has taken place at the transition into Mode 2.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span>  <span class="c1"># HealthSystem module</span>
+
+        <span class="c1"># Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,</span>
+        <span class="c1"># both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True</span>
+        <span class="c1"># This returns the number of staff counts normalised by the self.capabilities_coefficient parameter</span>
+        <span class="n">current_staff_count</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">hs</span><span class="o">.</span><span class="n">capabilities_today</span><span class="o">/</span><span class="n">hs</span><span class="o">.</span><span class="n">_daily_capabilities_per_staff</span><span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">())</span>
+
+        <span class="n">logger_summary</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;number_of_hcw_staff&quot;</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The number of hcw_staff this year&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">current_staff_count</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
 </pre></div>
 
            </div>
@@ -3289,7 +3362,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 09, 2024.
+      <span class="lastupdated">Last updated on Nov 14, 2024.
       </span></p>
   </div>
 

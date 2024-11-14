@@ -75,6 +75,12 @@ tlo.methods.epilepsy module
         * - daly_wt_epilepsy_seizure_free
           - REAL
           - disability weight for less severe epilepsycontrolled phase - code 862
+        * - prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt
+          - REAL
+          - probability that someone who has had a seizure is started on anti-epileptics. This is calibrated to induce the correct proportion of persons with epilepsy currently receiving anti-epileptics.
+        * - max_num_of_failed_attempts_before_defaulting
+          - INT
+          - maximum number of time an HSI can be repeated if the relevant essential consumables are not available.
 
 
      **PROPERTIES:**
@@ -106,13 +112,13 @@ tlo.methods.epilepsy module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x128fba650>}
+     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x132b74dd0>}
 
-     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x128fb84d0>}
+     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x132b74a50>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthBurden', 'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'HealthBurden'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      TREATMENT_ID : antiepileptic
 
