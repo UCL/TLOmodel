@@ -32,7 +32,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
-from tlo.util import random_date, sample_outcome
+from tlo.util import random_date, sample_outcome, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
@@ -520,8 +520,8 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
         # Read parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Diarrhoea.xlsx', sheet_name='Parameter_values')
+            read_csv_files(
+                Path(self.resourcefilepath) / 'ResourceFile_Diarrhoea', files=['Parameter_values'])
         )
 
         # Check that every value has been read-in successfully
