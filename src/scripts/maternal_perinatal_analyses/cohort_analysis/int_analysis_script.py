@@ -47,6 +47,17 @@ results = {k:get_ps_data_frames(k, results_folder) for k in
            ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
             'yearly_mnh_counter_dict']}
 
+direct_deaths = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=(
+                lambda df: df.loc[(df['label'] == 'Maternal Disorders')].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=False)
+dd_sum = summarize(direct_deaths)
+
+
 all_dalys_dfs = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
@@ -56,7 +67,7 @@ all_dalys_dfs = extract_results(
                 columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
         do_scaling=False)
 
-mat_disorders_all = all_dalys_dfs.loc[(slice(None), 'Neonatal Disorders'), :]
+mat_disorders_all = all_dalys_dfs.loc[(slice(None), 'Maternal Disorders'), :]
 
 mat_dalys_df = mat_disorders_all.loc[2024]
 mat_dalys_df_sum = summarize(mat_dalys_df)
@@ -69,10 +80,10 @@ def get_data(df, key, draw):
             df.loc[key, (draw, 'mean')],
             df.loc[key, (draw, 'upper')])
 
-dalys_by_scenario = {k: get_data(results['dalys']['summarised'], 'Neonatal Disorders', d) for k, d in zip (
+dalys_by_scenario = {k: get_data(results['dalys']['summarised'], 'Maternal Disorders', d) for k, d in zip (
     int_analysis, draws)}
 
-mmr_by_scnario = {k: get_data(results['deaths_and_stillbirths']['summarised'], 'nmr', d) for k, d in zip (
+mmr_by_scnario = {k: get_data(results['deaths_and_stillbirths']['summarised'], 'direct_mmr', d) for k, d in zip (
     int_analysis, draws)}
 
 def barcharts(data, y_label, title):
@@ -96,7 +107,7 @@ def barcharts(data, y_label, title):
     plt.show()
 
 barcharts(dalys_by_scenario, 'DALYs', 'Total Neonatal Disorders DALYs by scenario')
-barcharts(mmr_by_scnario, 'NMR', 'Total NMR by scenario')
+barcharts(mmr_by_scnario, 'MMR', 'Total MMR by scenario')
 
 # Difference results
 def get_diffs(df_key, result_key, ints, draws):
@@ -113,9 +124,22 @@ def get_diffs(df_key, result_key, ints, draws):
 
     return diff_results
 
-mmr_diffs = get_diffs('deaths_and_stillbirths', 'nmr', int_analysis, draws)
-dalys_diffs = get_diffs('dalys', 'Neonatal Disorders', int_analysis, draws)
+diff_results = {}
+baseline = direct_deaths[0]
 
+for draw, int in zip(draws, int_analysis):
+    diff_df = direct_deaths[draw] - baseline
+    diff_df.columns = pd.MultiIndex.from_tuples([(draw, v) for v in range(len(diff_df.columns))],
+                                                    names=['draw', 'run'])
+    results_diff = summarize(diff_df)
+    results_diff.fillna(0)
+    diff_results.update({int: results_diff.loc[2024].values})
+
+
+mat_deaths = get_diffs('deaths_and_stillbirths', 'direct_maternal_deaths', int_analysis, draws)
+mmr_diffs = get_diffs('deaths_and_stillbirths', 'direct_mmr', int_analysis, draws)
+dalys_diffs = get_diffs('dalys', 'Maternal Disorders', int_analysis, draws)
+mat_deaths_2 = diff_results
 
 def get_diff_plots(data, outcome):
     categories = list(data.keys())
@@ -139,8 +163,10 @@ def get_diff_plots(data, outcome):
     plt.tight_layout()
     plt.show()
 
-get_diff_plots(mmr_diffs, 'NMR')
-get_diff_plots(dalys_diffs, 'Neonatal DALYs')
+get_diff_plots(mmr_diffs, 'MMR')
+get_diff_plots(mat_deaths, 'Maternal Deaths (crude)')
+get_diff_plots(mat_deaths_2, 'Maternal Deaths (demog log)')
+get_diff_plots(dalys_diffs, 'Maternal DALYs')
 
 
 
