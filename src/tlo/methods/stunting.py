@@ -24,6 +24,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -149,8 +150,8 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, data_folder):
         self.load_parameters_from_dataframe(
-            pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
+            read_csv_files(
+                Path(self.resourcefilepath) / 'ResourceFile_Stunting', files=['Parameter_values'])
         )
 
     def initialise_population(self, population):
