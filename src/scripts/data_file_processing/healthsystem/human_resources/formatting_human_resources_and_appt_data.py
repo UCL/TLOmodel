@@ -44,18 +44,18 @@ import pandas as pd
 
 resourcefilepath = Path('./resources')
 
-path_to_dropbox = Path(
-    '/Users/jdbb1/Dropbox/Thanzi La Onse')  # <-- point to the TLO dropbox locally
+path_to_onedrive = Path(
+    '/Users/jdbb1/Imperial College London/TLOModel - WP - Documents')  # <-- point to the TLO onedrive locally
 
-workingfile = (path_to_dropbox /
+workingfile = (path_to_onedrive /
                '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
                'Malawi optimization model import_2022-02-11.xlsx')
 
-working_file_old = (path_to_dropbox /
+working_file_old = (path_to_onedrive /
                     '05 - Resources' / 'Module-healthsystem' / 'chai ehp resource use data' / 'ORIGINAL' /
                     'Optimization model import_Malawi_20180315 v10.xlsx')
 
-path_to_auxiliaryfiles = (path_to_dropbox /
+path_to_auxiliaryfiles = (path_to_onedrive /
                           '05 - Resources' /
                           'Module-healthsystem' /
                           'chai ehp resource use data' /
