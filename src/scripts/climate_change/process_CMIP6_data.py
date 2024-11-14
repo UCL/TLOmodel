@@ -4,10 +4,24 @@ import re
 import shutil
 import zipfile
 from pathlib import Path
+import difflib
 
 import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
+import geopandas as gpd
+
+five_day = True
+monthly_cumulative = False
+multiplier = 86400
+years = range(2015, 2100)
+reporting_data = pd.read_csv(
+    "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv")
+
+general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
+
+facilities_with_lat_long = pd.read_csv(
+    "/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
 
 
 def unzip_all_in_directory(directory):
@@ -83,12 +97,13 @@ for scenario in scenarios:
         pr_data = data_per_model.variables['pr'][:]  # in kg m-2 s-1 = mm s-1 x 86400 to get to day
         lat_data = data_per_model.variables['lat'][:]
         long_data = data_per_model.variables['lon'][:]
+        #time_data = data_per_model.variables['time'] 31046 days
         grid_dictionary = {}
         grid = 0
         for i in range(len(long_data)):
             for j in range(len(lat_data)):
                 precip_data_for_grid = pr_data[:,j,i] # across all time points
-                precip_data_for_grid = precip_data_for_grid * 86400 # to get from per second to per day
+                precip_data_for_grid = precip_data_for_grid * multiplier # to get from per second to per day
                 grid_dictionary[grid] = precip_data_for_grid
                 grid += 1
         data_by_model_and_grid[model] = grid_dictionary
@@ -118,7 +133,6 @@ for scenario in scenarios:
             for i, value in enumerate(model_data):
                 if not np.ma.is_masked(value):
                     timepoint_values[i].append(value)
-
         # Calculate and store statistics for each grid and timepoint
         mean_precip_by_timepoint[grid] = [np.mean(tp_values) if tp_values else np.nan for tp_values in timepoint_values]
         median_precip_by_timepoint[grid] = [np.median(tp_values) if tp_values else np.nan for tp_values in
@@ -142,5 +156,130 @@ for scenario in scenarios:
     percentile_75_df = pd.DataFrame.from_dict(percentile_75_by_timepoint, orient='index')
     percentile_75_df.to_csv(
         Path(scenario_directory) / "percentile_75_projected_precip_by_timepoint_modal_resolution.csv")
+
+    ## now do monthly 5-day max
+
+    month_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]*len(years)
+
+    if five_day:
+        window_size = 5  # Set the window size to 5 days
+        cumulative_sum_by_grid = {}
+        mean_precip_by_timepoint = pd.DataFrame.from_dict(mean_precip_by_timepoint)
+        for grid in range(mean_precip_by_timepoint.shape[1]): # columns are grids
+                    pr_data_for_grid = mean_precip_by_timepoint[grid]
+                    if grid not in cumulative_sum_by_grid:
+                        cumulative_sum_by_grid[grid] = []
+                    begin_day = 0
+                    for month_idx, month_length in enumerate(month_lengths):
+                        days_for_grid = pr_data_for_grid[begin_day:begin_day + month_length]
+                        cumulative_sums = []
+                        for day in range(month_length - window_size + 1):
+                            window_sum = sum(days_for_grid[day:day + window_size])
+                            cumulative_sums.append(window_sum)
+                        max_cumulative_sums = max(cumulative_sums)
+                        cumulative_sum_by_grid[grid].append(max_cumulative_sums)
+                        begin_day += month_length
+        df_cumulative_sum = pd.DataFrame.from_dict(cumulative_sum_by_grid, orient='index')
+        df_cumulative_sum = df_cumulative_sum.T
+        df_cumulative_sum.to_csv(Path(scenario_directory) / "five_day_cumulative_sum_by_grid.csv")
+
+
+        ############### NOW HAVE LAT/LONG OF FACILITIES #####################
+        facilities_with_location = []
+        cumulative_sum_by_facility = {}
+        for reporting_facility in reporting_data.columns:
+            matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_with_lat_long['Fname'], n=3, cutoff=0.90)
+            if matching_facility_name:
+                match_name = matching_facility_name[0]  # Access the string directly
+                facilities_with_location.append(reporting_facility)
+                lat_for_facility = facilities_with_lat_long.loc[
+                    facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
+                long_for_facility = facilities_with_lat_long.loc[
+                    facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
+                index_for_x = ((long_data - long_for_facility)**2).argmin()
+                index_for_y= ((lat_data - lat_for_facility)**2).argmin()
+                # which grid number is it
+                grid = index_for_x * index_for_y + 1
+                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]  # across all time points
+
+            ## below are not in facilities file?
+            elif reporting_facility == "Central East Zone":
+                grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[
+                    0]  # furtherst east zone
+                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]
+            elif (reporting_facility == "Central Hospital"):
+                grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[
+                    0]  # all labelled X City will be in the same grid
+                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]
+            else:
+                continue
+
+
+        ### Get data ready for linear regression between reporting and weather data
+        weather_df = pd.DataFrame.from_dict(cumulative_sum_by_facility, orient='index').T
+        weather_df.columns = facilities_with_location
+        weather_df.to_csv(Path(scenario_directory)/"prediction_weather_by_smaller_facilities_with_ANC_lm.csv")
+
+    elif monthly_cumulative:
+        cumulative_sum_by_grid = {}
+        mean_precip_by_timepoint = pd.DataFrame.from_dict(mean_precip_by_timepoint)
+        cumulative_sum_by_facility = {}
+        for grid in range(mean_precip_by_timepoint.shape[1]):  # columns are grids
+                pr_data_for_grid = mean_precip_by_timepoint[grid]
+                if grid not in cumulative_sum_by_grid:
+                    cumulative_sum_by_grid[grid] = []
+                begin_day = 0
+                for month_idx, month_length in enumerate(month_lengths):
+                    window_size = month_length  # Set the window size to 5 days
+                    days_for_grid = pr_data_for_grid[begin_day:begin_day + month_length]
+                    cumulative_sums = []
+                    for day in range(month_length - window_size + 1):
+                        window_sum = sum(days_for_grid[day:day + window_size])
+                        cumulative_sums.append(window_sum)
+                    max_cumulative_sums = max(cumulative_sums)
+                    cumulative_sum_by_grid[grid].append(max_cumulative_sums)
+                    begin_day += month_length
+        df_cumulative_sum = pd.DataFrame.from_dict(cumulative_sum_by_grid, orient='index')
+        df_cumulative_sum = df_cumulative_sum.T
+        df_cumulative_sum.to_csv(Path(scenario_directory) / "monthly_cumulative_sum_by_grid.csv")
+
+        ##
+
+        ############### NOW HAVE LAT/LONG OF FACILITIES #####################
+        facilities_with_location = []
+        for reporting_facility in reporting_data.columns:
+            matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_with_lat_long['Fname'],
+                                                               n=3, cutoff=0.90)
+            if matching_facility_name:
+                match_name = matching_facility_name[0]  # Access the string directly
+                facilities_with_location.append(reporting_facility)
+                lat_for_facility = facilities_with_lat_long.loc[
+                    facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
+                long_for_facility = facilities_with_lat_long.loc[
+                    facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
+                index_for_x = ((long_data - long_for_facility) ** 2).argmin()
+                index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
+                # which grid number is it
+                grid = index_for_x*index_for_y + 1
+                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]  # across all time points
+
+            ## below are not in facilities file?
+            elif reporting_facility == "Central East Zone":
+                grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[
+                    0]  # furtherst east zone
+                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]
+            elif (reporting_facility == "Central Hospital"):
+                grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[
+                    0]  # all labelled X City will be in the same grid
+                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]
+            else:
+                continue
+
+        ### Get data ready for linear regression between reporting and weather data
+        weather_df = pd.DataFrame.from_dict(cumulative_sum_by_facility, orient='index').T
+        weather_df.columns = facilities_with_location
+        weather_df.to_csv(Path(scenario_directory) / "prediction_weather_monthly_by_smaller_facilities_with_ANC_lm.csv")
+
+
 
 
