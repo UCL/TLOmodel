@@ -375,8 +375,6 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     person_id = under5s.index[0]
     # make this individual have no wasting
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    # confirm wasting property is reset. This individual should have no wasting
-    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
 
     # get wasting module
     wmodule = sim.modules['Wasting']
