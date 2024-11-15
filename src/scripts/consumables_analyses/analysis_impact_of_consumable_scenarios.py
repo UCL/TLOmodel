@@ -14,6 +14,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib.ticker import FuncFormatter
 from collections import Counter, defaultdict
 import seaborn as sns
@@ -139,6 +140,103 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     fig.tight_layout()
 
     return fig, ax
+
+def do_bar_plot_with_ci_and_heatmap(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, heatmap_values=None, plt_title = 'unnamed_figure'):
+    """Create a bar plot with CI and a heatmap above it."""
+    yerr = np.array([
+        (_df['median'] - _df['lower']).values,
+        (_df['upper'] - _df['median']).values,
+    ])
+
+    xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
+
+    # Define color mapping based on index values
+    color_mapping = {
+          'Actual': '#1f77b4',
+          'Non-therapeutic consumables':'#ff7f0e',
+          'Vital medicines': '#2ca02c',
+          'Pharmacist-managed':'#d62728',
+          '75th percentile facility':'#9467bd',
+          '90th percentile facility':'#8c564b',
+          'Best facility': '#e377c2',
+          'Best facility (including DHO)': '#7f7f7f',
+          'HIV supply chain': '#bcbd22',
+          'EPI supply chain': '#17becf',
+          'Perfect':'#31a354'
+    }
+
+    color_values = [color_mapping.get(idx, '#cccccc') for idx in _df.index]
+
+    # Create a figure with two axes
+    fig, (heatmap_ax, ax) = plt.subplots(
+        nrows=2, ncols=1, gridspec_kw={"height_ratios": [0.3, 2]}, figsize=(10, 7)
+    )
+
+    # Heatmap axis
+    if heatmap_values:
+        cmap = plt.cm.YlGn
+        norm = mcolors.Normalize(vmin=min(heatmap_values), vmax=max(heatmap_values))
+        heatmap_colors = [cmap(norm(value)) for value in heatmap_values]
+
+        heatmap_ax.bar(
+            xticks.keys(),
+            [1] * len(heatmap_values),  # Constant height for heatmap bars
+            color=heatmap_colors,
+            align='center',
+            width=0.8
+        )
+
+        # Add data labels to heatmap bars
+        for xpos, value in zip(xticks.keys(), heatmap_values):
+            heatmap_ax.text(
+                xpos, 0.5, f"{value:.2f}", color='black', ha='center', va='center', fontsize= 12, weight='bold'
+            )
+
+        heatmap_ax.set_xticks(list(xticks.keys()))
+        heatmap_ax.set_xticklabels([])
+        heatmap_ax.set_yticks([])
+        heatmap_ax.set_ylabel('Average consumable \n availability under \n each scenario \n (Baseline = 0.52)', fontsize=10, rotation=0, labelpad=20)
+        heatmap_ax.spines['top'].set_visible(False)
+        heatmap_ax.spines['right'].set_visible(False)
+        heatmap_ax.spines['left'].set_visible(False)
+        heatmap_ax.spines['bottom'].set_visible(False)
+
+    # Bar plot axis
+    ax.bar(
+        xticks.keys(),
+        _df['median'].values,
+        yerr=yerr,
+        alpha=1,
+        color=color_values,
+        ecolor='black',
+        capsize=10
+    )
+    if annotations:
+        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=10)
+
+    ax.set_xticks(list(xticks.keys()))
+    if not xticklabels_horizontal_and_wrapped:
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs, rotation=45, ha='right', fontsize=10)
+    else:
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs, fontsize=10)
+
+    # Set font size for y-tick labels
+    ax.tick_params(axis='y', labelsize=10)
+    ax.tick_params(axis='x', labelsize=10)
+
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Add global title
+    fig.suptitle(plt_title, fontsize=16, fontweight='bold')
+
+    fig.tight_layout()
+
+    return fig, (heatmap_ax, ax)
 
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -448,20 +546,23 @@ pc_dalys_averted = pc_dalys_averted.set_index('scenario')
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Health impact of improved consumable availability\n {target_period()}'
+average_availability_under_scenarios = [0.59, 0.59, 0.6, 0.57, 0.63, 0.7, 0.79, 0.91, 1]
+name_of_plot = f'Health impact of improved consumable availability\n at level 1 health facilities, {target_period()}'
 chosen_num_dalys_averted = num_dalys_averted[~num_dalys_averted.index.isin(drop_scenarios)]
 chosen_pc_dalys_averted = pc_dalys_averted[~pc_dalys_averted.index.isin(drop_scenarios)]
-fig, ax = do_bar_plot_with_ci(
-    (chosen_num_dalys_averted / 1e6).clip(lower=0.0),
+fig, (heatmap_ax, ax) = do_bar_plot_with_ci_and_heatmap(
+    (chosen_num_dalys_averted / 1e6),
     annotations=[
         f"{round(row['median'], 1)} % \n ({round(row['lower'], 1)}- \n {round(row['upper'], 1)}) %"
-        for _, row in chosen_pc_dalys_averted.clip(lower=0.0).iterrows()
+        for _, row in chosen_pc_dalys_averted.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
+    heatmap_values=average_availability_under_scenarios,
+    plt_title = name_of_plot
 )
-ax.set_title(name_of_plot)
-ax.set_ylim(0, 20)
-ax.set_yticks(np.arange(0, 18, 2))
+#ax.set_title(name_of_plot)
+ax.set_ylim(0, 14)
+ax.set_yticks(np.arange(0, 14, 2))
 ax.set_ylabel('Additional DALYS Averted \n(Millions)')
 fig.tight_layout()
 fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
