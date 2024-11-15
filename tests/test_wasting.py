@@ -391,8 +391,8 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
 
     # Set death rate at 0% and recovery to MAM at 100%
-    wmodule.parameters['prob_death_after_care'] = 0.0
-    wmodule.parameters['prob_mam_after_care'] = 1.0
+    wmodule.parameters['prob_death_after_SAMcare'] = 0.0
+    wmodule.parameters['prob_mam_after_SAMcare'] = 1.0
 
     # Run Wasting Polling event to get new incident cases:
     polling = Wasting_IncidencePoll(module=sim.modules['Wasting'])
@@ -514,7 +514,7 @@ def test_recovery_severe_wasting_with_complications(tmpdir):
     # make recovery rate to 100% and death rate to zero so that
     # this individual should recover
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel.multiplicative()
-    wmodule.parameters['prob_death_after_care'] = 0.0
+    wmodule.parameters['prob_death_after_SAMcare'] = 0.0
 
     # run care seeking event and ensure HSI for complicated SAM is scheduled
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
@@ -584,8 +584,8 @@ def test_nat_hist_death(tmpdir):
     wmodule = sim.modules['Wasting']
 
     # Set death rate at 100%
-    wmodule.parameters['prob_death_after_care'] = 1.0
-    wmodule.parameters['prob_mam_after_care'] = 0.0
+    wmodule.parameters['prob_death_after_SAMcare'] = 1.0
+    wmodule.parameters['prob_mam_after_SAMcare'] = 0.0
 
     # make zero recovery rate. reset recovery linear model
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
@@ -669,8 +669,8 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
 
     wmodule = sim.modules['Wasting']
     # Make 0% death rate by replacing with empty linear model 0.0
-    wmodule.parameters['prob_death_after_care'] = 0.0
-    wmodule.parameters['prob_mam_after_care'] = 1.0
+    wmodule.parameters['prob_death_after_SAMcare'] = 0.0
+    wmodule.parameters['prob_mam_after_SAMcare'] = 1.0
 
     # increase wasting incidence rate to 100% and reduce rate of progress to severe wasting to zero.We don't want
     # individuals to progress to SAM as we are testing for MAM natural recovery
@@ -743,8 +743,8 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
     wmodule.wasting_models.severe_wasting_progression_lm = LinearModel.multiplicative()
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
-    wmodule.parameters['prob_mam_after_care'] = 0.0
-    wmodule.parameters['prob_death_after_care'] = 1.0
+    wmodule.parameters['prob_mam_after_SAMcare'] = 0.0
+    wmodule.parameters['prob_death_after_SAMcare'] = 1.0
 
     # Get person to use:
     df = sim.population.props
