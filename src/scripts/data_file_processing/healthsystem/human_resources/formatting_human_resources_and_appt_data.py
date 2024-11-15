@@ -1762,6 +1762,9 @@ funded_daily_capability_coarse = pd.DataFrame(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
         dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
+# None-necessary changes of data format; just to keep in consistency with TLO master resource files
+funded_daily_capability_coarse['Staff_Count'] = funded_daily_capability_coarse['Staff_Count'].astype(float)
+funded_daily_capability_coarse['Facility_ID'] = funded_daily_capability_coarse['Facility_ID'].astype(float)
 
 # Since not dropped zero-minute rows in lines 1717-1718,
 # check that there are entries for all coarse cadres and all facility id
@@ -1836,6 +1839,9 @@ curr_daily_capability_coarse = pd.DataFrame(
         ['Facility_ID', 'Facility_Name', 'Facility_Level', 'District', 'Region', 'Officer_Category'],
         dropna=False)[['Total_Mins_Per_Day', 'Staff_Count']].sum()
 ).reset_index()
+# None-necessary changes of data format; just to keep in consistency with TLO master resource files
+curr_daily_capability_coarse['Staff_Count'] = curr_daily_capability_coarse['Staff_Count'].astype(float)
+curr_daily_capability_coarse['Facility_ID'] = curr_daily_capability_coarse['Facility_ID'].astype(float)
 
 # Since not dropped zero-minute rows in lines 1797-1798,
 # check that there are entries for all coarse cadres and all facility id
