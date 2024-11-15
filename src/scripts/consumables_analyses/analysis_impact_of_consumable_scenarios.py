@@ -878,7 +878,7 @@ fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                     on = ['Facility_ID'], how='left')
 # Attach programs
-program_item_mapping = pd.read_csv(path_for_new_resourcefiles  / 'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
+program_item_mapping = pd.read_csv(resourcefilepath  / 'healthsystem'/ 'consumables' /  'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
 program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
 tlo_availability_df = tlo_availability_df.merge(program_item_mapping,on = ['item_code'], how='left')
 
