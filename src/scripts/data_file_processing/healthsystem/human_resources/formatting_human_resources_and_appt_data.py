@@ -283,10 +283,9 @@ curr_staff_distribution.loc[idx_dcsa[1:4], 'Proportion'] = 0.00
 
 # --- Generate assumptions of established/funded staff distribution at facility levels 0&1a&1b&2
 # Read 2018-03-09 Facility-level establishment MOH & CHAM from CHAI auxiliary datasets
-fund_staff_2018_raw = pd.read_csv(resourcefilepath / '2018-03-09 Facility-level establishment MOH & CHAM.csv')
+fund_staff_2018_raw = pd.read_csv(path_to_auxiliaryfiles / '2018-03-09 Facility-level establishment MOH & CHAM.csv')
 fund_staff_2018_raw['Number of positions'] = fund_staff_2018_raw['Number of positions'].fillna(0)
 fund_staff_2018_raw['Number of positions'] = fund_staff_2018_raw['Number of positions'].astype(int)
-
 
 # Get relevant columns
 fund_staff_2018 = fund_staff_2018_raw[['Number of positions', 'Facility', 'Facility Type', 'WFOM Cadre']].copy()
