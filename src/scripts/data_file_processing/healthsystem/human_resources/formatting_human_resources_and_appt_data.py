@@ -966,7 +966,8 @@ curr_staffing_table.loc[
 # Group the referral hospitals QECH and ZCH as Referral Hospital_Southern
 Is_DistrictLevel = curr_staffing_table['Is_DistrictLevel'].values  # Save the column 'Is_DistrictLevel' first
 curr_staffing_table = pd.DataFrame(
-    curr_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()).reset_index()
+    curr_staffing_table.groupby(by=['District_Or_Hospital'], sort=False).sum()
+).reset_index().drop(columns='Is_DistrictLevel')
 curr_staffing_table.insert(1, 'Is_DistrictLevel', Is_DistrictLevel[:-1])  # Add the column 'Is_DistrictLevel'
 
 # No need to add a row for Zomba Mental Hospital, as the updated CHAI data has this row for ZMH.
@@ -999,7 +1000,7 @@ for i in np.arange(0, len(split_districts)):
     record['Is_DistrictLevel'] = True
 
     # get total staff level from the super districts
-    cols = set(curr_staffing_table.columns).intersection(set(officer_types_table.Officer_Type_Code))
+    cols = list(set(curr_staffing_table.columns).intersection(set(officer_types_table.Officer_Type_Code)))
 
     total_staff = curr_staffing_table.loc[
         curr_staffing_table['District_Or_Hospital'] == super_district, cols].values.squeeze()
@@ -1014,7 +1015,8 @@ for i in np.arange(0, len(split_districts)):
 
     # assign w * 100% staff to the new district
     record.loc[cols] = w * total_staff
-    curr_staffing_table = curr_staffing_table.append(record).reset_index(drop=True)
+    assert (record.to_frame().T.columns == curr_staffing_table.columns).all()
+    curr_staffing_table = pd.concat([curr_staffing_table, record.to_frame().T], axis=0).reset_index(drop=True)
 
     # take staff away from the super district
     curr_staffing_table.loc[curr_staffing_table['District_Or_Hospital'] == super_district, cols] = \
@@ -1111,23 +1113,23 @@ pop_regions = pd.unique(pop['Region'])
 for d in pop_districts:
     df = pd.DataFrame({'Facility_Level': Facility_Levels[0:4], 'District': d,
                        'Region': pop.loc[pop['District'] == d, 'Region'].values[0]})
-    mfl = mfl.append(df, ignore_index=True, sort=True)
+    mfl = pd.concat([mfl, df], ignore_index=True, sort=True)
 
 # Add in the Referral Hospitals, one for each region
 for r in pop_regions:
-    mfl = mfl.append(pd.DataFrame({
-        'Facility_Level': Facility_Levels[4], 'District': None, 'Region': r
-    }, index=[0]), ignore_index=True, sort=True)
+    df = pd.DataFrame({
+        'Facility_Level': Facility_Levels[4], 'District': None, 'Region': r}, index=[0])
+    mfl = pd.concat([mfl, df], ignore_index=True, sort=True)
 
 # Add the ZMH
-mfl = mfl.append(pd.DataFrame({
-    'Facility_Level': Facility_Levels[5], 'District': None, 'Region': None
-}, index=[0]), ignore_index=True, sort=True)
+df = pd.DataFrame({
+    'Facility_Level': Facility_Levels[5], 'District': None, 'Region': None}, index=[0])
+mfl = pd.concat([mfl, df], ignore_index=True, sort=True)
 
 # Add the HQ
-mfl = mfl.append(pd.DataFrame({
-    'Facility_Level': Facility_Levels[6], 'District': None, 'Region': None
-}, index=[0]), ignore_index=True, sort=True)
+df = pd.DataFrame({
+    'Facility_Level': Facility_Levels[6], 'District': None, 'Region': None}, index=[0])
+mfl = pd.concat([mfl, df], ignore_index=True, sort=True)
 
 # Create the Facility_ID
 mfl.loc[:, 'Facility_ID'] = mfl.index
@@ -1415,7 +1417,7 @@ ApptTimeTable.reset_index(drop=True, inplace=True)
 # Generate appt_time_table_coarse with officer_category, instead of officer_type
 appt_time_table_coarse = pd.DataFrame(
     ApptTimeTable.groupby(['Appt_Type_Code', 'Facility_Level', 'Officer_Category']).sum()
-).reset_index()
+).reset_index().drop(columns=['Officer_Type', 'Officer_Type_Code'])
 
 # Save
 # ApptTimeTable.to_csv(
@@ -1481,19 +1483,14 @@ for a in appt_types_table['Appt_Type_Code'].values:
 
         if len(block) == 0:
             # no requirement expressed => The appt is not possible at this location
-            Officers_Need_For_Appt = Officers_Need_For_Appt.append(
-                {'Facility_Level': f,
-                 'Appt_Type_Code': a,
-                 'Officer_Type_Codes': False
-                 }, ignore_index=True)
+            df = pd.DataFrame({'Facility_Level': f, 'Appt_Type_Code': a, 'Officer_Type_Codes': False}, index=[0])
+            Officers_Need_For_Appt = pd.concat([Officers_Need_For_Appt, df], ignore_index=True)
 
         else:
             need_officer_types = list(block['Officer_Type_Code'])
-            Officers_Need_For_Appt = Officers_Need_For_Appt.append(
-                {'Facility_Level': f,
-                 'Appt_Type_Code': a,
-                 'Officer_Type_Codes': need_officer_types
-                 }, ignore_index=True)
+            df = pd.DataFrame({'Facility_Level': f, 'Appt_Type_Code': a, 'Officer_Type_Codes': need_officer_types},
+                              index=range(len(block)))
+            Officers_Need_For_Appt = pd.concat([Officers_Need_For_Appt, df], ignore_index=True)
 
 # Turn this into the the set of staff that are required for each type of appointment
 FacLevel_By_Officer = pd.DataFrame(columns=Facility_Levels,
@@ -1681,7 +1678,8 @@ HosHC_pft_diff.iloc[:, 1:] = (
      HosHC_patient_facing_time_old.iloc[:, 1:].values) /
     HosHC_patient_facing_time_old.iloc[:, 1:].values
 )
-HosHC_pft_diff = HosHC_pft_diff.append(HosHC_pft_diff.iloc[:, 1:].mean(axis=0), ignore_index=True)
+df = HosHC_pft_diff.iloc[:, 1:].mean(axis=0).to_frame().T
+HosHC_pft_diff = pd.concat([HosHC_pft_diff, df], ignore_index=True)
 
 # save
 # HosHC_pft_diff.to_csv(
@@ -1752,13 +1750,8 @@ for i in funded_daily_capability.index:
 funded_daily_capability.drop(columns='District_Or_Hospital', inplace=True)
 
 # Add info from mfl: Region and Facility ID
-for i in funded_daily_capability.index:
-    the_facility_name = funded_daily_capability.loc[i, 'Facility_Name']
-    the_ID = mfl.loc[mfl['Facility_Name'] == the_facility_name, 'Facility_ID']
-    the_region = mfl.loc[mfl['Facility_Name'] == the_facility_name, 'Region']
-
-    funded_daily_capability.loc[i, 'Facility_ID'] = the_ID.values
-    funded_daily_capability.loc[i, 'Region'] = the_region.values
+funded_daily_capability = funded_daily_capability.merge(
+    mfl[['Facility_Name', 'Facility_ID', 'Region']], on='Facility_Name', how='left')
 
 # Add 'officer_category' info
 funded_daily_capability = funded_daily_capability.merge(officer_types_table, on='Officer_Type_Code', how='left')
@@ -1831,13 +1824,8 @@ for i in curr_daily_capability.index:
 curr_daily_capability.drop(columns='District_Or_Hospital', inplace=True)
 
 # Add info from mfl: Region and Facility ID
-for i in curr_daily_capability.index:
-    the_facility_name = curr_daily_capability.loc[i, 'Facility_Name']
-    the_ID = mfl.loc[mfl['Facility_Name'] == the_facility_name, 'Facility_ID']
-    the_region = mfl.loc[mfl['Facility_Name'] == the_facility_name, 'Region']
-
-    curr_daily_capability.loc[i, 'Facility_ID'] = the_ID.values
-    curr_daily_capability.loc[i, 'Region'] = the_region.values
+curr_daily_capability = curr_daily_capability.merge(
+    mfl[['Facility_Name', 'Facility_ID', 'Region']], on='Facility_Name', how='left')
 
 # Add 'officer_category' info
 curr_daily_capability = curr_daily_capability.merge(officer_types_table, on='Officer_Type_Code', how='left')
