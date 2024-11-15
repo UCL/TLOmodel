@@ -1092,8 +1092,11 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         if not self.attendance:
             return
 
-        # TODO: check availability of equipment and base diagnosis on equipment used
-        available_equipment = ['Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape']
+        available_equipment = []
+        for equip in ['Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape']:
+            available = rng.random_sample() < HSI_Event.probability_all_equipment_available(self, equip)
+            if available:
+                available_equipment.append(equip)
         self.add_equipment(set(available_equipment))
 
         def schedule_tx_by_diagnosis(hsi_event):
@@ -1104,36 +1107,54 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         complications = df.at[person_id, 'un_sam_with_complications']
         oedema_checked = rng.random_sample() < 0.1  # TODO: find correct value & add as parameter p['']
-        # diagnosis based on measurements that can be performed with available equipment
+
+        # DIAGNOSIS
+        # based on performed measurements (depends on whether oedema is checked, and what equipment is available)
         if oedema_checked and df.at[person_id, 'un_am_bilateral_oedema']:
             diagnosis = 'SAM'
         else:
-            if all(item in available_equipment for item in
-                   ['Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape']):
-                if oedema_checked:
-                    diagnosis = df.at[person_id, 'un_clinical_acute_malnutrition']
+            if 'MUAC tape' in available_equipment:
+                # all equip available and used
+                if all(item in available_equipment for item in
+                       ['Height Pole (Stadiometer)', 'Weighing scale']):
+                    if oedema_checked:
+                        diagnosis = df.at[person_id, 'un_clinical_acute_malnutrition']
+                    else:
+                        whz = df.at[person_id, 'un_WHZ_category']
+                        muac = df.at[person_id, 'un_am_MUAC_category']
+                        if whz == 'WHZ>=-2' and muac == '>=125mm':
+                            diagnosis = 'well'
+                        elif whz == 'WHZ<-3' or muac == '<115mm':
+                            diagnosis = 'SAM'
+                        else:
+                            diagnosis = 'MAM'
+                # MUAC measurement is solely used for diagnosis
                 else:
-                    whz = df.at[person_id, 'un_WHZ_category']
                     muac = df.at[person_id, 'un_am_MUAC_category']
-                    # if person well
-                    if whz == 'WHZ>=-2' and muac == '>=125mm':
+                    if muac == '>=125mm':
                         diagnosis = 'well'
-                    elif whz == 'WHZ<-3' or muac == '<115mm':
+                    elif muac == '<115mm':
                         diagnosis = 'SAM'
                     else:
                         diagnosis = 'MAM'
-            else:
-                diagnosis = 'well'
-                # TODO: update the above, define what to do otherwise:
-                #   if height pole or weight scale not available & MUAC tape avail.
-                #     => low MUAC = SAM, middle MUAC = MAM, normal MUAC = well;
-                #   if height pole and weight scale avail & MUAC not avail
-                #     => low WHZ = SAM, middle WHZ = MAM, normal WHZ = well;
-                #   if height pole or weight scale not avail & MUAC not avail
-                #     => ? could we assume that in that case, they will at least check the oedema? or what?
 
-                # TODO: will the presence of complications change the above diagnosis, or will it be taken in account
-                #  only if SAM is diagnosed based on the above?
+            else:  # MUAC tape not available
+                # WHZ score is solely used for diagnosis
+                if all(item in available_equipment for item in
+                       ['Height Pole (Stadiometer)', 'Weighing scale']):
+                    whz = df.at[person_id, 'un_WHZ_category']
+                    if whz == 'WHZ>=-2':
+                        diagnosis = 'well'
+                    elif whz == 'WHZ<-3':
+                        diagnosis = 'SAM'
+                    else:
+                        diagnosis = 'MAM'
+                # WHZ score nor MUAC measurement available, hence diagnosis based solely on presence of oedema
+                else:
+                    if df.at[person_id, 'un_am_bilateral_oedema']:
+                        diagnosis = 'SAM'
+                    else:
+                        diagnosis = 'well'
 
         if diagnosis == 'well':
             return
@@ -1141,7 +1162,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             schedule_tx_by_diagnosis(HSI_Wasting_SupplementaryFeedingProgramme_MAM)
         elif (diagnosis == 'SAM') and (not complications):
             schedule_tx_by_diagnosis(HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
-        elif (diagnosis == 'SAM') and complications:
+        else:  # (diagnosis == 'SAM') and complications:
             schedule_tx_by_diagnosis(HSI_Wasting_InpatientCare_ComplicatedSAM)
 
     def did_not_run(self):
