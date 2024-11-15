@@ -716,8 +716,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         """schedule to run every month
         :param module: the module that created this event
         """
-        self.repeat_months = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat_months))
+        super().__init__(module, frequency=DateOffset(months=1))
         assert isinstance(module, Wasting)
 
     def apply(self, population):
