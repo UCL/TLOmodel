@@ -1030,7 +1030,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
-        """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
+        """Return the expected appointment footprint based on attendance at the HSI event."""
         p = self.module.parameters
         rng = self.module.rng
         person_age = self.sim.population.props.loc[self.target].age_exact_years
