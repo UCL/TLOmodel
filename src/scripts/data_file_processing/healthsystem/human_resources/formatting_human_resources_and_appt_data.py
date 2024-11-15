@@ -709,20 +709,20 @@ fund_staffing_table = wb_extract.copy()
 # whereas C01 is required by mental health appts at level 1b, level 2 and level 3.
 # To fix this inconsistency, we have to move at least 1 C01 to each of these districts from the referral hospitals.
 # (QECH and ZCH in South, MCH in North, KCH in Central; ZCH has no C01)
-# non_c01_district_idx = fund_staffing_table[(fund_staffing_table['C01'] == 0) &
-#                                            (fund_staffing_table['Is_DistrictLevel'])].index
-# non_c01_districts = pd.DataFrame(fund_staffing_table.loc[non_c01_district_idx, 'District_Or_Hospital'])
-# non_c01_districts['Region'] = pop_by_district.loc[non_c01_districts['District_Or_Hospital'], 'Region'].values
-# fund_staffing_table.loc[non_c01_district_idx, 'C01'] = 1
-# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] = (
-#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] - 4
-# )
-# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] = (
-#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] - 1
-# )
-# fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] = (
-#     fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] - 2
-# )
+non_c01_district_idx = fund_staffing_table[(fund_staffing_table['C01'] == 0) &
+                                           (fund_staffing_table['Is_DistrictLevel'])].index
+non_c01_districts = pd.DataFrame(fund_staffing_table.loc[non_c01_district_idx, 'District_Or_Hospital'])
+non_c01_districts['Region'] = pop_by_district.loc[non_c01_districts['District_Or_Hospital'], 'Region'].values
+fund_staffing_table.loc[non_c01_district_idx, 'C01'] = 1
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] = (
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'QECH', 'C01'] - 4
+)
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] = (
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'MCH', 'C01'] - 1
+)
+fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] = (
+    fund_staffing_table.loc[fund_staffing_table['District_Or_Hospital'] == 'KCH', 'C01'] - 2
+)
 # *********************************************************************************************************************
 
 # *** Only for funded_plus ********************************************************************************************
@@ -730,27 +730,27 @@ fund_staffing_table = wb_extract.copy()
 # which is abnormal. Therefore, we use actual DCSA count data for funded_plus scenario, to avoid possible
 # negative impact caused of reduced DCSA when switch from actual to funded_plus scenario in tlo simulation.
 # First, extract the section about "Current TOTAl Staff'
-# hcw_curr_extract = wb_import.loc[3:39, 1:21]
-# hcw_curr_extract = hcw_curr_extract.drop([4, 5])
-# hcw_curr_extract.columns = hcw_curr_extract.iloc[0]
-# hcw_curr_extract = hcw_curr_extract.drop([3])
-# hcw_curr_extract = hcw_curr_extract.reset_index(drop=True)
-# hcw_curr_extract.fillna(0, inplace=True)
-# hcw_curr_extract.loc[:, 'District_Or_Hospital'] = labels
-# hcw_curr_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
-# curr_staffing_table = hcw_curr_extract.copy()
+hcw_curr_extract = wb_import.loc[3:39, 1:21]
+hcw_curr_extract = hcw_curr_extract.drop([4, 5])
+hcw_curr_extract.columns = hcw_curr_extract.iloc[0]
+hcw_curr_extract = hcw_curr_extract.drop([3])
+hcw_curr_extract = hcw_curr_extract.reset_index(drop=True)
+hcw_curr_extract.fillna(0, inplace=True)
+hcw_curr_extract.loc[:, 'District_Or_Hospital'] = labels
+hcw_curr_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
+curr_staffing_table = hcw_curr_extract.copy()
 # Then, replace the DCSA E01 data for funded_plus
-# assert (curr_staffing_table.District_Or_Hospital == fund_staffing_table.District_Or_Hospital).all()
-# fund_staffing_table['E01'] = curr_staffing_table['E01'].copy()
+assert (curr_staffing_table.District_Or_Hospital == fund_staffing_table.District_Or_Hospital).all()
+fund_staffing_table['E01'] = curr_staffing_table['E01'].copy()
 # Further, it does not make sense that Likoma has no DCSA staff. As CHAI indicates Likoma's data is mostly bounded into
 # Nhkata Bay, we draw some DCSA from Nhkata Bay to Likoma using population as the weight
-# idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
-# assert fund_staffing_table.loc[idx_likoma, 'E01'].values == 0
-# idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
-# fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
-#      pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
-# fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
-#      fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
+idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
+assert fund_staffing_table.loc[idx_likoma, 'E01'].values == 0
+idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
+fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
+     pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
+fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
+     fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
 # *********************************************************************************************************************
 
 # Sort out which are district allocations and which are central hospitals and above
@@ -875,15 +875,15 @@ fund_staffing_table = district_faclevel.merge(fund_staffing_table, how='outer')
 # Before split, update the funded C01 distributions at levels 1a, 1b and 2 using CHAI Optimal Workforce estimates. \
 # This is because funded C01 are all at level 1b (100%), meanwhile appt time base requires C01 at level 2. \
 # CHAI Optimal Workforce locates C01 47.92% at level 1b and 52.08% at level 2, which seems more sensible.
-# idx_c01_level_1b = fund_staff_distribution[
-#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
-#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
-# fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
-#
-# idx_c01_level_2 = fund_staff_distribution[
-#     (fund_staff_distribution['Cadre_Code'] == 'C01') &
-#     (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
-# fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
+idx_c01_level_1b = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_1b')].index
+fund_staff_distribution.loc[idx_c01_level_1b, 'Proportion_Fund'] = 0.4792
+
+idx_c01_level_2 = fund_staff_distribution[
+    (fund_staff_distribution['Cadre_Code'] == 'C01') &
+    (fund_staff_distribution['Facility_Level'] == 'Facility_Level_2')].index
+fund_staff_distribution.loc[idx_c01_level_2, 'Proportion_Fund'] = 0.5208
 # *********************************************************************************************************************
 
 # Split
@@ -1847,12 +1847,12 @@ curr_daily_capability_coarse.to_csv(
     outputlocation / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 # Need to # following lines below when generate funded_plus capability
-funded_daily_capability_coarse.to_csv(
-    outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+# funded_daily_capability_coarse.to_csv(
+#     outputlocation / 'human_resources' / 'funded' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 
 # *** Only for funded_plus ********************************************************************************************
-# funded_daily_capability_coarse.to_csv(
-#     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
+funded_daily_capability_coarse.to_csv(
+    outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
 # *********************************************************************************************************************
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -1965,15 +1965,16 @@ appts_with_no_required_hcw.drop_duplicates(inplace=True, ignore_index=True)
 appts_with_no_required_hcw.dropna(axis='index', how='any', inplace=True)
 
 # *** Only for funded_plus ********************************************************************************************
-# df_funded_plus = find_districts_with_no_required_hcw(funded_daily_capability_coarse, 'funded_plus')
-# assert len(df_funded_plus) == 0
+df_funded_plus = find_districts_with_no_required_hcw(funded_daily_capability_coarse, 'funded_plus')
+assert len(df_funded_plus) == 0
 # *********************************************************************************************************************
 
 # save results for actual and funded HR scenarios;
 # excl. funded_plus scenario, where there is no failing district or CenHos
-appts_with_no_required_hcw.to_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appts_That_Require_HCW_Who_Are_Not_Present.csv',
-    index=False)
+# to comment these lines when run for funded_plus
+# appts_with_no_required_hcw.to_csv(
+#     outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appts_That_Require_HCW_Who_Are_Not_Present.csv',
+#     index=False)
 
 # Save results for funded
 # Need to # following lines below when generate funded_plus capability
