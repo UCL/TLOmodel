@@ -57,7 +57,7 @@ from tlo.analysis.utils import (
 )
 
 outputspath = Path('./outputs')
-figurespath = Path(outputspath / 'impact_of_consumable_scenarios_12Sep2024')
+figurespath = Path(outputspath / 'impact_of_consumable_scenarios_results')
 figurespath.mkdir(parents=True, exist_ok=True) # create directory if it doesn't exist
 resourcefilepath = Path("./resources")
 
@@ -82,8 +82,8 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     extent of the error bar."""
 
     yerr = np.array([
-        (_df['mean'] - _df['lower']).values,
-        (_df['upper'] - _df['mean']).values,
+        (_df['median'] - _df['lower']).values,
+        (_df['upper'] - _df['median']).values,
     ])
 
     xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
@@ -91,7 +91,7 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     # Define color mapping based on index values
     color_mapping = {
           'Actual': '#1f77b4',
-          'General consumables':'#ff7f0e',
+          'Non-therapeutic consumables':'#ff7f0e',
           'Vital medicines': '#2ca02c',
           'Pharmacist-managed':'#d62728',
           '75th percentile facility':'#9467bd',
@@ -104,12 +104,12 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     }
 
     colors = [_df.index[i] in color_mapping for i in range(len(_df.index))]
-    color_values = [color_mapping.get(idx, 'default_color') for idx in _df.index]
+    color_values = [color_mapping.get(idx, '#cccccc') for idx in _df.index]
 
     fig, ax = plt.subplots()
     ax.bar(
         xticks.keys(),
-        _df['mean'].values,
+        _df['median'].values,
         yerr=yerr,
         alpha=1,
         color=color_values,
@@ -119,7 +119,7 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
     )
     if annotations:
         for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=11)
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=10)
 
     ax.set_xticks(list(xticks.keys()))
     if not xticklabels_horizontal_and_wrapped:
@@ -130,8 +130,8 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
         ax.set_xticklabels(wrapped_labs, fontsize=10)
 
     # Set font size for y-tick labels
-    ax.tick_params(axis='y', labelsize=12)
-    ax.tick_params(axis='x', labelsize=11)
+    ax.tick_params(axis='y', labelsize=10)
+    ax.tick_params(axis='x', labelsize=10)
 
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
@@ -368,7 +368,7 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-params_dict  = {'default': 'Actual', 'scenario1': 'General consumables', 'scenario2': 'Vital medicines',
+params_dict  = {'default': 'Actual', 'scenario1': 'Non-therapeutic consumables', 'scenario2': 'Vital medicines',
                 'scenario3': 'Pharmacist-managed', 'scenario4': 'Level 1b', 'scenario5': 'CHAM',
                 'scenario6': '75th percentile facility', 'scenario7': '90th percentile facility', 'scenario8': 'Best facility',
                 'scenario9': 'Best facility (including DHO)','scenario10': 'HIV supply chain','scenario11': 'EPI supply chain',
@@ -405,7 +405,7 @@ chosen_num_dalys_summarized = num_dalys_summarized[~num_dalys_summarized.index.i
 fig, ax = do_bar_plot_with_ci(
     (chosen_num_dalys_summarized / 1e6).clip(lower=0.0),
     annotations=[
-        f"{round(row['mean']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
+        f"{round(row['median']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
         for _, row in chosen_num_dalys_summarized.clip(lower=0.0).iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -448,13 +448,13 @@ pc_dalys_averted = pc_dalys_averted.set_index('scenario')
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Additional DALYs Averted vs Actual, {target_period()}'
+name_of_plot = f'Health impact of improved consumable availability\n {target_period()}'
 chosen_num_dalys_averted = num_dalys_averted[~num_dalys_averted.index.isin(drop_scenarios)]
 chosen_pc_dalys_averted = pc_dalys_averted[~pc_dalys_averted.index.isin(drop_scenarios)]
 fig, ax = do_bar_plot_with_ci(
     (chosen_num_dalys_averted / 1e6).clip(lower=0.0),
     annotations=[
-        f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}- \n {round(row['upper'], 1)}) %"
+        f"{round(row['median'], 1)} % \n ({round(row['lower'], 1)}- \n {round(row['upper'], 1)}) %"
         for _, row in chosen_pc_dalys_averted.clip(lower=0.0).iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -464,7 +464,7 @@ ax.set_ylim(0, 20)
 ax.set_yticks(np.arange(0, 18, 2))
 ax.set_ylabel('Additional DALYS Averted \n(Millions)')
 fig.tight_layout()
-fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
 fig.show()
 plt.close(fig)
 
