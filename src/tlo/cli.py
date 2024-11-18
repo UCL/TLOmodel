@@ -13,7 +13,6 @@ import click
 import dateutil.parser
 import pandas as pd
 from azure import batch
-from azure.batch import batch_auth
 from azure.batch import models as batch_models
 from azure.batch.models import BatchErrorException
 from azure.common.credentials import ServicePrincipalCredentials
@@ -133,9 +132,10 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config['BATCH']['CLIENT_ID'],
+        config['BATCH']['SECRET'],
+        config['AZURE']['TENANT_ID'],
+        config['BATCH']['URL']
     )
 
     create_file_share(
@@ -248,8 +248,8 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
 
     try:
         # Create the job that will run the tasks.
-        create_job(batch_client, vm_size, pool_node_count, job_id,
-                   container_conf, [mount_configuration], keep_pool_alive)
+        create_job(batch_client, vm_size, pool_node_count, job_id, container_conf, [mount_configuration],
+                   keep_pool_alive, config['BATCH']['SUBNET_ID'])
 
         # Add the tasks to the job.
         add_tasks(batch_client, user_identity, job_id, image_name,
@@ -298,9 +298,10 @@ def batch_terminate(ctx, job_id):
         return
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config['BATCH']['CLIENT_ID'],
+        config['BATCH']['SECRET'],
+        config['AZURE']['TENANT_ID'],
+        config['BATCH']['URL']
     )
 
     # check the job is running
@@ -332,9 +333,10 @@ def batch_job(ctx, job_id, raw, show_tasks):
     print(">Querying batch system\r", end="")
     config = load_config(ctx.obj['config_file'])
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config['BATCH']['CLIENT_ID'],
+        config['BATCH']['SECRET'],
+        config['AZURE']['TENANT_ID'],
+        config['BATCH']['URL']
     )
     tasks = None
 
@@ -403,9 +405,10 @@ def batch_list(ctx, status, n, find, username):
         username = config["DEFAULT"]["USERNAME"]
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config['BATCH']['CLIENT_ID'],
+        config['BATCH']['SECRET'],
+        config['AZURE']['TENANT_ID'],
+        config['BATCH']['URL']
     )
 
     # create client to connect to file share
@@ -582,21 +585,18 @@ def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
     return {"STORAGE": storage_config, "BATCH": batch_config, "REGISTRY": registry_config}
 
 
-def get_batch_client(name, key, url):
+def get_batch_client(client_id, secret, tenant_id, url):
     """Create a Batch service client"""
-    # credentials = batch_auth.SharedKeyCredentials(name, key)
-    # batch_client = batch.BatchServiceClient(credentials, batch_url=url)
-
-
+    resource = "https://batch.core.windows.net/"
 
     credentials = ServicePrincipalCredentials(
-        client_id=CLIENT_ID,
-        secret=SECRET,
-        tenant=TENANT_ID,
-        resource=RESOURCE
+        client_id=client_id,
+        secret=secret,
+        tenant=tenant_id,
+        resource=resource
     )
 
-    batch_client = batch.BatchServiceClient(credentials, batch_url=BATCH_ACCOUNT_URL)
+    batch_client = batch.BatchServiceClient(credentials, batch_url=url)
     return batch_client
 
 
@@ -709,10 +709,11 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
         print("ResourceNotFoundError:", ex.message)
 
 
-def create_job(batch_service_client, vm_size, pool_node_count, job_id,
-               container_conf, mount_configuration, keep_pool_alive):
+def create_job(batch_service_client, vm_size, pool_node_count, job_id, container_conf, mount_configuration,
+               keep_pool_alive, subnet_id):
     """Creates a job with the specified ID, associated with the specified pool.
 
+    :param subnet_id:
     :param batch_service_client: A Batch service client.
     :type batch_service_client: `azure.batch.BatchServiceClient`
     :param str vm_size: Type of virtual machine to use as pool.
@@ -753,6 +754,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     """
 
     network_configuration = batch_models.NetworkConfiguration(
+        subnet_id=subnet_id,
         public_ip_address_configuration=batch_models.PublicIPAddressConfiguration(provision="noPublicIPAddresses"),
     )
 
