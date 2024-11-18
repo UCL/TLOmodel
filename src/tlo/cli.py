@@ -16,6 +16,7 @@ from azure import batch
 from azure.batch import batch_auth
 from azure.batch import models as batch_models
 from azure.batch.models import BatchErrorException
+from azure.common.credentials import ServicePrincipalCredentials
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
@@ -583,8 +584,19 @@ def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
 
 def get_batch_client(name, key, url):
     """Create a Batch service client"""
-    credentials = batch_auth.SharedKeyCredentials(name, key)
-    batch_client = batch.BatchServiceClient(credentials, batch_url=url)
+    # credentials = batch_auth.SharedKeyCredentials(name, key)
+    # batch_client = batch.BatchServiceClient(credentials, batch_url=url)
+
+
+
+    credentials = ServicePrincipalCredentials(
+        client_id=CLIENT_ID,
+        secret=SECRET,
+        tenant=TENANT_ID,
+        resource=RESOURCE
+    )
+
+    batch_client = batch.BatchServiceClient(credentials, batch_url=BATCH_ACCOUNT_URL)
     return batch_client
 
 
@@ -740,6 +752,10 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     $NodeDeallocationOption = taskcompletion;
     """
 
+    network_configuration = batch_models.NetworkConfiguration(
+        public_ip_address_configuration=batch_models.PublicIPAddressConfiguration(provision="noPublicIPAddresses"),
+    )
+
     pool = batch_models.PoolSpecification(
         virtual_machine_configuration=virtual_machine_configuration,
         vm_size=vm_size,
@@ -747,6 +763,8 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
         task_slots_per_node=1,
         enable_auto_scale=True,
         auto_scale_formula=auto_scale_formula,
+        network_configuration=network_configuration,
+        target_node_communication_mode="simplified"
     )
 
     auto_pool_specification = batch_models.AutoPoolSpecification(
