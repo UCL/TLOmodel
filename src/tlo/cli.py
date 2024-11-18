@@ -132,10 +132,7 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
-        config['BATCH']['CLIENT_ID'],
-        config['BATCH']['SECRET'],
-        config['AZURE']['TENANT_ID'],
-        config['BATCH']['URL']
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
 
     create_file_share(
@@ -248,8 +245,16 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
 
     try:
         # Create the job that will run the tasks.
-        create_job(batch_client, vm_size, pool_node_count, job_id, container_conf, [mount_configuration],
-                   keep_pool_alive, config['BATCH']['SUBNET_ID'])
+        create_job(
+            batch_client,
+            vm_size,
+            pool_node_count,
+            job_id,
+            container_conf,
+            [mount_configuration],
+            keep_pool_alive,
+            config["BATCH"]["SUBNET_ID"],
+        )
 
         # Add the tasks to the job.
         add_tasks(batch_client, user_identity, job_id, image_name,
@@ -298,10 +303,7 @@ def batch_terminate(ctx, job_id):
         return
 
     batch_client = get_batch_client(
-        config['BATCH']['CLIENT_ID'],
-        config['BATCH']['SECRET'],
-        config['AZURE']['TENANT_ID'],
-        config['BATCH']['URL']
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
 
     # check the job is running
@@ -333,11 +335,9 @@ def batch_job(ctx, job_id, raw, show_tasks):
     print(">Querying batch system\r", end="")
     config = load_config(ctx.obj['config_file'])
     batch_client = get_batch_client(
-        config['BATCH']['CLIENT_ID'],
-        config['BATCH']['SECRET'],
-        config['AZURE']['TENANT_ID'],
-        config['BATCH']['URL']
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
+
     tasks = None
 
     try:
@@ -405,10 +405,7 @@ def batch_list(ctx, status, n, find, username):
         username = config["DEFAULT"]["USERNAME"]
 
     batch_client = get_batch_client(
-        config['BATCH']['CLIENT_ID'],
-        config['BATCH']['SECRET'],
-        config['AZURE']['TENANT_ID'],
-        config['BATCH']['URL']
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
 
     # create client to connect to file share
@@ -589,12 +586,7 @@ def get_batch_client(client_id, secret, tenant_id, url):
     """Create a Batch service client"""
     resource = "https://batch.core.windows.net/"
 
-    credentials = ServicePrincipalCredentials(
-        client_id=client_id,
-        secret=secret,
-        tenant=tenant_id,
-        resource=resource
-    )
+    credentials = ServicePrincipalCredentials(client_id=client_id, secret=secret, tenant=tenant_id, resource=resource)
 
     batch_client = batch.BatchServiceClient(credentials, batch_url=url)
     return batch_client
@@ -709,8 +701,16 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
         print("ResourceNotFoundError:", ex.message)
 
 
-def create_job(batch_service_client, vm_size, pool_node_count, job_id, container_conf, mount_configuration,
-               keep_pool_alive, subnet_id):
+def create_job(
+    batch_service_client,
+    vm_size,
+    pool_node_count,
+    job_id,
+    container_conf,
+    mount_configuration,
+    keep_pool_alive,
+    subnet_id,
+):
     """Creates a job with the specified ID, associated with the specified pool.
 
     :param subnet_id:
@@ -766,7 +766,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id, container
         enable_auto_scale=True,
         auto_scale_formula=auto_scale_formula,
         network_configuration=network_configuration,
-        target_node_communication_mode="simplified"
+        target_node_communication_mode="simplified",
     )
 
     auto_pool_specification = batch_models.AutoPoolSpecification(
