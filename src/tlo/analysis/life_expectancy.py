@@ -20,6 +20,18 @@ from tlo.analysis.utils import (
 
 def _map_age_to_age_group(age: pd.Series) -> pd.Series:
     """
+    Returns age-groups used in the calculation of life-expectancy with 1-year intervals.
+    """
+    age_groups = ["0-0.5"] + ["0.5 - 1"] + [str(i) for i in range(1,90)] + ['90']
+    bins = [0, 0.5, 1] + list(range(2, 91)) + [float('inf')]
+    return pd.cut(
+        age,
+        bins=bins,
+        labels=age_groups, right=False
+    )
+
+def _map_age_to_age_group(age: pd.Series) -> pd.Series:
+    """
     Returns age-groups used in the calculation of life-expectancy.
 
     Args:
@@ -29,11 +41,12 @@ def _map_age_to_age_group(age: pd.Series) -> pd.Series:
     - pd.Series: Series of the 'age-group', corresponding the `age` argument.
     """
     # Define age groups in 5-year intervals
-    age_groups = ['0'] + ['1-4'] + [f'{start}-{start + 4}' for start in range(5, 90, 5)] + ['90']
+    age_groups = ['0'] + ['1'] + [f'{start}' for start in range(2, 90, 1)] + ['90']
+    age_groups = ['0'] + ['0.5'] + [1] + [f'{start}' for start in range(2, 90, 1)] + ['90']
 
     return pd.cut(
         age,
-        bins=[0] + [1] + list(range(5, 95, 5)) + [float('inf')],
+        bins=[0] + [0.5] + [1] + list(range(2, 91, 1)) + [float('inf')],
         labels=age_groups, right=False
     )
 
@@ -51,15 +64,15 @@ def _num_deaths_by_age_group(results_folder, target_period) -> pd.DataFrame:
     """
 
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
-        age_group = _map_age_to_age_group(df['age'])
+        age_group = _map_age_to_age_group(df['age_exact_years'])
         return df.loc[
             pd.to_datetime(df.date).dt.date.between(*target_period, inclusive='both')
         ].groupby([age_group, df["sex"]]).size()
 
     return extract_results(
         results_folder,
-        module="tlo.methods.demography",
-        key="death",
+        module="tlo.methods.demography.detail",
+        key="properties_of_deceased_persons",
         custom_generate_series=extract_deaths_by_age_group,
         do_scaling=False
     )
@@ -98,37 +111,27 @@ def _aggregate_person_years_by_age(results_folder, target_period) -> pd.DataFram
 
     return py_by_sex_and_agegroup
 
-
 def calculate_probability_of_dying(interval_width, fraction_of_last_age_survived, sex, _person_years_at_risk,
                                    _number_of_deaths_in_interval) -> pd.DataFrame:
-    """Returns the probability of dying in each interval"""
+    """Returns the probability of dying in each 1-year interval"""
 
     person_years_by_sex = _person_years_at_risk.xs(key=sex, level='sex')
-
     number_of_deaths_by_sex = _number_of_deaths_in_interval.xs(key=sex, level='sex')
-
     death_rate_in_interval = number_of_deaths_by_sex / person_years_by_sex
-
     death_rate_in_interval = death_rate_in_interval.fillna(0)
 
     if death_rate_in_interval.loc['90'] == 0:
-        death_rate_in_interval.loc['90'] = death_rate_in_interval.loc['85-89']
+        death_rate_in_interval.loc['90'] = death_rate_in_interval.loc['89']
 
     condition = number_of_deaths_by_sex > (
-
         person_years_by_sex / interval_width / interval_width / fraction_of_last_age_survived)
-
     probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
-
     probability_of_dying_in_interval[condition] = 1
-
     probability_of_dying_in_interval[~condition] = interval_width * death_rate_in_interval / (
-
         1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
 
     probability_of_dying_in_interval.at['90'] = 1
     return probability_of_dying_in_interval, death_rate_in_interval
-
 
 def _estimate_life_expectancy(
     _person_years_at_risk: pd.Series,
@@ -141,17 +144,17 @@ def _estimate_life_expectancy(
 
     estimated_life_expectancy_at_birth = dict()
 
-    # first age-group is 0, then 1-4, 5-9, 10-14 etc. 22 categories in total
+    # Extract unique age-group labels
     age_group_labels = _person_years_at_risk.index.get_level_values('age_group').unique()
-
-    # Extract interval width
+    # Adjust interval width calculation to handle half-year segments
     interval_width = [
-        5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
-        if '-' in interval else 1 for interval in age_group_labels.categories
+        1 if '90' == interval else 0.5
+        if '0' == interval else 0.5 if '0.5' == interval else 1 for interval in age_group_labels.categories
     ]
+    print(len(interval_width))
+    print(interval_width)
     number_age_groups = len(interval_width)
     fraction_of_last_age_survived = pd.Series([0.5] * number_age_groups, index=age_group_labels)
-
     # separate male and female data
     for sex in ['M', 'F']:
         probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(interval_width,
@@ -159,19 +162,21 @@ def _estimate_life_expectancy(
                                                                                                   sex,
                                                                                                   _person_years_at_risk,
                                                                                                   _number_of_deaths_in_interval)
+        print(probability_of_dying_in_interval)
         # number_alive_at_start_of_interval
         # keep dtype as float in case using aggregated outputs
         # note range stops BEFORE the specified number
         number_alive_at_start_of_interval = pd.Series(index=range(number_age_groups), dtype=float)
         number_alive_at_start_of_interval[0] = 100_000  # hypothetical cohort
+
         for i in range(1, number_age_groups):
-            number_alive_at_start_of_interval[i] = (1 - probability_of_dying_in_interval[i - 1]) * \
-                                                   number_alive_at_start_of_interval[i - 1]
+            number_alive_at_start_of_interval[i] = (1 - probability_of_dying_in_interval.iloc[i - 1]) * \
+                                                   number_alive_at_start_of_interval.iloc[i - 1]
 
         # number_dying_in_interval
         number_dying_in_interval = pd.Series(index=range(number_age_groups), dtype=float)
         for i in range(0, number_age_groups - 1):
-            number_dying_in_interval[i] = number_alive_at_start_of_interval[i] - number_alive_at_start_of_interval[
+            number_dying_in_interval.iloc[i] = number_alive_at_start_of_interval.iloc[i] - number_alive_at_start_of_interval.iloc[
                 i + 1]
         number_dying_in_interval[number_age_groups - 1] = number_alive_at_start_of_interval[number_age_groups - 1]
 
@@ -179,7 +184,7 @@ def _estimate_life_expectancy(
         py_lived_in_interval = pd.Series(index=range(number_age_groups), dtype=float)
         for i in range(0, number_age_groups - 1):
             py_lived_in_interval[i] = interval_width[i] * (
-                number_alive_at_start_of_interval[i + 1] + fraction_of_last_age_survived[i] * number_dying_in_interval[
+                number_alive_at_start_of_interval.iloc[i + 1] + fraction_of_last_age_survived.iloc[i] * number_dying_in_interval.iloc[
                 i])
         py_lived_in_interval[number_age_groups - 1] = number_alive_at_start_of_interval[number_age_groups - 1] / \
                                                       death_rate_in_interval[number_age_groups - 1]
@@ -254,12 +259,13 @@ def get_life_expectancy_estimates(
     output = pd.DataFrame.from_dict(le_for_each_draw_and_run)
     output.index.name = "sex"
     output.columns = output.columns.set_names(level=[0, 1], names=['draw', 'run'])
-
+    print(summarize(results=output, only_mean=False, collapse_columns=False))
     if not summary:
         return output
 
     else:
         return summarize(results=output, only_mean=False, collapse_columns=False)
+
 
 
 def _calculate_probability_of_premature_death_for_single_run(
@@ -273,23 +279,18 @@ def _calculate_probability_of_premature_death_for_single_run(
     premature age).
     """
     probability_of_premature_death = dict()
-
     age_group_labels = person_years_at_risk.index.get_level_values('age_group').unique()
     interval_width = [
-        5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
-        if '-' in interval else 1 for interval in age_group_labels.categories
+        5 if '90' in interval else 0.5
+        if '0' in interval else 0.5 if '0.5' in interval else 1 for interval in age_group_labels.categories
     ]
-    number_age_groups = len(interval_width)
-    fraction_of_last_age_survived = pd.Series([0.5] * number_age_groups, index=age_group_labels)
+    fraction_of_last_age_survived = pd.Series([0.5] * len(interval_width), index=age_group_labels)
 
     for sex in ['M', 'F']:
-        probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(interval_width,
-                                                                                                  fraction_of_last_age_survived,
-                                                                                                  sex,
-                                                                                                  person_years_at_risk,
-                                                                                                  number_of_deaths_in_interval)
+        probability_of_dying_in_interval, death_rate_in_interval = calculate_probability_of_dying(
+            interval_width, fraction_of_last_age_survived, sex, person_years_at_risk, number_of_deaths_in_interval
+        )
 
-        # Calculate cumulative probability of dying before the defined premature age
         cumulative_probability_of_dying = 0
         proportion_alive_at_start_of_interval = 1.0
 
@@ -302,7 +303,6 @@ def _calculate_probability_of_premature_death_for_single_run(
         probability_of_premature_death[sex] = cumulative_probability_of_dying
 
     return probability_of_premature_death
-
 
 def get_probability_of_premature_death(
     results_folder: Path,
