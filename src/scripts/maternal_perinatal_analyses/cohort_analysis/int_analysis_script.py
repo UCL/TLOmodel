@@ -9,14 +9,10 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize,
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
-scenario = 'block_intervention_big_pop_test-2024-11-12T165005Z'
+scenario = 'block_intervention_big_pop_test-2024-11-14T163110Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
-interventions =['urine_dipstick','bp_measurement', 'iron_folic_acid', 'calcium_supplement', 'hb_test',
-                'full_blood_count','blood_transfusion', 'oral_antihypertensives','iv_antihypertensives',
-                'mgso4', 'abx_for_prom', 'post_abortion_care_core', 'ectopic_pregnancy_treatment',
-                'birth_kit', 'sepsis_treatment', 'amtsl', 'pph_treatment_uterotonics', 'pph_treatment_mrrp',
-                'pph_treatment_surgery','caesarean_section']
+interventions =['bp_measurement', 'post_abortion_care_core', 'ectopic_pregnancy_treatment']
 
 int_analysis = ['baseline']
 
