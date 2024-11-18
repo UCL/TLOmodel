@@ -418,6 +418,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
+        "select_mihpsa_scenario": Parameter(
+            Types.INT,
+            "the mihpsa scenario selected which switches on a candidate intervention"
+        ),
+        "mihpsa_scenarios": Parameter(
+            Types.DATA_FRAME,
+            "the parameters and values changed in mihpsa analysis"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -1173,78 +1181,80 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         updated_params = updated_params_workbook.set_index('parameter')['target_value'].to_dict()
 
-        # baseline - no VMMC
-        # - switch other interventions off
-        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
-        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
-        p["prob_prep_for_fsw_after_hiv_test"] = 0
+        if p['select_mihpsa_scenario'] == 0:
+            # baseline - no VMMC
+            # - switch other interventions off
+            p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+            p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
 
         # oral prep 15-24 yr old girls
-        # - switch other interventions off
-        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
-        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
-        p["prob_prep_for_fsw_after_hiv_test"] = 0
+        if p['select_mihpsa_scenario'] == 1:
+            # - switch other interventions off
+            p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+            p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
 
-        # - switch on candidate intervention
-        p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
-        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
-            "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            # - switch on candidate intervention
+            p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
+            p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
+                "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # oral prep FSW
-        # - switch other interventions off
-        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
-        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+        if p['select_mihpsa_scenario'] == 2:
+            # - switch other interventions off
+            p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+            p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
 
-        # - switch on candidate intervention
-        p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
-        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
-            "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            # - switch on candidate intervention
+            p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
+            p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
+                "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # CAB-LA prep 15-24 yr old girls
-        # - switch other interventions off
-        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
-        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
-        p["prob_prep_for_fsw_after_hiv_test"] = 0
+        if p['select_mihpsa_scenario'] == 3:
+            # - switch other interventions off
+            p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+            p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
 
-        # - switch on candidate intervention
-        p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
-        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
-        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            # - switch on candidate intervention
+            p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
+            p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # CAB-LA prep FSW
-        # - switch other interventions off
-        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
-        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
-        p["prob_prep_for_fsw_after_hiv_test"] = 0
+        if p['select_mihpsa_scenario'] == 4:
+            # - switch other interventions off
+            p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+            p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
 
-        # - switch on candidate intervention
-        p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
-        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
-        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            # - switch on candidate intervention
+            p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
+            p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # HIV self-testing
-        # - switch other interventions off
-        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
-        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
-        p["prob_prep_for_fsw_after_hiv_test"] = 0
+        if p['select_mihpsa_scenario'] == 5:
+            # - switch other interventions off
+            p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+            p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
 
-        # - switch on candidate intervention
-        p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"]["annual_testing_rate_adults"] * \
-                                                               updated_params["rr_hiv_self_testing"]
+            # - switch on candidate intervention
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"]["annual_testing_rate_adults"] * \
+                                                                   updated_params["rr_hiv_self_testing"]
 
         # VMMC
-        # - switch other interventions off
-        p["prob_prep_for_fsw_after_hiv_test"] = 0
+        if p['select_mihpsa_scenario'] == 6:
+            # - switch other interventions off
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
 
-        # - switch on candidate intervention
-        # don't need to do anything here, default value allows VMMC
-
-        # viral suppression rates
-        # adults already at 95% by 2020
-        # change all column values
-        p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+            # - switch on candidate intervention
+            # don't need to do anything here, default value allows VMMC
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()

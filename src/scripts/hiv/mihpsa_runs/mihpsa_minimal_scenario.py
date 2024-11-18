@@ -42,9 +42,6 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-number_of_draws = 1
-runs_per_draw = 3
-
 
 class TestScenario(BaseScenario):
     # this imports the resource filepath automatically
@@ -55,8 +52,9 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2051, 1, 1)
         self.pop_size = 100_000
-        self.number_of_draws = number_of_draws
-        self.runs_per_draw = runs_per_draw
+        self.scenarios = [0, 1, 2, 3, 4, 5, 6]
+        self.number_of_draws = len(self.scenarios)
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -92,9 +90,15 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return
+        return {
+            'Hiv': {
+                'select_mihpsa_scenario': self.scenarios[draw_number],
+                'scaleup_start_year': 2024
+            },
+        }
 
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
+
     scenario_run([__file__])
