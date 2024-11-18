@@ -1141,10 +1141,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # prep poll for AGYW - target to the highest risk
         # increase retention to 75% for FSW and AGYW
         p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_prep_every_3_months"]
 
         # perfect retention on ART
-        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_art_every_3_months"]
 
         # increase probability of VMMC after hiv test
         p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
@@ -1161,7 +1163,90 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # change all column values
         p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
 
-        # update exising linear models to use new scaled-up paramters
+        # update exising linear models to use new scaled-up parameters
+        self._build_linear_models()
+
+    def update_parameters_for_mihpsa_interventions(self):
+        """ options for interventions defined by scenario number """
+        p = self.parameters
+        updated_params_workbook = p["mihpsa_scenarios"]
+
+        updated_params = updated_params_workbook.set_index('parameter')['target_value'].to_dict()
+
+        # baseline - no VMMC
+        # - switch other interventions off
+        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+        p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+        # oral prep 15-24 yr old girls
+        # - switch other interventions off
+        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+        p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+        # - switch on candidate intervention
+        p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
+        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
+            "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+
+        # oral prep FSW
+        # - switch other interventions off
+        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+
+        # - switch on candidate intervention
+        p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
+        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
+            "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+
+        # CAB-LA prep 15-24 yr old girls
+        # - switch other interventions off
+        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+        p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+        # - switch on candidate intervention
+        p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
+        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
+        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+
+        # CAB-LA prep FSW
+        # - switch other interventions off
+        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+        p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+        # - switch on candidate intervention
+        p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
+        p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
+        p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+
+        # HIV self-testing
+        # - switch other interventions off
+        p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+        p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+        p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+        # - switch on candidate intervention
+        p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"]["annual_testing_rate_adults"] * \
+                                                               updated_params["rr_hiv_self_testing"]
+
+        # VMMC
+        # - switch other interventions off
+        p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+        # - switch on candidate intervention
+        # don't need to do anything here, default value allows VMMC
+
+        # viral suppression rates
+        # adults already at 95% by 2020
+        # change all column values
+        p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+
+        # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
@@ -2481,7 +2566,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
-
             if (
                 self.counter_for_test_not_available
                 <= self.module.parameters["hiv_healthseekingbehaviour_cap"]
@@ -2538,7 +2622,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
                 # Add used equipment
                 self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
-                                       'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
+                                    'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
 
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
@@ -2756,7 +2840,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # check whether person had Rx at least 3 months ago and is now due repeat prescription
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
         if person['hv_date_last_ART'] > (
-                self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
+            self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         if art_status_at_beginning_of_hsi == "not":
@@ -2960,7 +3044,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: older child']: dispensation_days * 3},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
+                                         'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
@@ -2969,7 +3053,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First-line ART regimen: adult']: dispensation_days},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
+                                         'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict
@@ -3153,23 +3237,22 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         N_ART_00_14_C = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive & (df.age_years < 15)])
 
         N_ART_15_UP_M = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'M')])
+                               (df.age_years >= 15) & (df.sex == 'M')])
 
         N_ART_15_UP_F = len(df[df.hv_inf & (df.hv_art != 'not') & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'F')])
+                               (df.age_years >= 15) & (df.sex == 'F')])
 
         N_VLS_15_UP_M = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'M')])
+                               (df.age_years >= 15) & (df.sex == 'M')])
 
         N_VLS_15_UP_F = len(df[df.hv_inf & (df.hv_art == 'on_VL_suppressed') & df.is_alive &
-                                (df.age_years >= 15) & (df.sex == 'F')])
+                               (df.age_years >= 15) & (df.sex == 'F')])
 
         N_PLHIV_15_UP_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms > 0) & df.is_alive &
-                                (df.age_years >= 15)])
+                                    (df.age_years >= 15)])
 
         N_PLHIV_15_UP_NO_AIDS = len(df[df.hv_inf & (df.sy_aids_symptoms == 0) & df.is_alive &
-                                (df.age_years >= 15)])
-
+                                       (df.age_years >= 15)])
 
         logger.info(
             key="stock_variables",
@@ -3209,21 +3292,21 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[
                 df.is_alive &
                 (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         N_BirthHIV = len(
             df.loc[
                 df.hv_inf & df.is_alive &
                 (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         N_BirthART = len(
             df.loc[
                 df.hv_inf & df.is_alive & (df.hv_art != 'not') &
                 (df.si_date_of_last_delivery >= (now - DateOffset(months=self.repeat)))
-            ]
+                ]
         )
 
         N_NewHIV_00_14_C = len(
@@ -3373,7 +3456,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "N_EconEmpowerment": N_EconEmpowerment,
                 "N_CSE_15_19_F": N_CSE_15_19_F,
                 "N_CSE_15_19_M": N_CSE_15_19_M,
-           },
+            },
         )
 
         # after logger, reset yearly logged properties
