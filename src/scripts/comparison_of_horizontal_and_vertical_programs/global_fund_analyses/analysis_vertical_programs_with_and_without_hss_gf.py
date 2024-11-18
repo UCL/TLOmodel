@@ -8,6 +8,8 @@ htm_with_and_without_hss-2024-09-04T143044Z
 results for updates 30Sept2024 (IRS in high-risk distr and reduced gen pop RDT):
 htm_with_and_without_hss-2024-09-17T083150Z
 
+with reduced consumables logging
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-11-12T172311Z
 
 """
 
@@ -34,7 +36,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
 
     # Definitions of general helper functions
-    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"GF_{stub.replace('*', '_star_')}.png"  # noqa: E731
 
     _, age_grp_lookup = make_age_grp_lookup()
 
@@ -98,7 +100,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for _idx, row in _df.iterrows()
         }, axis=1).T
 
-
     def do_bar_plot_with_ci(_df, set_colors=None, annotations=None,
                             xticklabels_horizontal_and_wrapped=False,
                             put_labels_in_legend=True,
@@ -116,10 +117,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
-        # cmap = plt.get_cmap("tab20")
-        # cmap = sns.color_palette('Spectral', as_cmap=True)
-        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        # colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
         if set_colors:
             colors = [color_map.get(series, 'grey') for series in _df.index]
         else:
@@ -140,9 +137,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
         if annotations:
-            # for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            #     ax.text(xpos, ypos * 1.15, '\n'.join(text.split(' ', 1)),
-            #             horizontalalignment='center', rotation='horizontal', fontsize='x-small')
             for xpos, (ypos, text) in zip(xticks.keys(), zip(_df['upper'].values.flatten(), annotations)):
                 # Set annotation position with fixed offset
                 annotation_y = ypos + offset
@@ -198,11 +192,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Ensure that the x-axis is the row index (years)
         xticks = {i: k for i, k in enumerate(median_df.index)}
 
-        # Define colormap
-        # cmap = sns.color_palette('Spectral', as_cmap=True)
-        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        # colors = list(map(cmap, rescale(np.arange(len(median_df.columns))))) if put_labels_in_legend else None
-
         if set_colors:
             colors = [color_map.get(series, 'grey') for series in median_df.columns]
         else:
@@ -218,8 +207,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             line, = ax.plot(
                 xticks.keys(),
                 median_df[column],
-                color=colors[i] if colors is not None else 'black',  # Line color
-                marker='o',  # Marker at each point
+                color=colors[i] if colors is not None else 'black',
+                marker='o',
                 label=f'{column}'
             )
             lines.append(line)
@@ -229,8 +218,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 xticks.keys(),
                 lower_df[column],
                 upper_df[column],
-                color=colors[i] if colors is not None else 'gray',  # Shaded area color
-                alpha=0.3,  # Transparency of the shaded area
+                color=colors[i] if colors is not None else 'gray',
+                alpha=0.3,
                 label=f'{column} - CI'
             )
 
@@ -253,18 +242,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return fig, ax
 
-    # color_map = {
-    #     'Baseline': '#9e0142',
-    #      'FULL HSS PACKAGE':  '#d8434e',
-    #      'HIV Programs Scale-up WITHOUT HSS PACKAGE': '#f67a49',
-    #      'HIV Programs Scale-up WITH HSS PACKAGE': '#fdbf6f',
-    #      'TB Programs Scale-up WITHOUT HSS PACKAGE': '#feeda1',
-    #      'TB Programs Scale-up WITH HSS PACKAGE': '#f1f9a9',
-    #      'Malaria Programs Scale-up WITHOUT HSS PACKAGE': '#bfe5a0',
-    #      'Malaria Programs Scale-up WITH HSS PACKAGE': '#74c7a5',
-    #      'HIV/Tb/Malaria Programs Scale-up WITHOUT HSS PACKAGE': '#378ebb',
-    #      'HIV/Tb/Malaria Programs Scale-up WITH HSS PACKAGE': '#5e4fa2',
-    # }
     color_map = {
         'Baseline': '#9e0142',
         'HSS PACKAGE: Realistic': '#d8434e',
@@ -327,9 +304,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
-    num_dalys_summarized.to_csv(results_folder / 'num_dalys_summarized.csv')
-    num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
-
+    num_dalys_summarized.to_csv(results_folder / f'GF_num_dalys_summarized_{target_period()}.csv')
+    num_deaths_summarized.to_csv(results_folder / f'GF_num_deaths_summarized_{target_period()}.csv')
 
     name_of_plot = f'Deaths, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
@@ -351,34 +327,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # remove the HIV/TB joint scenarios
-    # Filter out rows where level 0 of the multi-index is 'Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE' or 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
-    filtered_num_deaths_summarized = num_deaths_summarized.drop(
-        index=['Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE', 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE']
-    )
-    name_of_plot = f'Deaths, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(filtered_num_deaths_summarized / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    fig.tight_layout()
-    ax.axhline(num_deaths_summarized.loc['Baseline', 'median'] / 1e6, color='black', linestyle='--', alpha=0.5)
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
-    filtered_num_dalys_summarized = num_dalys_summarized.drop(
-        index=['Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE', 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE']
-    )
-    name_of_plot = f'All Scenarios: DALYs, {target_period()}'
-    fig, ax = do_bar_plot_with_ci(filtered_num_dalys_summarized / 1e6)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('(Millions)')
-    ax.axhline(num_dalys_summarized.loc['Baseline', 'median'] / 1e6, color='black', linestyle='--', alpha=0.5)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    fig.show()
-    plt.close(fig)
-
     # %% Deaths and DALYS averted relative to Status Quo
     num_deaths_averted = summarize(
         -1.0 *
@@ -388,7 +336,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    num_deaths_averted.to_csv(results_folder / 'num_deaths_averted.csv')
+    num_deaths_averted.to_csv(results_folder / f'GF_num_deaths_averted_{target_period()}.csv')
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
@@ -399,7 +347,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    pc_deaths_averted.to_csv(results_folder / 'pc_deaths_averted.csv')
+    pc_deaths_averted.to_csv(results_folder / f'GF_pc_deaths_averted_{target_period()}.csv')
 
     num_dalys_averted = summarize(
         -1.0 *
@@ -409,7 +357,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    num_dalys_averted.to_csv(results_folder / 'num_dalys_averted.csv')
+    num_dalys_averted.to_csv(results_folder / f'GF_num_dalys_averted_{target_period()}.csv')
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
@@ -420,7 +368,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    pc_dalys_averted.to_csv(results_folder / 'pc_dalys_averted.csv')
+    pc_dalys_averted.to_csv(results_folder / f'GF_pc_dalys_averted_{target_period()}.csv')
 
     # DEATHS
     name_of_plot = f'Additional Deaths Averted vs Baseline, {target_period()}'
@@ -489,8 +437,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         custom_generate_series=get_total_num_dalys_by_label,
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0), only_median=True
-    )
-    summarise_total_num_dalys_by_label_results.to_csv(results_folder / 'summarise_total_num_dalys_by_label_results.csv')
+                                                           )
+    summarise_total_num_dalys_by_label_results.to_csv(results_folder / f'GF_num_dalys_by_label_{target_period()}.csv')
 
     pc_dalys_averted_by_label = 100.0 * summarize(
         -1.0 *
@@ -501,7 +449,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         )
     )
-    pc_dalys_averted_by_label.to_csv(results_folder / 'pc_dalys_averted_by_label.csv')
+    pc_dalys_averted_by_label.to_csv(results_folder / f'GF_pc_dalys_averted_by_label_{target_period()}.csv')
 
     total_num_dalys_by_label_results_averted_vs_baseline = summarize(
         -1.0 * find_difference_relative_to_comparison_series_dataframe(
@@ -510,7 +458,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_median=True
     )
-    total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / 'total_num_dalys_by_label_results_averted_vs_baseline.csv')
+    total_num_dalys_by_label_results_averted_vs_baseline.to_csv(
+        results_folder / f'GF_num_dalys_by_label_averted_vs_baseline_{target_period()}.csv')
 
     def sort_order_of_columns(_df):
 
@@ -549,7 +498,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Summary': [
             'HSS PACKAGE: Realistic',
             'HTM Programs Scale-up WITHOUT HSS PACKAGE',
-             'HTM Programs Scale-up WITH REALISTIC HSS PACKAGE'
+            'HTM Programs Scale-up WITH REALISTIC HSS PACKAGE'
         ]
 
     }
@@ -577,7 +526,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
-
 
     def plot_combined_programs_scale_up(_df):
         """
@@ -655,85 +603,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     plot_combined_programs_scale_up(filtered_df_htm_hss)
 
-
-    # def plot_combined_programs_scale_up(_df):
-    #     """
-    #     Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
-    #     """
-    #     combined_plot_name = 'Combined Programs Scale-up'
-    #     fig, ax = plt.subplots(figsize=(12, 6))
-    #
-    #     colours = sns.color_palette('Set1', 4)  # We have 4 categories to stack
-    #     x_labels = [
-    #         'FULL HSS',
-    #         'WITHOUT \nRSSH',
-    #         'WITH \nRSSH',
-    #         'WITHOUT \nRSSH',
-    #         'WITH \nRSSH',
-    #         'WITHOUT \nRSSH',
-    #         'WITH \nRSSH',
-    #         'WITHOUT \nRSSH',
-    #         'WITH \nRSSH',
-    #     ]
-    #     shared_labels = [
-    #         '',  # No shared label for the first bar
-    #         'HIV Scale-up',  # Shared label for the second and third bars
-    #         '',  # Shared label for the second and third bars
-    #         'TB Scale-up',  # Shared label for the fourth and fifth bars
-    #         '',  # Shared label for the fourth and fifth bars
-    #         'Malaria Scale-up',  # Shared label for the sixth and seventh bars
-    #         '',  # Shared label for the sixth and seventh bars
-    #         'HTM Scale-up',  # Shared label for the eighth and ninth bars
-    #         '',  # Shared label for the eighth and ninth bars
-    #     ]
-    #
-    #     # Transpose the DataFrame to get each program as a bar (columns become x-axis categories)
-    #     filtered_df.T.plot(
-    #         kind='bar',
-    #         stacked=True,
-    #         ax=ax,
-    #         color=colours,
-    #         rot=0
-    #     )
-    #
-    #     # Set the title and labels
-    #     ax.set_title(combined_plot_name)
-    #     ax.set_ylabel(f'DALYs Averted vs Baseline, {target_period()}\n(Millions)')
-    #     ax.set_ylim([0, 2e7])
-    #     ax.set_xlabel("")
-    #     ax.set_xticks(range(len(x_labels)))
-    #     ax.set_xticklabels(x_labels, ha="center")
-    #
-    #     # Add shared second-line labels
-    #     for i, label in enumerate(shared_labels):
-    #         if label:  # Only add text if there's a label
-    #             ax.text(i, filtered_df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=10, rotation=0,
-    #                     color='black')
-    #
-    #     ax.legend(title="Cause", labels=filtered_df.index, bbox_to_anchor=(1.05, 1), loc='upper left')
-    #
-    #     # Add vertical grey lines
-    #     line_positions = [0, 2, 4, 6]
-    #     for pos in line_positions:
-    #         ax.axvline(x=pos + 0.5, color='grey', linestyle='--', linewidth=1)
-    #
-    #     # Adjust layout and save
-    #     fig.tight_layout()
-    #     fig.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
-    #     fig.show()
-    #     plt.close(fig)
-    #
-    # data_for_plot = sort_order_of_columns(total_num_dalys_by_label_results_averted_vs_baseline)
-    # filtered_df = data_for_plot.drop(
-    #     columns=[
-    #         'Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE',
-    #         'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
-    #     ]
-    # )
-    # plot_combined_programs_scale_up(filtered_df)
-
-
-
     def plot_pc_DALYS_combined_programs_scale_up(_df):
         """
         Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
@@ -800,7 +669,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
-
 
     # Define  custom x_labels and shared_labels
     x_labels = [
@@ -875,8 +743,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         for i, label in enumerate(shared_labels):
             if label:  # Only add text if there's a label
                 plt.text(i, 105, label, ha='left', va='bottom', fontsize=10, rotation=0,
-                        color='black')
-
+                         color='black')
 
         # Add labels and title
         plt.xlabel('')
@@ -892,14 +759,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     data_for_plot = pc_dalys_averted_by_label.loc[:, pc_dalys_averted_by_label.columns.get_level_values(1) == 'median']
     data_for_plot.columns = data_for_plot.columns.droplevel(1)
     data_for_plot = sort_order_of_columns(data_for_plot)
-    filtered_df = data_for_plot.drop(
-        columns=[
-            'Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE',
-            'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
-        ]
-    )
-    plot_percentage_dalys_averted(filtered_df, x_labels, shared_labels)
-
+    # filtered_df = data_for_plot.drop(
+    #     columns=[
+    #         'Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE',
+    #         'Hiv/Tb Programs Scale-up WITH HSS PACKAGE'
+    #     ]
+    # )
+    plot_percentage_dalys_averted(data_for_plot, x_labels, shared_labels)
 
     def get_num_dalys_by_year(_df):
         """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -953,7 +819,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # DALYS over time
     for plot_name, scenario_names in program_plots.items():
-
         name_of_plot = f'DALYS, {target_period()}, {plot_name}'
         fig, ax = do_line_plot_with_ci(
             result_df.loc[:, pd.IndexSlice[:, scenario_names]] / 1e6,
@@ -964,7 +829,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
-
 
     # get numbers of deaths by cause
     def summarise_deaths_by_cause(results_folder):
@@ -1026,7 +890,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Use the function with your data
     deaths_averted_by_cause = calculate_deaths_averted(num_deaths_by_cause)
-    deaths_averted_by_cause.to_csv(results_folder / 'deaths_averted_by_cause.csv')
+    deaths_averted_by_cause.to_csv(results_folder / f'GF_deaths_averted_by_cause_{target_period()}.csv')
 
     def calculate_percentage_deaths_averted(_df):
         """Calculate the percentage of deaths averted compared to the Baseline for each draw."""
@@ -1044,7 +908,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return percentage_deaths_averted
 
     percentage_deaths_averted = calculate_percentage_deaths_averted(num_deaths_by_cause)
-    percentage_deaths_averted.to_csv(results_folder / 'percentage_deaths_averted.csv')
+    percentage_deaths_averted.to_csv(results_folder / f'GF_percentage_deaths_averted_{target_period()}.csv')
 
     def plot_percentage_deaths_averted(percentage_df, x_labels, shared_labels):
         """
@@ -1092,8 +956,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         for i, label in enumerate(shared_labels):
             if label:  # Only add text if there's a label
                 plt.text(i, 95, label, ha='left', va='bottom', fontsize=10, rotation=0,
-                        color='black')
-
+                         color='black')
 
         # Add labels and title
         plt.xlabel('')
@@ -1129,10 +992,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         '',  # Shared label for the eighth and ninth bars
     ]
 
-    filtered_percentage_deaths_averted = percentage_deaths_averted.drop(
-        columns=['Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE', 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE']
-    )
-    plot_percentage_deaths_averted(filtered_percentage_deaths_averted, x_labels, shared_labels)
+    # filtered_percentage_deaths_averted = percentage_deaths_averted.drop(
+    #     columns=['Hiv/Tb Programs Scale-up WITHOUT HSS PACKAGE', 'Hiv/Tb Programs Scale-up WITH HSS PACKAGE']
+    # )
+    plot_percentage_deaths_averted(percentage_deaths_averted, x_labels, shared_labels)
 
 
 if __name__ == "__main__":
@@ -1145,7 +1008,6 @@ if __name__ == "__main__":
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
-
 
 # tmp checks
 log_BASELINE = load_pickled_dataframes(results_folder, draw=0, run=0)
@@ -1177,7 +1039,6 @@ summarise_hiv_tx = summarize(extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0), only_median=True)
 summarise_hiv_tx.to_csv(results_folder / 'summarise_hiv_tx.csv')
-
 
 summarise_hiv_tx_num = summarize(extract_results(
     results_folder,
@@ -1245,7 +1106,6 @@ summarise_hiv_tx_num.to_csv(results_folder / 'summarise_hiv_tx_num.csv')
 #     return results
 
 
-
 def sum_appt_by_id(results_folder, module, key, column, draw):
     """
     sum occurrences of each treatment_id over the simulation period for every run within a draw
@@ -1274,15 +1134,15 @@ key = 'Never_ran_HSI_Event'
 column = 'TREATMENT_ID'
 
 baseline_never_ran_hsi = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=0)
+                                        module=module, key=key, column=column, draw=0)
 baseline_never_ran_hsi['mean'] = baseline_never_ran_hsi.mean(axis=1)
 
 hiv_scaleup_WITHOUT_HSS_never_ran_hsi = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=2)
+                                                       module=module, key=key, column=column, draw=2)
 hiv_scaleup_WITHOUT_HSS_never_ran_hsi['mean'] = hiv_scaleup_WITHOUT_HSS_never_ran_hsi.mean(axis=1)
 
 htm_scaleup_WITHOUT_HSS_never_ran_hsi = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=10)
+                                                       module=module, key=key, column=column, draw=10)
 htm_scaleup_WITHOUT_HSS_never_ran_hsi['mean'] = htm_scaleup_WITHOUT_HSS_never_ran_hsi.mean(axis=1)
 
 combined_df = pd.DataFrame({
@@ -1295,28 +1155,24 @@ combined_df = pd.DataFrame({
 combined_df.head()
 combined_df.to_csv(results_folder / 'hsi_never_ran.csv')
 
-
-
-
 module = "tlo.methods.healthsystem.summary"
 key = 'HSI_Event'
 column = 'TREATMENT_ID'
 
 baseline_hsi = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=0)
+                              module=module, key=key, column=column, draw=0)
 baseline_hsi['mean'] = baseline_hsi.mean(axis=1)
 
 hiv_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=2)
+                                             module=module, key=key, column=column, draw=2)
 hiv_scaleup_WITHOUT_HSS_hsi['mean'] = hiv_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
 
 mal_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=8)
+                                             module=module, key=key, column=column, draw=8)
 mal_scaleup_WITHOUT_HSS_hsi['mean'] = mal_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
 
-
 htm_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=10)
+                                             module=module, key=key, column=column, draw=10)
 htm_scaleup_WITHOUT_HSS_hsi['mean'] = htm_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
 
 combined_df = pd.DataFrame({
@@ -1329,8 +1185,3 @@ combined_df = pd.DataFrame({
 # Display the combined DataFrame
 combined_df.head()
 combined_df.to_csv(results_folder / 'hsi_ran.csv')
-
-
-
-
-
