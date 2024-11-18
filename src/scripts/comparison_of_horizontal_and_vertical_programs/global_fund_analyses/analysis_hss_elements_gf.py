@@ -5,7 +5,7 @@ test run for developing plots:
 outputs/hss_elements-2024-08-21T125348Z
 
 full run:
-hss_elements-2024-08-27T122317Z
+hss_elements-2024-11-12T172311Z
 
 """
 
