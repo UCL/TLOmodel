@@ -475,7 +475,9 @@ def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, 
             Path(folder/excel_file_path).unlink()
 
 
-def read_csv_files(folder: Path, dtype: DtypeArg | None = None, files: Optional[list[str]] | None | int = 0) -> DataFrame | dict[str, DataFrame]:
+def read_csv_files(folder: Path,
+                   dtype: DtypeArg | dict[str, DtypeArg] | None = None,
+                   files: str | int | list[str] | None = 0) -> DataFrame | dict[str, DataFrame]:
     """
     A function to read CSV files in a similar way pandas reads Excel files (:py:func:`pandas.read_excel`).
 
@@ -485,9 +487,19 @@ def read_csv_files(folder: Path, dtype: DtypeArg | None = None, files: Optional[
     :py:func:`pandas.drop`.
 
     :param folder: Path to folder containing CSV files to read.
-    :param dtype: preferred datatype
+    :param dtype: allows passing in a dictionary of datatypes in cases where you want different datatypes per column
     :param files: preferred csv file name(s). This is the same as sheet names in Excel file. Note that if None(no files
-                  selected) then all files in the containing folder will be loaded
+                  selected) then all csv files in the containing folder will be read
+
+                  Please take note of the following behaviours:
+                  -----------------------------------------------
+                   - if files argument is initialised to zero(default) and the folder contains one file, this method
+                     will return a dataframe
+                   - if files argument is initialised to None and the folder contains one file, this method will return
+                     a dataframe dictionary
+                   - if files argument is initialised to None or zero and the folder contains multiple files, this
+                     method will return dataframes dictionary
+
 
     """
     all_data: dict[str, DataFrame] = {}  # dataframes dictionary
@@ -500,7 +512,10 @@ def read_csv_files(folder: Path, dtype: DtypeArg | None = None, files: Optional[
         for _key, dataframe in dataframes_dict.items():
             all_data[_key] = dataframe.drop(dataframe.filter(like='Unnamed'), axis=1)  # filter and drop Unnamed columns
 
-    if files == 0 or files is None:
+    if isinstance(files, str):
+        files = [files]
+
+    if not files or files is None: # read all files in folder if no file name is given
         for f_name in folder.rglob("*.csv"):
             all_data[f_name.stem] = pd.read_csv(f_name, dtype=dtype)
 

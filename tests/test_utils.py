@@ -341,7 +341,7 @@ def test_pass_datatypes_to_read_csv_method(tmpdir):
     # read from the sample data file
     read_sample_data = read_csv_files(path_to_tmpdir, files=['sample_data'])
     # confirm column datatype is what was assigned
-    assert read_sample_data.numbers1.dtype and read_sample_data.numbers2.dtype == 'int'
+    assert read_sample_data.numbers1.dtype == 'int' and read_sample_data.numbers2.dtype == 'int'
     # define new datatypes
     datatype = {'numbers1': int, 'numbers2': float}
     # pass the new datatypes to read csv method and confirm datatype has changed to what has been declared now
@@ -391,7 +391,7 @@ def test_read_csv_method_with_one_file(tmpdir):
 
     """
     tmpdir_resource_filepath = copy_files_to_temporal_directory_and_return_path(tmpdir)
-    df = read_csv_files(tmpdir_resource_filepath, files=['df_at_healthcareseeking'])
+    df = read_csv_files(tmpdir_resource_filepath, files='df_at_healthcareseeking')
     assert isinstance(df, pd.DataFrame)
 
 
