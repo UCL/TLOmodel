@@ -27,8 +27,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
-
-    TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
+    # todo update TARGET_PERIOD
+    TARGET_PERIOD = (Date(2027, 1, 1), Date(2029, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"GF_{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -400,7 +400,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         offset=10_000
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 550_000)
+    ax.set_ylim(0, 200_000)
     ax.set_ylabel('Deaths Averted')
     # fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -422,7 +422,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         offset=10_000, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
-        ax.set_ylim(0, 400_000)
+        ax.set_ylim(0, 200_000)
         ax.set_ylabel('Deaths Averted')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -440,7 +440,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         offset=0.5,
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 50)
+    ax.set_ylim(0, 15)
     ax.set_ylabel('DALYS Averted \n(Millions)')
     # fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -462,7 +462,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             offset=0.25, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
-        ax.set_ylim(0, 40)
+        ax.set_ylim(0, 15)
         ax.set_ylabel('Additional DALYS Averted \n (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -558,7 +558,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # alpha=0.75,
             color=colours
         )
-        ax.set_ylim([0, 30])
+        ax.set_ylim([0, 15])
         ax.set_title(name_of_plot)
         ax.set_ylabel(f'DALYs Averted vs Baseline, (Millions)')
         wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 13)) for _lab in ax.get_xticklabels()]

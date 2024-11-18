@@ -53,11 +53,15 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
     param_names = get_parameter_names_from_scenario_file()
 
     # Define the target periods
+    # periods = {
+    #     "2010": (datetime.date(2010, 1, 1), datetime.date(2010, 12, 31)),
+    #     "2024": (datetime.date(2024, 1, 1), datetime.date(2024, 12, 31)),
+    #     "2030": (datetime.date(2030, 1, 1), datetime.date(2030, 12, 31)),
+    #     "2035": (datetime.date(2035, 1, 1), datetime.date(2035, 12, 31)),
+    # }
     periods = {
-        "2010": (datetime.date(2010, 1, 1), datetime.date(2010, 12, 31)),
-        "2024": (datetime.date(2024, 1, 1), datetime.date(2024, 12, 31)),
-        "2030": (datetime.date(2030, 1, 1), datetime.date(2030, 12, 31)),
-        "2035": (datetime.date(2035, 1, 1), datetime.date(2035, 12, 31)),
+        str(year): (datetime.date(year, 1, 1), datetime.date(year, 12, 31))
+        for year in [2010] + list(range(2024, 2035))
     }
 
     summaries = {}
@@ -84,9 +88,6 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
     with pd.ExcelWriter(output_file) as writer:
         for year, df in summaries.items():
             df.to_excel(writer, sheet_name=f"Summary_{year}")
-
-    # todo figure showing LE for each draw, can be different sets depending on HSS or HTM scenarios
-    # use 2030 values, all others (2010/2024) should be the same (or similar)
 
     def plot_le(df: pd.DataFrame, baseline2024: pd.DataFrame):
         """
@@ -130,11 +131,6 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
             # Plotting
             ax.errorbar(x_positions, means, yerr=yerr, label=f'{sex}', fmt='o', capsize=5, color=color[i])
 
-            # Add shaded horizontal bands for baseline 2024
-            # baseline_lower = baseline2024.loc[sex, 'lower']
-            # baseline_upper = baseline2024.loc[sex, 'upper']
-            # ax.fill_betweenx([baseline_lower, baseline_upper], -0.5, num_categories - 0.5, color=color[i], alpha=0.2)
-
         # Customize plot
         ax.set_xlabel('')
         ax.set_ylabel('Life expectancy estimate, years')
@@ -161,7 +157,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
         plt.tight_layout()
         plt.show()
 
-    # Plot life expectancy for 2030
+    # Plot life expectancy for 2035
     baseline2024 = summaries['2024']['Baseline']
     plot_le(summaries['2035'], baseline2024)
 

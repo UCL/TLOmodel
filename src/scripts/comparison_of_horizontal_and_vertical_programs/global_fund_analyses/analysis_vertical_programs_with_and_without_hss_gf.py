@@ -33,7 +33,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
 
-    TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
+    TARGET_PERIOD = (Date(2023, 1, 1), Date(2029, 12, 31))
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"GF_{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -635,7 +635,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ]
 
         # Transpose the DataFrame to get each program as a bar (columns become x-axis categories)
-        filtered_df.T.plot(
+        _df.T.plot(
             kind='bar',
             stacked=True,
             ax=ax,
@@ -654,10 +654,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Add shared second-line labels
         for i, label in enumerate(shared_labels):
             if label:  # Only add text if there's a label
-                ax.text(i, filtered_df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=10, rotation=0,
+                ax.text(i, _df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=10, rotation=0,
                         color='black')
 
-        ax.legend(title="Cause", labels=filtered_df.index, bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax.legend(title="Cause", labels=_df.index, bbox_to_anchor=(1.05, 1), loc='upper left')
 
         # Add vertical grey lines
         line_positions = [0, 2, 4, 6]
@@ -1008,180 +1008,3 @@ if __name__ == "__main__":
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources')
     )
-
-# tmp checks
-log_BASELINE = load_pickled_dataframes(results_folder, draw=0, run=0)
-log_HTM_WITHOUT_HSS = load_pickled_dataframes(results_folder, draw=10, run=0)
-
-summarise_hiv_prev = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.hiv",
-    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-    column="hiv_prev_adult_1549",
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0), only_median=True)
-summarise_hiv_prev.to_csv(results_folder / 'summarise_hiv_prev.csv')
-
-summarise_hiv_inc = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.hiv",
-    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-    column="hiv_adult_inc_15plus",
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0), only_median=True)
-summarise_hiv_inc.to_csv(results_folder / 'summarise_hiv_inc.csv')
-
-summarise_hiv_tx = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.hiv",
-    key="hiv_program_coverage",
-    column="art_coverage_adult_VL_suppression",
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0), only_median=True)
-summarise_hiv_tx.to_csv(results_folder / 'summarise_hiv_tx.csv')
-
-summarise_hiv_tx_num = summarize(extract_results(
-    results_folder,
-    module="tlo.methods.hiv",
-    key="hiv_program_coverage",
-    column="n_on_art_total",
-    do_scaling=False,
-).pipe(set_param_names_as_column_index_level_0), only_median=True)
-summarise_hiv_tx_num.to_csv(results_folder / 'summarise_hiv_tx_num.csv')
-
-
-########################################
-# extract numbers of appts
-# years_of_simulation = 20
-#
-# def summarise_appt_outputs(df_list, treatment_id):
-#     """ summarise the treatment counts across all draws/runs for one results folder
-#         requires a list of dataframes with all treatments listed with associated counts
-#     """
-#     number_runs = len(df_list)
-#     number_HSI_by_run = pd.DataFrame(index=np.arange(years_of_simulation), columns=np.arange(number_runs))
-#     column_names = [
-#         treatment_id + "_mean",
-#         treatment_id + "_lower",
-#         treatment_id + "_upper"]
-#     out = pd.DataFrame(columns=column_names)
-#
-#     for i in range(number_runs):
-#         if treatment_id in df_list[i].columns:
-#             number_HSI_by_run.iloc[:, i] = pd.Series(df_list[i].loc[:, treatment_id])
-#
-#     out.iloc[:, 0] = number_HSI_by_run.quantile(q=0.5, axis=1)
-#     out.iloc[:, 1] = number_HSI_by_run.quantile(q=0.025, axis=1)
-#     out.iloc[:, 2] = number_HSI_by_run.quantile(q=0.975, axis=1)
-#
-#     return out
-#
-# def extract_appt_details(results_folder, module, key, column, draw):
-#     """
-#     extract list of dataframes with all treatments listed with associated counts
-#     """
-#
-#     info = get_scenario_info(results_folder)
-#
-#     df_list = list()
-#
-#     for run in range(info['runs_per_draw']):
-#         df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-#
-#         new = df[['date', column]].copy()
-#         df_list.append(pd.DataFrame(new[column].to_list()))
-#
-#     # for column in each df, get median
-#     # list of treatment IDs
-#     list_tx_id = list(df_list[0].columns)
-#     results = pd.DataFrame(index=np.arange(years_of_simulation))
-#
-#     # produce a list of numbers of every treatment_id
-#     for treatment_id in list_tx_id:
-#         tmp = summarise_appt_outputs(df_list, treatment_id)
-#
-#         # append output to dataframe
-#         results = results.join(tmp)
-#
-#     return results
-
-
-def sum_appt_by_id(results_folder, module, key, column, draw):
-    """
-    sum occurrences of each treatment_id over the simulation period for every run within a draw
-    """
-
-    info = get_scenario_info(results_folder)
-    # create emtpy dataframe
-    results = pd.DataFrame()
-
-    for run in range(info['runs_per_draw']):
-        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-
-        new = df[['date', column]].copy()
-        tmp = pd.DataFrame(new[column].to_list())
-
-        # sum each column to get total appts of each type over the simulation
-        tmp2 = pd.DataFrame(tmp.sum())
-        # add results to dataframe for output
-        results = pd.concat([results, tmp2], axis=1)
-
-    return results
-
-
-module = "tlo.methods.healthsystem.summary"
-key = 'Never_ran_HSI_Event'
-column = 'TREATMENT_ID'
-
-baseline_never_ran_hsi = sum_appt_by_id(results_folder,
-                                        module=module, key=key, column=column, draw=0)
-baseline_never_ran_hsi['mean'] = baseline_never_ran_hsi.mean(axis=1)
-
-hiv_scaleup_WITHOUT_HSS_never_ran_hsi = sum_appt_by_id(results_folder,
-                                                       module=module, key=key, column=column, draw=2)
-hiv_scaleup_WITHOUT_HSS_never_ran_hsi['mean'] = hiv_scaleup_WITHOUT_HSS_never_ran_hsi.mean(axis=1)
-
-htm_scaleup_WITHOUT_HSS_never_ran_hsi = sum_appt_by_id(results_folder,
-                                                       module=module, key=key, column=column, draw=10)
-htm_scaleup_WITHOUT_HSS_never_ran_hsi['mean'] = htm_scaleup_WITHOUT_HSS_never_ran_hsi.mean(axis=1)
-
-combined_df = pd.DataFrame({
-    'Baseline': baseline_never_ran_hsi['mean'],
-    'HIV Scale-up WITHOUT HSS': hiv_scaleup_WITHOUT_HSS_never_ran_hsi['mean'],
-    'HTM Scale-up WITHOUT HSS': htm_scaleup_WITHOUT_HSS_never_ran_hsi['mean']
-})
-
-# Display the combined DataFrame
-combined_df.head()
-combined_df.to_csv(results_folder / 'hsi_never_ran.csv')
-
-module = "tlo.methods.healthsystem.summary"
-key = 'HSI_Event'
-column = 'TREATMENT_ID'
-
-baseline_hsi = sum_appt_by_id(results_folder,
-                              module=module, key=key, column=column, draw=0)
-baseline_hsi['mean'] = baseline_hsi.mean(axis=1)
-
-hiv_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
-                                             module=module, key=key, column=column, draw=2)
-hiv_scaleup_WITHOUT_HSS_hsi['mean'] = hiv_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
-
-mal_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
-                                             module=module, key=key, column=column, draw=8)
-mal_scaleup_WITHOUT_HSS_hsi['mean'] = mal_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
-
-htm_scaleup_WITHOUT_HSS_hsi = sum_appt_by_id(results_folder,
-                                             module=module, key=key, column=column, draw=10)
-htm_scaleup_WITHOUT_HSS_hsi['mean'] = htm_scaleup_WITHOUT_HSS_hsi.mean(axis=1)
-
-combined_df = pd.DataFrame({
-    'Baseline': baseline_hsi['mean'],
-    'HIV Scale-up WITHOUT HSS': hiv_scaleup_WITHOUT_HSS_hsi['mean'],
-    'Malaria Scale-up WITHOUT HSS': mal_scaleup_WITHOUT_HSS_hsi['mean'],
-    'HTM Scale-up WITHOUT HSS': htm_scaleup_WITHOUT_HSS_hsi['mean']
-})
-
-# Display the combined DataFrame
-combined_df.head()
-combined_df.to_csv(results_folder / 'hsi_ran.csv')

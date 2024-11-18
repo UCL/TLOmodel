@@ -125,11 +125,6 @@ def apply(results_folder: Path, output_folder: Path):
 
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
-        # Define colormap (used only with option `put_labels_in_legend=True`)
-        # cmap = plt.get_cmap("tab20")
-        # cmap = sns.color_palette('Spectral', as_cmap=True)
-        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        # colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
         if set_colors:
             colors = [color_map.get(series, 'grey') for series in _df.index]
         else:
@@ -280,8 +275,8 @@ def apply(results_folder: Path, output_folder: Path):
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
-    num_dalys_summarized.to_csv(results_folder / 'fcdo_num_dalys_summarized.csv')
-    num_deaths_summarized.to_csv(results_folder / 'fcdo_num_deaths_summarized.csv')
+    num_dalys_summarized.to_csv(results_folder / f'fcdo_num_dalys_summarized_{target_period()}.csv')
+    num_deaths_summarized.to_csv(results_folder / f'fcdo_num_deaths_summarized_{target_period()}.csv')
 
     color_map = {
         'Baseline': '#a50026',
@@ -326,7 +321,7 @@ def apply(results_folder: Path, output_folder: Path):
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    num_deaths_averted.to_csv(results_folder / 'fcdo_num_deaths_averted.csv')
+    num_deaths_averted.to_csv(results_folder / f'fcdo_num_deaths_averted_{target_period()}.csv')
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
@@ -337,7 +332,7 @@ def apply(results_folder: Path, output_folder: Path):
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    pc_deaths_averted.to_csv(results_folder / 'fcdo_pc_deaths_averted.csv')
+    pc_deaths_averted.to_csv(results_folder / f'fcdo_pc_deaths_averted_{target_period()}.csv')
 
     num_dalys_averted = summarize(
         -1.0 *
@@ -347,7 +342,7 @@ def apply(results_folder: Path, output_folder: Path):
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    num_dalys_averted.to_csv(results_folder / 'fcdo_num_dalys_averted.csv')
+    num_dalys_averted.to_csv(results_folder / f'fcdo_num_dalys_averted_{target_period()}.csv')
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
@@ -358,7 +353,7 @@ def apply(results_folder: Path, output_folder: Path):
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    pc_dalys_averted.to_csv(results_folder / 'fcdo_pc_dalys_averted.csv')
+    pc_dalys_averted.to_csv(results_folder / f'fcdo_pc_dalys_averted_{target_period()}.csv')
 
     # DEATHS AVERTED
     name_of_plot = f'Deaths Averted vs Baseline, {target_period()}'
@@ -387,12 +382,13 @@ def apply(results_folder: Path, output_folder: Path):
             f"{round(row['median'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ],
-        offset=0.02, set_colors=color_map,
+        offset=0.5, set_colors=color_map,
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 0.6)
+    ax.set_ylim(0, 25)
     ax.set_ylabel('DALYS Averted \n(Millions)')
-    fig.tight_layout()
+    # fig.tight_layout()
+    fig.subplots_adjust(left=0.1)  # Increase left margin for the y-axis label.
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
@@ -508,14 +504,14 @@ def apply(results_folder: Path, output_folder: Path):
     fig, ax = plot_dalys_averted_by_cause(total_num_dalys_by_label_results_averted_vs_baseline / 1e6,
                                           color_map)
     ax.set_title(name_of_plot)
-    ax.set_ylim([0, 50])
+    ax.set_ylim([0, 30])
     ax.set_ylabel('DALYs Averted vs Baseline (Millions)')
     ax.set_xlabel('')
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     plt.show()
     plt.close(fig)
 
-    def process_and_plot_dalys(results_folder, target_period):
+    def process_and_plot_dalys(results_folder):
         """
         Process and plot DALYs over a target period with confidence intervals.
         """
@@ -525,7 +521,7 @@ def apply(results_folder: Path, output_folder: Path):
             Return total number of DALYs (Stacked) by label within the target period.
             Throws an error if there is not a record for every year in the target period.
             """
-            years_needed = [i.year for i in target_period()]
+            years_needed = [i.year for i in TARGET_PERIOD]
             assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
             return pd.Series(
                 data=_df
@@ -567,7 +563,7 @@ def apply(results_folder: Path, output_folder: Path):
         )
         ax.set_title(name_of_plot)
         ax.set_ylim(6, 18)
-        ax.set_ylabel('(Millions)')
+        ax.set_ylabel('DALYs, (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
@@ -575,7 +571,6 @@ def apply(results_folder: Path, output_folder: Path):
 
     process_and_plot_dalys(
         results_folder=results_folder,
-        target_period=lambda: TARGET_PERIOD,
     )
 
     def get_total_num_dalys_by_wealth(_df):
@@ -602,7 +597,7 @@ def apply(results_folder: Path, output_folder: Path):
             do_scaling=True,
         ).pipe(set_param_names_as_column_index_level_0),
         collapse_columns=True,
-        only_mean=True,
+        only_median=True,
     ).unstack()
 
     def format_to_plot(_df):
@@ -613,7 +608,7 @@ def apply(results_folder: Path, output_folder: Path):
 
         # Pivot the DataFrame to have 'li_wealth' as rows and 'stat/draw' as columns
         df_pivot = df.pivot_table(index=['li_wealth'], columns=['draw', 'stat'], values=0, aggfunc='sum').fillna(0)
-        filtered_columns = df_pivot.columns[df_pivot.columns.get_level_values(1) == 'mean']
+        filtered_columns = df_pivot.columns[df_pivot.columns.get_level_values(1) == 'median']
         df_mean = df_pivot.loc[:, filtered_columns]
         df_mean.columns = df_mean.columns.droplevel(1)
 
@@ -625,9 +620,9 @@ def apply(results_folder: Path, output_folder: Path):
     formatted_data = format_to_plot(total_num_dalys_by_wealth)
 
     name_of_plot = f'DALYS, {target_period()}'
-    fig, ax = plot_dalys_averted_by_cause(formatted_data / 1e6)
+    fig, ax = plot_dalys_averted_by_cause(formatted_data / 1e6, color_map)
     ax.set_title(name_of_plot)
-    ax.set_ylim([0, 100])
+    ax.set_ylim([0, 200])
     ax.set_ylabel('DALYs (Millions)')
     ax.set_xlabel('')
     legend = ax.get_legend()
