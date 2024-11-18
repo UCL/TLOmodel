@@ -335,17 +335,17 @@ def copy_files_to_temporal_directory_and_return_path(tmpdir):
 def test_pass_datatypes_to_read_csv_method(tmpdir):
     """ test passing column datatypes to read csv method. Final column datatype should change to what has been passed """
     # copy and get resource files path in the temporal directory
-    tmpdir_resource_filepath = copy_files_to_temporal_directory_and_return_path(tmpdir)
+    path_to_tmpdir = Path(tmpdir)
     sample_data = pd.DataFrame(data={'numbers1': [5,6,8,4,9,6], 'numbers2': [19,27,53,49,75,56]}, dtype=int)
-    sample_data.to_csv(tmpdir_resource_filepath/'sample_data.csv', index=False)
+    sample_data.to_csv(tmpdir/'sample_data.csv', index=False)
     # read from the sample data file
-    read_sample_data = read_csv_files(tmpdir_resource_filepath, files=['sample_data'])
+    read_sample_data = read_csv_files(path_to_tmpdir, files=['sample_data'])
     # confirm column datatype is what was assigned
     assert read_sample_data.numbers1.dtype and read_sample_data.numbers2.dtype == 'int'
     # define new datatypes
     datatype = {'numbers1': int, 'numbers2': float}
     # pass the new datatypes to read csv method and confirm datatype has changed to what has been declared now
-    assign_dtype = read_csv_files(tmpdir_resource_filepath, files=['sample_data'], dtype=datatype)
+    assign_dtype = read_csv_files(path_to_tmpdir, files=['sample_data'], dtype=datatype)
     assert assign_dtype.numbers1.dtype == 'int' and assign_dtype.numbers2.dtype == 'float'
 
 
