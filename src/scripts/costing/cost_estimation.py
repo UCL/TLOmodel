@@ -1020,7 +1020,8 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                        _draws:None,
                        _scenario_dict: dict,
                        _outputfilepath: Path,
-                       _value_of_life_suffix = ''):
+                       _value_of_life_suffix = '',
+                       _y_axis_lim = None):
     # Calculate maximum ability to pay for implementation
     _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
     _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
@@ -1101,7 +1102,10 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         max_roi.append(max_val)
 
     # Set y-axis limit
-    ax.set_ylim(0, max(max_roi) * 1.25)
+    if _y_axis_lim == None:
+        ax.set_ylim(0, max(max_roi) * 1.25)
+    else:
+        ax.set_ylim(0, _y_axis_lim)
     ax.set_xlim(left = 0)
 
     plt.xlabel('Implementation cost, millions')
