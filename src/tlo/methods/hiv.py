@@ -3001,7 +3001,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / 12:
+            _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Log the VL test: line-list of summary information about each test
         adult = True if person['age_years'] >= 15 else False
