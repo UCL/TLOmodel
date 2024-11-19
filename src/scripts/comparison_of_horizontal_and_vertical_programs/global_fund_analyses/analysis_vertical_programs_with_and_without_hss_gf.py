@@ -9,7 +9,8 @@ results for updates 30Sept2024 (IRS in high-risk distr and reduced gen pop RDT):
 htm_with_and_without_hss-2024-09-17T083150Z
 
 with reduced consumables logging
-/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-11-12T172311Z
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_with_and_without_hss-2024-11-12T172503Z
+
 
 """
 
@@ -279,6 +280,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'HTM Programs Scale-up WITH HRH',
     ]
 
+    # Make a separate plot for the scale-up of each program/programs
+    program_plots = {
+        'HIV programs': [
+            'HIV Programs Scale-up WITHOUT HSS PACKAGE',
+            'HIV Programs Scale-up WITH REALISTIC HSS PACKAGE',
+        ],
+        'TB programs': [
+            'TB Programs Scale-up WITHOUT HSS PACKAGE',
+            'TB Programs Scale-up WITH REALISTIC HSS PACKAGE',
+        ],
+        'Malaria programs': [
+            'Malaria Programs Scale-up WITHOUT HSS PACKAGE',
+            'Malaria Programs Scale-up WITH REALISTIC HSS PACKAGE',
+        ],
+        'Summary': [
+            'HSS PACKAGE: Realistic',
+            'HTM Programs Scale-up WITHOUT HSS PACKAGE',
+            'HTM Programs Scale-up WITH REALISTIC HSS PACKAGE'
+        ]
+
+    }
+
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
 
@@ -402,6 +425,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    # plot dalys averted for each program and summary
+    for plot_name, scenario_names in program_plots.items():
+        # Define the plot title and filename for each scenario
+        name_of_plot = f'DALYs Averted vs Baseline, {target_period()}, {plot_name}'
+
+        filtered_num_dalys_averted = num_dalys_averted.loc[
+            num_dalys_averted.index.isin(scenario_names)]
+
+        filtered_pc_dalys_averted = pc_dalys_averted.loc[
+            pc_dalys_averted.index.isin(scenario_names)]
+
+        # Create figure and axis
+        fig, ax = plt.subplots()
+
+        # Generate the bar plot with confidence intervals
+        fig, ax = do_bar_plot_with_ci(
+            (filtered_num_dalys_averted / 1e6).clip(lower=0.0),
+            annotations=[
+                f"{round(row['median'])}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+                for _, row in filtered_pc_dalys_averted.clip(lower=0.0).iterrows()
+            ],
+            set_colors=color_map,
+            offset=1,
+        )
+
+        # Set plot title, labels, and limits
+        ax.set_title(name_of_plot)
+        ax.set_ylim(0, 20)
+        ax.set_ylabel('Additional DALYs Averted vs Baseline \n(Millions)')
+
+        # Adjust layout and save each plot
+        fig.tight_layout()
+        plt.subplots_adjust(right=0.55)  # Increase right margin for annotations/legend
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
+
     # %% DALYS averted relative to Baseline - broken down by major cause (HIV, TB, MALARIA)
 
     def get_total_num_dalys_by_label(_df):
@@ -473,35 +533,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         return reordered_df
 
-    # Check that when we sum across the causes, we get the same total as calculated when we didn't split by cause.
-    # this assertion fails since moving from mean to median
-    assert (
-        (total_num_dalys_by_label_results_averted_vs_baseline.sum(axis=0).sort_index()
-         - num_dalys_averted['median'].sort_index()
-         ) < 1e-6
-    ).all()
-
-    # Make a separate plot for the scale-up of each program/programs
-    program_plots = {
-        'HIV programs': [
-            'HIV Programs Scale-up WITHOUT HSS PACKAGE',
-            'HIV Programs Scale-up WITH REALISTIC HSS PACKAGE',
-        ],
-        'TB programs': [
-            'TB Programs Scale-up WITHOUT HSS PACKAGE',
-            'TB Programs Scale-up WITH REALISTIC HSS PACKAGE',
-        ],
-        'Malaria programs': [
-            'Malaria Programs Scale-up WITHOUT HSS PACKAGE',
-            'Malaria Programs Scale-up WITH REALISTIC HSS PACKAGE',
-        ],
-        'Summary': [
-            'HSS PACKAGE: Realistic',
-            'HTM Programs Scale-up WITHOUT HSS PACKAGE',
-            'HTM Programs Scale-up WITH REALISTIC HSS PACKAGE'
-        ]
-
-    }
 
     for plot_name, scenario_names in program_plots.items():
         name_of_plot = f'{plot_name}'
@@ -517,7 +548,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             rot=0,
             color=colours,
         )
-        ax.set_ylim([0, 3e7])
+        ax.set_ylim([0, 1.5e7])
         ax.set_title(name_of_plot)
         ax.set_ylabel(f'DALYs Averted vs Baseline, {target_period()}\n(Millions)')
         wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 20)) for _lab in ax.get_xticklabels()]
@@ -527,11 +558,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.show()
         plt.close(fig)
 
+
     def plot_combined_programs_scale_up(_df):
         """
         Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
         """
-        combined_plot_name = 'Combined Programs Scale-up'
+        combined_plot_name = 'DALYs averted, Combined Programs Scale-up'
         fig, ax = plt.subplots(figsize=(12, 6))
 
         colours = sns.color_palette('Set1', 4)  # We have 4 categories to stack
@@ -572,7 +604,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Set the title and labels
         ax.set_title(combined_plot_name)
         ax.set_ylabel(f'DALYs Averted vs Baseline, {target_period()}\n(Millions)')
-        ax.set_ylim([0, 3e7])
+        ax.set_ylim([0, 1.2e7])
         ax.set_xlabel("")
         ax.set_xticks(range(len(x_labels)))
         ax.set_xticklabels(x_labels, ha="center")
@@ -603,73 +635,73 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     plot_combined_programs_scale_up(filtered_df_htm_hss)
 
-    def plot_pc_DALYS_combined_programs_scale_up(_df):
-        """
-        Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
-        """
-        combined_plot_name = 'Percentage Change in DALYS vs Baseline'
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-        colours = sns.color_palette('Set1', 4)  # We have 4 categories to stack
-        x_labels = [
-            'FULL HSS',
-            'WITHOUT \nRSSH',
-            'WITH \nRSSH',
-            'WITHOUT \nRSSH',
-            'WITH \nRSSH',
-            'WITHOUT \nRSSH',
-            'WITH \nRSSH',
-            'WITHOUT \nRSSH',
-            'WITH \nRSSH',
-        ]
-        shared_labels = [
-            '',  # No shared label for the first bar
-            'HIV Scale-up',  # Shared label for the second and third bars
-            '',  # Shared label for the second and third bars
-            'TB Scale-up',  # Shared label for the fourth and fifth bars
-            '',  # Shared label for the fourth and fifth bars
-            'Malaria Scale-up',  # Shared label for the sixth and seventh bars
-            '',  # Shared label for the sixth and seventh bars
-            'HTM Scale-up',  # Shared label for the eighth and ninth bars
-            '',  # Shared label for the eighth and ninth bars
-        ]
-
-        # Transpose the DataFrame to get each program as a bar (columns become x-axis categories)
-        _df.T.plot(
-            kind='bar',
-            stacked=True,
-            ax=ax,
-            color=colours,
-            rot=0
-        )
-
-        # Set the title and labels
-        ax.set_title(combined_plot_name)
-        ax.set_ylabel(f'Percentage Change in DALYs vs Baseline, \n{target_period()}(%)')
-        ax.set_ylim([0, 300])
-        ax.set_xlabel("")
-        ax.set_xticks(range(len(x_labels)))
-        ax.set_xticklabels(x_labels, ha="center")
-
-        # Add shared second-line labels
-        for i, label in enumerate(shared_labels):
-            if label:  # Only add text if there's a label
-                ax.text(i, _df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=10, rotation=0,
-                        color='black')
-
-        ax.legend(title="Cause", labels=_df.index, bbox_to_anchor=(1.05, 1), loc='upper left')
-
-        # Add vertical grey lines
-        line_positions = [0, 2, 4, 6]
-        for pos in line_positions:
-            ax.axvline(x=pos + 0.5, color='grey', linestyle='--', linewidth=1)
-
-        # Adjust layout and save
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
-        fig.show()
-        plt.close(fig)
-
+    # def plot_pc_DALYS_combined_programs_scale_up(_df):
+    #     """
+    #     Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
+    #     """
+    #     combined_plot_name = 'Percentage Change in DALYS vs Baseline'
+    #     fig, ax = plt.subplots(figsize=(12, 6))
+    #
+    #     colours = sns.color_palette('Set1', 4)  # We have 4 categories to stack
+    #     x_labels = [
+    #         'FULL HSS',
+    #         'WITHOUT \nRSSH',
+    #         'WITH \nRSSH',
+    #         'WITHOUT \nRSSH',
+    #         'WITH \nRSSH',
+    #         'WITHOUT \nRSSH',
+    #         'WITH \nRSSH',
+    #         'WITHOUT \nRSSH',
+    #         'WITH \nRSSH',
+    #     ]
+    #     shared_labels = [
+    #         '',  # No shared label for the first bar
+    #         'HIV Scale-up',  # Shared label for the second and third bars
+    #         '',  # Shared label for the second and third bars
+    #         'TB Scale-up',  # Shared label for the fourth and fifth bars
+    #         '',  # Shared label for the fourth and fifth bars
+    #         'Malaria Scale-up',  # Shared label for the sixth and seventh bars
+    #         '',  # Shared label for the sixth and seventh bars
+    #         'HTM Scale-up',  # Shared label for the eighth and ninth bars
+    #         '',  # Shared label for the eighth and ninth bars
+    #     ]
+    #
+    #     # Transpose the DataFrame to get each program as a bar (columns become x-axis categories)
+    #     _df.T.plot(
+    #         kind='bar',
+    #         stacked=True,
+    #         ax=ax,
+    #         color=colours,
+    #         rot=0
+    #     )
+    #
+    #     # Set the title and labels
+    #     ax.set_title(combined_plot_name)
+    #     ax.set_ylabel(f'Percentage Change in DALYs vs Baseline, \n{target_period()}(%)')
+    #     ax.set_ylim([0, 300])
+    #     ax.set_xlabel("")
+    #     ax.set_xticks(range(len(x_labels)))
+    #     ax.set_xticklabels(x_labels, ha="center")
+    #
+    #     # Add shared second-line labels
+    #     for i, label in enumerate(shared_labels):
+    #         if label:  # Only add text if there's a label
+    #             ax.text(i, _df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=10, rotation=0,
+    #                     color='black')
+    #
+    #     ax.legend(title="Cause", labels=_df.index, bbox_to_anchor=(1.05, 1), loc='upper left')
+    #
+    #     # Add vertical grey lines
+    #     line_positions = [0, 2, 4, 6]
+    #     for pos in line_positions:
+    #         ax.axvline(x=pos + 0.5, color='grey', linestyle='--', linewidth=1)
+    #
+    #     # Adjust layout and save
+    #     fig.tight_layout()
+    #     fig.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
+    #     fig.show()
+    #     plt.close(fig)
+    #
     # Define  custom x_labels and shared_labels
     x_labels = [
         'FULL HSS',
@@ -703,7 +735,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         x_labels (list): Custom labels for the x-axis.
         shared_labels (list): Shared labels for groups of x-axis categories.
         """
-        combined_plot_name = 'Percentage DALYS Averted vs Baseline'
+        combined_plot_name = (f'Percentage Change in DALYs vs Baseline, \n{target_period()}(%)')
         # Reset index to convert MultiIndex DataFrame to a suitable format for plotting
         percentage_data = percentage_df.reset_index()
 
@@ -920,6 +952,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         shared_labels (list): Shared labels for groups of x-axis categories.
         """
         # Reset index to convert MultiIndex DataFrame to a suitable format for plotting
+        name_of_plot = (f'Percentage Change in DALYs vs Baseline (%), \n{target_period()}')
         percentage_data = percentage_df.reset_index()
 
         # Melt the DataFrame for easier plotting
@@ -940,7 +973,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         sns.barplot(data=percentage_data, x='draw', y='Percentage', hue='label', palette=cause_color_map)
 
         # Add vertical dashed grey lines between draws
-        vertical_lines = [1, 3, 5, 7, 9]  # Positions for vertical lines
+        vertical_lines = [1, 3, 5, 7]  # Positions for vertical lines
         for line in vertical_lines:
             plt.axvline(x=line - 0.5, color='grey', linestyle='--', linewidth=1)
 
@@ -961,11 +994,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Add labels and title
         plt.xlabel('')
         plt.ylabel('Percentage of Deaths Averted')
-        plt.title('Percentage of Deaths Averted by Cause')
+        plt.title(name_of_plot)
         plt.legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')  # Legend outside the plot
 
         # Show the plot
         plt.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         plt.show()
 
     # Define your custom x_labels and shared_labels
@@ -979,6 +1013,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'WITH \nRSSH',
         'WITHOUT \nRSSH',
         'WITH \nRSSH',
+        'WITH \nSUPPLY \nCHAINS',
+        'WITH \nHRH'
     ]
     shared_labels = [
         '',  # No shared label for the first bar

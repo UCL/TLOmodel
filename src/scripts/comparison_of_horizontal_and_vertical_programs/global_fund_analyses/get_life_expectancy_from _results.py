@@ -61,7 +61,7 @@ def apply(results_folder: Path, output_folder: Path, HSS_or_HTM: str):
     # }
     periods = {
         str(year): (datetime.date(year, 1, 1), datetime.date(year, 12, 31))
-        for year in [2010] + list(range(2024, 2035))
+        for year in [2010] + list(range(2024, 2036))
     }
 
     summaries = {}
