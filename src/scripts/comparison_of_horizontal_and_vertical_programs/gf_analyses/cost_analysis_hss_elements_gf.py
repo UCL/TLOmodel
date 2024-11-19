@@ -1,3 +1,10 @@
+"""Produce plots to show the impact each the healthcare system (overall health impact) when running under different
+scenarios (scenario_impact_of_healthsystem.py)
+
+with reduced consumables logging
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-11-12T172311Z
+"""
+
 from pathlib import Path
 from tlo import Date
 

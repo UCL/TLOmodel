@@ -1,3 +1,17 @@
+"""Produce plots to show the impact each the healthcare system (overall health impact) when running under different
+scenarios (scenario_vertical_programs_with_and_without_hss.py)
+
+job ID:
+results for FCDO and GF presentations Sept 2024:
+htm_with_and_without_hss-2024-09-04T143044Z
+
+results for updates 30Sept2024 (IRS in high-risk distr and reduced gen pop RDT):
+htm_with_and_without_hss-2024-09-17T083150Z
+
+with reduced consumables logging
+htm_with_and_without_hss-2024-11-12T172503Z
+"""
+
 from pathlib import Path
 from tlo import Date
 
