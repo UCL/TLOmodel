@@ -1022,7 +1022,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                        _outputfilepath: Path,
                        _value_of_life_suffix = '',
                        _y_axis_lim = None,
-                      _plot_vertical_lines = False):
+                      _plot_vertical_lines_at: list = None):
     # Calculate maximum ability to pay for implementation
     _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
     _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
@@ -1031,11 +1031,8 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
     # Create a figure and axis to plot all draws together
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Generate a list to store max ROI value to set ylim
-    max_roi = []
-    roi_at_1billion = []
-    roi_at_3billion = []
-    roi_at_0 = []
+    # Store ROI values for specific costs
+    roi_at_costs = {cost: [] for cost in (_plot_vertical_lines_at or [])}
 
     # Iterate over each draw in monetary_value_of_incremental_health
     for draw_index, row in _monetary_value_of_incremental_health.iterrows():
@@ -1108,27 +1105,25 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         max_val = mean_values[~np.isinf(mean_values['roi'])]['roi'].max()
         max_roi.append(max_val)
 
-        roi_at_0_value = collapsed_data[(collapsed_data.implementation_cost == 0) & (collapsed_data.stat == 'mean')]['roi'].iloc[0]
-        roi_at_1billion_value = collapsed_data[(collapsed_data.implementation_cost == 1e+09) & (collapsed_data.stat == 'mean')]['roi'].iloc[0]
-        roi_at_3billion_value = collapsed_data[(collapsed_data.implementation_cost == 3e+09) & (collapsed_data.stat == 'mean')]['roi'].iloc[0]
+        # Capture ROI at specific costs
+        if _plot_vertical_lines_at:
+            for cost in _plot_vertical_lines_at:
+                roi_value = collapsed_data[
+                    (collapsed_data.implementation_cost == cost) &
+                    (collapsed_data.stat == 'mean')
+                    ]['roi']
+                if not roi_value.empty:
+                    roi_at_costs[cost].append(roi_value.iloc[0])
 
-        roi_at_0.append(roi_at_0_value)
-        roi_at_1billion.append(roi_at_1billion_value)
-        roi_at_3billion.append(roi_at_3billion_value)
-
-    ratio_at_0 = max(roi_at_0)/min(roi_at_0)
-    ratio_at_1billion = max(roi_at_1billion)/min(roi_at_1billion)
-    ratio_at_3billion = max(roi_at_3billion) / min(roi_at_3billion)
-    roi_ratio = [ratio_at_0, ratio_at_1billion, ratio_at_3billion]
-
-    if _plot_vertical_lines == True:
-        # Present ratio of returns at different implementation costs
-        i = 0
-        for cost in [0, 1_000_000_000, 3_000_000_000]:
-            ax.axvline(x=cost / 1e6, color='black', linestyle='--', linewidth=1)
-            ax.text(cost / 1e6 + 400, ax.get_ylim()[1] * 0.9, f'At {cost / 1e6:.0f}M, ratio of ROI curves is {round(roi_ratio[i],1)}', color='black', fontsize=10, rotation=90,
-                    verticalalignment='top')
-            i = i + 1
+        # Calculate and annotate ROI ratios
+    if _plot_vertical_lines_at:
+        for cost in _plot_vertical_lines_at:
+            if cost in roi_at_costs:
+                ratio = max(roi_at_costs[cost]) / min(roi_at_costs[cost])
+                ax.axvline(x=cost / 1e6, color='black', linestyle='--', linewidth=1)
+                ax.text(cost / 1e6 + 400, ax.get_ylim()[1] * 0.9,
+                        f'At {cost / 1e6:.0f}M, ROI ratio = {round(ratio, 2)}',
+                        color='black', fontsize=10, rotation=90, verticalalignment='top')
 
     # Set y-axis limit
     if _y_axis_lim == None:

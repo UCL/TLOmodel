@@ -495,7 +495,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HTM_full_HSS_VSL',
-                   _plot_vertical_lines=True)
+                   _plot_vertical_lines_at = [0, 1e9, 3e9])
 
 # HTM scenarios with HSS
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -504,7 +504,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HTM_full_HSS_VSL',
-                   _plot_vertical_lines=True)
+                   _plot_vertical_lines_at = [0, 1e9, 3e9])
 
 # HIV scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
