@@ -608,8 +608,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("sex").when("M", 1.0).otherwise(0.0),
             Predictor("year",
                       external=True,
-                      conditions_are_mutually_exclusive=True,
-                      conditions_are_exhaustive=True).when("<2019", 1)
+                      conditions_are_mutually_exclusive=True).when("<2019", 1)
             .otherwise(p["increase_in_prob_circ_2019"])
         )
 
