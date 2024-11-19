@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.cli module &mdash; TLOmodel 0.1.dev2469+g28643ea.d20241114 documentation</title>
+  <title>tlo.cli module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=fa124278"></script>
+      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -113,7 +113,7 @@ For more information, see <a class="reference external" href="https://github.com
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.get_batch_client">
-<span class="sig-name descname"><span class="pre">get_batch_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#get_batch_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.get_batch_client" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_batch_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tenant_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#get_batch_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.get_batch_client" title="Link to this definition"></a></dt>
 <dd><p>Create a Batch service client</p>
 </dd></dl>
 
@@ -167,11 +167,12 @@ the specified Azure file share.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.create_job">
-<span class="sig-name descname"><span class="pre">create_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_service_client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vm_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_node_count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mount_configuration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_pool_alive</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#create_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.create_job" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_service_client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vm_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_node_count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mount_configuration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_pool_alive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subnet_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#create_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.create_job" title="Link to this definition"></a></dt>
 <dd><p>Creates a job with the specified ID, associated with the specified pool.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>subnet_id</strong></p></li>
 <li><p><strong>batch_service_client</strong> (<cite>azure.batch.BatchServiceClient</cite>) – A Batch service client.</p></li>
 <li><p><strong>vm_size</strong> (<em>str</em>) – Type of virtual machine to use as pool.</p></li>
 <li><p><strong>pool_node_count</strong> (<em>int</em>) – Number of nodes in the pool.</p></li>
@@ -217,7 +218,7 @@ the specified Azure file share.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Nov 14, 2024.
+      <span class="lastupdated">Last updated on Nov 19, 2024.
       </span></p>
   </div>
 

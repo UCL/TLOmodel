@@ -79,13 +79,13 @@ tlo.methods.healthseekingbehaviour module
 
      ADDITIONAL_DEPENDENCIES : {'Lifestyle'}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
      __annotations__ : {}
 
-     force_any_symptom_to_lead_to_healthcareseeking : <property object at 0x120f4c810>
+     force_any_symptom_to_lead_to_healthcareseeking : <property object at 0x11f1ef060>
 
      **Functions (defined or overridden in class HealthSeekingBehaviour):**
 

@@ -436,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'Contraception', 'Lifestyle', 'HealthSystem', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'Labour', 'Contraception', 'HealthSystem', 'Lifestyle'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x132599a50>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x1323135d0>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x132310990>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x132313e50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1323112d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x132313f90>, 'eclampsia': <tlo.methods.causes.Cause object at 0x132311350>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x132310190>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x1306c4490>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x1306dfd10>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x1306dc490>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1306dea50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1306ddad0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1306df690>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1306dcad0>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x1306df990>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x132312310>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1306de8d0>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Malaria', 'Hiv', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'HealthBurden', 'Malaria', 'Hiv'}
 
      __annotations__ : {}
 

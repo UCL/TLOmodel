@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.cli &mdash; TLOmodel 0.1.dev2469+g28643ea.d20241114 documentation</title>
+  <title>tlo.cli &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
@@ -14,7 +14,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=fa124278"></script>
+      <script src="../../_static/documentation_options.js?v=cdb6c1d3"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -97,9 +97,9 @@
 <span class="kn">import</span> <span class="nn">dateutil.parser</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">azure</span> <span class="kn">import</span> <span class="n">batch</span>
-<span class="kn">from</span> <span class="nn">azure.batch</span> <span class="kn">import</span> <span class="n">batch_auth</span>
 <span class="kn">from</span> <span class="nn">azure.batch</span> <span class="kn">import</span> <span class="n">models</span> <span class="k">as</span> <span class="n">batch_models</span>
 <span class="kn">from</span> <span class="nn">azure.batch.models</span> <span class="kn">import</span> <span class="n">BatchErrorException</span>
+<span class="kn">from</span> <span class="nn">azure.common.credentials</span> <span class="kn">import</span> <span class="n">ServicePrincipalCredentials</span>
 <span class="kn">from</span> <span class="nn">azure.core.exceptions</span> <span class="kn">import</span> <span class="n">ResourceExistsError</span><span class="p">,</span> <span class="n">ResourceNotFoundError</span>
 <span class="kn">from</span> <span class="nn">azure.identity</span> <span class="kn">import</span> <span class="n">DefaultAzureCredential</span>
 <span class="kn">from</span> <span class="nn">azure.keyvault.secrets</span> <span class="kn">import</span> <span class="n">SecretClient</span>
@@ -216,9 +216,7 @@
     <span class="n">azure_directory</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s1">&#39;USERNAME&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">get_batch_client</span><span class="p">(</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;NAME&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;KEY&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;CLIENT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;SECRET&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;AZURE&quot;</span><span class="p">][</span><span class="s2">&quot;TENANT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
     <span class="p">)</span>
 
     <span class="n">create_file_share</span><span class="p">(</span>
@@ -331,8 +329,16 @@
 
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Create the job that will run the tasks.</span>
-        <span class="n">create_job</span><span class="p">(</span><span class="n">batch_client</span><span class="p">,</span> <span class="n">vm_size</span><span class="p">,</span> <span class="n">pool_node_count</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span>
-                   <span class="n">container_conf</span><span class="p">,</span> <span class="p">[</span><span class="n">mount_configuration</span><span class="p">],</span> <span class="n">keep_pool_alive</span><span class="p">)</span>
+        <span class="n">create_job</span><span class="p">(</span>
+            <span class="n">batch_client</span><span class="p">,</span>
+            <span class="n">vm_size</span><span class="p">,</span>
+            <span class="n">pool_node_count</span><span class="p">,</span>
+            <span class="n">job_id</span><span class="p">,</span>
+            <span class="n">container_conf</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">mount_configuration</span><span class="p">],</span>
+            <span class="n">keep_pool_alive</span><span class="p">,</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;SUBNET_ID&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
 
         <span class="c1"># Add the tasks to the job.</span>
         <span class="n">add_tasks</span><span class="p">(</span><span class="n">batch_client</span><span class="p">,</span> <span class="n">user_identity</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">image_name</span><span class="p">,</span>
@@ -381,9 +387,7 @@
         <span class="k">return</span>
 
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">get_batch_client</span><span class="p">(</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;NAME&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;KEY&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;CLIENT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;SECRET&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;AZURE&quot;</span><span class="p">][</span><span class="s2">&quot;TENANT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
     <span class="p">)</span>
 
     <span class="c1"># check the job is running</span>
@@ -415,10 +419,9 @@
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;Querying batch system</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;config_file&#39;</span><span class="p">])</span>
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">get_batch_client</span><span class="p">(</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;NAME&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;KEY&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;CLIENT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;SECRET&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;AZURE&quot;</span><span class="p">][</span><span class="s2">&quot;TENANT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
     <span class="p">)</span>
+
     <span class="n">tasks</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">try</span><span class="p">:</span>
@@ -486,9 +489,7 @@
         <span class="n">username</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">][</span><span class="s2">&quot;USERNAME&quot;</span><span class="p">]</span>
 
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">get_batch_client</span><span class="p">(</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;NAME&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;KEY&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;CLIENT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;SECRET&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;AZURE&quot;</span><span class="p">][</span><span class="s2">&quot;TENANT_ID&quot;</span><span class="p">],</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;BATCH&quot;</span><span class="p">][</span><span class="s2">&quot;URL&quot;</span><span class="p">]</span>
     <span class="p">)</span>
 
     <span class="c1"># create client to connect to file share</span>
@@ -676,9 +677,12 @@
 
 <div class="viewcode-block" id="get_batch_client">
 <a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.get_batch_client">[docs]</a>
-<span class="k">def</span> <span class="nf">get_batch_client</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_batch_client</span><span class="p">(</span><span class="n">client_id</span><span class="p">,</span> <span class="n">secret</span><span class="p">,</span> <span class="n">tenant_id</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Batch service client&quot;&quot;&quot;</span>
-    <span class="n">credentials</span> <span class="o">=</span> <span class="n">batch_auth</span><span class="o">.</span><span class="n">SharedKeyCredentials</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+    <span class="n">resource</span> <span class="o">=</span> <span class="s2">&quot;https://batch.core.windows.net/&quot;</span>
+
+    <span class="n">credentials</span> <span class="o">=</span> <span class="n">ServicePrincipalCredentials</span><span class="p">(</span><span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">,</span> <span class="n">secret</span><span class="o">=</span><span class="n">secret</span><span class="p">,</span> <span class="n">tenant</span><span class="o">=</span><span class="n">tenant_id</span><span class="p">,</span> <span class="n">resource</span><span class="o">=</span><span class="n">resource</span><span class="p">)</span>
+
     <span class="n">batch_client</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">BatchServiceClient</span><span class="p">(</span><span class="n">credentials</span><span class="p">,</span> <span class="n">batch_url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">batch_client</span></div>
 
@@ -813,10 +817,19 @@
 
 <div class="viewcode-block" id="create_job">
 <a class="viewcode-back" href="../../reference/tlo.cli.html#tlo.cli.create_job">[docs]</a>
-<span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span><span class="n">batch_service_client</span><span class="p">,</span> <span class="n">vm_size</span><span class="p">,</span> <span class="n">pool_node_count</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span>
-               <span class="n">container_conf</span><span class="p">,</span> <span class="n">mount_configuration</span><span class="p">,</span> <span class="n">keep_pool_alive</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span>
+    <span class="n">batch_service_client</span><span class="p">,</span>
+    <span class="n">vm_size</span><span class="p">,</span>
+    <span class="n">pool_node_count</span><span class="p">,</span>
+    <span class="n">job_id</span><span class="p">,</span>
+    <span class="n">container_conf</span><span class="p">,</span>
+    <span class="n">mount_configuration</span><span class="p">,</span>
+    <span class="n">keep_pool_alive</span><span class="p">,</span>
+    <span class="n">subnet_id</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a job with the specified ID, associated with the specified pool.</span>
 
+<span class="sd">    :param subnet_id:</span>
 <span class="sd">    :param batch_service_client: A Batch service client.</span>
 <span class="sd">    :type batch_service_client: `azure.batch.BatchServiceClient`</span>
 <span class="sd">    :param str vm_size: Type of virtual machine to use as pool.</span>
@@ -856,6 +869,11 @@
 <span class="s2">    $NodeDeallocationOption = taskcompletion;</span>
 <span class="s2">    &quot;&quot;&quot;</span>
 
+    <span class="n">network_configuration</span> <span class="o">=</span> <span class="n">batch_models</span><span class="o">.</span><span class="n">NetworkConfiguration</span><span class="p">(</span>
+        <span class="n">subnet_id</span><span class="o">=</span><span class="n">subnet_id</span><span class="p">,</span>
+        <span class="n">public_ip_address_configuration</span><span class="o">=</span><span class="n">batch_models</span><span class="o">.</span><span class="n">PublicIPAddressConfiguration</span><span class="p">(</span><span class="n">provision</span><span class="o">=</span><span class="s2">&quot;noPublicIPAddresses&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
     <span class="n">pool</span> <span class="o">=</span> <span class="n">batch_models</span><span class="o">.</span><span class="n">PoolSpecification</span><span class="p">(</span>
         <span class="n">virtual_machine_configuration</span><span class="o">=</span><span class="n">virtual_machine_configuration</span><span class="p">,</span>
         <span class="n">vm_size</span><span class="o">=</span><span class="n">vm_size</span><span class="p">,</span>
@@ -863,6 +881,8 @@
         <span class="n">task_slots_per_node</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">enable_auto_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">auto_scale_formula</span><span class="o">=</span><span class="n">auto_scale_formula</span><span class="p">,</span>
+        <span class="n">network_configuration</span><span class="o">=</span><span class="n">network_configuration</span><span class="p">,</span>
+        <span class="n">target_node_communication_mode</span><span class="o">=</span><span class="s2">&quot;simplified&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">auto_pool_specification</span> <span class="o">=</span> <span class="n">batch_models</span><span class="o">.</span><span class="n">AutoPoolSpecification</span><span class="p">(</span>
@@ -938,7 +958,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Nov 14, 2024.
+      <span class="lastupdated">Last updated on Nov 19, 2024.
       </span></p>
   </div>
 

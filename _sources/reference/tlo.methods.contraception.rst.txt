@@ -112,7 +112,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'Hiv'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -122,9 +122,9 @@ tlo.methods.contraception module
 
      __annotations__ : {}
 
-     all_contraception_states : {'IUD', 'male_condom', 'periodic_abstinence', 'other_modern', 'female_sterilization', 'withdrawal', 'pill', 'not_using', 'other_traditional', 'implant', 'injections'}
+     all_contraception_states : {'other_traditional', 'injections', 'implant', 'female_sterilization', 'withdrawal', 'male_condom', 'pill', 'not_using', 'periodic_abstinence', 'other_modern', 'IUD'}
 
-     contraceptives_initiated_with_additional_items : {'IUD', 'female_sterilization', 'implant', 'injections', 'pill'}
+     contraceptives_initiated_with_additional_items : {'pill', 'injections', 'implant', 'female_sterilization', 'IUD'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -251,7 +251,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x1327413f0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x130800860>
 
      __annotations__ : {}
 
