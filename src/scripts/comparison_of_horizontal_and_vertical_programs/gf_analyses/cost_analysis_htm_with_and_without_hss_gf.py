@@ -472,13 +472,39 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 # 3. Return on Investment Plot
 # ----------------------------------------------------
 # Combined ROI plot of relevant scenarios
-# HTM scenarios
+# HTM scenarios X 5
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [1,8,9,10,11],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'all_HTM_VSL')
+
+# HTM scenarios X 3
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [1,8,9],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'HTM_full_HSS_VSL')
+
+# Only HSS
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [8,1],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'HTM_full_HSS_VSL',
+                   _plot_vertical_lines=True)
+
+# HTM scenarios with HSS
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [8,9],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'HTM_full_HSS_VSL',
+                   _plot_vertical_lines=True)
 
 # HIV scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -494,7 +520,8 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draws = [4,5],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'TB_VSL')
+                   _value_of_life_suffix = 'TB_VSL',
+                   _y_axis_lim = 50 )
 
 # Malaria scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -538,6 +565,7 @@ fig, ax = do_standard_bar_plot_with_ci(
         for _, row in incremental_scenario_cost_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
+    put_labels_in_legend=True
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Cost \n(USD Millions)')
@@ -567,3 +595,67 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+
+'''
+# Population size across scenarios
+def get_total_population_by_age_range(_df):
+    years_needed = [i.year for i in TARGET_PERIOD] # we only consider the population for the malaria scale-up period
+    _df['year'] = pd.to_datetime(_df['date']).dt.year
+    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    _df = pd.melt(_df.drop(columns = 'date'), id_vars = ['year']).rename(columns = {'variable': 'age_range'})
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .groupby('age_range')['value'].sum()
+    )
+
+male_population_by_age_range = summarize(extract_results(
+    results_folder,
+    module='tlo.methods.demography',
+    key='age_range_m',
+    custom_generate_series=get_total_population_by_age_range,
+    do_scaling=True
+))
+
+female_population_by_age_range = summarize(extract_results(
+    results_folder,
+    module='tlo.methods.demography',
+    key='age_range_f',
+    custom_generate_series=get_total_population_by_age_range,
+    do_scaling=True
+))
+
+# Plot male population (age 0-4)
+name_of_plot = f'Male population, 0-4 years, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (male_population_by_age_range[male_population_by_age_range.index.get_level_values('age_range') == '0-4'].sum()/1e6).unstack(),
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Population \n(Millions)')
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+
+# Plot female population (age 0-4)
+name_of_plot = f'Female population, 0-4 years, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (female_population_by_age_range[female_population_by_age_range.index.get_level_values('age_range') == '0-4'].sum()/1e6).unstack(),
+    xticklabels_horizontal_and_wrapped=False,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Population \n(Millions)')
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+'''
+name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_bar_plot_with_ci(incremental_scenario_cost_summarized / 1e6)
+ax.set_title(name_of_plot)
+ax.set_ylabel('(Millions)')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
