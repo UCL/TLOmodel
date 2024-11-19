@@ -158,8 +158,10 @@ class SummarizedStyle(UnsrtStyle):
 def write_publications_list(stream, bibliography_data, section_names, backend, style):
     """Write bibliography data with given backend and style to a stream splitting in to sections."""
     keys_by_section = defaultdict(list)
+    section_names = [name.lower() for name in section_names]
     for key, entry in bibliography_data.entries.items():
-        keywords = set(k.strip() for k in entry.fields.get("keywords", "").split(","))
+        # Section names and keywords normalized to lower case to make matching case-insensitive
+        keywords = set(k.strip().lower() for k in entry.fields.get("keywords", "").split(","))
         section_names_in_keywords = keywords & set(section_names)
         if len(section_names_in_keywords) == 1:
             keys_by_section[section_names_in_keywords.pop()].append(key)
@@ -176,7 +178,7 @@ def write_publications_list(stream, bibliography_data, section_names, backend, s
             )
             warn(msg, stacklevel=2)
     for section_name in section_names:
-        stream.write(f"<h2>{section_name}</h2>\n")
+        stream.write(f"<h2>{section_name.capitalize()}</h2>\n")
         formatted_bibliography = style.format_bibliography(
             bibliography_data, keys_by_section[section_name]
         )
