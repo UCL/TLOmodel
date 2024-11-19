@@ -470,6 +470,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # load parameters for scale-up projections
         p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
+        # load parameters for mihpsa projections
+        p['mihpsa_scenarios'] = workbook["mihpsa_scenarios"]
+
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
@@ -944,7 +947,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # Optional: Schedule the scale-up of programs
-        if self.parameters["type_of_scaleup"] != 'none':
+        if self.parameters["type_of_scaleup"] != 'none' or self.parameters["select_mihpsa_scenario"] > 0:
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
@@ -1190,6 +1193,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
 
         # oral prep 15-24 yr old girls
@@ -1197,6 +1202,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
 
             # - switch on candidate intervention
@@ -1210,6 +1217,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
 
             # - switch on candidate intervention
             p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
@@ -1222,6 +1231,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
 
             # - switch on candidate intervention
@@ -1234,7 +1245,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
-            p["prob_prep_for_fsw_after_hiv_test"] = 0
+            p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
 
             # - switch on candidate intervention
             p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
@@ -1246,6 +1258,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
 
             # - switch on candidate intervention
@@ -2418,14 +2432,17 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-        self.module.update_parameters_for_program_scaleup()
-        self.module.update_parameters_for_mihpsa_interventions()
+
+        if self.module.parameters['type_of_scaleup'] != 'none':
+            self.module.update_parameters_for_program_scaleup()
+
+        if self.module.parameters['select_mihpsa_scenario'] > 0:
+            self.module.update_parameters_for_mihpsa_interventions()
 
 
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
-
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     This is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
@@ -2613,10 +2630,6 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         """ Do the circumcision for this man. If he is already circumcised, this is a follow-up appointment."""
         self.number_of_occurrences += 1  # The current appointment is included in the count.
         df = self.sim.population.props  # shortcut to the dataframe
-
-        # todo remove for intervention scenarios
-        if self.sim.date.year >= 2024:
-            return
 
         person = df.loc[person_id]
 
