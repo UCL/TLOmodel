@@ -359,20 +359,20 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     def get_quantity_of_consumables_dispensed(results_folder):
         def get_counts_of_items_requested(_df):
             _df = drop_outside_period(_df)
-            counts_of_available = defaultdict(lambda: defaultdict(int))
+            counts_of_used = defaultdict(lambda: defaultdict(int))
             counts_of_not_available = defaultdict(lambda: defaultdict(int))
 
             for _, row in _df.iterrows():
                 date = row['date']
-                for item, num in row['Item_Available'].items():
-                    counts_of_available[date][item] += num
+                for item, num in row['Item_Used'].items():
+                    counts_of_used[date][item] += num
                 for item, num in row['Item_NotAvailable'].items():
                     counts_of_not_available[date][item] += num
-            available_df = pd.DataFrame(counts_of_available).fillna(0).astype(int).stack().rename('Available')
+            used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
             not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename('Not_Available')
 
             # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
-            combined_df = pd.concat([available_df, not_available_df], axis=1).fillna(0).astype(int)
+            combined_df = pd.concat([used_df, not_available_df], axis=1).fillna(0).astype(int)
 
             # Convert to a pd.Series, as expected by the custom_generate_series function
             return combined_df.stack()
@@ -384,7 +384,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                 custom_generate_series=get_counts_of_items_requested,
                 do_scaling=True)
 
-        cons_dispensed = cons_req.xs("Available", level=2) # only keep actual dispensed amount, i.e. when available
+        cons_dispensed = cons_req.xs("Used", level=2) # only keep actual dispensed amount, i.e. when available
         return cons_dispensed
     # TODO Extract year of dispensing drugs
 
