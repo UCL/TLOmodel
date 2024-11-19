@@ -43,7 +43,7 @@ def apply_discounting_to_cost_data(_df, _discount_rate=0):
     initial_year = min(_df['year'].unique())
 
     # Calculate the discounted values
-    _df['cost'] = _df['cost'] / ((1 + _discount_rate) ** (_df['year'] - initial_year))
+    _df.loc[:, 'cost'] = _df['cost'] / ((1 + _discount_rate) ** (_df['year'] - initial_year))
     return _df
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
