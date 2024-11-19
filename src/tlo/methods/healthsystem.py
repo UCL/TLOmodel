@@ -310,7 +310,7 @@ class HealthSystem(Module):
         'HR_expansion_by_officer_type': Parameter(
             Types.DICT, "This DICT has keys of nine officer types, each with a float value that "
                         "specifies the proportion of extra budget allocated to that officer type."
-                        "The extra budget for this year is (100 * HR_budget_growth_rate) of the total salary "
+                        "The extra budget for this year is (100 * HR_budget_growth_rate) percent of the total salary "
                         "of these officers in last year. Given the allocated extra budget and annual salary, "
                         "we calculate the extra minutes for these staff of this year. The expansion is done "
                         "on 1 Jan of every year from start_year_HR_expansion_by_officer_type."
