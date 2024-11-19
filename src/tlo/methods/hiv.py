@@ -426,6 +426,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in mihpsa analysis"
         ),
+        "interval_for_viral_load_measurement_months": Parameter(
+            Types.REAL,
+            " the interval for viral load monitoring in months"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -2995,13 +2999,14 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        p = self.module.parameters
 
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / 12:
+        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Log the VL test: line-list of summary information about each test
