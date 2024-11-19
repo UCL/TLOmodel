@@ -339,6 +339,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
+        "increase_in_prob_circ_2019": Parameter(
+            Types.REAL,
+            "increase in probability that a male will be circumcised, if HIV-negative, following testing"
+            "from 2019 onwards",
+        ),
         "prob_circ_for_child_before_2020": Parameter(
             Types.REAL,
             "Probability that a male aging <15 yrs will be circumcised before year 2020",
@@ -601,6 +606,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_after_hiv_test"],
             Predictor("hv_inf").when(False, 1.0).otherwise(0.0),
             Predictor("sex").when("M", 1.0).otherwise(0.0),
+            Predictor("year",
+                      external=True,
+                      conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True).when("<2019", 1)
+            .otherwise(p["increase_in_prob_circ_2019"])
         )
 
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
@@ -2422,7 +2432,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person["sex"] == "M") & (~person["li_is_circ"]):
                         x = self.module.lm["lm_circ"].predict(
-                            df.loc[[person_id]], self.module.rng
+                            df.loc[[person_id]], self.module.rng,
+                            year=self.sim.date.year,
                         )
                         if x:
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
