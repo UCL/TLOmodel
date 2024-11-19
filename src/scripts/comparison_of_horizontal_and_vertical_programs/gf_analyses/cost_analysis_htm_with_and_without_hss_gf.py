@@ -396,10 +396,9 @@ input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_s
 # Return on Invesment analysis
 # Calculate incremental cost
 # -----------------------------------------------------------------------------------------------------------------------
-# Aggregate input costs for further analysis
+# Aggregate input costs for further analysis (this step is needed because the malaria specific scale-up costs start from the year or malaria scale-up implementation)
 input_costs_subset = input_costs[
     (input_costs['year'] >= relevant_period_for_costing[0]) & (input_costs['year'] <= relevant_period_for_costing[1])]
-# TODO the above step may not longer be needed
 total_input_cost = input_costs_subset.groupby(['draw', 'run'])['cost'].sum()
 total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
 def find_difference_relative_to_comparison(_ser: pd.Series,
@@ -425,7 +424,7 @@ incremental_scenario_cost = (pd.DataFrame(
 
 # Keep only scenarios of interest
 incremental_scenario_cost = incremental_scenario_cost[
-    incremental_scenario_cost.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
+    incremental_scenario_cost.index.get_level_values(0).isin(htm_scenarios_for_report)]
 
 # Monetary value of health impact
 # -----------------------------------------------------------------------------------------------------------------------
@@ -434,7 +433,7 @@ def get_num_dalys(_df):
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
     results from runs that crashed mid-way through the simulation.
     """
-    years_needed = relevant_period_for_costing  # [i.year for i in TARGET_PERIOD_INTERVENTION]
+    years_needed = relevant_period_for_costing
     assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
     _df = _df.loc[_df.year.between(*years_needed)].drop(columns=['date', 'sex', 'age_range']).groupby('year').sum().sum(axis = 1)
 
@@ -461,7 +460,7 @@ num_dalys_averted = (-1.0 *
                              num_dalys.loc[0],
                              comparison=0)  # sets the comparator to 0 which is the Actual scenario
                      ).T.iloc[0].unstack(level='run'))
-num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
+num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values(0).isin(htm_scenarios_for_report)]
 
 # The monetary value of the health benefit is delta health times CET (negative values are set to 0)
 def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
@@ -472,20 +471,8 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 
 # 3. Return on Investment Plot
 # ----------------------------------------------------
-# Plot ROI at various levels of cost
-generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'CET')
-
-generate_roi_plots(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'VSL')
-
 # Combined ROI plot of relevant scenarios
+# HTM scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [1,8,9,10,11],
@@ -493,6 +480,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'all_HTM_VSL')
 
+# HIV scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [2,3],
@@ -500,6 +488,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HIV_VSL')
 
+# TB scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [4,5],
@@ -507,6 +496,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'TB_VSL')
 
+# Malaria scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [6,7],
@@ -520,7 +510,7 @@ max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_healt
     lower=0.0)  # monetary value - change in costs
 max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
 max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
-    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
+    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(htm_scenarios_for_report)]
 
 # Plot Maximum ability to pay
 name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
@@ -534,30 +524,6 @@ fig, ax = do_standard_bar_plot_with_ci(
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
-fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
-plt.close(fig)
-
-# 4. Plot Maximum ability-to-pay at VSL
-# ----------------------------------------------------
-max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life) - incremental_scenario_cost).clip(
-    lower=0.0)  # monetary value - change in costs
-max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation)
-max_ability_to_pay_for_implementation_summarized = max_ability_to_pay_for_implementation_summarized[
-    max_ability_to_pay_for_implementation_summarized.index.get_level_values(0).isin(htm_scenarios_for_gf_report)]
-
-# Plot Maximum ability to pay
-name_of_plot = f'Maximum ability to pay at VSL, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_bar_plot_with_ci(
-    (max_ability_to_pay_for_implementation_summarized / 1e6),
-    annotations=[
-        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
-        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Maximum ability to pay (at VSL) \n(Millions)')
 fig.tight_layout()
 fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
@@ -581,7 +547,7 @@ plt.close(fig)
 
 # 4. Plot costs
 # ----------------------------------------------------
-input_costs_for_plot = input_costs[input_costs.draw.isin(htm_scenarios_for_gf_report)]
+input_costs_for_plot = input_costs_subset[input_costs_subset.draw.isin(htm_scenarios_for_report)]
 # First summarize all input costs
 input_costs_for_plot_summarized = input_costs_for_plot.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category']).agg(
     mean=('cost', 'mean'),
@@ -595,9 +561,9 @@ input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
     value_name='cost'
 )
 
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = list(range(2025, 2036)), _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict_fcdo)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = list(range(2025, 2036)), _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
