@@ -1185,7 +1185,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         updated_params = updated_params_workbook.set_index('parameter')['target_value'].to_dict()
 
-        if p['select_mihpsa_scenario'] == 0:
+        if p['select_mihpsa_scenario'] == 1:
             # baseline - no VMMC
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
@@ -1193,7 +1193,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_prep_for_fsw_after_hiv_test"] = 0
 
         # oral prep 15-24 yr old girls
-        if p['select_mihpsa_scenario'] == 1:
+        if p['select_mihpsa_scenario'] == 2:
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
@@ -1206,7 +1206,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # oral prep FSW
-        if p['select_mihpsa_scenario'] == 2:
+        if p['select_mihpsa_scenario'] == 3:
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
@@ -1218,7 +1218,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # CAB-LA prep 15-24 yr old girls
-        if p['select_mihpsa_scenario'] == 3:
+        if p['select_mihpsa_scenario'] == 4:
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
@@ -1230,7 +1230,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # CAB-LA prep FSW
-        if p['select_mihpsa_scenario'] == 4:
+        if p['select_mihpsa_scenario'] == 5:
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
@@ -1242,7 +1242,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
 
         # HIV self-testing
-        if p['select_mihpsa_scenario'] == 5:
+        if p['select_mihpsa_scenario'] == 6:
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
@@ -1253,7 +1253,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                                                                    updated_params["rr_hiv_self_testing"]
 
         # VMMC
-        if p['select_mihpsa_scenario'] == 6:
+        if p['select_mihpsa_scenario'] == 7:
             # - switch other interventions off
             p["prob_prep_for_fsw_after_hiv_test"] = 0
 
@@ -2419,6 +2419,7 @@ class HivScaleUpEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.module.update_parameters_for_program_scaleup()
+        self.module.update_parameters_for_mihpsa_interventions()
 
 
 # ---------------------------------------------------------------------------
