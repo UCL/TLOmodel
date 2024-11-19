@@ -109,7 +109,8 @@ class SummarizedStyle(UnsrtStyle):
         ]
 
     def _get_summary_template(self, e, type_):
-        venue_field = "journal" if type_ == "article" else "publisher"
+        bibtex_type_to_venue_field = {"article": "journal", "misc": "publisher", "inproceedings": "booktitle"}
+        venue_field = bibtex_type_to_venue_field[type_]
         url = first_of[
             optional[join["https://doi.org/", field("doi", raw=True)]],
             optional[field("url", raw=True)],
@@ -128,7 +129,7 @@ class SummarizedStyle(UnsrtStyle):
         ]
 
     def _get_details_template(self, type_):
-        bibtex_type_to_label = {"article": "Journal article", "misc": "Pre-print"}
+        bibtex_type_to_label = {"article": "Journal article", "misc": "Pre-print", "inproceedings": "Conference paper"}
         return self._format_details_as_table(
             {
                 "Type": bibtex_type_to_label[type_],
@@ -149,6 +150,9 @@ class SummarizedStyle(UnsrtStyle):
 
     def get_misc_template(self, e):
         return self._get_summarized_template(e, "misc")
+
+    def get_inproceedings_template(self, e):
+        return self._get_summarized_template(e, "inproceedings")
 
 
 def write_publications_list(stream, bibliography_data, section_names, backend, style):
