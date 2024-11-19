@@ -291,8 +291,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     Return a series of yearly scale up factors for all cadres,
     #     with index of year and value of list of scale up factors.
     #     """
-    #     _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year_of_scale_up', 'scale_up_factor']
-    #                   ].set_index('year_of_scale_up')
+    #     _df['year'] = _df['date'].dt.year
+    #     _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year', 'scale_up_factor']
+    #                   ].set_index('year')
     #     _df = _df['scale_up_factor'].apply(pd.Series)
     #     assert (_df.columns == cadres).all()
     #     _dict = {idx: [list(_df.loc[idx, :])] for idx in _df.index}
@@ -306,8 +307,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         Return a series of yearly total cost for all cadres,
         with index of year and values of list of total cost.
         """
-        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year_of_scale_up', 'total_hr_salary']
-                      ].set_index('year_of_scale_up')
+        _df['year'] = _df['date'].dt.year
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), ['year', 'total_hr_salary']].set_index('year')
         _df = _df['total_hr_salary'].apply(pd.Series)
         assert (_df.columns == cadres).all()
         _dict = {idx: [list(_df.loc[idx, :])] for idx in _df.index}
@@ -450,13 +451,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         }
         time_by_treatment_all_scenarios = pd.DataFrame(time_by_treatment_all_scenarios).T
 
+        # rename scenarios according to param_names
+        time_by_treatment_all_scenarios.rename(
+            index={time_by_treatment_all_scenarios.index[i]: param_names[i]
+                   for i in range(len(time_by_treatment_all_scenarios.index))}, inplace=True)
+
         time_increased_by_treatment = time_by_treatment_all_scenarios.subtract(
             time_by_treatment_all_scenarios.loc['s_0', :], axis=1).drop('s_0', axis=0).add_suffix('*')
 
         return time_increased_by_treatment
 
     # Get parameter/scenario names
-    param_names = tuple(extra_budget_fracs.columns)
+    param_names = tuple(extra_budget_fracs.drop(columns='s_2'))
     # param_names = get_parameter_names_from_scenario_file()
     # param_names = ('s_0', 's_1', 's_2', 's_3', 's_11', 's_22')
     # param_names = ('s_1', 's_2', 's_3', 's_11', 's_22')
@@ -530,11 +536,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # staff_count_2029 = staff_count.loc[staff_count.year == 2029, :].drop(columns='year').set_index('draw')
 
     # check total cost calculated is increased as expected
-    years = range(2019, the_target_period[1].year + 1)
+    years = range(2025, the_target_period[1].year + 1)
     for s in param_names[1:]:
         assert (abs(
-            total_cost.loc[(total_cost.year == 2029) & (total_cost.draw == s), 'all_cadres'].values[0] -
-            (1 + 0.042) ** len(years) * total_cost.loc[(total_cost.year == 2019) & (total_cost.draw == 's_0'),
+            total_cost.loc[(total_cost.year == 2034) & (total_cost.draw == s), 'all_cadres'].values[0] -
+            (1 + 0.042) ** len(years) * total_cost.loc[(total_cost.year == 2025) & (total_cost.draw == 's_0'),
                                                        'all_cadres'].values[0]
         ) < 1e6).all()
 
@@ -808,9 +814,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
 
-    num_dalys_by_cause_averted_CNP = num_dalys_by_cause_averted.loc['s_2', :].sort_values(ascending=False)
+    num_dalys_by_cause_averted_CNP = num_dalys_by_cause_averted.loc['s_22', :].sort_values(ascending=False)
     # num_dalys_by_cause_averted_CP = num_dalys_by_cause_averted.loc['s_11', :].sort_values(ascending=False)
-    num_dalys_by_cause_averted_percent_CNP = num_dalys_by_cause_averted_percent.loc['s_2', :].sort_values(
+    num_dalys_by_cause_averted_percent_CNP = num_dalys_by_cause_averted_percent.loc['s_22', :].sort_values(
         ascending=False)
     # num_dalys_by_cause_averted_percent_CP = num_dalys_by_cause_averted_percent.loc['s_11', :].sort_values(
     #     ascending=False)
@@ -2320,5 +2326,5 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
         resourcefilepath=Path('./resources'),
-        the_target_period=(Date(2019, 1, 1), Date(2029, 12, 31))
+        the_target_period=(Date(2025, 1, 1), Date(2034, 12, 31))
     )
