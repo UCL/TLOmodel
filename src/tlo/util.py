@@ -528,6 +528,6 @@ def read_csv_files(folder: Path,
         all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"), dtype=dtype)
     # clean and return the dataframe dictionary
     clean_dataframe(all_data)
-    # If only one file loaded return dataframe directly rather than dict
+    # return a dictionary if return_dict flag is set to True else return a dataframe
     return all_data if return_dict else next(iter(all_data.values()))
 
