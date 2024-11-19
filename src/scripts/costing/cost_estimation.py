@@ -1106,7 +1106,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
 
     plt.xlabel('Implementation cost, millions')
     plt.ylabel('Return on Investment')
-    plt.title('Return on Investment of scenario at different levels of implementation cost')
+    plt.title('Return on Investment at different levels of implementation cost')
 
     # Show legend
     plt.legend()
