@@ -1,20 +1,14 @@
-import argparse
 from pathlib import Path
 from tlo import Date
-from collections import Counter, defaultdict
 
-import calendar
 import datetime
 import os
 import textwrap
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib.ticker import FuncFormatter
 import numpy as np
 import pandas as pd
-import ast
-import math
 
 from tlo.analysis.utils import (
     extract_params,
@@ -22,17 +16,11 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    summarize,
-    create_pickles_locally,
-    parse_log_file,
-    unflatten_flattened_multi_index_in_logging
+    summarize
 )
 
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              summarize_cost_data,
-                                             apply_discounting_to_cost_data,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
                                              generate_roi_plots,
