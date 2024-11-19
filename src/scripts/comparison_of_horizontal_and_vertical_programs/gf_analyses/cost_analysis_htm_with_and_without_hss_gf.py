@@ -63,6 +63,7 @@ results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-11-12T17250
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0) # look at one log (so can decide what to extract)
 params = extract_params(results_folder)
+info = get_scenario_info(results_folder)
 
 # Declare default parameters for cost analysis
 #------------------------------------------------------------------------------------------------------------------
@@ -74,8 +75,8 @@ district_dict = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 district_dict = dict(zip(district_dict['District_Num'], district_dict['District']))
 
 # Period relevant for costing
-TARGET_PERIOD_INTERVENTION = (Date(2025, 1, 1), Date(2035, 12, 31))  # This is the period that is costed
-relevant_period_for_costing = [i.year for i in TARGET_PERIOD_INTERVENTION]
+TARGET_PERIOD= (Date(2025, 1, 1), Date(2035, 12, 31))  # This is the period that is costed
+relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 
 # Scenarios
@@ -85,13 +86,13 @@ htm_scenarios = {0:"Baseline", 1: "HSS PACKAGE: Realistic", 2: "HIV Programs Sca
 7: "Malaria Programs Scale-up WITH REALISTIC HSS PACKAGE", 8: "HTM Programs Scale-up WITHOUT HSS PACKAGE",
 9: "HTM Programs Scale-up WITH REALISTIC HSS PACKAGE", 10: "HTM Programs Scale-up WITH SUPPLY CHAINS", 11: "HTM Programs Scale-up WITH HRH"}
 
-htm_scenarios_substitutedict_fcdo = {0:"0", 1: "A", 2: "B", 3: "C",
+htm_scenarios_substitutedict = {0:"0", 1: "A", 2: "B", 3: "C",
 4: "D", 5: "E", 6: "F",
 7: "G", 8: "H", 9: "I",
 10: "J", 11: "K"}
 
 # Subset of scenarios included in analysis
-htm_scenarios_for_gf_report = [0,1,2,3,4,5,6,7,8,9,10,11]
+htm_scenarios_for_report = list(range(0,12))
 
 color_map = {
     'Baseline': '#9e0142',
@@ -249,14 +250,13 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
 # Estimate standard input costs of scenario
 #-----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
                                                _discount_rate = discount_rate)
-# _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
+
 # TODO Remove the manual fix below once the logging for these is corrected
+# Post-run fixes to costs due to challenges with calibration
 input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost'] = \
     input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost']/10
-input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost'] =\
-    input_costs.loc[input_costs.cost_subgroup == 'Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly', 'cost']/7
 #input_costs = apply_discounting_to_cost_data(input_costs, _discount_rate = discount_rate)
 
 # Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
@@ -298,7 +298,9 @@ districts_with_irs_scaleup = ['Kasungu', 'Mchinji', 'Lilongwe', 'Lilongwe City',
                               'Mwanza', 'Likoma', 'Nkhotakota']
 # Convert above list of district names to numeric district identifiers
 district_keys_with_irs_scaleup = [key for key, name in district_dict.items() if name in districts_with_irs_scaleup]
-TARGET_PERIOD_MALARIA_SCALEUP = (Date(2024, 1, 1), Date(2035, 12, 31))
+year_of_malaria_scaleup_start = list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'].reset_index()['value'][0]
+final_year_for_costing = max(list_of_relevant_years_for_costing)
+TARGET_PERIOD_MALARIA_SCALEUP = (Date(year_of_malaria_scaleup_start, 1, 1), Date(final_year_for_costing, 12, 31))
 
 # Get population by district
 def get_total_population_by_district(_df):
@@ -348,7 +350,11 @@ total_irs_cost = total_irs_cost.groupby(level='year').sum()
 # 2. Bednet costs
 bednet_coverage_rate = 0.7
 # We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
-unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] * (1 + supply_chain_cost_proportion)
+inflation_2011_to_2023 = 1.35
+unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] + (8.27 - 3.36) * inflation_2011_to_2023
+# Stelmach et al Tanzania https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_ (Price in 2011 USD) - This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping. The cost is measured per net distributed
+# Note that the cost per net of $3.36 has been replaced with a cost of Malawi Kwacha 667 (2023) as per the Central Medical Stores Trust sales catalogue
+
 # We add supply chain costs (procurement + distribution + warehousing) because the unit_cost does not include this
 annual_bednet_cost_per_person = unit_cost_of_bednet / 1.8 / 3
 bednet_multiplication_factor = bednet_coverage_rate * annual_bednet_cost_per_person
@@ -383,7 +389,6 @@ for df, label in malaria_scaleup_costs:
     new_df = melt_and_label_malaria_scaleup_cost(df, label)
     input_costs = pd.concat([input_costs, new_df], ignore_index=True)
 
-# TODO Reduce the cost of Oxygen and Depo-medroxy temporarily which we figure out the issue with this
 # Extract input_costs for browsing
 input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_subgroup','year'])['cost'].sum().to_csv(figurespath / 'cost_detailed.csv')
 
