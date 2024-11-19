@@ -410,6 +410,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
+        "interval_for_viral_load_measurement_months": Parameter(
+            Types.REAL,
+            " the interval for viral load monitoring in months"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -2860,13 +2864,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        p = self.module.parameters
 
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
+            _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
