@@ -493,13 +493,14 @@ def read_csv_files(folder: Path,
 
                   Please take note of the following behaviours:
                   -----------------------------------------------
-                   - if files argument is initialised to zero(default) and the folder contains one file, this method
-                     will return a dataframe
-                   - if files argument is initialised to None and the folder contains one file, this method will return
-                     a dataframe dictionary
-                   - if files argument is initialised to None or zero and the folder contains multiple files, this
-                     method will return dataframes dictionary
-
+                   - if files argument is initialised to zero(default) and the folder contains one or multiple files,
+                     this method will return a dataframe. If the folder contain multiple files, it is good to
+                     specify file names or initialise files argument with None to ensure correct files are selected
+                   - if files argument is initialised to None and the folder contains one or multiple files, this method
+                     will return a dataframe dictionary
+                   - if the folder contains multiple files and files argument is initialised with one file name this
+                     method will return a dataframe. it will return a dataframe dictionary when files argument is
+                     initialised with a list of multiple file names
 
     """
     all_data: dict[str, DataFrame] = {}  # dataframes dictionary
@@ -512,18 +513,21 @@ def read_csv_files(folder: Path,
         for _key, dataframe in dataframes_dict.items():
             all_data[_key] = dataframe.drop(dataframe.filter(like='Unnamed'), axis=1)  # filter and drop Unnamed columns
 
-    if isinstance(files, str):
+    return_dict = False # a flag that will determine whether the output should be a dictionary or a DatFrame
+    if isinstance(files, list):
+        return_dict = True
+    elif files is None:
+        files = [f_name.stem for f_name in folder.rglob("*.csv")]
+        return_dict = True
+    elif isinstance(files, str):
         files = [files]
-
-    if not files or files is None: # read all files in folder if no file name is given
-        for f_name in folder.rglob("*.csv"):
-            all_data[f_name.stem] = pd.read_csv(f_name, dtype=dtype)
-
     else:
-        for f_name in files:
-            all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"), dtype=dtype)
+        files = [f_name.stem for f_name in folder.rglob("*.csv")]
+
+    for f_name in files:
+        all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"), dtype=dtype)
     # clean and return the dataframe dictionary
     clean_dataframe(all_data)
     # If only one file loaded return dataframe directly rather than dict
-    return next(iter(all_data.values())) if len(all_data) == 1 and files is not None else all_data
+    return all_data if return_dict else next(iter(all_data.values()))
 
