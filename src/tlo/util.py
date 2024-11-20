@@ -516,13 +516,13 @@ def read_csv_files(folder: Path,
     return_dict = False # a flag that will determine whether the output should be a dictionary or a DatFrame
     if isinstance(files, list):
         return_dict = True
-    elif files is None:
+    elif isinstance(files, int) or files is None:
         files = [f_name.stem for f_name in folder.glob("*.csv")]
-        return_dict = True
+        return_dict = files is None
     elif isinstance(files, str):
         files = [files]
     else:
-        files = [f_name.stem for f_name in folder.glob("*.csv")]
+        raise TypeError(f"Value passed for files argument {files} is not one of expected types.")
 
     for f_name in files:
         all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"), dtype=dtype)
