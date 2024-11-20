@@ -517,8 +517,8 @@ def read_csv_files(folder: Path,
     if isinstance(files, list):
         return_dict = True
     elif isinstance(files, int) or files is None:
-        files = [f_name.stem for f_name in folder.glob("*.csv")]
         return_dict = files is None
+        files = [f_name.stem for f_name in folder.glob("*.csv")]
     elif isinstance(files, str):
         files = [files]
     else:
