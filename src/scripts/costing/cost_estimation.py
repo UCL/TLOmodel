@@ -1229,7 +1229,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
 
         # Update the x-ticks and labels
         ax.set_xticks(xticks)
-        ax.set_xticklabels(xtick_labels, fontsize=7)
+        ax.set_xticklabels(xtick_labels, fontsize=10)
 
     # Set y-axis limit
     if _y_axis_lim == None:

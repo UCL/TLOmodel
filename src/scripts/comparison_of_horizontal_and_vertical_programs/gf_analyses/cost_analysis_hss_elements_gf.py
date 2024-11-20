@@ -219,6 +219,11 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
             wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
             ax.set_xticklabels(wrapped_labs)
 
+    # Extend ylim to accommodate data labels
+    ymin, ymax = ax.get_ylim()
+    extension = 0.1 * (ymax - ymin) # 10% of range
+    ax.set_ylim(ymin - extension, ymax + extension) # Set new y-axis limits with the extended range
+
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -375,32 +380,17 @@ name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}
 fig, ax = do_standard_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized_fcdo / 1e6),
     annotations=[
-        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
+        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}-\n {row['upper'] / projected_health_spending_baseline:.2%})"
         for _, row in max_ability_to_pay_for_implementation_summarized_fcdo.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
+    put_labels_in_legend=True,
+    offset=0.5,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
 fig.tight_layout()
 fig.savefig(roi_outputs_folder_fcdo / name_of_plot.replace(' ', '_').replace(',', ''))
-plt.close(fig)
-
-# Global Fund
-# Plot Maximum ability to pay
-name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (max_ability_to_pay_for_implementation_summarized_gf / 1e6),
-    annotations=[
-        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}-\n {round(row['upper'] / 1e6, 1)})"
-        for _, row in max_ability_to_pay_for_implementation_summarized_gf.iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Maximum ability to pay \n(Millions)')
-fig.tight_layout()
-fig.savefig(roi_outputs_folder_gf / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
 # Plot incremental costs
@@ -416,31 +406,17 @@ name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period
 fig, ax = do_standard_bar_plot_with_ci(
     (incremental_scenario_cost_summarized_fcdo / 1e6),
     annotations=[
-        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
+        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}-\n {row['upper'] / projected_health_spending_baseline:.2%})"
         for _, row in incremental_scenario_cost_summarized_fcdo.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
+    put_labels_in_legend=True,
+    offset=0.5,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Cost \n(USD Millions)')
 fig.tight_layout()
 fig.savefig(roi_outputs_folder_fcdo / name_of_plot.replace(' ', '_').replace(',', ''))
-plt.close(fig)
-
-# Global Fund
-name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (incremental_scenario_cost_summarized_gf / 1e6),
-    annotations=[
-        f"{round(row['mean'] / 1e6, 1)} \n ({round(row['lower'] / 1e6, 1)}- \n {round(row['upper'] / 1e6, 1)})"
-        for _, row in incremental_scenario_cost_summarized_gf.iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Cost \n(USD Millions)')
-fig.tight_layout()
-fig.savefig(roi_outputs_folder_gf / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
 # 4. Plot costs
