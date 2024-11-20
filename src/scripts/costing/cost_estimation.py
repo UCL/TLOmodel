@@ -692,6 +692,92 @@ def summarize_cost_data(_df):
     collapsed_df = collapsed_df.unstack(level='stat')
     return collapsed_df
 
+# Estimate projected health spending
+####################################################
+def estimate_projected_health_spending(resourcefilepath: Path = None,
+                                      results_folder: Path =  None,
+                                     _draws = None, _runs = None,
+                                     _years = None,
+                                     _discount_rate = 0,
+                                     _summarize = False):
+    # %% Gathering basic information
+    # Load basic simulation parameters
+    #-------------------------------------
+    log = load_pickled_dataframes(results_folder, 0, 0)  # read from 1 draw and run
+    info = get_scenario_info(results_folder)  # get basic information about the results
+    if _draws is None:
+        _draws = range(0, info['number_of_draws'])
+    if _runs is None:
+        _runs = range(0, info['runs_per_draw'])
+    final_year_of_simulation = max(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
+    first_year_of_simulation = min(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
+    if _years == None:
+        _years = list(range(first_year_of_simulation, final_year_of_simulation + 1))
+
+    # Load health spending per capita projections
+    #----------------------------------------
+    # Load health spending projections
+    workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                        sheet_name = None)
+    health_spending_per_capita = workbook_cost["health_spending_projections"]
+    # Assign the fourth row as column names
+    health_spending_per_capita.columns = health_spending_per_capita.iloc[1]
+    health_spending_per_capita = health_spending_per_capita.iloc[2:].reset_index(drop = True)
+    health_spending_per_capita = health_spending_per_capita[health_spending_per_capita.year.isin(list(range(2015,2041)))]
+    total_health_spending_per_capita_mean = health_spending_per_capita[['year', 'total_mean']].set_index('year')
+
+    # Load population projections
+    # ----------------------------------------
+    def get_total_population(_df):
+        years_needed = [min(_years), max(_years)] # we only consider the population for the malaria scale-up period
+        # because those are the years relevant for malaria scale-up costing
+        _df['year'] = pd.to_datetime(_df['date']).dt.year
+        _df = _df[['year', 'total']]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        return pd.Series(_df.loc[_df.year.between(*years_needed)].set_index('year')['total'])
+
+    total_population_by_year = extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='population',
+        custom_generate_series=get_total_population,
+        do_scaling=True
+    )
+    population_columns = total_population_by_year.columns
+
+    # Estimate total health spending
+    projected_health_spending = pd.merge(total_health_spending_per_capita_mean,
+                    total_population_by_year,
+                    left_index=True, right_index=True,how='inner')
+    projected_health_spending = projected_health_spending.apply(pd.to_numeric, errors='coerce')
+    projected_health_spending[population_columns] = projected_health_spending[population_columns].multiply(
+        projected_health_spending['total_mean'], axis=0)
+    projected_health_spending = projected_health_spending[population_columns]
+
+    # Apply discount rate
+    # Initial year and discount rate
+    initial_year = min(projected_health_spending.index.get_level_values('year').unique())
+    # Discount factor calculation
+    discount_factors = (1 + _discount_rate) ** (projected_health_spending.index.get_level_values('year') - initial_year)
+    # Apply the discount to the specified columns
+    projected_health_spending.loc[:, population_columns] = (
+        projected_health_spending[population_columns].div(discount_factors, axis=0))
+    # add across years
+    projected_health_spending = projected_health_spending.sum(axis = 0)
+    projected_health_spending.index = pd.MultiIndex.from_tuples(projected_health_spending.index, names=["draw", "run"])
+
+    if _summarize == True:
+        # Calculate the mean and 95% confidence intervals for each group
+        projected_health_spending = projected_health_spending.groupby(level="draw").agg(
+            mean=np.mean,
+            lower=lambda x: np.percentile(x, 2.5),
+            upper=lambda x: np.percentile(x, 97.5)
+        )
+        # Flatten the resulting DataFrame into a single-level MultiIndex Series
+        projected_health_spending = projected_health_spending.stack().rename_axis(["draw", "stat"]).rename("value")
+
+    return projected_health_spending.unstack()
+
 # Plot costs
 ####################################################
 # 1. Stacked bar plot (Total cost + Cost categories)
@@ -763,7 +849,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
         labels = pivot_df.index.astype(str)
 
     # Wrap x-tick labels for readability
-    wrapped_labels = [textwrap.fill(label, 20) for label in labels]
+    wrapped_labels = [textwrap.fill(str(label), 20) for label in labels]
     ax.set_xticklabels(wrapped_labels, rotation=45, ha='right')
 
     # Period included for plot title and name
@@ -1022,7 +1108,9 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                        _outputfilepath: Path,
                        _value_of_life_suffix = '',
                        _y_axis_lim = None,
-                      _plot_vertical_lines_at: list = None):
+                      _plot_vertical_lines_at: list = None,
+                      _year_suffix = '',
+                      _projected_health_spending = None):
     # Calculate maximum ability to pay for implementation
     _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
     _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
@@ -1032,6 +1120,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Store ROI values for specific costs
+    max_roi = []
     roi_at_costs = {cost: [] for cost in (_plot_vertical_lines_at or [])}
 
     # Iterate over each draw in monetary_value_of_incremental_health
@@ -1115,15 +1204,33 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                 if not roi_value.empty:
                     roi_at_costs[cost].append(roi_value.iloc[0])
 
-        # Calculate and annotate ROI ratios
+    # Calculate and annotate ROI ratios
     if _plot_vertical_lines_at:
         for cost in _plot_vertical_lines_at:
             if cost in roi_at_costs:
                 ratio = max(roi_at_costs[cost]) / min(roi_at_costs[cost])
                 ax.axvline(x=cost / 1e6, color='black', linestyle='--', linewidth=1)
-                ax.text(cost / 1e6 + 400, ax.get_ylim()[1] * 0.9,
-                        f'At {cost / 1e6:.0f}M, ROI ratio = {round(ratio, 2)}',
+                ax.text(cost / 1e6 + 200, ax.get_ylim()[1] * 0.9,
+                        f'At {cost / 1e6:.0f}M, ratio of ROI curves = {round(ratio, 2)}',
                         color='black', fontsize=10, rotation=90, verticalalignment='top')
+
+    # Define fixed x-tick positions with a gap of 2000
+    step_size = (ax.get_xlim()[1] - 0)/5
+    xticks = np.arange(0, ax.get_xlim()[1] + 1, int(round(step_size, -3)))  # From 0 to max x-limit with 5 steps
+    # Get labels
+    xtick_labels = [f'{tick:.0f}M' for tick in xticks]  # Default labels for all ticks
+
+    # Replace specific x-ticks with % of health spending values
+    if _projected_health_spending:
+        for i, tick in enumerate(xticks):
+            if tick == 2000:  # Replace for 2000
+                xtick_labels[i] = f'{tick:.0f}M\n({tick / (_projected_health_spending/1e6) :.2%} of \n projected total \n health spend)'
+            elif tick == 4000:  # Replace for 4000
+                xtick_labels[i] = f'{tick:.0f}M\n({tick / (_projected_health_spending/1e6) :.2%} of \n projected total \n health spend)'
+
+        # Update the x-ticks and labels
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(xtick_labels, fontsize=7)
 
     # Set y-axis limit
     if _y_axis_lim == None:
@@ -1134,12 +1241,12 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
 
     plt.xlabel('Implementation cost, millions')
     plt.ylabel('Return on Investment')
-    plt.title('Return on Investment at different levels of implementation cost')
+    plt.title(f'Return on Investment at different levels of implementation cost{_year_suffix}')
 
     # Show legend
     plt.legend()
     # Save
-    plt.savefig(_outputfilepath / f'draws_{_draws}_ROI_at_{_value_of_life_suffix}.png', dpi=100,
+    plt.savefig(_outputfilepath / f'draws_{_draws}_ROI_at_{_value_of_life_suffix}_{_year_suffix}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
 

@@ -38,7 +38,8 @@ from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
                                              generate_roi_plots,
-                                             generate_multiple_scenarios_roi_plot)
+                                             generate_multiple_scenarios_roi_plot,
+                                             estimate_projected_health_spending)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -75,7 +76,7 @@ district_dict = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 district_dict = dict(zip(district_dict['District_Num'], district_dict['District']))
 
 # Period relevant for costing
-TARGET_PERIOD= (Date(2025, 1, 1), Date(2035, 12, 31))  # This is the period that is costed
+TARGET_PERIOD= (Date(2027, 1, 1), Date(2029, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 
@@ -226,11 +227,13 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
     if put_labels_in_legend:
         # Update xticks label with substitute labels
         # Insert legend with updated labels that shows correspondence between substitute label and original label
+        # Use htm_scenarios for the legend
+        xtick_legend = [f'{letter}: {htm_scenarios.get(label, label)}' for letter, label in zip(substitute_labels, xticks.values())]
         xtick_values = [letter for letter, label in zip(substitute_labels, xticks.values())]
-        xtick_legend = [f'{letter}: {label}' for letter, label in zip(substitute_labels, xticks.values())]
+
         h, legs = ax.get_legend_handles_labels()
         ax.legend(h, xtick_legend, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5))
-        ax.set_xticklabels(list(xtick_values))
+        ax.set_xticklabels(xtick_values)
     else:
         if not xticklabels_horizontal_and_wrapped:
             # xticklabels will be vertical and not wrapped
@@ -242,6 +245,7 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    #fig.tight_layout()
     fig.tight_layout(pad=2.0)
     plt.subplots_adjust(left=0.15, right=0.85)  # Adjust left and right margins
 
@@ -471,6 +475,13 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 
 # 3. Return on Investment Plot
 # ----------------------------------------------------
+projected_health_spending = estimate_projected_health_spending(resourcefilepath,
+                                  results_folder,
+                                 _years = list_of_relevant_years_for_costing,
+                                 _discount_rate = discount_rate,
+                                 _summarize = True)
+projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0]['mean'][0]
+
 # Combined ROI plot of relevant scenarios
 # HTM scenarios X 5
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -495,7 +506,9 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HTM_full_HSS_VSL',
-                   _plot_vertical_lines_at = [0, 1e9, 3e9])
+                   _plot_vertical_lines_at = [0, 1e9, 3e9],
+                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                    _projected_health_spending = projected_health_spending_baseline)
 
 # HTM scenarios with HSS
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -504,7 +517,9 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HTM_full_HSS_VSL',
-                   _plot_vertical_lines_at = [0, 1e9, 3e9])
+                   _plot_vertical_lines_at = [0, 1e9, 3e9],
+                    _year_suffix= f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
+                   _projected_health_spending = projected_health_spending_baseline)
 
 # HIV scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -548,6 +563,8 @@ fig, ax = do_standard_bar_plot_with_ci(
         for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
+    put_labels_in_legend=True,
+    offset=0.5,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
@@ -565,7 +582,8 @@ fig, ax = do_standard_bar_plot_with_ci(
         for _, row in incremental_scenario_cost_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
-    put_labels_in_legend=True
+    put_labels_in_legend=True,
+    offset=0.5,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Cost \n(USD Millions)')
@@ -589,7 +607,7 @@ input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
     value_name='cost'
 )
 
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = list(range(2025, 2036)), _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
@@ -651,11 +669,4 @@ fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', '')
 plt.close(fig)
 
 '''
-name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_bar_plot_with_ci(incremental_scenario_cost_summarized / 1e6)
-ax.set_title(name_of_plot)
-ax.set_ylabel('(Millions)')
-fig.tight_layout()
-fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-fig.show()
-plt.close(fig)
+
