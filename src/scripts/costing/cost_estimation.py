@@ -1222,11 +1222,10 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
 
     # Replace specific x-ticks with % of health spending values
     if _projected_health_spending:
+        xtick_labels[1] = f'{xticks[1]:.0f}M\n({xticks[1] / (_projected_health_spending / 1e6) :.2%} of \n projected total \n health spend)'
         for i, tick in enumerate(xticks):
-            if tick == 2000:  # Replace for 2000
-                xtick_labels[i] = f'{tick:.0f}M\n({tick / (_projected_health_spending/1e6) :.2%} of \n projected total \n health spend)'
-            elif tick == 4000:  # Replace for 4000
-                xtick_labels[i] = f'{tick:.0f}M\n({tick / (_projected_health_spending/1e6) :.2%} of \n projected total \n health spend)'
+            if (i != 0) & (i != 1):  # Replace for 4000
+                xtick_labels[i] = f'{tick:.0f}M\n({tick / (_projected_health_spending/1e6) :.2%})'
 
         # Update the x-ticks and labels
         ax.set_xticks(xticks)
