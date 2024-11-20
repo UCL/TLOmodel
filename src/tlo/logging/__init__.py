@@ -8,9 +8,9 @@ from .core import (
     getLogger,
     initialise,
     restore_global_state,
+    set_logging_levels,
     set_output_file,
 )
-from .helpers import set_logging_levels
 
 __all__ = [
     "CRITICAL",
