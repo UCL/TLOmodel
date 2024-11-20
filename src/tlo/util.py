@@ -517,12 +517,12 @@ def read_csv_files(folder: Path,
     if isinstance(files, list):
         return_dict = True
     elif files is None:
-        files = [f_name.stem for f_name in folder.rglob("*.csv")]
+        files = [f_name.stem for f_name in folder.glob("*.csv")]
         return_dict = True
     elif isinstance(files, str):
         files = [files]
     else:
-        files = [f_name.stem for f_name in folder.rglob("*.csv")]
+        files = [f_name.stem for f_name in folder.glob("*.csv")]
 
     for f_name in files:
         all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"), dtype=dtype)
