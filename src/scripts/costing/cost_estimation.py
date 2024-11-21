@@ -94,7 +94,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # Overall cost assumptions
     TARGET_PERIOD = (Date(first_year_of_simulation, 1, 1), Date(final_year_of_simulation, 12, 31)) # Declare period for which the results will be generated (defined inclusively)
-    discount_rate = 0.03
+    discount_rate = _discount_rate
 
     # Read all cost parameters
     #---------------------------------------
@@ -717,18 +717,19 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
     #----------------------------------------
     # Load health spending projections
     workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                        sheet_name = None)
+                                  sheet_name=None)
     health_spending_per_capita = workbook_cost["health_spending_projections"]
     # Assign the fourth row as column names
     health_spending_per_capita.columns = health_spending_per_capita.iloc[1]
-    health_spending_per_capita = health_spending_per_capita.iloc[2:].reset_index(drop = True)
-    health_spending_per_capita = health_spending_per_capita[health_spending_per_capita.year.isin(list(range(2015,2041)))]
+    health_spending_per_capita = health_spending_per_capita.iloc[2:].reset_index(drop=True)
+    health_spending_per_capita = health_spending_per_capita[
+        health_spending_per_capita.year.isin(list(range(2015, 2041)))]
     total_health_spending_per_capita_mean = health_spending_per_capita[['year', 'total_mean']].set_index('year')
 
     # Load population projections
     # ----------------------------------------
     def get_total_population(_df):
-        years_needed = [min(_years), max(_years)] # we only consider the population for the malaria scale-up period
+        years_needed = [min(_years), max(_years)]  # we only consider the population for the malaria scale-up period
         # because those are the years relevant for malaria scale-up costing
         _df['year'] = pd.to_datetime(_df['date']).dt.year
         _df = _df[['year', 'total']]
