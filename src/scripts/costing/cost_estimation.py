@@ -450,10 +450,9 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # 2.3 Store all consumable costs in one standard format dataframe
     #---------------------------------------------------------------------------------------------------------------
     # Function to melt and label the cost category
-    consumables_dict = pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
-                                 encoding="ISO-8859-1")[['item_code', 'consumable_name_tlo']]
-    consumables_dict = consumables_dict.rename(columns = {'item_code': 'Item_Code'})
-    consumables_dict = dict(zip(consumables_dict['Item_Code'], consumables_dict['consumable_name_tlo']))
+    consumables_dict = pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_Consumables_Items_and_Packages.csv', low_memory=False,
+                                 encoding="ISO-8859-1")[['Items','Item_Code']]
+    consumables_dict = dict(zip(consumables_dict['Item_Code'], consumables_dict['Items']))
     def melt_and_label_consumables_cost(_df, label):
         multi_index = pd.MultiIndex.from_tuples(_df.columns)
         _df.columns = multi_index
