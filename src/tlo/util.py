@@ -439,8 +439,10 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
         return mother_id
 
 
-def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False) -> None:
-    """ convert Excel files to csv files.
+def convert_excel_files_to_csv(
+    folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False
+) -> None:
+    """convert Excel files to csv files.
 
     :param folder: Folder containing Excel files.
     :param files: List of Excel file names to convert to csv files. When `None`, all Excel files in the folder and
@@ -509,4 +511,3 @@ def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame
     clean_dataframe(all_data)
     # If only one file loaded return dataframe directly rather than dict
     return next(iter(all_data.values())) if len(all_data) == 1 else all_data
-
