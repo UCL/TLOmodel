@@ -130,7 +130,7 @@ class Simulation:
 
     def _configure_logging(
         self,
-        filename: Optional[str] = None, 
+        filename: Optional[str] = None,
         directory: Path | str = "./outputs",
         custom_levels: Optional[dict[str, LogLevel]] = None,
         suppress_stdout: bool = False
