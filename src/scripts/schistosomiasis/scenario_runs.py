@@ -21,24 +21,8 @@ import random
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.methods import (
-    alri,
-    bladder_cancer,
-    demography,
-    diarrhoea,
-    enhanced_lifestyle,
-    epi,
-    healthburden,
-    healthsystem,
-    healthseekingbehaviour,
-    hiv,
-    schisto,
-    simplified_births,
-    stunting,
-    symptommanager,
-    tb,
-    wasting,
-)
+from tlo.methods.fullmodel import fullmodel
+
 from tlo.scenario import BaseScenario
 from scripts.schistosomiasis.schisto_scenario_definitions import (
     ScenarioDefinitions,
@@ -87,31 +71,7 @@ class SchistoScenarios(BaseScenario):
         }
 
     def modules(self):
-        return [
-            demography.Demography(resourcefilepath=self.resources,
-                                  equal_allocation_by_district=self.equal_allocation_by_district),
-            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            healthburden.HealthBurden(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(
-                resourcefilepath=self.resources,
-                disable_and_reject_all=False,  # if True, disable healthsystem and no HSI runs
-            ),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-            symptommanager.SymptomManager(resourcefilepath=self.resources),
-            # diseases
-            alri.Alri(resourcefilepath=self.resources),
-            bladder_cancer.BladderCancer(resourcefilepath=self.resources),
-            diarrhoea.Diarrhoea(resourcefilepath=self.resources),
-            hiv.Hiv(resourcefilepath=self.resources),
-            schisto.Schisto(resourcefilepath=self.resources,
-                            mda_execute=self.mda_execute,
-                            single_district=self.single_district),
-            stunting.Stunting(resourcefilepath=self.resources),
-            tb.Tb(resourcefilepath=self.resources),
-            wasting.Wasting(resourcefilepath=self.resources),
-        ]
+        return fullmodel(resourcefilepath=self.resources, use_simplified_births=True)
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -124,7 +84,10 @@ class SchistoScenarios(BaseScenario):
 
         return {
             "Baseline":
+            mix_scenarios(
+                set_parameters(),
                 scenario_definitions.baseline(),
+            ),
 
             # - - - Modify future MDA schedules with/without WASH activities - - -
             "MDA SAC with no WASH":

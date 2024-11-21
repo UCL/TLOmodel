@@ -12,6 +12,20 @@ class ScenarioDefinitions:
         """Year in which WASH-related changes are made."""
         return 2025
 
+    def set_parameters(self) -> Dict:
+        """Return the Dict with values for the parameter changes that define the baseline scenario. """
+        return mix_scenarios(
+            get_parameters_for_status_quo(),  # <-- Parameters that have been the calibration targets
+            {
+                "Schisto": {
+                    "single_district": False
+                },
+                "Demography": {
+                    "equal_allocation_by_district": True,
+                }
+            },
+        )
+
     def baseline(self) -> Dict:
         """ Return the Dict with values for the parameter changes that define the baseline scenario.
         The default settings are mda_coverage=0.7, target_group=SAC, mda_frequency=6 months

@@ -152,21 +152,21 @@ class Schisto(Module):
                 s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
         self.age_group_mapper = s.to_dict()
 
-        # create container for logging person-days infected
-        index = pd.MultiIndex.from_product(
-            [
-                ['mansoni', 'haematobium'],  # species
-                ['PSAC', 'SAC', 'Adults'],  # age_group
-                ['Low-infection', 'Moderate-infection', 'High-infection'],  # infection_level
-                self.sim.population.props['district'].unique()  # district
-            ],
-            names=['species', 'age_group', 'infection_level', 'district']
-        )
+        # # create container for logging person-days infected
         # index = pd.MultiIndex.from_product(
-        #     [['mansoni', 'haematobium'], ['PSAC', 'SAC', 'Adults'], ['Low-infection', 'Moderate-infection', 'High-infection']],
-        #     names=['species', 'age_group', 'infection_level']
+        #     [
+        #         ['mansoni', 'haematobium'],  # species
+        #         ['PSAC', 'SAC', 'Adults'],  # age_group
+        #         ['Low-infection', 'Moderate-infection', 'High-infection'],  # infection_level
+        #         self.population.props['district'].unique()  # district
+        #     ],
+        #     names=['species', 'age_group', 'infection_level', 'district']
         # )
-        self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days']).sort_index()
+        # # index = pd.MultiIndex.from_product(
+        # #     [['mansoni', 'haematobium'], ['PSAC', 'SAC', 'Adults'], ['Low-infection', 'Moderate-infection', 'High-infection']],
+        # #     names=['species', 'age_group', 'infection_level']
+        # # )
+        # self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days']).sort_index()
 
 
     def read_parameters(self, data_folder):
@@ -186,6 +186,18 @@ class Schisto(Module):
         # Register symptoms
         symptoms_df = workbook['Symptoms']
         self._register_symptoms(symptoms_df.set_index('Symptom')['HSB_mapped_symptom'].to_dict())
+
+        # create container for logging person-days infected
+        index = pd.MultiIndex.from_product(
+            [
+                ['mansoni', 'haematobium'],  # species
+                ['PSAC', 'SAC', 'Adults'],  # age_group
+                ['Low-infection', 'Moderate-infection', 'High-infection'],  # infection_level
+                self.districts  # district
+            ],
+            names=['species', 'age_group', 'infection_level', 'district']
+        )
+        self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days']).sort_index()
 
     def pre_initialise_population(self):
         """Do things before generating the population (but after read_parameters and any parameter updating)."""
@@ -1685,31 +1697,59 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         sum these in SchistoLoggingEvent each year to get person-years infected
         """
         df = self.sim.population.props
+        df_alive = df.loc[df.is_alive].copy()
 
-        # _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
-        species_list = ['mansoni', 'haematobium']
-        age_groups = ['PSAC', 'SAC', 'Adults']
-        infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
+        # Precompute categories
+        df_alive['age_group'] = df_alive.age_years.map(self.module.age_group_mapper)
+        df_alive['species_prefix'] = df_alive.apply(
+            lambda row: 'sm' if row['ss_sm_infection_status'] != 'None' else 'sh', axis=1
+        )
+        df_alive['infection_level'] = df_alive.apply(
+            lambda row: row[f"ss_{row['species_prefix']}_infection_status"], axis=1
+        )
 
-        def log_infection_counts(df, species, age_group, infection_level, district):
-            age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
-            species_prefix = 'sm' if species == 'mansoni' else 'sh'
+        # Exclude non-infected individuals
+        df_alive = df_alive[df_alive['infection_level'] != 'Non-infected']
 
-            return df[
-                (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
-                (age_bands == age_group) &
-                (df['district'] == district)
-            ].shape[0]
+        # Group by species, age group, infection level, and district
+        grouped_counts = df_alive.groupby(
+            ['species_prefix', 'age_group', 'infection_level', 'district_of_residence']
+        ).size()
 
-        for species, age_group, infection_level, district in product(
-                self.module.log_person_days.index.get_level_values('species').unique(),
-                self.module.log_person_days.index.get_level_values('age_group').unique(),
-                self.module.log_person_days.index.get_level_values('infection_level').unique(),
-                self.module.log_person_days.index.get_level_values('district').unique()):
-            person_days = log_infection_counts(df, species, age_group, infection_level, district)
+        # Update the log_person_days DataFrame
+        for idx, count in grouped_counts.items():
+            species = 'mansoni' if idx[0] == 'sm' else 'haematobium'
             self.module.log_person_days.loc[
-                (species, age_group, infection_level, district), 'person_days'
-            ] += person_days
+                (species, idx[1], idx[2], idx[3]), 'person_days'
+            ] += count
+        print(self.module.log_person_days)
+
+        # df = self.sim.population.props
+        #
+        # # _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
+        # species_list = ['mansoni', 'haematobium']
+        # age_groups = ['PSAC', 'SAC', 'Adults']
+        # infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
+        #
+        # def log_infection_counts(df, species, age_group, infection_level, district):
+        #     age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
+        #     species_prefix = 'sm' if species == 'mansoni' else 'sh'
+        #
+        #     return df[
+        #         (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
+        #         (age_bands == age_group) &
+        #         (df['district_of_residence'] == district)
+        #     ].shape[0]
+        #
+        # for species, age_group, infection_level, district in product(
+        #         self.module.log_person_days.index.get_level_values('species').unique(),
+        #         self.module.log_person_days.index.get_level_values('age_group').unique(),
+        #         self.module.log_person_days.index.get_level_values('infection_level').unique(),
+        #         self.module.log_person_days.index.get_level_values('district').unique()):
+        #     person_days = log_infection_counts(df, species, age_group, infection_level, district)
+        #     self.module.log_person_days.loc[
+        #         (species, age_group, infection_level, district), 'person_days'
+        #     ] += person_days
 
         # def log_infection_counts(df, species, age_group, infection_level):
         #     age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
@@ -1768,7 +1808,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(
             key='Schisto_person_days_infected',
             data=flatten_multi_index_series_into_dict_for_logging(self.module.log_person_days['person_days']),
-            description='Counts of person-days infected by any species'
+            description='Counts of person-days infected by species'
         )
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
