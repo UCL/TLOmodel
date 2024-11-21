@@ -38,9 +38,12 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 #%%
 
 # Define a function to discount and summarise costs by cost_category
-def apply_discounting_to_cost_data(_df, _discount_rate=0):
-    # Initial year and discount rate
-    initial_year = min(_df['year'].unique())
+def apply_discounting_to_cost_data(_df, _discount_rate=0, _year = None):
+    if _year == None:
+        # Initial year and discount rate
+        initial_year = min(_df['year'].unique())
+    else:
+        initial_year = _year
 
     # Calculate the discounted values
     _df.loc[:, 'cost'] = _df['cost'] / ((1 + _discount_rate) ** (_df['year'] - initial_year))
@@ -94,7 +97,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # Overall cost assumptions
     TARGET_PERIOD = (Date(first_year_of_simulation, 1, 1), Date(final_year_of_simulation, 12, 31)) # Declare period for which the results will be generated (defined inclusively)
-    discount_rate = _discount_rate
+    discount_rate = 0.03 # this is the discount rate for annuitization
 
     # Read all cost parameters
     #---------------------------------------
@@ -1210,7 +1213,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
             if cost in roi_at_costs:
                 ratio = max(roi_at_costs[cost]) / min(roi_at_costs[cost])
                 ax.axvline(x=cost / 1e6, color='black', linestyle='--', linewidth=1)
-                ax.text(cost / 1e6 + 200, ax.get_ylim()[1] * 0.9,
+                ax.text(cost / 1e6 + ax.get_xlim()[1] * 0.011, ax.get_ylim()[1] * 0.75,
                         f'At {cost / 1e6:.0f}M, ratio of ROI curves = {round(ratio, 2)}',
                         color='black', fontsize=10, rotation=90, verticalalignment='top')
 
