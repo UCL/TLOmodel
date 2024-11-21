@@ -154,10 +154,20 @@ class Schisto(Module):
 
         # create container for logging person-days infected
         index = pd.MultiIndex.from_product(
-            [['mansoni', 'haematobium'], ['PSAC', 'SAC', 'Adults'], ['Low-infection', 'Moderate-infection', 'High-infection']],
-            names=['species', 'age_group', 'infection_level']
+            [
+                ['mansoni', 'haematobium'],  # species
+                ['PSAC', 'SAC', 'Adults'],  # age_group
+                ['Low-infection', 'Moderate-infection', 'High-infection'],  # infection_level
+                self.sim.population.props['district'].unique()  # district
+            ],
+            names=['species', 'age_group', 'infection_level', 'district']
         )
+        # index = pd.MultiIndex.from_product(
+        #     [['mansoni', 'haematobium'], ['PSAC', 'SAC', 'Adults'], ['Low-infection', 'Moderate-infection', 'High-infection']],
+        #     names=['species', 'age_group', 'infection_level']
+        # )
         self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days']).sort_index()
+
 
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
@@ -1681,21 +1691,41 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         age_groups = ['PSAC', 'SAC', 'Adults']
         infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
 
-        def log_infection_counts(df, species, age_group, infection_level):
+        def log_infection_counts(df, species, age_group, infection_level, district):
             age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
             species_prefix = 'sm' if species == 'mansoni' else 'sh'
 
             return df[
                 (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
-                (age_bands == age_group)
-                ].shape[0]
+                (age_bands == age_group) &
+                (df['district'] == district)
+            ].shape[0]
 
-        for species, age_group, infection_level in product(
+        for species, age_group, infection_level, district in product(
                 self.module.log_person_days.index.get_level_values('species').unique(),
                 self.module.log_person_days.index.get_level_values('age_group').unique(),
-                self.module.log_person_days.index.get_level_values('infection_level').unique()):
-            person_days = log_infection_counts(df, species, age_group, infection_level)
-            self.module.log_person_days.loc[(species, age_group, infection_level), 'person_days'] += person_days
+                self.module.log_person_days.index.get_level_values('infection_level').unique(),
+                self.module.log_person_days.index.get_level_values('district').unique()):
+            person_days = log_infection_counts(df, species, age_group, infection_level, district)
+            self.module.log_person_days.loc[
+                (species, age_group, infection_level, district), 'person_days'
+            ] += person_days
+
+        # def log_infection_counts(df, species, age_group, infection_level):
+        #     age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
+        #     species_prefix = 'sm' if species == 'mansoni' else 'sh'
+        #
+        #     return df[
+        #         (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
+        #         (age_bands == age_group)
+        #         ].shape[0]
+        #
+        # for species, age_group, infection_level in product(
+        #         self.module.log_person_days.index.get_level_values('species').unique(),
+        #         self.module.log_person_days.index.get_level_values('age_group').unique(),
+        #         self.module.log_person_days.index.get_level_values('infection_level').unique()):
+        #     person_days = log_infection_counts(df, species, age_group, infection_level)
+        #     self.module.log_person_days.loc[(species, age_group, infection_level), 'person_days'] += person_days
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
