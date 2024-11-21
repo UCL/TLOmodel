@@ -532,6 +532,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draws = [2,3],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
+                   _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'HIV_VSL')
 
 # TB scenarios
@@ -540,8 +541,9 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draws = [4,5],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
+                   _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'TB_VSL',
-                   _y_axis_lim = 50 )
+                   _y_axis_lim = 30)
 
 # Malaria scenarios
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -549,6 +551,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draws = [6,7],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
+                   _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'Malaria_VSL')
 
 # 4. Plot Maximum ability-to-pay at CET
@@ -564,15 +567,16 @@ name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}
 fig, ax = do_standard_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized / 1e6),
     annotations=[
-        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}-\n {row['upper'] / projected_health_spending_baseline:.2%})"
+        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- \n {row['upper'] / projected_health_spending_baseline:.2%})"
         for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
     put_labels_in_legend=True,
-    offset=0.5,
+    offset=50,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Maximum ability to pay \n(Millions)')
+ax.set_ylim(bottom=0)
 fig.tight_layout()
 fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
@@ -583,15 +587,16 @@ name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period
 fig, ax = do_standard_bar_plot_with_ci(
     (incremental_scenario_cost_summarized / 1e6),
     annotations=[
-        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}-\n {row['upper'] / projected_health_spending_baseline:.2%})"
+        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- {row['upper'] / projected_health_spending_baseline:.2%})"
         for _, row in incremental_scenario_cost_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
     put_labels_in_legend=True,
-    offset=0.5,
+    offset=50,
 )
 ax.set_title(name_of_plot)
 ax.set_ylabel('Cost \n(USD Millions)')
+ax.set_ylim(bottom=0)
 fig.tight_layout()
 fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
