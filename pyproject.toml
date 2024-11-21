@@ -33,6 +33,8 @@ dependencies = [
     "azure-identity",
     "azure-keyvault",
     "azure-storage-file-share",
+    # For saving and loading simulation state
+    "dill",
 ]
 description = "Thanzi la Onse Epidemiology Model"
 dynamic = ["version"]
