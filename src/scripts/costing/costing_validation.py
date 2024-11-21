@@ -74,7 +74,7 @@ calibration_data = calibration_data.set_index(['calibration_category', 'stat'])
 # Load result files
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
-results_folder = get_scenario_outputs('htm_with_and_without_hss-2024-10-22T163743Z.py', outputfilepath)[0]
+results_folder = get_scenario_outputs('hss_elements-2024-11-12T172311Z.py', outputfilepath)[0]
 
 # Estimate costs for 2018
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _years = [2018], _draws = [0], summarize = True, cost_only_used_staff=False)
@@ -151,7 +151,7 @@ hiv_screening = [190,191,196]
 condoms = [2,25]
 tb_tests = [184,187, 175]
 other_drugs = set(consumables_costs_by_item_code['cost_subgroup'].unique()) - set(art) - set(tb_treatment) - set(antimalarials) - set(malaria_rdts) - set(hiv_screening)\
-              - set(condoms) - set(tb_tests) - {3}
+              - set(condoms) - set(tb_tests)# - {3}
 # TODO once the quantity dispensed of Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly is fixed we no lnger have to adjust for Item_code 3
 
 # Note that the main ARV  regimen in 2018 was tenofovir/lamivudine/efavirenz as opposed to Tenofovir/Lamivudine/Dolutegravir as used in the RF_Costing. The price of this
@@ -208,7 +208,7 @@ list_of_equipment_costs_for_calibration = ['Medical Equipment - Purchase', 'Medi
 costing_outputs_folder = Path('./outputs/costing')
 if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
-figurespath = costing_outputs_folder / "figures"
+figurespath = costing_outputs_folder / "figures_post_cons_fix"
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 calibration_outputs_folder = Path(figurespath / 'calibration')
