@@ -38,24 +38,12 @@ class SchistoScenarios(BaseScenario):
         self.start_date = Date(2010, 1, 1)
 
         # todo reset
-        self.end_date = Date(2035, 12, 31)  # 10 years of projections
-        self.pop_size = 64_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.end_date = Date(2040, 12, 31)  # 15 years of projections
+        self.pop_size = 160_000  # todo if equal_allocation_by_district, 64,000=2k per district
         self.runs_per_draw = 3
 
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-
-        # self.coverage_options = [0.6, 0.7, 0.8]
-        # self.target_group_options = ['SAC', 'PSAC', 'All']
-        # self.coverage_options = [0.0, 0.8]
-        # self.wash_options = [0, 1]  # although this is BOOL, python changes type when reading in from Excel
-
-        self.mda_execute = True  # determines whether future MDA activities can occur
-        self.single_district = True  # allocates all population to one district (Zomba)
-        self.equal_allocation_by_district = True  # puts equal population sizes in each district
-
-        # Calculate the total number of combinations
-        # self.number_of_draws = len(self.coverage_options) * len(self.target_group_options) * len(self.wash_options)
 
     def log_configuration(self):
         return {
@@ -85,30 +73,34 @@ class SchistoScenarios(BaseScenario):
         return {
             "Baseline":
             mix_scenarios(
-                set_parameters(),
+                scenario_definitions.set_parameters(),
                 scenario_definitions.baseline(),
             ),
 
             # - - - Modify future MDA schedules with/without WASH activities - - -
             "MDA SAC with no WASH":
                 mix_scenarios(
+                    scenario_definitions.set_parameters(),
                     scenario_definitions.high_coverage_MDA(),
                 ),
 
             "MDA SAC with WASH":
                 mix_scenarios(
+                    scenario_definitions.set_parameters(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.scaleup_WASH(),
                 ),
 
             "MDA PSAC with no WASH":
                 mix_scenarios(
+                    scenario_definitions.set_parameters(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_PSAC(),
                 ),
 
             "MDA PSAC with WASH":
                 mix_scenarios(
+                    scenario_definitions.set_parameters(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_PSAC(),
                     scenario_definitions.scaleup_WASH(),
@@ -116,12 +108,14 @@ class SchistoScenarios(BaseScenario):
 
             "MDA All with no WASH":
                 mix_scenarios(
+                    scenario_definitions.set_parameters(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_All(),
                 ),
 
             "MDA All with WASH":
                 mix_scenarios(
+                    scenario_definitions.set_parameters(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_All(),
                     scenario_definitions.scaleup_WASH(),
