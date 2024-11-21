@@ -453,10 +453,10 @@ class Schisto(Module):
         # assume child 0-5, maximum weight 17.5kg (WHO- average between girls/boys)
         if age < 5:
             dose = 20 * 17.5
-        # child aged 5-15, use mid-point age 10: 50th percentile weight=30kg
+        # child aged 5-15, 40mg/kg, use mid-point age 10: 50th percentile weight=30kg
         elif age >= 5 and age < 15:
             dose = 40 * 30
-        # adult, average weight 62kg
+        # adult, 40mg/kg, average weight 62kg
         else:
             dose = 40 * 62
 
@@ -1640,11 +1640,14 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
             self.sim.population.props.index[self.sim.population.props.is_alive]
         ))
 
+        # Calculate total dosage required for all beneficiaries still alive
+        total_dosage = sum(self.module._calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
+
         # Let the key consumable be "optional" in order that provision of the treatment is NOT conditional on the drugs
         # being available.This is because we expect that special planning would be undertaken in order to ensure the
         # availability of the drugs on the day(s) when the MDA is planned.
         if self.get_consumables(
-            optional_item_codes={self.module.item_code_for_praziquantel: len(beneficiaries_still_alive)}
+            optional_item_codes={self.module.item_code_for_praziquantel: total_dosage}
         ):
             self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
 
