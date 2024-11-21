@@ -81,8 +81,9 @@ for c in cadre_group:
 auxiliary = cadre_to_expand.copy()
 for i in auxiliary.columns[3:]:  # for all equal-fraction scenarios
     auxiliary.loc[:, i] = auxiliary.loc[:, i] / auxiliary.loc[:, i].sum()
-auxiliary.loc[:, 's_2'] = [0.4586, 0.0272, 0.3502, 0.1476, 0.0164]  # without historical scaling
-# auxiliary.loc[:, 's_2'] = [0.4322, 0.0201, 0.3701, 0.1408, 0.0368]  # with historical scaling
+# for "gap" allocation strategy
+# auxiliary.loc[:, 's_2'] = [0.4586, 0.0272, 0.3502, 0.1476, 0.0164]  # without historical scaling; "default" settings
+auxiliary.loc[:, 's_2'] = [0.4322, 0.0201, 0.3701, 0.1408, 0.0368]  # with historical scaling; "default" settings
 
 # define extra budget fracs for each cadre
 extra_budget_fracs = pd.DataFrame(index=cadre_all, columns=combination_list)
