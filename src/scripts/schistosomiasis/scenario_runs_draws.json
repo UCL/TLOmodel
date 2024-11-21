@@ -1,6 +1,6 @@
 {
   "scenario_script_path": "src/scripts/schistosomiasis/scenario_runs.py",
-  "scenario_seed": 989,
+  "scenario_seed": 29753,
   "arguments": [],
   "runs_per_draw": 3,
   "draws": [
@@ -21,76 +21,182 @@
           "equip_availability": "all"
         },
         "Schisto": {
+          "single_district": false,
           "mda_coverage": 0.0,
           "scaleup_WASH": 0
+        },
+        "Demography": {
+          "equal_allocation_by_district": true
         }
       }
     },
     {
       "draw_number": 1,
       "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        },
         "Schisto": {
+          "single_district": false,
           "mda_coverage": 0.8,
           "mda_frequency_months": 12
+        },
+        "Demography": {
+          "equal_allocation_by_district": true
         }
       }
     },
     {
       "draw_number": 2,
       "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        },
         "Schisto": {
+          "single_district": false,
           "mda_coverage": 0.8,
           "mda_frequency_months": 12,
           "scaleup_WASH": 1,
           "scaleup_WASH_start_year": 2025
+        },
+        "Demography": {
+          "equal_allocation_by_district": true
         }
       }
     },
     {
       "draw_number": 3,
       "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        },
         "Schisto": {
+          "single_district": false,
           "mda_coverage": 0.8,
           "mda_frequency_months": 12,
-          "mda_target_group": "PSAC"
+          "mda_target_group": "PSAC_SAC"
+        },
+        "Demography": {
+          "equal_allocation_by_district": true
         }
       }
     },
     {
       "draw_number": 4,
       "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        },
         "Schisto": {
+          "single_district": false,
           "mda_coverage": 0.8,
           "mda_frequency_months": 12,
-          "mda_target_group": "PSAC",
+          "mda_target_group": "PSAC_SAC",
           "scaleup_WASH": 1,
           "scaleup_WASH_start_year": 2025
+        },
+        "Demography": {
+          "equal_allocation_by_district": true
         }
       }
     },
     {
       "draw_number": 5,
       "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        },
         "Schisto": {
+          "single_district": false,
           "mda_coverage": 0.8,
           "mda_frequency_months": 12,
-          "mda_target_group": "All"
+          "mda_target_group": "ALL"
+        },
+        "Demography": {
+          "equal_allocation_by_district": true
         }
       }
     },
     {
       "draw_number": 6,
       "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "default",
+          "equip_availability": "all"
+        },
         "Schisto": {
+          "single_district": false,
           "mda_coverage": 0.8,
           "mda_frequency_months": 12,
-          "mda_target_group": "All",
+          "mda_target_group": "ALL",
           "scaleup_WASH": 1,
           "scaleup_WASH_start_year": 2025
+        },
+        "Demography": {
+          "equal_allocation_by_district": true
         }
       }
     }
   ],
-  "commit": "8b4245c2a3cbd7290e8f87051a326354b572be21",
-  "github": "https://github.com/UCL/TLOmodel/tree/8b4245c2a3cbd7290e8f87051a326354b572be21"
+  "commit": "3ba01df28e509851d4c4f4b71d159ac169d4f253",
+  "github": "https://github.com/UCL/TLOmodel/tree/3ba01df28e509851d4c4f4b71d159ac169d4f253"
 }
