@@ -1466,11 +1466,14 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         # Reduce susceptibility for haematobium
         self.module.reduce_susceptibility(df, species_column='ss_sh_susceptibility')
 
-        # scale-up property li_unimproved_sanitation
+        # scale-up properties related to WASH
         # set the properties to False for everyone
         df['li_unimproved_sanitation'] = False
+        df['li_no_clean_drinking_water'] = False
+        df['li_no_access_handwashing'] = False
         df['li_date_acquire_improved_sanitation'] = self.sim.date
-
+        df['li_date_acquire_access_handwashing'] = self.sim.date
+        df['li_date_acquire_clean_drinking_water'] = self.sim.date
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt
