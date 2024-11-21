@@ -749,14 +749,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     hcw_time_increased_by_treatment_type = get_hcw_time_by_treatment().reindex(num_dalys_summarized.index).drop(['s_0'])
 
-    num_services_increased_percent = summarize(
-        pd.DataFrame(
-            find_difference_relative_to_comparison_series(
-                num_services.loc[0],
-                comparison='s_0',
-                scaled=True)
-        ).T
-    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    # num_services_increased_percent = summarize(
+    #     pd.DataFrame(
+    #         find_difference_relative_to_comparison_series(
+    #             num_services.loc[0],
+    #             comparison='s_0',
+    #             scaled=True)
+    #     ).T
+    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
 
     num_deaths_averted = summarize(
         -1.0 *
