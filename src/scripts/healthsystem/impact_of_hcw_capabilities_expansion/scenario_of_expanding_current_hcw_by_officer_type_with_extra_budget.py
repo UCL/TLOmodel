@@ -67,8 +67,8 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.YEAR_OF_HRH_EXPANSION = 2025
         # The start year to expand HRH by cadre given the extra budget, which is after the historical HRH scaling
 
-        self.scenarios = extra_budget_fracs.drop(columns='s_2')
-        # Test historical scaling changes; do not run 'gap' scenario that's based on "no historical scaling"
+        self.scenarios = extra_budget_fracs['s_2'].to_frame()
+        # Run 'gap' scenario that's based on "no historical scaling" + baseline of baseline settings
 
         # self.scenarios = extra_budget_fracs['s_0'].to_frame()
         # Run no extra budget allocation scenarios first to get never ran services and 'gap' allocation strategies
