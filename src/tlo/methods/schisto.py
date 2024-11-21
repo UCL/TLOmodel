@@ -214,7 +214,8 @@ class Schisto(Module):
 
         # Look-up item code for Praziquantel
         if 'HealthSystem' in self.sim.modules:
-            self.item_code_for_praziquantel = self._get_item_code_for_praziquantel()
+            self.item_code_for_praziquantel = self._get_item_code_for_praziquantel(MDA=False)
+            self.item_code_for_praziquantel_MDA = self._get_item_code_for_praziquantel(MDA=True)
 
         # define the Dx tests and consumables required
         self._get_consumables_for_dx()
@@ -441,9 +442,13 @@ class Schisto(Module):
             symptom: get_daly_weight(dw_code) for symptom, dw_code in symptoms_to_disability_weight_mapping.items()
         }
 
-    def _get_item_code_for_praziquantel(self) -> int:
+    def _get_item_code_for_praziquantel(self, MDA=False) -> int:
         """Look-up the item code for Praziquantel"""
-        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
+
+        if MDA:
+            return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
+        else:
+            return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
     def _calculate_praziquantel_dosage(self, person_id):
         age = self.sim.population.props.at[person_id, "age_years"]
@@ -1650,7 +1655,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # being available.This is because we expect that special planning would be undertaken in order to ensure the
         # availability of the drugs on the day(s) when the MDA is planned.
         if self.get_consumables(
-            optional_item_codes={self.module.item_code_for_praziquantel: total_dosage}
+            optional_item_codes={self.module.item_code_for_praziquantel_MDA: total_dosage}
         ):
             self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
 
