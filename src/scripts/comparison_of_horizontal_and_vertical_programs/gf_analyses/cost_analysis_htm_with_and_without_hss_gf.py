@@ -39,7 +39,8 @@ from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              do_line_plot_of_cost,
                                              generate_roi_plots,
                                              generate_multiple_scenarios_roi_plot,
-                                             estimate_projected_health_spending)
+                                             estimate_projected_health_spending,
+                                             apply_discounting_to_cost_data)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -350,8 +351,7 @@ district_population_covered_by_irs_scaleup_by_year = get_number_of_people_covere
                                                                                                  draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period)
 
 irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
-# The above unit cost already includes implementation - project management (17%), personnel (6%), vehicles (10%), equipment (6%), monitoring and evaluation (3%), training (3%),
-# other commodities (3%) and buildings (2%) from Alonso et al (2021)
+# This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping, PPE. The cost is measured per person protected. Based on Stelmach et al (2018)
 irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate
 total_irs_cost = irs_multiplication_factor.iloc[0] * district_population_covered_by_irs_scaleup_by_year # for districts and scenarios included
 total_irs_cost = total_irs_cost.groupby(level='year').sum()
@@ -396,6 +396,7 @@ def melt_and_label_malaria_scaleup_cost(_df, label):
 # Iterate through additional costs, melt and concatenate
 for df, label in malaria_scaleup_costs:
     new_df = melt_and_label_malaria_scaleup_cost(df, label)
+    new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate, _year = relevant_period_for_costing[0])
     input_costs = pd.concat([input_costs, new_df], ignore_index=True)
 
 # Extract input_costs for browsing
@@ -408,6 +409,10 @@ input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_s
 # Aggregate input costs for further analysis (this step is needed because the malaria specific scale-up costs start from the year or malaria scale-up implementation)
 input_costs_subset = input_costs[
     (input_costs['year'] >= relevant_period_for_costing[0]) & (input_costs['year'] <= relevant_period_for_costing[1])]
+
+# Extract input_costs for TGF
+input_costs_subset.groupby(['draw', 'run', 'cost_category', 'year'])['cost'].sum().to_csv(figurespath / 'cost_for_gf.csv')
+
 total_input_cost = input_costs_subset.groupby(['draw', 'run'])['cost'].sum()
 total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
 def find_difference_relative_to_comparison(_ser: pd.Series,
@@ -488,6 +493,7 @@ projected_health_spending = estimate_projected_health_spending(resourcefilepath,
 projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0]['mean'][0]
 
 # Combined ROI plot of relevant scenarios
+'''
 # HTM scenarios X 5
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
@@ -503,6 +509,8 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HTM_full_HSS_VSL')
+
+'''
 
 # Only HSS
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
