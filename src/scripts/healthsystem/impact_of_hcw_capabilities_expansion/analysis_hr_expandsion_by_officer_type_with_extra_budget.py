@@ -1388,17 +1388,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plt.close(fig)
 
     # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
-    # outcome_data = num_dalys_averted_percent['mean']
-    outcome_data = num_services_increased_percent['mean']
+    outcome_data = num_dalys_averted_percent['mean']
+    # outcome_data = num_services_increased_percent['mean']
     # outcome_data = num_treatments_total_increased_percent['mean']
     regression_data = pd.merge(outcome_data,
                                extra_budget_allocation,
                                left_index=True, right_index=True, how='inner')
-    regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
-    regression_data['C*N'] = regression_data['Clinical'] * regression_data['Nursing_and_Midwifery']
-    regression_data['N*P'] = regression_data['Pharmacy'] * regression_data['Nursing_and_Midwifery']
-    regression_data['C*N*P'] = (regression_data['Clinical'] * regression_data['Pharmacy']
-                                * regression_data['Nursing_and_Midwifery'])
+    # regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
+    # regression_data['C*N'] = regression_data['Clinical'] * regression_data['Nursing_and_Midwifery']
+    # regression_data['N*P'] = regression_data['Pharmacy'] * regression_data['Nursing_and_Midwifery']
+    # regression_data['C*N*P'] = (regression_data['Clinical'] * regression_data['Pharmacy']
+    #                             * regression_data['Nursing_and_Midwifery'])
     cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography', 'Other']
     regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
     predictor = regression_data[regression_data.columns[1:]]
