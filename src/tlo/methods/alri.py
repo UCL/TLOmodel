@@ -643,6 +643,11 @@ class Alri(Module):
                       'Relative Risk for treatment failure for persons with danger signs pneumonia being treated with '
                       'first line intravenous antibiotics if the person has any general danger signs'
                       ),
+        'rr_tf_1st_line_antibiotics_if_respiratory_distress':
+            Parameter(Types.REAL,
+                      'Relative Risk for treatment failure for persons with danger signs pneumonia being treated with '
+                      'first line intravenous antibiotics if the person has respiratory distress'
+                      ),
         'rr_tf_1st_line_antibiotics_if_SpO2<90%':
             Parameter(Types.REAL,
                       'Relative Risk for treatment failure for persons with danger_signs_pneumonia being treated with '
@@ -667,11 +672,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'Relative Risk for treatment failure for persons with danger_signs_pneumonia being treated with '
                       'first line intravenous antibiotics if the person has HIV and is not currently being treated.'
-                      ),
-        'rr_tf_1st_line_antibiotics_if_any_pulmonary_complications':
-            Parameter(Types.REAL,
-                      'Relative Risk for treatment failure for patients being treated with '
-                      'first line intravenous antibiotics if the patient has a pulmonary complication'
                       ),
         'or_mortality_improved_oxygen_systems':
             Parameter(Types.REAL,
@@ -775,9 +775,9 @@ class Alri(Module):
                       'at facility level 1a/1b/2'
                       ),
 
-        'or_care_seeking_perceived_severe_illness':
+        'or_care_seeking_if_perceived_severe':
             Parameter(Types.REAL,
-                      'The Odds Ratio for healthcare seeking for the symptom of chest-indrawing'
+                      'The Odds Ratio for healthcare seeking if perceived severe'
                       ),
 
         'pulse_oximeter_and_oxygen_is_available':
@@ -807,11 +807,15 @@ class Alri(Module):
                       'sensitivity of health worker decision in oxygen provision for danger signs penumonia '
                       'without the use of pulse oximeter'
                       ),
-        'rr_tf_oral_antibiotics_if_SpO2<90%':
+        'or_tf_oral_antibiotics_if_SpO2<90%':
             Parameter(Types.REAL,
                       'tmp param'
                       ),
-        'or_tf_oral_antibiotics_if_malnutrition':
+        'or_tf_oral_antibiotics_if_MAM':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_tf_oral_antibiotics_if_SAM':
             Parameter(Types.REAL,
                       'tmp param'
                       ),
@@ -824,7 +828,11 @@ class Alri(Module):
                       'tmp param'
                       ),
 
-        'rr_tf_oral_antibiotics_if_general_danger_signs':
+        'rr_tf_oral_antibiotics_if_danger_signs':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'rr_tf_oral_antibiotics_if_repiratory_distress':
             Parameter(Types.REAL,
                       'tmp param'
                       ),
@@ -903,6 +911,18 @@ class Alri(Module):
                       ),
         'base_prob_care_seeking_by_level':
             Parameter(Types.LIST,
+                      'tmp param'
+                      ),
+        'or_care_seeking_hospital_age<2mo':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_care_seeking_hospital_age2_11mo':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_care_seeking_hospital_age12_23mo':
+            Parameter(Types.REAL,
                       'tmp param'
                       ),
         'or_care_seeking_hospital_danger_signs':
@@ -1012,6 +1032,11 @@ class Alri(Module):
         'pulse_oximeter_usage_rate':
             Parameter(Types.REAL,
                       'Health worker usage rate of pulse oximeter'
+                      ),
+        'rr_tf_follow_up_care_with_initial_incorrect_care':
+            Parameter(Types.REAL,
+                      'Relative risk of treatment failure at follow-up with initial care incorrect'
+                      'prior to referral'
                       ),
         'or_tf_non_stabilised_with_oxygen_prior_to_referral':
             Parameter(Types.REAL,
@@ -1173,11 +1198,11 @@ class Alri(Module):
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom.emergency(name=symptom_name, which='children')
                     )
-                elif symptom_name in ('tachypnoea', 'chest_indrawing', 'respiratory_distress'):
+                elif symptom_name in ('fast_breathing', 'chest_indrawing', 'respiratory_distress'):
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
                                 odds_ratio_health_seeking_in_children=self.parameters[
-                                    'or_care_seeking_perceived_severe_illness']))
+                                    f'or_care_seeking_if_perceived_severe']))
                 else:
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name))
@@ -1674,7 +1699,7 @@ class Alri(Module):
         else:
             return 'failure'
 
-    def seek_care_level(self, symptoms) -> str:
+    def seek_care_level(self, symptoms, age) -> str:
         """Care seeking at facility levels, based on symptom severity"""
 
         prop_seek_level = {'2': self.parameters['base_prob_care_seeking_by_level'][0],
@@ -1682,14 +1707,31 @@ class Alri(Module):
                            '1a': self.parameters['base_prob_care_seeking_by_level'][2],
                            '0': self.parameters['base_prob_care_seeking_by_level'][3]}
 
+        # increase seeking at higher levels by age
+        age_gp = '<2mo' if age < 1/6 else '2_11mo' if 1/6 <= age < 1 else '12_23mo' if 1 <= age < 2 else '24_59mo'
+        if age < 2:
+            prop_seek_level.update({
+                '2': to_prob(to_odds(prop_seek_level['2']) *
+                             self.parameters[f'or_care_seeking_hospital_age{age_gp}']),
+                '1b': to_prob(to_odds(prop_seek_level['1b']) *
+                              self.parameters[f'or_care_seeking_hospital_age{age_gp}']),
+                '1a': to_prob(to_odds(prop_seek_level['1a']) *
+                              (1 / self.parameters[f'or_care_seeking_hospital_age{age_gp}'])),
+                '0': to_prob(to_odds(prop_seek_level['0']) *
+                             (1 / self.parameters[f'or_care_seeking_hospital_age{age_gp}']))})
+
         # Increase seeking at higher levels if severe symptoms
-        if any(sev_symptom in ['danger_signs', 'chest_indrawing', 'respiratory_distress'] for sev_symptom in symptoms):
-            # if 'chest_indrawing' in symptoms:
-            #     prop_seek_level.update({
-            #         '2': to_prob(to_odds(prop_seek_level['2']) * 2.4),
-            #         '1b': to_prob(to_odds(prop_seek_level['1b']) * 2.4),
-            #         '1a': to_prob(to_odds(prop_seek_level['1a']) * (1 / 2.4)),
-            #         '0': to_prob(to_odds(prop_seek_level['0']) * (1 / 2.4))})
+        if any(sev_symptom in ['danger_signs', 'respiratory_distress'] for sev_symptom in symptoms):
+            if 'chest_indrawing' in symptoms:
+                prop_seek_level.update({
+                    '2': to_prob(to_odds(prop_seek_level['2']) *
+                                 self.parameters[f'or_care_seeking_if_perceived_severe']),
+                    '1b': to_prob(to_odds(prop_seek_level['1b']) *
+                                  self.parameters[f'or_care_seeking_if_perceived_severe']),
+                    '1a': to_prob(to_odds(prop_seek_level['1a']) *
+                                  (1 / self.parameters[f'or_care_seeking_if_perceived_severe'])),
+                    '0': to_prob(to_odds(prop_seek_level['0']) *
+                                 (1 / self.parameters[f'or_care_seeking_if_perceived_severe']))})
 
             for symptom_name in ('danger_signs', 'respiratory_distress'):
                 if symptom_name in symptoms:
@@ -1703,11 +1745,11 @@ class Alri(Module):
                         '0': to_prob(to_odds(prop_seek_level['0']) *
                                      (1 / self.parameters[f'or_care_seeking_hospital_{symptom_name}']))})
 
-            sum_of_probs = prop_seek_level['2'] + prop_seek_level['1b'] + prop_seek_level['1a'] + prop_seek_level['0']
-            prop_seek_level.update({'2': prop_seek_level['2']/sum_of_probs,
-                                    '1b': prop_seek_level['1b']/sum_of_probs,
-                                    '1a': prop_seek_level['1a']/sum_of_probs,
-                                    '0': prop_seek_level['0']/sum_of_probs})
+        sum_of_probs = prop_seek_level['2'] + prop_seek_level['1b'] + prop_seek_level['1a'] + prop_seek_level['0']
+        prop_seek_level.update({'2': prop_seek_level['2']/sum_of_probs,
+                                '1b': prop_seek_level['1b']/sum_of_probs,
+                                '1a': prop_seek_level['1a']/sum_of_probs,
+                                '0': prop_seek_level['0']/sum_of_probs})
 
         seek_level = self.rng.choice(list(prop_seek_level.keys()), p=list(prop_seek_level.values()))
 
@@ -1716,11 +1758,12 @@ class Alri(Module):
     def on_presentation(self, person_id, symptoms, hsi_event):
         """Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
          with symptoms of `cough` or `difficult_breathing`."""
+        df = self.sim.population.props
 
         self.record_sought_care_for_alri()
 
         if self.parameters['use_static_simulation_run']:
-            seek_level = self.seek_care_level(symptoms)
+            seek_level = self.seek_care_level(symptoms, age=df.loc[person_id, 'age_exact_years'])
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
                                              facility_level=seek_level),
@@ -1763,7 +1806,7 @@ class Alri(Module):
                         'chest_indrawing' in symptoms):
                     return 'danger_signs_pneumonia'
                 elif 'tachypnoea' in symptoms:
-                    if hiv_infected_and_not_on_art or (un_clinical_acute_malnutrition == 'SAM'):
+                    if hiv_infected_and_not_on_art or (un_clinical_acute_malnutrition != 'well'):
                         return 'danger_signs_pneumonia'
                     else:
                         return 'fast_breathing_pneumonia'
@@ -1793,7 +1836,7 @@ class Alri(Module):
                 if ('danger_signs' in symptoms) or ('chest_indrawing' in symptoms):
                     return 'danger_signs_pneumonia'
                 elif 'tachypnoea' in symptoms:
-                    if hiv_infected_and_not_on_art or (un_clinical_acute_malnutrition == 'SAM'):
+                    if hiv_infected_and_not_on_art or (un_clinical_acute_malnutrition != 'well'):
                         return 'danger_signs_pneumonia'
                     else:
                         return 'fast_breathing_pneumonia'
@@ -1853,10 +1896,21 @@ class Alri(Module):
 
         # apply a porportion that will seek care:
         p = self.parameters
-        prob_sought_fup_care = p['sought_follow_up_care'] > self.rng.random_sample()
+        prob_sought_fup_care = p['sought_follow_up_care']
 
-        if any(sev_symptom in ['danger_signs', 'chest_indrawing', 'respiratory_distress'] for sev_symptom in symptoms):
-            prob_sought_fup_care = p['sought_follow_up_care'] * p['or_care_seeking_perceived_severe_illness']
+        if prob_sought_fup_care < 1.0:
+            if any(sev_symptom in ['danger_signs', 'respiratory_distress'] for sev_symptom in symptoms):
+                if 'danger_signs' in symptoms:
+                    prob_sought_fup_care = to_prob(to_odds(prob_sought_fup_care) * p[f'or_care_seeking_hospital_danger_signs'])
+                if 'respiratory_distress' in symptoms:
+                    prob_sought_fup_care = to_prob(to_odds(prob_sought_fup_care) * p[f'or_care_seeking_hospital_respiratory_distress'])
+                # if 'chest_indrawing' in symptoms:
+                #     prob_sought_fup_care = to_prob(to_odds(prob_sought_fup_care) * p[f'or_care_seeking_if_perceived_severe'])
+            else:
+                if 'chest_indrawing' not in symptoms:
+                    prob_sought_fup_care = to_prob(to_odds(prob_sought_fup_care) * (1 / p[f'or_care_seeking_if_perceived_severe']))
+                else:
+                    prob_sought_fup_care = p['sought_follow_up_care']
 
         prob_fup_care = min(1.0, prob_sought_fup_care)
         sought_follow_up_care = prob_fup_care > self.rng.random_sample()
@@ -2523,17 +2577,17 @@ class Models:
                 # get the probability of resp. distress without chest-indrawing (base group) and the RR from the OR
                 rr_and_prob_rd_in_spc_alri_without_ci = self.get_prob_of_outcome_in_baseline_group(
                     or_value=p['or_respiratory_distress_in_alri_with_chest_indrawing'],
-                    prob_ref=to_prob(to_odds(p['prob_respiratory_distress_in_no_chest_indrawing_SpO2<90%']) *
+                    prob_ref=to_prob(to_odds(p['prob_respiratory_distress_in_no_chest_indrawing_pc']) *
                                      p['or_severe_symptoms_in_severe_pulmonary_complications']),
-                    prop_case_group=to_prob(to_odds(p['prob_chest_indrawing_in_SpO2<90%']) *
+                    prop_case_group=to_prob(to_odds(p['prob_chest_indrawing_in_pulmonary_complications']) *
                                             p['or_severe_symptoms_in_severe_pulmonary_complications']),
-                    prevalence=to_prob(to_odds(p['prob_respiratory_distress_in_SpO2<90%']) *
+                    prevalence=to_prob(to_odds(p['prob_respiratory_distress_in_pulmonary_complications']) *
                                        p['or_severe_symptoms_in_severe_pulmonary_complications']))
 
                 # get the probability of danger signs without respiratory distress (base group) and the RR from the OR
                 rr_and_prob_ds_in_spc_alri_without_rd = self.get_prob_of_outcome_in_baseline_group(
                     or_value=p['or_danger_signs_in_alri_with_respiratory_distress'],
-                    prob_ref=to_prob(to_odds(p[f'prob_danger_signs_in_no_respiratory_distress_SpO2<90%']) *
+                    prob_ref=to_prob(to_odds(p[f'prob_danger_signs_in_no_respiratory_distress_pc']) *
                                      p['or_severe_symptoms_in_severe_pulmonary_complications']),
                     prop_case_group=to_prob(to_odds(p['prob_respiratory_distress_in_pulmonary_complications']) *
                                             p['or_severe_symptoms_in_severe_pulmonary_complications']),
@@ -2636,6 +2690,9 @@ class Models:
             if 'chest_indrawing' in all_symptoms:
                 odds_death *= p[f'or_death_ALRI_{_age_}_chest_indrawing']
 
+            if 'respiratory_distress' in all_symptoms:
+                odds_death *= p['or_death_ALRI_respiratory_distress']
+
         if 'bacteraemia' in complications:
             odds_death *= p['or_death_ALRI_bacteraemia']
 
@@ -2645,116 +2702,116 @@ class Models:
         if any(pc in ['pleural_effusion', 'empyema', 'pneumothorax', 'lung_abscess'] for pc in complications):
             odds_death *= p['or_death_ALRI_pulmonary_complications']
 
-        if 'respiratory_distress' in all_symptoms:
-            odds_death *= p['or_death_ALRI_respiratory_distress']
+        if bacterial_infection in self.module.pathogens['bacterial']:
+            odds_death *= 4.01
 
-        # return min(1.0, to_prob(odds_death))
+        return min(1.0, to_prob(odds_death))
 
-        # Adjustments ----------------------------------
-        if 0 == len(complications):
-            # Adjust the natural risk of death for those uncomplicated CXR- viral causes, without severe symptoms
-            if disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 0.1 * to_prob(odds_death))  # these wouldn't be be in the Lazzerini dataset
-                                                            # or within less than 1%
-
-            # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, without severe symptoms
-            elif disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 0.5 * to_prob(odds_death))  # these wouldn't be be in the Lazzerini dataset
-                                                            # or within less than 1%
-
-            # Adjust the natural risk of death for those uncomplicated CXR- viral causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 0.7 * to_prob(odds_death))  # antibiotic treatment has no effect on outcome
-
-            # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.1 * to_prob(odds_death))  # death for these cases = with/without treatment
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.4 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ bacterial causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.6 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.7 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ bacteriral causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.9 * to_prob(odds_death))
-
-        # Now with complications
-        # Adjust the natural risk of death for those complicated CXR- viral causes, without severe symptoms
-        elif 0 < len(complications):
-            if disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, (1 + (len(complications) * 0.5)) * to_prob(
-                    odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR- bacterial causes, without severe symptoms
-            elif disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, (1.2 + (len(complications) * 0.5)) * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR- viral causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, (1.3 + (len(complications) * 0.5)) * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR- bacterial causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, (1.5 + (len(complications) * 0.5)) * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR+ viral causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, (1.4 + (len(complications) * 0.5)) * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ bacterial causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, (1.6 + (len(complications) * 0.5)) * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, (1.7 + (len(complications) * 0.5)) * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ bacteriral causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, (1.9 + (len(complications) * 0.5)) * to_prob(odds_death))
-
-        else:
-            raise ValueError('Case type missing in the adjustment')
+        # # Adjustments ----------------------------------
+        # if 0 == len(complications):
+        #     # Adjust the natural risk of death for those uncomplicated CXR- viral causes, without severe symptoms
+        #     if disease_type == 'other_alri' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 0.6 * to_prob(odds_death))  # these wouldn't be be in the Lazzerini dataset
+        #         # or within less than 1%
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, without severe symptoms
+        #     elif disease_type == 'other_alri' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 0.8 * to_prob(odds_death))  # these wouldn't be be in the Lazzerini dataset
+        #         # or within less than 1%
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR- viral causes, with severe symptoms
+        #     elif disease_type == 'other_alri' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 0.8 * to_prob(odds_death))  # antibiotic treatment has no effect on outcome
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, with severe symptoms
+        #     elif disease_type == 'other_alri' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1 * to_prob(odds_death))  # death for these cases = with/without treatment
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, without severe symptoms
+        #     elif disease_type == 'pneumonia' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.1 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR+ bacterial causes, without severe symptoms
+        #     elif disease_type == 'pneumonia' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.2 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, with severe symptoms
+        #     elif disease_type == 'pneumonia' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.2 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR+ bacteriral causes, with severe symptoms
+        #     elif disease_type == 'pneumonia' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.3 * to_prob(odds_death))
+        #
+        # # Now with complications
+        # # Adjust the natural risk of death for those complicated CXR- viral causes, without severe symptoms
+        # elif 0 < len(complications):
+        #     if disease_type == 'other_alri' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.1 * to_prob(
+        #             odds_death))
+        #
+        #     # Adjust the natural risk of death for those complicated CXR- bacterial causes, without severe symptoms
+        #     elif disease_type == 'other_alri' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.2 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those complicated CXR- viral causes, with severe symptoms
+        #     elif disease_type == 'other_alri' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.2 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those complicated CXR- bacterial causes, with severe symptoms
+        #     elif disease_type == 'other_alri' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.3 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those complicated CXR+ viral causes, without severe symptoms
+        #     elif disease_type == 'pneumonia' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.2 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR+ bacterial causes, without severe symptoms
+        #     elif disease_type == 'pneumonia' and not any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.3 * to_prob(odds_death))
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, with severe symptoms
+        #     elif disease_type == 'pneumonia' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection not in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.3 * to_prob(odds_death)) # (len(complications) *
+        #
+        #     # Adjust the natural risk of death for those uncomplicated CXR+ bacterial causes, with severe symptoms
+        #     elif disease_type == 'pneumonia' and any(symptom in [
+        #         'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
+        #         bacterial_infection in self.module.pathogens['bacterial']:
+        #         return min(1.0, 1.4 * to_prob(odds_death))
+        #
+        # else:
+        #     raise ValueError('Case type missing in the adjustment')
 
     def treatment_fails(self, **kwargs) -> bool:
         """Determine whether a treatment fails or not: Returns `True` if the treatment fails."""
@@ -2850,6 +2907,8 @@ class Models:
 
             if this_is_follow_up:
                 _risk = to_prob(to_odds(_risk) * p['or_tf_at_follow_up_care_with_previous_oral_antibiotic'])
+                if any([needs_oxygen, might_need_oxygen]) or (any(['danger_signs', 'respiratory_distress']) in symptoms):
+                    _risk *= p['rr_tf_follow_up_care_with_initial_incorrect_care']
                 return min(1.0, _risk)
                 # assume a risk of increase failure for oral antibiotics if no care was provided at the first appt
             else:
@@ -2872,15 +2931,26 @@ class Models:
             risk_tf_oral_antibiotics = risk_tf_oral_antibiotics
 
             if SpO2_level == '<90%':
-                risk_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_SpO2<90%']
+                risk_tf_oral_antibiotics = to_prob(
+                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_SpO2<90%'])
 
             if SpO2_level == '90-92%':
                 risk_tf_oral_antibiotics = to_prob(
                     to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_SpO2_90_92%'])
 
-            if un_clinical_acute_malnutrition in ('MAM', 'SAM'):
+            if un_clinical_acute_malnutrition == 'MAM':
                 risk_tf_oral_antibiotics = to_prob(
-                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_malnutrition'])
+                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_MAM'])
+
+            if un_clinical_acute_malnutrition == 'SAM':
+                risk_tf_oral_antibiotics = to_prob(
+                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_SAM'])
+
+            if 'danger_signs' in symptoms:
+                risk_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_danger_signs']
+
+            if 'respiratory_distress' in symptoms:
+                risk_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_repiratory_distress']
 
             # if 'ma_is_infected' and not 'ma_tx':
             #     risk_tf_oral_antibiotics = to_prob(
@@ -2891,8 +2961,9 @@ class Models:
             if disease_type == 'pneumonia':
                 risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_abnormal_CXR']
 
-            if any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in complications):
-                risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_any_pulmonary_complications']
+            # The effect of HIV
+            if hiv_infected_and_not_on_art:
+                risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_HIV/AIDS']
 
             # return risk_tf_oral_antibiotics
             return min(1.0, risk_tf_oral_antibiotics)
@@ -2908,14 +2979,14 @@ class Models:
             if 'danger_signs' in symptoms:
                 risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_general_danger_signs']
 
+            if 'respiratory_distress' in symptoms:
+                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_respiratory_distress']
+
             if SpO2_level == "<90%":
                 risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_SpO2<90%']
 
             if disease_type == 'pneumonia':
                 risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_abnormal_CXR']
-
-            if any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in complications):
-                risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_any_pulmonary_complications']
 
             # The effect of acute malnutrition
             if un_clinical_acute_malnutrition == 'MAM':
@@ -2937,6 +3008,7 @@ class Models:
                 return 1.0  # If no antibiotic is provided the treatment fails
 
             elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
+
                 # danger_signs_pneumonia given 1st line IV antibiotic:
                 iv_tf_ = _treatment_failure_IV_antibiotics()
                 iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
@@ -2950,26 +3022,17 @@ class Models:
             # danger_signs_pneumonia given oral antibiotics (probably due to misdiagnosis) with or without SpO2<90%
             elif antibiotic_provided_grp == 'oral_antibiotics':
 
-                # get the TF of IV antibiotics without oxygen provision
-                iv_tf_ = modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
-                    _treatment_failure_IV_antibiotics()) if any([needs_oxygen, might_need_oxygen]) and \
-                                                            not oxygen_provided else _treatment_failure_IV_antibiotics()
+                oral_tf_ = min(1.0, _treatment_failure_oral_antibiotics(p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']))
 
-                average_oral_tf = _treatment_failure_oral_antibiotics(
-                    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']) if \
-                    antibiotic_provided.endswith('7days') else _treatment_failure_oral_antibiotics(
-                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) if \
-                    antibiotic_provided.endswith('3days') and ('chest_indrawing' not in symptoms) else \
-                    _treatment_failure_oral_antibiotics(p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) if \
-                        antibiotic_provided.endswith('3days') and ('chest_indrawing' in symptoms) else \
-                        _treatment_failure_oral_antibiotics(p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+                # # get the TF of IV antibiotics without oxygen provision
+                # iv_tf_ = modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(
+                #     _treatment_failure_IV_antibiotics()) if any([needs_oxygen, might_need_oxygen]) and \
+                #                                             not oxygen_provided else _treatment_failure_IV_antibiotics()
+                #
+                # # adjusted_oral_tf_ = iv_tf_ * (1 / (0.65 * fraction))
+                # oral_tf_ = iv_tf_ * 1.3537
 
-                # fraction to adjust for the differences in the TF model for oral vs IV
-                fraction = (average_oral_tf / iv_tf_) if (iv_tf_ != 0) else 1
-
-                adjusted_oral_tf_ = iv_tf_ * (1 / (0.55 * fraction))
-
-                oral_tf_ = modify_failure_risk_when_follow_up(adjusted_oral_tf_)
+                oral_tf_ = modify_failure_risk_when_follow_up(oral_tf_)
                 oral_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(oral_tf_)
 
                 return oral_tf_
@@ -2982,36 +3045,6 @@ class Models:
             if antibiotic_provided_grp == '':
                 return 1.0  # If no antibiotic is provided the treatment fails
 
-            # If symptom-based classification == fast-breathing pneum with SpO2<90% - give IV antibiotics + oxygen
-            elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
-
-                # base oral TF for SpO2<90% or SpO2>=90% * RR of IV antibiotics
-                rr_tf_iv = p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
-                    antibiotic_provided_grp == '1st_line_IV_antibiotics' and needs_oxygen \
-                    else p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
-                    antibiotic_provided_grp == '2nd_line_IV_antibiotics' and needs_oxygen \
-                    else p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
-                    antibiotic_provided_grp == '1st_line_IV_antibiotics' and might_need_oxygen \
-                    else p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
-                    antibiotic_provided_grp == '2nd_line_IV_antibiotics' and might_need_oxygen \
-                    else 1.0
-
-                iv_tf_ = _treatment_failure_oral_antibiotics(
-                    p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']) * rr_tf_iv if \
-                    age_exact_years < 1 / 6 else \
-                    _treatment_failure_oral_antibiotics(
-                        p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * rr_tf_iv
-
-                iv_tf_ = min(1.0, iv_tf_)
-                iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
-                iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
-
-                # adjust the TF base on oxygen provision
-                if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
-                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
-                else:
-                    return iv_tf_
-
             # oral antibiotics
             elif antibiotic_provided_grp == 'oral_antibiotics':
                 oral_tf_ = _treatment_failure_oral_antibiotics(
@@ -3021,6 +3054,45 @@ class Models:
                 oral_tf_ = modify_failure_risk_when_follow_up(oral_tf_)
                 oral_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(oral_tf_)
                 return oral_tf_
+
+            # If symptom-based classification == fast-breathing pneum with SpO2<90% - give IV antibiotics + oxygen
+            elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
+                # danger_signs_pneumonia given 1st line IV antibiotic:
+                iv_tf_ = min(1.0, _treatment_failure_IV_antibiotics())
+                iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
+
+                if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                    return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
+                else:
+                    return iv_tf_
+
+                # # base oral TF for SpO2<90% or SpO2>=90% * RR of IV antibiotics
+                # rr_tf_iv = p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
+                #     needs_oxygen and antibiotic_provided_grp=='1st_line_IV_antibiotics' else \
+                #     p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
+                #         needs_oxygen and antibiotic_provided_grp=='2nd_line_IV_antibiotics' else \
+                #         p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
+                #             might_need_oxygen and antibiotic_provided_grp=='1st_line_IV_antibiotics' else \
+                #     p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
+                #         might_need_oxygen and antibiotic_provided_grp=='2nd_line_IV_antibiotics' else 0.8025 if \
+                #         antibiotic_provided_grp=='1st_line_IV_antibiotics' else 0.91485
+                #
+                # iv_tf_ = _treatment_failure_oral_antibiotics(
+                #     p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']) * rr_tf_iv if \
+                #     age_exact_years < 1 / 6 else \
+                #     _treatment_failure_oral_antibiotics(
+                #         p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * rr_tf_iv
+                #
+                # iv_tf_ = min(1.0, iv_tf_)
+                # iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                # iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
+                #
+                # # adjust the TF base on oxygen provision
+                # if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                #     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
+                # else:
+                #     return iv_tf_
 
             else:
                 raise ValueError(f'Unrecognised antibiotic{antibiotic_provided_grp}.')
@@ -3052,30 +3124,39 @@ class Models:
 
             # 1st line IV antibiotic:
             elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
-
-                rr_tf_iv = p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
-                    antibiotic_provided_grp == '1st_line_IV_antibiotics' and needs_oxygen \
-                    else p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
-                    antibiotic_provided_grp == '2nd_line_IV_antibiotics' and needs_oxygen \
-                    else p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
-                    antibiotic_provided_grp == '1st_line_IV_antibiotics' and might_need_oxygen \
-                    else p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
-                    antibiotic_provided_grp == '2nd_line_IV_antibiotics' and might_need_oxygen \
-                    else 1.0
-
-                iv_tf_ = _treatment_failure_oral_antibiotics(
-                    p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * rr_tf_iv
-
-                iv_tf_ = min(1.0, iv_tf_)
-
+                # danger_signs_pneumonia given 1st line IV antibiotic:
+                iv_tf_ = min(1.0, _treatment_failure_IV_antibiotics())
                 iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
                 iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
 
-                # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
                     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
                 else:
                     return iv_tf_
+
+                # # base oral TF for SpO2<90% or SpO2>=90% * RR of IV antibiotics
+                # rr_tf_iv = p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
+                #     needs_oxygen and antibiotic_provided_grp=='1st_line_IV_antibiotics' else \
+                #     p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
+                #         needs_oxygen and antibiotic_provided_grp=='2nd_line_IV_antibiotics' else \
+                #         p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
+                #             might_need_oxygen and antibiotic_provided_grp=='1st_line_IV_antibiotics' else \
+                #             p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
+                #                 might_need_oxygen and antibiotic_provided_grp=='2nd_line_IV_antibiotics' else 0.8025 if \
+                #                 antibiotic_provided_grp=='1st_line_IV_antibiotics' else 0.91485
+                #
+                # iv_tf_ = _treatment_failure_oral_antibiotics(
+                #     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * rr_tf_iv
+                #
+                # iv_tf_ = min(1.0, iv_tf_)
+                # iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                # iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
+                #
+                # # adjust the TF base on oxygen provision
+                # if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                #     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
+                # else:
+                #     return iv_tf_
 
             else:
                 raise ValueError(f'Unrecognised antibiotic{antibiotic_provided_grp}.')
@@ -3095,30 +3176,39 @@ class Models:
 
             # If symptom-based classification == cough/cold classification with SpO2<90% - give IV antibiotics + oxygen
             elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
-
-                # base TF for SpO2<90% or SpO2>=90%
-                rr_tf_iv = p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
-                    antibiotic_provided_grp == '1st_line_IV_antibiotics' and needs_oxygen \
-                    else p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
-                    antibiotic_provided_grp == '2nd_line_IV_antibiotics' and needs_oxygen \
-                    else p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
-                    antibiotic_provided_grp == '1st_line_IV_antibiotics' and might_need_oxygen \
-                    else p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
-                    antibiotic_provided_grp == '2nd_line_IV_antibiotics' and might_need_oxygen \
-                    else 1.0
-
-                iv_tf_ = _treatment_failure_oral_antibiotics(
-                    p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * rr_tf_iv
-
-                iv_tf_ = min(1.0, iv_tf_)
+                # danger_signs_pneumonia given 1st line IV antibiotic:
+                iv_tf_ = min(1.0, _treatment_failure_IV_antibiotics())
                 iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
                 iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
 
-                # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
                     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
                 else:
                     return iv_tf_
+
+                # # base oral TF for SpO2<90% or SpO2>=90% * RR of IV antibiotics
+                # rr_tf_iv = p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
+                #     needs_oxygen and antibiotic_provided_grp=='1st_line_IV_antibiotics' else \
+                #     p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
+                #         needs_oxygen and antibiotic_provided_grp=='2nd_line_IV_antibiotics' else \
+                #         p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
+                #             might_need_oxygen and antibiotic_provided_grp=='1st_line_IV_antibiotics' else \
+                #             p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if \
+                #                 might_need_oxygen and antibiotic_provided_grp=='2nd_line_IV_antibiotics' else 0.8025 if \
+                #                 antibiotic_provided_grp=='1st_line_IV_antibiotics' else 0.91485
+                #
+                # iv_tf_ = _treatment_failure_oral_antibiotics(
+                #     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * rr_tf_iv
+                #
+                # iv_tf_ = min(1.0, iv_tf_)
+                # iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                # iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
+                #
+                # # adjust the TF base on oxygen provision
+                # if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
+                #     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
+                # else:
+                #     return iv_tf_
 
             else:
                 raise ValueError(f'Unrecognised antibiotic{antibiotic_provided_grp}.')
@@ -4363,8 +4453,8 @@ class AlriPropertiesOfOtherModules(Module):
         # NOTE: 'nb_breastfeeding_status' and 'nb_low_birth_weight_status' already in simplified births!!
     }
 
-    def __init__(self, name=None, hiv_prev=0.01, art_cov=0.75, moderate_wasting=0.034, severe_wasting=0.013,
-                 va_pcv13=0.4992, va_hib=0.875, va_measles=0.772):
+    def __init__(self, name=None, hiv_prev=0.01, art_cov=0.9, moderate_wasting=0.02444, severe_wasting=0.00156,
+                 va_pcv13=0.91, va_hib=0.91, va_measles=0.65):
         super().__init__(name)
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov
@@ -4393,7 +4483,7 @@ class AlriPropertiesOfOtherModules(Module):
 
         df.loc[df.is_alive, 'un_WHZ_category'] = self.rng.choice(
             ['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2'],
-            p=[self.severe_wasting, self.moderate_wasting, 0.953], size=sum(df.is_alive))  # 0.953
+            p=[self.severe_wasting, self.moderate_wasting, 0.974], size=sum(df.is_alive))
 
         df.loc[df.is_alive & (df.un_WHZ_category == 'WHZ>=-2'), 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2'), 'un_clinical_acute_malnutrition'] = 'MAM'
@@ -4596,7 +4686,7 @@ def _make_perfect_conditions(alri_module):
 
     p['referral_rate_severe_cases_from_hc'] = 1.0
     p['pulse_oximeter_usage_rate'] = 1.0
-    p['sought_follow_up_care'] = 1.0
+    # p['sought_follow_up_care'] = 1.0
 
 
 def _make_high_risk_of_death(alri_module):

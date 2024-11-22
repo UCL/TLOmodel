@@ -28,7 +28,7 @@ from tlo.methods.alri import (
 )
 from tlo.util import sample_outcome
 
-MODEL_POPSIZE = 15_000
+MODEL_POPSIZE = 150_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
@@ -101,26 +101,30 @@ def generate_case_mix() -> pd.DataFrame:
         while len(new_alri) < MIN_SAMPLE_OF_NEW_CASES:
             new_alri.extend(
                 [(k, v) for k, v in
-                 sample_outcome(probs=probs_of_acquiring_pathogen, rng=alri_module_with_perfect_diagnosis.rng).items()]
+                 sample_outcome(probs=probs_of_acquiring_pathogen,
+                                rng=alri_module_with_perfect_diagnosis.rng).items()]
             )
 
         # Return dataframe in which person_id is replaced with age and sex (ignoring variation in vaccine /
         # under-nutrition).
         return pd.DataFrame(columns=['person_id', 'pathogen'], data=new_alri) \
-            .merge(sim1.population.props[['age_exact_years', 'sex']],
+            .merge(sim1.population.props[['age_exact_years', 'sex', 'hv_inf', 'hv_art',
+                                          'va_hib_all_doses', 'va_pneumo_all_doses', 'un_clinical_acute_malnutrition']],
                    right_index=True, left_on=['person_id'], how='left') \
             .drop(columns=['person_id'])
 
     def char_of_incident_case(sex,
                               age_exact_years,
+                              hv_inf, hv_art,
                               pathogen,
-                              va_hib_all_doses=False,
-                              va_pneumo_all_doses=False,
-                              un_clinical_acute_malnutrition="well",
+                              va_hib_all_doses,
+                              va_pneumo_all_doses,
+                              un_clinical_acute_malnutrition,
                               ) -> dict:
         """Return the characteristics that are determined by IncidentCase (over 1000 iterations), given an infection
         caused by the pathogen"""
-        incident_case = AlriIncidentCase(module=alri_module_with_perfect_diagnosis, person_id=None, pathogen=None)
+        incident_case = AlriIncidentCase(module=alri_module_with_perfect_diagnosis,
+                                         person_id=None, pathogen=None)
 
         samples = []
         for _ in range(NUM_REPS_FOR_EACH_CASE):
@@ -135,10 +139,12 @@ def generate_case_mix() -> pd.DataFrame:
 
             samples.append({**nature_of_char, **{'sex': sex,
                                                  'age_exact_years': age_exact_years,
+                                                 'hv_inf': hv_inf, 'hv_art': hv_art,
                                                  'pathogen': pathogen,
                                                  'va_hib_all_doses': va_hib_all_doses,
                                                  'va_pneumo_all_doses': va_pneumo_all_doses,
                                                  'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
+
                                                  }
                             })
 
@@ -150,7 +156,10 @@ def generate_case_mix() -> pd.DataFrame:
 
     for x in incident_case_mix.itertuples():
         overall_case_mix.extend(
-            char_of_incident_case(sex=x.sex, age_exact_years=x.age_exact_years, pathogen=x.pathogen)
+            char_of_incident_case(sex=x.sex, age_exact_years=x.age_exact_years, hv_inf=x.hv_inf, hv_art=x.hv_art,
+                                  pathogen=x.pathogen,
+                                  va_hib_all_doses=x.va_hib_all_doses, va_pneumo_all_doses=x.va_pneumo_all_doses,
+                                  un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition)
         )
 
     return pd.DataFrame(overall_case_mix)
@@ -162,6 +171,9 @@ def treatment_efficacy(
     oxygen_saturation,
     disease_type,
     complications,
+    un_clinical_acute_malnutrition,
+    hiv_infected_and_not_on_art,
+    duration_in_days_of_alri,
     oximeter_available,
     oxygen_available,
     treatment_perfect,
@@ -179,13 +191,14 @@ def treatment_efficacy(
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
         age_exact_years=age_exact_years, symptoms=symptoms, oxygen_saturation=oxygen_saturation,
-        facility_level=_facility_level, use_oximeter=oximeter_available, hiv_infected_and_not_on_art=False,
-        un_clinical_acute_malnutrition='well')
+        facility_level=_facility_level, use_oximeter=oximeter_available,
+        hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition)
 
     imci_symptom_based_classification = hsi._get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
-        symptoms=symptoms, facility_level=_facility_level, hiv_infected_and_not_on_art=False,
-        un_clinical_acute_malnutrition='well',
+        symptoms=symptoms, facility_level=_facility_level, hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
     )
 
     # Get the treatment selected based on classification given
@@ -212,9 +225,9 @@ def treatment_efficacy(
         age_exact_years=age_exact_years,
         symptoms=symptoms,
         complications=complications,
-        hiv_infected_and_not_on_art=False,
-        un_clinical_acute_malnutrition='well',
-        pre_referral_oxygen='not_provided'
+        hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+        pre_referral_oxygen='not_applicable',
     )
 
     # Return percentage probability of treatment success
@@ -227,6 +240,8 @@ def treatment_efficacy_for_each_classification(
     oxygen_saturation,
     disease_type,
     complications,
+    un_clinical_acute_malnutrition,
+    hiv_infected_and_not_on_art,
     oximeter_available,
     oxygen_available,
     classification_for_treatment
@@ -252,8 +267,8 @@ def treatment_efficacy_for_each_classification(
     # get the IMCI symptoms based classification
     imci_symptom_based_classification = hsi._get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
-        symptoms=symptoms, facility_level=_facility_level, hiv_infected_and_not_on_art=False,
-        un_clinical_acute_malnutrition='well',
+        symptoms=symptoms, facility_level=_facility_level, hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
     )
 
     # apply TFs by oral/IV antibiotic +/- oxygen (proxy by classification)
@@ -269,8 +284,8 @@ def treatment_efficacy_for_each_classification(
         age_exact_years=age_exact_years,
         symptoms=symptoms,
         complications=complications,
-        hiv_infected_and_not_on_art=False,
-        un_clinical_acute_malnutrition='well',
+        hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
         pre_referral_oxygen='not_applicable',
         this_is_follow_up=False
     )
@@ -286,8 +301,8 @@ def treatment_efficacy_for_each_classification(
             age_exact_years=age_exact_years,
             symptoms=symptoms,
             complications=complications,
-            hiv_infected_and_not_on_art=False,
-            un_clinical_acute_malnutrition='well',
+            hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
             pre_referral_oxygen='not_applicable',
             this_is_follow_up=False
         ))
@@ -303,6 +318,12 @@ def generate_table():
     # Get Case Mix
     df = generate_case_mix()
 
+    hiv_not_on_art = list()
+    for x in df.itertuples():
+        hiv_not_on_art.append({
+            'hiv_not_on_art': (x.hv_inf and x.hv_art != "on_VL_suppressed")})
+    df = df.join(pd.DataFrame(hiv_not_on_art))
+
     # Consider risk of death for this person, intrinsically and under different conditions of treatments
     risk_of_death = list()
     for x in df.itertuples():
@@ -317,6 +338,17 @@ def generate_table():
                 all_symptoms=x.symptoms,
                 un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
             ),
+            'will_die_2': alri_module_with_perfect_diagnosis.models.will_die_of_alri(
+                age_exact_years=x.age_exact_years,
+                sex=x.sex,
+                bacterial_infection=x.pathogen,
+                disease_type=x.disease_type,
+                SpO2_level=x.oxygen_saturation,
+                complications=x.complications,
+                all_symptoms=x.symptoms,
+                un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
+            ),
+
             'treatment_efficacy_iv_antibiotics_with_oxygen':
                 treatment_efficacy_for_each_classification(
                     # Information about the patient:
@@ -325,6 +357,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -340,9 +374,11 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
-                    oximeter_available=True,
+                    oximeter_available=False,
                     oxygen_available=False,
                     classification_for_treatment='danger_signs_pneumonia'
                 ),
@@ -355,6 +391,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -370,6 +408,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -381,14 +421,14 @@ def generate_table():
             'classification_for_treatment_decision_with_oximeter_perfect_accuracy':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
                     age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
-                    facility_level=_facility_level, use_oximeter=True, hiv_infected_and_not_on_art=False,
-                    un_clinical_acute_malnutrition='well'),
+                    facility_level=_facility_level, use_oximeter=True, hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition),
 
             'classification_for_treatment_decision_without_oximeter_perfect_accuracy':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
                     age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
-                    facility_level=_facility_level, use_oximeter=False, hiv_infected_and_not_on_art=False,
-                    un_clinical_acute_malnutrition='well')
+                    facility_level=_facility_level, use_oximeter=False, hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition)
         })
 
     return df.join(pd.DataFrame(risk_of_death))
@@ -438,7 +478,7 @@ if __name__ == "__main__":
     # Treatment efficacies table
     risk_of_death = summarize_by(
         df=table,
-        by=['oxygen_saturation', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy', 'disease_type'],
+        by=['oxygen_saturation', 'has_danger_signs', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy', 'disease_type'],
         columns=[
             'prob_die_if_no_treatment',
             'treatment_efficacy_iv_antibiotics_with_oxygen',
@@ -446,12 +486,15 @@ if __name__ == "__main__":
             'treatment_efficacy_oral_antibiotics_only',
             'treatment_efficacy_no_antibiotics'
         ]
+
     ).assign(
         fraction_of_deaths=lambda df: (
             (df.fraction * df.prob_die_if_no_treatment) / (df.fraction * df.prob_die_if_no_treatment).sum()
         )
     )
     print(f"{risk_of_death=}")
+
+    will_die = table.groupby('will_die').size() / table.groupby('will_die').size().sum()
 
     # risk of deaths if no treatment
     (risk_of_death.fraction * risk_of_death.prob_die_if_no_treatment).sum()  # 12.38%
@@ -497,6 +540,3 @@ if __name__ == "__main__":
     fig.tight_layout()
     fig.show()
     plt.close(fig)
-
-
-

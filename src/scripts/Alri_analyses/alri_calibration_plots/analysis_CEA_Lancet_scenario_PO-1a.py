@@ -46,14 +46,14 @@ NUM_REPS_FOR_EACH_CASE = 20
 # scenario = 'baseline_ant'
 # scenario = 'baseline_ant_with_po_level2'
 # scenario = 'baseline_ant_with_po_level1b'
-# scenario = 'baseline_ant_with_po_level1a'
+scenario = 'baseline_ant_with_po_level1a'
 # scenario = 'baseline_ant_with_po_level0'
 # scenario = 'existing_psa'
 # scenario = 'existing_psa_with_po_level2'
 # scenario = 'existing_psa_with_po_level1b'
 # scenario = 'existing_psa_with_po_level1a'
 # scenario = 'existing_psa_with_po_level0'
-scenario = 'planned_psa'
+# scenario = 'planned_psa'
 # scenario = 'planned_psa_with_po_level2'
 # scenario = 'planned_psa_with_po_level1b'
 # scenario = 'planned_psa_with_po_level1a'
@@ -78,8 +78,7 @@ implementation_level = ('2') if 'with_po_level2' in scenario else ('2', '1b') if
         'none'
 
 # Helper function for conversion between odds and probabilities
-to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731tab e402c
-
+to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
 to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
 
 # Date for saving the image for log-file
@@ -325,7 +324,7 @@ def treatment_efficacy(
 
     referral_status = 'needs referral, referred' if needs_referral and referred_up else \
         'needs referral, not referred' if needs_referral and not referred_up else \
-        'no referral needed' if not needs_referral else None
+            'no referral needed' if not needs_referral else None
 
     # Provision for pre-referral oxygen treatment
     if needs_referral and (oxygen_saturation == '<90%'):
@@ -419,7 +418,7 @@ def treatment_efficacy(
 
     referral_status_follow_up = 'needs referral, referred' if needs_referral_follow_up and referred_up_follow_up else \
         'needs referral, not referred' if needs_referral_follow_up and not referred_up_follow_up else \
-        'no referral needed' if not needs_referral_follow_up else None
+            'no referral needed' if not needs_referral_follow_up else None
 
     # Provision for pre-referral oxygen treatment
     if needs_referral_follow_up and (oxygen_saturation == '<90%'):
@@ -668,8 +667,8 @@ if __name__ == "__main__":
     iq1, iq2 = np.percentile(table['age_exact_years'], [25, 75])
     total_deaths = table.loc[(table[
         f'treatment_efficacy_scenario_{scenario}_{dx_accuracy}_hw_dx']) &
-              (table[f'follow_up_treatment_failure_scenario_{scenario}_{dx_accuracy}_hw_dx'] != False),
-              'will_die'].sum()
+                             (table[f'follow_up_treatment_failure_scenario_{scenario}_{dx_accuracy}_hw_dx'] != False),
+                             'will_die'].sum()
 
     # deaths_scenario = table['prob_die_if_no_treatment'] * (1.0 - table[
     #     f'treatment_efficacy_scenario_{scenario}_{dx_accuracy}_hw_dx'] / 100.0)
@@ -709,11 +708,11 @@ if __name__ == "__main__":
             pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%')]))
 
         full_oxygen_provided = table.loc[((final_facility == '2') | (final_facility == '1b')),
-                                f'oxygen_provided_scenario_{scenario}_{dx_accuracy}_hw_dx'].sum()
+                                         f'oxygen_provided_scenario_{scenario}_{dx_accuracy}_hw_dx'].sum()
 
         # add follow-up cases from failure oral treatment
         follow_up_full_oxygen_provided = table.loc[((final_facility == '2') | (final_facility == '1b')),
-                                       f'oxygen_provided_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].sum()
+                                                   f'oxygen_provided_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].sum()
 
         total_full_oxygen_provided = full_oxygen_provided + follow_up_full_oxygen_provided
 
@@ -918,7 +917,7 @@ if __name__ == "__main__":
         # OXYGEN COST ----------------
         oxygen_scenario = 'existing_psa' if scenario.startswith('existing') else \
             'planned_psa' if scenario.startswith('planned') else \
-            'all_district_psa' if scenario.startswith('all_district') else 'baseline_ant'
+                'all_district_psa' if scenario.startswith('all_district') else 'baseline_ant'
 
         # oxygen unit cost changes with PO vs without
         p = sim1.modules['Alri'].parameters
@@ -1060,7 +1059,7 @@ if __name__ == "__main__":
         [table['classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'],
          table['oxygen_saturation']]).sum() / table.groupby(
         [table['classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'],
-         table['oxygen_saturation']]).size()  # <90% 0.30552, 90-92%: 0.13409
+         table['oxygen_saturation']]).size()
 
     # TF
     TF = table[f'treatment_efficacy_scenario_{scenario}_{dx_accuracy}_hw_dx'].groupby(by=[table[f'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'], table['disease_type'], table['oxygen_saturation']]).sum() / \
@@ -1069,15 +1068,15 @@ if __name__ == "__main__":
 
     will_die_with_treatment = table.loc[
         (((table[f'treatment_efficacy_scenario_{scenario}_{dx_accuracy}_hw_dx']) &
-         (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'] == False)) |
-        ((table[f'treatment_efficacy_scenario_{scenario}_{dx_accuracy}_hw_dx']) &
-         (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[0] == True) &
-         (table[f'follow_up_treatment_failure_scenario_{scenario}_{dx_accuracy}_hw_dx'] == True))),
+          (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'] == False)) |
+         ((table[f'treatment_efficacy_scenario_{scenario}_{dx_accuracy}_hw_dx']) &
+          (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[0] == True) &
+          (table[f'follow_up_treatment_failure_scenario_{scenario}_{dx_accuracy}_hw_dx'] == True))),
         'will_die'].groupby(by=[table[f'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'], table['oxygen_saturation']]).sum()
 
     will_die_with_treatment_prop = will_die_with_treatment / table.groupby(
         [table['classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'],
-         table['oxygen_saturation']]).size()  # 15.566% prob die with treatment spo2<90%, 4.285% spo2 90-92% - baseline; perfect hw dx = <90%: 0.094527588, 90-92: 0.01928559
+         table['oxygen_saturation']]).size()
 
     classificatioN_distribution = table.groupby(
         [table['classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'],
@@ -1115,31 +1114,27 @@ if __name__ == "__main__":
             LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 unscaled_intercept,
-                Predictor('disease_type', external=True).when(True, 1.71),
+                Predictor('disease_type', external=True).when('pneumonia', 1.71),
                 # Predictor('complications', external=True).when(True, 2.31),
                 Predictor('hiv_not_on_art', external=True).when(True, 1.8),
                 Predictor('un_clinical_acute_malnutrition', external=True).when('MAM', 1.48),
                 Predictor('un_clinical_acute_malnutrition', external=True).when('SAM', 2.02),
                 Predictor('oxygen_saturation', external=True).when(True, 1.28),
                 Predictor('symptoms', external=True).when(True, 1.55),
-                # Predictor('respiratory_distress', external=True).when(True, 1.11),
                 # Predictor('referral_hc', external=True).when(True, 1.72),
             )
 
         # make unscaled linear model
         unscaled_tf = unscaled_lm.predict(df,
-                                          disease_type=(df['disease_type'] =='pneumonia') &
-                                                       (df['symptoms'].apply(lambda x: True if
-                                                                                                ('danger_signs' not in x) else False)) & (
-                                                           (df['un_clinical_acute_malnutrition'] =='well') & (df.oxygen_saturation != '<90%')
-                                                       ),
+                                          disease_type=df['disease_type'],
                                           # complications=any(['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax']) in df.complications,
                                           hiv_not_on_art=df['hiv_not_on_art'],
                                           un_clinical_acute_malnutrition=df['un_clinical_acute_malnutrition'],
                                           oxygen_saturation=df.oxygen_saturation == '<90%',
                                           symptoms=df['symptoms'].apply(lambda x: True if 'danger_signs' in x else False),
-                                          respiratory_distress=df['symptoms'].apply(lambda x: True if 'respiratory_distress' in x else False),
-                                          referral_hc=(df['seek_level'].apply(lambda x: True if '0' in x or '1a' in x else False)) & (df[f'referral_status_and_oxygen_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[1] == 'not provided') & (df.classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1 == 'danger_signs_pneumonia')
+                                          # referral_hc=df['seek_level'].apply(lambda x: True if '0' in x or '1a' in x else False) and
+                                          #     df[f'referral_status_and_oxygen_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[1] == 'not provided' and
+                                          #     df.classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1 == 'danger_signs_pneumonia'
                                           )
 
         cases_combo = unscaled_tf.unique()
@@ -1158,8 +1153,8 @@ if __name__ == "__main__":
     df_ds_pneumonia = df.drop(df.index[df[f"classification_for_treatment_decision_with_oximeter_perfect_accuracy_level2"] != 'danger_signs_pneumonia'])
     # df_ds_pneumonia = df.loc[(df[f"classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2"] == 'danger_signs_pneumonia') &
     #                          ((df[f"final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx"] == '1b') | (df[f"final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx"] == '2'))]
-    df_ds_pneumonia_failed_1st = df_ds_pneumonia.drop(
-        df_ds_pneumonia.index[(df_ds_pneumonia[f'first_line_iv_failed_scenario_{scenario}_{dx_accuracy}_hw_dx'] == False)])
+    # df_ds_pneumonia_failed_1st = df_ds_pneumonia.drop(
+    #     df_ds_pneumonia.index[(df_ds_pneumonia[f'first_line_iv_failed_scenario_{scenario}_{dx_accuracy}_hw_dx'] == False)])
 
     get_base_tf = scaled_baseline_tf(df=df_ds_pneumonia, unscaled_intercept=0.17085) # 0.0906
     get_base_tf_2nd_line = scaled_baseline_tf(df=df_ds_pneumonia, unscaled_intercept=0.196) # 0.0638 use the TF from perfect scenario 1.PO-0
@@ -1177,7 +1172,6 @@ if __name__ == "__main__":
                     LinearModelType.MULTIPLICATIVE,
                     unscaled_intercept,
                     Predictor('disease_type', external=True).when('pneumonia', 1.71),
-                    Predictor('hiv_not_on_art', external=True).when(True, 1.8),
                     Predictor('danger_signs', external=True).when(True, 2.1),
                     Predictor('respiratory_distress', external=True).when(True, 1.35),
                 )
@@ -1186,7 +1180,6 @@ if __name__ == "__main__":
             unscaled_tf_multiplicative = unscaled_lm_multiplicative.predict(
                 df,
                 disease_type=df['disease_type'],
-                hiv_not_on_art=df['hiv_not_on_art'],
                 danger_signs=df['symptoms'].apply(lambda x: True if 'danger_signs' in x else False),
                 respiratory_distress=df['symptoms'].apply(lambda x: True if 'respiratory_distress' in x else False)
             )
@@ -1217,6 +1210,8 @@ if __name__ == "__main__":
         # make unscaled linear model
         unscaled_tf = unscaled_lm.predict(
             df,
+            # disease_type=df['disease_type'],
+            # complications=any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in df.complications),
             un_clinical_acute_malnutrition=df['un_clinical_acute_malnutrition'],
             below90SpO2=df.oxygen_saturation == '<90%',
             moderate_hypoxaemia=df.oxygen_saturation == '90-92%'
@@ -1236,10 +1231,10 @@ if __name__ == "__main__":
     # TF for > 2 months
     df = table.drop(table[table.age_exact_years < 1 / 6].index)
     df_fb_pneumonia = df.loc[
-                      (df[f"classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1"] == 'fast_breathing_pneumonia'), :]
+                      (df[f"classification_for_treatment_decision_with_oximeter_perfect_accuracy_level2"] == 'fast_breathing_pneumonia'), :]
     get_base_oral_tf_fb_pneum = scaled_baseline_oral_tf(df=df_fb_pneumonia, unscaled_intercept=0.101)
 
-    df_ci_pneumonia = df.loc[(df[f"classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1"] == 'chest_indrawing_pneumonia'), :]
+    df_ci_pneumonia = df.loc[(df[f"classification_for_treatment_decision_with_oximeter_perfect_accuracy_level2"] == 'chest_indrawing_pneumonia'), :]
     get_base_oral_tf_ci_pneum = scaled_baseline_oral_tf(df=df_ci_pneumonia, unscaled_intercept=0.108)   # 0.07618 // 0.088395
 
     # TF for young infants < 2 months
@@ -1254,20 +1249,20 @@ if __name__ == "__main__":
             LinearModel(
                 LinearModelType.LOGISTIC,
                 unscaled_intercept,
-                # Predictor('disease_type', external=True).when('pneumonia', 2.79),
+                Predictor('disease_type', external=True).when('pneumonia', 2.79),
                 Predictor('sex', external=True).when('F', 1.25),
-                # Predictor('complications', external=True).when(True, 2.55),
+                Predictor('complications', external=True).when(True, 2.55),
                 Predictor('un_clinical_acute_malnutrition', external=True).when('SAM', 2.37),
-                Predictor('below90SpO2', external=True).when(True, 5.04),
-                Predictor('moderate_hypoxaemia', external=True).when(True, 1.54),
+                Predictor('below90SpO2', external=True).when(True, 5.04), # 5.04
+                Predictor('moderate_hypoxaemia', external=True).when(True, 1.54), # 1.54
                 Predictor('chest_indrawing', external=True).when(True, 1.26),
-                Predictor('danger_signs', external=True).when(True, 2.45),
-                Predictor('respiratory_distress', external=True).when(True, 1.58),
-                # Predictor('bacteraemia', external=True).when(True, 2.51),
+                Predictor('danger_signs', external=True).when(True, 2.45), # 2.45
+                Predictor('respiratory_distress', external=True).when(True, 1.65),
+                Predictor('bacteraemia', external=True).when(True, 2.51),
                 # # under 2 mo
-                # Predictor('danger_signs', external=True).when(True, 2.4),
-                # Predictor('moderate_hypoxaemia', external=True).when(True, 3.3),
-                # Predictor('below90SpO2', external=True).when(True, 4.5),
+                # Predictor('danger_signs', external=True).when(True, 2.4), # 2.45
+                # Predictor('moderate_hypoxaemia', external=True).when(True, 3.3), # 1.54
+                # Predictor('below90SpO2', external=True).when(True, 4.5), # 5.04
             )
 
         # make unscaled linear model
@@ -1296,118 +1291,5 @@ if __name__ == "__main__":
 
 
     df_death = table.drop(table[table.age_exact_years < 1 / 6].index)
-    # df_death = df_death.drop(df_death[df_death['classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2'] != 'danger_signs_pneumonia'].index)
     get_base_death = scaled_baseline_death(df=df_death, unscaled_intercept=0.02)  #0.02 overall CFR
 
-
-# 1.1 Import TLO model availability data
-#------------------------------------------------------
-resourcefilepath = Path('./resources')
-tlo_availability_df = pd.read_csv(resourcefilepath / "healthsystem" / "consumables" / "ResourceFile_Consumables_availability_small.csv")
-# Drop any scenario data previously included in the resourcefile
-tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_code', 'available_prop']]
-
-# 1.1.1 Attach district, facility level, program to this dataset
-#----------------------------------------------------------------
-# Get TLO Facility_ID for each district and facility level
-mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
-districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
-fac_levels = {'0', '1a', '1b', '2', '3', '4'}
-tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
-                                                on = ['Facility_ID'], how='left')
-
-check = tlo_availability_df.groupby(['Facility_Level', 'item_code']).mean()
-# amoxicillin 125 --- 0: 0.25758, 1a: 0.51568, 1b: 0.61787, 2: 0.85851, 3: 0.94966
-# amoxicillin suspension 125mg/5ml - 70 --- 0: 0.12330, 1a: 0.24660, 1b: 0.31790, 2: 0.50819, 3: 0.77481
-
-# gentamicin 106 --- 0: 0.44312, 1a: 0.88739, 1b: 0.86271, 2: 0.89192, 3: 0.96970
-# ampicillin 86 --- 0: 0, 1a: 0, 1b: 0.71114, 2: 0.74023, 3: 0.95411
-# benzylpen 99 ---- 0: 0.42456, 1a: 0.85039, 1b: 0.66246, 2: 0.91312, 3: 0.96970
-# benzylpen 1g 2606 --- 0: 0.21851, 1a: 0.43703, 1b: 0.50399, 2: 0.31189, 3: 0.38913
-# ceftriaxone 81 --- 0: 0.27986, 1a: 0.56095, 1b: 0.74610, 2: 0.89684, 3: 0.96621
-# fluoxacillin 1831 --- 0: 0, 1a: 0, 1b: 0, 2: 0.32914, 3: 0.66691
-
-# co-trimoxazole 203 ---- 0: 0.38546, 1a: 0.77091, 1b: 0.82631, 2: 0.73216, 3: 0.78459
-# erythromycin 123 --- 0: 0.15414, 1a: 0.30827, 1b: 0.43940, 2: 0.59340, 3: 0.84973
-# azithromycin --- 1a and 1b 0.5077 - assume 1a: 0.4577, 1b: 0.5577, half of 1a for 0: 0.22885, 2: 0.78655, 3: 0.900975
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Define the dataset
-interventions = ['Scenario 0', 'Scenario 0.PO-2', 'Scenario 0.PO-1b', 'Scenario 0.PO-1a', 'Scenario 0.PO-0',
-                 'Scenario 1', 'Scenario 1.PO-2', 'Scenario 1.PO-1b', 'Scenario 1.PO-1a', 'Scenario 1.PO-0',
-                 'Scenario 2', 'Scenario 2.PO-2', 'Scenario 2.PO-1b', 'Scenario 2.PO-1a', 'Scenario 2.PO-0',
-                 'Scenario 3', 'Scenario 3.PO-2', 'Scenario 3.PO-1b', 'Scenario 3.PO-1a', 'Scenario 3.PO-0']
-costs = [832300.817, 843773.248, 868415.539, 916512.278, 923313.384,
-         913758.772, 925209.575, 949688.096, 994772.516, 1001151.764,
-         973034.166, 984282.582, 1008389.223, 1050203.791, 1056056.903,
-         1123030.591,
-         1134348.459,
-         1158582.825,
-         1196655.298,
-         1201932.238]
-
-effects = [66785,
-           66108,
-           65246,
-           64139,
-           64016,
-           58231,
-           57554,
-           56262,
-           54539,
-           54108,
-           49124,
-           48386,
-           46416,
-           43893,
-           43463,
-           49063,
-           48324,
-           46355,
-           43893,
-           47278
-           ]
-
-# Calculate the incremental cost-effectiveness ratio (ICER)
-ICERs = []
-for i in range(len(interventions)-1):
-    ICER = (costs[i+1] - costs[0]) / (effects[0] - effects[i+1])
-    ICERs.append(ICER)
-
-dalys_averteds = []
-for i in range(len(interventions)-1):
-    dalys_averted = effects[0] - effects[i+1]
-    dalys_averteds.append(dalys_averted)
-
-# Create a cost-effectiveness plane
-plt.scatter(effects, costs)
-plt.xlabel('Effectiveness')
-plt.ylabel('Cost')
-plt.title('Cost-Effectiveness Plane')
-for i in range(len(interventions)):
-    plt.annotate(interventions[i], (effects[i], costs[i]))
-
-# Calculate the net monetary benefit (NMB)
-WTP = np.linspace(0, 1000, 101)
-NMBs = []
-for i in range(len(interventions)-1):
-    NMB = dalys_averteds[i] * WTP - costs[i+1]
-    NMBs.append(NMB)
-
-# Plot the cost-effectiveness acceptability curve (CEAC)
-CEAC = []
-for wtp in WTP:
-    num = sum([1 for i in range(len(interventions)-1) if any(NMBs[i] >= wtp)])
-    prob = num / (len(interventions)-1)
-    CEAC.append(prob)
-
-plt.figure()
-plt.plot(WTP, CEAC)
-plt.xlabel('Willingness-to-Pay')
-plt.ylabel('Probability of Cost-Effectiveness')
-plt.title('Cost-Effectiveness Acceptability Curve')
-
-# Show the plots
-plt.show()
