@@ -369,11 +369,17 @@ def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
 
     # If they have experienced all delays, treatment effectiveness is reduced by greater amount
     if delay_one_two and delay_three:
-        treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_all_delays'])
+        if treatment_effect in ('prob_haemostatis_uterotonics', 'prob_successful_manual_removal_placenta'):
+            treatment_effect = params[treatment_effect] * params['treatment_effect_modifier_all_delays']
+        else:
+            treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_all_delays'])
 
     # Otherwise, if only one type of delay is experience the treatment effect is reduced by a lesser amount
     elif delay_one_two or delay_three:
-        treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_one_delay'])
+        if treatment_effect in ('prob_haemostatis_uterotonics', 'prob_successful_manual_removal_placenta'):
+            treatment_effect = params[treatment_effect] * params['treatment_effect_modifier_one_delay']
+        else:
+            treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_one_delay'])
 
     # If no delays occurred, maximum treatment effectiveness is applied
     else:
@@ -490,7 +496,12 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
         def apply_effect_of_anaemia(cause):
             lab_params = self.sim.modules['Labour'].current_parameters
 
-            if df.at[individual_id, 'pn_anaemia_following_pregnancy'] != 'none':
+            if cause == 'antepartum_haemorrhage':
+                param = 'ps_anaemia_in_pregnancy'
+            else:
+                param = 'pn_anaemia_following_pregnancy'
+
+            if df.at[individual_id, param] != 'none':
                 risk[cause] = risk[cause] * lab_params['rr_death_from_haem_with_anaemia']
 
         for cause in causes:
@@ -498,7 +509,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                 risk = {cause: params[f'prob_{cause}_death']}
 
                 if cause == 'antepartum_haemorrhage':
-                    apply_effect_of_anaemia('antepartum_haemorrhage')
+                    apply_effect_of_anaemia(cause)
 
                 risks.update(risk)
 
@@ -513,7 +524,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                         delay_one_two=mni[individual_id]['delay_one_two'],
                         delay_three=mni[individual_id]['delay_three']
                     )[individual_id]}
-                    apply_effect_of_anaemia('secondary_postpartum_haemorrhage')
+                    apply_effect_of_anaemia(cause)
 
                 else:
                     risk = {cause: self.la_linear_models[f'{cause}_death'].predict(
@@ -524,15 +535,15 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                         delay_one_two=mni[individual_id]['delay_one_two'],
                         delay_three=mni[individual_id]['delay_three'])[individual_id]}
 
-                    if cause == 'postpartum_haemorrhage' or cause == 'antepartum_haemorrhage':
-                        apply_effect_of_anaemia('postpartum_haemorrhage')
+                    if (cause == 'postpartum_haemorrhage') or (cause == 'antepartum_haemorrhage'):
+                        apply_effect_of_anaemia(cause)
 
                 risks.update(risk)
 
             elif self == self.sim.modules['PostnatalSupervisor']:
                 risk = {cause: params[f'cfr_{cause}']}
                 if cause == 'secondary_postpartum_haemorrhage':
-                    apply_effect_of_anaemia('secondary_postpartum_haemorrhage')
+                    apply_effect_of_anaemia(cause)
 
                 risks.update(risk)
 
