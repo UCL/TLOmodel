@@ -1147,11 +1147,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
         current_method = self.sim.population.props.loc[person_id].co_contraception
-        self.EXPECTED_APPT_FOOTPRINT = self._get_expected_appt_footprint(current_method)
+        self.EXPECTED_APPT_FOOTPRINT = self._get_appt_footprint(current_method)
 
 
-    def _get_expected_appt_footprint(self, current_method: str):
-        """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
+    def _get_appt_footprint(self, current_method: str):
+        """Return the appointment footprint based on contraception method and whether the HSI has been rescheduled."""
         if self._number_of_times_run > 0:  # if it is to re-schedule due to unavailable consumables
             return self.make_appt_footprint({})
         # if to switch to a method
@@ -1267,6 +1267,8 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
         ):
             self.reschedule()
+
+        return self._get_appt_footprint(current_method)
 
     def post_apply_hook(self):
         self._number_of_times_run += 1
