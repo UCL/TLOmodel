@@ -8,10 +8,9 @@ import numpy as np
 from tlo import Date, logging
 from tlo.events import Event
 from tlo.population import Population
-
+from tlo.util import FACTOR_POP_DICT
 import pandas as pd
 
-FACTOR_POP_DICT = 5000
 
 
 if TYPE_CHECKING:
@@ -219,19 +218,21 @@ class HSI_Event:
                 # Save row for comparison after event has occurred
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
 
-                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                row = self.sim.population.props.loc[[abs(self.target)]]
-                row['person_ID'] = self.target
-                row['event'] = str(self)
-                row['event_date'] = self.sim.date
-                row['when'] = 'Before'
-                try:
-                    row['appt_footprint'] = str(self.EXPECTED_APPT_FOOTPRINT)
-                    row['level'] = self.facility_info.level
-                except:
-                    row['appt_footprint'] = 'N/A'
-                    row['level'] = 'N/A'
-                self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+                if self.sim.debug_generate_event_chains:
+                    # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+                    row = self.sim.population.props.loc[[abs(self.target)]]
+                    row['person_ID'] = self.target
+                    row['event'] = str(self)
+                    row['event_date'] = self.sim.date
+                    row['when'] = 'Before'
+                
+                    try:
+                        row['appt_footprint'] = str(self.EXPECTED_APPT_FOOTPRINT)
+                        row['level'] = self.facility_info.level
+                    except:
+                        row['appt_footprint'] = 'N/A'
+                        row['level'] = 'N/A'
+                    self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
                 
             else:
                 # Once this has been removed from Chronic Syndrome mock module, make this a Runtime Error
@@ -280,15 +281,16 @@ class HSI_Event:
             
             chain_links = {self.target : str(link_info)}
 
-            # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-            row = self.sim.population.props.loc[[abs(self.target)]]
-            row['person_ID'] = self.target
-            row['event'] = str(self)
-            row['event_date'] = self.sim.date
-            row['when'] = 'After'
-            row['appt_footprint'] = record_footprint
-            row['level'] = record_level
-            self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+            if self.sim.debug_generate_event_chains:
+                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+                row = self.sim.population.props.loc[[abs(self.target)]]
+                row['person_ID'] = self.target
+                row['event'] = str(self)
+                row['event_date'] = self.sim.date
+                row['when'] = 'After'
+                row['appt_footprint'] = record_footprint
+                row['level'] = record_level
+                self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
             
         return chain_links
         

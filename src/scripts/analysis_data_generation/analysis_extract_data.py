@@ -8,10 +8,14 @@ from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import extract_results
 from datetime import datetime
+from collections import Counter
+import ast
+
 
 # Range of years considered
 min_year = 2010
@@ -28,17 +32,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
-    event_chains = extract_results(
-            results_folder,
-            module='tlo.simulation',
-            key='event_chains',
-            column='0',
-            #column = str(i),
-            #custom_generate_series=get_num_dalys_by_year,
-            do_scaling=False
-        )
-   # print(event_chains.loc[0,(0, 0)])
-
+    
     eval_env = {
         'datetime': datetime,  # Add the datetime class to the eval environment
         'pd': pd,              # Add pandas to handle Timestamp
@@ -46,13 +40,144 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'NaT': pd.NaT,
         'nan': float('nan'),       # Include NaN for eval (can also use pd.NA if preferred)
     }
+    
+    initial_properties_of_interest = ['rt_inj_severity','rt_MAIS_military_score','rt_ISS_score','rt_disability','rt_polytrauma','rt_injury_1','rt_injury_2','rt_injury_3','rt_injury_4','rt_injury_5','rt_injury_6', 'rt_imm_death','sy_injury','sex','li_urban', 'li_wealth', 'li_ex_alc', 'li_exposed_to_campaign_alcohol_reduction', 'li_mar_stat', 'li_in_ed', 'li_ed_lev']
 
-    for item,row in event_chains.iterrows():
-        value = event_chains.loc[item,(0, 0)]
-        if value !='':
-            print('')
-            print(value)
+    # Will be added through computation: age at time of RTI
+        
+    # Will be added through computation: total duration of event
+    
+    initial_rt_event_properties = set()
+    
+    num_individuals = 1000
+    num_runs = 50
+    record = []
+    
+    
+    for i in range(0,num_individuals):
+
+        individual_event_chains = extract_results(
+                results_folder,
+                module='tlo.simulation',
+                key='event_chains',
+                column=str(i),
+                do_scaling=False
+            )
+            
+        #print(individual_event_chains)
+
+            
+        for r in range(0,num_runs):
+        
+            print("AT RUN = ", r)
+
+            initial_properties = {}
+            progression_properties = {}
+            key_first_event = {}
+            key_last_event = {}
+            first_event = {}
+            last_event = {}
+            properties = {}
+
+
+            #ind_Counter = Counter()
+            ind_Counter = {'0': Counter(), '1a': Counter(), '1b' : Counter(), '2' : Counter()}
+            # Count total appts
+
+            list_for_individual = []
+            for item,row in individual_event_chains.iterrows():
+                value = individual_event_chains.loc[item,(0, r)]
+               # print("The value is", value, "at run ", r)
+                if value !='' and isinstance(value, str):
+                    evaluated = eval(value, eval_env)
+                    list_for_individual.append(evaluated)
+               # elif not isinstance(value,str):
+               #     print(value)
+                    
+            initial_properties = list_for_individual[0]
+            print(initial_properties)
+            
+            # Initialise first event by gathering parameters of interest from initial_properties
+            first_event = {key: initial_properties[key] for key in initial_properties_of_interest if key in initial_properties}
+            
+            progression_properties = {}
+            for i in list_for_individual:
+                if 'event' in i:
+                    print("")
+                    print(i)
+                    if 'RTIPolling' in i['event']:
+                        #print("I'm in polling event")
+                        #print(i)
+                        
+                        # Keep track of which properties are changed during polling events
+                        for key,value in i.items():
+                            if 'rt_' in key:
+                                initial_rt_event_properties.add(key)
+                        
+                        # Retain a copy of Polling event
+                        polling_event = i.copy()
+                        
+                        # Update parameters of interest following RTI
+                        key_first_event = {key: i[key] if key in i else value for key, value in first_event.items()}
+                        
+                        # Calculate age of individual at time of event
+                        key_first_event['age_in_days_at_event'] = (i['rt_date_inj'] - initial_properties['date_of_birth']).days
+                        
+                        # Keep track of evolution in individual's properties
+                        progression_properties = initial_properties.copy()
+                        progression_properties.update(i)
+
+                    else:
+                        # Progress properties of individual, even if this event is a death
+                        progression_properties.update(i)
+                    
+                    #print(progression_properties)
+                    # Update footprint
+                    if 'appt_footprint' in i and i['appt_footprint'] != 'Counter()':
+                        footprint = i['appt_footprint']
+                        if 'Counter' in footprint:
+                            footprint = footprint[len("Counter("):-1]
+                        apply = eval(footprint, eval_env)
+                        ind_Counter[i['level']].update(Counter(apply))
+                        
+                    if 'is_alive' in i and i['is_alive'] is False:
+                        print("Death", i)
+                        print("-------Total footprint", ind_Counter)
+                        break
+                        
+
+            # Compute final properties of individual
+            key_last_event['is_alive_after_RTI'] = progression_properties['is_alive']
+            key_last_event['duration_days'] = (progression_properties['event_date'] - polling_event['rt_date_inj']).days
+            key_last_event['rt_disability_final'] = progression_properties['rt_disability']
+            key_last_event.update({'total_footprint': ind_Counter})
+            
+            #print("-------Total footprint", ind_Counter)
+            #for key, value in key_first_event.items():
+               # if 'rt_' in key or 'alive' in key:
+             #   print(f"{key}: {value}")
+            #print(#)
+            #for key, value in key_last_event.items():
+                #if 'rt_' in key or 'alive' in key or 'event_date' in key or 'footprint' in key:
+            #    print(f"{key}: {value}")
+
+            #print(key_first_event)
+            #print(key_last_event)
+            print(initial_rt_event_properties)
+            properties = key_first_event | key_last_event
+            record.append(properties)
+            for key, value in properties.items():
+                #if 'rt_' in key or 'alive' in key or 'event_date' in key or 'footprint' in key:
+                print(f"{key}: {value}")
+         
+    df = pd.DataFrame(record)
+    df.to_csv("raw_data.csv", index=False)
+
+    print(df)
+    print(initial_rt_event_properties)
     exit(-1)
+            #print(i)
+
     #dict = {}
     #for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
     #    dict[i] = []

@@ -12,6 +12,7 @@ from tlo import Population, Property, Types
 
 # Default mother_id value, assigned to individuals initialised as adults at the start of the simulation.
 DEFAULT_MOTHER_ID = -1e7
+FACTOR_POP_DICT = 1000
 
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):

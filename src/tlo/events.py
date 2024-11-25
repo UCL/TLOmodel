@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-FACTOR_POP_DICT = 5000
+from tlo.util import FACTOR_POP_DICT
 
 
 logger = logging.getLogger(__name__)
@@ -132,7 +132,7 @@ class Event:
                 # Save row for comparison after event has occurred
                 row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
                 
-                if debug_chains:
+                if self.sim.debug_generate_event_chains:
                     # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                     row = self.sim.population.props.loc[[abs(self.target)]]
                     row['person_ID'] = self.target
@@ -142,6 +142,7 @@ class Event:
                     self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
                 
             else:
+
                 # This will be a population-wide event. In order to find individuals for which this led to
                 # a meaningful change, make a copy of the pop dataframe before the event has occurred.
                 df_before = self.sim.population.props.copy()
@@ -174,7 +175,7 @@ class Event:
                 chain_links[self.target] = str(link_info)
 
                 # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                if debug_chains:
+                if self.sim.debug_generate_event_chains:
                     # Print entire row
                     row = self.sim.population.props.loc[[abs(self.target)]] # Use abs to avoid potentil issue with direct births
                     row['person_ID'] = self.target
@@ -194,7 +195,7 @@ class Event:
                 chain_links = self.compare_population_dataframe(df_before, df_after)
 
                 # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-                if debug_chains:
+                if self.sim.debug_generate_event_chains:
                     # Or print entire rows
                     change = df_before.compare(df_after)
                     if not change.empty:
@@ -233,7 +234,6 @@ class Event:
             
             # Create empty logger for entire pop
             pop_dict = {i: '' for i in range(FACTOR_POP_DICT)} # Always include all possible individuals
-
             pop_dict.update(chain_links)
 
             # Log chain_links here

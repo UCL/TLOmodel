@@ -22,18 +22,42 @@ from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
-
+from tlo.methods import (
+    alri,
+    cardio_metabolic_disorders,
+    care_of_women_during_pregnancy,
+    contraception,
+    demography,
+    depression,
+    diarrhoea,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    rti,
+    labour,
+    malaria,
+    newborn_outcomes,
+    postnatal_supervisor,
+    pregnancy_supervisor,
+    stunting,
+    symptommanager,
+    tb,
+    wasting,
+)
 
 class GenerateDataChains(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(months=1)
-        self.pop_size = 120
+        self.end_date = self.start_date + pd.DateOffset(months=13)
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 50
         self.generate_event_chains = True
 
     def log_configuration(self):
@@ -51,10 +75,23 @@ class GenerateDataChains(BaseScenario):
         }
 
     def modules(self):
-        return (
-            fullmodel(resourcefilepath=self.resources)
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
-        )
+        # MODIFY
+        # Here instead of running full module
+        return [demography.Demography(resourcefilepath=self.resources),
+                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+                healthburden.HealthBurden(resourcefilepath=self.resources),
+                symptommanager.SymptomManager(resourcefilepath=self.resources, spurious_symptoms=False),
+                rti.RTI(resourcefilepath=self.resources),
+                healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+                #simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                healthsystem.HealthSystem(resourcefilepath=self.resources,
+                                          mode_appt_constraints=1,
+                                          cons_availability='all')]
+                                          
+       # return (
+       #     fullmodel(resourcefilepath=self.resources)
+       #     + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+       # )
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:

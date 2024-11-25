@@ -11,8 +11,9 @@ from pathlib import Path
 from typing import Optional
 from typing import TYPE_CHECKING, Optional
 import pandas as pd
-
+import tlo.population
 import numpy as np
+from tlo.util import FACTOR_POP_DICT
 
 try:
     import dill
@@ -39,8 +40,6 @@ logger.setLevel(logging.INFO)
 
 logger_chains = logging.getLogger("tlo.methods.event")
 logger_chains.setLevel(logging.INFO)
-
-FACTOR_POP_DICT = 5000
 
 
 class SimulationPreviouslyInitialisedError(Exception):
@@ -113,12 +112,15 @@ class Simulation:
         self.generate_event_chains_overwrite_epi = None
         self.generate_event_chains_modules_of_interest = []
         self.generate_event_chains_ignore_events = []
+        self.debug_generate_event_chains = False
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
         
-        # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-        self.event_chains: Optinoal[Population] = None
+                
+        if self.debug_generate_event_chains:
+            # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+            self.event_chains: Optional[Population] = None
 
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = resourcefilepath
@@ -288,8 +290,9 @@ class Simulation:
                 data=f"{module.name}.initialise_population() {time.time() - start1} s",
             )
 
-        # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-        self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'] + ['appt_footprint'] + ['level'])
+        if self.debug_generate_event_chains:
+            # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+            self.event_chains = pd.DataFrame(columns= list(self.population.props.columns)+['person_ID'] + ['event'] + ['event_date'] + ['when'] + ['appt_footprint'] + ['level'])
         
         # When logging events for each individual to reconstruct chains, only the changes in individual properties will be logged.
         # At the start of the simulation + when a new individual is born, we therefore want to store all of their properties at the start.
@@ -329,7 +332,7 @@ class Simulation:
             self.generate_event_chains_overwrite_epi = True
             # For now keep these fixed, eventually they will be input from user
             self.generate_event_chains_modules_of_interest = [self.modules]
-            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
+            self.generate_event_chains_ignore_events =  ['AgeUpdateEvent','HealthSystemScheduler', 'SimplifiedBirthsPoll','DirectBirth', 'HealthSeekingBehaviourPoll', 'LifestyleEvent'] #['TbActiveCasePollGenerateData','HivPollingEventForDataGeneration','SimplifiedBirthsPoll', 'AgeUpdateEvent', 'HealthSystemScheduler']
         else:
             # If not using to print chains, cannot ignore epi
             self.generate_event_chains_overwrite_epi = False
@@ -418,8 +421,9 @@ class Simulation:
             self.fire_single_event(event, date)
         self.date = to_date
         
-        # TO BE REMOVED: this is currently only used for debugging, will be removed from final PR.
-        self.event_chains.to_csv('output.csv', index=False)
+        if self.debug_generate_event_chains:
+            # TO BE REMOVED: this is currently only used for debugging, will be removed from final PR.
+            self.event_chains.to_csv('output.csv', index=False)
 
         if self.show_progress_bar:
             progress_bar.stop()
@@ -492,13 +496,14 @@ class Simulation:
                                data = pop_dict,
                                description='Links forming chains of events for simulated individuals')
         
-            # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
-            row = self.population.props.iloc[[child_id]]
-            row['person_ID'] = child_id
-            row['event'] = 'Birth'
-            row['event_date'] = self.date
-            row['when'] = 'After'
-            self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
+            if self.debug_generate_event_chains:
+                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+                row = self.population.props.iloc[[child_id]]
+                row['person_ID'] = child_id
+                row['event'] = 'Birth'
+                row['event_date'] = self.date
+                row['when'] = 'After'
+                self.event_chains = pd.concat([self.event_chains, row], ignore_index=True)
 
         return child_id
 
