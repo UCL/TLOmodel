@@ -3,8 +3,9 @@
     It schedules TB treatment and follow-up appointments along with preventive therapy
     for eligible people (HIV+ and paediatric contacts of active TB cases
 """
-
+import ast
 from functools import reduce
+from typing import Any
 
 import pandas as pd
 
@@ -20,6 +21,27 @@ from tlo.util import random_date, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def parse_csv_columns_with_mixed_datatypes(value: Any):
+    """ Normally, pd.read_csv parses all mixed datatypes column values as strings. Problems arise when you're trying to
+     directly use the output from this as you may expect data value in a particular datatype but all you get is a
+     string. This method seeks to address that by trying to parse values according to their best possible format.
+     Currently, it is part of this Module as I think this is the only module that affected by this behaviour
+
+    :param value: mixed datatype column value
+
+    """
+    try:
+        return int(value)  # Try to convert to int
+    except ValueError:
+        try:
+            return float(value)  # Try to convert to float
+        except ValueError:
+            try:
+                return ast.literal_eval(value) # Try to convert to list
+            except ValueError:
+                return value # return an unconverted value
 
 
 class Tb(Module):
@@ -889,6 +911,8 @@ class Tb(Module):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
         scaled_params_workbook = p["scaleup_parameters"]
+        for col in scaled_params_workbook.columns:
+            scaled_params_workbook[col] = scaled_params_workbook[col].apply(parse_csv_columns_with_mixed_datatypes)
 
         if p['type_of_scaleup'] == 'target':
             scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()

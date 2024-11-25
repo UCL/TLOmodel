@@ -19,6 +19,8 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
+from tlo.methods.tb import parse_csv_columns_with_mixed_datatypes
+from tlo.util import read_csv_files
 
 resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
@@ -54,7 +56,8 @@ def get_sim(seed):
 
 def check_initial_params(sim):
 
-    original_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='parameters')
+    original_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files='parameters')
+    original_params.value = original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
 
     # check initial parameters
     assert sim.modules["Hiv"].parameters["beta"] == \
@@ -73,8 +76,9 @@ def test_hiv_scale_up(seed):
     """ test hiv program scale-up changes parameters correctly
     and on correct date """
 
-    original_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="parameters")
-    new_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="scaleup_parameters")
+    original_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="parameters")
+    original_params.value = original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    new_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="scaleup_parameters")
 
     popsize = 100
 
@@ -104,10 +108,12 @@ def test_hiv_scale_up(seed):
         new_params.parameter == "prob_circ_after_hiv_test", "target_value"].values[0]
 
     # check malaria parameters unchanged
-    mal_original_params = pd.read_excel(resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx',
-                                        sheet_name="parameters")
-    mal_rdt_testing = pd.read_excel(resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx',
-                                    sheet_name="WHO_TestData2023")
+    mal_original_params = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
+                                        files="parameters")
+    mal_original_params.value = mal_original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+
+    mal_rdt_testing = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
+                                    files="WHO_TestData2023")
 
     assert sim.modules["Malaria"].parameters["prob_malaria_case_tests"] == mal_original_params.loc[
         mal_original_params.parameter_name == "prob_malaria_case_tests", "value"].values[0]
@@ -121,8 +127,9 @@ def test_hiv_scale_up(seed):
         mal_original_params.parameter_name == "itn", "value"].values[0]
 
     # check tb parameters unchanged
-    tb_original_params = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name="parameters")
-    tb_testing = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name="NTP2019")
+    tb_original_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="parameters")
+    tb_original_params.value = tb_original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    tb_testing = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="NTP2019")
 
     pd.testing.assert_series_equal(sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"],
                                    tb_testing["treatment_coverage"])
@@ -143,8 +150,9 @@ def test_htm_scale_up(seed):
     and on correct date """
 
     # Load data on HIV prevalence
-    original_hiv_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="parameters")
-    new_hiv_params = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name="scaleup_parameters")
+    original_hiv_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="parameters")
+    original_hiv_params.value = original_hiv_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    new_hiv_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="scaleup_parameters")
 
     popsize = 100
 
@@ -178,8 +186,8 @@ def test_htm_scale_up(seed):
         new_hiv_params.parameter == "prob_circ_after_hiv_test", "target_value"].values[0]
 
     # check malaria parameters changed
-    new_mal_params = pd.read_excel(resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx',
-                                   sheet_name="scaleup_parameters")
+    new_mal_params = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
+                                   files="scaleup_parameters")
 
     assert sim.modules["Malaria"].parameters["prob_malaria_case_tests"] == new_mal_params.loc[
         new_mal_params.parameter == "prob_malaria_case_tests", "target_value"].values[0]
@@ -193,7 +201,8 @@ def test_htm_scale_up(seed):
         new_mal_params.parameter == "itn", "target_value"].values[0]
 
     # check tb parameters changed
-    new_tb_params = pd.read_excel(resourcefilepath / 'ResourceFile_TB.xlsx', sheet_name="scaleup_parameters")
+    new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")
+    new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_columns_with_mixed_datatypes)
 
     assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
         new_tb_params.parameter == "tb_treatment_coverage", "target_value"].values[0]).all()
