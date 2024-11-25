@@ -152,23 +152,6 @@ class Schisto(Module):
                 s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
         self.age_group_mapper = s.to_dict()
 
-        # # create container for logging person-days infected
-        # index = pd.MultiIndex.from_product(
-        #     [
-        #         ['mansoni', 'haematobium'],  # species
-        #         ['PSAC', 'SAC', 'Adults'],  # age_group
-        #         ['Low-infection', 'Moderate-infection', 'High-infection'],  # infection_level
-        #         self.population.props['district'].unique()  # district
-        #     ],
-        #     names=['species', 'age_group', 'infection_level', 'district']
-        # )
-        # # index = pd.MultiIndex.from_product(
-        # #     [['mansoni', 'haematobium'], ['PSAC', 'SAC', 'Adults'], ['Low-infection', 'Moderate-infection', 'High-infection']],
-        # #     names=['species', 'age_group', 'infection_level']
-        # # )
-        # self.log_person_days = pd.DataFrame(0, index=index, columns=['person_days']).sort_index()
-
-
     def read_parameters(self, data_folder):
         """Read parameters and register symptoms."""
 
@@ -280,6 +263,8 @@ class Schisto(Module):
         if self.parameters['scaleup_WASH'] and (
             self.sim.date >= Date(self.parameters['scaleup_WASH_start_year'], 1, 1)):
             df.at[child_id, 'li_unimproved_sanitation'] = False
+            df.at[child_id, 'li_no_clean_drinking_water'] = False
+            df.at[child_id, 'li_no_access_handwashing'] = False
 
         for _spec in self.species.values():
             # this assigns infection_status, aggregate_worm_burden, harbouring_rate, susceptibility
@@ -661,7 +646,7 @@ class Schisto(Module):
 
         # choose test
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        if any(symptom in p['sh_symptoms'].keys() for symptom in persons_symptoms):
+        if any(symptom in ['haematuria', 'bladder_pathology',] for symptom in persons_symptoms):
             test = 'urine_filtration_test'
         else:
             test = 'kato-katz'
@@ -1501,6 +1486,7 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         df['li_date_acquire_improved_sanitation'] = self.sim.date
         df['li_date_acquire_access_handwashing'] = self.sim.date
         df['li_date_acquire_clean_drinking_water'] = self.sim.date
+
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event for a person with symptoms who has been referred from the FirstAppt
