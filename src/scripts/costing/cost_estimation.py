@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import ast
 import math
+import itertools
 
 from tlo.analysis.utils import (
     extract_params,
@@ -136,6 +137,9 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     facility_level_mapping = {'Health_Post': '0', 'Health_Center': '1a', 'Community': '1b', 'District': '2', 'Central': '3'}
     unit_cost_equipment['Facility_Level'] = unit_cost_equipment['Facility_Level'].replace(facility_level_mapping)
     unit_cost_equipment = unit_cost_equipment.rename(columns = {'Quantity_': 'Quantity'})
+
+    # Load and prepare facility operation cost parameters
+    unit_cost_fac_operations = workbook_cost["facility_operations"]
 
     # Function to prepare cost dataframe ready to be merged across cross categories
     def retain_relevant_column_subset(_df, _category_specific_group):
@@ -649,11 +653,43 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # 4. Facility running costs
     # Average running costs by facility level and district times the number of facilities  in the simulation
+    # Convert unit_costs to long format
+    unit_cost_fac_operations = pd.melt(
+        unit_cost_fac_operations,
+        id_vars=["Facility_Level"],  # Columns to keep as identifiers
+        var_name="operating_cost_type",  # Name for the new 'cost_category' column
+        value_name="unit_cost"  # Name for the new 'cost' column
+    )
+    unit_cost_fac_operations['Facility_Level'] = unit_cost_fac_operations['Facility_Level'].astype(str)
+    fac_count_by_district_and_level = mfl[['Facility_Level', 'Facility_Count', 'District']].groupby(['Facility_Level', 'District']).sum().reset_index()
+
+    facility_operation_cost = pd.merge(unit_cost_fac_operations, fac_count_by_district_and_level, on = 'Facility_Level', how = 'left', validate = 'm:m')
+    facility_operation_cost['Facility_Count'] = facility_operation_cost['Facility_Count'].fillna(0).astype(int)
+    facility_operation_cost['cost'] =  facility_operation_cost['unit_cost'] * facility_operation_cost['Facility_Count']
+
+    # Duplicate the same set of facility operation costs for all draws and runs
+    # Create the Cartesian product of `_draws` and `_runs`
+    combinations = list(itertools.product(_draws, _runs))
+    comb_df = pd.DataFrame(combinations, columns=["draw", "run"])
+    facility_operation_cost = facility_operation_cost.merge(comb_df, how="cross")
+    facility_operation_cost['cost_category'] = 'Facility operating cost'
+    operating_cost_mapping = {'Electricity': 'utilities_and_maintenance', 'Water': 'utilities_and_maintenance', 'Cleaning':'utilities_and_maintenance',
+                              'Security':'utilities_and_maintenance', 'Building maintenance': 'building_maintenance',
+                             'Facility management': 'utilities_and_maintenance', 'Vehicle maintenance': 'vehicle_maintenance',
+                              'Ambulance fuel': 'fuel_for_ambulance', 'Food for inpatient cases': 'food_for_inpatient_care'}
+    facility_operation_cost['cost_subcategory'] = facility_operation_cost['operating_cost_type']
+    facility_operation_cost['cost_subcategory'] = facility_operation_cost['cost_subcategory'].map(operating_cost_mapping)
+    # Assume that the annual costs are constant each year of the simulation
+    facility_operation_cost = pd.concat([facility_operation_cost.assign(year=year) for year in years])
+
+    # Assume that the annual costs are constant each year of the simulation
+    facility_operation_cost = prepare_cost_dataframe(facility_operation_cost, _category_specific_group = 'operating_cost_type', _cost_category = 'facility operating cost')
+
 
     # %%
     # Store all costs in single dataframe
     #--------------------------------------------
-    scenario_cost = pd.concat([human_resource_costs, consumable_costs, equipment_costs, other_costs], ignore_index=True)
+    scenario_cost = pd.concat([human_resource_costs, consumable_costs, equipment_costs, other_costs, facility_operation_cost], ignore_index=True)
     scenario_cost['cost'] = pd.to_numeric(scenario_cost['cost'], errors='coerce')
 
     # Summarize costs
