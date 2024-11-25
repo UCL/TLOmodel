@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.docs module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.docs module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -91,7 +91,7 @@
 <p>The functions used by tlo_methods_rst.py.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.get_package_name">
-<span class="sig-name descname"><span class="pre">get_package_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirpath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#get_package_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.get_package_name" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_package_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirpath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.get_package_name" title="Link to this definition"></a></dt>
 <dd><p>Given a file path to a TLO package, return the name in dot form.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -107,7 +107,7 @@ e.g. (1) “tlo.logging.sublog” or (2) “tlo”</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.generate_module_dict">
-<span class="sig-name descname"><span class="pre">generate_module_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topdir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#generate_module_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.generate_module_dict" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">generate_module_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topdir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.generate_module_dict" title="Link to this definition"></a></dt>
 <dd><p>Given a root directory topdir, iterates recursively
 over top dir and the files and subdirectories within it.
 Returns a dictionary with each key = path to a directory
@@ -126,7 +126,7 @@ value = list of Python files in dir <cite>key</cite>.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.get_classes_in_module">
-<span class="sig-name descname"><span class="pre">get_classes_in_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fqn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#get_classes_in_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.get_classes_in_module" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_classes_in_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fqn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.get_classes_in_module" title="Link to this definition"></a></dt>
 <dd><p>Generate a list of lists of the classes <em>defined</em> in
 the required module (file), in the order in which they
 appear in the module file. Note that this excludes
@@ -149,7 +149,7 @@ e.g. “tlo.methods.mockitis”</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.get_fully_qualified_name">
-<span class="sig-name descname"><span class="pre">get_fully_qualified_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#get_fully_qualified_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.get_fully_qualified_name" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_fully_qualified_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.get_fully_qualified_name" title="Link to this definition"></a></dt>
 <dd><p>Given a file name and a context
 return the fully-qualified name of the <em>module</em></p>
 <p>e.g. tlo.methods.mockitis
@@ -169,7 +169,7 @@ This gets used in doc page title.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.write_rst_file">
-<span class="sig-name descname"><span class="pre">write_rst_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rst_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fqn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mobj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#write_rst_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.write_rst_file" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">write_rst_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rst_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fqn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mobj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.write_rst_file" title="Link to this definition"></a></dt>
 <dd><p>We want to write one .rst file per module in ./src/tlo/methods</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -184,7 +184,7 @@ This gets used in doc page title.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.get_class_output_string">
-<span class="sig-name descname"><span class="pre">get_class_output_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classinfo</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#get_class_output_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.get_class_output_string" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_class_output_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classinfo</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.get_class_output_string" title="Link to this definition"></a></dt>
 <dd><p>Generate output string for a single class to be written to an rst file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -198,7 +198,7 @@ This gets used in doc page title.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.which_functions_to_print">
-<span class="sig-name descname"><span class="pre">which_functions_to_print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clazz</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#which_functions_to_print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.which_functions_to_print" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">which_functions_to_print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clazz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.which_functions_to_print" title="Link to this definition"></a></dt>
 <dd><p>Which functions do we want to print?</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -213,7 +213,7 @@ This gets used in doc page title.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.extract_bases">
-<span class="sig-name descname"><span class="pre">extract_bases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#extract_bases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.extract_bases" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">extract_bases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.extract_bases" title="Link to this definition"></a></dt>
 <dd><p>Document which classes this class inherits from,
 except for the object class or this class itself.</p>
 <dl class="field-list simple">
@@ -234,7 +234,7 @@ links to their docs. (2) the list of base class objects</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.get_base_string">
-<span class="sig-name descname"><span class="pre">get_base_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#get_base_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.get_base_string" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_base_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.get_base_string" title="Link to this definition"></a></dt>
 <dd><p>For this object, representing a base class,
 extract its name and add a hyperlink to it.
 Unless it is the root ‘object’ class, or the name of the class itself.</p>
@@ -257,7 +257,7 @@ or &lt;class ‘tlo.methods.mockitis.Mockitis’&gt;</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.get_link">
-<span class="sig-name descname"><span class="pre">get_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_fqn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#get_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.get_link" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_fqn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.get_link" title="Link to this definition"></a></dt>
 <dd><p>Given a name like Mockitis and a base_string like
 tlo.core.Module, create a link to the latter’s doc page.</p>
 <dl class="field-list simple">
@@ -277,7 +277,7 @@ documentation.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.docs.create_table">
-<span class="sig-name descname"><span class="pre">create_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mydict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/docs.html#create_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.docs.create_table" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mydict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.docs.create_table" title="Link to this definition"></a></dt>
 <dd><p>Dynamically create a table of arbitrary length
 from a PROPERTIES or PARAMETERS dictionary.</p>
 <dl class="field-list simple">
@@ -307,9 +307,7 @@ If there is no data, an empty list is returned.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

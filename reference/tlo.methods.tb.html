@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.tb module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.methods.tb module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -94,7 +94,7 @@ It schedules TB treatment and follow-up appointments along with preventive thera
 for eligible people (HIV+ and paediatric contacts of active TB cases</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_with_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_with_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb" title="Link to this definition"></a></dt>
 <dd><p>Set up the baseline population with TB prevalence</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -490,17 +490,17 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x11f186cd0&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x11f187c90&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x11f1844d0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘SymptomManager’, ‘HealthSystem’, ‘Lifestyle’, ‘Epi’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x14f353610&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x14f353710&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x14f350210&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’, ‘SymptomManager’, ‘Lifestyle’, ‘Epi’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
 <p>SYMPTOMS : {‘night_sweats’, ‘fatigue’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Tb):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_with_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_with_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -513,7 +513,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.read_parameters" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><ol class="arabic simple">
 <li><p>Reads the ResourceFiles</p></li>
@@ -532,35 +532,35 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.pre_initialise_population">
-<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.pre_initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.pre_initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Do things required before the population is created
 * Build the LinearModels</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb._build_linear_models">
-<span class="sig-name descname"><span class="pre">_build_linear_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb._build_linear_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb._build_linear_models" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_build_linear_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb._build_linear_models" title="Link to this definition"></a></dt>
 <dd><p>Establish the Linear Models</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.send_for_screening_general">
-<span class="sig-name descname"><span class="pre">send_for_screening_general</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.send_for_screening_general"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.send_for_screening_general" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">send_for_screening_general</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.send_for_screening_general" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.select_tb_test">
-<span class="sig-name descname"><span class="pre">select_tb_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.select_tb_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.select_tb_test" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">select_tb_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.select_tb_test" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.get_consumables_for_dx_and_tx">
-<span class="sig-name descname"><span class="pre">get_consumables_for_dx_and_tx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.get_consumables_for_dx_and_tx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.get_consumables_for_dx_and_tx" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_consumables_for_dx_and_tx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.get_consumables_for_dx_and_tx" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
@@ -587,7 +587,7 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.initialise_simulation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><ol class="arabic simple">
 <li><p>Schedule the regular TB events</p></li>
@@ -606,20 +606,20 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.update_parameters_for_program_scaleup">
-<span class="sig-name descname"><span class="pre">update_parameters_for_program_scaleup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.update_parameters_for_program_scaleup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.update_parameters_for_program_scaleup" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update_parameters_for_program_scaleup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.update_parameters_for_program_scaleup" title="Link to this definition"></a></dt>
 <dd><p>options for program scale-up are ‘target’ or ‘max’</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.on_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise properties for a newborn individual
 allocate IPT for child if mother diagnosed with TB</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.report_daly_values">
-<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.report_daly_values" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.report_daly_values" title="Link to this definition"></a></dt>
 <dd><p>This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
 experienced by persons in the previous month. Only rows for alive-persons must be returned.
 The names of the series of columns is taken to be the label of the cause of this disability.
@@ -628,7 +628,7 @@ It will be recorded by the healthburden module as &lt;ModuleName&gt;_&lt;Cause&g
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.calculate_untreated_proportion">
-<span class="sig-name descname"><span class="pre">calculate_untreated_proportion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.calculate_untreated_proportion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.calculate_untreated_proportion" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">calculate_untreated_proportion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.calculate_untreated_proportion" title="Link to this definition"></a></dt>
 <dd><p>calculate the proportion of active TB cases not on correct treatment
 if mdr-tb and on first-line treatment, count case as untreated
 they will continue to contribute to transmission</p>
@@ -636,7 +636,7 @@ they will continue to contribute to transmission</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.assign_active_tb">
-<span class="sig-name descname"><span class="pre">assign_active_tb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incidence</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.assign_active_tb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.assign_active_tb" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assign_active_tb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incidence</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.assign_active_tb" title="Link to this definition"></a></dt>
 <dd><p>select individuals to be infected
 assign scheduled date of active tb onset
 update properties as needed
@@ -645,14 +645,14 @@ symptoms and smear status are assigned in the TbActiveEvent</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.consider_ipt_for_those_initiating_art">
-<span class="sig-name descname"><span class="pre">consider_ipt_for_those_initiating_art</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.consider_ipt_for_those_initiating_art"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.consider_ipt_for_those_initiating_art" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">consider_ipt_for_those_initiating_art</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.consider_ipt_for_those_initiating_art" title="Link to this definition"></a></dt>
 <dd><p>this is called by HIV when person is initiating ART
 checks whether person is eligible for IPT</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.relapse_event">
-<span class="sig-name descname"><span class="pre">relapse_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.relapse_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.relapse_event" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">relapse_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.relapse_event" title="Link to this definition"></a></dt>
 <dd><p>The Tb Regular Relapse Event
 runs every month to randomly sample amongst those previously infected with active tb
 * Schedules persons who have previously been infected to relapse with a set probability
@@ -661,7 +661,7 @@ runs every month to randomly sample amongst those previously infected with activ
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.end_treatment">
-<span class="sig-name descname"><span class="pre">end_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.end_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.end_treatment" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">end_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.end_treatment" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>check for those eligible to finish treatment</p></li>
 <li><p>sample for treatment failure and refer for follow-up screening/testing</p></li>
@@ -671,7 +671,7 @@ runs every month to randomly sample amongst those previously infected with activ
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb.check_config_of_properties">
-<span class="sig-name descname"><span class="pre">check_config_of_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb.check_config_of_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb.check_config_of_properties" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">check_config_of_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb.check_config_of_properties" title="Link to this definition"></a></dt>
 <dd><p>check that the properties are currently configured correctly</p>
 </dd></dl>
 
@@ -679,7 +679,7 @@ runs every month to randomly sample amongst those previously infected with activ
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbActiveCasePoll">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbActiveCasePoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbActiveCasePoll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbActiveCasePoll" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbActiveCasePoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbActiveCasePoll" title="Link to this definition"></a></dt>
 <dd><p>The Tb Regular Poll Event for assigning active infections
 * selects people for active infection and schedules onset of active tb
 assign_active_tb uses a transmission model to assign new cases
@@ -700,7 +700,7 @@ import_tb simulates importation of active tb independent of current prevalence</
 <p><strong>Functions (defined or overridden in class TbActiveCasePoll):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbActiveCasePoll.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbActiveCasePoll.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbActiveCasePoll.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbActiveCasePoll.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -715,7 +715,7 @@ import_tb simulates importation of active tb independent of current prevalence</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbActiveCasePoll.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbActiveCasePoll.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbActiveCasePoll.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbActiveCasePoll.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -729,7 +729,7 @@ import_tb simulates importation of active tb independent of current prevalence</
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbRegularEvents">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbRegularEvents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbRegularEvents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbRegularEvents" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbRegularEvents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbRegularEvents" title="Link to this definition"></a></dt>
 <dd><p>This event runs each month and calls three functions:
 * scheduling TB screening for the general population
 * ending treatment if end of treatment regimen has been reached
@@ -750,7 +750,7 @@ import_tb simulates importation of active tb independent of current prevalence</
 <p><strong>Functions (defined or overridden in class TbRegularEvents):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbRegularEvents.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbRegularEvents.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbRegularEvents.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbRegularEvents.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -765,7 +765,7 @@ import_tb simulates importation of active tb independent of current prevalence</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbRegularEvents.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbRegularEvents.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbRegularEvents.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbRegularEvents.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -779,7 +779,7 @@ import_tb simulates importation of active tb independent of current prevalence</
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbScaleUpEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbScaleUpEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbScaleUpEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbScaleUpEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbScaleUpEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbScaleUpEvent" title="Link to this definition"></a></dt>
 <dd><p>This event exists to change parameters or functions
 depending on the scenario for projections which has been set
 It only occurs once on date: scaleup_start_date,
@@ -803,7 +803,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class TbScaleUpEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbScaleUpEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbScaleUpEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbScaleUpEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbScaleUpEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -821,7 +821,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbScaleUpEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbScaleUpEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbScaleUpEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbScaleUpEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -835,7 +835,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbActiveEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbActiveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbActiveEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbActiveEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbActiveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbActiveEvent" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>check for those with dates of active tb onset within last time-period</p></li>
 </ul>
@@ -860,7 +860,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class TbActiveEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbActiveEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbActiveEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbActiveEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbActiveEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -875,7 +875,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbActiveEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbActiveEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbActiveEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbActiveEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -889,7 +889,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbSelfCureEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbSelfCureEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbSelfCureEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbSelfCureEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbSelfCureEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbSelfCureEvent" title="Link to this definition"></a></dt>
 <dd><p>annual event which allows some individuals to self-cure
 approximate time from infection to self-cure is 3 years
 HIV+ and not virally suppressed cannot self-cure
@@ -910,7 +910,7 @@ note that frequency can’t be changed here as parameters are set to annual valu
 <p><strong>Functions (defined or overridden in class TbSelfCureEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbSelfCureEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbSelfCureEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbSelfCureEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbSelfCureEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -925,7 +925,7 @@ note that frequency can’t be changed here as parameters are set to annual valu
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbSelfCureEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbSelfCureEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbSelfCureEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbSelfCureEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -939,7 +939,7 @@ note that frequency can’t be changed here as parameters are set to annual valu
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_ScreeningAndRefer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_ScreeningAndRefer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_ScreeningAndRefer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ScreeningAndRefer" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_ScreeningAndRefer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ScreeningAndRefer" title="Link to this definition"></a></dt>
 <dd><p>This is the Screening-and-Refer HSI.
 A positive outcome from symptom-based screening will prompt referral to tb tests (sputum/xpert/xray)
 no consumables are required for screening (4 clinical questions)</p>
@@ -979,7 +979,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_ScreeningAndRefer):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_ScreeningAndRefer.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_ScreeningAndRefer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ScreeningAndRefer.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ScreeningAndRefer.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -994,7 +994,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_ScreeningAndRefer.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_ScreeningAndRefer.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ScreeningAndRefer.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ScreeningAndRefer.apply" title="Link to this definition"></a></dt>
 <dd><p>Do the screening and referring to next tests</p>
 </dd></dl>
 
@@ -1002,7 +1002,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_ClinicalDiagnosis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_ClinicalDiagnosis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_ClinicalDiagnosis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_ClinicalDiagnosis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis" title="Link to this definition"></a></dt>
 <dd><p>This is a clinical diagnosis appt which is called when other tests have not been
 available and only a clinical diagnosis is required</p>
 <ul class="simple">
@@ -1027,7 +1027,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_ClinicalDiagnosis):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_ClinicalDiagnosis.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1042,7 +1042,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_ClinicalDiagnosis.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.apply" title="Link to this definition"></a></dt>
 <dd><p>Do the screening and referring process</p>
 </dd></dl>
 
@@ -1050,7 +1050,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Xray_level1b">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_Xray_level1b</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Xray_level1b"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level1b" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_Xray_level1b</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level1b" title="Link to this definition"></a></dt>
 <dd><p>The is the x-ray HSI
 usually used for testing children unable to produce sputum
 positive result will prompt referral to start treatment</p>
@@ -1070,7 +1070,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_Xray_level1b):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Xray_level1b.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Xray_level1b.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level1b.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level1b.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1085,7 +1085,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Xray_level1b.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Xray_level1b.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level1b.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level1b.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
@@ -1094,7 +1094,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Xray_level2">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_Xray_level2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Xray_level2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level2" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_Xray_level2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level2" title="Link to this definition"></a></dt>
 <dd><p>This is the x-ray HSI performed at level 2
 usually used for testing children unable to produce sputum
 positive result will prompt referral to start treatment</p>
@@ -1114,7 +1114,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_Xray_level2):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Xray_level2.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Xray_level2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level2.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level2.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1129,7 +1129,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Xray_level2.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Xray_level2.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level2.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Xray_level2.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
@@ -1138,7 +1138,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_StartTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_StartTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1151,12 +1151,12 @@ constructor, but may also take further keyword arguments.</p>
 </dl>
 <p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x11f18c9f0&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x14f55e890&gt;</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_StartTreatment):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1171,7 +1171,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.apply" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event - start TB treatment
 select appropriate treatment and request
 if available, change person’s properties</p>
@@ -1179,7 +1179,7 @@ if available, change person’s properties</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment.select_treatment">
-<span class="sig-name descname"><span class="pre">select_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment.select_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.select_treatment" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">select_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.select_treatment" title="Link to this definition"></a></dt>
 <dd><p>helper function to select appropriate treatment and check whether
 consumables are available to start drug course
 treatment will always be for ds-tb unless mdr has been identified
@@ -1190,7 +1190,7 @@ treatment will always be for ds-tb unless mdr has been identified
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_FollowUp">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_FollowUp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_FollowUp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_FollowUp" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_FollowUp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_FollowUp" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event
 clinical monitoring for tb patients on treatment
 will schedule sputum smear test if needed
@@ -1212,7 +1212,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_FollowUp):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_FollowUp.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_FollowUp.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_FollowUp.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_FollowUp.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1227,7 +1227,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_FollowUp.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_FollowUp.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_FollowUp.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_FollowUp.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
@@ -1236,7 +1236,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_Start_or_Continue_Ipt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Start_or_Continue_Ipt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_Start_or_Continue_Ipt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event - give ipt to reduce risk of active TB
 It can be scheduled by:
 * HIV.HSI_Hiv_StartOrContinueTreatment for PLHIV, diagnosed and on ART
@@ -1260,7 +1260,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_Start_or_Continue_Ipt):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Start_or_Continue_Ipt.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1275,7 +1275,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_Start_or_Continue_Ipt.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_Start_or_Continue_Ipt.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
@@ -1284,7 +1284,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_EndOfLifeCare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_EndOfLifeCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beddays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_EndOfLifeCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_EndOfLifeCare" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_EndOfLifeCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beddays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_EndOfLifeCare" title="Link to this definition"></a></dt>
 <dd><p>this is a hospital stay for terminally-ill patients with TB
 it does not affect disability weight or probability of death
 no consumables are logged but health system capacity (HR) is allocated
@@ -1306,7 +1306,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_EndOfLifeCare):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_EndOfLifeCare.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beddays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_EndOfLifeCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_EndOfLifeCare.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beddays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_EndOfLifeCare.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1321,7 +1321,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_EndOfLifeCare.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_EndOfLifeCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_EndOfLifeCare.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_EndOfLifeCare.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
@@ -1330,7 +1330,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb_DecisionToContinueIPT">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tb_DecisionToContinueIPT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb_DecisionToContinueIPT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb_DecisionToContinueIPT" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tb_DecisionToContinueIPT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb_DecisionToContinueIPT" title="Link to this definition"></a></dt>
 <dd><p>Helper event that is used to ‘decide’ if someone on IPT should continue or end
 This event is scheduled by ‘HSI_Tb_Start_or_Continue_Ipt’ after 6 months</p>
 <ul class="simple">
@@ -1354,7 +1354,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class Tb_DecisionToContinueIPT):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb_DecisionToContinueIPT.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb_DecisionToContinueIPT.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb_DecisionToContinueIPT.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb_DecisionToContinueIPT.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1372,7 +1372,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.Tb_DecisionToContinueIPT.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#Tb_DecisionToContinueIPT.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.Tb_DecisionToContinueIPT.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.Tb_DecisionToContinueIPT.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1386,7 +1386,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbDecideDeathEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbDecideDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbDecideDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbDecideDeathEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbDecideDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbDecideDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>The scheduled hospitalisation and subsequent death for a tb case
 check whether death should occur using a linear model
 will depend on treatment status, smear status and age
@@ -1409,7 +1409,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class TbDecideDeathEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbDecideDeathEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbDecideDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbDecideDeathEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbDecideDeathEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1427,7 +1427,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbDecideDeathEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbDecideDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbDecideDeathEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbDecideDeathEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1441,7 +1441,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbDeathEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbDeathEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>The scheduled death for a tb case
 check whether this death should occur using a linear model
 will depend on treatment status, smear status and age</p>
@@ -1462,7 +1462,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class TbDeathEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbDeathEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbDeathEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbDeathEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1480,7 +1480,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbDeathEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbDeathEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbDeathEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1494,7 +1494,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbLoggingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbLoggingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>produce some outputs to check</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
@@ -1502,13 +1502,13 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class TbLoggingEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbLoggingEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbLoggingEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbLoggingEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>produce some outputs to check</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbLoggingEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbLoggingEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbLoggingEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -1522,7 +1522,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbCheckPropertiesEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbCheckPropertiesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbCheckPropertiesEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbCheckPropertiesEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TbCheckPropertiesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbCheckPropertiesEvent" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1539,7 +1539,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class TbCheckPropertiesEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbCheckPropertiesEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbCheckPropertiesEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbCheckPropertiesEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbCheckPropertiesEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1554,7 +1554,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.TbCheckPropertiesEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#TbCheckPropertiesEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.TbCheckPropertiesEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.TbCheckPropertiesEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -1568,7 +1568,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.tb.DummyTbModule">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DummyTbModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_tb_prev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#DummyTbModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.DummyTbModule" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DummyTbModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_tb_prev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.DummyTbModule" title="Link to this definition"></a></dt>
 <dd><p>Dummy TB Module - it’s only job is to create and maintain the ‘tb_inf’ property.
 This can be used in test files.</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
@@ -1607,7 +1607,7 @@ generator.</p>
 <p><strong>Functions (defined or overridden in class DummyTbModule):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.DummyTbModule.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_tb_prev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#DummyTbModule.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active_tb_prev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -1620,7 +1620,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.DummyTbModule.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#DummyTbModule.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1633,7 +1633,7 @@ Typically, modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.DummyTbModule.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#DummyTbModule.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
@@ -1660,7 +1660,7 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.DummyTbModule.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#DummyTbModule.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.initialise_simulation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Get ready for simulation start.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called just before the main simulation loop begins, and after all
@@ -1670,7 +1670,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.DummyTbModule.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#DummyTbModule.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.on_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.tb.DummyTbModule.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This is called by the simulation whenever a new person is born.</p>
@@ -1699,9 +1699,7 @@ It is a good place to add initial events to the event queue.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

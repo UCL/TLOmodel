@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.cli module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.cli module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -91,19 +91,19 @@
 <p>The TLOmodel command-line interface</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.print_basic_job_details">
-<span class="sig-name descname"><span class="pre">print_basic_job_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#print_basic_job_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.print_basic_job_details" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">print_basic_job_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.print_basic_job_details" title="Link to this definition"></a></dt>
 <dd><p>Display basic job information</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.load_config">
-<span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.load_config" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.load_config" title="Link to this definition"></a></dt>
 <dd><p>Load configuration for accessing Batch services</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.load_server_config">
-<span class="sig-name descname"><span class="pre">load_server_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kv_uri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tenant_id</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/cli.html#load_server_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.load_server_config" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">load_server_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kv_uri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tenant_id</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#tlo.cli.load_server_config" title="Link to this definition"></a></dt>
 <dd><p>Retrieve the server configuration for running Batch using the user’s Azure credentials</p>
 <p>Allows user to login using credentials from Azure CLI or interactive browser.</p>
 <p>On Windows, login might fail because pywin32 is not installed correctly. Resolve by
@@ -113,19 +113,19 @@ For more information, see <a class="reference external" href="https://github.com
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.get_batch_client">
-<span class="sig-name descname"><span class="pre">get_batch_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tenant_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#get_batch_client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.get_batch_client" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_batch_client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tenant_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.get_batch_client" title="Link to this definition"></a></dt>
 <dd><p>Create a Batch service client</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.load_scenario">
-<span class="sig-name descname"><span class="pre">load_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#load_scenario"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.load_scenario" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">load_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.load_scenario" title="Link to this definition"></a></dt>
 <dd><p>Load the Scenario class from the specified file</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.is_file_clean">
-<span class="sig-name descname"><span class="pre">is_file_clean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#is_file_clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.is_file_clean" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">is_file_clean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.is_file_clean" title="Link to this definition"></a></dt>
 <dd><p>Checks whether the scenario file and current branch is clean and unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -136,7 +136,7 @@ For more information, see <a class="reference external" href="https://github.com
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.print_batch_exception">
-<span class="sig-name descname"><span class="pre">print_batch_exception</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_exception</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#print_batch_exception"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.print_batch_exception" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">print_batch_exception</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_exception</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.print_batch_exception" title="Link to this definition"></a></dt>
 <dd><p>Prints the contents of the specified Batch exception.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -147,27 +147,27 @@ For more information, see <a class="reference external" href="https://github.com
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.create_file_share">
-<span class="sig-name descname"><span class="pre">create_file_share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#create_file_share"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.create_file_share" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_file_share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.create_file_share" title="Link to this definition"></a></dt>
 <dd><p>Uses a ShareClient object to create a share if it does not exist.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.create_directory">
-<span class="sig-name descname"><span class="pre">create_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dir_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#create_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.create_directory" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dir_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.create_directory" title="Link to this definition"></a></dt>
 <dd><p>Creates a directory in the root of the specified file share by using a
 ShareDirectoryClient object.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.upload_local_file">
-<span class="sig-name descname"><span class="pre">upload_local_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#upload_local_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.upload_local_file" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">upload_local_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">connection_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_file_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.upload_local_file" title="Link to this definition"></a></dt>
 <dd><p>Uploads the contents of the specified file into the specified directory in
 the specified Azure file share.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.create_job">
-<span class="sig-name descname"><span class="pre">create_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_service_client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vm_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_node_count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mount_configuration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_pool_alive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subnet_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#create_job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.create_job" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_service_client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vm_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_node_count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mount_configuration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_pool_alive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subnet_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.create_job" title="Link to this definition"></a></dt>
 <dd><p>Creates a job with the specified ID, associated with the specified pool.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -187,7 +187,7 @@ the specified Azure file share.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.cli.add_tasks">
-<span class="sig-name descname"><span class="pre">add_tasks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_service_client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_identity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_run_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">command</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/cli.html#add_tasks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.cli.add_tasks" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_tasks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_service_client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_identity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_run_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">command</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.cli.add_tasks" title="Link to this definition"></a></dt>
 <dd><p>Adds the simulation tasks in the collection to the specified job.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -217,9 +217,7 @@ the specified Azure file share.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

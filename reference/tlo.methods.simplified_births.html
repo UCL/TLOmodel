@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.simplified_births module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.methods.simplified_births module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -95,7 +95,7 @@ postnatal supervisor, newborn outcomes) , allowing for faster runnning when thes
 is that every pregnancy results in a birth.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirths">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimplifiedBirths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimplifiedBirths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths" title="Link to this definition"></a></dt>
 <dd><p>A simplified births module responsible for generating births in a simplified way and assign mother ids to newborns.</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -187,14 +187,14 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Labour’, ‘Contraception’, ‘PregnancySupervisor’, ‘NewbornOutcomes’, ‘PostnatalSupervisor’}</p>
+<p>ALTERNATIVE_TO : {‘PregnancySupervisor’, ‘Contraception’, ‘Labour’, ‘NewbornOutcomes’, ‘PostnatalSupervisor’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class SimplifiedBirths):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirths.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirths.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -207,25 +207,25 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirths.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirths.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Load parameters for probability of pregnancy/birth and breastfeeding status for newborns</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirths.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirths.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set property values to their defaults for the initial population.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirths.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirths.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.initialise_simulation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Schedule the SimplifiedBirthsPoll and the SimplifiedBirthEvent to occur every month.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirths.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirths.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.on_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirths.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise properties for a newborn individual to their defaults.</p>
 </dd></dl>
 
@@ -233,7 +233,7 @@ generator.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirthsPoll">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimplifiedBirthsPoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirthsPoll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SimplifiedBirthsPoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -250,7 +250,7 @@ generator.</p>
 <p><strong>Functions (defined or overridden in class SimplifiedBirthsPoll):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirthsPoll.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirthsPoll.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -265,7 +265,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirthsPoll.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirthsPoll.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -277,21 +277,21 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirthsPoll.set_new_pregnancies">
-<span class="sig-name descname"><span class="pre">set_new_pregnancies</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirthsPoll.set_new_pregnancies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.set_new_pregnancies" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_new_pregnancies</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.set_new_pregnancies" title="Link to this definition"></a></dt>
 <dd><p>Making women pregnant. Rate of doing so is based on age-specific fertility rates under assumption that every
 pregnancy results in a birth.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirthsPoll.do_deliveries">
-<span class="sig-name descname"><span class="pre">do_deliveries</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirthsPoll.do_deliveries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.do_deliveries" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_deliveries</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.do_deliveries" title="Link to this definition"></a></dt>
 <dd><p>Checks to see if the date-of-delivery for pregnant women has been reached and implement births where
 appropriate.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirthsPoll.update_breastfed_status">
-<span class="sig-name descname"><span class="pre">update_breastfed_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirthsPoll.update_breastfed_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.update_breastfed_status" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update_breastfed_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.update_breastfed_status" title="Link to this definition"></a></dt>
 <dd><p>Update the bread_fed status of newborns, mirroing the functionality provided by the Newborn module</p>
 </dd></dl>
 
@@ -310,9 +310,7 @@ appropriate.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

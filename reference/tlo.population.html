@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.population module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.population module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -91,7 +91,7 @@
 <p>Types for representing a properties of a population of individuals.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.population.IndividualProperties">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IndividualProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population_dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#IndividualProperties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.IndividualProperties" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IndividualProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population_dataframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.population.IndividualProperties" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Memoized view of population dataframe row that is optionally read-only.</p>
 <p>This class should not be instantiated directly but instead the
@@ -99,13 +99,13 @@
 instances for a given population.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.population.IndividualProperties.synchronize_updates_to_dataframe">
-<span class="sig-name descname"><span class="pre">synchronize_updates_to_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/population.html#IndividualProperties.synchronize_updates_to_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.IndividualProperties.synchronize_updates_to_dataframe" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">synchronize_updates_to_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.population.IndividualProperties.synchronize_updates_to_dataframe" title="Link to this definition"></a></dt>
 <dd><p>Synchronize values for any updated properties to population dataframe.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.population.IndividualProperties.finalize">
-<span class="sig-name descname"><span class="pre">finalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/population.html#IndividualProperties.finalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.IndividualProperties.finalize" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">finalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.population.IndividualProperties.finalize" title="Link to this definition"></a></dt>
 <dd><p>Synchronize updates to population dataframe and prevent further access.</p>
 </dd></dl>
 
@@ -113,7 +113,7 @@ instances for a given population.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.population.Population">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="tlo.core.html#tlo.core.Property" title="tlo.core.Property"><span class="pre">Property</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="tlo.core.html#tlo.core.Property" title="tlo.core.Property"><span class="pre">Property</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.population.Population" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A complete population of individuals.</p>
 <p>Useful properties of a population:</p>
@@ -164,7 +164,7 @@ dataframe (optional).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.population.Population.do_birth">
-<span class="sig-name descname"><span class="pre">do_birth</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population.do_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.do_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_birth</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.population.Population.do_birth" title="Link to this definition"></a></dt>
 <dd><p>Create a new person within the population.</p>
 <p>TODO: This will over-allocate capacity in the population dataframe for efficiency.</p>
 <dl class="field-list simple">
@@ -176,7 +176,7 @@ dataframe (optional).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.population.Population.make_test_property">
-<span class="sig-name descname"><span class="pre">make_test_property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population.make_test_property"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.make_test_property" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">make_test_property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.population.Population.make_test_property" title="Link to this definition"></a></dt>
 <dd><p>Create a new property for test purposes.</p>
 <p>When testing a particular method in isolation, it’s helpful to be able to define
 the properties it reads that would normally be provided by other methods. That is
@@ -196,7 +196,7 @@ the property</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.population.Population.individual_properties">
-<span class="sig-name descname"><span class="pre">individual_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/population.html#Population.individual_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.individual_properties" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">individual_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#tlo.population.Population.individual_properties" title="Link to this definition"></a></dt>
 <dd><p>Context manager for a memoized view of a row of the population dataframe.</p>
 <p>The view returned represents the properties of an individual with properties
 accessible by indexing using string column names, and lazily read-on demand
@@ -239,9 +239,7 @@ dataframe.</p></li>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

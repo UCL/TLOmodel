@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hiv_tb_calibration module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.methods.hiv_tb_calibration module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -94,7 +94,7 @@
 for a given set of parameters using outputs from the demography (deaths), HIV and TB modules</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Deviance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Deviance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance" title="Link to this definition"></a></dt>
 <dd><p>This module reads in logged outputs from HIV, TB and demography and compares them with reported data
 a deviance measure is calculated and returned on simulation end</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
@@ -107,13 +107,13 @@ generator.</p>
 </dl>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘Tb’, ‘Hiv’}</p>
+<p>INIT_DEPENDENCIES : {‘Tb’, ‘Demography’, ‘Hiv’}</p>
 <p>METADATA : {}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Deviance):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -126,7 +126,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -139,7 +139,7 @@ Typically, modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
@@ -166,7 +166,7 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.initialise_simulation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Get ready for simulation start.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called just before the main simulation loop begins, and after all
@@ -176,7 +176,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.on_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This is called by the simulation whenever a new person is born.</p>
@@ -192,29 +192,29 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.read_data_files">
-<span class="sig-name descname"><span class="pre">read_data_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.read_data_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.read_data_files" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_data_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.read_data_files" title="Link to this definition"></a></dt>
 <dd><p>Make a dict of all data to be used in calculating calibration score</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.read_model_outputs">
-<span class="sig-name descname"><span class="pre">read_model_outputs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.read_model_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.read_model_outputs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_model_outputs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.read_model_outputs" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.weighted_mean">
-<span class="sig-name descname"><span class="pre">weighted_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.weighted_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.weighted_mean" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">weighted_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.weighted_mean" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.record_death">
-<span class="sig-name descname"><span class="pre">record_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_years</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.record_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.record_death" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">record_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">age_years</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.record_death" title="Link to this definition"></a></dt>
 <dd><p>Save outputs about one death</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv_tb_calibration.Deviance.on_simulation_end">
-<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv_tb_calibration.html#Deviance.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.on_simulation_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hiv_tb_calibration.Deviance.on_simulation_end" title="Link to this definition"></a></dt>
 <dd><p>This is called after the simulation has ended.
 Modules do not need to declare this.</p>
 </dd></dl>
@@ -234,9 +234,7 @@ Modules do not need to declare this.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

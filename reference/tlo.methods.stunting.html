@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.stunting module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.methods.stunting module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -99,7 +99,7 @@ if they have any stunting they are provided with an intervention - <cite>HSI_Stu
 </section>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stunting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stunting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting" title="Link to this definition"></a></dt>
 <dd><p>This is the disease module for Stunting</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -271,13 +271,13 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘Diarrhoea’, ‘NewbornOutcomes’, ‘Wasting’, ‘Hiv’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Diarrhoea’, ‘Demography’, ‘Hiv’, ‘NewbornOutcomes’, ‘Wasting’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Stunting):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -290,7 +290,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -303,57 +303,57 @@ Typically, modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set initial prevalence of stunting according to distributions provided in parameters</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.initialise_simulation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Prepare for simulation to start</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.on_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Set that on birth there is no stunting</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.look_up_consumable_item_codes">
-<span class="sig-name descname"><span class="pre">look_up_consumable_item_codes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.look_up_consumable_item_codes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.look_up_consumable_item_codes" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">look_up_consumable_item_codes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.look_up_consumable_item_codes" title="Link to this definition"></a></dt>
 <dd><p>Look up the item codes that used in the HSI in the module</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_onset">
-<span class="sig-name descname"><span class="pre">do_onset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_onset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_onset" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_onset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_onset" title="Link to this definition"></a></dt>
 <dd><p>Represent the onset of stunting for the person_id given in <cite>idx</cite></p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_progression">
-<span class="sig-name descname"><span class="pre">do_progression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_progression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_progression" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_progression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_progression" title="Link to this definition"></a></dt>
 <dd><p>Represent the progression to severe stunting for the person_id given in <cite>idx</cite></p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_recovery">
-<span class="sig-name descname"><span class="pre">do_recovery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_recovery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_recovery" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_recovery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_recovery" title="Link to this definition"></a></dt>
 <dd><p>Represent the recovery from stunting for the person_id given in <cite>idx</cite>. Recovery causes the person to move
 ‘up’ one level: i.e. ‘HAZ&lt;-3’ –&gt; ‘-3&lt;=HAZ&lt;-2’ or ‘-3&lt;=HAZ&lt;-2’ –&gt; ‘HAZ&gt;=-2’</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_treatment">
-<span class="sig-name descname"><span class="pre">do_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prob_success</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_treatment" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prob_success</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_treatment" title="Link to this definition"></a></dt>
 <dd><p>Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery
 of the person immediately.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting.do_at_generic_first_appt">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#Stunting.do_at_generic_first_appt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_at_generic_first_appt" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.stunting.Stunting.do_at_generic_first_appt" title="Link to this definition"></a></dt>
 <dd><p>Actions to take during a non-emergency generic health system interaction (HSI).</p>
 <p>Derived classes should overwrite this method so that they are compatible with
 the <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem" title="tlo.methods.healthsystem.HealthSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">HealthSystem</span></code></a> module, and can schedule HSI events when a
@@ -394,7 +394,7 @@ appointment.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPollingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPollingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent" title="Link to this definition"></a></dt>
 <dd><p>Regular event that controls the onset of stunting, progression to severe stunting and natural recovery.</p>
 <p>Create a new regular event.</p>
 <dl class="field-list simple">
@@ -412,7 +412,7 @@ appointment.</p></li>
 <p><strong>Functions (defined or overridden in class StuntingPollingEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPollingEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPollingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -427,7 +427,7 @@ appointment.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPollingEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent.apply" title="Link to this definition"></a></dt>
 <dd><ul class="simple">
 <li><p>Determine who will be onset for stunting (among those not stunted) and effect that change;</p></li>
 <li><p>Determine who will be onset for recovery (among those stunted) and effect that change.</p></li>
@@ -437,7 +437,7 @@ appointment.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPollingEvent.apply_model">
-<span class="sig-name descname"><span class="pre">apply_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days_exposed_to_risk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPollingEvent.apply_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent.apply_model" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days_exposed_to_risk</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent.apply_model" title="Link to this definition"></a></dt>
 <dd><p>Return the person_ids selected for an event of occur to in a given period (in days), as specified by a
 LinearModel that provides the annual risk of the event.
 * Looks-up annual probability of the event using a linear model supplied in <cite>model</cite> to a population masked with</p>
@@ -455,7 +455,7 @@ LinearModel that provides the annual risk of the event.
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingLoggingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>Logging event occurring every year</p>
 <p>Create a new regular event.</p>
 <dl class="field-list simple">
@@ -473,7 +473,7 @@ LinearModel that provides the annual risk of the event.
 <p><strong>Functions (defined or overridden in class StuntingLoggingEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingLoggingEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -488,7 +488,7 @@ LinearModel that provides the annual risk of the event.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingLoggingEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Log the current distribution of stunting classification by age</p>
 </dd></dl>
 
@@ -496,7 +496,7 @@ LinearModel that provides the annual risk of the event.
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Stunting_ComplementaryFeeding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#HSI_Stunting_ComplementaryFeeding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Stunting_ComplementaryFeeding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding" title="Link to this definition"></a></dt>
 <dd><p>HSI for complementary feeding, either with the provision of supplementary foods or with education only.</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
@@ -514,7 +514,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Stunting_ComplementaryFeeding):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#HSI_Stunting_ComplementaryFeeding.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -529,7 +529,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#HSI_Stunting_ComplementaryFeeding.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
@@ -538,7 +538,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPropertiesOfOtherModules">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPropertiesOfOtherModules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules" title="Link to this definition"></a></dt>
 <dd><p>For the purpose of the testing, this module generates the properties upon which the Stunting module relies</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -608,7 +608,7 @@ generator.</p>
 <p><strong>Functions (defined or overridden in class StuntingPropertiesOfOtherModules):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPropertiesOfOtherModules.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPropertiesOfOtherModules.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -621,7 +621,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPropertiesOfOtherModules.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPropertiesOfOtherModules.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -634,7 +634,7 @@ Typically, modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPropertiesOfOtherModules.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
@@ -661,7 +661,7 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPropertiesOfOtherModules.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_simulation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Get ready for simulation start.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called just before the main simulation loop begins, and after all
@@ -671,7 +671,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPropertiesOfOtherModules.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/stunting.html#StuntingPropertiesOfOtherModules.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.on_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This is called by the simulation whenever a new person is born.</p>
@@ -700,9 +700,7 @@ It is a good place to add initial events to the event queue.</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

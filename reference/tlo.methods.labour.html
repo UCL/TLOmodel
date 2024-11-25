@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2471+g49acef5 documentation</title>
+  <title>tlo.methods.labour module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=cdb6c1d3"></script>
+      <script src="../_static/documentation_options.js?v=04b6525c"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -91,7 +91,7 @@
 <span id="tlo-methods-labour-module"></span><h1>tlo.methods.labour module<a class="headerlink" href="#module-tlo.methods.labour" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour" title="Link to this definition"></a></dt>
 <dd><p>This is module is responsible for the process of labour, birth and the immediate postnatal period (up until
 48hrs post birth). This model has a number of core functions including; initiating the onset of labour for women on
 their pre-determined due date (or prior to this for preterm labour/admission for delivery), applying the incidence</p>
@@ -962,17 +962,17 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘Contraception’, ‘HealthSystem’, ‘Lifestyle’, ‘PregnancySupervisor’, ‘NewbornOutcomes’, ‘PostnatalSupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x1306c5750&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1306c42d0&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1306c46d0&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1306c70d0&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1306c6510&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1306c5850&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1306c6710&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1306c6490&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x1306c7c10&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘HealthSystem’, ‘Contraception’, ‘PregnancySupervisor’, ‘Lifestyle’, ‘NewbornOutcomes’, ‘CareOfWomenDuringPregnancy’, ‘PostnatalSupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x33f752d50&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x33f7535d0&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x33f750850&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x33f7509d0&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x33f753b10&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x33f752850&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x33f752090&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x33f752410&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x33f7525d0&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘Stunting’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Labour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.__init__" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -985,7 +985,7 @@ generator.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.read_parameters" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -998,7 +998,7 @@ Typically, modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.initialise_population" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
@@ -1025,14 +1025,14 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.get_and_store_labour_item_codes">
-<span class="sig-name descname"><span class="pre">get_and_store_labour_item_codes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.get_and_store_labour_item_codes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.get_and_store_labour_item_codes" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_and_store_labour_item_codes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.get_and_store_labour_item_codes" title="Link to this definition"></a></dt>
 <dd><p>This function defines the required consumables for each intervention delivered during this module and stores
 them in a module level dictionary called within HSIs</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.initialise_simulation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Get ready for simulation start.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called just before the main simulation loop begins, and after all
@@ -1042,7 +1042,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.on_birth" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This is called by the simulation whenever a new person is born.</p>
@@ -1058,7 +1058,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.further_on_birth_labour">
-<span class="sig-name descname"><span class="pre">further_on_birth_labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.further_on_birth_labour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.further_on_birth_labour" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">further_on_birth_labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.further_on_birth_labour" title="Link to this definition"></a></dt>
 <dd><p>This function is called by the on_birth function of NewbornOutcomes module. This function contains additional
 code related to the labour module that should be ran on_birth for all births - it has been
 parcelled into functions to ensure each modules (pregnancy,antenatal care, labour, newborn, postnatal) on_birth
@@ -1068,18 +1068,18 @@ code is ran in the correct sequence (as this can vary depending on how modules a
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.on_hsi_alert">
-<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.on_hsi_alert" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.on_hsi_alert" title="Link to this definition"></a></dt>
 <dd><p>This is called whenever there is an HSI event commissioned by one of the other disease modules.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.report_daly_values">
-<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.report_daly_values" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.report_daly_values" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.set_date_of_labour">
-<span class="sig-name descname"><span class="pre">set_date_of_labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.set_date_of_labour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.set_date_of_labour" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_date_of_labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.set_date_of_labour" title="Link to this definition"></a></dt>
 <dd><p>This function is called by contraception.py within the events ‘PregnancyPoll’ and ‘Fail’ for women who are
 allocated to become pregnant during a simulation run. This function schedules the onset of labour between 37
 and 44 weeks gestational age (not foetal age) to ensure all women who become pregnant will go into labour.
@@ -1090,7 +1090,7 @@ caesarean section.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.predict">
-<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.predict" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.predict" title="Link to this definition"></a></dt>
 <dd><p>This function compares the result of a specific linear equation with a random draw providing a boolean for
 the outcome under examination
 :param eq: Linear model equation
@@ -1099,7 +1099,7 @@ the outcome under examination
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.reset_due_date">
-<span class="sig-name descname"><span class="pre">reset_due_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id_or_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_due_date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.reset_due_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.reset_due_date" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">reset_due_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id_or_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_due_date</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.reset_due_date" title="Link to this definition"></a></dt>
 <dd><p>This function is called at various points in the PregnancySupervisor module to reset the due-date of women who
 may have experience pregnancy loss or will now go into pre-term labour on new due-date
 :param ind_or_df: (STR) Is this function being use on an individual row or slice of the data frame</p>
@@ -1118,7 +1118,7 @@ may have experience pregnancy loss or will now go into pre-term labour on new du
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.check_labour_can_proceed">
-<span class="sig-name descname"><span class="pre">check_labour_can_proceed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.check_labour_can_proceed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.check_labour_can_proceed" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">check_labour_can_proceed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.check_labour_can_proceed" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>This function is called by the LabourOnsetEvent to evaluate if labour can proceed for the woman who has arrived</dt><dd><p>at the event</p>
 </dd>
@@ -1133,7 +1133,7 @@ may have experience pregnancy loss or will now go into pre-term labour on new du
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.set_intrapartum_complications">
-<span class="sig-name descname"><span class="pre">set_intrapartum_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.set_intrapartum_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.set_intrapartum_complications" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_intrapartum_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.set_intrapartum_complications" title="Link to this definition"></a></dt>
 <dd><p>This function is called either during a LabourAtHomeEvent OR HSI_Labour_ReceivesSkilledBirthAttendanceDuring
 Labour for all women during labour (home birth vs facility delivery). The function is used to apply risk of
 complications which have been passed ot it including the preceding causes of obstructed labour
@@ -1156,7 +1156,7 @@ abruption, antepartum haemorrhage,  infections (chorioamnionitis/other) and seps
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.set_postpartum_complications">
-<span class="sig-name descname"><span class="pre">set_postpartum_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.set_postpartum_complications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.set_postpartum_complications" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">set_postpartum_complications</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.set_postpartum_complications" title="Link to this definition"></a></dt>
 <dd><p>This function is called in BirthAndPostnatalOutcomesEvent during  for all women following labour and birth
 (home birth vs facility delivery). The function is used to apply risk of complications which have been passed
 ot it including the preceding causes of postpartum haemorrhage (uterine atony, retained placenta, lacerations,
@@ -1170,7 +1170,7 @@ which map to disability weights to capture DALYs
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.progression_of_hypertensive_disorders">
-<span class="sig-name descname"><span class="pre">progression_of_hypertensive_disorders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">property_prefix</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.progression_of_hypertensive_disorders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.progression_of_hypertensive_disorders" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">progression_of_hypertensive_disorders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">property_prefix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.progression_of_hypertensive_disorders" title="Link to this definition"></a></dt>
 <dd><p>This function is called during LabourAtHomeEvent/BirthAndPostnatalEvent or HSI_Labour_Receives
 SkilledBirthAttendanceDuring/HSI_Labour_ReceivesPostnatalCheck to determine if a woman with a hypertensive
 disorder will experience progression to a more severe state of disease during labour or the immediate</p>
@@ -1184,7 +1184,7 @@ disorder will experience progression to a more severe state of disease during la
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.apply_risk_of_early_postpartum_death">
-<span class="sig-name descname"><span class="pre">apply_risk_of_early_postpartum_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.apply_risk_of_early_postpartum_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.apply_risk_of_early_postpartum_death" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply_risk_of_early_postpartum_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.apply_risk_of_early_postpartum_death" title="Link to this definition"></a></dt>
 <dd><p>This function is called for all women who have survived labour. This function is called at various points in
 the model depending on a womans pathway through key events/HSI events. The function cycles through each
 complication to determine if that will contribute to a womans death and then schedules InstantaneousDeathEvent
@@ -1195,7 +1195,7 @@ PostnatalWeekOneEvent
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.labour_characteristics_checker">
-<span class="sig-name descname"><span class="pre">labour_characteristics_checker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.labour_characteristics_checker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.labour_characteristics_checker" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">labour_characteristics_checker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.labour_characteristics_checker" title="Link to this definition"></a></dt>
 <dd><p>This function is called at multiples points in the module to ensure women of the right characteristics are
 in labour. This function doesnt check for a woman being pregnant or alive, as some events will still run despite
 those variables being set to false
@@ -1204,7 +1204,7 @@ those variables being set to false
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.postpartum_characteristics_checker">
-<span class="sig-name descname"><span class="pre">postpartum_characteristics_checker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.postpartum_characteristics_checker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.postpartum_characteristics_checker" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">postpartum_characteristics_checker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.postpartum_characteristics_checker" title="Link to this definition"></a></dt>
 <dd><p>This function is called at multiples points in the module to ensure women of the right characteristics are
 in the period following labour. This function doesnt check for a woman being pregnant or alive, as some events
 will still run despite those variables being set to false
@@ -1213,7 +1213,7 @@ will still run despite those variables being set to false
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.prophylactic_labour_interventions">
-<span class="sig-name descname"><span class="pre">prophylactic_labour_interventions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.prophylactic_labour_interventions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.prophylactic_labour_interventions" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">prophylactic_labour_interventions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.prophylactic_labour_interventions" title="Link to this definition"></a></dt>
 <dd><p>This function houses prophylactic interventions delivered by a Skilled Birth Attendant to women in labour.
 It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
 :param hsi_event: HSI event in which the function has been called:</p>
@@ -1221,7 +1221,7 @@ It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.determine_delivery_mode_in_spe_or_ec">
-<span class="sig-name descname"><span class="pre">determine_delivery_mode_in_spe_or_ec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.determine_delivery_mode_in_spe_or_ec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.determine_delivery_mode_in_spe_or_ec" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">determine_delivery_mode_in_spe_or_ec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">complication</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.determine_delivery_mode_in_spe_or_ec" title="Link to this definition"></a></dt>
 <dd><p>This function is called following treatment for either severe pre-eclampsia or eclampsia during labour and
 determines if women with these conditions will undergo vaginal, assisted vaginal or caesarean section due to</p>
 <blockquote>
@@ -1240,7 +1240,7 @@ determines if women with these conditions will undergo vaginal, assisted vaginal
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_treatment_of_severe_pre_eclampsia_mgso4">
-<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_severe_pre_eclampsia_mgso4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_treatment_of_severe_pre_eclampsia_mgso4"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_severe_pre_eclampsia_mgso4" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_severe_pre_eclampsia_mgso4</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_severe_pre_eclampsia_mgso4" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis and management of severe pre-eclampsia during labour. This function
 defines the required consumables and administers the intervention if available. The intervention is
 intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or
@@ -1252,7 +1252,7 @@ HSI_Labour_ReceivesPostnatalCheck
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_treatment_of_hypertension">
-<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_hypertension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_treatment_of_hypertension"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_hypertension" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_hypertension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_hypertension" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis and management of hypertension during labour. This function
 defines the required consumable  and administers the intervention if available. The intervention is
 intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or
@@ -1262,7 +1262,7 @@ HSI_Labour_ReceivesPostnatalCheck
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_treatment_of_eclampsia">
-<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_eclampsia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_treatment_of_eclampsia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_eclampsia" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_eclampsia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_eclampsia" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis and management of eclampsia during or following labour. This function
 defines the required consumables and administers the intervention if available. The intervention is
 intravenous magnesium sulphate.  It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour or
@@ -1274,7 +1274,7 @@ HSI_Labour_ReceivesPostnatalCheck
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_for_assisted_vaginal_delivery">
-<span class="sig-name descname"><span class="pre">assessment_for_assisted_vaginal_delivery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indication</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_for_assisted_vaginal_delivery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_for_assisted_vaginal_delivery" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_for_assisted_vaginal_delivery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indication</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_for_assisted_vaginal_delivery" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis and management of obstructed labour during labour. This function
 defines the required consumables and administers the intervention if available. The intervention in this
 function is assisted vaginal delivery. It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
@@ -1285,7 +1285,7 @@ function is assisted vaginal delivery. It is called by HSI_Labour_PresentsForSki
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_treatment_of_maternal_sepsis">
-<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_maternal_sepsis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_treatment_of_maternal_sepsis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_maternal_sepsis" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_maternal_sepsis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labour_stage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_maternal_sepsis" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis and management of maternal sepsis during or following labour. This
 function defines the required consumables and administers the intervention if they are available. The
 intervention in this function is maternal sepsis case management. It is called by either</p>
@@ -1303,7 +1303,7 @@ intervention in this function is maternal sepsis case management. It is called b
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_plan_for_antepartum_haemorrhage">
-<span class="sig-name descname"><span class="pre">assessment_and_plan_for_antepartum_haemorrhage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_plan_for_antepartum_haemorrhage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_plan_for_antepartum_haemorrhage" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_plan_for_antepartum_haemorrhage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_plan_for_antepartum_haemorrhage" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis of antepartum haemorrhage during  labour. This
 function ensures that woman is referred for comprehensive care via caesarean section and blood transfusion.
 It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
@@ -1313,7 +1313,7 @@ It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_for_referral_uterine_rupture">
-<span class="sig-name descname"><span class="pre">assessment_for_referral_uterine_rupture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_for_referral_uterine_rupture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_for_referral_uterine_rupture" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_for_referral_uterine_rupture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_for_referral_uterine_rupture" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis of uterine rupture during  labour and ensures
 that a woman is referred for comprehensive care via caesarean section, surgical repair and blood transfusion.
 It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour.
@@ -1323,7 +1323,7 @@ It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.active_management_of_the_third_stage_of_labour">
-<span class="sig-name descname"><span class="pre">active_management_of_the_third_stage_of_labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.active_management_of_the_third_stage_of_labour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.active_management_of_the_third_stage_of_labour" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">active_management_of_the_third_stage_of_labour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.active_management_of_the_third_stage_of_labour" title="Link to this definition"></a></dt>
 <dd><p>This function represents the administration of active management of the third stage of labour. This
 function checks the availability of consumables and delivers the intervention accordingly. It is called by
 HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour
@@ -1332,7 +1332,7 @@ HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_treatment_of_pph_uterine_atony">
-<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_pph_uterine_atony</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_treatment_of_pph_uterine_atony"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_pph_uterine_atony" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_pph_uterine_atony</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_pph_uterine_atony" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis and management of postpartum haemorrhage secondary to uterine atony
 following labour. This function defines the required consumables and administers the intervention if they are
 available. The intervention in this function is  intravenous uterotonics followed by referral for further care
@@ -1342,7 +1342,7 @@ in the event of continued haemorrhage. It is called by HSI_Labour_ReceivesPostna
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_treatment_of_pph_retained_placenta">
-<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_pph_retained_placenta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_treatment_of_pph_retained_placenta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_pph_retained_placenta" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_pph_retained_placenta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_pph_retained_placenta" title="Link to this definition"></a></dt>
 <dd><p>This function represents the diagnosis and management of postpartum haemorrhage secondary to retained placenta
 following labour. This function defines the required consumables and administers the intervention if they are
 available. The intervention in this function is manual removal of placenta (bedside) followed by referral for
@@ -1352,7 +1352,7 @@ further care in the event of continued haemorrhage. It is called by HSI_Labour_R
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.surgical_management_of_pph">
-<span class="sig-name descname"><span class="pre">surgical_management_of_pph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.surgical_management_of_pph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.surgical_management_of_pph" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">surgical_management_of_pph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.surgical_management_of_pph" title="Link to this definition"></a></dt>
 <dd><p>This function represents the surgical management of postpartum haemorrhage (all-cause) following labour. This
 function is called during HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare for women who have PPH and
 medical management has failed.
@@ -1361,7 +1361,7 @@ medical management has failed.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.blood_transfusion">
-<span class="sig-name descname"><span class="pre">blood_transfusion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.blood_transfusion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.blood_transfusion" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">blood_transfusion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.blood_transfusion" title="Link to this definition"></a></dt>
 <dd><p>This function represents the blood transfusion during or after labour. This function is called during
 HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare for women who have experience blood loss due to
 antepartum haemorrhage, postpartum haemorrhage or uterine rupture
@@ -1370,7 +1370,7 @@ antepartum haemorrhage, postpartum haemorrhage or uterine rupture
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_and_treatment_of_anaemia">
-<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_anaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_and_treatment_of_anaemia"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_anaemia" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_and_treatment_of_anaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_and_treatment_of_anaemia" title="Link to this definition"></a></dt>
 <dd><p>This function represents the management of postnatal anaemia including iron and folic acid administration and
 blood testing. Women with severe anaemia are scheduled to receive blood. It is called during
 HSI_Labour_ReceivesPostnatalCheck
@@ -1379,7 +1379,7 @@ HSI_Labour_ReceivesPostnatalCheck
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.assessment_for_depression">
-<span class="sig-name descname"><span class="pre">assessment_for_depression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.assessment_for_depression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_for_depression" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">assessment_for_depression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.assessment_for_depression" title="Link to this definition"></a></dt>
 <dd><p>This function schedules depression screening for women who attend postnatal care via the Depression module. It
 is called within HSI_Labour_ReceivesPostnatalCheck.
 :param hsi_event: HSI event in which the function has been called</p>
@@ -1387,7 +1387,7 @@ is called within HSI_Labour_ReceivesPostnatalCheck.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.interventions_delivered_pre_discharge">
-<span class="sig-name descname"><span class="pre">interventions_delivered_pre_discharge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.interventions_delivered_pre_discharge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.interventions_delivered_pre_discharge" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">interventions_delivered_pre_discharge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.interventions_delivered_pre_discharge" title="Link to this definition"></a></dt>
 <dd><p>This function contains the interventions that are delivered to women prior to discharge. This are considered
 part of essential postnatal care and currently include testing for HIV and postnatal iron and folic acid
 supplementation. It is called by HSI_Labour_ReceivesPostnatalCheck
@@ -1396,7 +1396,7 @@ supplementation. It is called by HSI_Labour_ReceivesPostnatalCheck
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.run_if_receives_skilled_birth_attendance_cant_run">
-<span class="sig-name descname"><span class="pre">run_if_receives_skilled_birth_attendance_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.run_if_receives_skilled_birth_attendance_cant_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.run_if_receives_skilled_birth_attendance_cant_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run_if_receives_skilled_birth_attendance_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.run_if_receives_skilled_birth_attendance_cant_run" title="Link to this definition"></a></dt>
 <dd><p>This function is called by HSI_Labour_PresentsForSkilledBirthAttendanceFollowingLabour if the HSI is unable to
 run on the date it has been scheduled for. For these women who cannot deliver in a facility despite presenting</p>
 <blockquote>
@@ -1412,7 +1412,7 @@ correct schedule of labour events</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.run_if_receives_postnatal_check_cant_run">
-<span class="sig-name descname"><span class="pre">run_if_receives_postnatal_check_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.run_if_receives_postnatal_check_cant_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.run_if_receives_postnatal_check_cant_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run_if_receives_postnatal_check_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.run_if_receives_postnatal_check_cant_run" title="Link to this definition"></a></dt>
 <dd><p>This function is called by HSI_Labour_ReceivesPostnatalCheck if the HSI is unable to
 run on the date it has been scheduled for. For these women who have may have experienced life threatening
 complications we apply risk of death in this function, as it would have been applied in the HSI which can not
@@ -1422,7 +1422,7 @@ run
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run">
-<span class="sig-name descname"><span class="pre">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run" title="Link to this definition"></a></dt>
 <dd><p>This function is called by HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare if the HSI is unable to
 run on the date it has been scheduled for. For these women who have may have experienced life threatening
 complications we apply risk of death in this function, as it would have been applied in the HSI which can not
@@ -1432,7 +1432,7 @@ run
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.Labour.do_at_generic_first_appt_emergency">
-<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/tlo/methods/labour.html#Labour.do_at_generic_first_appt_emergency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.Labour.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_at_generic_first_appt_emergency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="tlo.population.html#tlo.population.IndividualProperties" title="tlo.population.IndividualProperties"><span class="pre">IndividualProperties</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule_hsi_event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HSIEventScheduler</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.labour.Labour.do_at_generic_first_appt_emergency" title="Link to this definition"></a></dt>
 <dd><p>Actions to take during an emergency generic health system interaction (HSI).</p>
 <p>Call signature is identical to the
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">do_at_generic_first_appt()</span></code> method.</p>
@@ -1446,7 +1446,7 @@ condition.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourOnsetEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourOnsetEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourOnsetEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourOnsetEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourOnsetEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourOnsetEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the LabourOnsetEvent. It is scheduled by the set_date_of_labour function for all women who are newly
 pregnant. In addition it is scheduled via the Pregnancy Supervisor module for women who are going into preterm
 labour and by the Care of Women During Pregnancy module for women who require emergency delivery as an intervention
@@ -1474,7 +1474,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class LabourOnsetEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourOnsetEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourOnsetEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourOnsetEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourOnsetEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1492,7 +1492,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourOnsetEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourOnsetEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourOnsetEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourOnsetEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1506,7 +1506,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAtHomeEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourAtHomeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAtHomeEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAtHomeEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourAtHomeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourAtHomeEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the LabourAtHomeEvent. It is scheduled by the LabourOnsetEvent for women who will not seek delivery care at
 a  health facility. This event applies the probability that women delivering at home will experience
 complications associated with the intrapartum phase of labour and makes the appropriate changes to the data frame.</p>
@@ -1531,7 +1531,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class LabourAtHomeEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAtHomeEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAtHomeEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAtHomeEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourAtHomeEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1549,7 +1549,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAtHomeEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAtHomeEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAtHomeEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourAtHomeEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1563,7 +1563,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourDeathAndStillBirthEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourDeathAndStillBirthEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourDeathAndStillBirthEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourDeathAndStillBirthEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourDeathAndStillBirthEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourDeathAndStillBirthEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the LabourDeathAndStillBirthEvent. It is scheduled by the LabourOnsetEvent for all women in the labour
 module following the application of complications (and possibly treatment) for women who have given birth at home
 OR in a facility . This event determines if women who have experienced complications in labour will die or
@@ -1585,7 +1585,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class LabourDeathAndStillBirthEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourDeathAndStillBirthEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourDeathAndStillBirthEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourDeathAndStillBirthEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourDeathAndStillBirthEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1603,7 +1603,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourDeathAndStillBirthEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourDeathAndStillBirthEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourDeathAndStillBirthEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourDeathAndStillBirthEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1617,7 +1617,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.BirthAndPostnatalOutcomesEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BirthAndPostnatalOutcomesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#BirthAndPostnatalOutcomesEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.BirthAndPostnatalOutcomesEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BirthAndPostnatalOutcomesEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.BirthAndPostnatalOutcomesEvent" title="Link to this definition"></a></dt>
 <dd><p>This is BirthAndPostnatalOutcomesEvent. It is scheduled by LabourOnsetEvent when women go into labour. This event
 calls the do_birth function for all women who have gone into labour to generate a newborn within the simulation.
 Additionally, this event applies the incidence of complications immediately following birth and determines if each
@@ -1639,7 +1639,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class BirthAndPostnatalOutcomesEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.BirthAndPostnatalOutcomesEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#BirthAndPostnatalOutcomesEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.BirthAndPostnatalOutcomesEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.BirthAndPostnatalOutcomesEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1657,7 +1657,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.BirthAndPostnatalOutcomesEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#BirthAndPostnatalOutcomesEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.BirthAndPostnatalOutcomesEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.BirthAndPostnatalOutcomesEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1671,7 +1671,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour" title="Link to this definition"></a></dt>
 <dd><p>This is the HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour. This event is the first HSI for women who have
 chosen to deliver in a health care facility. Broadly this HSI represents care provided by a skilled birth attendant
 during labour. This event…</p>
@@ -1706,7 +1706,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1721,34 +1721,34 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.never_ran">
-<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.never_ran" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.never_ran" title="Link to this definition"></a></dt>
 <dd><p>Called when this event is was entered to the HSI Event Queue, but was never run.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.did_not_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.did_not_run" title="Link to this definition"></a></dt>
 <dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_ReceivesPostnatalCheck</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_ReceivesPostnatalCheck</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_Labour_ReceivesPostnatalCheck. It is scheduled by BirthAndPostnatalOutcomesEvent for all women who
 will receive full postnatal checkup after birth. Additionally, this event is scheduled by the
 PostnatalSupervisorEvent for women who require PNC later in the postnatal period. This event represents the
@@ -1771,7 +1771,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_ReceivesPostnatalCheck):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1786,39 +1786,39 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.never_ran">
-<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.never_ran" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.never_ran" title="Link to this definition"></a></dt>
 <dd><p>Called when this event is was entered to the HSI Event Queue, but was never run.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.did_not_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.did_not_run" title="Link to this definition"></a></dt>
 <dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.not_available" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.not_available" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc">
-<span class="sig-name descname"><span class="pre">_get_facility_level_for_pnc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">_get_facility_level_for_pnc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare. This event houses all the interventions that are
 required to be delivered at a CEmONC level facility including caesarean section, blood transfusion and surgery
 during or following labour Currently we assume that if this even runs and the consumables are available then the
@@ -1839,7 +1839,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1854,34 +1854,34 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.never_ran">
-<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.never_ran" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.never_ran" title="Link to this definition"></a></dt>
 <dd><p>Called when this event is was entered to the HSI Event Queue, but was never run.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.did_not_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.did_not_run" title="Link to this definition"></a></dt>
 <dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_PostnatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_PostnatalWardInpatientCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Labour_PostnatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_Labour_PostnatalWardInpatientCare. It is scheduled by HSI_Labour_ReceivesPostnatalCheck for all women
 require treatment as inpatients after delivery. The primary function of this event is to capture inpatient bed
 days</p>
@@ -1901,7 +1901,7 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Functions (defined or overridden in class HSI_Labour_PostnatalWardInpatientCare):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_PostnatalWardInpatientCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1916,28 +1916,28 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_PostnatalWardInpatientCare.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_PostnatalWardInpatientCare.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.did_not_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.did_not_run" title="Link to this definition"></a></dt>
 <dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_PostnatalWardInpatientCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.not_available" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.not_available" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourAndPostnatalCareAnalysisEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAndPostnatalCareAnalysisEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourAndPostnatalCareAnalysisEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>This is LabourAndPostnatalCareAnalysisEvent. This event is scheduled in initialise_simulation. When this event runs,</dt><dd><p>and if any of the module parameters the signify analysis is being conducted are set to True, then key parameters</p>
 </dd>
@@ -1963,7 +1963,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p><strong>Functions (defined or overridden in class LabourAndPostnatalCareAnalysisEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAndPostnatalCareAnalysisEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1981,7 +1981,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAndPostnatalCareAnalysisEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -1995,7 +1995,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourLoggingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourLoggingEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LabourLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the LabourLoggingEvent. It uses the data frame and the labour_tracker to produce summary statistics which
 are processed and presented by different analysis scripts</p>
 <p>Create a new regular event.</p>
@@ -2014,7 +2014,7 @@ are processed and presented by different analysis scripts</p>
 <p><strong>Functions (defined or overridden in class LabourLoggingEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourLoggingEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourLoggingEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2029,7 +2029,7 @@ are processed and presented by different analysis scripts</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourLoggingEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
@@ -2054,9 +2054,7 @@ are processed and presented by different analysis scripts</p>
   <hr/>
 
   <div role="contentinfo">
-    <p>
-      <span class="lastupdated">Last updated on Nov 19, 2024.
-      </span></p>
+    <p></p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

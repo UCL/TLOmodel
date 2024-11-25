@@ -42,13 +42,13 @@ tlo.methods.skeleton module
 
      ADDITIONAL_DEPENDENCIES : {'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x130542d90>}
+     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x33f056a10>}
 
-     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x1305412d0>}
+     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x33f331810>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

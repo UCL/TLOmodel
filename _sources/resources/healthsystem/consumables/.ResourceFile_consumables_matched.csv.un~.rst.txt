@@ -1,5 +1,0 @@
-.ResourceFile consumables matched.csv (.un~)
-============================================
-
-:download:`Download original .un~ file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/consumables/.ResourceFile_consumables_matched.csv.un~>`
-

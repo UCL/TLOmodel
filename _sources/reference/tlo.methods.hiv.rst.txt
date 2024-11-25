@@ -291,13 +291,13 @@ tlo.methods.hiv module
 
      ADDITIONAL_DEPENDENCIES : {'Tb', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x11f4ceb90>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x11f4cfe50>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x14f519b50>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x14f51b2d0>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x11f4cd850>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x14f51a750>}
 
-     INIT_DEPENDENCIES : {'Demography', 'Lifestyle', 'SymptomManager', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'Demography', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -640,7 +640,7 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x11f18d4e0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x14f55f380>
 
      __annotations__ : {}
 

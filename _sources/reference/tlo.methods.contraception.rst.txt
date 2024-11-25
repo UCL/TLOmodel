@@ -112,7 +112,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'Hiv'}
+     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Labour'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -122,9 +122,9 @@ tlo.methods.contraception module
 
      __annotations__ : {}
 
-     all_contraception_states : {'other_traditional', 'injections', 'implant', 'female_sterilization', 'withdrawal', 'male_condom', 'pill', 'not_using', 'periodic_abstinence', 'other_modern', 'IUD'}
+     all_contraception_states : {'IUD', 'not_using', 'other_traditional', 'other_modern', 'pill', 'injections', 'female_sterilization', 'periodic_abstinence', 'male_condom', 'withdrawal', 'implant'}
 
-     contraceptives_initiated_with_additional_items : {'pill', 'injections', 'implant', 'female_sterilization', 'IUD'}
+     contraceptives_initiated_with_additional_items : {'injections', 'IUD', 'female_sterilization', 'pill', 'implant'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -251,13 +251,13 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x130800860>
-
      __annotations__ : {}
 
      **Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):**
 
      .. automethod:: __init__
+
+     .. automethod:: _get_appt_footprint
 
      .. automethod:: apply
 
