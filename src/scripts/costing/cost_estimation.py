@@ -869,7 +869,15 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 
     # Arrange the legend in the same ascending order
     handles, labels = plt.gca().get_legend_handles_labels()
-    plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.05, 1), loc='upper right')
+    plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.05, 0.7), loc='center left', fontsize='small')
+
+    # Extend the y-axis by 25%
+    max_y = ax.get_ylim()[1]
+    ax.set_ylim(0, max_y*1.25)
+
+    # Save the plot with tight layout
+    plt.tight_layout(pad=2.0)  # Ensure there is enough space for the legend
+    plt.subplots_adjust(right=0.8) # Adjust to ensure legend doesn't overlap
 
     plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
     plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}.png', dpi=100,

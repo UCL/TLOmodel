@@ -77,7 +77,7 @@ district_dict = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Popu
 district_dict = dict(zip(district_dict['District_Num'], district_dict['District']))
 
 # Period relevant for costing
-TARGET_PERIOD= (Date(2027, 1, 1), Date(2029, 12, 31))  # This is the period that is costed
+TARGET_PERIOD= (Date(2025, 1, 1), Date(2035, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 
