@@ -1211,7 +1211,7 @@ def test_baseline_hiv_prevalence(seed):
 
     # get data on 2010 prevalence
     # HIV resourcefile
-    prev_data = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files=["DHS_prevalence"])
+    prev_data = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="DHS_prevalence")
 
     adult_prev_1549_data = prev_data.loc[
         (prev_data.Year == 2010, "HIV prevalence among general population 15-49")].values[0] / 100
