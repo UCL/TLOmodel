@@ -52,7 +52,7 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2051, 1, 1)
         self.pop_size = 100_000
-        self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7]
+        self.scenarios = [1, 2, 3, 4, 5, 6, 7]
         self.number_of_draws = len(self.scenarios)
         self.runs_per_draw = 1
 
