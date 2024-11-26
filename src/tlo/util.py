@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, DateOffset
+from pandas._typing import DtypeArg
 
 from tlo import Population, Property, Types
 
@@ -477,7 +478,9 @@ def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, 
             Path(folder/excel_file_path).unlink()
 
 
-def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame | dict[str, DataFrame]:
+def read_csv_files(folder: Path,
+                   dtype: DtypeArg | dict[str, DtypeArg] | None = None,
+                   files: str | int | list[str] | None = 0) -> DataFrame | dict[str, DataFrame]:
     """
     A function to read CSV files in a similar way pandas reads Excel files (:py:func:`pandas.read_excel`).
 
@@ -487,8 +490,20 @@ def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame
     :py:func:`pandas.drop`.
 
     :param folder: Path to folder containing CSV files to read.
+    :param dtype: allows passing in a dictionary of datatypes in cases where you want different datatypes per column
     :param files: preferred csv file name(s). This is the same as sheet names in Excel file. Note that if None(no files
-                  selected) then all files in the containing folder will be loaded
+                  selected) then all csv files in the containing folder will be read
+
+                  Please take note of the following behaviours:
+                  -----------------------------------------------
+                   - if files argument is initialised to zero(default) and the folder contains one or multiple files,
+                     this method will return a dataframe. If the folder contain multiple files, it is good to
+                     specify file names or initialise files argument with None to ensure correct files are selected
+                   - if files argument is initialised to None and the folder contains one or multiple files, this method
+                     will return a dataframe dictionary
+                   - if the folder contains multiple files and files argument is initialised with one file name this
+                     method will return a dataframe. it will return a dataframe dictionary when files argument is
+                     initialised with a list of multiple file names
 
     """
     all_data: dict[str, DataFrame] = {}  # dataframes dictionary
@@ -501,15 +516,21 @@ def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame
         for _key, dataframe in dataframes_dict.items():
             all_data[_key] = dataframe.drop(dataframe.filter(like='Unnamed'), axis=1)  # filter and drop Unnamed columns
 
-    if files is None:
-        for f_name in folder.rglob("*.csv"):
-            all_data[f_name.stem] = pd.read_csv(f_name)
-
+    return_dict = False # a flag that will determine whether the output should be a dictionary or a DatFrame
+    if isinstance(files, list):
+        return_dict = True
+    elif isinstance(files, int) or files is None:
+        return_dict = files is None
+        files = [f_name.stem for f_name in folder.glob("*.csv")]
+    elif isinstance(files, str):
+        files = [files]
     else:
-        for f_name in files:
-            all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"))
+        raise TypeError(f"Value passed for files argument {files} is not one of expected types.")
+
+    for f_name in files:
+        all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"), dtype=dtype)
     # clean and return the dataframe dictionary
     clean_dataframe(all_data)
-    # If only one file loaded return dataframe directly rather than dict
-    return next(iter(all_data.values())) if len(all_data) == 1 else all_data
+    # return a dictionary if return_dict flag is set to True else return a dataframe
+    return all_data if return_dict else next(iter(all_data.values()))
 
