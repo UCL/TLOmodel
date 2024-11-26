@@ -101,6 +101,15 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         'daly_wt_epilepsy_seizure_free': Parameter(
             Types.REAL, 'disability weight for less severe epilepsy' 'controlled phase - code 862'
         ),
+        'prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt': Parameter(
+            Types.REAL, 'probability that someone who has had a seizure is started on anti-epileptics. This is '
+                        'calibrated to induce the correct proportion of persons with epilepsy currently receiving '
+                        'anti-epileptics.'
+        ),
+        'max_num_of_failed_attempts_before_defaulting': Parameter(
+            Types.INT, 'maximum number of time an HSI can be repeated if the relevant essential consumables are not '
+                       'available.'
+        ),
     }
 
     """
@@ -407,8 +416,14 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         **kwargs,
     ) -> None:
         if "seizures" in symptoms:
-            event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
-            schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            # Determine if treatment will start - depends on probability of prescribing, which is calibrated to
+            # induce the right proportion of persons with epilepsy receiving treatment.
+
+            prob_start = self.parameters['prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt']
+
+            if self.rng.random_sample() < prob_start:
+                event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
+                schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -577,12 +592,17 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         cum_deaths = (~df.is_alive).sum()
 
+        # Proportion of those with infrequent or frequent seizures currently on anti-epileptics
+        prop_freq_or_infreq_seiz_on_antiep = status_groups[2:].ep_antiep.sum() / status_groups[2:].is_alive.sum() \
+            if status_groups[2:].is_alive.sum() > 0 else 0
+
         logger.info(key='epilepsy_logging',
                     data={
                         'prop_seiz_stat_0': status_groups['prop_seiz_stats'].iloc[0],
                         'prop_seiz_stat_1': status_groups['prop_seiz_stats'].iloc[1],
                         'prop_seiz_stat_2': status_groups['prop_seiz_stats'].iloc[2],
                         'prop_seiz_stat_3': status_groups['prop_seiz_stats'].iloc[3],
+                        'prop_freq_or_infreq_seiz_on_antiep': prop_freq_or_infreq_seiz_on_antiep,
                         'prop_antiepilep_seiz_stat_0': status_groups['prop_seiz_stat_on_anti_ep'].iloc[0],
                         'prop_antiepilep_seiz_stat_1': status_groups['prop_seiz_stat_on_anti_ep'].iloc[1],
                         'prop_antiepilep_seiz_stat_2': status_groups['prop_seiz_stat_on_anti_ep'].iloc[2],
@@ -608,6 +628,9 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Epilepsy_Treatment_Start'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
+        self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -640,8 +663,12 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                 priority=0
             )
 
-        else:
+        elif (
+            self._counter_of_failed_attempts_due_to_unavailable_medicines
+            < self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING
+        ):
             # If no medicine is available, run this HSI again next month
+            self._counter_of_failed_attempts_due_to_unavailable_medicines += 1
             self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
                                                                        topen=self.sim.date + pd.DateOffset(months=1),
                                                                        tclose=None,
@@ -653,7 +680,7 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = 2
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
         self._DEFAULT_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self._REPEATED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
 
