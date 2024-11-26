@@ -128,13 +128,6 @@ class HSI_Event:
         return self._received_info_about_bed_days
 
     @property
-    def target_is_alive(self) -> bool:
-        """Return True if the target of this HSI event is alive,
-        otherwise False.
-        """
-        return self.sim.population.props.at[self.target, "is_alive"]
-
-    @property
     def sim(self) -> Simulation:
         return self.module.sim
 
@@ -232,7 +225,8 @@ class HSI_Event:
 
         # Checking the availability and logging:
         rtn = self.healthcare_system.consumables._request_consumables(
-            item_codes={**_item_codes, **_optional_item_codes},
+            essential_item_codes=_item_codes,
+            optional_item_codes=_optional_item_codes,
             to_log=_to_log,
             facility_info=self.facility_info,
             treatment_id=self.TREATMENT_ID,
@@ -365,7 +359,7 @@ class HSI_Event:
             ):
                 return True
             else:
-                logger.warning(
+                logger.debug(
                     key="message",
                     data=(
                         f"The expected footprint of {self.TREATMENT_ID} is not possible with the configuration of "

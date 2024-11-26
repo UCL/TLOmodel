@@ -61,12 +61,12 @@ def test_using_recognised_item_codes(seed):
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
-        item_codes={0: 1, 1: 1},
+        essential_item_codes={0: 1, 1: 1},
         facility_info=facility_info_0
     )
 
     assert {0: False, 1: True} == rtn
-    assert not cons._not_recognised_item_codes  # No item_codes recorded as not recognised.
+    assert len(cons._not_recognised_item_codes) == 0  # No item_codes recorded as not recognised.
 
 
 def test_unrecognised_item_code_is_recorded(seed):
@@ -88,12 +88,12 @@ def test_unrecognised_item_code_is_recorded(seed):
 
     # Make requests for consumables (which would normally come from an instance of `HSI_Event`).
     rtn = cons._request_consumables(
-        item_codes={99: 1},
+        essential_item_codes={99: 1},
         facility_info=facility_info_0
     )
 
     assert isinstance(rtn[99], bool)
-    assert cons._not_recognised_item_codes  # Some item_codes recorded as not recognised.
+    assert len(cons._not_recognised_item_codes) > 0  # Some item_codes recorded as not recognised.
 
     # Check warning is issued at end of simulation
     with pytest.warns(UserWarning) as recorded_warnings:
@@ -128,7 +128,8 @@ def test_consumables_availability_options(seed):
         cons.on_start_of_day(date=date)
 
         assert _expected_result == cons._request_consumables(
-            item_codes={_item_code: 1 for _item_code in all_items_request}, to_log=False, facility_info=facility_info_0
+            essential_item_codes={_item_code: 1 for _item_code in all_items_request},
+            to_log=False, facility_info=facility_info_0
         )
 
 
@@ -153,7 +154,8 @@ def test_override_cons_availability(seed):
             item_code = [item_code]
 
         return all(cons._request_consumables(
-            item_codes={_i: 1 for _i in item_code}, to_log=False, facility_info=facility_info_0
+            essential_item_codes={_i: 1 for _i in item_code},
+            to_log=False, facility_info=facility_info_0
         ).values())
 
     rng = get_rng(seed)
@@ -250,7 +252,7 @@ def test_consumables_available_at_right_frequency(seed):
     for _ in range(n_trials):
         cons.on_start_of_day(date=date)
         rtn = cons._request_consumables(
-            item_codes=requested_items,
+            essential_item_codes=requested_items,
             facility_info=facility_info_0,
         )
         for _i in requested_items:
@@ -271,6 +273,47 @@ def test_consumables_available_at_right_frequency(seed):
     # Check that the availability of the unknown item is the average of the known items
     assert is_obs_frequency_consistent_with_expected_probability(n_obs=counter[4], n_trials=n_trials,
                                                                  p=average_availability_of_known_items)
+
+
+@pytest.mark.parametrize("p_known_items, expected_items_used", [
+    # Test 1
+    ({0: 0.0, 1: 1.0, 2: 1.0, 3: 1.0}, {}),
+    # Test 2
+    ({0: 1.0, 1: 1.0, 2: 0.0, 3: 1.0}, {0: 5, 1: 10, 3: 2})
+])
+def test_items_used_includes_only_available_items(seed, p_known_items, expected_items_used):
+    """
+    Test that 'items_used' includes only items that are available.
+    Items should only be logged if the essential items are ALL available
+    If essential items are available, then optional items can be logged as items_used if available
+    Test 1: should not have any items_used as essential item 0 is not available
+    Test 2: should have essential items logged as items_used, but optional item 2 is not available
+    """
+
+    data = create_dummy_data_for_cons_availability(
+        intrinsic_availability=p_known_items,
+        months=[1],
+        facility_ids=[0]
+    )
+    rng = get_rng(seed)
+    date = datetime.datetime(2010, 1, 1)
+
+    cons = Consumables(availability_data=data, rng=rng)
+
+    # Define essential and optional item codes
+    essential_item_codes = {0: 5, 1: 10}  # these must match parameters above
+    optional_item_codes = {2: 7, 3: 2}
+
+    cons.on_start_of_day(date=date)
+    cons._request_consumables(
+        essential_item_codes=essential_item_codes,
+        optional_item_codes=optional_item_codes,
+        facility_info=facility_info_0,
+    )
+
+    # Access items used from the Consumables summary counter
+    items_used = getattr(cons._summary_counter, '_items', {}).get('Used')
+    assert items_used == expected_items_used, f"Expected items_used to be {expected_items_used}, but got {items_used}"
 
 
 def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
@@ -321,7 +364,7 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     return sim
 
 
-def get_dummy_hsi_event_instance(module, facility_id=None):
+def get_dummy_hsi_event_instance(module, facility_id=None, to_log=False):
     """Make an HSI Event that runs for person_id=0 in a particular facility_id and requests consumables,
     and for which its parent is the identified module."""
 
@@ -340,7 +383,7 @@ def get_dummy_hsi_event_instance(module, facility_id=None):
             """Requests all recognised consumables."""
             self.get_consumables(
                 item_codes=list(self.sim.modules['HealthSystem'].consumables.item_codes),
-                to_log=True,
+                to_log=to_log,
                 return_individual_results=False
             )
 
@@ -446,7 +489,7 @@ def test_outputs_to_log(tmpdir):
 
         # Schedule the HSI event for person_id=0
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0),
+            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, to_log=True),
             topen=sim.start_date,
             tclose=None,
             priority=0
@@ -500,12 +543,12 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data(recw
                     facility_id=_facility_id
                 )
                 for _item_code in item_codes:
-                    hsi_event.get_consumables(item_codes=_item_code)
+                    hsi_event.get_consumables(item_codes=_item_code, to_log=False)
 
     sim.modules['HealthSystem'].on_simulation_end()
 
-    # Check that no warnings raised or item_codes recorded as being not recogised.
-    assert not sim.modules['HealthSystem'].consumables._not_recognised_item_codes
+    # Check that no warnings raised or item_codes recorded as being not recognised.
+    assert len(sim.modules['HealthSystem'].consumables._not_recognised_item_codes) == 0
     assert not any_warnings_about_item_code(recwarn)
 
 

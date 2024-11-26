@@ -165,7 +165,7 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing': Parameter(
             Types.STRING, "If `actual`, then use the numbers and distribution of staff estimated to be available"
                           " currently; If `funded`, then use the numbers and distribution of staff that are "
-                          "potentially available. If 'funded_plus`, then use a dataset in which the allocation of "
+                          "potentially available. If `funded_plus`, then use a dataset in which the allocation of "
                           "staff to facilities is tweaked so as to allow each appointment type to run at each "
                           "facility_level in each district for which it is defined. N.B. This parameter is "
                           "over-ridden if an argument is provided to the module initialiser.",
@@ -235,6 +235,9 @@ class HealthSystem(Module):
                         "we can approximate overtime and rushing of appts even in mode 2."),
         'year_cons_availability_switch': Parameter(
             Types.INT, "Year in which consumable availability switch is enforced. The change happens"
+                       "on 1st January of that year.)"),
+        'year_use_funded_or_actual_staffing_switch': Parameter(
+            Types.INT, "Year in which switch for `use_funded_or_actual_staffing` is enforced. (The change happens"
                        "on 1st January of that year.)"),
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
@@ -323,7 +326,10 @@ class HealthSystem(Module):
             Types.INT, 'Mode considered after a mode switch in year_mode_switch.'),
         'cons_availability_postSwitch': Parameter(
             Types.STRING, 'Consumables availability after switch in `year_cons_availability_switch`. Acceptable values'
-                          'are the same as those for Parameter `cons_availability`.')
+                          'are the same as those for Parameter `cons_availability`.'),
+        'use_funded_or_actual_staffing_postSwitch': Parameter(
+            Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
+                          'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
     }
 
     PROPERTIES = {
@@ -447,10 +453,9 @@ class HealthSystem(Module):
             assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
-        # Find which set of assumptions to use - those for the actual staff available or the funded staff available
-        if use_funded_or_actual_staffing is not None:
-            assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        # Save argument for assumptions to use for 'use_funded_or_actual_staffing`
         self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        self._use_funded_or_actual_staffing = None  # <-- this is the private internal store of the value that is used.
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -637,9 +642,15 @@ class HealthSystem(Module):
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
-        self.process_human_resources_files(
-            use_funded_or_actual_staffing=self.get_use_funded_or_actual_staffing()
-        )
+        # Process health system organisation files (Facilities, Appointment Types, Time Taken etc.)
+        self.process_healthsystem_organisation_files()
+
+        # Set value for `use_funded_or_actual_staffing` and process Human Resources Files
+        # (Initially set value should be equal to what is specified by the parameter, but overwritten with what was
+        # provided in argument if an argument was specified -- provided for backward compatibility/debugging.)
+        self.use_funded_or_actual_staffing = self.parameters['use_funded_or_actual_staffing'] \
+            if self.arg_use_funded_or_actual_staffing is None \
+            else self.arg_use_funded_or_actual_staffing
 
         # Initialise the BedDays class
         self.bed_days = BedDays(hs_module=self,
@@ -738,6 +749,16 @@ class HealthSystem(Module):
             Date(self.parameters["year_equip_availability_switch"], 1, 1)
         )
 
+        # Schedule an equipment availability switch
+        sim.schedule_event(
+            HealthSystemChangeParameters(
+                self,
+                parameters={
+                    'use_funded_or_actual_staffing': self.parameters['use_funded_or_actual_staffing_postSwitch']
+                }
+            ),
+            Date(self.parameters["year_use_funded_or_actual_staffing_switch"], 1, 1)
+        )
 
         # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
         # This occurs on 1st January of the year specified in the parameters.
@@ -753,6 +774,9 @@ class HealthSystem(Module):
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
+
+        # Schedule the logger to occur at the start of every year
+        sim.schedule_event(HealthSystemLogger(self), Date(sim.date.year, 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -809,8 +833,15 @@ class HealthSystem(Module):
         if 'Tb' in self.sim.modules:
             self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
 
-    def process_human_resources_files(self, use_funded_or_actual_staffing: str):
-        """Create the data-structures needed from the information read into the parameters."""
+    def process_healthsystem_organisation_files(self):
+        """Create the data-structures needed from the information read into the parameters:
+         * self._facility_levels
+         * self._appointment_types
+         * self._appt_times
+         * self._appt_type_by_facLevel
+         * self._facility_by_facility_id
+         * self._facilities_for_each_district
+        """
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -903,23 +934,26 @@ class HealthSystem(Module):
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
 
+    def setup_daily_capabilities(self, use_funded_or_actual_staffing):
+        """Set up `self._daily_capabilities` and `self._officers_with_availability`.
+        This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
+         and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities = self.format_daily_capabilities(use_funded_or_actual_staffing)
+        self._daily_capabilities, self._daily_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
-    def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
+    def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
-        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
-        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
+        This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to:
+        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
         is available.
-
-        It also give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
-
+        2. Give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
         (This is so that its easier to track where demands are being placed where there is no capacity)
+        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent of assumed efficiency.
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
@@ -927,6 +961,10 @@ class HealthSystem(Module):
                 self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
         )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
+
+        # Create new column where capabilities per staff are computed
+        capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
+
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
@@ -947,6 +985,9 @@ class HealthSystem(Module):
         mfl = self.parameters['Master_Facilities_List']
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
 
+        # Create a copy of this to store staff counts
+        capabilities_per_staff_ex = capabilities_ex.copy()
+
         # Merge in information about officers
         # officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
         # capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
@@ -960,8 +1001,23 @@ class HealthSystem(Module):
         )
         capabilities_ex = capabilities_ex.fillna(0)
 
+        capabilities_per_staff_ex = capabilities_per_staff_ex.merge(
+            capabilities[['Facility_ID', 'Officer_Type_Code', 'Mins_Per_Day_Per_Staff']],
+            on=['Facility_ID', 'Officer_Type_Code'],
+            how='left',
+        )
+        capabilities_per_staff_ex = capabilities_per_staff_ex.fillna(0)
+
         # Give the standard index:
         capabilities_ex = capabilities_ex.set_index(
+            'FacilityID_'
+            + capabilities_ex['Facility_ID'].astype(str)
+            + '_Officer_'
+            + capabilities_ex['Officer_Type_Code']
+        )
+
+        # Give the standard index:
+        capabilities_per_staff_ex = capabilities_per_staff_ex.set_index(
             'FacilityID_'
             + capabilities_ex['Facility_ID'].astype(str)
             + '_Officer_'
@@ -974,9 +1030,10 @@ class HealthSystem(Module):
         # Checks
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
+        assert len(capabilities_per_staff_ex) == len(facility_ids) * len(officer_type_codes)
 
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
-        return capabilities_ex['Total_Minutes_Per_Day']
+        return capabilities_ex['Total_Minutes_Per_Day'], capabilities_per_staff_ex['Mins_Per_Day_Per_Staff']
 
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
@@ -998,6 +1055,11 @@ class HealthSystem(Module):
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
+
+                # We assume that increased daily capabilities is a result of each staff performing more
+                # daily patient facing time per day than contracted (or equivalently performing appts more
+                # efficiently).
+                self._daily_capabilities_per_staff[officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -1142,13 +1204,17 @@ class HealthSystem(Module):
             if self.arg_mode_appt_constraints is None \
             else self.arg_mode_appt_constraints
 
-    def get_use_funded_or_actual_staffing(self) -> str:
-        """Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but
-        overwrite with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
-        return self.parameters['use_funded_or_actual_staffing'] \
-            if self.arg_use_funded_or_actual_staffing is None \
-            else self.arg_use_funded_or_actual_staffing
+    @property
+    def use_funded_or_actual_staffing(self) -> str:
+        """Returns value for `use_funded_or_actual_staffing`."""
+        return self._use_funded_or_actual_staffing
+
+    @use_funded_or_actual_staffing.setter
+    def use_funded_or_actual_staffing(self, use_funded_or_actual_staffing) -> str:
+        """Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. """
+        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        self._use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        self.setup_daily_capabilities(self._use_funded_or_actual_staffing)
 
     def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
@@ -1172,8 +1238,13 @@ class HealthSystem(Module):
             ].iloc[0]
 
             # Convert policy dataframe into dictionary to speed-up look-up process.
-            self.priority_rank_dict = \
-                Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
+            self.priority_rank_dict = (
+                Policy_df.set_index("Treatment", drop=True)
+                # Standardize dtypes to ensure any integers represented as floats are
+                # converted to integer dtypes
+                .convert_dtypes()
+                .to_dict(orient="index")
+            )
             del self.priority_rank_dict["lowest_priority_considered"]
 
     def schedule_hsi_event(
@@ -1747,7 +1818,7 @@ class HealthSystem(Module):
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
                 'priority': priority,
-                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
                 'Facility_ID': facility_id if facility_id is not None else -99,
             },
             description="record of each HSI event that never ran"
@@ -2425,8 +2496,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         )
 
                             # Update today's footprint based on actual call and squeeze factor
-                            self.module.running_total_footprint -= original_call
-                            self.module.running_total_footprint += updated_call
+                            self.module.running_total_footprint.update(updated_call)
 
                             # Write to the log
                             self.module.record_hsi_event(
@@ -2613,6 +2683,11 @@ class HealthSystemSummaryCounter:
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
 
+        # Log HSI_Events that have a non-blank appointment footprint
+        self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s with non-blank footprint
+        self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that with non-blank footprint
+        self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
@@ -2645,6 +2720,13 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
+
+        # Count the non-blank appointment footprints
+        if len(appt_footprint):
+            self._no_blank_appt_treatment_ids[treatment_id] += 1
+            for appt_type, number in appt_footprint:
+                self._no_blank_appt_appts[appt_type] += number
+                self._no_blank_appt_by_level[level][appt_type] += number
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
@@ -2688,6 +2770,15 @@ class HealthSystemSummaryCounter:
                 'squeeze_factor': {
                     k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
                 }
+            },
+        )
+        logger_summary.info(
+            key="HSI_Event_non_blank_appt_footprint",
+            description="Same as for key 'HSI_Event' but limited to HSI_Event that have non-blank footprints",
+            data={
+            "TREATMENT_ID": self._no_blank_appt_treatment_ids,
+            "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
+            "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
             },
         )
 
@@ -2763,6 +2854,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `cons_availability`
         * `beds_availability`
         * `equip_availability`
+        * `use_funded_or_actual_staffing`
     Note that no checking is done here on the suitability of values of each parameter."""
 
     def __init__(self, module: HealthSystem, parameters: Dict):
@@ -2784,11 +2876,17 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.consumables.availability = self._parameters['cons_availability']
 
         if 'beds_availability' in self._parameters:
-            self.module.bed_days.availability = self._parameters['beds_availability']
+            self.module.bed_days.switch_beddays_availability(
+                new_availability=self._parameters["beds_availability"],
+                effective_on_and_from=self.sim.date,
+                model_to_data_popsize_ratio=self.sim.modules["Demography"].initial_model_to_data_popsize_ratio
+            )
 
         if 'equip_availability' in self._parameters:
             self.module.equipment.availability = self._parameters['equip_availability']
 
+        if 'use_funded_or_actual_staffing' in self._parameters:
+            self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing']
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
@@ -2901,3 +2999,34 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                          f"Now using mode: "
                          f"{self.module.mode_appt_constraints}"
                     )
+
+
+class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
+    """ This event runs at the start of each year and does any logging jobs for the HealthSystem module."""
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+
+    def apply(self, population):
+        """Things to do at the start of the year"""
+        self.log_number_of_staff()
+
+    def log_number_of_staff(self):
+        """Write to the summary log with the counts of staff (by cadre/facility/level) taking into account:
+         * Any scaling of capabilities that has taken place, year-by-year, or cadre-by-cadre
+         * Any re-scaling that has taken place at the transition into Mode 2.
+        """
+
+        hs = self.module  # HealthSystem module
+
+        # Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,
+        # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
+        # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
+        current_staff_count = dict((hs.capabilities_today/hs._daily_capabilities_per_staff).sort_index())
+
+        logger_summary.info(
+            key="number_of_hcw_staff",
+            description="The number of hcw_staff this year",
+            data=current_staff_count,
+        )
+
