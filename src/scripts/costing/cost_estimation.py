@@ -842,6 +842,17 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
         subset_df = subset_df[subset_df['year'].isin(_year)]
 
     if _cost_category == 'all':
+        # Predefined color mapping for cost categories
+        color_mapping = {
+            'human resources for health': '#1f77b4',  # Muted blue
+            'medical consumables': '#ff7f0e',  # Muted orange
+            'medical equipment': '#2ca02c',  # Muted green
+            'other': '#d62728',  # Muted red
+            'facility operating cost': '#9467bd',  # Muted purple
+        }
+        # Default color for unexpected categories
+        default_color = 'gray'
+
         if (_disaggregate_by_subgroup == True):
             raise ValueError(f"Invalid input for _disaggregate_by_subgroup: '{_disaggregate_by_subgroup}'. "
                              f"Value can be True only when plotting a specific _cost_category")
@@ -878,8 +889,11 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
     sorted_columns = pivot_df.sum(axis=0).sort_values().index
     pivot_df = pivot_df[sorted_columns]  # Rearrange columns by sorted order
 
+    # Define custom colors for the bars
+    column_colors = [color_mapping.get(col, default_color) for col in sorted_columns]
+
     # Plot the stacked bar chart
-    ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6))
+    ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
@@ -980,9 +994,21 @@ def do_line_plot_of_cost(_df, _cost_category='all',
     lines = []
     labels = []
 
-    # Define a list of colors to rotate through
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'gray']  # Add more colors as needed
-    color_cycle = iter(colors)  # Create an iterator from the color list
+    # Define a list of colors
+    if disaggregate_by == 'cost_category':
+        color_mapping = {
+            'human resources for health': '#1f77b4',  # Muted blue
+            'medical consumables': '#ff7f0e',  # Muted orange
+            'medical equipment': '#2ca02c',  # Muted green
+            'other': '#d62728',  # Muted red
+            'facility operating cost': '#9467bd',  # Muted purple
+        }
+        # Default color for unexpected categories
+        default_color = 'gray'
+    else:
+        # Define a list of colors to rotate through
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'gray']  # Add more colors as needed
+        color_cycle = iter(colors)  # Create an iterator from the color list
 
     # Plot each line for the disaggregated values
     if disaggregate_by:
@@ -992,8 +1018,11 @@ def do_line_plot_of_cost(_df, _cost_category='all',
             value_lower = lower_values.xs(disaggregate_value, level=disaggregate_by)
             value_upper = upper_values.xs(disaggregate_value, level=disaggregate_by)
 
-            # Get the next color from the cycle
-            color = next(color_cycle)
+            if disaggregate_by == 'cost_category':
+                color = color_mapping.get(disaggregate_value, default_color)
+            else:
+                # Get the next color from the cycle
+                color = next(color_cycle)
 
             # Plot line for mean and shaded region for 95% CI
             line, = plt.plot(value_mean.index, value_mean, marker='o', linestyle='-', color=color, label=f'{disaggregate_value} - Mean')
@@ -1038,7 +1067,8 @@ def do_line_plot_of_cost(_df, _cost_category='all',
     else:
         filename_suffix = f"_by_{disaggregate_by}"
 
-    filename = f'trend_{_cost_category}_{period}{filename_suffix}.png'
+    draw_suffix = 'all' if _draws is None else str(_draws)
+    filename = f'trend_{_cost_category}_{period}{filename_suffix}_draw-{draw_suffix}.png'
     plt.savefig(_outputfilepath / filename, dpi=100, bbox_inches='tight')
     plt.close()
 
