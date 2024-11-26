@@ -41,7 +41,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'nan': float('nan'),       # Include NaN for eval (can also use pd.NA if preferred)
     }
     
-    initial_properties_of_interest = ['rt_inj_severity','rt_MAIS_military_score','rt_ISS_score','rt_disability','rt_polytrauma','rt_injury_1','rt_injury_2','rt_injury_3','rt_injury_4','rt_injury_5','rt_injury_6', 'rt_imm_death','sy_injury','sex','li_urban', 'li_wealth', 'li_ex_alc', 'li_exposed_to_campaign_alcohol_reduction', 'li_mar_stat', 'li_in_ed', 'li_ed_lev']
+    initial_properties_of_interest = ['rt_MAIS_military_score','rt_ISS_score','rt_disability','rt_polytrauma','rt_injury_1','rt_injury_2','rt_injury_3','rt_injury_4','rt_injury_5','rt_injury_6', 'rt_imm_death','sy_injury','sy_severe_trauma','sex','li_urban', 'li_wealth', 'li_mar_stat', 'li_in_ed', 'li_ed_lev']
 
     # Will be added through computation: age at time of RTI
         
@@ -54,13 +54,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     record = []
     
     
-    for i in range(0,num_individuals):
+    for p in range(0,num_individuals):
+    
+        print("At person = ", p)
 
         individual_event_chains = extract_results(
                 results_folder,
                 module='tlo.simulation',
                 key='event_chains',
-                column=str(i),
+                column=str(p),
                 do_scaling=False
             )
             
@@ -69,7 +71,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             
         for r in range(0,num_runs):
         
-            print("AT RUN = ", r)
+
 
             initial_properties = {}
             progression_properties = {}
@@ -78,7 +80,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             first_event = {}
             last_event = {}
             properties = {}
-
+            average_disability = 0
+            prev_disability_incurred = 0
 
             #ind_Counter = Counter()
             ind_Counter = {'0': Counter(), '1a': Counter(), '1b' : Counter(), '2' : Counter()}
@@ -95,7 +98,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                #     print(value)
                     
             initial_properties = list_for_individual[0]
-            print(initial_properties)
+           # print(initial_properties)
             
             # Initialise first event by gathering parameters of interest from initial_properties
             first_event = {key: initial_properties[key] for key in initial_properties_of_interest if key in initial_properties}
@@ -103,8 +106,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             progression_properties = {}
             for i in list_for_individual:
                 if 'event' in i:
-                    print("")
-                    print(i)
+                    #print("")
+                    #print(i)
                     if 'RTIPolling' in i['event']:
                         #print("I'm in polling event")
                         #print(i)
@@ -126,10 +129,26 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         # Keep track of evolution in individual's properties
                         progression_properties = initial_properties.copy()
                         progression_properties.update(i)
+                        
+                        # dalys incurred
+                        if 'rt_disability' in i:
+                            prev_disability_incurred = i['rt_disability']
+                            prev_date = i['event_date']
+                            #print('At polling event, ', prev_disability_incurred, prev_date)
 
                     else:
                         # Progress properties of individual, even if this event is a death
                         progression_properties.update(i)
+                        
+                        # If disability has changed as a result of this, recalculate
+                        if 'rt_disability' in i and i['rt_disability'] != prev_disability_incurred:
+                            dt_in_prev_disability = (i['event_date'] - prev_date).days
+                            average_disability += prev_disability_incurred*dt_in_prev_disability
+                            # Update variables
+                            prev_disability_incurred = i['rt_disability']
+                            prev_date = i['event_date']
+
+
                     
                     #print(progression_properties)
                     # Update footprint
@@ -141,34 +160,33 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         ind_Counter[i['level']].update(Counter(apply))
                         
                     if 'is_alive' in i and i['is_alive'] is False:
-                        print("Death", i)
-                        print("-------Total footprint", ind_Counter)
+                        #print("Death", i)
+                        #print("-------Total footprint", ind_Counter)
                         break
                         
 
             # Compute final properties of individual
             key_last_event['is_alive_after_RTI'] = progression_properties['is_alive']
             key_last_event['duration_days'] = (progression_properties['event_date'] - polling_event['rt_date_inj']).days
-            key_last_event['rt_disability_final'] = progression_properties['rt_disability']
+            if not key_first_event['rt_imm_death'] and key_last_event['duration_days']> 0.0:
+                key_last_event['rt_disability_average'] = average_disability/key_last_event['duration_days']
+            else:
+                key_last_event['rt_disability_average'] = 0.0
+            key_last_event['rt_disability_permanent'] = progression_properties['rt_disability']
             key_last_event.update({'total_footprint': ind_Counter})
-            
-            #print("-------Total footprint", ind_Counter)
-            #for key, value in key_first_event.items():
-               # if 'rt_' in key or 'alive' in key:
-             #   print(f"{key}: {value}")
-            #print(#)
-            #for key, value in key_last_event.items():
-                #if 'rt_' in key or 'alive' in key or 'event_date' in key or 'footprint' in key:
-            #    print(f"{key}: {value}")
 
-            #print(key_first_event)
-            #print(key_last_event)
-            print(initial_rt_event_properties)
+            #print("Average disability", key_last_event['rt_disability_average'])
+            
             properties = key_first_event | key_last_event
+            
+            if not key_first_event['rt_imm_death'] and ((properties['rt_disability_average']-properties['rt_disability'])/properties['rt_disability'] > 1e-4):
+                print("Error in computed average for individual ", p, r )
+                
             record.append(properties)
-            for key, value in properties.items():
+            #for key, value in properties.items():
                 #if 'rt_' in key or 'alive' in key or 'event_date' in key or 'footprint' in key:
-                print(f"{key}: {value}")
+                #print(f"{key}: {value}")
+           # print("Initial event properties", initial_rt_event_properties)
          
     df = pd.DataFrame(record)
     df.to_csv("raw_data.csv", index=False)
