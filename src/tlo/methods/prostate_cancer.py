@@ -203,7 +203,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer",
-                           files=["parameter_values"])
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
