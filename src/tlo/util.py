@@ -1,11 +1,12 @@
 """This file contains helpful utility functions."""
 import hashlib
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
-from pandas import DateOffset
+from pandas import DataFrame, DateOffset
 
 from tlo import Population, Property, Types
 
@@ -407,6 +408,11 @@ def random_date(start, end, rng):
     return start + DateOffset(days=rng.randint(0, (end - start).days))
 
 
+def str_to_pandas_date(date_string):
+    """Convert a string with the format YYYY-MM-DD to a pandas Timestamp (aka TLO Date) object."""
+    return pd.to_datetime(date_string, format="%Y-%m-%d")
+
+
 def hash_dataframe(dataframe: pd.DataFrame):
     def coerce_lists_to_tuples(df: pd.DataFrame) -> pd.DataFrame:
         """Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame
@@ -431,3 +437,76 @@ def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng
         return abs(mother_id)
     elif mother_id >= 0:
         return mother_id
+
+
+def convert_excel_files_to_csv(folder: Path, files: Optional[list[str]] = None, *, delete_excel_files: bool = False) -> None:
+    """ convert Excel files to csv files.
+
+    :param folder: Folder containing Excel files.
+    :param files: List of Excel file names to convert to csv files. When `None`, all Excel files in the folder and
+                  subsequent folders within this folder will be converted to csv files with Excel file name becoming
+                  folder name and sheet names becoming csv file names.
+    :param delete_excel_files: When true, the Excel file we are generating csv files from will get deleted.
+    """
+    # get path to Excel files
+    if files is None:
+        excel_file_paths = sorted(folder.rglob("*.xlsx"))
+    else:
+        excel_file_paths = [folder / file for file in files]
+    # exit function if no Excel file is given or found within the path
+    if excel_file_paths is None:
+        return
+
+    for excel_file_path in excel_file_paths:
+        sheet_dataframes: dict[Any, DataFrame] = pd.read_excel(excel_file_path, sheet_name=None)
+        excel_file_directory: Path = excel_file_path.with_suffix("")
+        # Create a container directory for per sheet CSVs
+        if excel_file_directory.exists():
+            print(f"Directory {excel_file_directory} already exists")
+        else:
+            excel_file_directory.mkdir()
+        # Write a CSV for each worksheet
+        for sheet_name, dataframe in sheet_dataframes.items():
+            dataframe.to_csv(f'{excel_file_directory / sheet_name}.csv', index=False)
+
+        if delete_excel_files:
+            # Remove no longer needed Excel file
+            Path(folder/excel_file_path).unlink()
+
+
+def read_csv_files(folder: Path, files: Optional[list[str]] = None) -> DataFrame | dict[str, DataFrame]:
+    """
+    A function to read CSV files in a similar way pandas reads Excel files (:py:func:`pandas.read_excel`).
+
+    NB: Converting Excel files to csv files caused all columns that had no relevant data to simulation (i.e.
+    parameter descriptions or data references) to be named `Unnamed1, Unnamed2, ....., UnnamedN` in the csv files.
+    We are therefore using :py:func:`pandas.filter` to track all unnamed columns and silently drop them using
+    :py:func:`pandas.drop`.
+
+    :param folder: Path to folder containing CSV files to read.
+    :param files: preferred csv file name(s). This is the same as sheet names in Excel file. Note that if None(no files
+                  selected) then all files in the containing folder will be loaded
+
+    """
+    all_data: dict[str, DataFrame] = {}  # dataframes dictionary
+
+    def clean_dataframe(dataframes_dict: dict[str, DataFrame]) -> None:
+        """ silently drop all columns that have no relevant data to simulation (all columns with a name starting with
+        Unnamed
+        :param dataframes_dict: Dictionary of dataframes to clean
+        """
+        for _key, dataframe in dataframes_dict.items():
+            all_data[_key] = dataframe.drop(dataframe.filter(like='Unnamed'), axis=1)  # filter and drop Unnamed columns
+
+    if files is None:
+        for f_name in folder.rglob("*.csv"):
+            all_data[f_name.stem] = pd.read_csv(f_name)
+
+    else:
+        for f_name in files:
+            all_data[f_name] = pd.read_csv((folder / f_name).with_suffix(".csv"))
+    # clean and return the dataframe dictionary
+    clean_dataframe(all_data)
+    # If only one file loaded return dataframe directly rather than dict
+    return next(iter(all_data.values())) if len(all_data) == 1 else all_data
+
