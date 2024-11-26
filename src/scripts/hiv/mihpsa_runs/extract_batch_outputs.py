@@ -349,203 +349,211 @@ aids_deaths_men = summarise_deaths(results_folder,
                                                  sex='M')
 
 
-def get_aids_deaths_children(_df):
-    """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-    df returned: series with rows for each draw, values are total counts.
-    """
-    # Filter for label "AIDS" and age less than 15 within the TARGET_PERIOD
-    filtered_df = _df.loc[
-        (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-        (_df['label'] == 'AIDS') &
-        (_df['age'] < 15)
-        ]
-
-    # Group by the 'draw' column (assuming 'draw' is part of the DataFrame) and count the deaths
-    return filtered_df.groupby('label').size()
 
 
-aids_deaths_children = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_aids_deaths_children,
-        do_scaling=True
-    ),
-    collapse_columns=False,
-    only_mean=True
-)
 
 
-def get_aids_deaths_men(_df):
-    """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-    df returned: single count value, not grouped by COD.
-    """
-    # Filter for label "AIDS" and age less than 15
-    filtered_df = _df.loc[
-        (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-        (_df['label'] == 'AIDS') &
-        (_df['age'] >= 15) &
-        (_df['sex'] == 'M')
-        ]
-
-    # Return the count of relevant deaths
-    return filtered_df.shape[0]  # This gives the total number of deaths
 
 
-aids_deaths_men = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_aids_deaths_men,
-        do_scaling=True
-    ),
-    collapse_columns=False,
-    only_mean=True
-)
 
-
-def get_aids_deaths_women(_df):
-    """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-    df returned: single count value, not grouped by COD.
-    """
-    # Filter for label "AIDS" and age less than 15
-    filtered_df = _df.loc[
-        (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-        (_df['label'] == 'AIDS') &
-        (_df['age'] >= 15) &
-        (_df['sex'] == 'F')
-        ]
-
-    # Return the count of relevant deaths
-    return filtered_df.shape[0]  # This gives the total number of deaths
-
-
-aids_deaths_women = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_aids_deaths_women,
-        do_scaling=True
-    ),
-    collapse_columns=False,
-    only_mean=True
-)
-
-
-def get_all_deaths_children(_df):
-    """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-    df returned: single count value, not grouped by COD.
-    """
-    # Filter for label "AIDS" and age less than 15
-    filtered_df = _df.loc[
-        (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-        (_df['age'] < 15)
-        ]
-
-    # Return the count of relevant deaths
-    return filtered_df.shape[0]  # This gives the total number of deaths
-
-
-all_deaths_children = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_all_deaths_children,
-        do_scaling=True
-    ),
-    collapse_columns=False,
-    only_mean=True
-)
-
-
-def get_all_deaths_men(_df):
-    """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-    df returned: single count value, not grouped by COD.
-    """
-    # Filter for label "AIDS" and age less than 15
-    filtered_df = _df.loc[
-        (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-        (_df['age'] >= 15) &
-        (_df['sex'] == 'M')
-        ]
-
-    # Return the count of relevant deaths
-    return filtered_df.shape[0]  # This gives the total number of deaths
-
-
-all_deaths_men = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_all_deaths_men,
-        do_scaling=True
-    ),
-    collapse_columns=False,
-    only_mean=True
-)
-
-
-def get_all_deaths_women(_df):
-    """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-    df returned: single count value, not grouped by COD.
-    """
-    # Filter for label "AIDS" and age less than 15
-    filtered_df = _df.loc[
-        (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-        (_df['age'] >= 15) &
-        (_df['sex'] == 'F')
-        ]
-
-    # Return the count of relevant deaths
-    return filtered_df.shape[0]  # This gives the total number of deaths
-
-
-all_deaths_women = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='death',
-        custom_generate_series=get_all_deaths_women,
-        do_scaling=True
-    ),
-    collapse_columns=False,
-    only_mean=True
-)
-
-# Create an empty dictionary to store dataframes for each draw
-draws_data = {}
-
-# Store each category of death count in a single DataFrame
-draws_data["aids_deaths_children"] = aids_deaths_children
-draws_data["aids_deaths_men"] = aids_deaths_men
-draws_data["aids_deaths_women"] = aids_deaths_women
-draws_data["all_deaths_children"] = all_deaths_children
-draws_data["all_deaths_men"] = all_deaths_men
-draws_data["all_deaths_women"] = all_deaths_women
-
-# Prepare a dictionary for each draw (assuming 'aids_deaths_children', 'aids_deaths_men', etc., have multi-draw output)
-combined_results = {}
-
-# Combine the data for each draw by matching the index of each category
-for draw_number in range(1, len(aids_deaths_children.columns) + 1):
-    draw_data = {}
-    for category, df in draws_data.items():
-        # Select the column for the current draw number (e.g., 1, 2, 3, etc.)
-        draw_data[category] = df[draw_number]
-
-    # Store the data for this draw in the combined_results dictionary
-    combined_results[draw_number] = pd.DataFrame(draw_data)
-
-# Output the combined results into an Excel file with one sheet per draw
-with pd.ExcelWriter('death_counts_by_draw.xlsx') as writer:
-    for draw_number, df in combined_results.items():
-        sheet_name = str(draw_number)  # Use the draw number as the sheet name
-        df.to_excel(writer, sheet_name=sheet_name)
+#
+# def get_aids_deaths_children(_df):
+#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
+#     df returned: series with rows for each draw, values are total counts.
+#     """
+#     # Filter for label "AIDS" and age less than 15 within the TARGET_PERIOD
+#     filtered_df = _df.loc[
+#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
+#         (_df['label'] == 'AIDS') &
+#         (_df['age'] < 15)
+#         ]
+#
+#     # Group by the 'draw' column (assuming 'draw' is part of the DataFrame) and count the deaths
+#     return filtered_df.groupby('label').size()
+#
+#
+# aids_deaths_children = summarize(
+#     extract_results(
+#         results_folder,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_aids_deaths_children,
+#         do_scaling=True
+#     ),
+#     collapse_columns=False,
+#     only_mean=True
+# )
+#
+#
+# def get_aids_deaths_men(_df):
+#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
+#     df returned: single count value, not grouped by COD.
+#     """
+#     # Filter for label "AIDS" and age less than 15
+#     filtered_df = _df.loc[
+#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
+#         (_df['label'] == 'AIDS') &
+#         (_df['age'] >= 15) &
+#         (_df['sex'] == 'M')
+#         ]
+#
+#     # Return the count of relevant deaths
+#     return filtered_df.shape[0]  # This gives the total number of deaths
+#
+#
+# aids_deaths_men = summarize(
+#     extract_results(
+#         results_folder,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_aids_deaths_men,
+#         do_scaling=True
+#     ),
+#     collapse_columns=False,
+#     only_mean=True
+# )
+#
+#
+# def get_aids_deaths_women(_df):
+#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
+#     df returned: single count value, not grouped by COD.
+#     """
+#     # Filter for label "AIDS" and age less than 15
+#     filtered_df = _df.loc[
+#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
+#         (_df['label'] == 'AIDS') &
+#         (_df['age'] >= 15) &
+#         (_df['sex'] == 'F')
+#         ]
+#
+#     # Return the count of relevant deaths
+#     return filtered_df.shape[0]  # This gives the total number of deaths
+#
+#
+# aids_deaths_women = summarize(
+#     extract_results(
+#         results_folder,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_aids_deaths_women,
+#         do_scaling=True
+#     ),
+#     collapse_columns=False,
+#     only_mean=True
+# )
+#
+#
+# def get_all_deaths_children(_df):
+#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
+#     df returned: single count value, not grouped by COD.
+#     """
+#     # Filter for label "AIDS" and age less than 15
+#     filtered_df = _df.loc[
+#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
+#         (_df['age'] < 15)
+#         ]
+#
+#     # Return the count of relevant deaths
+#     return filtered_df.shape[0]  # This gives the total number of deaths
+#
+#
+# all_deaths_children = summarize(
+#     extract_results(
+#         results_folder,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_all_deaths_children,
+#         do_scaling=True
+#     ),
+#     collapse_columns=False,
+#     only_mean=True
+# )
+#
+#
+# def get_all_deaths_men(_df):
+#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
+#     df returned: single count value, not grouped by COD.
+#     """
+#     # Filter for label "AIDS" and age less than 15
+#     filtered_df = _df.loc[
+#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
+#         (_df['age'] >= 15) &
+#         (_df['sex'] == 'M')
+#         ]
+#
+#     # Return the count of relevant deaths
+#     return filtered_df.shape[0]  # This gives the total number of deaths
+#
+#
+# all_deaths_men = summarize(
+#     extract_results(
+#         results_folder,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_all_deaths_men,
+#         do_scaling=True
+#     ),
+#     collapse_columns=False,
+#     only_mean=True
+# )
+#
+#
+# def get_all_deaths_women(_df):
+#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
+#     df returned: single count value, not grouped by COD.
+#     """
+#     # Filter for label "AIDS" and age less than 15
+#     filtered_df = _df.loc[
+#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
+#         (_df['age'] >= 15) &
+#         (_df['sex'] == 'F')
+#         ]
+#
+#     # Return the count of relevant deaths
+#     return filtered_df.shape[0]  # This gives the total number of deaths
+#
+#
+# all_deaths_women = summarize(
+#     extract_results(
+#         results_folder,
+#         module='tlo.methods.demography',
+#         key='death',
+#         custom_generate_series=get_all_deaths_women,
+#         do_scaling=True
+#     ),
+#     collapse_columns=False,
+#     only_mean=True
+# )
+#
+# # Create an empty dictionary to store dataframes for each draw
+# draws_data = {}
+#
+# # Store each category of death count in a single DataFrame
+# draws_data["aids_deaths_children"] = aids_deaths_children
+# draws_data["aids_deaths_men"] = aids_deaths_men
+# draws_data["aids_deaths_women"] = aids_deaths_women
+# draws_data["all_deaths_children"] = all_deaths_children
+# draws_data["all_deaths_men"] = all_deaths_men
+# draws_data["all_deaths_women"] = all_deaths_women
+#
+# # Prepare a dictionary for each draw (assuming 'aids_deaths_children', 'aids_deaths_men', etc., have multi-draw output)
+# combined_results = {}
+#
+# # Combine the data for each draw by matching the index of each category
+# for draw_number in range(1, len(aids_deaths_children.columns) + 1):
+#     draw_data = {}
+#     for category, df in draws_data.items():
+#         # Select the column for the current draw number (e.g., 1, 2, 3, etc.)
+#         draw_data[category] = df[draw_number]
+#
+#     # Store the data for this draw in the combined_results dictionary
+#     combined_results[draw_number] = pd.DataFrame(draw_data)
+#
+# # Output the combined results into an Excel file with one sheet per draw
+# with pd.ExcelWriter('death_counts_by_draw.xlsx') as writer:
+#     for draw_number, df in combined_results.items():
+#         sheet_name = str(draw_number)  # Use the draw number as the sheet name
+#         df.to_excel(writer, sheet_name=sheet_name)
 
 # %% extract results
 # Load and format model results (with year as integer):
