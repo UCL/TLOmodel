@@ -164,7 +164,8 @@ class Contraception(Module):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = read_csv_files(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception')
+        workbook = read_csv_files(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception',
+                                  files=None)
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
@@ -1349,7 +1350,7 @@ class SimplifiedPregnancyAndLabour(Module):
         parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].resourcefilepath /
                                             'contraception' /
                                             'ResourceFile_Contraception',
-                                            files=['simplified_labour_parameters'])
+                                            files='simplified_labour_parameters')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):

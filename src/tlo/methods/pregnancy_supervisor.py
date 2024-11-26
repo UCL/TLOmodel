@@ -435,7 +435,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, data_folder):
         # load parameters from the resource file
         parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor',
-                                            files=['parameter_values'])
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module.

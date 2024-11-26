@@ -113,7 +113,7 @@ class SimplifiedBirths(Module):
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
         # pylint: disable=E1101
-        rf = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes')
+        rf = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes/parameter_values.csv')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter

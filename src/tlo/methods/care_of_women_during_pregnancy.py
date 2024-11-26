@@ -178,7 +178,7 @@ class CareOfWomenDuringPregnancy(Module):
 
     def read_parameters(self, data_folder):
         parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare',
-                                            files=['parameter_values'])
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
