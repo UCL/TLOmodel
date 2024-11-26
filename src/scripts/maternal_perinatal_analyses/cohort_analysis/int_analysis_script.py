@@ -5,12 +5,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize, create_pickles_locally
+from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize, create_pickles_locally, get_scenario_info
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
 scenario = 'block_intervention_big_pop_test-2024-11-14T163110Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
+create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_pop_test')
 
 interventions =['bp_measurement', 'post_abortion_care_core', 'ectopic_pregnancy_treatment']
 
@@ -51,8 +52,20 @@ direct_deaths = extract_results(
                 lambda df: df.loc[(df['label'] == 'Maternal Disorders')].assign(
                     year=df['date'].dt.year).groupby(['year'])['year'].count()),
             do_scaling=False)
-dd_sum = summarize(direct_deaths)
 
+br = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="on_birth",
+            custom_generate_series=(
+                lambda df: df.assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=False
+        )
+
+dd_sum = summarize(direct_deaths)
+dd_mmr = (direct_deaths/br) * 100_000
+dd_mr_sum = summarize(dd_mmr)
 
 all_dalys_dfs = extract_results(
         results_folder,
@@ -82,11 +95,17 @@ dalys_by_scenario = {k: get_data(results['dalys']['summarised'], 'Maternal Disor
 mmr_by_scnario = {k: get_data(results['deaths_and_stillbirths']['summarised'], 'direct_mmr', d) for k, d in zip (
     int_analysis, draws)}
 
+mmr_by_scenario_oth_log = {k: get_data(dd_mr_sum, 2024, d) for k, d in zip (
+    int_analysis, draws)}
+
 def barcharts(data, y_label, title):
 
     # Extract means and errors
     labels = data.keys()
     means = [vals[1] for vals in data.values()]
+    # lower_errors = [vals[0] for vals in data.values()]
+    # upper_errors = [vals[2] for vals in data.values()]
+
     lower_errors = [vals[1] - vals[0] for vals in data.values()]
     upper_errors = [vals[2] - vals[1] for vals in data.values()]
     errors = [lower_errors, upper_errors]
@@ -102,7 +121,8 @@ def barcharts(data, y_label, title):
     plt.tight_layout()
     plt.show()
 
-barcharts(dalys_by_scenario, 'DALYs', 'Total Neonatal Disorders DALYs by scenario')
+barcharts(dalys_by_scenario, 'DALYs', 'Total Maternal Disorders DALYs by scenario')
+barcharts(mmr_by_scnario, 'MMR', 'Total MMR by scenario')
 barcharts(mmr_by_scnario, 'MMR', 'Total MMR by scenario')
 
 # Difference results
@@ -121,10 +141,10 @@ def get_diffs(df_key, result_key, ints, draws):
     return diff_results
 
 diff_results = {}
-baseline = direct_deaths[0]
+baseline = dd_mmr[0]
 
 for draw, int in zip(draws, int_analysis):
-    diff_df = direct_deaths[draw] - baseline
+    diff_df = dd_mmr[draw] - baseline
     diff_df.columns = pd.MultiIndex.from_tuples([(draw, v) for v in range(len(diff_df.columns))],
                                                     names=['draw', 'run'])
     results_diff = summarize(diff_df)
@@ -147,6 +167,8 @@ def get_diff_plots(data, outcome):
     errors = [(mean - min_val, max_val - mean) for mean, min_val, max_val in zip(means, mins, maxs)]
     errors = np.array(errors).T
 
+    # todo: the error bars are slightly off...
+
     # Plotting
     plt.figure(figsize=(12, 6))
     plt.errorbar(categories, means, yerr=errors, fmt='o', capsize=5)
@@ -161,7 +183,7 @@ def get_diff_plots(data, outcome):
 
 get_diff_plots(mmr_diffs, 'MMR')
 get_diff_plots(mat_deaths, 'Maternal Deaths (crude)')
-get_diff_plots(mat_deaths_2, 'Maternal Deaths (demog log)')
+get_diff_plots(mat_deaths_2, 'MMR (demog log)')
 get_diff_plots(dalys_diffs, 'Maternal DALYs')
 
 
