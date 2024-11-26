@@ -825,7 +825,8 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
                                             _disaggregate_by_subgroup: bool = False,
                                             _year = 'all', _draws = None,
                                             _scenario_dict: dict = None,
-                                            _outputfilepath: Path = None):
+                                            _outputfilepath: Path = None,
+                                            _add_figname_suffix = ''):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Make a copy of the dataframe to avoid modifying the original
     _df = _df[_df.stat == 'mean'].copy()
@@ -930,7 +931,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
     plt.subplots_adjust(right=0.8) # Adjust to ensure legend doesn't overlap
 
     plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
-    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}.png', dpi=100,
+    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}{_add_figname_suffix}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
 
