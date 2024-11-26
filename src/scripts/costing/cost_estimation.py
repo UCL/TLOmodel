@@ -1157,7 +1157,12 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                        _y_axis_lim = None,
                       _plot_vertical_lines_at: list = None,
                       _year_suffix = '',
-                      _projected_health_spending = None):
+                      _projected_health_spending = None,
+                      _draw_colors = None):
+    # Default color mapping if not provided
+    if _draw_colors is None:
+        _draw_colors = {draw: color for draw, color in zip(_draws, plt.cm.tab10.colors[:len(_draws)])}
+
     # Calculate maximum ability to pay for implementation
     _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
     _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
@@ -1235,8 +1240,19 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         upper_values = collapsed_data[collapsed_data['stat']  == 'upper'][['implementation_cost', 'roi']]
 
         # Plot mean line and confidence interval
-        ax.plot(implementation_costs / 1e6, mean_values['roi'], label=f'{_scenario_dict[draw_index]}')
-        ax.fill_between(implementation_costs / 1e6, lower_values['roi'], upper_values['roi'], alpha=0.2)
+        ax.plot(
+            implementation_costs / 1e6,
+            mean_values['roi'],
+            label=f'{_scenario_dict[draw_index]}',
+            color=_draw_colors.get(draw_index, 'black'),
+        )
+        ax.fill_between(
+            implementation_costs / 1e6,
+            lower_values['roi'],
+            upper_values['roi'],
+            alpha=0.2,
+            color=_draw_colors.get(draw_index, 'black'),
+        )
 
         max_val = mean_values[~np.isinf(mean_values['roi'])]['roi'].max()
         max_roi.append(max_val)
