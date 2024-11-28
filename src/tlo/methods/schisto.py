@@ -26,11 +26,11 @@ logger.setLevel(logging.INFO)
 
 # Definition of the age-groups used in the module, as a tuple of two integers (a,b) such that the given age group
 #  is in range a <= group <= b. i.e.,
-#     0 <= PSAC <= 4
+#     2 <= PSAC <= 4
 #     5 <= SAC <= 14
 #     15 <= Adults
 #     0 <= All
-_AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
+_AGE_GROUPS = {'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
 class Schisto(Module):
