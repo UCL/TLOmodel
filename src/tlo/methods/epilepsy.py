@@ -153,7 +153,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         """
         # Update parameters from the resource dataframe
         dfd = read_csv_files(Path(self.resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy',
-                            files=['parameter_values'])
+                            files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters

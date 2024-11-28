@@ -227,7 +227,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
             read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Depression',
-                          files=['parameter_values'])
+                          files='parameter_values')
         )
         p = self.parameters
 

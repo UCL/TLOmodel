@@ -1112,7 +1112,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
 
-        dfd = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_RTI', files=['parameter_values'])
+        dfd = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_RTI', files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries
