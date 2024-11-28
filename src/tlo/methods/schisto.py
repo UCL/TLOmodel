@@ -1708,50 +1708,6 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             self.module.log_person_days.loc[
                 (species, idx[1], idx[2], idx[3]), 'person_days'
             ] += count
-        print(self.module.log_person_days)
-
-        # df = self.sim.population.props
-        #
-        # # _AGE_GROUPS = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
-        # species_list = ['mansoni', 'haematobium']
-        # age_groups = ['PSAC', 'SAC', 'Adults']
-        # infection_levels = ['Low-infection', 'Moderate-infection', 'High-infection']
-        #
-        # def log_infection_counts(df, species, age_group, infection_level, district):
-        #     age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
-        #     species_prefix = 'sm' if species == 'mansoni' else 'sh'
-        #
-        #     return df[
-        #         (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
-        #         (age_bands == age_group) &
-        #         (df['district_of_residence'] == district)
-        #     ].shape[0]
-        #
-        # for species, age_group, infection_level, district in product(
-        #         self.module.log_person_days.index.get_level_values('species').unique(),
-        #         self.module.log_person_days.index.get_level_values('age_group').unique(),
-        #         self.module.log_person_days.index.get_level_values('infection_level').unique(),
-        #         self.module.log_person_days.index.get_level_values('district').unique()):
-        #     person_days = log_infection_counts(df, species, age_group, infection_level, district)
-        #     self.module.log_person_days.loc[
-        #         (species, age_group, infection_level, district), 'person_days'
-        #     ] += person_days
-
-        # def log_infection_counts(df, species, age_group, infection_level):
-        #     age_bands = df.loc[df.is_alive].age_years.map(self.module.age_group_mapper)
-        #     species_prefix = 'sm' if species == 'mansoni' else 'sh'
-        #
-        #     return df[
-        #         (df[f'ss_{species_prefix}_infection_status'] == infection_level) &
-        #         (age_bands == age_group)
-        #         ].shape[0]
-        #
-        # for species, age_group, infection_level in product(
-        #         self.module.log_person_days.index.get_level_values('species').unique(),
-        #         self.module.log_person_days.index.get_level_values('age_group').unique(),
-        #         self.module.log_person_days.index.get_level_values('infection_level').unique()):
-        #     person_days = log_infection_counts(df, species, age_group, infection_level)
-        #     self.module.log_person_days.loc[(species, age_group, infection_level), 'person_days'] += person_days
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):

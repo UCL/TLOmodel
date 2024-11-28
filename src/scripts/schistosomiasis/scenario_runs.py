@@ -13,7 +13,7 @@ or execute a single run:
 tlo scenario-run src/scripts/schistosomiasis/scenario_runs.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/schistosomiasis/scenario_runs.py
+tlo batch-submit --more-memory src/scripts/schistosomiasis/scenario_runs.py
 
 """
 
@@ -51,7 +51,6 @@ class SchistoScenarios(BaseScenario):
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
-                "tlo.methods.enhanced_lifestyle": logging.INFO,
                 "tlo.methods.schisto": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
