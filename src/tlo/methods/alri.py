@@ -37,7 +37,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date, sample_outcome, read_csv_files
+from tlo.util import random_date, read_csv_files, sample_outcome
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
