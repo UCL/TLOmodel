@@ -4,7 +4,7 @@
   affiliation: "Imperial College London"
   website: "https://www.imperial.ac.uk/people/timothy.hallett"
   github-username: tbhallett
-  role: Joint lead epidemiology
+  role: Project Lead
   contributions:
     - Epidemiology and modelling
     - Software development
@@ -14,7 +14,7 @@
   affiliation: "University College London"
   website: "https://profiles.ucl.ac.uk/5430"
   github-username: andrew-phillips-1
-  role: Joint lead epidemiology
+  role: Lead Epidemiology
   contributions:
     - Epidemiology and modelling
     - Software development
@@ -102,7 +102,6 @@
   website: "https://www.york.ac.uk/che/staff/research/sakshi-mohan/"
   github-username: sakshimohan
   contributions:
-    - Epidemiology and modelling
     - Health economics
     - Software development
 - given-names: Wingston
@@ -196,6 +195,7 @@
   family-names: Janoušková
   orcid: "https://orcid.org/0000-0002-4104-0119"
   affiliation: "University College London"
+  website: "https://profiles.ucl.ac.uk/90260"
   github-username: EvaJanouskova
   contributions:
     - Epidemiology and modelling
@@ -206,15 +206,14 @@
   affiliation: University College London
   website: "https://profiles.ucl.ac.uk/954"
   contributions:
-    - Clinical consultant 
+    - Clinical process modelling
 - given-names: Paul
   family-names: Revill
   orcid: "https://orcid.org/0000-0001-8632-0600"
   affiliation: University of York
   website: "https://www.york.ac.uk/che/staff/research/paul-revill/"
   github-username: paulrevill
-  contributions:
-    - Health economics
+  role: "Lead Health-Economics"
 - given-names: Wiktoria
   family-names: Tafesse
   orcid: "https://orcid.org/0000-0002-0076-8285"
@@ -237,7 +236,7 @@
   website: "https://www.york.ac.uk/che/staff/students/newton-chagoma/"
   github-username: nchagoma503
   contributions:
-    - Health economics  
+    - Health economics
 - given-names: Martin
   family-names: Chalkley
   orcid: "https://orcid.org/0000-0002-1091-8259"
@@ -273,3 +272,31 @@
   family-names: Uwais
   website: "https://uk.linkedin.com/in/leila-uwais-597705142"
   github-username: Leila-Uwais
+- given-names: Dominic
+  family-names: Nkhoma
+  affiliation: "Kamuzu University of Health Sciences"
+  orcid: "https://orcid.org/0000-0001-6125-6630"
+  contributions:
+      - Policy translation
+  website: "https://mw.linkedin.com/in/dominicnkhoma1978"
+- given-names: Gerald
+  family-names: Manthalu
+  affiliation: "Department of Planning and Policy Development, Ministry of Health and Population, Lilongwe, Malawi"
+  orcid: "https://orcid.org/0000-0002-3501-8601"
+  contributions:
+      - Policy translation
+- given-names: Rachel
+  family-names: Murray-Watson
+  affiliation: "Imperial College London"
+  orcid: https://orcid.org/0000-0001-9079-5975
+  github-username: RachelMurray-Watson
+  contributions:
+    - Epidemiology and modelling
+    - Software development
+- given-names: Victor
+  family-names: Mwapasa
+  orcid: "https://orcid.org/0000-0002-2748-8902"
+  affiliation: "Kamuzu University of Health Sciences"
+  website: "https://www.kuhes.ac.mw/prof-victor-mwapasa/"
+  contributions:
+    - Clinical process modelling
