@@ -530,7 +530,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     other_costs = pd.concat([cost_of_separately_managed_medical_supplies_dispensed, cost_of_separately_managed_medical_supplies_excess_stock])
 
     consumable_costs = prepare_cost_dataframe(consumable_costs, _category_specific_group = 'consumable', _cost_category = 'medical consumables')
-    other_costs = prepare_cost_dataframe(other_costs, _category_specific_group = 'consumable', _cost_category = 'other')
+    other_costs = prepare_cost_dataframe(other_costs, _category_specific_group = 'consumable', _cost_category = 'medical consumables')
 
     # Only preserve the draws and runs requested
     if _draws is not None:
