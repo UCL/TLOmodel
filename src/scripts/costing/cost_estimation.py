@@ -1132,7 +1132,7 @@ def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = 
     squarify.plot(sizes=sizes, label=labels, alpha=0.8, color=plt.cm.Paired.colors)
     plt.axis("off")
     plt.title(f'{_cost_category} ; Period = {period}')
-    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_[{_draw}]_{period}.png',
+    plt.savefig(_outputfilepath / f'treemap_{_cost_category}_[{_draw}]_{period}.png',
                 dpi=100,
                 bbox_inches='tight')
     plt.close()
