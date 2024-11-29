@@ -4,17 +4,17 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 
 It can be submitted on Azure Batch by running:
-tlo batch-submit src//scripts/hiv/projections_jan2023/tb_DAH_impact01.py
+tlo batch-submit src//scripts/hiv/projections_jan2023/tb_DAH_impact02.py
 
 or locally using:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_impact01.py
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_impact02.py
   execute a single run:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_impact01.py --draw 1 0
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_impact02.py --draw 1 0
 
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_impact01.py
+tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_impact02.py
 
  """
 import warnings
@@ -54,7 +54,7 @@ class ImpactOfTbDaH(BaseScenario):
         self.runs_per_draw = 2
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impact01',
+            'filename': 'Tb_DAH_impact02',
             'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -114,17 +114,23 @@ class ImpactOfTbDaH(BaseScenario):
                  'Tb': {
                      'scenario': 3,
                      'probability_community_chest_xray': 0.0,
-                     'scaling_factor_WHO':1.4
                  },
              },
             #introduce outreach services
             "Outreach services": {
                 'Tb': {
                     'scenario': 4,
-                    'scaling_factor_WHO': 1.44
                 }
             },
         }
+ # applying health system constraints to all scenarios
+    health_system_constraints = {
+            'HealthSystem': {
+                'use_funded_or_actual_staffing': 'actual',
+                'cons_availability': 'default',
+            }
+        }
+
 if __name__ == '__main__':
     from tlo.cli import scenario_run
     scenario_run([__file__])
