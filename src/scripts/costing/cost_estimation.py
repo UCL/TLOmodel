@@ -10,6 +10,7 @@ import textwrap
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
+import squarify
 import numpy as np
 import pandas as pd
 import ast
@@ -521,7 +522,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                               'cost'].sum() * supply_chain_cost_proportion).reset_index()
     # Assign relevant additional columns to match the format of the rest of consumables costs
     supply_chain_costs['Facility_Level'] = 'all'
-    supply_chain_costs['consumable'] = 'NA'
+    supply_chain_costs['consumable'] = 'supply chain (all consumables)'
     supply_chain_costs['cost_subcategory'] = 'supply_chain'
     assert set(supply_chain_costs.columns) == set(consumable_costs.columns)
 
@@ -864,14 +865,14 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
         subset_df = subset_df[subset_df['cost_category'] == _cost_category]
         if (_disaggregate_by_subgroup == True):
             # If sub-groups are more than 10 in number, then disaggregate the top 10 and group the rest into an 'other' category
-            if (len(subset_df['cost_subgroup']) > 10):
+            if (len(subset_df['cost_subgroup'].unique()) > 10):
                 # Calculate total cost per subgroup
                 subgroup_totals = subset_df.groupby('cost_subgroup')['cost'].sum()
                 # Identify the top 10 subgroups by cost
                 top_10_subgroups = subgroup_totals.nlargest(10).index.tolist()
                 # Label the remaining subgroups as 'other'
                 subset_df['cost_subgroup'] = subset_df['cost_subgroup'].apply(
-                    lambda x: x if x in top_10_subgroups else 'other'
+                    lambda x: x if x in top_10_subgroups else 'All other consumables'
                 )
 
                 pivot_df = subset_df.pivot_table(index=['draw', 'cost_subcategory'], columns='cost_subgroup',
@@ -891,10 +892,13 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
     pivot_df = pivot_df[sorted_columns]  # Rearrange columns by sorted order
 
     # Define custom colors for the bars
-    column_colors = [color_mapping.get(col, default_color) for col in sorted_columns]
-
-    # Plot the stacked bar chart
-    ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
+    if _cost_category == 'all':
+        column_colors = [color_mapping.get(col, default_color) for col in sorted_columns]
+        # Plot the stacked bar chart with set colours
+        ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
+    else:
+        # Plot the stacked bar chart without set colours
+        ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6))
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
@@ -1071,6 +1075,66 @@ def do_line_plot_of_cost(_df, _cost_category='all',
     draw_suffix = 'all' if _draws is None else str(_draws)
     filename = f'trend_{_cost_category}_{period}{filename_suffix}_draw-{draw_suffix}.png'
     plt.savefig(_outputfilepath / filename, dpi=100, bbox_inches='tight')
+    plt.close()
+
+# Treemap by category subgroup
+#-----------------------------------------------------------------------------------------------
+def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = None, _year = 'all',
+                                            _outputfilepath = figurespath):
+    # Function to wrap text to fit within treemap rectangles
+    def wrap_text(text, width=15):
+        return "\n".join(textwrap.wrap(text, width))
+
+    valid_cost_categories = ['human resources for health', 'medical consumables',
+       'medical equipment', 'facility operating cost']
+    if _cost_category == None:
+        raise ValueError(f"Specify one of the following as _cost_category - {valid_cost_categories})")
+    elif _cost_category not in valid_cost_categories:
+        raise ValueError(f"Invalid input for _cost_category: '{_cost_category}'. "
+                     f"Specify one of the following - {valid_cost_categories})")
+    else:
+        _df = _df[_df['cost_category'] == _cost_category]
+
+    if _draw != None:
+        _df = _df[_df.draw == _draw]
+
+    # Create summary dataframe for treemap
+    _df = _df.groupby('cost_subgroup')['cost'].sum().reset_index()
+    _df = _df.sort_values(by="cost", ascending=False)
+    top_10 = _df.iloc[:10]
+
+    if (len(_df['cost_subgroup'].unique()) > 10):
+        # Step 2: Group all other consumables into "Other"
+        other_cost = _df.iloc[10:]["cost"].sum()
+        top_10 = top_10.append({"cost_subgroup": "Other", "cost": other_cost}, ignore_index=True)
+
+    # Prepare data for the treemap
+    total_cost = top_10["cost"].sum()
+    top_10["proportion"] = top_10["cost"]/total_cost
+    sizes = top_10["cost"]
+
+    # Exclude labels for small proportions
+    labels = [
+        f"{wrap_text(name)}\n${round(cost, 1)}m\n({round(prop * 100, 1)}%)"
+        if prop >= 0.01 else ""
+        for name, cost, prop in zip(top_10["cost_subgroup"], top_10["cost"] / 1e6, top_10["proportion"])
+    ]
+    # Period included for plot title and name
+    if _year == 'all':
+        period = (f"{min(_df['year'].unique())} - {max(_df['year'].unique())}")
+    elif (len(_year) == 1):
+        period = (f"{_year[0]}")
+    else:
+        period = (f"{min(_year)} - {max(_year)}")
+
+    # Step 4: Plot the treemap
+    plt.figure(figsize=(12, 8))
+    squarify.plot(sizes=sizes, label=labels, alpha=0.8, color=plt.cm.Paired.colors)
+    plt.axis("off")
+    plt.title(f'{_cost_category} ; Period = {period}')
+    plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_[{_draw}]_{period}.png',
+                dpi=100,
+                bbox_inches='tight')
     plt.close()
 
 # Plot ROI
