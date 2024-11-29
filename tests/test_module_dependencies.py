@@ -1,5 +1,4 @@
 """Tests for automatic checking and ordering of method module dependencies."""
-
 import os
 from pathlib import Path
 from random import seed as set_seed
@@ -8,7 +7,7 @@ from types import GeneratorType
 
 import pytest
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
 from tlo.dependencies import (
     ModuleDependencyError,
     get_all_dependencies,
@@ -17,6 +16,7 @@ from tlo.dependencies import (
     get_module_class_map,
     topologically_sort_modules,
 )
+from tlo.methods import hiv, simplified_births
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -27,7 +27,6 @@ except NameError:
 simulation_start_date = Date(2010, 1, 1)
 simulation_end_date = Date(2010, 9, 1)
 simulation_initial_population = 1000
-
 
 module_class_map = get_module_class_map(
     excluded_modules={
@@ -51,7 +50,6 @@ def sim(seed):
 
 @pytest.fixture
 def dependent_module_pair():
-
     class Module1(Module):
         pass
 
@@ -67,7 +65,7 @@ def dependent_module_chain():
         type(
             f'Module{i}',
             (Module,),
-            {'INIT_DEPENDENCIES': frozenset({f'Module{i-1}'})} if i != 0 else {}
+            {'INIT_DEPENDENCIES': frozenset({f'Module{i - 1}'})} if i != 0 else {}
         )
         for i in range(10)
     ]
@@ -251,8 +249,8 @@ def test_module_dependencies_complete(sim, module_class):
         for module in module_class_map.values()
         # Skip test for NewbornOutcomes as long simulation needed for birth events to occur and dependencies to be used
         if module.__name__ not in {
-            'NewbornOutcomes'
-        }
+        'NewbornOutcomes'
+    }
         for dependency_name in sorted(get_all_required_dependencies(module))
     ],
     ids=lambda pair: f"{pair[0].__name__}, {pair[1].__name__}"
@@ -285,3 +283,76 @@ def test_module_dependencies_all_required(sim, module_and_dependency_pair):
             'does not appear to be required to run simulation without errors and so '
             f'should be removed from the dependencies of {module_class.__name__}.'
         )
+
+
+def test_auto_register_module_dependencies(tmpdir):
+    """ check if module dependencies are registered as expected when an argument to auto register modules in simulation
+    is set to True """
+    # configure logging
+    log_config = {
+        'filename': 'LogFile',
+        'directory': tmpdir,
+        'custom_levels': {
+            '*': logging.CRITICAL,
+            'tlo.method.demography': logging.INFO
+        }
+    }
+    # set simulation start date
+    start_date = Date(2010, 1, 1)
+
+    # register required modules for a simple simulation. We have included copd for as it has some dependencies. We want
+    # to test if the dependencies can be automatically registered when the auto register argument in simulation
+    # is set to True
+    def register_disease_modules_manually():
+        """ Test manually registering disease modules without including all dependencies and leaving to false an
+        option to auto register missing dependencies. This should fail with module dependency error """
+        with pytest.raises(ModuleDependencyError, match='missing'):
+            # configure simulation
+            sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+            # the lines below should fail with missing dependencies
+            sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
+
+    def register_disease_modules_using_labour_modules_for_births():
+        """ Test registering disease modules without including all dependencies and not using simplified births
+        module BUT setting to true an option to auto register missing dependencies. This should register all necessary
+        modules including all labour modules """
+        # configure simulation
+        sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+        # re-register modules with auto-register-module argument set to True and using labour modules for births
+        sim.register(hiv.Hiv(resourcefilepath=resourcefilepath),
+                     auto_register_dependencies=True)
+        # get module dependencies
+        required_dependencies = get_all_required_dependencies(sim.modules["Hiv"])
+        # check registered dependencies
+        registered_module_names = set(sim.modules.keys())
+        # all required dependencies should be available in registered dependencies
+        assert required_dependencies <= registered_module_names
+
+    def register_disease_modules_using_simplified_births_for_births():
+        """ Test registering disease modules without including all dependencies BUT setting to true an option to auto
+        register missing dependencies and using simplified births module.This should register all necessary modules
+        except labour modules since we're using simplified births """
+        # configure simulation
+        sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+        sim.register(hiv.Hiv(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     auto_register_dependencies=True
+                     )
+        # now that we're using simplified births we want to ensure that all alternative dependencies are not registered
+        alternative_dependencies = simplified_births.SimplifiedBirths.ALTERNATIVE_TO
+        # get registered modules
+        registered_module_names = set(sim.modules.keys())
+        # no alternative dependency(labour modules) should get registered when using simplified births
+        for dependency in alternative_dependencies:
+            assert dependency not in registered_module_names, (f'{dependency} should not be registered when simplified'
+                                                               f' module has been registered')
+
+    # test registering disease modules manually(when all dependencies are not included and auto register missing
+    # dependencies option is set to false)
+    register_disease_modules_manually()
+
+    # test auto registering disease modules using labor modules for births
+    register_disease_modules_using_labour_modules_for_births()
+
+    # test auto registering disease modules using simplified module for births
+    register_disease_modules_using_simplified_births_for_births()
