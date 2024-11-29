@@ -29,7 +29,7 @@ from tlo.scenario import BaseScenario
 class HRHExpansionByCadreWithExtraBudget(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 0  # change seed to 1 if to do another 5 runs per draw
+        self.seed = 1  # change seed to 1 if to do another 5 runs per draw
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
         self.pop_size = 100_000
@@ -67,7 +67,10 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.YEAR_OF_HRH_EXPANSION = 2025
         # The start year to expand HRH by cadre given the extra budget, which is after the historical HRH scaling
 
-        self.scenarios = extra_budget_fracs['s_2'].to_frame()
+        self.scenarios = extra_budget_fracs.drop(columns=['s_2'])
+        # Run another 5 runs for "no historical scaling" + baseline of baseline settings
+
+        # self.scenarios = extra_budget_fracs['s_2'].to_frame()
         # Run 'gap' scenario that's based on "no historical scaling" + baseline of baseline settings
 
         # self.scenarios = extra_budget_fracs['s_0'].to_frame()
