@@ -19,6 +19,7 @@ from matplotlib import pyplot as plt
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
     Minute_Salary_by_Cadre_Level,
     extra_budget_fracs,
+    hr_increase_rates_2034,
 )
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget import (
     HRHExpansionByCadreWithExtraBudget,
@@ -317,6 +318,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             _df_1.loc[:, 0], index=_df_1.index
         )
 
+    def get_yearly_hr_count(_df):
+        """
+        Return a series of yearly total cost for all cadres,
+        with index of year and values of list of total cost.
+        """
+        # format
+        _df['year'] = _df['date'].dt.year
+        _df = _df.drop(columns='date').set_index('year').fillna(0)
+        _df.columns = _df.columns.map(lambda x: x.split('_')[-1])
+        _df.rename(columns={'Midwifery': 'Nursing_and_Midwifery'}, inplace=True)
+        _df = _df.groupby(level=0, axis=1).sum()
+        assert set(_df.columns) == set(cadres)
+        _df = _df[cadres]
+        # get multiplier for popsize=100,000: 145.39609000000002
+        _df = _df * 145.39609000000002
+        # reformat as a series
+        _dict = {idx: [list(_df.loc[idx, :])] for idx in _df.index}
+        _df_1 = pd.DataFrame(data=_dict).T
+        return pd.Series(
+            _df_1.loc[:, 0], index=_df_1.index
+        )
+
     def get_current_hr(cadres):
         """
         Return current (year of 2018/2019) staff counts and capabilities for the cadres specified.
@@ -462,7 +485,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return time_increased_by_treatment
 
     # Get parameter/scenario names
-    param_names = tuple(extra_budget_fracs.drop(columns='s_2'))
+    param_names = tuple(extra_budget_fracs)
     # param_names = get_parameter_names_from_scenario_file()
     # param_names = ('s_0', 's_1', 's_2', 's_3', 's_11', 's_22')
     # param_names = ('s_1', 's_2', 's_3', 's_11', 's_22')
@@ -473,9 +496,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Get appointment time and cost requirement
     appt_time, appt_cost = format_appt_time_and_cost()
-
-    # # Get current (year of 2018/2019) hr counts
-    # curr_hr = get_current_hr(cadres)
 
     # # Get scale up factors for all scenarios
     # scale_up_factors = extract_results(
@@ -491,9 +511,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # scale_up_factors = scale_up_factors.iloc[:, 0].unstack().reset_index().melt(id_vars='index')
     # scale_up_factors[cadres] = scale_up_factors.value.tolist()
     # scale_up_factors.drop(columns='value', inplace=True)
-
-    # Get salary
-    salary = get_hr_salary(cadres)
 
     # Get total cost for all scenarios
     total_cost = extract_results(
@@ -518,24 +535,42 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         extra_cost_all_yrs.loc[s, :] = total_cost_all_yrs.loc[s, :] - total_cost_all_yrs.loc['s_0', :]
     extra_cost_all_yrs.drop(index='s_0', inplace=True)
 
-    # get staff count = total cost / salary
-    staff_count = total_cost.copy()
-    for c in cadres:
-        staff_count.loc[:, c] = total_cost.loc[:, c] / salary[c].values[0]
-    staff_count.loc[:, 'all_cadres'] = staff_count[[c for c in staff_count.columns if c in cadres]].sum(axis=1)
+    # get yearly hr count
+    yearly_hr_count = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='number_of_hcw_staff',
+        custom_generate_series=get_yearly_hr_count,
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0).stack(level=0)
+    # check that the staff counts are the same between each run within each draw
+    for i in range(len(yearly_hr_count.index)):
+        for j in yearly_hr_count.columns[1:]:
+            for k in range(len(cadres)):
+                assert abs(yearly_hr_count.iloc[i, j][k] - yearly_hr_count.iloc[i, 0][k]) < 1/1e8
+    # store results for only one run per draw
+    yearly_hr_count = yearly_hr_count.iloc[:, 0].unstack().reset_index().melt(id_vars='index')
+    yearly_hr_count[cadres] = yearly_hr_count.value.tolist()
+    yearly_hr_count.drop(columns='value', inplace=True)
+    yearly_hr_count['all_cadres'] = yearly_hr_count[[c for c in yearly_hr_count.columns if c in cadres]].sum(axis=1)
+    yearly_hr_count.rename(columns={'index': 'year'}, inplace=True)
 
     # get extra count = staff count - staff count of no expansion s_1
     # note that annual staff increase rate = scale up factor - 1
-    extra_staff = staff_count.copy()
-    for i in staff_count.index:
-        extra_staff.iloc[i, 2:] = staff_count.iloc[i, 2:] - staff_count.iloc[0, 2:]
-
-    # extra_staff_2029 = extra_staff.loc[extra_staff.year == 2029, :].drop(columns='year').set_index('draw').drop(
-    #     index='s_1'
-    # )
-    # staff_count_2029 = staff_count.loc[staff_count.year == 2029, :].drop(columns='year').set_index('draw')
+    extra_staff = yearly_hr_count.drop(
+        yearly_hr_count[yearly_hr_count.year.isin(range(2010, 2024))].index, axis=0
+    ).reset_index(drop=True)
+    staff_increase_rate = extra_staff.copy()
+    staff_2024 = pd.DataFrame(extra_staff.loc[(extra_staff.year == 2024)
+                                              & (extra_staff.draw == 's_0'), :])
+    for i in extra_staff.index:
+        extra_staff.iloc[i, 2:] = extra_staff.iloc[i, 2:] - staff_2024.iloc[0, 2:]
+        staff_increase_rate.iloc[i, 2:] = (extra_staff.iloc[i, 2:] / staff_2024.iloc[0, 2:])
+        # checked that this is slightly different with hr_increase_rates from preparation script, due the calculation
+        # process are not the same
 
     # check total cost calculated is increased as expected
+    # also checked (in excel) that the yearly_hr_count (s_0 and s_1) are expanded as expected
     years = range(2025, the_target_period[1].year + 1)
     for s in param_names[1:]:
         assert (abs(
@@ -1212,10 +1247,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot 4D data: relative increases of Clinical, Pharmacy, and Nursing_and_Midwifery as three coordinates,\
     # percentage of DALYs averted decides the color of that scatter point
+    # prepare extra budget allocation
     extra_budget_allocation = extra_budget_fracs.T.reindex(num_dalys_summarized.index)
     extra_budget_allocation['Other'] = extra_budget_allocation[
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
+    # prepare hrh increase rates in the same format for regression analysis
+    hr_increase_rates = hr_increase_rates_2034.T.reindex(num_dalys_summarized.index)
+    hr_increase_rates['Other'] = hr_increase_rates['Dental'].copy()
+
     name_of_plot = f'3D DALYs averted (%) vs no extra budget allocation, {target_period()}'
     # name_of_plot = f'DALYs averted (%) vs no HCW expansion investment, {target_period()}'
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
@@ -1392,6 +1432,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # outcome_data = num_services_increased_percent['mean']
     # outcome_data = num_treatments_total_increased_percent['mean']
     regression_data = pd.merge(outcome_data,
+                               # hr_increase_rates,
                                extra_budget_allocation,
                                left_index=True, right_index=True, how='inner')
     # regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
