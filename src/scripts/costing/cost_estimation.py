@@ -16,6 +16,7 @@ import pandas as pd
 import ast
 import math
 import itertools
+from itertools import cycle
 
 from tlo.analysis.utils import (
     extract_params,
@@ -1080,6 +1081,7 @@ def do_line_plot_of_cost(_df, _cost_category='all',
 # Treemap by category subgroup
 #-----------------------------------------------------------------------------------------------
 def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = None, _year = 'all',
+                                            _color_map = None, _label_fontsize = 10,
                                             _outputfilepath = figurespath):
     # Function to wrap text to fit within treemap rectangles
     def wrap_text(text, width=15):
@@ -1098,6 +1100,10 @@ def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = 
     if _draw != None:
         _df = _df[_df.draw == _draw]
 
+    # Remove non-specific subgroup for consumables
+    if _cost_category == 'medical consumables':
+        _df = _df[~(_df.cost_subgroup == 'supply chain (all consumables)')]
+
     # Create summary dataframe for treemap
     _df = _df.groupby('cost_subgroup')['cost'].sum().reset_index()
     _df = _df.sort_values(by="cost", ascending=False)
@@ -1113,6 +1119,20 @@ def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = 
     top_10["proportion"] = top_10["cost"]/total_cost
     sizes = top_10["cost"]
 
+    # Handle color map
+    if _color_map is None:
+        # Generate automatic colors if no color map is provided
+        auto_colors = plt.cm.Paired.colors
+        color_cycle = cycle(auto_colors)  # Cycle through the automatic colors
+        color_map = {subgroup: next(color_cycle) for subgroup in top_10["cost_subgroup"]}
+    else:
+        # Use the provided color map, fallback to a default color for missing subgroups
+        fallback_color = '#cccccc'
+        color_map = {subgroup: _color_map.get(subgroup, fallback_color) for subgroup in top_10["cost_subgroup"]}
+
+    # Get colors for each subgroup
+    colors = [color_map[subgroup] for subgroup in top_10["cost_subgroup"]]
+
     # Exclude labels for small proportions
     labels = [
         f"{wrap_text(name)}\n${round(cost, 1)}m\n({round(prop * 100, 1)}%)"
@@ -1127,9 +1147,9 @@ def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = 
     else:
         period = (f"{min(_year)} - {max(_year)}")
 
-    # Step 4: Plot the treemap
+    # Plot the treemap
     plt.figure(figsize=(12, 8))
-    squarify.plot(sizes=sizes, label=labels, alpha=0.8, color=plt.cm.Paired.colors)
+    squarify.plot(sizes=sizes, label=labels, alpha=0.8, color=colors, text_kwargs={'fontsize': _label_fontsize})
     plt.axis("off")
     plt.title(f'{_cost_category} ; Period = {period}')
     plt.savefig(_outputfilepath / f'treemap_{_cost_category}_[{_draw}]_{period}.png',
