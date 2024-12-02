@@ -16,7 +16,7 @@ class BaselineScenario(BaseScenario):
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 9
+        self.number_of_draws = 7
         self.runs_per_draw = 60
 
     def log_configuration(self):
@@ -50,11 +50,9 @@ class BaselineScenario(BaseScenario):
         else:
             interventions_for_analysis = ['sepsis_treatment','sepsis_treatment',
                                           'amtsl', 'amtsl',
-                                          'pph_treatment_uterotonics', 'pph_treatment_uterotonics',
                                           'blood_transfusion', 'blood_transfusion']
 
             avail_for_draw = [0.0, 1.0,
-                              0.0, 1.0,
                               0.0, 1.0,
                               0.0, 1.0]
 
