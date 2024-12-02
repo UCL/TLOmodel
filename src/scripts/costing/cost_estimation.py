@@ -1082,7 +1082,7 @@ def do_line_plot_of_cost(_df, _cost_category='all',
 #-----------------------------------------------------------------------------------------------
 def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = None, _year = 'all',
                                             _color_map = None, _label_fontsize = 10,
-                                            _outputfilepath = figurespath):
+                                            _outputfilepath: Path = None):
     # Function to wrap text to fit within treemap rectangles
     def wrap_text(text, width=15):
         return "\n".join(textwrap.wrap(text, width))
