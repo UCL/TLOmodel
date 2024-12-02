@@ -16,17 +16,30 @@ hr_salary = pd.read_csv(resourcefilepath /
                         'costing' / 'ResourceFile_Annual_Salary_Per_Cadre.csv', index_col=False)
 hr_salary_per_level = pd.read_excel(resourcefilepath /
                                     'costing' / 'ResourceFile_Costing.xlsx', sheet_name='human_resources')
+# as of 2019
 hr_current = pd.read_csv(resourcefilepath /
                          'healthsystem' / 'human_resources' / 'actual' / 'ResourceFile_Daily_Capabilities.csv')
 hr_established = pd.read_csv(resourcefilepath /
                              'healthsystem' / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv')
+# for 2020-2024
+historical_scaling = pd.read_excel(resourcefilepath /
+                                   'healthsystem' / 'human_resources' / 'scaling_capabilities' /
+                                   'ResourceFile_dynamic_HR_scaling.xlsx', sheet_name='historical_scaling'
+                                   ).set_index('year')
+integrated_historical_scaling = (
+    historical_scaling.loc[2020, 'dynamic_HR_scaling_factor'] *
+    historical_scaling.loc[2021, 'dynamic_HR_scaling_factor'] *
+    historical_scaling.loc[2022, 'dynamic_HR_scaling_factor'] *
+    historical_scaling.loc[2023, 'dynamic_HR_scaling_factor'] *
+    historical_scaling.loc[2024, 'dynamic_HR_scaling_factor']
+)
 
 # to get minute salary per cadre per level
 Annual_PFT = hr_current.groupby(['Facility_Level', 'Officer_Category']).agg(
     {'Total_Mins_Per_Day': 'sum', 'Staff_Count': 'sum'}).reset_index()
 Annual_PFT['Annual_Mins_Per_Staff'] = 365.25 * Annual_PFT['Total_Mins_Per_Day']/Annual_PFT['Staff_Count']
 
-# the hr salary by minute and facility id
+# the hr salary by minute and facility id, as of 2019
 Minute_Salary = Annual_PFT.merge(hr_salary, on=['Officer_Category'], how='outer')
 Minute_Salary['Minute_Salary_USD'] = Minute_Salary['Annual_Salary_USD']/Minute_Salary['Annual_Mins_Per_Staff']
 # store the minute salary by cadre and level
@@ -42,14 +55,18 @@ Minute_Salary.rename(columns={'Officer_Category': 'Officer_Type_Code'}, inplace=
 
 Minute_Salary.to_csv(resourcefilepath / 'costing' / 'Minute_Salary_HR.csv', index=False)
 
-# calculate the current cost distribution of all cadres
+# implement historical scaling to hr_current
+hr_current['Total_Mins_Per_Day'] *= integrated_historical_scaling
+hr_current['Staff_Count'] *= integrated_historical_scaling
+
+# calculate the current cost distribution of all cadres, as of 2024
 cadre_all = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
              'Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
 staff_count = hr_current.groupby('Officer_Category')['Staff_Count'].sum().reset_index()
 staff_cost = staff_count.merge(hr_salary, on=['Officer_Category'], how='outer')
 staff_cost['annual_cost'] = staff_cost['Staff_Count'] * staff_cost['Annual_Salary_USD']
 staff_cost['cost_frac'] = (staff_cost['annual_cost'] / staff_cost['annual_cost'].sum())
-assert staff_cost.cost_frac.sum() == 1
+assert abs(staff_cost.cost_frac.sum() - 1) < 1/1e8
 staff_cost.set_index('Officer_Category', inplace=True)
 staff_cost = staff_cost.reindex(index=cadre_all)
 
@@ -125,7 +142,7 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
     """This function calculates the yearly hr scale up factor for cadres for a year yr,
     given a fraction of an extra budget allocated to each cadre and a yearly budget growth rate of 4.2%.
     Parameter extra_budget_frac (list) is a list of 9 floats, representing the fractions.
-    Parameter yr (int) is a year between 2019 and 2030.
+    Parameter yr (int) is a year between 2025 and 2035 (exclusive).
     Parameter scenario (string) is a column name in the extra budget fractions resource file.
     Output dataframe stores scale up factors and relevant for the year yr.
     """
@@ -149,31 +166,31 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
 
 # calculate scale up factors for all defined scenarios and years
 staff_cost['scale_up_factor'] = 1
-scale_up_factor_dict = {s: {y: {} for y in range(2018, 2030)} for s in extra_budget_fracs.columns}
+scale_up_factor_dict = {s: {y: {} for y in range(2025, 2035)} for s in extra_budget_fracs.columns}
 for s in extra_budget_fracs.columns:
-    # for the initial/current year of 2018
-    scale_up_factor_dict[s][2018] = staff_cost.drop(columns='cost_frac').copy()
+    # for the initial/current year of 2024
+    scale_up_factor_dict[s][2024] = staff_cost.drop(columns='cost_frac').copy()
     # for the years with scaled up hr
-    for y in range(2019, 2030):
+    for y in range(2025, 2035):
         scale_up_factor_dict[s][y] = calculate_hr_scale_up_factor(list(extra_budget_fracs[s]), y, s)
 
-# get the total cost and staff count for each year between 2020-2030 and each scenario
-total_cost = pd.DataFrame(index=range(2018, 2030), columns=extra_budget_fracs.columns)
-total_staff = pd.DataFrame(index=range(2018, 2030), columns=extra_budget_fracs.columns)
+# get the total cost and staff count for each year between 2024-2034 and each scenario
+total_cost = pd.DataFrame(index=range(2024, 2035), columns=extra_budget_fracs.columns)
+total_staff = pd.DataFrame(index=range(2024, 2035), columns=extra_budget_fracs.columns)
 for y in total_cost.index:
     for s in extra_budget_fracs.columns:
         total_cost.loc[y, s] = scale_up_factor_dict[s][y].annual_cost.sum()
         total_staff.loc[y, s] = scale_up_factor_dict[s][y].Staff_Count.sum()
 
-# check the total cost after 11 years are increased as expected
+# check the total cost after 10 years are increased as expected
 assert (
-    abs(total_cost.loc[2029, total_cost.columns[1:]] - (1 + 0.042) ** 11 * total_cost.loc[2029, 's_0']) < 1/1e7
+    abs(total_cost.loc[2034, total_cost.columns[1:]] - (1 + 0.042) ** 10 * total_cost.loc[2024, 's_0']) < 1/1e6
 ).all()
 
-# get the integrated scale up factors by the end of year 2029 and each scenario
+# get the integrated scale up factors by the end of year 2034 and each scenario
 integrated_scale_up_factor = pd.DataFrame(index=cadre_all, columns=total_cost.columns).fillna(1.0)
 for s in total_cost.columns[1:]:
-    for yr in range(2019, 2030):
+    for yr in range(2025, 2035):
         integrated_scale_up_factor.loc[:, s] = np.multiply(
             integrated_scale_up_factor.loc[:, s].values,
             scale_up_factor_dict[s][yr].loc[:, 'scale_up_factor'].values
