@@ -663,9 +663,9 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         value_name="unit_cost"  # Name for the new 'cost' column
     )
     unit_cost_fac_operations['Facility_Level'] = unit_cost_fac_operations['Facility_Level'].astype(str)
-    fac_count_by_district_and_level = mfl[['Facility_Level', 'Facility_Count', 'District']].groupby(['Facility_Level', 'District']).sum().reset_index()
+    fac_count_by_level = mfl[['Facility_Level', 'Facility_Count']].groupby(['Facility_Level']).sum().reset_index()
 
-    facility_operation_cost = pd.merge(unit_cost_fac_operations, fac_count_by_district_and_level, on = 'Facility_Level', how = 'left', validate = 'm:m')
+    facility_operation_cost = pd.merge(unit_cost_fac_operations, fac_count_by_level, on = 'Facility_Level', how = 'left', validate = 'm:m')
     facility_operation_cost['Facility_Count'] = facility_operation_cost['Facility_Count'].fillna(0).astype(int)
     facility_operation_cost['cost'] =  facility_operation_cost['unit_cost'] * facility_operation_cost['Facility_Count']
 
