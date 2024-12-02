@@ -191,7 +191,10 @@ calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calib
 
 # Facility operation costs
 #-----------------------------------------------------------------------------------------------------------------------
-#calibration_data[calibration_data['calibration_category'] == 'Facility utility bills - ICT', 'Infrastructure - New Builds'] = get_calibration_relevant_subset()
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Electricity', 'Water', 'Cleaning', 'Security', 'Food for inpatient cases', 'Facility management'], _calibration_category = 'Facility utility bills'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Building maintenance'], _calibration_category = 'Infrastructure - Rehabilitation'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Vehicle maintenance'], _calibration_category = 'Vehicles - Maintenance'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Ambulance fuel'], _calibration_category = 'Vehicles - Fuel'))
 
 # Infrastructure
 #-----------------------------------------------------------------------------------------------------------------------
@@ -203,6 +206,7 @@ list_of_consumables_costs_for_calibration_only_hiv = ['HIV Screening/Diagnostic 
 list_of_consumables_costs_for_calibration_without_hiv =['Malaria RDTs', 'Antimalarials', 'TB Tests (including RDTs)', 'TB Treatment', 'Condoms and Lubricants', 'Other Drugs, medical supplies, and commodities']
 list_of_hr_costs_for_calibration = ['Health Worker Salaries', 'Health Worker Training - In-Service', 'Health Worker Training - Pre-Service', 'Mentorships & Supportive Supervision']
 list_of_equipment_costs_for_calibration = ['Medical Equipment - Purchase', 'Medical Equipment - Maintenance']
+list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastructure - Rehabilitation', 'Vehicles - Maintenance','Vehicles - Fuel' ]
 
 # Create folders to store results
 costing_outputs_folder = Path('./outputs/costing')
@@ -290,13 +294,14 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
 
 # Call the function for each variable and cost list
 all_consumable_costs = list_of_consumables_costs_for_calibration_only_hiv + list_of_consumables_costs_for_calibration_without_hiv + ['Supply Chain']
-all_calibration_costs = all_consumable_costs + list_of_hr_costs_for_calibration + list_of_equipment_costs_for_calibration
+all_calibration_costs = all_consumable_costs + list_of_hr_costs_for_calibration + list_of_equipment_costs_for_calibration + list_of_operating_costs_for_calibration
 
 do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_without_hiv)
 do_cost_calibration_plot(calibration_data,list_of_consumables_costs_for_calibration_only_hiv)
 do_cost_calibration_plot(calibration_data,all_consumable_costs)
 do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
+do_cost_calibration_plot(calibration_data, list_of_operating_costs_for_calibration)
 do_cost_calibration_plot(calibration_data,all_calibration_costs, _xtick_fontsize = 8)
 calibration_data.to_csv(figurespath / 'calibration/calibration.csv')
 
