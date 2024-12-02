@@ -448,7 +448,6 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     }
 
     def read_parameters(self, data_folder):
-        p = self.parameters
 
         # load parameters from the resource file
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
