@@ -389,6 +389,17 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         'sens_analysis_max': Parameter(
             Types.BOOL, 'Signals within the analysis event and code that sensitivity analysis is being undertaken in '
                         'which the maximum coverage of ANC is enforced'),
+
+        'interventions_analysis': Parameter(
+            Types.BOOL, 'Signals within the analysis event and code that intervention-based analysis is being '
+                        'undertaken in which the maximum coverage of ANC is enforced'),
+        'interventions_under_analysis': Parameter(
+            Types.LIST, 'Intervention for which their availability is being changed during analysis'),
+        'all_interventions': Parameter(
+            Types.LIST, 'Names of all maternal and newborn health interventions'),
+        'intervention_analysis_availability': Parameter(
+            Types.REAL, 'Probability an intervention which is included in "interventions_under_analysis" will be'
+                        'available'),
     }
 
     PROPERTIES = {
@@ -437,6 +448,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
     }
 
     def read_parameters(self, data_folder):
+        p = self.parameters
+
         # load parameters from the resource file
         parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
                                             sheet_name='parameter_values')
@@ -527,13 +540,19 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                            sim.date + DateOffset(years=1))
 
         # ...and register and schedule the parameter update event
-        sim.schedule_event(ParameterUpdateEvent(self),
-                           Date(2015, 1, 1))
+        if self.sim.date.year < 2015:
+            sim.schedule_event(ParameterUpdateEvent(self),
+                               Date(2015, 1, 1))
+        else:
+            sim.schedule_event(ParameterUpdateEvent(self),
+                               Date(self.sim.date.year, 1, 1))
 
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period. The event is schedule to run even when analysis is not
         # conducted but no changes to parameters can be made.
-        sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
+
+        if self.sim.date.year <= params['analysis_year']:
+            sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
@@ -1668,7 +1687,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             "PregnancySupervisor"
         ].abortion_complications
         if abortion_complications.has_any(
-            [person_id], "sepsis", "injury", "haemorrhage", first=True
+            [person_id], "sepsis", "injury", "haemorrhage", "other", first=True
         ):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
@@ -1997,7 +2016,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
 
             else:
-                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
+                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury', 'other')
                 df.at[individual_id, 'ac_received_post_abortion_care'] = False
 
             if individual_id in mni:
@@ -2121,7 +2140,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
             params['alternative_anc_quality'] or \
             params['alternative_ip_anc_quality'] or \
             params['sens_analysis_max'] or \
-           params['sens_analysis_min']:
+           params['sens_analysis_min'] or  \
+            params['interventions_analysis']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
             # alternative functionality for determining availability of interventions only occurs when analysis is
@@ -2147,11 +2167,6 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
                 params['prob_late_initiation_anc4'] = 0
 
-                # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
-                # coverage can  be reached with current logic
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
-                    10_000
-
             if params['alternative_anc_quality'] or params['sens_analysis_max']:
 
                 # Override the availability of IPTp consumables with the set level of coverage
@@ -2160,22 +2175,9 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                     self.sim.modules['HealthSystem'].override_availability_of_consumables(
                         {iptp: params['anc_availability_probability']})
 
-                # And then override the quality parameters in the model
-                for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                                  'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
-                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
-                        params['anc_availability_probability']
-
-            if params['alternative_ip_anc_quality']:
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_an'] = \
-                    10_000
-
             if params['sens_analysis_max']:
                 for parameter in ['prob_seek_anc5', 'prob_seek_anc6', 'prob_seek_anc7', 'prob_seek_anc8']:
                     self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = 1.0
-
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
-                    10_000
 
                 params['prob_seek_care_pregnancy_complication'] = 1.0
                 self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['prob_adherent_ifa'] = 1.0
