@@ -170,7 +170,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     when they run"""
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
+
     lparams = sim.modules['Labour'].parameters
     pparams = sim.modules['PregnancySupervisor'].parameters
 
@@ -200,11 +200,11 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     unchanged_odds_anc = pparams['odds_early_init_anc4'][0]
     unchanged_odds_pnc = lparams['odds_will_attend_pnc'][0]
 
+    sim.make_initial_population(n=100)
     # run the model for 1 day
     sim.simulate(end_date=Date(2010, 1, 2))
 
     p_current_params = sim.modules['PregnancySupervisor'].current_parameters
-    c_current_params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
     l_current_params = sim.modules['Labour'].current_parameters
     nbparams = sim.modules['NewbornOutcomes'].current_parameters
 
@@ -215,10 +215,6 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     assert p_current_params['prob_anc1_months_2_to_4'] == [1.0, 0, 0]
     assert p_current_params['prob_late_initiation_anc4'] == 0
     assert p_current_params['odds_early_init_anc4'] != unchanged_odds_anc
-
-    for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                      'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
-        assert c_current_params[parameter] == new_avail_prob
 
     # Now check corrent labour/newborn/postnatal parameters have been updated
     assert l_current_params['prob_intervention_delivered_anaemia_assessment_pnc'] == new_avail_prob
@@ -234,7 +230,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
 def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_parameters(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
+
     lparams = sim.modules['Labour'].parameters
     pparams = sim.modules['PregnancySupervisor'].parameters
 
@@ -250,6 +246,7 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_par
     pnc_avail_prob = 1.0
     lparams['pnc_availability_probability'] = pnc_avail_prob
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     p_current_params = sim.modules['PregnancySupervisor'].current_parameters
@@ -285,7 +282,6 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_par
 def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_parameters(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
     lparams = sim.modules['Labour'].parameters
     pparams = sim.modules['PregnancySupervisor'].parameters
 
@@ -300,6 +296,7 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_min_par
     pnc_avail_prob = 0.0
     lparams['pnc_availability_probability'] = pnc_avail_prob
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     p_current_params = sim.modules['PregnancySupervisor'].current_parameters
@@ -328,7 +325,6 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     via some pre-defined analysis parameter and not via the health system within the ANC HSIs"""
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
 
     # Set the analysis event to run on the first day of the simulation
     pparams = sim.modules['PregnancySupervisor'].parameters
@@ -340,6 +336,7 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     cparams['sensitivity_blood_test_syphilis'] = [1.0, 1.0]
     cparams['specificity_blood_test_syphilis'] = [1.0, 1.0]
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     # check the event ran
@@ -411,7 +408,6 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     via some pre-defined analysis parameter and not via the health system within the SBA HSIs"""
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters
@@ -423,6 +419,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     lparams['bemonc_availability'] = 1.0
     lparams['cemonc_availability'] = 1.0
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     params = sim.modules['Labour'].current_parameters
@@ -547,7 +544,6 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
     via some pre-defined analysis parameter and not via the health system within the PNC HSIs"""
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters
@@ -558,6 +554,7 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
     # Set availability
     lparams['pnc_availability_probability'] = 1.0
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     params = sim.modules['Labour'].current_parameters
@@ -615,7 +612,6 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     via some pre-defined analysis parameter and not via the health system within the newborn HSIs"""
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters
@@ -628,6 +624,7 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     lparams['pnc_availability_probability'] = 1.0
     lparams['bemonc_availability'] = 1.0
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     df = sim.population.props
@@ -685,7 +682,6 @@ def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     functions can run"""
     sim = Simulation(start_date=start_date, seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=100)
 
     # Set the analysis event to run at simulation start
     lparams = sim.modules['Labour'].parameters
@@ -697,6 +693,7 @@ def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     lparams['bemonc_availability'] = 1.0
     lparams['cemonc_availability'] = 1.0
 
+    sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2010, 1, 2))
 
     params = sim.modules['Labour'].current_parameters

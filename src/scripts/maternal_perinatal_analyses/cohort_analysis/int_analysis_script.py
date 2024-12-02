@@ -1,4 +1,6 @@
 import os
+import scipy.stats as st
+from scipy.stats import t, norm, shapiro
 
 import pandas as pd
 
@@ -9,9 +11,9 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize,
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
-scenario = 'block_intervention_big_pop_test-2024-11-14T163110Z'
+scenario = 'block_intervention_big_pop_test-2024-11-27T110117Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
-create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_pop_test')
+# create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_pop_test')
 
 interventions =['bp_measurement', 'post_abortion_care_core', 'ectopic_pregnancy_treatment']
 
@@ -22,6 +24,38 @@ for i in interventions:
     int_analysis.append(f'{i}_max')
 
 draws = [x for x in range(len(int_analysis))]
+
+def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
+    """Utility function to compute summary statistics
+
+    Finds mean value and 95% interval across the runs for each draw.
+    """
+
+    # Calculate summary statistics
+    grouped = results.groupby(axis=1, by='draw', sort=False)
+    mean = grouped.mean()
+    sem = grouped.sem()  # Standard error of the mean
+
+    # Calculate the critical value for a 95% confidence level
+    n = grouped.size().max()  # Assuming the largest group size determines the degrees of freedom
+    critical_value = t.ppf(0.975, df=n - 1)  # Two-tailed critical value
+
+    # Compute the margin of error
+    margin_of_error = critical_value * sem
+
+    # Compute confidence intervals
+    lower = mean - margin_of_error
+    upper = mean + margin_of_error
+
+    # Combine into a single DataFrame
+    summary = pd.concat({'mean': mean, 'lower': lower, 'upper': upper}, axis=1)
+
+    # Format the DataFrame as in the original code
+    summary.columns = summary.columns.swaplevel(1, 0)
+    summary.columns.names = ['draw', 'stat']
+    summary = summary.sort_index(axis=1)
+
+    return summary
 
 # Access dataframes generated from pregnancy supervisor
 def get_ps_data_frames(key, results_folder):
@@ -36,7 +70,7 @@ def get_ps_data_frames(key, results_folder):
                 custom_generate_series=sort_df,
                 do_scaling=False
             )
-    results_df_summ = summarize(results_df)
+    results_df_summ = summarize_confidence_intervals(results_df)
 
     return {'crude':results_df, 'summarised':results_df_summ}
 
@@ -63,9 +97,9 @@ br = extract_results(
             do_scaling=False
         )
 
-dd_sum = summarize(direct_deaths)
+dd_sum = summarize_confidence_intervals(direct_deaths)
 dd_mmr = (direct_deaths/br) * 100_000
-dd_mr_sum = summarize(dd_mmr)
+dd_mr_sum = summarize_confidence_intervals(dd_mmr)
 
 all_dalys_dfs = extract_results(
         results_folder,
@@ -79,7 +113,7 @@ all_dalys_dfs = extract_results(
 mat_disorders_all = all_dalys_dfs.loc[(slice(None), 'Maternal Disorders'), :]
 
 mat_dalys_df = mat_disorders_all.loc[2024]
-mat_dalys_df_sum = summarize(mat_dalys_df)
+mat_dalys_df_sum = summarize_confidence_intervals(mat_dalys_df)
 
 results.update({'dalys':{'crude': mat_dalys_df, 'summarised': mat_dalys_df_sum}})
 
@@ -134,11 +168,11 @@ def get_diffs(df_key, result_key, ints, draws):
         diff_df = results[df_key]['crude'][draw] - baseline
         diff_df.columns = pd.MultiIndex.from_tuples([(draw, v) for v in range(len(diff_df.columns))],
                                                     names=['draw', 'run'])
-        results_diff = summarize(diff_df)
+        results_diff = summarize_confidence_intervals(diff_df)
         results_diff.fillna(0)
         diff_results.update({int: results_diff.loc[result_key].values})
 
-    return diff_results
+    return [diff_results, diff_df]
 
 diff_results = {}
 baseline = dd_mmr[0]
@@ -147,14 +181,14 @@ for draw, int in zip(draws, int_analysis):
     diff_df = dd_mmr[draw] - baseline
     diff_df.columns = pd.MultiIndex.from_tuples([(draw, v) for v in range(len(diff_df.columns))],
                                                     names=['draw', 'run'])
-    results_diff = summarize(diff_df)
+    results_diff = summarize_confidence_intervals(diff_df)
     results_diff.fillna(0)
     diff_results.update({int: results_diff.loc[2024].values})
 
 
-mat_deaths = get_diffs('deaths_and_stillbirths', 'direct_maternal_deaths', int_analysis, draws)
-mmr_diffs = get_diffs('deaths_and_stillbirths', 'direct_mmr', int_analysis, draws)
-dalys_diffs = get_diffs('dalys', 'Maternal Disorders', int_analysis, draws)
+mat_deaths = get_diffs('deaths_and_stillbirths', 'direct_maternal_deaths', int_analysis, draws)[0]
+mmr_diffs = get_diffs('deaths_and_stillbirths', 'direct_mmr', int_analysis, draws)[0]
+dalys_diffs = get_diffs('dalys', 'Maternal Disorders', int_analysis, draws)[0]
 mat_deaths_2 = diff_results
 
 def get_diff_plots(data, outcome):
@@ -187,4 +221,35 @@ get_diff_plots(mat_deaths_2, 'MMR (demog log)')
 get_diff_plots(dalys_diffs, 'Maternal DALYs')
 
 
+# NORMALITY OF MMR ESTIMATES ACROSS RUNS (NOT DIFFERENCES)
+for draw in draws:
+    data = results['deaths_and_stillbirths']['crude'].loc['direct_mmr', draw].values
+
+    # Importing Shapiro-Wilk test for normality
+    # Conducting Shapiro-Wilk test
+    stat, p_value = shapiro(data)
+    # Plotting histogram
+    plt.hist(data, bins=15, density=True, alpha=0.6, color='skyblue', edgecolor='black')
+
+    # Overlay normal distribution (optional)
+    mean, std = np.mean(data), np.std(data)
+    xmin, xmax = plt.xlim()
+    x = np.linspace(xmin, xmax, 100)
+    p = norm.pdf(x, mean, std)
+    plt.axvline(mean, color='green', linestyle='-', linewidth=2, label='Data Mean')
+    plt.plot(x, p, 'r--', linewidth=2, label='Normal Curve')
+
+    # Adding labels and legend
+    plt.title(f'MMR data Histogram with Normality Test (p-value = {p_value:.4f}) (Draw {draw})')
+    plt.xlabel('Value')
+    plt.ylabel('Density')
+    plt.legend()
+    # Show plot
+    plt.show()
+    # Printing Shapiro-Wilk test results
+    print(f"Shapiro-Wilk Test Statistic: {stat:.4f}, p-value: {p_value:.4f}")
+    if p_value > 0.05:
+        print("Result: Data likely follows a normal distribution (p > 0.05).")
+    else:
+        print("Result: Data likely does not follow a normal distribution (p ≤ 0.05).")
 
