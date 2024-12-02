@@ -134,7 +134,7 @@ class Demography(Module):
         ),
 
         'district_num_of_residence': Property(
-            Types.CATEGORICAL, 
+            Types.CATEGORICAL,
             'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
@@ -792,8 +792,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(
             key='population',
             data={'total': sum(sex_count),
-                  'male': sex_count['M'],
-                  'female': sex_count['F']
+                  'male': sex_count['M'] if 'M' in sex_count.index else 0,
+                  'female': sex_count['F'] if 'F' in sex_count.index else 0,
                   })
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
