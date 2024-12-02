@@ -12,16 +12,16 @@ from tlo.scenario import BaseScenario
 class BaselineScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 796967
+        self.seed = 120589
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
-        self.pop_size = 30_000
-        self.number_of_draws = 7
+        self.pop_size = 40_000
+        self.number_of_draws = 9
         self.runs_per_draw = 60
 
     def log_configuration(self):
         return {
-            'filename': 'block_intervention_big_pop_test', 'directory': './outputs',
+            'filename': 'block_intervention_big_run', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -48,11 +48,13 @@ class BaselineScenario(BaseScenario):
             return {'PregnancySupervisor': {
                     'analysis_year': 2024}}
         else:
-            interventions_for_analysis = ['bp_measurement','bp_measurement',
-                                          'post_abortion_care_core', 'post_abortion_care_core',
-                                          'ectopic_pregnancy_treatment', 'ectopic_pregnancy_treatment']
+            interventions_for_analysis = ['sepsis_treatment','sepsis_treatment',
+                                          'amtsl', 'amtsl',
+                                          'pph_treatment_uterotonics', 'pph_treatment_uterotonics',
+                                          'blood_transfusion', 'blood_transfusion']
 
             avail_for_draw = [0.0, 1.0,
+                              0.0, 1.0,
                               0.0, 1.0,
                               0.0, 1.0]
 
