@@ -193,8 +193,7 @@ calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calib
 #-----------------------------------------------------------------------------------------------------------------------
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Electricity', 'Water', 'Cleaning', 'Security', 'Food for inpatient cases', 'Facility management'], _calibration_category = 'Facility utility bills'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Building maintenance'], _calibration_category = 'Infrastructure - Rehabilitation'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Vehicle maintenance'], _calibration_category = 'Vehicles - Maintenance'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Ambulance fuel'], _calibration_category = 'Vehicles - Fuel'))
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Vehicle maintenance', 'Ambulance fuel'], _calibration_category = 'Vehicles - Fuel and Maintenance'))
 
 # Infrastructure
 #-----------------------------------------------------------------------------------------------------------------------
@@ -206,7 +205,7 @@ list_of_consumables_costs_for_calibration_only_hiv = ['HIV Screening/Diagnostic 
 list_of_consumables_costs_for_calibration_without_hiv =['Malaria RDTs', 'Antimalarials', 'TB Tests (including RDTs)', 'TB Treatment', 'Condoms and Lubricants', 'Other Drugs, medical supplies, and commodities']
 list_of_hr_costs_for_calibration = ['Health Worker Salaries', 'Health Worker Training - In-Service', 'Health Worker Training - Pre-Service', 'Mentorships & Supportive Supervision']
 list_of_equipment_costs_for_calibration = ['Medical Equipment - Purchase', 'Medical Equipment - Maintenance']
-list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastructure - Rehabilitation', 'Vehicles - Maintenance','Vehicles - Fuel' ]
+list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastructure - Rehabilitation', 'Vehicles - Maintenance','Vehicles - Fuel and Maintenance']
 
 # Create folders to store results
 costing_outputs_folder = Path('./outputs/costing')
