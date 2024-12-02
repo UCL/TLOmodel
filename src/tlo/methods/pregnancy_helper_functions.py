@@ -378,7 +378,7 @@ def log_mni_for_maternal_death(self, person_id):
     logger.info(key='death_mni', data=mni_to_log)
 
 
-def calculate_risk_of_death_from_causes(self, risks):
+def calculate_risk_of_death_from_causes(self, risks, target):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
     newborn. In addition, it determines if the complication(s) will cause death or not. If death occurs the function
@@ -518,7 +518,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                 risks.update(risk)
 
         # Call return the result from calculate_risk_of_death_from_causes function
-        return calculate_risk_of_death_from_causes(self, risks)
+        return calculate_risk_of_death_from_causes(self, risks, target='m')
 
     # if she is not at risk of death as she has no complications we return false to the module
     return False
@@ -588,7 +588,7 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
             risks.update(risk)
 
         # Return the result from calculate_risk_of_death_from_causes function (returns primary cause of death or False)
-        return calculate_risk_of_death_from_causes(self, risks)
+        return calculate_risk_of_death_from_causes(self, risks, target='n')
 
     # if they is not at risk of death as they has no complications we return False to the module
     return False
