@@ -529,9 +529,9 @@ def test_abortion_complications(seed):
         params['treatment_effect_post_abortion_care'] = 0.0
 
         lab_params = sim.modules['Labour'].current_parameters
-        lab_params['mean_hcw_competence_hc'] = [1, 1]
-        lab_params['mean_hcw_competence_hp'] = [1, 1]
-        lab_params['prob_hcw_avail_retained_prod'] = 1
+        lab_params['mean_hcw_competence_hc'] = 1.0
+        lab_params['mean_hcw_competence_hp'] = 1.0
+        lab_params['prob_hcw_avail_retained_prod'] = 1.0
 
         df = sim.population.props
         pregnant_women = df.loc[df.is_alive & df.is_pregnant]

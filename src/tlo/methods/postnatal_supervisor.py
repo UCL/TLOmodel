@@ -655,7 +655,7 @@ class PostnatalSupervisor(Module):
             del self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person]
 
         # ----------------------------------------- CARE SEEKING ------------------------------------------------------
-        # We now use the the pn_emergency_event_mother property that has just been set for women who are experiencing
+        # We now use the pn_emergency_event_mother property that has just been set for women who are experiencing
         # severe complications to select a subset of women who may choose to seek care
         can_seek_care = df.loc[df['is_alive'] & df['la_is_postpartum'] & (df['pn_postnatal_period_in_weeks'] == week) &
                                df['pn_emergency_event_mother'] & ~df['hs_is_inpatient']]
