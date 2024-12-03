@@ -134,7 +134,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'MUAC_distribution_WHZ>=-2': Parameter(
             Types.LIST,
             'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
-        # bilateral oedema
+        # nutritional oedema
         'prevalence_nutritional_oedema': Parameter(
             Types.REAL, 'prevalence of nutritional oedema in children under 5 in Malawi'),
         'proportion_WHZ<-2_with_oedema': Parameter(
@@ -180,9 +180,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # Properties related to clinical acute malnutrition
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state based'
-                                                                      ' on WHZ and/or MUAC and/or oedema',
+                                                                      ' on WHZ and/or MUAC and/or nutritional oedema',
                                                    categories=['MAM', 'SAM', 'well']),
-        'un_am_bilateral_oedema': Property(Types.BOOL, 'bilateral pitting oedema present in wasting episode'),
+        'un_am_nutritional_oedema': Property(Types.BOOL, 'bilateral pitting oedema present in wasting episode'),
         'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories, based on WHO '
                                                            'cut-offs',
                                         categories=['<115mm', '[115-125)mm', '>=125mm']),
@@ -247,7 +247,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
         df.loc[df.is_alive, 'un_last_wasting_date_of_onset'] = pd.NaT
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
-        df.loc[df.is_alive, 'un_am_bilateral_oedema'] = False
+        df.loc[df.is_alive, 'un_am_nutritional_oedema'] = False
         df.loc[df.is_alive, 'un_am_MUAC_category'] = '>=125mm'
         df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
@@ -313,7 +313,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'un_last_wasting_date_of_onset'] = pd.NaT
         df.at[child_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[child_id, 'un_sam_death_date'] = pd.NaT
-        df.at[child_id, 'un_am_bilateral_oedema'] = False
+        df.at[child_id, 'un_am_nutritional_oedema'] = False
         df.at[child_id, 'un_am_MUAC_category'] = '>=125mm'
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
 
@@ -413,7 +413,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def nutritional_oedema_present(self, idx):
         """
-        This function applies the probability of bilateral oedema present in wasting and non-wasted cases
+        This function applies the probability of nutritional oedema present in wasting and non-wasted cases
         :param idx: index of children under 5, or person_id
         """
         if len(idx) == 0:
@@ -430,7 +430,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # oedema among wasted children
         oedema_in_wasted_children = self.rng.random_sample(size=len(
             children_with_wasting)) < p['proportion_WHZ<-2_with_oedema']
-        df.loc[children_with_wasting, 'un_am_bilateral_oedema'] = oedema_in_wasted_children
+        df.loc[children_with_wasting, 'un_am_nutritional_oedema'] = oedema_in_wasted_children
 
         # oedema among non-wasted children
         if len(children_without_wasting) == 0:
@@ -441,12 +441,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2']) / self.prob_normal_whz
         oedema_in_non_wasted = self.rng.random_sample(size=len(
             children_without_wasting)) < proportion_normal_whz_with_oedema
-        df.loc[children_without_wasting, 'un_am_bilateral_oedema'] = oedema_in_non_wasted
+        df.loc[children_without_wasting, 'un_am_nutritional_oedema'] = oedema_in_non_wasted
 
     def clinical_acute_malnutrition_state(self, person_id, pop_dataframe):
         """
         This function will determine the clinical acute malnutrition status (MAM, SAM) based on anthropometric indices
-        and presence of bilateral oedema (Kwashiorkor); And help determine whether the individual will have medical
+        and presence of nutritional oedema (Kwashiorkor); And help determine whether the individual will have medical
         complications, applicable to SAM cases only, requiring inpatient care.
         :param person_id: individual id
         :param pop_dataframe: population dataframe
@@ -456,7 +456,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         whz = df.at[person_id, 'un_WHZ_category']
         muac = df.at[person_id, 'un_am_MUAC_category']
-        oedema_presence = df.at[person_id, 'un_am_bilateral_oedema']
+        oedema_presence = df.at[person_id, 'un_am_nutritional_oedema']
 
         # if person well
         if (whz == 'WHZ>=-2') and (muac == '>=125mm') and (not oedema_presence):
@@ -466,7 +466,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             # start without treatment
             df.at[person_id, 'un_am_treatment_type'] = 'none'
 
-            # severe acute malnutrition (SAM): MUAC < 115 mm and/or WHZ < -3 and/or bilateral oedema
+            # severe acute malnutrition (SAM): MUAC < 115 mm and/or WHZ < -3 and/or nutritional oedema
             if (muac == '<115mm') or (whz == 'WHZ<-3') or oedema_presence:
                 df.at[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
                 # apply symptoms to all SAM cases
@@ -540,7 +540,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                                             & (df.un_WHZ_category == whz)])
             self.muac_cutoff_by_WHZ(idx=index_6_59mo_by_whz, whz=whz)
 
-        # determine the presence of bilateral oedema / oedematous malnutrition
+        # determine the presence of nutritional oedema (oedematous malnutrition)
         self.nutritional_oedema_present(idx=idx)
 
         # determine the clinical acute malnutrition state -----
@@ -569,11 +569,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         total_daly_values = pd.Series(data=0.0,
                                       index=df.index[df.is_alive])
         total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
-                              df.un_am_bilateral_oedema] = daly_wts['sev_wasting_with_oedema']
+                              df.un_am_nutritional_oedema] = daly_wts['sev_wasting_with_oedema']
         total_daly_values.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3') &
-                              (~df.un_am_bilateral_oedema)] = daly_wts['sev_wasting_w/o_oedema']
+                              (~df.un_am_nutritional_oedema)] = daly_wts['sev_wasting_w/o_oedema']
         total_daly_values.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2') &
-                              df.un_am_bilateral_oedema] = daly_wts['mod_wasting_with_oedema']
+                              df.un_am_nutritional_oedema] = daly_wts['mod_wasting_with_oedema']
         return total_daly_values
 
     def wasting_clinical_symptoms(self, person_id):
@@ -894,7 +894,7 @@ class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEven
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[person_id, 'un_sam_death_date'] = pd.NaT
-        df.at[person_id, 'un_am_bilateral_oedema'] = False
+        df.at[person_id, 'un_am_nutritional_oedema'] = False
         df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
         df.at[person_id, 'un_sam_with_complications'] = False
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
@@ -952,7 +952,7 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
 
         # Update all other properties equally
         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
-        df.at[person_id, 'un_am_bilateral_oedema'] = False
+        df.at[person_id, 'un_am_nutritional_oedema'] = False
         df.at[person_id, 'un_sam_with_complications'] = False
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_recovery_date'] = pd.NaT
@@ -1110,7 +1110,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         # DIAGNOSIS
         # based on performed measurements (depends on whether oedema is checked, and what equipment is available)
-        if oedema_checked and df.at[person_id, 'un_am_bilateral_oedema']:
+        if oedema_checked and df.at[person_id, 'un_am_nutritional_oedema']:
             diagnosis = 'SAM'
         else:
             if 'MUAC tape' in available_equipment:
@@ -1151,7 +1151,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                         diagnosis = 'MAM'
                 # WHZ score nor MUAC measurement available, hence diagnosis based solely on presence of oedema
                 else:
-                    if df.at[person_id, 'un_am_bilateral_oedema']:
+                    if df.at[person_id, 'un_am_nutritional_oedema']:
                         diagnosis = 'SAM'
                     else:
                         diagnosis = 'well'

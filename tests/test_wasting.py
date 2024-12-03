@@ -156,7 +156,7 @@ def test_basic_run(tmpdir):
 
             # WHZ standard deviation of -3, oedema, and MUAC <115mm should cause severe acute malnutrition
             whz_index = df.index[df['un_WHZ_category'] == 'WHZ<-3']
-            oedema_index = df.index[df['un_am_bilateral_oedema']]
+            oedema_index = df.index[df['un_am_nutritional_oedema']]
             muac_index = df.index[df['un_am_MUAC_category'] == '<115mm']
             assert (df.loc[whz_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
             assert (df.loc[oedema_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
@@ -231,7 +231,7 @@ def test_report_daly_weights(tmpdir):
     # Check daly weight for not undernourished person (weight is 0.0)
     # Reset diagnostic properties
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    df.loc[person_id, 'un_am_bilateral_oedema'] = False
+    df.loc[person_id, 'un_am_nutritional_oedema'] = False
     df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
 
     # Verify diagnosis - an individual should be well
@@ -249,7 +249,7 @@ def test_report_daly_weights(tmpdir):
     # Check daly weight for person with moderate wasting and oedema (weight is 0.051)
     # Reset diagnostic properties
     df.loc[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
-    df.loc[person_id, 'un_am_bilateral_oedema'] = True
+    df.loc[person_id, 'un_am_nutritional_oedema'] = True
 
     # Verify diagnosis - an individual should be SAM
     sim.modules["Wasting"].clinical_acute_malnutrition_state(person_id, df)
@@ -267,7 +267,7 @@ def test_report_daly_weights(tmpdir):
     # Check daly weight for person with severe wasting and oedema (weight is 0.172)
     # Reset diagnostic properties
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-    df.loc[person_id, 'un_am_bilateral_oedema'] = True
+    df.loc[person_id, 'un_am_nutritional_oedema'] = True
 
     # Verify diagnosis - an individual should be SAM
     sim.modules["Wasting"].clinical_acute_malnutrition_state(person_id, df)
@@ -285,7 +285,7 @@ def test_report_daly_weights(tmpdir):
     # Check daly weight for person with severe wasting without oedema (weight is 0.128)
     # Reset diagnosis
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-    df.loc[person_id, 'un_am_bilateral_oedema'] = False
+    df.loc[person_id, 'un_am_nutritional_oedema'] = False
 
     # Verify diagnosis - an individual should be SAM
     sim.modules["Wasting"].clinical_acute_malnutrition_state(person_id, df)
