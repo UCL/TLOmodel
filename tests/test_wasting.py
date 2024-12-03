@@ -127,10 +127,9 @@ def test_basic_run(tmpdir):
             assert (df.loc[~df.un_ever_wasted & ~df.date_of_birth.isna(), 'un_WHZ_category'] == 'WHZ>=-2').all()
 
             # Those for whom the death date has past should be dead
-            assert not df.loc[df.un_ever_wasted & (df['un_sam_death_date'] < self.sim.date), 'is_alive'].any()
-            assert not df.loc[
-                (df.un_clinical_acute_malnutrition == 'SAM') & (df['un_sam_death_date'] < self.sim.date),
-                'is_alive'].any()
+            assert not df.loc[(df['un_sam_death_date'] < self.sim.date), 'is_alive'].any()
+            # Those who died due to SAM should have SAM
+            assert (df.loc[(df['un_sam_death_date']) < self.sim.date, 'un_clinical_acute_malnutrition'] == 'SAM').all()
 
             # Check that those in a current episode have symptoms of wasting
             # [caused by the wasting module] but not others (among those alive)
@@ -763,8 +762,8 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
-    # Check that there is a Wasting_ProgressionToSevere_Event scheduled for this person and if the person is scheduled for
-    # death due to SAM, the death happens after the progression to severe wasting:
+    # Check that there is a Wasting_ProgressionToSevere_Event scheduled for this person and if the person is scheduled
+    # for death due to SAM, the death happens after the progression to severe wasting:
     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
                                if isinstance(event_tuple[1], Wasting_ProgressionToSevere_Event)][0]
     date_of_scheduled_progression = progression_event_tuple[0]
