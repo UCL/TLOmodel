@@ -245,12 +245,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # Set initial properties
         df.loc[df.is_alive, 'un_ever_wasted'] = False
         df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
-        df.loc[df.is_alive, 'un_last_wasting_date_of_onset'] = pd.NaT
+        # df.loc[df.is_alive, 'un_last_wasting_date_of_onset'] = pd.NaT
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_am_nutritional_oedema'] = False
         df.loc[df.is_alive, 'un_am_MUAC_category'] = '>=125mm'
-        df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
-        df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_am_recovery_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_am_discharge_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_treatment_type'] = 'not_applicable'
 
         # initialise wasting linear models.
@@ -309,12 +311,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # Set initial properties
         df.at[child_id, 'un_ever_wasted'] = False
         df.at[child_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
+        # df.at[child_id, 'un_last_wasting_date_of_onset'] = pd.NaT
         df.at[child_id, 'un_clinical_acute_malnutrition'] = 'well'
-        df.at[child_id, 'un_last_wasting_date_of_onset'] = pd.NaT
-        df.at[child_id, 'un_am_tx_start_date'] = pd.NaT
-        df.at[child_id, 'un_sam_death_date'] = pd.NaT
         df.at[child_id, 'un_am_nutritional_oedema'] = False
         df.at[child_id, 'un_am_MUAC_category'] = '>=125mm'
+        # df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_am_recovery_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_am_discharge_date'] = pd.NaT
+        # df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
 
     def get_prob_severe_wasting_among_wasted(self, agegp: str) -> Union[float, int]:
