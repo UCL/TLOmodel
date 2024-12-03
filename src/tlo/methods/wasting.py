@@ -732,12 +732,14 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
         # Determine who will be onset with wasting among those who are not currently wasted -------------
-        not_wasted = df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == 'WHZ>=-2')]
-        incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted, rng=rng)
-        mod_wasting_new_cases_idx = not_wasted.index[incidence_of_wasting]
+        not_wasted_or_treated = df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == 'WHZ>=-2') &
+                                       (df.un_am_tx_start_date != pd.NaT)]
+        incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted_or_treated, rng=rng)
+        mod_wasting_new_cases_idx = not_wasted_or_treated.index[incidence_of_wasting]
         # update the properties for new cases of wasted children
         df.loc[mod_wasting_new_cases_idx, 'un_ever_wasted'] = True
         df.loc[mod_wasting_new_cases_idx, 'un_last_wasting_date_of_onset'] = self.sim.date
+        df.loc[mod_wasting_new_cases_idx, 'un_am_recovery_date'] = pd.NaT
         # initiate moderate wasting
         df.loc[mod_wasting_new_cases_idx, 'un_WHZ_category'] = '-3<=WHZ<-2'
         # -------------------------------------------------------------------------------------------
