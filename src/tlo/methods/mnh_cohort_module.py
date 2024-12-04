@@ -17,6 +17,7 @@ class MaternalNewbornHealthCohort(Module):
     are sourced from a long run of the full model in which the properties of all newly pregnant women per year were
     logged. The cohort represents women in 2024.
     """
+    INIT_DEPENDENCIES = {'Demography', 'RTI', 'Contraception', 'Labour'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
