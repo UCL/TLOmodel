@@ -30,7 +30,7 @@ logger.setLevel(logging.INFO)
 #     5 <= SAC <= 14
 #     15 <= Adults
 #     0 <= All
-_AGE_GROUPS = {'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
+_AGE_GROUPS = {'Infant': (0, 1), 'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
 class Schisto(Module):
@@ -174,7 +174,7 @@ class Schisto(Module):
         index = pd.MultiIndex.from_product(
             [
                 ['mansoni', 'haematobium'],  # species
-                ['PSAC', 'SAC', 'Adults'],  # age_group
+                ['Infant', 'PSAC', 'SAC', 'Adults'],  # age_group
                 ['Low-infection', 'Moderate-infection', 'High-infection'],  # infection_level
                 self.districts  # district
             ],
