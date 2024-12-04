@@ -212,7 +212,7 @@ class Population:
         In this case on exit from the ``with`` block in which the context is entered,
         any updates to the individual properties will be written back to the population
         dataframe.
-        
+
         Once the ``with`` block in which the context is entered has been exited the view
         returned will raise an error on any subsequent attempts at reading or writing
         properties.

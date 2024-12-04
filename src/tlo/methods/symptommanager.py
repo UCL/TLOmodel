@@ -475,10 +475,10 @@ class SymptomManager(Module):
         This is a helper function that will give a list of strings for the symptoms that a _single_ person
         is currently experiencing.
 
-        If working in a `tlo.population.IndividualProperties` context, one can pass the context object
-        instead of supplying the person's DataFrame index.
-        Note that at least one of these inputs must be passed as a keyword argument however.
-        In the event that both arguments are passed, the individual_details argument takes precedence over the person_id.
+        If working in a `tlo.population.IndividualProperties` context, one can pass the context object instead of
+        supplying the person's DataFrame index. Note that at least one of these inputs must be passed as a keyword
+        argument however. In the event that both arguments are passed, the individual_details argument takes precedence
+        over the person_id.
 
         Optionally can specify disease_module_name to limit to the symptoms caused by that disease module.
 

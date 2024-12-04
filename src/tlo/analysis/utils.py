@@ -89,7 +89,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
 
 def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> None:
     """Merge two log files, skipping any repeated header lines.
-    
+
     :param log_path_1: Path to first log file to merge. Records from this log file will
         appear first in merged log file.
     :param log_path_2: Path to second log file to merge. Records from this log file will
