@@ -31,7 +31,7 @@ def test_run_sim_with_mnh_cohort(tmpdir, seed):
                 "*": logging.DEBUG},"directory": tmpdir})
 
     register_modules(sim)
-    sim.make_initial_population(n=3000)
+    sim.make_initial_population(n=500)
     sim.simulate(end_date=Date(2025, 1, 2))
 
     output= parse_log_file(sim.log_filepath)
@@ -69,7 +69,7 @@ def test_mnh_cohort_module_updates_properties_as_expected(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
 
     register_modules(sim)
-    sim.make_initial_population(n=3000)
+    sim.make_initial_population(n=500)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props

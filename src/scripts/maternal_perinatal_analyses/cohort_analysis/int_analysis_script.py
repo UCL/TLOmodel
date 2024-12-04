@@ -11,11 +11,11 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize,
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
-scenario = 'block_intervention_big_pop_test-2024-11-27T110117Z'
+scenario = 'block_intervention_big_run-2024-12-02T171146Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
-# create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_pop_test')
+create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
-interventions =['bp_measurement', 'post_abortion_care_core', 'ectopic_pregnancy_treatment']
+interventions =['sepsis_treatment', 'amtsl', 'blood_transfusion']
 
 int_analysis = ['baseline']
 
