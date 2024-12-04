@@ -22,7 +22,7 @@ import squarify
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -89,7 +89,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
 
 def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> None:
     """Merge two log files, skipping any repeated header lines.
-    
+
     :param log_path_1: Path to first log file to merge. Records from this log file will
         appear first in merged log file.
     :param log_path_2: Path to second log file to merge. Records from this log file will
@@ -1256,7 +1256,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
                 squeeze_single_col_df_to_series(
                     drop_extra_columns(
                         construct_multiindex_if_implied(
-                            pd.read_excel(workbook, sheet_name=sheet_name))))
+                            workbook[sheet_name])))
 
         elif isinstance(_value, str) and _value.startswith("["):
             # this looks like its intended to be a list
@@ -1264,11 +1264,11 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
         else:
             return _value
 
-    workbook = pd.ExcelFile(
-        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
+    workbook = read_csv_files(
+        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking', files=None)
 
     # Load the ResourceFile for the list of parameters that may change
-    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
+    mainsheet = workbook['main'].set_index(['Module', 'Parameter'])
 
     # Select which columns for parameter changes to extract
     cols = []

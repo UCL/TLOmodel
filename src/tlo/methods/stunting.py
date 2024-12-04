@@ -151,7 +151,7 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, data_folder):
         self.load_parameters_from_dataframe(
             read_csv_files(
-                Path(self.resourcefilepath) / 'ResourceFile_Stunting', files=['Parameter_values'])
+                Path(self.resourcefilepath) / 'ResourceFile_Stunting', files='Parameter_values')
         )
 
     def initialise_population(self, population):
