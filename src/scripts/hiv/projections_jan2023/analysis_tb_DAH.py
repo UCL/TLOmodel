@@ -30,7 +30,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_impactx55-2023-11-28T074721Z based on 10K and run for 2020 and appears to work except for
 #Tb_DAH_impactx58-2023-11-28T202627Z and this Tb_DAH_impactx61-2023-11-29T213503Z-based on 10k for 10 years---works perfectly
 # Tb_DAH_impactx59-2023-11-29T102358Z based on 10K for 2 years
-results_folder = get_scenario_outputs("tb_DAH_impact-2023-12-04T222317Z", outputspath)[-1]
+#Tb_DAH_impact02-2024-12-01T185458Z
+##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
+results_folder = get_scenario_outputs("Tb_DAH_impact03-2024-12-01T204928Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -41,11 +43,15 @@ params.to_excel(outputspath / "parameters.xlsx")
 
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")   #Item_Available
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Consumables'].keys()}")   #Item_Available
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Capacity'].keys()}")   #Item_Available
 
+#testing consumables extraction
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.tb_DAH_impact01 import ImpactOfTbDaH
-    e = ImpactOfTbDaH()
+    from scripts.hiv.projections_jan2023.tb_DAH_impact02 import ImpactOfTbDaH03
+    e = ImpactOfTbDaH03()
     return tuple(e._scenarios.keys())
 
 def set_param_names_as_column_index_level_0(_df):
@@ -55,7 +61,6 @@ def set_param_names_as_column_index_level_0(_df):
     assert len(names_of_cols_level0) == len(_df.columns.levels[0])
     _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
     return _df
-
 
 # %% Define parameter names
 param_names = get_parameter_names_from_scenario_file()
@@ -101,6 +106,23 @@ pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
 pyears_all.to_excel (outputspath / "pyears_all.xlsx")
 
 # Number of TB deaths and mortality rate
+consumables_summary= extract_results(
+    results_folder,
+    module="tlo.methods.healthsystem.summary",
+    key="Consumables",
+    custom_generate_series=(
+        lambda df: df.assign(year=df["date"].dt.year).groupby(
+            ["year", "Consumables"])["person_id"].count()
+    ),
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
+
+consumables_summary = consumables_summary.reset_index()
+print("Consumables_summary as follows:")
+print(consumables_summary)
+
+
+# Number of TB deaths and mortality rate
 results_deaths = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -127,13 +149,41 @@ combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
 combined_tb_table.to_excel(outputspath / "combined_tb_tables.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
 print("Scaling Factor Key:", scaling_factor_key)
+
+def tb_mortality0(results_folder):
+    tb_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    # Select only causes AIDS_TB, AIDS_non_TB, and TB
+    tb_deaths = tb_deaths.sort_index()
+    tb_deaths1 = summarize(tb_deaths[tb_deaths.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
+    tb_deaths1["year"] = tb_deaths1.index.get_level_values("year")  # Extract the 'year' values from the index
+    tb_deaths1.reset_index(drop=True, inplace=True)
+
+    # Group deaths by year
+    tb_mortality = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
+    tb_mortality.set_index("year", inplace=True)
+    return tb_mortality
+
+#printing file to excel
+tb_mortality = tb_mortality0(results_folder)
+tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
+
+
 def get_tb_dalys(df_):
     # Get DALYs of TB
     years = df_['year'].value_counts().keys()
     dalys = pd.Series(dtype='float64', index=years)
     for year in years:
         tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-        dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
+        dalys[year] = tot_dalys.loc[(year, ['AIDS_TB', 'AIDS_non_TB', 'TB'])].sum()
     dalys.sort_index()
     return dalys
 
@@ -878,8 +928,6 @@ plt.show()
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Assuming 'tb_treatment_cov' is your DataFrame with columns: ('mean', 'lower', 'upper') and scenario as column index level 0
-# Replace 'tb_treatment_cov' with your actual DataFrame
 
 # Extract unique scenarios from column index level 0
 scenarios = tb_treatment_cov.columns.get_level_values(0).unique()
@@ -962,4 +1010,5 @@ if __name__ == "__main__":
 # Removed commented and duplicate code
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables'] & params[draw]==1
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables']
+
 
