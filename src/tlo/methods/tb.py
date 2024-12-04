@@ -1816,7 +1816,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 if self.facility_level == "1a":
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Tb_ScreeningAndRefer(
-                            person_id=person_id, module=self.module, facility_level="2"
+                            person_id=person_id, module=self.module, facility_level="1b"
                         ),
                         topen=self.sim.date + DateOffset(days=1),
                         tclose=None,
