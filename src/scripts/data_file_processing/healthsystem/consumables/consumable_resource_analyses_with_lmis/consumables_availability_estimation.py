@@ -68,7 +68,7 @@ def change_colnames(df, NameChangeList):  # Change column names
 #########################################################################################
 
 # Import 2018 data
-lmis_df = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'ResourceFile_LMIS_2018.csv', low_memory=False)
+lmis_df = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/ResourceFile_LMIS_2018.csv', low_memory=False)
 
 # 1. BASIC CLEANING ##
 # Rename columns
