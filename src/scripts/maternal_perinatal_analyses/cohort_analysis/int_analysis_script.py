@@ -11,9 +11,9 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize,
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
-scenario = 'block_intervention_big_run-2024-12-02T171146Z'
+scenario = 'block_intervention_big_run-2024-12-04T115735Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
-create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
+# create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
 interventions =['sepsis_treatment', 'amtsl', 'blood_transfusion']
 
