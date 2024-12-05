@@ -53,8 +53,8 @@ number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
 print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")   #Item_Available
 print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Consumables'].keys()}")   #Item_Available
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Capacity'].keys()}")   #HR capacity
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")   #Item_Available
+print(f"capcity summary']: {log['tlo.methods.healthsystem.summary']['Capacity'].keys()}")   #HR capacity
+print(f"Keys of staff capcity by facility level']: {log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel'].keys()}")   #Item_Available
 print(f"Keys of healthburden['tlo.methods.healthburden']['dalys']: {log['tlo.methods.healthburden']['dalys']['tb_inf'].keys()}")
 
 # Assuming Item_Available is a DataFrame
@@ -251,33 +251,73 @@ cons_req = cons_req.reset_index()
 cons_req.to_excel(outputspath / "cons_summary.xlsx")
 
 #extract HR- staff count for each year and draw
+# def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
+#     """Summarize the parsed logged-key results for one draw (as a dataframe) into a pd.Series."""
+#     # Set index as year derived from 'date' column
+#     _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+#     _df.index.name = 'year'
+#     # Define a function to transform column names into a standard format
+#     def change_to_standard_flattened_index_format(col: str) -> str:
+#         parts = col.split("_", 3)  # Split by "_" up to 3 parts
+#         if len(parts) == 4:  # Ensure exactly 4 parts to format
+#             return f"{parts[0]}={parts[1]}|{parts[2]}={parts[3]}"
+#         return col  # Return unchanged if the format doesn't match
+#     _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
+#     return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # Expanded flattened axis
+#
+# actual_staff_count = extract_results(
+#     results_folder,
+#     module='tlo.methods.healthsystem.summary',
+#     key='Capacity_By_OfficerType_And_FacilityLevel',
+#     custom_generate_series=get_staff_count_by_facid_and_officer_type,
+#     do_scaling=True,
+# ).pipe(set_param_names_as_column_index_level_0)
+#
+# actual_staff_count = get_staff_count_by_facid_and_officer_type(results_folder)
+# actual_staff_count = actual_staff_count .reset_index()
+# actual_staff_count.to_excel(outputspath / "staff_count_summary.xlsx")
+
 def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
     """Summarize the parsed logged-key results for one draw (as a dataframe) into a pd.Series."""
+
     # Set index as year derived from 'date' column
-    _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-    _df.index.name = 'year'
+    _df['year'] = _df['date'].dt.year  # Extract year from 'date'
+    _df = _df.drop(columns=['date'])  # Drop the 'date' column
+
+    # Set the 'year' column as the DataFrame index
+    _df = _df.set_index('year')
+
     # Define a function to transform column names into a standard format
     def change_to_standard_flattened_index_format(col: str) -> str:
         parts = col.split("_", 3)  # Split by "_" up to 3 parts
         if len(parts) == 4:  # Ensure exactly 4 parts to format
             return f"{parts[0]}={parts[1]}|{parts[2]}={parts[3]}"
         return col  # Return unchanged if the format doesn't match
+
+    # Apply the standard format transformation to column names
     _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
+
+    # Unflatten the DataFrame and return it stacked at the first two levels
     return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # Expanded flattened axis
 
+
+# Use the 'extract_results' function to process and get staff count
 actual_staff_count = extract_results(
-    Path(results_folder),
+    results_folder,
     module='tlo.methods.healthsystem.summary',
-    key='number_of_hcw_staff',
+    key='Capacity_By_OfficerType_And_FacilityLevel',
     custom_generate_series=get_staff_count_by_facid_and_officer_type,
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-actual_staff_count = get_quantity_of_consumables_dispensed(results_folder)
-actual_staff_count = cons_req.reset_index()
+# Reset index to make the DataFrame easier to work with
+actual_staff_count = actual_staff_count.reset_index()
+
+# Write the result to an Excel file
 actual_staff_count.to_excel(outputspath / "staff_count_summary.xlsx")
 
-
+# Debug: Print the resulting DataFrame
+print(actual_staff_count)
 
 # Number of TB deaths and mortality rate
 results_deaths = extract_results(
