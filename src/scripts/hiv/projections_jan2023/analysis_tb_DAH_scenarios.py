@@ -19,7 +19,6 @@ from tlo.analysis.utils import (
     summarize, parse_log_file,
 
 )
-
 resourcefilepath = Path("./resources")
 outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
