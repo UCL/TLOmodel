@@ -657,6 +657,52 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     plt.close(fig)
 
 
+def table_2_relative_frequency_of_cons_use(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """Table 2: The relative frequency Consumables that are used."""
+
+    # Load the mapping between item_code and item_name
+    cons_names = pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
+    )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
+
+    def get_number_of_call_to_an_item_code(_df):
+        """This summarizes the number of calls to a particular item_code, irrespective of the quantity requested."""
+        _df = drop_outside_period(_df)
+
+        counts_of_available = defaultdict(int)
+        counts_of_not_available = defaultdict(int)
+
+        for _, row in _df.iterrows():
+            for item, _ in eval(row['Item_Available']).items():
+                counts_of_available[item] += 1
+            for item, _ in eval(row['Item_NotAvailable']).items():
+                counts_of_not_available[item] += 1
+
+        return pd.concat(
+            {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+            axis=1
+        ).fillna(0).astype(int).stack()
+
+    items_called = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem',
+            key='Consumables',
+            custom_generate_series=get_number_of_call_to_an_item_code,
+            do_scaling=True
+        ),
+        only_mean=True,
+        collapse_columns=True
+    )
+
+    total_calls = items_called.unstack().sum(axis=1)  # total calls by item_code (summing Available and Not_Availbale)
+    rfreq_calls = (total_calls / total_calls.sum()).sort_values(ascending=False).reset_index(name='rel_freq').rename(columns={'index': 'Item_Code'})
+    rfreq_calls = rfreq_calls.merge(cons_names.reset_index(), left_on='Item_Code', right_on='Item_Code', how='left')
+    rfreq_calls.to_csv(
+        output_folder / f"{PREFIX_ON_FILENAME}_Table_Of_Frequency_Consumables_Requested.csv",
+        index=False
+    )
+
 def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     """ 'Figure 7': Squeeze Factors for the HSIs"""
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig7_{stub}.png"  # noqa: E731
@@ -751,6 +797,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     figure6_cons_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    table_2_relative_frequency_of_cons_use(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
     )
 
