@@ -2,21 +2,33 @@
 
 # python src/scripts/hiv/projections_jan2023/analysis_tb_DAH_scenarios.py --scenario-outputs-folder outputs\newton.chagoma@york.ac.uk
 import argparse
-from typing import Optional, Iterable, List
-import datetime
 from pathlib import Path
+from tlo import Date
+from collections import Counter, defaultdict
+import calendar
+import datetime
+import os
+import textwrap
+from typing import Tuple
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+import squarify
 import numpy as np
 import pandas as pd
-from typing import Tuple
-from tlo import Date
+import ast
+import math
+import itertools
+from itertools import cycle
 from tlo.analysis.utils import (
     extract_params,
+    extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    extract_results,
     summarize,
+    create_pickles_locally,
+    parse_log_file,
+    unflatten_flattened_multi_index_in_logging
 )
 
 resourcefilepath = Path("./resources")
@@ -100,26 +112,28 @@ for draw in range(number_draws):
     pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
 
     # Append to the main DataFrame
-    pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
+pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
 pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
 # Print the DataFrame to Excel
 pyears_all.to_excel (outputspath / "pyears_all.xlsx")
 
-# Number of TB deaths and mortality rate
-consumables_summary= extract_results(
+# extracting consumables
+consumables_summary = extract_results(
     results_folder,
     module="tlo.methods.healthsystem.summary",
     key="Consumables",
     custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year).groupby(
-            ["year", "Consumables"])["person_id"].count()
+        lambda df: df[df["Consumables"] == "Item_Available"]
+                    .assign(year=df["date"].dt.year)
+                    .groupby(["year", "Consumables", "person_id", "Item_Code"]).size().reset_index(name="quantity")
+                    .groupby(["year", "Consumables", "Item_Code"]).agg({ "quantity": "sum"}).reset_index()
     ),
-    do_scaling=True,
+    do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
 consumables_summary = consumables_summary.reset_index()
-print("Consumables_summary as follows:")
-print(consumables_summary)
+consumables_summary.to_excel(outputspath / "consumables_summarys.xlsx")
+
 
 
 # Number of TB deaths and mortality rate

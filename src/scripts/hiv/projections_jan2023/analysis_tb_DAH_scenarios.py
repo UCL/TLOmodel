@@ -58,7 +58,6 @@ def set_param_names_as_column_index_level_0(_df):
     _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
     return _df
 
-
 # %% Define parameter names
 param_names = get_parameter_names_from_scenario_file()
 print(param_names)
