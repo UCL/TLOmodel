@@ -299,8 +299,6 @@ def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
 
     # Unflatten the DataFrame and return it stacked at the first two levels
     return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # Expanded flattened axis
-
-
 # Use the 'extract_results' function to process and get staff count
 actual_staff_count = extract_results(
     results_folder,
@@ -312,10 +310,8 @@ actual_staff_count = extract_results(
 
 # Reset index to make the DataFrame easier to work with
 actual_staff_count = actual_staff_count.reset_index()
-
 # Write the result to an Excel file
 actual_staff_count.to_excel(outputspath / "staff_count_summary.xlsx")
-
 # Debug: Print the resulting DataFrame
 print(actual_staff_count)
 
@@ -330,6 +326,30 @@ results_deaths = extract_results(
     ),
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
+
+
+#capacity by officer
+def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
+    """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+    _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+    _df.index.name = 'year'
+    return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+
+#Extracting capacity of cadres by staff
+capacity_by_cadre_and_level = extract_results(
+     results_folder,
+    module='tlo.methods.healthsystem.summary',
+    key='Capacity_By_OfficerType_And_FacilityLevel',
+    custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+# Reset index to make the DataFrame easier to work with
+capacity_by_cadre_and_level = capacity_by_cadre_and_level .reset_index()
+# Write the result to an Excel file
+capacity_by_cadre_and_level .to_excel(outputspath / "staff_capacity_by_cadres.xlsx")
+# Debug: Print the resulting DataFrame
+print(capacity_by_cadre_and_level )
 
 # Removes multi-index
 results_deaths = results_deaths.reset_index()
@@ -372,36 +392,6 @@ def tb_mortality0(results_folder):
 #printing file to excel
 tb_mortality = tb_mortality0(results_folder)
 tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
-
-
-def get_tb_dalys(df_):
-    # Get DALYs of TB
-    years = df_['year'].value_counts().keys()
-    dalys = pd.Series(dtype='float64', index=years)
-    for year in years:
-        tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-        dalys[year] = tot_dalys.loc[(year, ['AIDS_TB', 'AIDS_non_TB', 'TB'])].sum()
-    dalys.sort_index()
-    return dalys
-
-# Extract DALYs from model and scale
-tb_dalys = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys",
-    custom_generate_series=get_tb_dalys,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
-
-# Get mean/upper/lower statistics
-print("Shape of tb_dalys:", tb_dalys.shape)
-dalys_summary = summarize(tb_dalys).sort_index()
-print("Shape after summarize:", dalys_summary.shape)
-
-dalys_summary = summarize(tb_dalys).sort_index()
-print("DALYs for TB are as follows:")
-print(dalys_summary)
-dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 #raw mortality
 def tb_mortality0(results_folder):
@@ -653,9 +643,9 @@ child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
 
 #properties of deceased
-properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
-properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
-properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
+# properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
+# properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
+# properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 # wealth_quintile = extract_results(
 #     results_folder,
