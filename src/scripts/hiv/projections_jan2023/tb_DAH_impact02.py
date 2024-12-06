@@ -48,7 +48,7 @@ class ImpactOfTbDaH03(BaseScenario):
         self.seed = 2134
         # self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 12, 31)
+        self.end_date = Date(2015, 12, 31)
         self.pop_size = 2000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -127,12 +127,14 @@ class ImpactOfTbDaH03(BaseScenario):
                 'Tb': {
                     'scenario': 3,
                     'probability_community_chest_xray': 0.1,
+                    'scaling_factor_WHO': 1.4
                 },
             },
             # introduce outreach services
             "Outreach services": {
                 'Tb': {
                     'scenario': 4,
+                    'scaling_factor_WHO': 1.44
                 }
             },
         }
