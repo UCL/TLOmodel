@@ -1023,9 +1023,9 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
 
 class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
     """ Attendance is determined for the HSI. If the child attends, measurements with available equipment are performed
-    for that child. Based on these measurements, the child can be diagnosed as well/MAM/SAM and eventually scheduled
-    for appropriate treatment. If the child (attending or not) is still under 5 at the time of the next growth
-    monitoring, the next event is scheduled with age-dependent frequency.
+    for that child. Based on these measurements, the child can be diagnosed as well/MAM/(un)complicated SAM and
+    eventually scheduled for the appropriate treatment. If the child (attending or not) is still under 5 at the time of
+    the next growth monitoring, the next event is scheduled with age-dependent frequency.
     """
 
     def __init__(self, module, person_id):
