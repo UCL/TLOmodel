@@ -514,7 +514,7 @@ def test_parse_values_in_mixed_datatypes_columns():
     mixed_data_df = pd.DataFrame(data={'param_values':['54', 'inc_malaria', '[1,2,3]', '0.2']})
     # confirm all values are strings
     for value in mixed_data_df.param_values:
-        assert type(value) == str
+        assert isinstance(value, str)
     # expected datatypes
     exp_dtypes = [int, str, list, float]
     # parse values
@@ -522,4 +522,4 @@ def test_parse_values_in_mixed_datatypes_columns():
         'param_values'].apply(parse_csv_values_for_columns_with_mixed_datatypes)
     # confirm value data type is now as expected
     for _index, exp_dtype in enumerate(exp_dtypes):
-        assert exp_dtype == type(mixed_data_df.loc[_index, "param_values"])
+        assert isinstance(mixed_data_df.loc[_index, "param_values"], exp_dtype)
