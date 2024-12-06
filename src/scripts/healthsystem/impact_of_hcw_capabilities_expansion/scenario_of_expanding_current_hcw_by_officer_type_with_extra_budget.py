@@ -78,8 +78,8 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.baselines = {
             # 'baseline': self._baseline_of_baseline(),  # test historical scaling changes first
             # 'default_cons': self._baseline_default_cons(),
-            'more_budget': self._baseline_more_budget(),  # turn off when run baseline scenarios with no expansion
-            # 'less_budget': self._baseline_less_budget(),  # turn off when run baseline scenarios with no expansion
+            # 'more_budget': self._baseline_more_budget(),  # turn off when run baseline scenarios with no expansion
+            'less_budget': self._baseline_less_budget(),  # turn off when run baseline scenarios with no expansion
             # 'max_hs_function': self._baseline_max_hs_function(),
         }
 
