@@ -577,7 +577,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             total_cost.loc[(total_cost.year == 2034) & (total_cost.draw == s), 'all_cadres'].values[0] -
             (1 + 0.042) ** len(years) * total_cost.loc[(total_cost.year == 2025) & (total_cost.draw == 's_0'),
                                                        'all_cadres'].values[0]
-        ) < 1e6).all()
+        ) < 1e-6).all()
 
     # Absolute Number of Deaths and DALYs and Services
     num_deaths = extract_results(
