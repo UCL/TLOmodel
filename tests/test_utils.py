@@ -511,7 +511,7 @@ def test_parse_values_in_mixed_datatypes_columns():
 
     # define a series with mixed type column setting all values as string(This is the default behaviour when reading
     # csv files columns with mixed datatype column
-    mixed_data_df = pd.DataFrame(data={'param_values':['54', 'fruit', '[1,2,3]', '0.2']})
+    mixed_data_df = pd.DataFrame(data={'param_values':['54', 'inc_malaria', '[1,2,3]', '0.2']})
     # confirm all values are strings
     for value in mixed_data_df.param_values:
         assert type(value) == str
