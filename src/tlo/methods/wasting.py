@@ -799,15 +799,15 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
 
-        if ((not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5)
-                or df.at[person_id, 'un_WHZ_category'] != '-3<=WHZ<-2'):
+        if (
+            (not df.at[person_id, 'is_alive']) or
+            (df.at[person_id, 'age_exact_years'] >= 5) or
+            (df.at[person_id, 'un_WHZ_category'] != '-3<=WHZ<-2') or
+            (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
+                self.sim.date)
+        ):
             return
 
-        # before progression to severe wasting, check those who started
-        # supplementary feeding programme before today
-        if df.at[person_id, 'un_last_wasting_date_of_onset'] < \
-                df.at[person_id, 'un_am_tx_start_date'] < self.sim.date:
-            return
         # # # INCIDENCE OF SEVERE WASTING # # # # # # # # # # # # # # # # # # # # #
         # continue with progression to severe if not treated/recovered
         else:
