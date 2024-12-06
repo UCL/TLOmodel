@@ -189,7 +189,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM episode'),
         'un_sam_death_date': Property(Types.DATE, 'death date from severe acute malnutrition'),
         'un_am_recovery_date': Property(Types.DATE, 'recovery date from acute malnutrition'),
-        'un_am_discharge_date': Property(Types.DATE, 'discharge date from treatment of MAM/SAM'),
+        'un_am_discharge_date': Property(Types.DATE, 'discharge date from last treatment of MAM/SAM'),
         'un_am_tx_start_date': Property(Types.DATE, 'intervention start date'),
         'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment types for acute malnutrition',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
@@ -652,8 +652,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
+        # Reset tx discharge date
+        df.at[person_id, 'un_am_discharge_date'] = pd.NaT
 
         if intervention == 'SFP':
+            df.at[person_id, 'un_am_discharge_date'] = \
+                self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
+
             mam_full_recovery = self.wasting_models.acute_malnutrition_recovery_mam_lm.predict(
                 df.loc[[person_id]], self.rng
             )
@@ -662,8 +667,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 # schedule recovery date
                 self.sim.schedule_event(
                     event=Wasting_ClinicalAcuteMalnutritionRecovery_Event(module=self, person_id=person_id),
-                    date=(df.at[person_id, 'un_am_tx_start_date'] +
-                          DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM']))
+                    date=(df.at[person_id, 'un_am_discharge_date'])
                 )
                 # cancel progression date (in ProgressionEvent)
             else:
@@ -672,16 +676,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         elif intervention in ['OTC', 'ITC']:
             if intervention == 'OTC':
-                outcome_date = (df.at[person_id, 'un_am_tx_start_date'] +
-                                DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
+                outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
             else:
-                outcome_date = (df.at[person_id, 'un_am_tx_start_date'] +
-                                DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
+                outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
 
             sam_full_recovery = self.wasting_models.acute_malnutrition_recovery_sam_lm.predict(
                 df.loc[[person_id]], self.rng
             )
             if sam_full_recovery:
+                df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 # schedule full recovery
                 self.sim.schedule_event(
                     event=Wasting_ClinicalAcuteMalnutritionRecovery_Event(module=self, person_id=person_id),
@@ -698,6 +701,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         date=outcome_date
                     )
                 else:  # recovery to MAM and follow-up treatment for MAM
+                    df.at[person_id, 'un_am_discharge_date'] = outcome_date
                     self.sim.schedule_event(event=Wasting_UpdateToMAM_Event(module=self, person_id=person_id),
                                             date=outcome_date)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -835,8 +839,10 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
         df = self.sim.population.props  # shortcut to the dataframe
 
         # The event should not run if the person is not currently alive or doesn't have SAM
-        if ((not df.at[person_id, 'is_alive'])
-                or df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM'):
+        if (
+            (not df.at[person_id, 'is_alive']) or
+            (df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM')
+        ):
             return
 
         # # Check if this person should still die from SAM:
@@ -965,7 +971,6 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_sam_with_complications'] = False
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_recovery_date'] = pd.NaT
-        df.at[person_id, 'un_am_discharge_date'] = pd.NaT
         # Start without treatment, treatment will be applied with HSI if care sought
         df.at[person_id, 'un_am_treatment_type'] = 'none'
 
@@ -1220,8 +1225,6 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         if self.get_consumables([item_code1]):
             logger.debug(key='debug', data='consumables are available')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_discharge_date'] = \
-                self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             self.module.do_when_am_treatment(person_id, intervention='SFP')
         else:
@@ -1276,8 +1279,6 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables are available.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_discharge_date'] = \
-                self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM'])
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             self.module.do_when_am_treatment(person_id, intervention='OTC')
         else:
@@ -1329,8 +1330,6 @@ class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMi
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables available, so use it.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_am_discharge_date'] = \
-                self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM'])
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             self.module.do_when_am_treatment(person_id, intervention='ITC')
         else:
