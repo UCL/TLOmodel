@@ -522,8 +522,6 @@ def test_recovery_severe_wasting_with_complications(tmpdir):
                       hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
 
     # Run the created instance of HSI_GenericFirstApptAtFacilityLevel0 and check care was sought
-    # make inpatient care coverage 100%
-    wmodule.parameters['coverage_inpatient_care'] = 1.0
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
           isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
@@ -614,8 +612,6 @@ def test_nat_hist_death(tmpdir):
                       hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
 
     # Run the created instance of HSI_GenericFirstApptAtFacilityLevel0 and check care was sought
-    # make outpatient care coverage 100%
-    wmodule.parameters['coverage_outpatient_therapeutic_care'] = 1.0
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
           if isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
