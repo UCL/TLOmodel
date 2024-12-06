@@ -36,6 +36,7 @@ from tlo.methods.hsi_event import (
     HSIEventQueueItem,
     HSIEventWrapper,
 )
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -581,16 +582,16 @@ class HealthSystem(Module):
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
-        self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
-                                                         'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
-                                                         sheet_name=None)
+        self.parameters['priority_rank'] = read_csv_files(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
+                                                         'ResourceFile_PriorityRanking_ALLPOLICIES',
+                                                         files=None)
 
-        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_HR_scaling_by_level_and_officer_type.xlsx",
-            sheet_name=None  # all sheets read in
+            "ResourceFile_HR_scaling_by_level_and_officer_type",
+            files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling to be considered in included in the tables loaded
         assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
@@ -598,23 +599,23 @@ class HealthSystem(Module):
             (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
              f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}")
 
-        self.parameters['HR_scaling_by_district_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_district_table']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_HR_scaling_by_district.xlsx",
-            sheet_name=None  # all sheets read in
+            "ResourceFile_HR_scaling_by_district",
+            files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling by district to be considered in included in the tables loaded
         assert self.parameters['HR_scaling_by_district_mode'] in self.parameters['HR_scaling_by_district_table'], \
             f"Value of `HR_scaling_by_district_mode` not recognised: {self.parameters['HR_scaling_by_district_mode']}"
 
-        self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
+        self.parameters['yearly_HR_scaling']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_dynamic_HR_scaling.xlsx",
-            sheet_name=None,  # all sheets read in
+            "ResourceFile_dynamic_HR_scaling",
+            files=None,  # all sheets read in
             dtype={
                 'year': int,
                 'dynamic_HR_scaling_factor': float,
@@ -961,7 +962,7 @@ class HealthSystem(Module):
                 self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
         )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
-        
+
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
 
@@ -984,10 +985,10 @@ class HealthSystem(Module):
         # Merge in information about facility from Master Facilities List
         mfl = self.parameters['Master_Facilities_List']
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
-        
+
         # Create a copy of this to store staff counts
         capabilities_per_staff_ex = capabilities_ex.copy()
-        
+
         # Merge in information about officers
         # officer_types = self.parameters['Officer_Types_Table'][['Officer_Type_Code', 'Officer_Type']]
         # capabilities_ex = capabilities_ex.merge(officer_types, on='Officer_Type_Code', how='left')
@@ -1000,7 +1001,7 @@ class HealthSystem(Module):
             how='left',
         )
         capabilities_ex = capabilities_ex.fillna(0)
-        
+
         capabilities_per_staff_ex = capabilities_per_staff_ex.merge(
             capabilities[['Facility_ID', 'Officer_Type_Code', 'Mins_Per_Day_Per_Staff']],
             on=['Facility_ID', 'Officer_Type_Code'],
@@ -1015,7 +1016,7 @@ class HealthSystem(Module):
             + '_Officer_'
             + capabilities_ex['Officer_Type_Code']
         )
-        
+
         # Give the standard index:
         capabilities_per_staff_ex = capabilities_per_staff_ex.set_index(
             'FacilityID_'
@@ -1055,7 +1056,7 @@ class HealthSystem(Module):
             )
             if rescaling_factor > 1 and rescaling_factor != float("inf"):
                 self._daily_capabilities[officer] *= rescaling_factor
-                
+
                 # We assume that increased daily capabilities is a result of each staff performing more
                 # daily patient facing time per day than contracted (or equivalently performing appts more
                 # efficiently).
