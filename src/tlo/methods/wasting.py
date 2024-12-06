@@ -1208,7 +1208,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        p = self.module.parameters
+        # p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1258,7 +1258,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        p = self.module.parameters
+        # p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -1312,7 +1312,7 @@ class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMi
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        p = self.module.parameters
+        # p = self.module.parameters
 
         # Stop the person from dying of acute malnutrition (if they were going to die)
         if not df.at[person_id, 'is_alive']:
