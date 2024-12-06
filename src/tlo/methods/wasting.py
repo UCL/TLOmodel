@@ -834,13 +834,16 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
 
-        # The event should not run if the person is not currently alive
+        # The event should not run if the person is not currently alive or doesn't have SAM
         if ((not df.at[person_id, 'is_alive'])
                 or df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM'):
             return
 
         # # Check if this person should still die from SAM:
-        if pd.isnull(df.at[person_id, 'un_am_recovery_date']):
+        if (
+            pd.isnull(df.at[person_id, 'un_am_recovery_date']) and
+            not (df.at[person_id, 'un_am_discharge_date'] > df.at[person_id, 'un_am_tx_start_date'])
+        ):
             # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
