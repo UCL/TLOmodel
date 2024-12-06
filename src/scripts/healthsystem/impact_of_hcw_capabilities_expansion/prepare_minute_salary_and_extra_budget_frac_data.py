@@ -100,7 +100,11 @@ for i in auxiliary.columns[3:]:  # for all equal-fraction scenarios
     auxiliary.loc[:, i] = auxiliary.loc[:, i] / auxiliary.loc[:, i].sum()
 # for "gap" allocation strategy
 # auxiliary.loc[:, 's_2'] = [0.4586, 0.0272, 0.3502, 0.1476, 0.0164]  # without historical scaling; "default" settings
-auxiliary.loc[:, 's_2'] = [0.4322, 0.0201, 0.3701, 0.1408, 0.0368]  # with historical scaling; "default" settings
+auxiliary.loc[:, 's_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + main settings
+# auxiliary.loc[:, 'default_cons s_2'] = [0.4252, 0.0261, 0.3752, 0.1362, 0.0373]  # historical scaling + default_cons
+# auxiliary.loc[:, 'more_budget s_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + more_budget
+# auxiliary.loc[:, 'less_budget s_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + less_budget
+# auxiliary.loc[:, 'max hs function s_2'] = [0.5133, 0.0085, 0.2501, 0.1551, 0.073]  # historical scaling + less_budget
 
 # define extra budget fracs for each cadre
 extra_budget_fracs = pd.DataFrame(index=cadre_all, columns=combination_list)
