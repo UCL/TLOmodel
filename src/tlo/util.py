@@ -546,7 +546,7 @@ def parse_csv_values_for_columns_with_mixed_datatypes(value: Any):
     :param value: mixed datatype column value
     """
     # if value is not a string then return value
-    if type(value) != str:
+    if not isinstance(value, str):
         return value
 
     value = value.strip()  # Remove leading/trailing whitespace
