@@ -188,10 +188,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                         categories=['<115mm', '[115-125)mm', '>=125mm']),
         'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM episode'),
         'un_sam_death_date': Property(Types.DATE, 'death date from severe acute malnutrition'),
-        'un_am_recovery_date': Property(Types.DATE, 'recovery date from acute malnutrition'),
+        'un_am_recovery_date': Property(Types.DATE, 'recovery date from last acute malnutrition episode (MAM/SAM)'),
         'un_am_discharge_date': Property(Types.DATE, 'discharge date from last treatment of MAM/SAM'),
-        'un_am_tx_start_date': Property(Types.DATE, 'intervention start date'),
-        'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment types for acute malnutrition',
+        'un_am_tx_start_date': Property(Types.DATE, 'treatment start date, if currently on treatment'),
+        'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment type for acute malnutrition the person '
+                                         'is currently on; set to not_applicable if well hence no treatment required',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
                                              'none', 'not_applicable']),
     }
@@ -469,6 +470,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         else:
             # start without treatment
             df.at[person_id, 'un_am_treatment_type'] = 'none'
+            # reset recovery date
+            df.at[person_id, 'un_am_recovery_date'] = pd.NaT
 
             # severe acute malnutrition (SAM): MUAC < 115 mm and/or WHZ < -3 and/or nutritional oedema
             if (muac == '<115mm') or (whz == 'WHZ<-3') or oedema_presence:
@@ -690,8 +693,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     event=Wasting_ClinicalAcuteMalnutritionRecovery_Event(module=self, person_id=person_id),
                     date=outcome_date
                 )
-                # cancel death date
-                df.at[person_id, 'un_sam_death_date'] = pd.NaT
+
             else:
                 outcome = self.rng.choice(['recovery_to_mam', 'death'], p=[self.parameters['prob_mam_after_SAMcare'],
                                                                            self.parameters['prob_death_after_SAMcare']])
@@ -707,8 +709,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
-                    # cancel death date
-                    df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
 
 class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
@@ -743,7 +743,6 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         # update the properties for new cases of wasted children
         df.loc[mod_wasting_new_cases_idx, 'un_ever_wasted'] = True
         df.loc[mod_wasting_new_cases_idx, 'un_last_wasting_date_of_onset'] = self.sim.date
-        df.loc[mod_wasting_new_cases_idx, 'un_am_recovery_date'] = pd.NaT
         # initiate moderate wasting
         df.loc[mod_wasting_new_cases_idx, 'un_WHZ_category'] = '-3<=WHZ<-2'
         # -------------------------------------------------------------------------------------------
@@ -908,7 +907,6 @@ class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEven
         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
-        df.at[person_id, 'un_sam_death_date'] = pd.NaT
         df.at[person_id, 'un_am_nutritional_oedema'] = False
         df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
         df.at[person_id, 'un_sam_with_complications'] = False
@@ -970,7 +968,6 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_nutritional_oedema'] = False
         df.at[person_id, 'un_sam_with_complications'] = False
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
-        df.at[person_id, 'un_am_recovery_date'] = pd.NaT
         # Start without treatment, treatment will be applied with HSI if care sought
         df.at[person_id, 'un_am_treatment_type'] = 'none'
 
@@ -1299,13 +1296,9 @@ class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Wasting)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint['U5Malnutr'] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Undernutrition_Feeding_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"U5Malnutr": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
