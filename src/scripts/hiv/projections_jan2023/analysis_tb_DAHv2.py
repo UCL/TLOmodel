@@ -16,6 +16,7 @@ import squarify
 import numpy as np
 import pandas as pd
 from collections import defaultdict
+import os
 import ast
 import math
 import itertools
@@ -33,39 +34,43 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
+outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
+#if not os.path.exists(outputfilepath):
+  #  os.makedirs(outputfilepath)
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-#TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
+
 # Get basic information about the results
+print(f"Output path is : {outputfilepath}")
 
 #Tb_DAH_impact02-2024-12-01T185458Z
+#tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
-results_folder = get_scenario_outputs("Tb_DAH_impact03-2024-12-01T204928Z", outputspath)[-1]
+results_folder = get_scenario_outputs('tb_DAH_impact01-2023-12-04T222317Z', outputfilepath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
 #info.to_excel(outputspath / "info.xlsx")
 params = extract_params(results_folder)
 print("the parameter info as follows")
-params.to_excel(outputspath / "parameters.xlsx")
+params.to_excel(outputfilepath / "parameters.xlsx")
 
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")   #Item_Available
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Consumables'].keys()}")   #Item_Available
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Consumables'].keys()}")
 print(f"capcity summary']: {log['tlo.methods.healthsystem.summary']['Capacity'].keys()}")   #HR capacity
-print(f"Keys of staff capcity by facility level']: {log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel'].keys()}")   #Item_Available
+print(f"Keys of staff capcity by facility level']: {log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel'].keys()}")
 print(f"Keys of healthburden['tlo.methods.healthburden']['dalys']: {log['tlo.methods.healthburden']['dalys']['tb_inf'].keys()}")
 
 # Assuming Item_Available is a DataFrame
 item_available = log['tlo.methods.healthsystem.summary']['Consumables']['Item_Available']
 print(f"List of consumables['tlo.methods.healthsystem.summary'] Item_Available: {list(item_available)}")
-print(f"sample items available {outputspath / 'item_availbility_sample.xlsx'}")
+print(f"sample items available {outputfilepath / 'item_availbility_sample.xlsx'}")
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH
-    e = ImpactOfTbDaH()
+    from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH03
+    e = ImpactOfTbDaH03()
     return tuple(e._scenarios.keys())
 
 def set_param_names_as_column_index_level_0(_df):
@@ -104,7 +109,7 @@ tb_dalys = summarize(
      ))
 # Summarize the extracted DALYs
 tb_dalys = summarize(tb_dalys).sort_index()
-tb_dalys.to_excel(outputspath / "tb_infection_dalys5x.xlsx")
+tb_dalys.to_excel(outputfilepath / "tb_infection_dalys5x.xlsx")
 
 def get_tb_dalys(df_):
     # Get DALYs of TB
@@ -117,7 +122,6 @@ def get_tb_dalys(df_):
     return dalys
 
 # Extract DALYs from the model and scale
-# Extract DALYs from model and scale
 tb_dalys = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
@@ -126,7 +130,7 @@ tb_dalys = extract_results(
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
 dalys_summary = summarize(tb_dalys).sort_index()
-dalys_summary.to_excel(outputspath / "summarized_tb_dalys_all.xlsx")
+dalys_summary.to_excel(outputfilepath / "summarized_tb_dalys_all.xlsx")
 
 def get_tb_dalys(df_):
     # Get DALYs of TB
@@ -149,11 +153,9 @@ tb_dalys = extract_results(
     custom_generate_series=get_tb_dalys,
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
-# Summarize the extracted DALYs
-dalys_summary = summarize(tb_dalys).sort_index()
-# Save the summarized DALYs to an Excel file
-dalys_summary.to_excel(outputspath / "non_aids_tb_dalys_all.xlsx")
 
+dalys_summary = summarize(tb_dalys).sort_index()
+dalys_summary.to_excel(outputfilepath / "non_aids_tb_dalys_all.xlsx")
 
 # Number of TB deaths and mortality rate
 results_deaths = extract_results(
@@ -204,7 +206,7 @@ for draw in range(number_draws):
 pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
 pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
 # Print the DataFrame to Excel
-pyears_all.to_excel (outputspath / "pyears_all.xlsx")
+pyears_all.to_excel (outputfilepath / "pyears_all.xlsx")
 
 def get_counts_of_items_requested(_df):
     """
@@ -248,34 +250,7 @@ def get_quantity_of_consumables_dispensed(results_folder):
     return cons_req
 cons_req = get_quantity_of_consumables_dispensed(results_folder)
 cons_req = cons_req.reset_index()
-cons_req.to_excel(outputspath / "cons_summary.xlsx")
-
-#extract HR- staff count for each year and draw
-# def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
-#     """Summarize the parsed logged-key results for one draw (as a dataframe) into a pd.Series."""
-#     # Set index as year derived from 'date' column
-#     _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
-#     _df.index.name = 'year'
-#     # Define a function to transform column names into a standard format
-#     def change_to_standard_flattened_index_format(col: str) -> str:
-#         parts = col.split("_", 3)  # Split by "_" up to 3 parts
-#         if len(parts) == 4:  # Ensure exactly 4 parts to format
-#             return f"{parts[0]}={parts[1]}|{parts[2]}={parts[3]}"
-#         return col  # Return unchanged if the format doesn't match
-#     _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
-#     return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # Expanded flattened axis
-#
-# actual_staff_count = extract_results(
-#     results_folder,
-#     module='tlo.methods.healthsystem.summary',
-#     key='Capacity_By_OfficerType_And_FacilityLevel',
-#     custom_generate_series=get_staff_count_by_facid_and_officer_type,
-#     do_scaling=True,
-# ).pipe(set_param_names_as_column_index_level_0)
-#
-# actual_staff_count = get_staff_count_by_facid_and_officer_type(results_folder)
-# actual_staff_count = actual_staff_count .reset_index()
-# actual_staff_count.to_excel(outputspath / "staff_count_summary.xlsx")
+cons_req.to_excel(outputfilepath / "cons_summary.xlsx")
 
 def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
     """Summarize the parsed logged-key results for one draw (as a dataframe) into a pd.Series."""
@@ -311,7 +286,7 @@ actual_staff_count = extract_results(
 # Reset index to make the DataFrame easier to work with
 actual_staff_count = actual_staff_count.reset_index()
 # Write the result to an Excel file
-actual_staff_count.to_excel(outputspath / "staff_count_summary.xlsx")
+actual_staff_count.to_excel(outputfilepath / "staff_count_summary.xlsx")
 # Debug: Print the resulting DataFrame
 print(actual_staff_count)
 
@@ -326,7 +301,6 @@ results_deaths = extract_results(
     ),
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
-
 
 #capacity by officer
 def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
@@ -347,7 +321,7 @@ capacity_by_cadre_and_level = extract_results(
 # Reset index to make the DataFrame easier to work with
 capacity_by_cadre_and_level = capacity_by_cadre_and_level .reset_index()
 # Write the result to an Excel file
-capacity_by_cadre_and_level .to_excel(outputspath / "staff_capacity_by_cadres.xlsx")
+capacity_by_cadre_and_level .to_excel(outputfilepath / "staff_capacity_by_cadres.xlsx")
 # Debug: Print the resulting DataFrame
 print(capacity_by_cadre_and_level )
 
@@ -363,7 +337,7 @@ AIDS_non_TB = results_deaths.loc[results_deaths["cause"] == "AIDS_non_TB"]
 TB = results_deaths.loc[results_deaths["cause"] == "TB"]
 
 combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
-combined_tb_table.to_excel(outputspath / "combined_tb_tables.xlsx")
+combined_tb_table.to_excel(outputfilepath / "combined_tb_tables.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
 print("Scaling Factor Key:", scaling_factor_key)
 
@@ -391,7 +365,7 @@ def tb_mortality0(results_folder):
 
 #printing file to excel
 tb_mortality = tb_mortality0(results_folder)
-tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
+tb_mortality.to_excel(outputfilepath / "raw_mortality.xlsx")
 
 #raw mortality
 def tb_mortality0(results_folder):
@@ -418,7 +392,7 @@ def tb_mortality0(results_folder):
 
 #printing file to excel
 tb_mortality = tb_mortality0(results_folder)
-tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
+tb_mortality.to_excel(outputfilepath / "raw_mortality.xlsx")
 
 #TB mortality rate
 def tb_mortality_rate(results_folder, pyears_all):
@@ -445,7 +419,7 @@ def tb_mortality_rate(results_folder, pyears_all):
     # Divide draw/run by the respective person-years from that run
     tb_mortality1 = tb_mortality.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
     print("Tb mortality pattern as follows:", tb_mortality1)
-    tb_mortality1.to_excel(outputspath / "mortality_rates.xlsx")
+    tb_mortality1.to_excel(outputfilepath / "mortality_rates.xlsx")
 
     tb_mortality_rate = {}  # empty dict
     tb_mortality_rate["median"] =tb_mortality1.quantile(0.5, axis=1) * 100000
@@ -474,7 +448,7 @@ tb_hiv_prop = summarize(
 ).pipe(set_param_names_as_column_index_level_0)
 tb_hiv_prop.index = tb_hiv_prop.index.year
 tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
-tb_hiv_prop.to_excel(outputspath / "PLHIV_tb.xlsx")
+tb_hiv_prop.to_excel(outputfilepath / "PLHIV_tb.xlsx")
 
 #false positives
 def get_false_positives(df_):
@@ -498,7 +472,7 @@ fpositives = summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-fpositives.to_excel(outputspath / "false_positives_all.xlsx")
+fpositives.to_excel(outputfilepath / "false_positives_all.xlsx")
 
 #MDR TB cases
 mdr_tb_cases = summarize(
@@ -515,7 +489,7 @@ mdr_tb_cases = summarize(
 
 mdr_tb_cases.index = mdr_tb_cases.index.year
 mdr_tb = pd.DataFrame(mdr_tb_cases)
-mdr_tb.to_excel(outputspath / "new_active_mdr_tb_cases.xlsx")
+mdr_tb.to_excel(outputfilepath / "new_active_mdr_tb_cases.xlsx")
 
 # TB treatment coverage
 tb_treatment = summarize(
@@ -533,7 +507,7 @@ tb_treatment = summarize(
 #tb_treatment.index = tb_treatment.index.year,
 tb_treatment_cov = pd.DataFrame(tb_treatment)
 tb_treatment_cov.index = tb_treatment_cov.index.year
-tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage.xlsx")
+tb_treatment_cov.to_excel(outputfilepath / "tb_treatment_coverage.xlsx")
 
 ## extracts number of people screened for TB by scenario
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 12, 31))
@@ -556,7 +530,7 @@ counts_of_hsi_by_treatment_id = summarize(
         ).pipe(set_param_names_as_column_index_level_0),
         only_mean=True,
     )
-counts_of_hsi_by_treatment_id.to_excel(outputspath / "Tb_Test_Screening.xlsx")
+counts_of_hsi_by_treatment_id.to_excel(outputfilepath / "Tb_Test_Screening.xlsx")
 
 #TB Incidence
 tb_inc = summarize(
@@ -573,28 +547,28 @@ tb_inc = summarize(
 print(tb_inc)
 tb_incidence = pd.DataFrame(tb_inc)
 tb_inc.index = tb_inc.index.year
-tb_incidence.to_excel(outputspath / "active_tb.xlsx")
+tb_incidence.to_excel(outputfilepath / "active_tb.xlsx")
 #Tb incidence rate
 #Tb_inc_rate = (tb_incidence.divide(pyears_all.values, axis=0)) * 100000
 Tb_inc_rate = tb_incidence.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
 #Tb_inc_rate = tb_incidence.index(drop=True).div(pyears_all.index(drop=True), axis='rows')
-Tb_inc_rate.to_excel(outputspath / "Tb_incidence_rate.xlsx")
+Tb_inc_rate.to_excel(outputfilepath / "Tb_incidence_rate.xlsx")
 
 # Assuming mdr_tb_cases and tb_incidence are your DataFrames
 MDR_prop_TB_cases = mdr_tb_cases.div(tb_incidence)*100
-MDR_prop_TB_cases.to_excel(outputspath / "MDR_prop_TB_cases.xlsx")
+MDR_prop_TB_cases.to_excel(outputfilepath / "MDR_prop_TB_cases.xlsx")
 #pyears = pyears.reset_index(drop=True)
 pyears_summary = pyears_summary.reset_index(drop=True)
 
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 mdr = log["tlo.methods.tb"]["tb_mdr"]
 mdr = mdr.set_index("date")
-mdr.to_excel(outputspath / "mdr_numbers.xlsx")
+mdr.to_excel(outputfilepath / "mdr_numbers.xlsx")
 
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 new_active_tb = log["tlo.methods.tb"]["tb_incidence"]["num_new_active_tb"]
 #new_active_tb = new_active_tb.set_index("date")
-new_active_tb.to_excel(outputspath / "num_new_active_tb.xlsx")
+new_active_tb.to_excel(outputfilepath / "num_new_active_tb.xlsx")
 
 #Active Tb prevalence
 Tb_prevalence= summarize(
@@ -609,7 +583,7 @@ Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 Tb_prevalence.index = Tb_prevalence.index.year
-Tb_prevalence.to_excel(outputspath / "Tb_prevalence.xlsx")
+Tb_prevalence.to_excel(outputfilepath / "Tb_prevalence.xlsx")
 
 #Active Tb prevalence in adults
 adult_Tb_prevalence= summarize(
@@ -624,7 +598,7 @@ adult_Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 adult_Tb_prevalence.index = adult_Tb_prevalence.index.year
-adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence.xlsx")
+adult_Tb_prevalence.to_excel(outputfilepath / "adult_Tb_prevalence.xlsx")
 
 #Active Tb prevalence in children
 child_Tb_prevalence= summarize(
@@ -640,40 +614,22 @@ child_Tb_prevalence= summarize(
 ).pipe(set_param_names_as_column_index_level_0)
 
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
-child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
-
-#properties of deceased
-# properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
-# properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
-# properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
-
-# wealth_quintile = extract_results(
-#     results_folder,
-#     module="tlo.methods.demography.detail",
-#     key="tb_properties_of_deceased_persons",
-#     column="lil_wealth",
-#     index="date",
-#     do_scaling=False,
-#     #collapse_columns=True
-# ).pipe(set_param_names_as_column_index_level_0)
-
-# wealth_quintile.index = wealth_quintile.index.year
-# wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
+child_Tb_prevalence.to_excel(outputfilepath / "child_Tb_prevalence.xlsx")
 
 HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
 HSE = HSE.set_index("date")
 print("Health system events as follows",HSE)
-HSE.to_excel(outputspath / "HSE.xlsx")
+HSE.to_excel(outputfilepath / "HSE.xlsx")
 
 HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
 HSEvents = HSEvents.set_index("date")
 print("Health system events as follows",HSEvents)
-HSEvents.to_excel(outputspath / "HSEvents.xlsx")
+HSEvents.to_excel(outputfilepath / "HSEvents.xlsx")
 
 hsi_event_counts = log["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
 hsi_event_counts = hsi_event_counts.set_index("date")
 print("Health system events as follows",hsi_event_counts)
-hsi_event_counts.to_excel(outputspath / "hsi_event_counts")
+hsi_event_counts.to_excel(outputfilepath / "hsi_event_counts")
 print(hsi_event_counts)
 
 # print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
@@ -685,7 +641,7 @@ values = [log['tlo.methods.healthburden'][key] for key in keys]
 df = pd.DataFrame({'Key': keys, 'Value': values})
 
 # Export the DataFrame to an Excel file
-df.to_excel(outputspath /'healthburden_keys.xlsx', index=False)
+df.to_excel(outputfilepath /'healthburden_keys.xlsx', index=False)
 
 print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
 keys = log['tlo.methods.demography'].keys()
@@ -695,13 +651,7 @@ values = [log['tlo.methods.demography'][key] for key in keys]
 df = pd.DataFrame({'Key': keys, 'Value': values})
 
 # Export the DataFrame to an Excel file
-df.to_excel(outputspath /'demography_keys.xlsx', index=False)
-# print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography.detail'].keys()}")
-#
-# #aiming to extract wealth quintiles for the dead
-# properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
-# properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
-# properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
+df.to_excel(outputfilepath /'demography_keys.xlsx', index=False)
 
 ###### PLOTS##################################################
 print(dalys_summary.columns)
@@ -1117,25 +1067,3 @@ if __name__ == "__main__":
         required=False
     )
     args = parser.parse_args()
-
-    # apply(
-    #     results_folder=args.results_path,
-    #     output_folder=args.output_path,
-    #     resourcefilepath=args.resources_path
-    # )
-
-# # Removed duplicate print statements and corrected the commented-out code
-# print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
-# print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
-#
-# consumables_list = log['tlo.methods.healthsystem.summary']['Consumables']
-# # Print the list of consumables
-# print("List of Consumables:")
-# print(consumables_list)
-#
-# # Removed the comma at the end of the print statement
-#print(params)
-
-# Removed commented and duplicate code
-#consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables'] & params[draw]==1
-#consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables']
