@@ -181,6 +181,7 @@ class Epi(Module):
         # add an event to log to screen
         sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(years=1))
 
+        # TODO: check with Tara shes happy with this (could come in as its own PR)
         # HPV vaccine given from 2018 onwards
         if self.sim.date.year < 2018:
             sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))

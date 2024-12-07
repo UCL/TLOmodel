@@ -114,10 +114,13 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     cumsum = _probs.cumsum(axis=1)
     draws = pd.Series(rng.rand(len(cumsum)), index=cumsum.index)
     y = cumsum.gt(draws, axis=0)
-    outcome = y.idxmax(axis=1)
+    if not y.empty:
+        outcome = y.idxmax(axis=1)
+        # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
+        return outcome.loc[outcome != '_'].to_dict()
 
-    # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
-    return outcome.loc[outcome != '_'].to_dict()
+    else:
+        return dict()
 
 
 BitsetDType = Property.PANDAS_TYPE_MAP[Types.BITSET]
