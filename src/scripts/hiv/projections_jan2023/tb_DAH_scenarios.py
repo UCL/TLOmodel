@@ -40,7 +40,7 @@ from tlo.methods import(
 # we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
-class ImpactOfTbDaH(BaseScenario):
+class ImpactOfTbDaH03(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 2134

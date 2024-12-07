@@ -2,21 +2,34 @@
 
 # python src/scripts/hiv/projections_jan2023/analysis_tb_DAH_scenarios.py --scenario-outputs-folder outputs\newton.chagoma@york.ac.uk
 import argparse
-from typing import Optional, Iterable, List
-import datetime
 from pathlib import Path
+from tlo import Date
+from collections import Counter, defaultdict
+import calendar
+import datetime
+import os
+import textwrap
+from typing import Tuple
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+import squarify
 import numpy as np
 import pandas as pd
-from typing import Tuple
-from tlo import Date
+from collections import defaultdict
+import ast
+import math
+import itertools
+from itertools import cycle
 from tlo.analysis.utils import (
     extract_params,
+    extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    extract_results,
     summarize,
+    create_pickles_locally,
+    parse_log_file,
+    unflatten_flattened_multi_index_in_logging
 )
 
 resourcefilepath = Path("./resources")
@@ -24,9 +37,10 @@ outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 # Get basic information about the results
-#for previous analysis: tb_DAH_impact-2023-12-04T222317Z
 
-results_folder = get_scenario_outputs("tb_DAH_scenarios-2024-12-07T114024Z", outputspath)[-1]
+#Tb_DAH_impact02-2024-12-01T185458Z
+##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
+results_folder = get_scenario_outputs("Tb_DAH_impact03-2024-12-01T204928Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -37,6 +51,16 @@ params.to_excel(outputspath / "parameters.xlsx")
 
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")   #Item_Available
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Consumables'].keys()}")   #Item_Available
+print(f"capcity summary']: {log['tlo.methods.healthsystem.summary']['Capacity'].keys()}")   #HR capacity
+print(f"Keys of staff capcity by facility level']: {log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel'].keys()}")   #Item_Available
+print(f"Keys of healthburden['tlo.methods.healthburden']['dalys']: {log['tlo.methods.healthburden']['dalys']['tb_inf'].keys()}")
+
+# Assuming Item_Available is a DataFrame
+item_available = log['tlo.methods.healthsystem.summary']['Consumables']['Item_Available']
+print(f"List of consumables['tlo.methods.healthsystem.summary'] Item_Available: {list(item_available)}")
+print(f"sample items available {outputspath / 'item_availbility_sample.xlsx'}")
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
@@ -52,10 +76,96 @@ def set_param_names_as_column_index_level_0(_df):
     _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
     return _df
 
-
 # %% Define parameter names
 param_names = get_parameter_names_from_scenario_file()
 print(param_names)
+def get_tb_dalys(df_):
+    # Ensure 'year' is sorted
+    years = df_['year'].value_counts().keys()
+    tot_dalys = pd.Series(dtype='float64', index=years)
+    for year in years:
+        year_df = df_[df_['year'] == year]
+        yearly_dalys = year_df.drop(columns='date').groupby(['year', 'tb_inf']).sum().apply(pd.Series)
+        tot_dalys[year] = yearly_dalys.sum().sum()
+       # print(f'see how this looks {tot_dalys}')
+    tot_dalys = tot_dalys.sort_index()
+    return tot_dalys
+
+# Extract DALYs from the model and scale
+tb_dalys = summarize(
+    (extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys",
+        custom_generate_series=get_tb_dalys,
+        do_scaling=True,
+    )
+     .pipe(set_param_names_as_column_index_level_0)
+     ))
+# Summarize the extracted DALYs
+tb_dalys = summarize(tb_dalys).sort_index()
+tb_dalys.to_excel(outputspath / "tb_infection_dalys5x.xlsx")
+
+def get_tb_dalys(df_):
+    # Get DALYs of TB
+    years = df_['year'].value_counts().keys()
+    dalys = pd.Series(dtype='float64', index=years)
+    for year in years:
+       year_data = df_[df_['year'] == year]
+       dalys[year] = year_data.loc[:, ['AIDS', 'TB (non-AIDS)', 'Other']].sum().sum()
+    dalys.sort_index()
+    return dalys
+
+# Extract DALYs from the model and scale
+# Extract DALYs from model and scale
+tb_dalys = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys",
+    custom_generate_series=get_tb_dalys,
+    do_scaling=True
+).pipe(set_param_names_as_column_index_level_0)
+dalys_summary = summarize(tb_dalys).sort_index()
+dalys_summary.to_excel(outputspath / "summarized_tb_dalys_all.xlsx")
+
+def get_tb_dalys(df_):
+    # Get DALYs of TB
+    years = df_['year'].value_counts().keys()
+    dalys = pd.Series(dtype='float64', index=years)
+    for year in years:
+       # tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
+       year_data = df_[df_['year'] == year]
+       # dalys[year] = tot_dalys.loc[(year, ['AIDS', 'TB (non-AIDS)', 'Other']), 'Other'].sum()
+       dalys[year] = year_data.loc[:, ['TB (non-AIDS)']].sum().sum()
+    dalys.sort_index()
+    return dalys
+
+# Extract DALYs from the model and scale
+# Extract DALYs from model and scale
+tb_dalys = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys",
+    custom_generate_series=get_tb_dalys,
+    do_scaling=True
+).pipe(set_param_names_as_column_index_level_0)
+# Summarize the extracted DALYs
+dalys_summary = summarize(tb_dalys).sort_index()
+# Save the summarized DALYs to an Excel file
+dalys_summary.to_excel(outputspath / "non_aids_tb_dalys_all.xlsx")
+
+
+# Number of TB deaths and mortality rate
+results_deaths = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=(
+        lambda df: df.assign(year=df["date"].dt.year).groupby(
+            ["year", "cause"])["person_id"].count()
+    ),
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
 
 def get_person_years(draw, run):
     log = load_pickled_dataframes(results_folder, draw, run)
@@ -91,10 +201,119 @@ for draw in range(number_draws):
     pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
 
     # Append to the main DataFrame
-    pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
+pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
 pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
 # Print the DataFrame to Excel
 pyears_all.to_excel (outputspath / "pyears_all.xlsx")
+
+def get_counts_of_items_requested(_df):
+    """
+    Processes a DataFrame to compute counts of items used and available,
+    grouped by date and item.
+    """
+   # counts_of_used = defaultdict(lambda: defaultdict(int))
+    counts_of_availables = defaultdict(lambda: defaultdict(int))
+
+    # Iterate over rows to populate counts
+    for _, row in _df.iterrows():
+        date = row['date']
+        #for item, num in row['Item_Used'].items():
+        # counts_of_used[date][item] += num
+        for item, num in row['Item_Available'].items():
+            counts_of_availables[date][item] += num
+
+    # Create DataFrames for "Used" and "Available"
+  #  used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
+    availables_df = pd.DataFrame(counts_of_availables).fillna(0).astype(int).stack().rename('Available')
+
+    # Combine into one DataFrame and stack
+  #  combined_df = pd.concat([used_df, availables_df], axis=1).fillna(0).astype(int)
+    combined_df = pd.concat([availables_df], axis=1).fillna(0).astype(int)
+
+    return combined_df.stack()
+
+def get_quantity_of_consumables_dispensed(results_folder):
+    """
+    Extracts and processes consumables data, saving results to Excel.
+    """
+    cons_req = (
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='Consumables',
+            custom_generate_series=get_counts_of_items_requested,
+            do_scaling=True
+        ).pipe(set_param_names_as_column_index_level_0)
+    )
+    return cons_req
+cons_req = get_quantity_of_consumables_dispensed(results_folder)
+cons_req = cons_req.reset_index()
+cons_req.to_excel(outputspath / "cons_summary.xlsx")
+
+#extract HR- staff count for each year and draw
+# def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
+#     """Summarize the parsed logged-key results for one draw (as a dataframe) into a pd.Series."""
+#     # Set index as year derived from 'date' column
+#     _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+#     _df.index.name = 'year'
+#     # Define a function to transform column names into a standard format
+#     def change_to_standard_flattened_index_format(col: str) -> str:
+#         parts = col.split("_", 3)  # Split by "_" up to 3 parts
+#         if len(parts) == 4:  # Ensure exactly 4 parts to format
+#             return f"{parts[0]}={parts[1]}|{parts[2]}={parts[3]}"
+#         return col  # Return unchanged if the format doesn't match
+#     _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
+#     return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # Expanded flattened axis
+#
+# actual_staff_count = extract_results(
+#     results_folder,
+#     module='tlo.methods.healthsystem.summary',
+#     key='Capacity_By_OfficerType_And_FacilityLevel',
+#     custom_generate_series=get_staff_count_by_facid_and_officer_type,
+#     do_scaling=True,
+# ).pipe(set_param_names_as_column_index_level_0)
+#
+# actual_staff_count = get_staff_count_by_facid_and_officer_type(results_folder)
+# actual_staff_count = actual_staff_count .reset_index()
+# actual_staff_count.to_excel(outputspath / "staff_count_summary.xlsx")
+
+def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
+    """Summarize the parsed logged-key results for one draw (as a dataframe) into a pd.Series."""
+
+    # Set index as year derived from 'date' column
+    _df['year'] = _df['date'].dt.year  # Extract year from 'date'
+    _df = _df.drop(columns=['date'])  # Drop the 'date' column
+
+    # Set the 'year' column as the DataFrame index
+    _df = _df.set_index('year')
+
+    # Define a function to transform column names into a standard format
+    def change_to_standard_flattened_index_format(col: str) -> str:
+        parts = col.split("_", 3)  # Split by "_" up to 3 parts
+        if len(parts) == 4:  # Ensure exactly 4 parts to format
+            return f"{parts[0]}={parts[1]}|{parts[2]}={parts[3]}"
+        return col  # Return unchanged if the format doesn't match
+
+    # Apply the standard format transformation to column names
+    _df.columns = [change_to_standard_flattened_index_format(col) for col in _df.columns]
+
+    # Unflatten the DataFrame and return it stacked at the first two levels
+    return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # Expanded flattened axis
+# Use the 'extract_results' function to process and get staff count
+actual_staff_count = extract_results(
+    results_folder,
+    module='tlo.methods.healthsystem.summary',
+    key='Capacity_By_OfficerType_And_FacilityLevel',
+    custom_generate_series=get_staff_count_by_facid_and_officer_type,
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
+
+# Reset index to make the DataFrame easier to work with
+actual_staff_count = actual_staff_count.reset_index()
+# Write the result to an Excel file
+actual_staff_count.to_excel(outputspath / "staff_count_summary.xlsx")
+# Debug: Print the resulting DataFrame
+print(actual_staff_count)
 
 # Number of TB deaths and mortality rate
 results_deaths = extract_results(
@@ -107,6 +326,30 @@ results_deaths = extract_results(
     ),
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
+
+
+#capacity by officer
+def get_capacity_used_by_officer_type_and_facility_level(_df: pd.Series) -> pd.Series:
+    """Summarise the parsed logged-key results for one draw (as dataframe) into a pd.Series."""
+    _df = _df.set_axis(_df['date'].dt.year).drop(columns=['date'])
+    _df.index.name = 'year'
+    return unflatten_flattened_multi_index_in_logging(_df).stack(level=[0, 1])  # expanded flattened axis
+
+#Extracting capacity of cadres by staff
+capacity_by_cadre_and_level = extract_results(
+     results_folder,
+    module='tlo.methods.healthsystem.summary',
+    key='Capacity_By_OfficerType_And_FacilityLevel',
+    custom_generate_series=get_capacity_used_by_officer_type_and_facility_level,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+# Reset index to make the DataFrame easier to work with
+capacity_by_cadre_and_level = capacity_by_cadre_and_level .reset_index()
+# Write the result to an Excel file
+capacity_by_cadre_and_level .to_excel(outputspath / "staff_capacity_by_cadres.xlsx")
+# Debug: Print the resulting DataFrame
+print(capacity_by_cadre_and_level )
 
 # Removes multi-index
 results_deaths = results_deaths.reset_index()
@@ -123,92 +366,32 @@ combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
 combined_tb_table.to_excel(outputspath / "combined_tb_tables.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
 print("Scaling Factor Key:", scaling_factor_key)
-def get_tb_dalys(df_):
-    # Get DALYs of TB
-    years = df_['year'].value_counts().keys()
-    dalys = pd.Series(dtype='float64', index=years)
-    for year in years:
-        tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-        dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
-    dalys.sort_index()
-    return dalys
 
-# Extract DALYs from model and scale
-tb_dalys = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys",
-    custom_generate_series=get_tb_dalys,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
+def tb_mortality0(results_folder):
+    tb_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
 
-# Get mean/upper/lower statistics
-print("Shape of tb_dalys:", tb_dalys.shape)
-dalys_summary = summarize(tb_dalys).sort_index()
-print("Shape after summarize:", dalys_summary.shape)
+    # Select only causes AIDS_TB, AIDS_non_TB, and TB
+    tb_deaths = tb_deaths.sort_index()
+    tb_deaths1 = summarize(tb_deaths[tb_deaths.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
+    tb_deaths1["year"] = tb_deaths1.index.get_level_values("year")  # Extract the 'year' values from the index
+    tb_deaths1.reset_index(drop=True, inplace=True)
 
-dalys_summary = summarize(tb_dalys).sort_index()
-print("DALYs for TB are as follows:")
-print(dalys_summary)
-dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
+    # Group deaths by year
+    tb_mortality = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
+    tb_mortality.set_index("year", inplace=True)
+    return tb_mortality
 
-# secondary outcomes
-#print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
-#print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
-
-#extracting dalys by SES
-# def get_total_num_dalys_by_agegrp_and_label(_df):
-#     """Return the total number of DALYS in the TARGET_PERIOD by age-group and cause label."""
-#     return _df \
-#         .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
-#         .assign(age_group=_df['age_range']) \
-#         .drop(columns=['date', 'year', 'sex', 'age_range']) \
-#         .melt(id_vars=['age_group'], var_name='label', value_name='dalys') \
-#         .groupby(by=['age_group', 'label'])['dalys'] \
-#         .sum()
-#
-#
-# total_num_dalys_by_agegrp_and_label = extract_results(
-#     results_folder,
-#     module="tlo.methods.healthburden",
-#     key='dalys_stacked',  # <-- for stacking by age and time
-#     custom_generate_series=get_total_num_dalys_by_agegrp_and_label,
-#     do_scaling=True
-# ).pipe(set_param_names_as_column_index_level_0)
-#
-# total_num_dalys_by_agegrp_and_label.to_excel(outputspath / "total_num_dalys_by_agegrp_and_label.xlsx")
-#
-#     # SES_dalys = SES_dalys.sort_index()
-#     # SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
-#     # SES_dalys1["year"] = SES_dalys1.index.get_level_values("year")  # Extract the 'year' values from the index
-#     # SES_dalys1.reset_index(drop=True, inplace=True)
-#     # SES_dalys1.to_excel(outputspath / "DALY_by_SES.xlsx")
-#
-# #mortality by SES
-# def get_total_num_death_by_wealth_and_label(_df):
-#     """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
-#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-#     wealth_group = (
-#         _df['li_wealth']
-#         .map(wealth_cats)
-#         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-#     )
-#     result = (
-#         _df
-#         .loc[_df['date'].between(*TARGET_PERIOD)]
-#         .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])
-#         .groupby([wealth_group, 'label'])['person_id'].size()
-#     )
-#     return result
-# Rest of your code remains unchanged
-# total_num_death_by_wealth_and_label = extract_results(
-#     results_folder,
-#     module="tlo.methods.demography",
-#     key="death",
-#     custom_generate_series=get_total_num_death_by_wealth_and_label,
-#     do_scaling=True
-# ).pipe(set_param_names_as_column_index_level_0)
-# total_num_death_by_wealth_and_label.to_excel(outputspath / "total_num_deaths_by_agegrp_and_label.xlsx")
+#printing file to excel
+tb_mortality = tb_mortality0(results_folder)
+tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
 
 #raw mortality
 def tb_mortality0(results_folder):
@@ -460,9 +643,9 @@ child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
 
 #properties of deceased
-properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
-properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
-properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
+# properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
+# properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
+# properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 # wealth_quintile = extract_results(
 #     results_folder,
@@ -874,8 +1057,6 @@ plt.show()
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Assuming 'tb_treatment_cov' is your DataFrame with columns: ('mean', 'lower', 'upper') and scenario as column index level 0
-# Replace 'tb_treatment_cov' with your actual DataFrame
 
 # Extract unique scenarios from column index level 0
 scenarios = tb_treatment_cov.columns.get_level_values(0).unique()
@@ -958,4 +1139,3 @@ if __name__ == "__main__":
 # Removed commented and duplicate code
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables'] & params[draw]==1
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables']
-
