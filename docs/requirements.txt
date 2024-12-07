@@ -1,4 +1,6 @@
 sphinx>=1.3
 sphinx-rtd-theme
+pybtex
 pyyaml
+requests
 tabulate

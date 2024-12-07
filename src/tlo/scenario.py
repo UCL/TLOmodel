@@ -73,6 +73,7 @@ import numpy as np
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.util import str_to_pandas_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -141,6 +142,16 @@ class BaseScenario(abc.ABC):
         self.arguments = extra_arguments
 
         parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--resume-simulation",
+            type=str,
+            help="Directory containing suspended state files to resume simulation from",
+        )
+        parser.add_argument(
+            "--suspend-date",
+            type=str_to_pandas_date,
+            help="Date to suspend the simulation at",
+        )
 
         # add arguments from the subclass
         self.add_arguments(parser)
@@ -382,20 +393,58 @@ class SampleRunner:
         sample = self.get_sample(draw, sample_number)
         log_config = self.scenario.get_log_config(output_directory)
 
-        logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
-
-        sim = Simulation(
-            start_date=self.scenario.start_date,
-            seed=sample["simulation_seed"],
-            log_config=log_config
+        logger.info(
+            key="message",
+            data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}",
         )
-        sim.register(*self.scenario.modules())
 
-        if sample["parameters"] is not None:
-            self.override_parameters(sim, sample["parameters"])
+        # if user has specified a restore simulation, we load it from a pickle file
+        if (
+            hasattr(self.scenario, "resume_simulation")
+            and self.scenario.resume_simulation is not None
+        ):
+            suspended_simulation_path = (
+                Path(self.scenario.resume_simulation)
+                / str(draw_number)
+                / str(sample_number)
+                / "suspended_simulation.pickle"
+            )
+            logger.info(
+                key="message",
+                data=f"Loading pickled suspended simulation from {suspended_simulation_path}",
+            )
+            sim = Simulation.load_from_pickle(pickle_path=suspended_simulation_path, log_config=log_config)
+        else:
+            sim = Simulation(
+                start_date=self.scenario.start_date,
+                seed=sample["simulation_seed"],
+                log_config=log_config,
+            )
+            sim.register(*self.scenario.modules())
 
-        sim.make_initial_population(n=self.scenario.pop_size)
-        sim.simulate(end_date=self.scenario.end_date)
+            if sample["parameters"] is not None:
+                self.override_parameters(sim, sample["parameters"])
+
+            sim.make_initial_population(n=self.scenario.pop_size)
+            sim.initialise(end_date=self.scenario.end_date)
+
+        # if user has specified a suspend date, we run the simulation to that date and
+        # save it to a pickle file
+        if (
+            hasattr(self.scenario, "suspend_date")
+            and self.scenario.suspend_date is not None
+        ):
+            sim.run_simulation_to(to_date=self.scenario.suspend_date)
+            suspended_simulation_path = Path(log_config["directory"]) / "suspended_simulation.pickle"
+            sim.save_to_pickle(pickle_path=suspended_simulation_path)
+            sim.close_output_file()
+            logger.info(
+                key="message",
+                data=f"Simulation suspended at {self.scenario.suspend_date} and saved to {suspended_simulation_path}",
+            )
+        else:
+            sim.run_simulation_to(to_date=self.scenario.end_date)
+            sim.finalise()
 
         if sim.log_filepath is not None:
             outputs = parse_log_file(sim.log_filepath)
