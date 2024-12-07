@@ -642,7 +642,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             if complications:
                 # schedule HSI for supplementary feeding program for MAM
                 schedule_hsi_event(
-                    hsi_event=HSI_Wasting_InpatientCare_ComplicatedSAM(module=self, person_id=person_id),
+                    hsi_event=HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
 
     def do_when_am_treatment(self, person_id, intervention):
@@ -677,8 +677,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 # remained MAM
                 return
 
-        elif intervention in ['OTC', 'ITC']:
-            if intervention == 'OTC':
+        elif intervention in ['OTP', 'ITC']:
+            if intervention == 'OTP':
                 outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_OutpatientSAM']))
             else:
                 outcome_date = (self.sim.date + DateOffset(weeks=p['tx_length_weeks_InpatientSAM']))
@@ -1174,7 +1174,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         elif (diagnosis == 'SAM') and (not complications):
             schedule_tx_by_diagnosis(HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
         else:  # (diagnosis == 'SAM') and complications:
-            schedule_tx_by_diagnosis(HSI_Wasting_InpatientCare_ComplicatedSAM)
+            schedule_tx_by_diagnosis(HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)
 
     def did_not_run(self):
         logger.debug(key="HSI_Wasting_GrowthMonitoring",
@@ -1277,7 +1277,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             logger.debug(key='debug', data='consumables are available.')
             # Log that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
-            self.module.do_when_am_treatment(person_id, intervention='OTC')
+            self.module.do_when_am_treatment(person_id, intervention='OTP')
         else:
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
@@ -1287,7 +1287,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         pass
 
 
-class HSI_Wasting_InpatientCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMixin):
+class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualScopeEventMixin):
     """
     This is the inpatient management of SAM with medical complications
     """

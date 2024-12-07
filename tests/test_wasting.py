@@ -25,7 +25,7 @@ from tlo.methods import (
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.wasting import (
-    HSI_Wasting_InpatientCare_ComplicatedSAM,
+    HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM,
     HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
     Wasting_ClinicalAcuteMalnutritionRecovery_Event,
     Wasting_IncidencePoll,
@@ -530,13 +530,13 @@ def test_recovery_severe_wasting_with_complications(tmpdir):
     hsi_event_scheduled = [
         ev
         for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
-        if isinstance(ev[1], HSI_Wasting_InpatientCare_ComplicatedSAM)
+        if isinstance(ev[1], HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)
     ]
     assert 1 == len(hsi_event_scheduled)
 
     # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM and check care was sought
     sam_ev = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-              isinstance(ev[1], HSI_Wasting_InpatientCare_ComplicatedSAM)][0]
+              isinstance(ev[1], HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)][0]
     sam_ev.run(squeeze_factor=0.0)
 
     # check recovery event is scheduled
