@@ -26,7 +26,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # Get basic information about the results
 #for previous analysis: tb_DAH_impact-2023-12-04T222317Z
 
-results_folder = get_scenario_outputs("tb_DAH_scenarios-2024-12-07T114024Z", outputspath)[-1]
+results_folder = get_scenario_outputs("tb_DAH_impact-2023-12-04T222317Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -40,8 +40,8 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH
-    e = ImpactOfTbDaH()
+    from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH03
+    e = ImpactOfTbDaH03()
     return tuple(e._scenarios.keys())
 
 def set_param_names_as_column_index_level_0(_df):

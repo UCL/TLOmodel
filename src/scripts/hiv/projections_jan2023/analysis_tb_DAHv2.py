@@ -35,17 +35,14 @@ from tlo.analysis.utils import (
 
 resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
-#if not os.path.exists(outputfilepath):
-  #  os.makedirs(outputfilepath)
+if not os.path.exists(outputfilepath):
+    os.makedirs(outputfilepath)
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
-# Get basic information about the results
-print(f"Output path is : {outputfilepath}")
 
 #Tb_DAH_impact02-2024-12-01T185458Z
 #tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
-results_folder = get_scenario_outputs('tb_DAH_impact01-2023-12-04T222317Z', outputfilepath)[-1]
+results_folder = get_scenario_outputs('tb_DAH_impact-2023-12-04T222317Z', outputfilepath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
