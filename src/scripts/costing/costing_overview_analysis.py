@@ -219,3 +219,55 @@ generate_detail_cost_table(_groupby_var = 'cost_subcategory', _groupby_var_name 
 # Table : Cost by cost subgroup
 generate_detail_cost_table(_groupby_var = 'cost_subgroup', _groupby_var_name = 'Category Subgroup', _longtable = True)
 
+# Generate consumable inflow to outflow ratio figure
+# -----------------------------------------------------------------------------------------------------------------------
+# Estimate the stock to dispensed ratio from OpenLMIS data
+lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+# Collapse individual facilities
+lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
+df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
+df = df.loc[df.index.get_level_values('month') != "Aggregate"]
+opening_bal_january = df.loc[df.index.get_level_values('month') == 'January', 'closing_bal'] + \
+                      df.loc[df.index.get_level_values('month') == 'January', 'dispensed'] - \
+                      df.loc[df.index.get_level_values('month') == 'January', 'received']
+closing_bal_december = df.loc[df.index.get_level_values('month') == 'December', 'closing_bal']
+total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
+                                         opening_bal_january.reset_index(level='month', drop=True) -\
+                                         closing_bal_december.reset_index(level='month', drop=True)
+total_consumables_outflow_during_the_year  = df['dispensed'].groupby(level=[0,1,2,3]).sum()
+inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
+
+# Edit outlier ratios
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
+#average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
+inflow_to_outflow_ratio = inflow_to_outflow_ratio.reset_index().rename(columns = {0:'inflow_to_outflow_ratio'})
+
+def plot_inflow_to_outflow_ratio(_df, groupby_var, _outputfilepath):
+    # Plot the bar plot
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=_df , x=groupby_var, y= 'inflow_to_outflow_ratio', errorbar=None)
+
+    # Add points representing the distribution of individual values
+    sns.stripplot(data=_df, x=groupby_var, y='inflow_to_outflow_ratio', color='black', size=5, alpha=0.2)
+
+    # Set labels and title
+    plt.xlabel(groupby_var)
+    plt.ylabel('Inflow to Outflow Ratio')
+    plt.title('Average Inflow to Outflow Ratio by ' + f'{groupby_var}')
+    plt.xticks(rotation=45)
+
+    # Show plot
+    plt.tight_layout()
+    plt.savefig(_outputfilepath / 'inflow_to_outflow_ratio_by' f'{groupby_var}' )
+
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'fac_type_tlo', _outputfilepath = figurespath)
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district', _outputfilepath = figurespath)
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'item_code', _outputfilepath = figurespath)
+plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'category', _outputfilepath = figurespath)
+
+print(f"Inflow to Outflow ratio by consumable varies from "
+      f"{round(min(inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean()),2)} "
+      f"to {round(max(inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean()),2)}")
+
+
