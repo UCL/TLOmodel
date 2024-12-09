@@ -5,6 +5,7 @@ import json
 import logging as _logging
 import sys
 import warnings
+from contextlib import contextmanager
 from functools import partialmethod
 from pathlib import Path
 from typing import Any, Callable, List, Optional, TypeAlias, Union
@@ -75,14 +76,69 @@ def initialise(
         root_logger.addHandler(handler)
 
 
-def reset():
-    """Reset global logging state to values at initial import."""
+@contextmanager
+def restore_global_state():
+    """Context manager which records global logging state on entry and restores at exit."""
     global _get_simulation_date, _loggers
-    while len(_loggers) > 0:
-        name, _ = _loggers.popitem()
-        _logging.root.manager.loggerDict.pop(name, None)  # pylint: disable=E1101
-    _loggers.clear()
-    _get_simulation_date = _mock_simulation_date_getter
+    original_get_simulation_date = _get_simulation_date
+    original_loggers = _loggers.copy()
+    original_logger_states = {
+        name: logger.__getstate__() for name, logger in _loggers.items()
+    }
+    yield
+    # For any new loggers created in context managed code reset their attributes
+    # We don't remove the associated logger instances in the base logging library as
+    # any children of these loggers will then not work as expected
+    for name, logger in _loggers.items():
+        if name not in original_loggers:
+            logger.reset_attributes()
+    _get_simulation_date = original_get_simulation_date
+    for name, logger_state in original_logger_states.items():
+        original_loggers[name].__setstate__(logger_state)
+    _loggers = original_loggers
+
+
+def set_logging_levels(custom_levels: dict[str, LogLevel]) -> None:
+    """Set custom logging levels for disease modules
+
+    :param custom_levels: Dictionary of modules and their level, '*' can be used as a key for all modules
+    """
+    # get list of `tlo.` loggers to process (this assumes logger have been setup on module import)
+    tlo_methods_loggers = [
+        logger for name, logger in _loggers.items() if name.startswith("tlo.methods")
+    ]
+
+    # set the baseline logging level from methods, if it's been set
+    if "*" in custom_levels:
+        getLogger("tlo.methods").setLevel(custom_levels["*"])
+
+    # loop over each of the tlo loggers
+    for logger in tlo_methods_loggers:
+        # get the full name
+        logger_name = logger.name
+        matched = False
+        # look for name, or any parent name, in the custom levels
+        while len(logger_name):
+            if logger_name in custom_levels:
+                getLogger(logger_name).setLevel(custom_levels[logger_name])
+                matched = True
+                break
+            elif logger_name == "tlo.methods":
+                # we've reached the top-level of the `tlo.methods` logger
+                break
+            else:
+                # get the parent logger name
+                logger_name = ".".join(logger_name.split(".")[:-1])
+        # if we exited without finding a matching logger in custom levels
+        if not matched:
+            if "*" in custom_levels:
+                getLogger(logger.name).setLevel(custom_levels["*"])
+
+    # loggers named in custom_level but, for some reason, haven't been getLogger-ed yet
+    tlo_methods_logger_names = {logger.name for logger in tlo_methods_loggers}
+    for logger_name, logger_level in custom_levels.items():
+        if logger_name != "*" and logger_name not in tlo_methods_logger_names:
+            getLogger(logger_name).setLevel(logger_level)
 
 
 def set_output_file(
@@ -250,6 +306,22 @@ class Logger:
         self._uuids.clear()
         self._columns.clear()
         self.setLevel(_DEFAULT_LEVEL)
+
+    def __getstate__(self) -> dict:
+        return {
+            "name": self.name,
+            "level": self.level,
+            "handlers": self.handlers,
+            "uuids": self._uuids,
+            "columns": self._columns,
+        }
+
+    def __setstate__(self, state: dict):
+        self._std_logger = _logging.getLogger(name=state["name"])
+        self._std_logger.setLevel(state["level"])
+        self.handlers = state["handlers"]
+        self._uuids = state["uuids"]
+        self._columns = state["columns"]
 
     def setLevel(self, level: LogLevel) -> None:
         self._std_logger.setLevel(level)
