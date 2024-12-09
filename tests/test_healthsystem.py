@@ -952,7 +952,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
-    assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
+    assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable', 'Item_Used'
             } == set(detailed_consumables.columns)
 
     bed_types = sim.modules['HealthSystem'].bed_days.bed_types
@@ -1018,6 +1018,9 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
                lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
     assert summary_consumables['Item_NotAvailable'].apply(pd.Series).sum().to_dict() == \
            detailed_consumables['Item_NotAvailable'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+    assert summary_consumables['Item_Used'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_Used'].apply(
                lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
 
     #  - Bed-Days (bed-type by bed-type and year by year)
