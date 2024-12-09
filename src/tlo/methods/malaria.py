@@ -1245,26 +1245,32 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         # non-complicated malaria
         if age_of_person < 5:
             # Formulation for young children
+            # 5–14kg: 1 tablet(120mg Lumefantrine / 20mg Artemether) every 12 hours for 3 days
+            # paracetamol syrup in 1ml doses, 10ml 4x per day, 3 days
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children']: 6},
+                optional_item_codes=[{self.module.item_codes_for_consumables_required['paracetamol_syrup']: 120},
+                                     {self.module.item_codes_for_consumables_required['malaria_rdt']: 1}]
             )
 
         elif 5 <= age_of_person <= 15:
             # Formulation for older children
+            # 35–44 kg: 4 tablets every 12 hours for 3 days
+            # paracetamol syrup in 1ml doses, 15ml 4x per day, 3 days
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 24},
+                optional_item_codes=[{self.module.item_codes_for_consumables_required['paracetamol_syrup']: 180},
+                                     {self.module.item_codes_for_consumables_required['malaria_rdt']: 1}]
             )
 
         else:
             # Formulation for adults
+            # 4 tablets every 12 hours for 3 day
+            # paracetamol in 1 mg doses, 4g per day for 3 days
             drugs_available = self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult'],
-                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol'],
-                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult']: 24},
+                optional_item_codes=[{self.module.item_codes_for_consumables_required['paracetamol']: 12_000},
+                                     {self.module.item_codes_for_consumables_required['malaria_rdt']: 1}]
             )
 
         return drugs_available
