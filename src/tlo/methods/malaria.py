@@ -654,7 +654,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # malaria IPTp for pregnant women
         self.item_codes_for_consumables_required['malaria_iptp'] = get_item_code(
-            'Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg'
+            'Fansidar (sulphadoxine / pyrimethamine tab)'
         )
 
     def update_parameters_for_program_scaleup(self):
@@ -1365,6 +1365,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                      data=f'HSI_MalariaIPTp: requesting IPTp for person {person_id}')
 
         # request the treatment
+        # dosage is one tablet
         if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_iptp']):
             logger.debug(key='message',
                          data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
