@@ -237,7 +237,7 @@ class BaseScenario(abc.ABC):
     def draw_name(self, draw_number) -> str:
         """Returns the name of the draw corresponding to the given draw number. This is offered for convenience so that
         the logfile contain a 'user-friendly' label for the draw."""
-        return ""
+        return str(draw_number)
 
     def get_log_config(self, override_output_directory=None):
         """Returns the log configuration for the scenario, with some post_processing."""
