@@ -213,7 +213,7 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
         outreach_event = ChronicSyndrome_LaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=6))
 
-        # Schedule the occurance of a population wide change in risk that goes through the health system:
+        # Schedule the occurrence of a population wide change in risk:
         popwide_event = ChronicSyndrome_PopulationWideBehaviourChange(self)
         self.sim.schedule_event(
             popwide_event, self.sim.date
