@@ -79,17 +79,11 @@ input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate, summarize = True)
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
-# TODO Remove the manual fix below once the logging for these is corrected
-input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost'] = \
-    input_costs.loc[input_costs.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost']/10
 
 input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = 0, summarize = True)
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
-# TODO Remove the manual fix below once the logging for these is corrected
-input_costs_undiscounted.loc[input_costs_undiscounted.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost'] = \
-    input_costs_undiscounted.loc[input_costs_undiscounted.cost_subgroup == 'Oxygen, 1000 liters, primarily with oxygen cylinders', 'cost']/10
 
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
@@ -144,17 +138,21 @@ colourmap_for_consumables = {'First-line ART regimen: adult':'#1f77b4',
                              'Dietary supplements (country-specific)': '#17becf',
                              'Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg': '#2b8cbe',
                              'Blood, one unit': '#ffdd44',
-                             'Pneumococcal vaccine':'#756bb1'}
+                             'Pneumococcal vaccine': '#fdae61',
+                             'Pentavalent vaccine (DPT, Hep B, Hib)': '#d73027',
+                             'Ceftriaxone 1g, PFR_1_CMST': '#66c2a5',
+                             'male circumcision kit, consumables (10 procedures)_1_IDA': '#756bb1'}
 
 for _cat in cost_categories:
     for _d in draws:
         if _cat == 'medical consumables':
             create_summary_treemap_by_cost_subgroup(_df = input_costs, _year = list_of_years_for_plot,
                                                _cost_category = _cat, _draw = _d, _color_map=colourmap_for_consumables,
-                                                _label_fontsize= 8)
+                                                _label_fontsize= 8, _outputfilepath=figurespath)
         else:
             create_summary_treemap_by_cost_subgroup(_df=input_costs, _year=list_of_years_for_plot,
-                                                    _cost_category=_cat, _draw=_d, _label_fontsize= 8.5)
+                                                    _cost_category=_cat, _draw=_d, _label_fontsize= 8.5,
+                                                    _outputfilepath=figurespath)
 
 
 # Get tables for overview paper
@@ -173,7 +171,7 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
 
     # Create a pivot table to restructure the data for LaTeX output
     pivot_data = {}
-    for draw in [0, 1]:
+    for draw in [0, 3, 5, 8]:
         draw_data = grouped_costs.xs(draw, level='draw').unstack(fill_value=0)  # Unstack to get 'stat' as columns
         # Concatenate 'mean' with 'lower-upper' in the required format
         pivot_data[draw] = draw_data['mean'].astype(str) + ' [' + \
@@ -181,10 +179,10 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
                            draw_data['upper'].astype(str) + ']'
 
     # Combine draw data into a single DataFrame
-    table_data = pd.concat([pivot_data[0], pivot_data[1]], axis=1, keys=['draw=0', 'draw=1']).reset_index()
+    table_data = pd.concat([pivot_data[0], pivot_data[3], pivot_data[5], pivot_data[8]], axis=1, keys=['draw=0', 'draw=3', 'draw=5', 'draw=8']).reset_index()
 
     # Rename columns for clarity
-    table_data.columns = ['Cost Category', _groupby_var_name, 'Real World', 'Perfect Health System']
+    table_data.columns = ['Cost Category', _groupby_var_name, 'Actual', 'Expanded HRH', 'Improved consumable availability', 'Expanded HRH +\n Improved consumable availability']
 
     # Replace '\n' with '\\' for LaTeX line breaks
     #table_data['Real World'] = table_data['Real World'].apply(lambda x: x.replace("\n", "\\\\"))
@@ -193,7 +191,7 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
     # Convert to LaTeX format with horizontal lines after every row
     latex_table = table_data.to_latex(
         longtable=_longtable,  # Use the longtable environment for large tables
-        column_format='|R{4cm}|R{5cm}|R{3.5cm}|R{3.5cm}|',
+        column_format='|R{4cm}|R{5cm}|R{3.5cm}|R{3.5cm}|R{3.5cm}|R{3.5cm}|',
         caption=f"Summarized Costs by Category and {_groupby_var_name}",
         label=f"tab:cost_by_{_groupby_var}",
         position="h",
