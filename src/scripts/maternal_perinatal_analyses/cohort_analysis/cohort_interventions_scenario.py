@@ -38,6 +38,8 @@ class BaselineScenario(BaseScenario):
             }
         }
 
+
+
     def modules(self):
         return [*fullmodel(resourcefilepath=self.resources,
                            module_kwargs={'Schisto': {'mda_execute': False}}),
@@ -47,11 +49,13 @@ class BaselineScenario(BaseScenario):
         # if draw_number == 0:
         #     return {'PregnancySupervisor': {
         #             'analysis_year': 2024}}
+
         # else:
-        interventions_for_analysis = ['pph_treatment_uterotonics','pph_treatment_uterotonics',
-                                      'iv_antihypertensives', 'iv_antihypertensives',
-                                      'birth_kit', 'birth_kit',
-                                      'post_abortion_care_core', 'post_abortion_care_core']
+
+        interventions_for_analysis = ['mgso4','mgso4',
+                                      'ectopic_pregnancy_treatment', 'ectopic_pregnancy_treatment',
+                                      'pph_treatment_mrrp', 'pph_treatment_mrrp',
+                                      'pph_treatment_surg', 'pph_treatment_surg']
 
         avail_for_draw = [0.0, 1.0,
                           0.0, 1.0,

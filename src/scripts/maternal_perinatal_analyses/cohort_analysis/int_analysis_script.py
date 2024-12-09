@@ -19,7 +19,8 @@ scenario = 'block_intervention_big_run-2024-12-04T115735Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 # create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
-interventions =['sepsis_treatment', 'amtsl', 'blood_transfusion']
+interventions =['sepsis_treatment', 'amtsl', 'blood_transfusion',
+                'pph_treatment_uterotonics', 'iv_antihypertensives', 'birth_kit',  'post_abortion_care_core' ]
 
 int_analysis = ['baseline']
 
