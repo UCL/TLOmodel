@@ -35,6 +35,7 @@ from tlo.methods.hiv import (
     HSI_Hiv_StartOrContinueTreatment,
     HSI_Hiv_TestAndRefer,
 )
+from tlo.util import read_csv_files
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -1210,8 +1211,7 @@ def test_baseline_hiv_prevalence(seed):
 
     # get data on 2010 prevalence
     # HIV resourcefile
-    xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
-    prev_data = pd.read_excel(xls, sheet_name="DHS_prevalence")
+    prev_data = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="DHS_prevalence")
 
     adult_prev_1549_data = prev_data.loc[
         (prev_data.Year == 2010, "HIV prevalence among general population 15-49")].values[0] / 100
