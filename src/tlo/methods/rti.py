@@ -2867,21 +2867,79 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         pred = eq.predict(df.loc[rt_current_non_ind])
         random_draw_in_rti = self.module.rng.random_sample(size=len(rt_current_non_ind))
         selected_for_rti = rt_current_non_ind[pred > random_draw_in_rti]
+        
         # Update to say they have been involved in a rti
         df.loc[selected_for_rti, 'rt_road_traffic_inc'] = True
         # Set the date that people were injured to now
         df.loc[selected_for_rti, 'rt_date_inj'] = now
+        
+        # This is where we want to replace normal course of events with emulator
+        # We have to:
+        # 1. Sample new properties for individual
+        
+        # For now, don't consider properties of individual when sampling outcome. All we care about is the number of samples.
+        # NN_model = sample_NN_model(len(selected_for_rti))
+ 
+        # 2. Change current properties of the individual
+        count = 0
+
+        for person_id in selected_for_rti:
+
+            if NN_model.loc[count,'is_alive_after_RTI'] is False and NN_model.loc[count,'duration_days'] == 0:
+            
+                # Keep track of who experience pre-hospital mortality with the property rt_imm_death
+                df.loc[person_id, 'rt_imm_death'] = True
+                # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
+                                                        originating_module=self.module)
+            else:
+                # Set disability to what will be the average over duration of the episode
+                df.loc[person_id,'rt_dalys'] = NN_model.loc[count,'RT_disability_average']
+                
+                # Schedule resolution
+                self.sim.schedule_event(RTI_Emulated_Resolution(self.module, person_id, is_alive_after_RT, rt_disability_permament), self.sim.date +
+                                        DateOffset(days=duration_days))
+                                        
+                # Add HS use to running count
+                #self.running_counter_of_HSIs_used += HSI_counters
+            
+            count += 1
+        
+        # 3. Schedule resolution of event + log of HS usage by individual
+        
+        # N_samples = len(selected_for_rti)
+        # For all of these, select
+        
+        # if is_alive_after_RTI == False and duration_days == 0:
+            # Keep track of who experience pre-hospital mortality with the property rt_imm_death
+            df.loc[selected_to_die, 'rt_imm_death'] = True
+            # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
+            for individual_id in selected_to_die:
+                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
+                                                        originating_module=self.module)
+                                                        
+        # For all remaining individuals,
+    
+        # UPDATED
         # ========================= Take those involved in a RTI and assign some to death ==============================
+                
+        # REMOVE BECAUSE OUTDATED
         # This section accounts for pre-hospital mortality, where a person is so severy injured that they die before
         # being able to seek medical care
-        selected_to_die = selected_for_rti[self.imm_death_proportion_rti >
-                                           self.module.rng.random_sample(size=len(selected_for_rti))]
-        # Keep track of who experience pre-hospital mortality with the property rt_imm_death
-        df.loc[selected_to_die, 'rt_imm_death'] = True
-        # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
-        for individual_id in selected_to_die:
-            self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
-                                                    originating_module=self.module)
+        #selected_to_die = selected_for_rti[self.imm_death_proportion_rti >
+         #                                  self.module.rng.random_sample(size=len(selected_for_rti))]
+
+
+                                                    
+                                                    
+        # All of the following can be removed under the assumption that this data is capturing the incidence as well.
+        # Replace with
+        # Update of current relevant variables
+        
+        # Those that are sampled are
+        
+        
+                                                    
         # ============= Take those remaining people involved in a RTI and assign injuries to them ==================
         # Drop those who have died immediately
         selected_for_rti_inj_idx = selected_for_rti.drop(selected_to_die)
