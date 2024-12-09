@@ -385,10 +385,10 @@ def summarise(
 
     if only_central and (not collapse_columns):
         # Remove other metrics and simplify if 'only_central' across runs for each draw is required:
-        om: pd.DataFrame = summary.loc[:, (slice(None), "central")]
-        om.columns = [c[0] for c in om.columns.to_flat_index()]
-        om.columns.name = 'draw'
-        return om
+        oc: pd.DataFrame = summary.loc[:, (slice(None), "central")]
+        oc.columns = [c[0] for c in oc.columns.to_flat_index()]
+        oc.columns.name = 'draw'
+        return oc
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
         # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
