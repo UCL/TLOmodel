@@ -43,7 +43,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_impact02-2024-12-01T185458Z
 #tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
-results_folder = get_scenario_outputs('Tb_DAH_impact02-2024-12-01T185458Z', outputfilepath)[-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios-2024-12-07T133617Z', outputfilepath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
