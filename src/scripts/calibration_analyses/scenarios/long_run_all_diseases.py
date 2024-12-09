@@ -14,6 +14,7 @@ from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
+from tlo.util import str_to_pandas_date
 
 
 class LongRun(BaseScenario):
@@ -25,6 +26,7 @@ class LongRun(BaseScenario):
         self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 10
+        self.healthsystem_mode = 1
 
     def log_configuration(self):
         return {
@@ -45,8 +47,13 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return get_parameters_for_status_quo()
+        params = get_parameters_for_status_quo()
+        params['HealthSystem']['mode_appt_constraints'] = self.healthsystem_mode
+        return params
 
+    def add_arguments(self, parser):
+        parser.add_argument('--healthsystem-mode', type=int)
+        parser.add_argument('--end-date', type=str_to_pandas_date)
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
