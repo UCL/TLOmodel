@@ -628,7 +628,9 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
-        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters[
+            "max_num_of_failed_attempts_before_defaulting"
+        ]
         self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
 
     def apply(self, person_id, squeeze_factor):
@@ -679,8 +681,10 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters['max_num_of_failed_attempts_before_defaulting']
-        self._DEFAULT_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = module.parameters[
+            "max_num_of_failed_attempts_before_defaulting"
+        ]
+        self._DEFAULT_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self._REPEATED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
 
         self.TREATMENT_ID = "Epilepsy_Treatment_Followup"

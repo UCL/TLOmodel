@@ -333,7 +333,7 @@ def copy_files_to_temporal_directory_and_return_path(tmpdir):
 
 
 def test_pass_datatypes_to_read_csv_method(tmpdir):
-    """ test passing column datatypes to read csv method. Final column datatype should change to what has been passed """
+    """Test passing column datatypes to read csv method. Final column datatype should change to what has been passed."""
     # copy and get resource files path in the temporal directory
     path_to_tmpdir = Path(tmpdir)
     sample_data = pd.DataFrame(data={'numbers1': [5,6,8,4,9,6], 'numbers2': [19,27,53,49,75,56]}, dtype=int)
