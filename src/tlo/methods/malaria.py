@@ -642,7 +642,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         self.item_codes_for_consumables_required['paracetamol'] = get_item_code('Paracetamol 500mg_1000_CMST')
 
         # malaria treatment complicated - same consumables for adults and children
-        self.item_codes_for_consumables_required['malaria_complicated'] = get_item_code('Injectable artesunate')
+        self.item_codes_for_consumables_required['malaria_complicated_artesunate'] = get_item_code('Injectable artesunate')
 
         self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = [
             get_item_code('Malaria test kit (RDT)'),
@@ -882,6 +882,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
                     schedule_hsi_event(
                         event, priority=0, topen=self.sim.date
                     )
+
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1249,8 +1250,8 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             # paracetamol syrup in 1ml doses, 10ml 4x per day, 3 days
             drugs_available = self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children']: 6},
-                optional_item_codes=[{self.module.item_codes_for_consumables_required['paracetamol_syrup']: 120},
-                                     {self.module.item_codes_for_consumables_required['malaria_rdt']: 1}]
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 120,
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         elif 5 <= age_of_person <= 15:
@@ -1259,8 +1260,8 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             # paracetamol syrup in 1ml doses, 15ml 4x per day, 3 days
             drugs_available = self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 24},
-                optional_item_codes=[{self.module.item_codes_for_consumables_required['paracetamol_syrup']: 180},
-                                     {self.module.item_codes_for_consumables_required['malaria_rdt']: 1}]
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 180,
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         else:
@@ -1269,8 +1270,8 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             # paracetamol in 1 mg doses, 4g per day for 3 days
             drugs_available = self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult']: 24},
-                optional_item_codes=[{self.module.item_codes_for_consumables_required['paracetamol']: 12_000},
-                                     {self.module.item_codes_for_consumables_required['malaria_rdt']: 1}]
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol']: 12_000,
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         return drugs_available
@@ -1307,8 +1308,11 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                          data=f'HSI_Malaria_Treatment_Complicated: requesting complicated malaria treatment for '
                               f' {person_id}')
 
+            # dosage in 60mg artesunate ampoules
+            # First dose: 2.4 mg/kg × 25 kg = 60 mg (administered IV or IM).
+            # Repeat 60 mg after 12 hours and then again at 24 hours.
             if self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_complicated'],
+                item_codes={self.module.item_codes_for_consumables_required['malaria_complicated_artesunate']: 3},
                 optional_item_codes=self.module.item_codes_for_consumables_required[
                     'malaria_complicated_optional_items']
             ):
@@ -1336,6 +1340,12 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                     treatment_id=self.TREATMENT_ID,
                 )
                 logger.info(key='rdt_log', data=person_details_for_test)
+
+                # schedule ACT to follow inpatient care, this is delivered through outpatient facility
+                continue_to_treat = HSI_Malaria_Treatment(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    continue_to_treat, priority=1, topen=self.sim.date, tclose=None
+                )
 
     def did_not_run(self):
         logger.debug(key='message',
