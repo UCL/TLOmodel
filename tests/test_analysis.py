@@ -1,4 +1,5 @@
 import os
+import textwrap
 from pathlib import Path
 from typing import List
 
@@ -18,6 +19,7 @@ from tlo.analysis.utils import (
     get_parameters_for_improved_healthsystem_and_healthcare_seeking,
     get_parameters_for_status_quo,
     get_root_path,
+    merge_log_files,
     mix_scenarios,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
@@ -698,3 +700,99 @@ def test_control_loggers_from_same_module_independently(seed, tmpdir):
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
     check_log(run_simulation_and_cause_one_death(sim))
 
+
+def test_merge_log_files(tmp_path):
+    log_file_path_1 = tmp_path / "log_file_1"
+    log_file_path_1.write_text(
+        textwrap.dedent(
+            """\
+            {"uuid": "b07", "type": "header", "module": "m0", "key": "info", "level": "INFO", "columns": {"msg": "str"}, "description": null}
+            {"uuid": "b07", "date": "2010-01-01T00:00:00", "values": ["0"]}
+            {"uuid": "0b3", "type": "header", "module": "m1", "key": "a", "level": "INFO", "columns": {"msg": "str"}, "description": "A"}
+            {"uuid": "0b3", "date": "2010-01-01T00:00:00", "values": ["1"]}
+            {"uuid": "ed4", "type": "header", "module": "m2", "key": "b", "level": "INFO", "columns": {"msg": "str"}, "description": "B"}
+            {"uuid": "ed4", "date": "2010-01-02T00:00:00", "values": ["2"]}
+            {"uuid": "477", "type": "header", "module": "m2", "key": "c", "level": "INFO", "columns": {"msg": "str"}, "description": "C"}
+            {"uuid": "477", "date": "2010-01-02T00:00:00", "values": ["3"]}
+            {"uuid": "b5c", "type": "header", "module": "m2", "key": "d", "level": "INFO", "columns": {"msg": "str"}, "description": "D"}
+            {"uuid": "b5c", "date": "2010-01-03T00:00:00", "values": ["4"]}
+            {"uuid": "477", "date": "2010-01-03T00:00:00", "values": ["5"]}
+            """
+        )
+    )
+    log_file_path_2 = tmp_path / "log_file_2"
+    log_file_path_2.write_text(
+        textwrap.dedent(
+            """\
+            {"uuid": "b07", "type": "header", "module": "m0", "key": "info", "level": "INFO", "columns": {"msg": "str"}, "description": null}
+            {"uuid": "b07", "date": "2010-01-04T00:00:00", "values": ["6"]}
+            {"uuid": "ed4", "type": "header", "module": "m2", "key": "b", "level": "INFO", "columns": {"msg": "str"}, "description": "B"}
+            {"uuid": "ed4", "date": "2010-01-04T00:00:00", "values": ["7"]}
+            {"uuid": "ed4", "date": "2010-01-05T00:00:00", "values": ["8"]}
+            {"uuid": "0b3", "type": "header", "module": "m1", "key": "a", "level": "INFO", "columns": {"msg": "str"}, "description": "A"}
+            {"uuid": "0b3", "date": "2010-01-06T00:00:00", "values": ["9"]}
+            {"uuid": "a19", "type": "header", "module": "m3", "key": "e", "level": "INFO", "columns": {"msg": "str"}, "description": "E"}
+            {"uuid": "a19", "date": "2010-01-03T00:00:00", "values": ["10"]}
+            """
+        )
+    )
+    expected_merged_log_file_content = textwrap.dedent(
+        """\
+        {"uuid": "b07", "type": "header", "module": "m0", "key": "info", "level": "INFO", "columns": {"msg": "str"}, "description": null}
+        {"uuid": "b07", "date": "2010-01-01T00:00:00", "values": ["0"]}
+        {"uuid": "0b3", "type": "header", "module": "m1", "key": "a", "level": "INFO", "columns": {"msg": "str"}, "description": "A"}
+        {"uuid": "0b3", "date": "2010-01-01T00:00:00", "values": ["1"]}
+        {"uuid": "ed4", "type": "header", "module": "m2", "key": "b", "level": "INFO", "columns": {"msg": "str"}, "description": "B"}
+        {"uuid": "ed4", "date": "2010-01-02T00:00:00", "values": ["2"]}
+        {"uuid": "477", "type": "header", "module": "m2", "key": "c", "level": "INFO", "columns": {"msg": "str"}, "description": "C"}
+        {"uuid": "477", "date": "2010-01-02T00:00:00", "values": ["3"]}
+        {"uuid": "b5c", "type": "header", "module": "m2", "key": "d", "level": "INFO", "columns": {"msg": "str"}, "description": "D"}
+        {"uuid": "b5c", "date": "2010-01-03T00:00:00", "values": ["4"]}
+        {"uuid": "477", "date": "2010-01-03T00:00:00", "values": ["5"]}
+        {"uuid": "b07", "date": "2010-01-04T00:00:00", "values": ["6"]}
+        {"uuid": "ed4", "date": "2010-01-04T00:00:00", "values": ["7"]}
+        {"uuid": "ed4", "date": "2010-01-05T00:00:00", "values": ["8"]}
+        {"uuid": "0b3", "date": "2010-01-06T00:00:00", "values": ["9"]}
+        {"uuid": "a19", "type": "header", "module": "m3", "key": "e", "level": "INFO", "columns": {"msg": "str"}, "description": "E"}
+        {"uuid": "a19", "date": "2010-01-03T00:00:00", "values": ["10"]}
+        """
+    )
+    merged_log_file_path = tmp_path / "merged_log_file"
+    merge_log_files(log_file_path_1, log_file_path_2, merged_log_file_path)
+    merged_log_file_content = merged_log_file_path.read_text()
+    assert merged_log_file_content == expected_merged_log_file_content
+
+
+def test_merge_log_files_with_inconsistent_headers_raises(tmp_path):
+    log_file_path_1 = tmp_path / "log_file_1"
+    log_file_path_1.write_text(
+        textwrap.dedent(
+            """\
+            {"uuid": "b07", "type": "header", "module": "m0", "key": "info", "level": "INFO", "columns": {"msg": "str"}, "description": null}
+            {"uuid": "b07", "date": "2010-01-01T00:00:00", "values": ["0"]}
+            """
+        )
+    )
+    log_file_path_2 = tmp_path / "log_file_2"
+    log_file_path_2.write_text(
+        textwrap.dedent(
+            """\
+            {"uuid": "b07", "type": "header", "module": "m0", "key": "info", "level": "INFO", "columns": {"msg": "int"}, "description": null}
+            {"uuid": "b07", "date": "2010-01-04T00:00:00", "values": [1]}
+            """
+        )
+    )
+    merged_log_file_path = tmp_path / "merged_log_file"
+    with pytest.raises(RuntimeError, match="Inconsistent header lines"):
+        merge_log_files(log_file_path_1, log_file_path_2, merged_log_file_path)
+
+
+def test_merge_log_files_inplace_raises(tmp_path):
+    log_file_path_1 = tmp_path / "log_file_1"
+    log_file_path_1.write_text("foo")
+    log_file_path_2 = tmp_path / "log_file_2"
+    log_file_path_2.write_text("bar")
+    with pytest.raises(ValueError, match="output_path"):
+        merge_log_files(log_file_path_1, log_file_path_2, log_file_path_1)
+    with pytest.raises(ValueError, match="output_path"):
+        merge_log_files(log_file_path_1, log_file_path_2, log_file_path_2)
