@@ -11,8 +11,8 @@ import os
 import textwrap
 from typing import Tuple
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
-import squarify
+#from matplotlib.ticker import FuncFormatter
+#import squarify
 import numpy as np
 import pandas as pd
 from collections import defaultdict
@@ -35,6 +35,7 @@ from tlo.analysis.utils import (
 
 resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
+
 if not os.path.exists(outputfilepath):
     os.makedirs(outputfilepath)
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -42,7 +43,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_impact02-2024-12-01T185458Z
 #tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
-results_folder = get_scenario_outputs('tb_DAH_impact-2023-12-04T222317Z', outputfilepath)[-1]
+results_folder = get_scenario_outputs('Tb_DAH_impact02-2024-12-01T185458Z', outputfilepath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -1001,9 +1002,6 @@ plt.legend(handles=lines, labels=selected_scenarios)
 
 plt.show()
 #Treatment coverage revisted
-import pandas as pd
-import matplotlib.pyplot as plt
-
 
 # Extract unique scenarios from column index level 0
 scenarios = tb_treatment_cov.columns.get_level_values(0).unique()
