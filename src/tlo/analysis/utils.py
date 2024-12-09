@@ -355,11 +355,12 @@ def summarise(
     Finds a central value and a specified interval across the runs for each draw. By default, this uses a central
      measure of the median and a 95% interval range.
 
-    :Param: results: The pd.DataFame of results.
-    :Param: central_measure: The name of the central measure to use - either 'mean' or 'median'.
-    :Param: width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
-    :Param: collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise)
-    :Param: only_central: Whether to only report the central value (dropping the range).
+    :param results: The dataframe of results to compute summary statistics of.
+    :param central_measure: The name of the central measure to use - either 'mean' or 'median'.
+    :param width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
+    :param collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise).
+    :param only_central: Whether to only report the central value (dropping the range).
+    :return: A dataframe with computed summary statistics.
 
     """
     stats = dict()
