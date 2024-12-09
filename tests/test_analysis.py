@@ -24,6 +24,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
+    summarise,
     summarize,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -573,7 +574,7 @@ def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
     sim.simulate(end_date=Date(year_of_change + 2, 1, 1))
 
 
-def test_summarize():
+def test_summarise():
     """Check that the summarize utility function works as expected."""
 
     results_multiple_draws = pd.DataFrame(
@@ -604,10 +605,10 @@ def test_summarize():
             columns=pd.MultiIndex.from_tuples(
                 [
                     ("DrawA", "lower"),
-                    ("DrawA", "mean"),
+                    ("DrawA", "central"),
                     ("DrawA", "upper"),
                     ("DrawB", "lower"),
-                    ("DrawB", "mean"),
+                    ("DrawB", "central"),
                     ("DrawB", "upper"),
                 ],
                 names=("draw", "stat"),
@@ -620,7 +621,7 @@ def test_summarize():
                 ]
             ),
         ),
-        summarize(results_multiple_draws),
+        summarise(results_multiple_draws, central_measure='mean'),
     )
 
     # Without collapsing and only mean
@@ -630,19 +631,32 @@ def test_summarize():
             index=["TimePoint0", "TimePoint1"],
             data=np.array([[10.0, 1500.0], [10.0, 1500.0]]),
         ),
-        summarize(results_multiple_draws, only_mean=True),
+        summarise(results_multiple_draws, central_measure='mean', only_central=True),
     )
 
     # With collapsing (as only one draw)
     pd.testing.assert_frame_equal(
         pd.DataFrame(
-            columns=pd.Index(["lower", "mean", "upper"], name="stat"),
+            columns=pd.Index(["lower", "central", "upper"], name="stat"),
             index=["TimePoint0", "TimePoint1"],
             data=np.array([[0.5, 10.0, 19.5], [0.5, 10.0, 19.5], ]),
         ),
-        summarize(results_one_draw, collapse_columns=True),
+        summarise(results_one_draw, central_measure='mean', collapse_columns=True),
     )
 
+    # Check that summarize() produces legacy behaviour:
+    pd.testing.assert_frame_equal(
+        summarise(results_multiple_draws, central_measure='mean').rename(columns={'central': 'mean'}, level=1),
+        summarize(results_multiple_draws)
+    )
+    pd.testing.assert_frame_equal(
+        summarise(results_multiple_draws, central_measure='mean', only_central=True),
+        summarize(results_multiple_draws, only_mean=True)
+    )
+    pd.testing.assert_frame_equal(
+        summarise(results_one_draw, central_measure='mean', collapse_columns=True),
+        summarize(results_one_draw, collapse_columns=True)
+    )
 
 def test_control_loggers_from_same_module_independently(seed, tmpdir):
     """Check that detailed/summary loggers in the same module can configured independently."""
