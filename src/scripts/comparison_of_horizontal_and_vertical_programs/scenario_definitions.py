@@ -15,7 +15,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_HTM(self) -> int:
         """Year in which HIV, TB, Malaria scale-up changes are made."""
-        return 2015  # <-- todo changing this to 2015, to match Tara's run. Also note that it's not the same as the Year of change for the HSS
+        return 2019
 
     def baseline(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
@@ -38,11 +38,6 @@ class ScenarioDefinitions:
                 }
             },
         )
-
-    def baseline_mode1(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario when using Mode 1.
-        """
-        return get_parameters_for_status_quo()  # <-- Parameters that have been the calibration targets
 
     def double_capacity_at_primary_care(self) -> Dict:
         return {
@@ -131,7 +126,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the HIV program"""
         return {
             "Hiv": {
-                'type_of_scaleup': 'max',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -140,7 +135,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the TB program"""
         return {
             "Tb": {
-                'type_of_scaleup': 'max',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }
@@ -149,7 +144,7 @@ class ScenarioDefinitions:
         """The parameters for the scale-up of the Malaria program"""
         return {
             'Malaria': {
-                'type_of_scaleup': 'max',  # <--- todo: using MAXIMUM SCALE-UP as an experiment
+                'type_of_scaleup': 'max',  # <--- using MAXIMUM SCALE-UP as an experiment
                 'scaleup_start_year': self.YEAR_OF_CHANGE_FOR_HTM,
             }
         }

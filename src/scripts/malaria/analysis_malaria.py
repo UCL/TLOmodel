@@ -34,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 15_000
+end_date = Date(2014, 1, 1)
+popsize = 100
 
 
 # set up the log config
@@ -61,7 +61,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],
         mode_appt_constraints=1,
-        cons_availability='all',
+        cons_availability='default',
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=False,
@@ -85,8 +85,12 @@ sim.register(
 )
 
 # update parameters
-sim.modules["Tb"].parameters["type_of_scaleup"] = 'max'
-sim.modules["Tb"].parameters["scaleup_start_year"] = 2010
+sim.modules["Hiv"].parameters["do_scaleup"] = True
+sim.modules["Tb"].parameters["do_scaleup"] = True
+sim.modules["Malaria"].parameters["do_scaleup"] = True
+sim.modules["Hiv"].parameters["scaleup_start"] = 2
+sim.modules["Tb"].parameters["scaleup_start"] = 2
+sim.modules["Malaria"].parameters["scaleup_start"] = 2
 
 
 # Run the simulation and flush the logger
