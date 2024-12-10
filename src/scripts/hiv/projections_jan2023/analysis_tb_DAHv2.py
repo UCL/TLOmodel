@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
+#python src/scripts/hiv/projections_jan2023/analysis_tb_DAHv2.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
 
-# python src/scripts/hiv/projections_jan2023/analysis_tb_DAH_scenarios.py --scenario-outputs-folder outputs\newton.chagoma@york.ac.uk
 import argparse
 from pathlib import Path
 from tlo import Date
@@ -43,36 +43,7 @@ outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
 #tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
 
-def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
-    """Returns paths of folders associated with a batch_file, in chronological order."""
-
-    # Print debug information
-    print(f"Scenario Filename: {scenario_filename}")
-    print(f"Outputs Directory: {outputs_dir}")
-
-    # Generate the stub by removing the '.py' extension
-    stub, _ = os.path.splitext(scenario_filename)
-    print(f"Stub: {stub}")
-   # stub = scenario_filename.rstrip('.py')
-  #  print(f"Stub: {stub}")
-
-    # Collect matching folders
-    #folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
-    folders = [
-        Path(f.path) for f in os.scandir(outputs_dir)
-        if f.is_dir() and f.name.startswith(stub)
-    ]
-
-    # Sort the folders chronologically
-    folders.sort()
-
-    # Print results for further inspection
-    print(f"Found Folders: {folders}")
-
-    return folders
-
-results_folder = get_scenario_outputs('tb_DAH_scenarios-2024-12-07T133617Z', outputfilepath)
-
+results_folder = get_scenario_outputs('tb_DAH_scenarios-2024-12-07T133617Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
