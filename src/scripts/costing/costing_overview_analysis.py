@@ -78,12 +78,36 @@ discount_rate = 0.03
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate, summarize = True)
+input_costs = input_costs[(input_costs.year > 2018) & (input_costs.year < 2036)]
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
 
 input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = 0, summarize = True)
+input_costs_undiscounted = input_costs_undiscounted[(input_costs_undiscounted.year > 2018) & (input_costs_undiscounted.year < 2036)]
+
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
+
+# Get overall estimates for main text
+# -----------------------------------------------------------------------------------------------------------------------
+cost_by_draw = input_costs.groupby(['draw', 'stat'])['cost'].sum()
+print(f"The total estimated cost of healthcare delivery in Malawi between 2019 and 2035 was estimated to be "
+      f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion[\${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
+      f"\${cost_by_draw[5,'mean']/1e9:,.2f} billion[\${cost_by_draw[5,'lower']/1e9:,.2f}b - \${cost_by_draw[5,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
+      f"followed by \${cost_by_draw[3,'mean']/1e9:,.2f} billion[\${cost_by_draw[3,'lower']/1e9:,.2f}b - \${cost_by_draw[3,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
+      f"\${cost_by_draw[8,'mean']/1e9:,.2f} billion[\${cost_by_draw[8,'lower']/1e9:,.2f}b - \${cost_by_draw[8,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
+
+print(f"The total cost of healthcare delivery in Malawi (from a health system perspective) between 2019 and 2035 was estimated at "
+      f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion[\${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b] under current constraints. "
+      f"Alternative scenarios reflecting improvements in supply chain efficiency and workforce capacity increased costs by "
+      f"{(cost_by_draw[5,'mean']/cost_by_draw[0,'mean'] - 1):.2%} to "
+      f"{(cost_by_draw[8,'mean']/cost_by_draw[0,'mean'] - 1):.2%}. "
+      f"Importantly, our 2019 cost estimates closely aligned with reported actual expenditures, supporting the reliability of our approach.")
+
+consumable_cost_by_draw = input_costs[(input_costs.cost_category == 'medical consumables') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
+print(f"Notably, we find that the improved consumable availability scenario results in a {(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1):.2%} "
+      f"increase in cost of medical consumables. However, when combined with expanded HRH, the increase in consumables dispensed is "
+      f"{(consumable_cost_by_draw[8]/consumable_cost_by_draw[0] - 1):.2%} more than the actual scenario because the health system is able to deliver more appointments.")
 
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
@@ -166,7 +190,7 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
 
     grouped_costs = edited_input_costs.groupby(['cost_category', _groupby_var, 'draw', 'stat'])['cost'].sum()
     # Format the 'cost' values before creating the LaTeX table
-    grouped_costs = grouped_costs.apply(lambda x: f"{float(x):,.2f}")
+    grouped_costs = grouped_costs.apply(lambda x: f"{float(x):,.0f}")
     # Remove underscores from all column values
 
     # Create a pivot table to restructure the data for LaTeX output
@@ -270,4 +294,7 @@ print(f"Inflow to Outflow ratio by consumable varies from "
       f"{round(min(inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean()),2)} "
       f"to {round(max(inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean()),2)}")
 
+inflow_to_outflow_ratio_by_item = inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean().reset_index().rename(columns = {0: 'inflow_to_outflow_ratio'})
+inflow_to_outflow_ratio_by_item[inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio == min(inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio)]['item_code']
+inflow_to_outflow_ratio_by_item[inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio == max(inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio)]['item_code']
 
