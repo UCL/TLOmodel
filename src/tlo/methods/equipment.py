@@ -27,7 +27,7 @@ class Equipment:
      running even if equipment is declared is not available. For this reason, the ``HSI_Event`` should declare equipment
      that is *essential* for the healthcare service in its ``__init__`` method. If the logic inside the ``apply`` method
      of the ``HSI_Event`` depends on the availability of equipment, then it can find the probability with which
-     item(s) will be available using :py:meth:`.HSI_Event.probability_equipment_available`.
+     item(s) will be available using :py:meth:`.HSI_Event.probability_all_equipment_available`.
 
      The data on the availability of equipment data refers to the proportion of facilities in a district of a
      particular level (i.e., the ``Facility_ID``) that do have that piece of equipment. In the model, we do not know
