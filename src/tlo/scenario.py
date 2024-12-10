@@ -63,7 +63,6 @@ import abc
 import argparse
 import datetime
 import json
-import pickle
 from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
@@ -72,7 +71,6 @@ from typing import List, Optional
 import numpy as np
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
 from tlo.util import str_to_pandas_date
 
 logger = logging.getLogger(__name__)
