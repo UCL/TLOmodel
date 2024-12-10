@@ -1439,7 +1439,6 @@ class TbScaleUpEvent(Event, PopulationScopeEventMixin):
 
         self.module.update_parameters_for_program_scaleup()
 
-
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     """
     * check for those with dates of active tb onset within last time-period
