@@ -43,7 +43,7 @@ outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
 #tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios-2024-12-07T133617Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('Tb_DAH_impact04-2024-12-10T124604Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -67,8 +67,8 @@ print(f"sample items available {outputfilepath / 'item_availbility_sample.xlsx'}
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH03
-    e = ImpactOfTbDaH03()
+    from scripts.hiv.projections_jan2023.tb_DAH_scenariosv2 import ImpactOfTbDaH04
+    e = ImpactOfTbDaH04()
     return tuple(e._scenarios.keys())
 
 def set_param_names_as_column_index_level_0(_df):
