@@ -70,7 +70,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     }
 
     PARAMETERS = {
-        'interv': Parameter(Types.REAL, 'data frame of intervention coverage by year'),
         'itn_district': Parameter(
             Types.REAL, 'data frame of ITN usage rates by district'
         ),
@@ -235,7 +234,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         # baseline characteristics
-        p['interv'] = workbook['interventions']
         p['itn_district'] = workbook['MAP_ITNrates']
         p['irs_district'] = workbook['MAP_IRSrates']
 
