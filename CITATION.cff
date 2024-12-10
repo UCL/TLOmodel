@@ -113,6 +113,11 @@ authors:
   family-names: Janoušková
   orcid: https://orcid.org/0000-0002-4104-0119
   affiliation: University College London
+  website: https://profiles.ucl.ac.uk/90260
+- given-names: Rachel
+  family-names: Murray-Watson
+  affiliation: Imperial College London
+  orcid: https://orcid.org/0000-0001-9079-5975
 repository-code: https://github.com/UCL/TLOmodel
 url: https://tlomodel.org
 abstract: Our fundamental aim is to develop the use of epidemiological and economic
