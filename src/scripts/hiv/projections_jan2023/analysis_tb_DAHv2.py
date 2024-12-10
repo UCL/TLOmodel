@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from collections import defaultdict
-import os
 import ast
 import math
 import itertools
@@ -34,17 +33,40 @@ from tlo.analysis.utils import (
 )
 
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+print('Script Start', datetime.datetime.now().strftime('%H:%M'))
+
+#creating folders to store results
 resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
-if not os.path.exists(outputfilepath):
-    os.makedirs(outputfilepath)
 
 #Tb_DAH_impact02-2024-12-01T185458Z
 #tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
 
+def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
+    """Returns paths of folders associated with a batch_file, in chronological order."""
+
+    # Print debug information
+    print(f"Scenario Filename: {scenario_filename}")
+    print(f"Outputs Directory: {outputs_dir}")
+
+    # Generate the stub by removing the '.py' extension
+    stub = scenario_filename.rstrip('.py')
+    print(f"Stub: {stub}")
+
+    # Collect matching folders
+    folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
+
+    # Sort the folders chronologically
+    folders.sort()
+
+    # Print results for further inspection
+    print(f"Found Folders: {folders}")
+
+    return folders
+
 results_folder = get_scenario_outputs('tb_DAH_scenarios-2024-12-07T133617Z', outputfilepath)
-print(f"The results folder contains: {results_folder}")
+
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
