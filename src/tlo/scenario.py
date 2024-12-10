@@ -446,13 +446,6 @@ class SampleRunner:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()
 
-        if sim.log_filepath is not None:
-            outputs = parse_log_file(sim.log_filepath)
-            for key, output in outputs.items():
-                if key.startswith("tlo."):
-                    with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
-                        pickle.dump(output, f)
-
     def run(self):
         """Run all samples for the scenario. Used by `tlo scenario-run` to run the scenario locally"""
         log_config = self.scenario.get_log_config()
