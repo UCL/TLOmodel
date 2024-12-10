@@ -8,16 +8,27 @@ import numpy as np
 from tlo import Date, logging
 from tlo.events import Event
 from tlo.population import Population
+from tlo.util import FACTOR_POP_DICT
+import pandas as pd
+
+
 
 if TYPE_CHECKING:
     from tlo import Module, Simulation
     from tlo.methods.healthsystem import HealthSystem
+
+# Pointing to the logger in events
+logger_chains = logging.getLogger("tlo.simulation")
+logger_chains.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
+
+debug_chains = True
+
 
 # Declare the level which will be used to represent the merging of levels '1b' and '2'
 LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2 = "2"
@@ -184,13 +195,141 @@ class HSI_Event:
                 item_codes=self._EQUIPMENT,
                 facility_id=self.facility_info.id
             )
+            
+    def store_chains_to_do_before_event(self) -> tuple[bool, pd.Series]:
+        """ This function checks whether this event should be logged as part of the event chains, and if so stored required information before the event has occurred. """
+        
+        # Initialise these variables
+        print_chains = False
+        row_before = pd.Series()
+        
+        # Only print event if it belongs to modules of interest and if it is not in the list of events to ignore
+        # if (self.module in self.sim.generate_event_chains_modules_of_interest) and
+        if all(sub not in str(self) for sub in self.sim.generate_event_chains_ignore_events):
+        
+        # Will eventually use this once I can actually GET THE NAME OF THE SELF
+        # if not set(self.sim.generate_event_chains_ignore_events).intersection(str(self)):
+                
+            if self.target != self.sim.population:
+            
+                # In the case of HSI events, only individual events should exist and therefore be logged
+                print_chains = True
+                
+                # Save row for comparison after event has occurred
+                row_before = self.sim.population.props.loc[abs(self.target)].copy().fillna(-99999)
+
+                if self.sim.debug_generate_event_chains:
+                    # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+                    row = self.sim.population.props.loc[[abs(self.target)]]
+                    row['person_ID'] = self.target
+                    row['event'] = str(self)
+                    row['event_date'] = self.sim.date
+                    row['when'] = 'Before'
+                
+                    try:
+                        row['appt_footprint'] = str(self.EXPECTED_APPT_FOOTPRINT)
+                        row['level'] = self.facility_info.level
+                    except:
+                        row['appt_footprint'] = 'N/A'
+                        row['level'] = 'N/A'
+                    self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+                
+            else:
+                # Once this has been removed from Chronic Syndrome mock module, make this a Runtime Error
+                # raise RuntimeError("Cannot have population-wide HSI events")
+                logger.debug(
+                    key="message",
+                    data=(
+                        "Cannot have population-wide HSI events"
+                    ),
+                )
+
+                
+        return print_chains, row_before
+        
+    def store_chains_to_do_after_event(self, print_chains, row_before, footprint) -> dict:
+        """ If print_chains=True, this function logs the event and identifies and logs the any property changes that have occured to one or multiple individuals as a result of the event taking place. """
+        if print_chains:
+            # For HSI event, this will only ever occur for individual events
+            
+            row_after = self.sim.population.props.loc[abs(self.target)].fillna(-99999)
+            
+            # Create and store dictionary of changes. Note that person_ID, event, event_date, appt_foot, and level
+            # will be stored regardless of whether individual experienced property changes.
+
+            # Add event details
+            
+            try:
+                record_footprint = str(footprint)
+                record_level = self.facility_info.level
+            except:
+                record_footprint = 'N/A'
+                record_level = 'N/A'
+                
+            link_info = {
+                'person_ID': self.target,
+                'event' : str(self),
+                'event_date' : self.sim.date,
+                'appt_footprint' : record_footprint,
+                'level' : record_level,
+            }
+            
+            # Add changes to properties
+            for key in row_before.index:
+                if row_before[key] != row_after[key]: # Note: used fillna previously
+                    link_info[key] = row_after[key]
+            
+            chain_links = {self.target : str(link_info)}
+
+            if self.sim.debug_generate_event_chains:
+                # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
+                row = self.sim.population.props.loc[[abs(self.target)]]
+                row['person_ID'] = self.target
+                row['event'] = str(self)
+                row['event_date'] = self.sim.date
+                row['when'] = 'After'
+                row['appt_footprint'] = record_footprint
+                row['level'] = record_level
+                self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
+            
+        return chain_links
+        
 
     def run(self, squeeze_factor):
         """Make the event happen."""
+
+        
+        if self.sim.generate_event_chains and self.target != self.sim.population:
+            print_chains, row_before = self.store_chains_to_do_before_event()
+              
+            footprint = self.EXPECTED_APPT_FOOTPRINT
+
         updated_appt_footprint = self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
         self._run_after_hsi_event()
+        
+        
+        if self.sim.generate_event_chains and self.target != self.sim.population:
+
+            # If the footprint has been updated when the event ran, change it here
+            if updated_appt_footprint is not None:
+                footprint = updated_appt_footprint
+            
+            chain_links = self.store_chains_to_do_after_event(print_chains, row_before, str(footprint))
+            
+            if len(chain_links)>0:
+            
+                pop_dict = {i: '' for i in range(FACTOR_POP_DICT)}
+               # pop_dict = {i: '' for i in range(1000)} # Always include all possible individuals
+
+                pop_dict.update(chain_links)
+                
+                logger_chains.info(key='event_chains',
+                            data = pop_dict,
+                            description='Links forming chains of events for simulated individuals')
+                
         return updated_appt_footprint
+        
 
     def get_consumables(
         self,
