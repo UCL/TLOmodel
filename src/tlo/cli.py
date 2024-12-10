@@ -254,6 +254,7 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     pip install -r requirements/base.txt
     env | grep "^AZ_" | while read line; do echo "$line"; done
     {py_opt} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    tlo --config-file tlo.example.conf parse-log {working_dir}/{{draw_number}}/{{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
