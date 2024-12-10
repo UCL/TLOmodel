@@ -51,11 +51,17 @@ def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     print(f"Outputs Directory: {outputs_dir}")
 
     # Generate the stub by removing the '.py' extension
-    stub = scenario_filename.rstrip('.py')
+    stub, _ = os.path.splitext(scenario_filename)
     print(f"Stub: {stub}")
+   # stub = scenario_filename.rstrip('.py')
+  #  print(f"Stub: {stub}")
 
     # Collect matching folders
-    folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
+    #folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
+    folders = [
+        Path(f.path) for f in os.scandir(outputs_dir)
+        if f.is_dir() and f.name.startswith(stub)
+    ]
 
     # Sort the folders chronologically
     folders.sort()
