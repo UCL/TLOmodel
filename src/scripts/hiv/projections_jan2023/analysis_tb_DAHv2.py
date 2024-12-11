@@ -39,12 +39,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
 
-#Tb_DAH_impact02-2024-12-01T185458Z
-#tb_DAH_scenarios-2024-12-07T133617Z
-##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
-#Tb_DAH_impact04-2024-12-11T120711Z
-
-results_folder = get_scenario_outputs('Tb_DAH_impact04-2024-12-11T120711Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('Tb_DAH_impact04-2024-12-11T192630Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -55,16 +50,6 @@ params.to_excel(outputfilepath / "parameters.xlsx")
 
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary']['Consumables'].keys()}")
-print(f"capcity summary']: {log['tlo.methods.healthsystem.summary']['Capacity'].keys()}")   #HR capacity
-print(f"Keys of staff capcity by facility level']: {log['tlo.methods.healthsystem.summary']['Capacity_By_OfficerType_And_FacilityLevel'].keys()}")
-print(f"Keys of healthburden['tlo.methods.healthburden']['dalys']: {log['tlo.methods.healthburden']['dalys']['tb_inf'].keys()}")
-
-# Assuming Item_Available is a DataFrame
-item_available = log['tlo.methods.healthsystem.summary']['Consumables']['Item_Available']
-print(f"List of consumables['tlo.methods.healthsystem.summary'] Item_Available: {list(item_available)}")
-print(f"sample items available {outputfilepath / 'item_availbility_sample.xlsx'}")
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
