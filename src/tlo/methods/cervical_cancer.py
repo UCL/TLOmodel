@@ -43,6 +43,12 @@ hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
 polling_frequency = 1
 
 def screen_population(year, p, eligible_population, df, rng, sim, module):
+    """Function to define whether individual will be screened and which screening is to be assigned to individual.
+    :param year: the year of the screening
+    :param p: parameters
+    :param eligible_population: population that can be screened based on age, sex, HIV status
+    :param df: entire population
+    """
     screening_methods = {
         'VIA': {
             'prob_key': 'prob_via_screen',
@@ -72,6 +78,11 @@ def screen_population(year, p, eligible_population, df, rng, sim, module):
             tclose=None
         )
 def perform_cin_procedure(year, p, person_id, hs, module, sim):
+    """Function to decide treatment for individuals with CIN
+    :param year: the year of the screening
+    :param p: parameters
+    :param person_id: person of interest
+    """
     treatment_methods = {
         'Thermoablation': {
             'event_class': HSI_CervicalCancer_Thermoablation_CIN
@@ -423,7 +434,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         #     Symptom(name='chosen_via_screening_for_cin_cervical_cancer',
         #             odds_ratio_health_seeking_in_adults=100.00)
         # )
-# todo: in order to implement screening for cervical cancer creating a dummy symptom - likely there is a better way
 
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='chosen_via_screening_for_cin_cervical_cancer',
@@ -777,11 +787,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             )
         ] = self.daly_wts['stage_1_3_treated']
 
-        # todo: check
-        # I'm a bit surprised this works, because the masks being used are wrt to df, but the indexing
-        # into a series with a difference index. Maybe it only works as long as everyone is alive!?
-
-
         # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
             (df.ce_hpv_cc_status == "stage4") &
@@ -935,17 +940,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[has_cin1, 'ce_hpv_cc_status']
         )
 
-
-
-        # todo:
-        # this is also broadcasting to all dataframe (including dead peple and never alive people,
-        # potentially).
-        #
-        # Also, it will over-write to False those people not in any of those categories. I can see
-        # that this will not violate the logic, but the safest thing would be to also include in the
-        # chanied union statement the current value, in order to absolute prevent reversions... i.e.
-        # add in ce_cc_ever on the end of this line.
-
         df.loc[
             (df['is_alive']) & (~df['ce_cc_ever']),  # Apply only if is_alive is True and ce_cc_ever is not True
             'ce_cc_ever'
@@ -957,19 +951,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------------------- SCREENING FOR CERVICAL CANCER USING XPERT HPV TESTING AND VIA---------------
         # A subset of women aged 30-50 will receive a screening test
 
-        # in future this may be triggered by family planning visit
-
-        # todo:
-        # Instead, for the individuals that are chosen to be screened, create and schedule the HSI
-        # event directly.
-        #
-        # e.g. for each individual to be screened... make an HSI_Event_CervicalCancer_Screening.....
-        # and in that event, do whatever is required for the screening. (might be the same as happens
-        # in the generic appointment, in which case point them both to the same function)
-
-
-        #todo: create a date of last via screen (and same for xpert) and make it a condition of screening
-        # that last screen was x years ago
 
         df.ce_selected_for_via_this_month = False
         df.ce_selected_for_xpert_this_month = False
@@ -984,20 +965,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         days_since_last_via = (self.sim.date - df.ce_date_via).dt.days
         days_since_last_xpert = (self.sim.date - df.ce_date_xpert).dt.days
 
-        # todo: screening probability depends on date last screen and result (who guidelines)
-
-        # eligible_population = (
-        #     (df.is_alive) &
-        #     (df.sex == 'F') &
-        #     (df.age_years >= screening_min_age) &
-        #     (df.age_years < screening_max_age) &
-        #     (~df.ce_current_cc_diagnosed) &
-        #     (
-        #         pd.isna(df.ce_date_last_screened) |
-        #         ((days_since_last_via > 1825) & (days_since_last_xpert > 1825)) |
-        #         ((days_since_last_screen > 730) & (days_since_last_thermoabl < 1095))
-        #     )
-        # )
 
         # Define screening age and interval criteria based on HIV status
         age_min = np.where(df.hv_diagnosed, p['screening_min_age_hv_pos'], p['screening_min_age_hv_neg'])
@@ -1020,9 +987,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         )
                 )
         )
-
-        # todo: consider fact that who recommend move towards xpert screening away from via
-        # todo: start with via as screening tool and move to xpert in about 2024
 
         m = self.module
         rng = m.rng
@@ -1080,9 +1044,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             date_min = self.sim.date
             date_max = self.sim.date + pd.DateOffset(days=days_spread)
             df.loc[person_id, 'ce_date_death'] = pd.to_datetime(rng.uniform(date_min.value, date_max.value), unit='ns')
-
-    # todo: distribute death dates across next 30 days
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
@@ -1188,9 +1149,6 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         year = self.sim.date.year
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
-
-        # todo: if positive on xpert then do via if hiv negative but go straight to thermoablation
-        # todo: if hiv positive ?
 
         # Check consumables are available
         cons_avail = self.get_consumables(
@@ -1313,8 +1271,6 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
         p = self.sim.modules['CervicalCancer'].parameters
 
         # Use a biopsy to diagnose whether the person has cervical cancer
-        # todo: request consumables needed for this and elsewhere
-
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='biopsy_for_cervical_cancer',
             hsi_event=self
@@ -1585,10 +1541,6 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
 
         assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "ce_date_treatment"])
-
-        # todo:
-        # could use pd.Dateoffset(years =...) instead of the number of days for ease for
-        # reading/comprehension
 
         if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
