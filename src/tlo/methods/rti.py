@@ -2955,9 +2955,9 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     if is_alive_after_RTI:
                         # Store permanent disability incurred now to be accessed when Recovery Event is invoked.
                         df.loc[person_id,'rt_disability_permanent'] = NN_model.loc[count,'rt_disability_permanent']
-                        self.sim.schedule_event(RTI_NNResolution_Recovery_Event(self.module, person_id), self.sim.date + DateOffset(days=duration_days))
+                        self.sim.schedule_event(RTI_NNResolution_Recovery_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
                     else:
-                        self.sim.schedule_event(RTI_NNResolution_Death_Event(self.module, person_id), self.sim.date + DateOffset(days=duration_days))
+                        self.sim.schedule_event(RTI_NNResolution_Death_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
                 
                 count += 1
         
