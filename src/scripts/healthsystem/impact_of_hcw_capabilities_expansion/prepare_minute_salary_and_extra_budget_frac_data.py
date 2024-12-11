@@ -202,6 +202,7 @@ for s in total_cost.columns[1:]:
 
 # get the staff increase rate: 2034 vs 2025
 hr_increase_rates_2034 = pd.DataFrame(integrated_scale_up_factor - 1.0)
+hr_avg_yearly_increase_rate = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
 
 # Checked that for s_2, the integrated scale up factors of C/N/P cadres are comparable with shortage estimates from \
 # She et al 2024: https://human-resources-health.biomedcentral.com/articles/10.1186/s12960-024-00949-2
