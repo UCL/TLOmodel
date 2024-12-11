@@ -1504,8 +1504,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # add prevalence in children above 5y, to see if they are 0 as they should
             # add proportions of children 5 years old and above who are wasted to the dictionary
             above5s = df.loc[df.is_alive & df.age_exact_years >= 5]
-            wasting_prev_dict[f'mod__5y+'] = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum() / len(above5s)
-            wasting_prev_dict[f'sev__5y+'] = (above5s.un_WHZ_category == 'WHZ<-3').sum() / len(above5s)
+            wasting_prev_dict['mod__5y+'] = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum() / len(above5s)
+            wasting_prev_dict['sev__5y+'] = (above5s.un_WHZ_category == 'WHZ<-3').sum() / len(above5s)
 
         # add to dictionary proportion of all moderately/severely wasted children under 5 years
         wasting_prev_dict['total_mod_under5_prop'] = (under5s.un_WHZ_category == '-3<=WHZ<-2').sum() / len(under5s)

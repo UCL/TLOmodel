@@ -186,7 +186,7 @@ class WastingAnalyses:
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
                     fmt='o', color='#000', label="GBD")
-        ax.set_title(f'Direct deaths due to wasting')
+        ax.set_title('Direct deaths due to wasting')
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc=2)
