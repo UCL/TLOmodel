@@ -268,8 +268,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         "transition_screening_year": Parameter(
             Types.REAL, "transition_screening_year"
         ),
-        "min_age_hv": Parameter(
-            Types.REAL, "min_age_hv"
+        "min_age_hpv": Parameter(
+            Types.REAL, "min_age_hpv"
         ),
         "screening_min_age_hv_neg": Parameter(
             Types.REAL, "screening_min_age_hv_neg"
@@ -801,14 +801,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         return disability_series_for_alive_persons
 
-
-    def onset_xpert_properties(self, idx: pd.Index):
-        """Represents the screened property for the person_id given in `idx`"""
-        df = self.sim.population.props
-        if df.loc[idx, 'ce_selected_for_xpert_this_month'].any():
-            df.loc[idx, 'ce_ever_screened'] = True
-        else:
-            df.loc[idx, 'ce_ever_screened'] = False
+    #
+    # def onset_xpert_properties(self, idx: pd.Index):
+    #     """Represents the screened property for the person_id given in `idx`"""
+    #     df = self.sim.population.props
+    #     if df.loc[idx, 'ce_selected_for_xpert_this_month'].any():
+    #         df.loc[idx, 'ce_ever_screened'] = True
+    #     else:
+    #         df.loc[idx, 'ce_ever_screened'] = False
 
     def do_at_generic_first_appt(
         self,
@@ -888,14 +888,14 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         if self.sim.date < given_date:
 
-            women_over_15_nhiv_idx = df.index[(df["age_years"] > p['min_age_hv']) & (df["sex"] == 'F') & ~df["hv_inf"]]
+            women_over_15_nhiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & ~df["hv_inf"]]
 
             df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
                 ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
                 size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
             )
 
-            women_over_15_hiv_idx = df.index[(df["age_years"] > p['min_age_hv']) & (df["sex"] == 'F') & df["hv_inf"]]
+            women_over_15_hiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & df["hv_inf"]]
 
             df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
                 ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
@@ -1672,17 +1672,17 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Current counts, total
         out.update({
             f'total_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > p['min_age_hv'])].ce_hpv_cc_status.value_counts().items()})
+                                               (df['age_years'] > p['min_age_hpv'])].ce_hpv_cc_status.value_counts().items()})
 
         # Current counts, total hiv negative
         out.update({
             f'total_hivneg_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > p['min_age_hv']) & (~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+                                               (df['age_years'] > p['min_age_hpv']) & (~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
 
         # Current counts, total hiv positive
         out.update({
             f'total_hivpos_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > p['min_age_hv']) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+                                               (df['age_years'] > p['min_age_hpv']) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
 
         out.update({
             f'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
@@ -1787,23 +1787,23 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_diagnosed = ((df['is_alive']) & (df['ce_ever_diagnosed'])).sum()
 
         n_women_alive = ((df['is_alive']) & (df['sex'] == 'F')).sum()
-        n_women_alive_1549 = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hv'])
+        n_women_alive_1549 = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])
                               & (df['age_years'] < 50)).sum()
 
-        n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hv'])
+        n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])
                               & df['va_hpv']).sum()
 
-        n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hv'])
+        n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])
                                     & df['ce_hiv_unsuppressed']).sum()
 
         n_women_hivneg = ((df['is_alive']) &
                           (df['sex'] == 'F') &
-                          (df['age_years'] > p['min_age_hv']) &
+                          (df['age_years'] > p['min_age_hpv']) &
                           (~df['hv_inf'])).sum()
 
         n_women_hivpos = ((df['is_alive']) &
                           (df['sex'] == 'F') &
-                          (df['age_years'] > p['min_age_hv']) &
+                          (df['age_years'] > p['min_age_hpv']) &
                           (df['hv_inf'])).sum()
 
         rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
