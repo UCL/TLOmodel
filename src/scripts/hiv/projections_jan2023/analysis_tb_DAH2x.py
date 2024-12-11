@@ -1,5 +1,5 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
-#python src/scripts/hiv/projections_jan2023/analysis_tb_DAHv2.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+#python src/scripts/hiv/projections_jan2023/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
 
 import argparse
 from pathlib import Path
@@ -53,7 +53,7 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.tb_DAH_scenariosv2 import ImpactOfTbDaH04
+    from scripts.hiv.projections_jan2023.tb_DAH_scenarios2x import ImpactOfTbDaH04
     e = ImpactOfTbDaH04()
     return tuple(e._scenarios.keys())
 
