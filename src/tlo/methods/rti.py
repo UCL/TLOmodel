@@ -6,11 +6,13 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, List
+from collections import Counter
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, Date
+
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -51,6 +53,16 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'Lifestyle',
         'HealthSystem',
     }
+    
+    # Counters tracking use of HealthSystem by RTI module under use of emulator
+    HS_Use_Type = [
+        'Level2_AccidentsandEmerg', 'Level2_DiagRadio', 'Level2_EPI',
+        'Level2_IPAdmission', 'Level2_InpatientDays', 'Level2_MajorSurg',
+        'Level2_MinorSurg', 'Level2_Over5OPD', 'Level2_Tomography', 'Level2_Under5OPD'
+    ]
+
+    # Initialize the counter with all items set to 0
+    HS_Use_by_RTI = Counter({col: 0 for col in HS_Use_Type})
 
     INJURY_INDICES = range(1, 9)
 
@@ -1073,6 +1085,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                                                          'being able to be provided'),
         'rt_recovery_no_med': Property(Types.BOOL, 'recovery without medical intervention True/False'),
         'rt_disability': Property(Types.REAL, 'disability weight for current month'),
+        'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
         'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
         'rt_med_int': Property(Types.BOOL, 'whether this person is currently undergoing medical treatment'),
         'rt_in_icu_or_hdu': Property(Types.BOOL, 'whether this person is currently in ICU for RTI'),
@@ -1492,6 +1505,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'rt_no_med_death'] = False
         df.loc[df.is_alive, 'rt_unavailable_med_death'] = False
         df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
+        df.loc[df.is_alive, 'rt_disability_permanent'] = 0  # default: no DALY
         df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
         df.loc[df.is_alive, 'rt_med_int'] = False
         df.loc[df.is_alive, 'rt_in_icu_or_hdu'] = False
@@ -2035,6 +2049,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                                                 selected_for_rti_inj.loc[DALYweightunderlimit])
         df.loc[DALYweightunderlimit, 'rt_disability'] = 0
         assert (df.loc[injured_index, 'rt_disability'] > 0).all()
+
 
     def rti_alter_daly_post_treatment(self, person_id, codes):
         """
@@ -2737,7 +2752,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
 #   that represent disease events for particular persons.
 # ---------------------------------------------------------------------------------------------------------
 
-
 class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular RTI event which handles all the initial RTI related changes to the dataframe. It can be thought of
      as the actual road traffic accident occurring. Specifically the event decides who is involved in a road traffic
@@ -2796,6 +2810,30 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         self.imm_death_proportion_rti = p['imm_death_proportion_rti']
         self.prob_bleeding_leads_to_shock = p['prob_bleeding_leads_to_shock']
         self.rt_emergency_care_ISS_score_cut_off = p['rt_emergency_care_ISS_score_cut_off']
+
+
+    def sample_NN_model(self, N):
+        data = {
+        "is_alive_after_RTI": np.random.choice([True, False], size=N),
+        "duration_days": np.random.randint(0, 366, size=N),
+        "rt_disability_average": np.random.uniform(0, 1, size=N),
+        "rt_disability_permanent": np.random.uniform(0, 1, size=N),
+        
+        "Level2_AccidentsandEmerg": np.random.uniform(0, 3, size=N),
+        "Level2_DiagRadio": np.random.uniform(0, 3, size=N),
+        "Level2_EPI": np.random.uniform(0, 3, size=N),
+        "Level2_IPAdmission": np.random.uniform(0, 3, size=N),
+        "Level2_MajorSurg": np.random.uniform(0, 3, size=N),
+        "Level2_MinorSurg": np.random.uniform(0, 3, size=N),
+        "Level2_Over5OPD": np.random.uniform(0, 3, size=N),
+        "Level2_Tomography": np.random.uniform(0, 3, size=N),
+        "Level2_Under5OPD": np.random.uniform(0, 3, size=N),
+        
+        # Adding the 'Level2_InpatientDays' column with values between 0 and 200
+        "Level2_InpatientDays": np.random.randint(0, 201, size=N)
+        }
+    
+        return pd.DataFrame(data)
 
     def apply(self, population):
         """Apply this event to the population.
@@ -2872,45 +2910,64 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[selected_for_rti, 'rt_road_traffic_inc'] = True
         # Set the date that people were injured to now
         df.loc[selected_for_rti, 'rt_date_inj'] = now
-        
-        # This is where we want to replace normal course of events with emulator
-        # We have to:
-        # 1. Sample new properties for individual
-        
-        # For now, don't consider properties of individual when sampling outcome. All we care about is the number of samples.
-        # NN_model = sample_NN_model(len(selected_for_rti))
- 
-        # 2. Change current properties of the individual
-        count = 0
 
-        for person_id in selected_for_rti:
+        # Decide whether to use emulator or not
+        use_emulator = True
+        
+        if use_emulator:
+            # This is where we want to replace normal course of events for RTI with emulator.
 
-            if NN_model.loc[count,'is_alive_after_RTI'] is False and NN_model.loc[count,'duration_days'] == 0:
+            # First, sample outcomes for individuals which were selected_for_rti.
+            # For now, don't consider properties of individual when sampling outcome. All we care about is the number of samples.
+            NN_model = self.sample_NN_model(len(selected_for_rti))
+     
+            # HS USAGE
+            # Get the total number of different types of appts accessed as a result of this polling event and add to rolling count.
+            for column in self.sim.modules['RTI'].HS_Use_Type:
+                self.sim.modules['RTI'].HS_Use_by_RTI[column] += NN_model[column].sum()  # Sum all values in the column
+     
+            # Change current properties of the individual and schedule resolution of event.
+            count = 0
+            for person_id in selected_for_rti:
             
-                # Keep track of who experience pre-hospital mortality with the property rt_imm_death
-                df.loc[person_id, 'rt_imm_death'] = True
-                # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
-                self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
-                                                        originating_module=self.module)
-            else:
-                # Set disability to what will be the average over duration of the episode
-                df.loc[person_id,'rt_dalys'] = NN_model.loc[count,'RT_disability_average']
+                is_alive_after_RTI = NN_model.loc[count,'is_alive_after_RTI']
+                # Why does this require an int wrapper to work with DateOffset?
+                duration_days = int(NN_model.loc[count,'duration_days'])
                 
-                # Schedule resolution
-                self.sim.schedule_event(RTI_Emulated_Resolution(self.module, person_id, is_alive_after_RT, rt_disability_permament), self.sim.date +
-                                        DateOffset(days=duration_days))
-                                        
-                # Add HS use to running count
-                #self.running_counter_of_HSIs_used += HSI_counters
-            
-            count += 1
+                # Individual experiences an immediate death
+                if is_alive_after_RTI is False and duration_days == 0:
+                    # Keep track of who experience pre-hospital mortality with the property rt_imm_death
+                    # Do we need to keep this? Could probably ignore if using emulator.
+                    df.loc[person_id, 'rt_imm_death'] = True
+                    # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
+                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
+                                                            originating_module=self.module)
+                                                            
+                # Else individual doesn't immediately die, therefore schedule resolution
+                else:
+                    # Set disability to what will be the average over duration of the episode
+                    df.loc[person_id,'rt_disability'] = NN_model.loc[count,'rt_disability_average']
+                    
+                    # Make sure this person is not 'discoverable' by polling event next month.
+                    df.loc[person_id,'rt_inj_severity'] = 'mild' # instead of "none", but actually we don't know how severe it is
+                    
+                    # Schedule resolution
+                    if is_alive_after_RTI:
+                        # Store permanent disability incurred now to be accessed when Recovery Event is invoked.
+                        df.loc[person_id,'rt_disability_permanent'] = NN_model.loc[count,'rt_disability_permanent']
+                        self.sim.schedule_event(RTI_NNResolution_Recovery_Event(self.module, person_id), self.sim.date + DateOffset(days=duration_days))
+                    else:
+                        self.sim.schedule_event(RTI_NNResolution_Death_Event(self.module, person_id), self.sim.date + DateOffset(days=duration_days))
+                
+                count += 1
         
-        # 3. Schedule resolution of event + log of HS usage by individual
-        
-        # N_samples = len(selected_for_rti)
-        # For all of these, select
-        
-        # if is_alive_after_RTI == False and duration_days == 0:
+        else:
+    
+            # ========================= Take those involved in a RTI and assign some to death ==============================
+            # This section accounts for pre-hospital mortality, where a person is so severy injured that they die before
+            # being able to seek medical care
+            selected_to_die = selected_for_rti[self.imm_death_proportion_rti >
+                                               self.module.rng.random_sample(size=len(selected_for_rti))]
             # Keep track of who experience pre-hospital mortality with the property rt_imm_death
             df.loc[selected_to_die, 'rt_imm_death'] = True
             # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
@@ -2918,150 +2975,128 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
                                                         originating_module=self.module)
                                                         
-        # For all remaining individuals,
-    
-        # UPDATED
-        # ========================= Take those involved in a RTI and assign some to death ==============================
-                
-        # REMOVE BECAUSE OUTDATED
-        # This section accounts for pre-hospital mortality, where a person is so severy injured that they die before
-        # being able to seek medical care
-        #selected_to_die = selected_for_rti[self.imm_death_proportion_rti >
-         #                                  self.module.rng.random_sample(size=len(selected_for_rti))]
+            # ============= Take those remaining people involved in a RTI and assign injuries to them ==================
+            # Drop those who have died immediately
+            selected_for_rti_inj_idx = selected_for_rti.drop(selected_to_die)
+            # Check that none remain
+            assert len(selected_for_rti_inj_idx.intersection(selected_to_die)) == 0
+            # take a copy dataframe, used to get the index of the population affected by RTI
+            selected_for_rti_inj = df.loc[selected_for_rti_inj_idx]
+            # Again make sure that those who have injuries assigned to them are alive, involved in a crash and didn't die on
+            # scene
+            selected_for_rti_inj = selected_for_rti_inj.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
+            # To stop people who have died from causes outside of the RTI module progressing through the model, remove
+            # any person with the condition 'cause_of_death' is not null
+            died_elsewhere_index = selected_for_rti_inj[~ selected_for_rti_inj['cause_of_death'].isnull()].index
+            # drop the died_elsewhere_index from selected_for_rti_inj
+            selected_for_rti_inj.drop(died_elsewhere_index, inplace=True)
+            # Create shorthand link to RTI module
+            road_traffic_injuries = self.sim.modules['RTI']
 
+            # if people have been chosen to be injured, assign the injuries using the assign injuries function
+            description = road_traffic_injuries.rti_assign_injuries(len(selected_for_rti_inj))
+            # replace the nan values with 'none', this is so that the injuries can be copied over from this temporarily used
+            # pandas dataframe will fit in with the categories in the columns rt_injury_1 through rt_injury_8
+            description = description.replace('nan', 'none')
+            # set the index of the description dataframe, so that we can join it to the selected_for_rti_inj dataframe
+            description = description.set_index(selected_for_rti_inj.index)
+            # copy over values from the assign injury dataframe to self.sim.population.props
 
-                                                    
-                                                    
-        # All of the following can be removed under the assumption that this data is capturing the incidence as well.
-        # Replace with
-        # Update of current relevant variables
-        
-        # Those that are sampled are
-        
-        
-                                                    
-        # ============= Take those remaining people involved in a RTI and assign injuries to them ==================
-        # Drop those who have died immediately
-        selected_for_rti_inj_idx = selected_for_rti.drop(selected_to_die)
-        # Check that none remain
-        assert len(selected_for_rti_inj_idx.intersection(selected_to_die)) == 0
-        # take a copy dataframe, used to get the index of the population affected by RTI
-        selected_for_rti_inj = df.loc[selected_for_rti_inj_idx]
-        # Again make sure that those who have injuries assigned to them are alive, involved in a crash and didn't die on
-        # scene
-        selected_for_rti_inj = selected_for_rti_inj.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
-        # To stop people who have died from causes outside of the RTI module progressing through the model, remove
-        # any person with the condition 'cause_of_death' is not null
-        died_elsewhere_index = selected_for_rti_inj[~ selected_for_rti_inj['cause_of_death'].isnull()].index
-        # drop the died_elsewhere_index from selected_for_rti_inj
-        selected_for_rti_inj.drop(died_elsewhere_index, inplace=True)
-        # Create shorthand link to RTI module
-        road_traffic_injuries = self.sim.modules['RTI']
+            df.loc[selected_for_rti_inj.index, 'rt_ISS_score'] = \
+                description.loc[selected_for_rti_inj.index, 'ISS'].astype(int)
+            df.loc[selected_for_rti_inj.index, 'rt_MAIS_military_score'] = \
+                description.loc[selected_for_rti_inj.index, 'MAIS'].astype(int)
+            # ======================== Apply the injuries to the population dataframe ======================================
+            # Find the corresponding column names
+            injury_columns = pd.Index(RTI.INJURY_COLUMNS)
+            matching_columns = description.columns.intersection(injury_columns)
+            for col in matching_columns:
+                df.loc[selected_for_rti_inj.index, col] = description.loc[selected_for_rti_inj.index, col]
+            # Run assert statements to make sure the model is behaving as it should
+            # All those who are injured in a road traffic accident have this noted in the property 'rt_road_traffic_inc'
+            assert df.loc[selected_for_rti, 'rt_road_traffic_inc'].all()
+            # All those who are involved in a road traffic accident have these noted in the property 'rt_date_inj'
+            assert (df.loc[selected_for_rti, 'rt_date_inj'] != pd.NaT).all()
+            # All those who are injures and do not die immediately have an ISS score > 0
+            assert len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_ISS_score'] > 0) == \
+                   len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death])
+            # ========================== Determine who will experience shock from blood loss ==============================
+            internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
+            df = self.sim.population.props
 
-        # if people have been chosen to be injured, assign the injuries using the assign injuries function
-        description = road_traffic_injuries.rti_assign_injuries(len(selected_for_rti_inj))
-        # replace the nan values with 'none', this is so that the injuries can be copied over from this temporarily used
-        # pandas dataframe will fit in with the categories in the columns rt_injury_1 through rt_injury_8
-        description = description.replace('nan', 'none')
-        # set the index of the description dataframe, so that we can join it to the selected_for_rti_inj dataframe
-        description = description.set_index(selected_for_rti_inj.index)
-        # copy over values from the assign injury dataframe to self.sim.population.props
+            potential_shock_index, _ = \
+                road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
+                                                                  internal_bleeding_codes)
+            rand_for_shock = self.module.rng.random_sample(len(potential_shock_index))
+            shock_index = potential_shock_index[self.prob_bleeding_leads_to_shock > rand_for_shock]
+            df.loc[shock_index, 'rt_in_shock'] = True
+            # log the percentage of those with RTIs in shock
+            percent_in_shock = \
+                len(shock_index) / len(selected_for_rti_inj) if len(selected_for_rti_inj) > 0 else float("nan")
+            logger.info(key='Percent_of_shock_in_rti',
+                        data={'Percent_of_shock_in_rti': percent_in_shock},
+                        description='The percentage of those assigned injuries who were also assign the shock property')
+            # ========================== Decide survival time without medical intervention ================================
+            # todo: find better time for survival data without med int for ISS scores
+            # Assign a date in the future for which when the simulation reaches that date, the person's mortality will be
+            # checked if they haven't sought care
+            df.loc[selected_for_rti_inj.index, 'rt_date_death_no_med'] = now + DateOffset(days=7)
+            # ============================ Injury severity classification =================================================
+            # Find those with mild injuries and update the rt_inj_severity property so they have a mild injury
+            injured_this_month = df.loc[selected_for_rti_inj.index]
+            mild_rti_idx = injured_this_month.index[injured_this_month.is_alive & injured_this_month['rt_ISS_score'] < 15]
+            df.loc[mild_rti_idx, 'rt_inj_severity'] = 'mild'
+            # Find those with severe injuries and update the rt_inj_severity property so they have a severe injury
+            severe_rti_idx = injured_this_month.index[injured_this_month['rt_ISS_score'] >= 15]
+            df.loc[severe_rti_idx, 'rt_inj_severity'] = 'severe'
+            # check that everyone who has been assigned an injury this month has an associated injury severity
+            assert sum(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death & (df.rt_date_inj == now), 'rt_inj_severity']
+                       != 'none') == len(selected_for_rti_inj.index)
+            # Find those with polytrauma and update the rt_polytrauma property so they have polytrauma
+            polytrauma_idx = description.loc[description.Polytrauma].index
+            df.loc[polytrauma_idx, 'rt_polytrauma'] = True
+            # Assign daly weights for each person's injuries with the function rti_assign_daly_weights
+            road_traffic_injuries.rti_assign_daly_weights(selected_for_rti_inj.index)
 
-        df.loc[selected_for_rti_inj.index, 'rt_ISS_score'] = \
-            description.loc[selected_for_rti_inj.index, 'ISS'].astype(int)
-        df.loc[selected_for_rti_inj.index, 'rt_MAIS_military_score'] = \
-            description.loc[selected_for_rti_inj.index, 'MAIS'].astype(int)
-        # ======================== Apply the injuries to the population dataframe ======================================
-        # Find the corresponding column names
-        injury_columns = pd.Index(RTI.INJURY_COLUMNS)
-        matching_columns = description.columns.intersection(injury_columns)
-        for col in matching_columns:
-            df.loc[selected_for_rti_inj.index, col] = description.loc[selected_for_rti_inj.index, col]
-        # Run assert statements to make sure the model is behaving as it should
-        # All those who are injured in a road traffic accident have this noted in the property 'rt_road_traffic_inc'
-        assert df.loc[selected_for_rti, 'rt_road_traffic_inc'].all()
-        # All those who are involved in a road traffic accident have these noted in the property 'rt_date_inj'
-        assert (df.loc[selected_for_rti, 'rt_date_inj'] != pd.NaT).all()
-        # All those who are injures and do not die immediately have an ISS score > 0
-        assert len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_ISS_score'] > 0) == \
-               len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death])
-        # ========================== Determine who will experience shock from blood loss ==============================
-        internal_bleeding_codes = ['361', '363', '461', '463', '813bo', '813co', '813do', '813eo']
-        df = self.sim.population.props
+            # =============================== Health seeking behaviour set up =======================================
+            # Set up health seeking behaviour. Two symptoms are used in the RTI module, the generic injury symptom and an
+            # emergency symptom 'severe_trauma'.
 
-        potential_shock_index, _ = \
-            road_traffic_injuries.rti_find_and_count_injuries(df.loc[df.rt_road_traffic_inc, RTI.INJURY_COLUMNS],
-                                                              internal_bleeding_codes)
-        rand_for_shock = self.module.rng.random_sample(len(potential_shock_index))
-        shock_index = potential_shock_index[self.prob_bleeding_leads_to_shock > rand_for_shock]
-        df.loc[shock_index, 'rt_in_shock'] = True
-        # log the percentage of those with RTIs in shock
-        percent_in_shock = \
-            len(shock_index) / len(selected_for_rti_inj) if len(selected_for_rti_inj) > 0 else float("nan")
-        logger.info(key='Percent_of_shock_in_rti',
-                    data={'Percent_of_shock_in_rti': percent_in_shock},
-                    description='The percentage of those assigned injuries who were also assign the shock property')
-        # ========================== Decide survival time without medical intervention ================================
-        # todo: find better time for survival data without med int for ISS scores
-        # Assign a date in the future for which when the simulation reaches that date, the person's mortality will be
-        # checked if they haven't sought care
-        df.loc[selected_for_rti_inj.index, 'rt_date_death_no_med'] = now + DateOffset(days=7)
-        # ============================ Injury severity classification =================================================
-        # Find those with mild injuries and update the rt_inj_severity property so they have a mild injury
-        injured_this_month = df.loc[selected_for_rti_inj.index]
-        mild_rti_idx = injured_this_month.index[injured_this_month.is_alive & injured_this_month['rt_ISS_score'] < 15]
-        df.loc[mild_rti_idx, 'rt_inj_severity'] = 'mild'
-        # Find those with severe injuries and update the rt_inj_severity property so they have a severe injury
-        severe_rti_idx = injured_this_month.index[injured_this_month['rt_ISS_score'] >= 15]
-        df.loc[severe_rti_idx, 'rt_inj_severity'] = 'severe'
-        # check that everyone who has been assigned an injury this month has an associated injury severity
-        assert sum(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death & (df.rt_date_inj == now), 'rt_inj_severity']
-                   != 'none') == len(selected_for_rti_inj.index)
-        # Find those with polytrauma and update the rt_polytrauma property so they have polytrauma
-        polytrauma_idx = description.loc[description.Polytrauma].index
-        df.loc[polytrauma_idx, 'rt_polytrauma'] = True
-        # Assign daly weights for each person's injuries with the function rti_assign_daly_weights
-        road_traffic_injuries.rti_assign_daly_weights(selected_for_rti_inj.index)
+            # The condition to be sent to the health care system: 1) They must be alive 2) They must have been involved in a
+            # road traffic accident 3) they must have not died immediately in the accident 4) they must not have been to an
+            # A and E department previously and been diagnosed
 
-        # =============================== Health seeking behaviour set up =======================================
-        # Set up health seeking behaviour. Two symptoms are used in the RTI module, the generic injury symptom and an
-        # emergency symptom 'severe_trauma'.
+            # The symptom they are assigned depends injury severity, those with mild injuries will be assigned the generic
+            # symptom, those with severe injuries will have the emergency injury symptom
 
-        # The condition to be sent to the health care system: 1) They must be alive 2) They must have been involved in a
-        # road traffic accident 3) they must have not died immediately in the accident 4) they must not have been to an
-        # A and E department previously and been diagnosed
-
-        # The symptom they are assigned depends injury severity, those with mild injuries will be assigned the generic
-        # symptom, those with severe injuries will have the emergency injury symptom
-
-        # Create the logical conditions for each symptom
-        condition_to_be_sent_to_em = \
-            df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & (df.rt_date_inj == now) & \
-            (df.rt_injury_1 != "none") & (df.rt_ISS_score >= self.rt_emergency_care_ISS_score_cut_off)
-        condition_to_be_sent_to_begin_non_emergency = \
-            df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & (df.rt_date_inj == now) & \
-            (df.rt_injury_1 != "none") & (df.rt_ISS_score < self.rt_emergency_care_ISS_score_cut_off)
-        # check that all those who meet the conditions to try and seek healthcare have at least one injury
-        assert sum(df.loc[condition_to_be_sent_to_em, 'rt_injury_1'] != "none") == \
-               len(df.loc[condition_to_be_sent_to_em])
-        assert sum(df.loc[condition_to_be_sent_to_begin_non_emergency, 'rt_injury_1'] != "none") == \
-               len(df.loc[condition_to_be_sent_to_begin_non_emergency])
-        # create indexes of people to be assigned each rti symptom
-        em_idx = df.index[condition_to_be_sent_to_em]
-        non_em_idx = df.index[condition_to_be_sent_to_begin_non_emergency]
-        # Assign the symptoms
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=em_idx.tolist(),
-            disease_module=self.module,
-            add_or_remove='+',
-            symptom_string='severe_trauma',
-        )
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=non_em_idx.tolist(),
-            disease_module=self.module,
-            add_or_remove='+',
-            symptom_string='injury',
-        )
+            # Create the logical conditions for each symptom
+            condition_to_be_sent_to_em = \
+                df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & (df.rt_date_inj == now) & \
+                (df.rt_injury_1 != "none") & (df.rt_ISS_score >= self.rt_emergency_care_ISS_score_cut_off)
+            condition_to_be_sent_to_begin_non_emergency = \
+                df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & (df.rt_date_inj == now) & \
+                (df.rt_injury_1 != "none") & (df.rt_ISS_score < self.rt_emergency_care_ISS_score_cut_off)
+            # check that all those who meet the conditions to try and seek healthcare have at least one injury
+            assert sum(df.loc[condition_to_be_sent_to_em, 'rt_injury_1'] != "none") == \
+                   len(df.loc[condition_to_be_sent_to_em])
+            assert sum(df.loc[condition_to_be_sent_to_begin_non_emergency, 'rt_injury_1'] != "none") == \
+                   len(df.loc[condition_to_be_sent_to_begin_non_emergency])
+            # create indexes of people to be assigned each rti symptom
+            em_idx = df.index[condition_to_be_sent_to_em]
+            non_em_idx = df.index[condition_to_be_sent_to_begin_non_emergency]
+            # Assign the symptoms
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=em_idx.tolist(),
+                disease_module=self.module,
+                add_or_remove='+',
+                symptom_string='severe_trauma',
+            )
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=non_em_idx.tolist(),
+                disease_module=self.module,
+                add_or_remove='+',
+                symptom_string='injury',
+            )
 
 
 class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
@@ -5413,6 +5448,28 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                     mortality_checked = True
 
         assert mortality_checked, 'Something missing in criteria'
+
+
+class RTI_NNResolution_Death_Event(Event, IndividualScopeEventMixin):
+    """This is an individual-level event that determines the end of the incindent for individual via death"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+    def apply(self, person_id):
+        # For now invoking RTI_death_with_med, although technically we don't know whether individual accessed HSI or not.
+        # How finely do we want to really resolve RTI deaths?
+        self.sim.modules['Demography'].do_death(individual_id=person_id, cause="RTI_death_with_med",
+                                            originating_module=self.module)
+ 
+class RTI_NNResolution_Recovery_Event(Event, IndividualScopeEventMixin):
+    """This is an individual-level event that determines the end of the incindent for individual via death"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+    def apply(self, person_id):
+        df  = self.sim.population.props
+        # Updat rt disability with long term outcome of accident
+        df.loc[person_id,'rt_disability'] = df.loc[person_id,'rt_disability_permanent']
+        # Ensure that this person will be 'eligible' for rti injury again
+        df.loc[person_id,'rt_inj_severity'] = "none"
 
 
 class RTI_No_Lifesaving_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
