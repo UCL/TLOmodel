@@ -43,7 +43,7 @@ outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
 #tb_DAH_scenarios-2024-12-07T133617Z
 ##tb_DAH_impact01-2023-12-04T222317Z -basis for paper results
 
-results_folder = get_scenario_outputs('Tb_DAH_impact04-2024-12-10T211604Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('Tb_DAH_impact04-2024-12-11T044659Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
