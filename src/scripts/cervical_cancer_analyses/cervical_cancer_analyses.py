@@ -44,7 +44,7 @@ def hash_dataframe(df):
 
 # Where outputs will go
 output_csv_file = Path("./outputs/output1_data.csv")
-seed = 100
+seed = 3
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
