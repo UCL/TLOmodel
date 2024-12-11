@@ -52,7 +52,7 @@ class ImpactOfTbDaH04(BaseScenario):
         self.pop_size = 5000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 2
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -126,7 +126,7 @@ class ImpactOfTbDaH04(BaseScenario):
             "CXR scaleup": {
                 'Tb': {
                     'scenario': 3,
-                    'scaling_factor_WHO': 1.25,
+                    'scaling_factor_WHO': 1.27,
                 },
             },
             # introduce outreach services
