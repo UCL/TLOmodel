@@ -171,27 +171,25 @@ class WastingAnalyses:
         plt.tight_layout()
         fig_output_name = ('wasting_prevalence_per_each_age_group__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
-        plt.show()
+        # plt.show()
 
     def plot_modal_gbd_deaths_by_gender(self):
         """ compare modal and GBD deaths by gender """
         death_compare = \
             compare_number_of_deaths(self.__log_file_path, resources_path)
-        fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True, figsize=(10, 6))
-        for _col, sex in enumerate(('M', 'F')):
-            plot_df = death_compare.loc[(['2010-2014', '2015-2019'],
-                                         sex, slice(None), 'Childhood Undernutrition'
-                                         )].groupby('period').sum()
-            plotting = plot_df.loc[['2010-2014', '2015-2019']]
-            ax = plotting['model'].plot.bar(label='Model', ax=axs[_col], rot=0)
-            ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
-                        yerr=[plotting.GBD_lower, plotting.GBD_upper],
-                        fmt='o', color='#000', label="GBD")
-            ax.set_title(f'{self.__gender_desc[sex]} '
-                         f'deaths due to wasting')
-            ax.set_xlabel("Time period")
-            ax.set_ylabel("Number of deaths")
-            ax.legend(loc=2)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        plot_df = death_compare.loc[(['2010-2014', '2015-2019'],
+                                     slice(None), slice(None), 'Childhood Undernutrition'
+                                     )].groupby('period').sum()
+        plotting = plot_df.loc[['2010-2014', '2015-2019']]
+        ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
+        ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
+                    yerr=[plotting.GBD_lower, plotting.GBD_upper],
+                    fmt='o', color='#000', label="GBD")
+        ax.set_title(f'Direct deaths due to wasting')
+        ax.set_xlabel("time period")
+        ax.set_ylabel("number of deaths")
+        ax.legend(loc=2)
         fig.tight_layout()
         # Adjust the layout to make space for the footnote
         plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
