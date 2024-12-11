@@ -1490,15 +1490,25 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             low_bound_age_in_years = low_bound_mos / 12.0
             high_bound_age_in_years = (1 + high_bound_mos) / 12.0
             # get those children who are wasted
-            wasted_agegrp = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
-                                                             inclusive='left') & (under5s.un_WHZ_category
-                                                                                  != 'WHZ>=-2')).sum()
+            mod_wasted_agegrp = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                 inclusive='left') & (under5s.un_WHZ_category
+                                                                                      == '-3<=WHZ<-2')).sum()
+            sev_wasted_agegrp = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                 inclusive='left') & (under5s.un_WHZ_category
+                                                                                      == 'WHZ<-3')).sum()
             total_per_agegrp = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
                                                                 inclusive='left')).sum()
             # add proportions to the dictionary
-            wasting_prev_dict[f'{low_bound_mos}_{high_bound_mos}mo'] = wasted_agegrp / total_per_agegrp
+            wasting_prev_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = mod_wasted_agegrp / total_per_agegrp
+            wasting_prev_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = sev_wasted_agegrp / total_per_agegrp
+        # add prevalence in children above 5y, to see if they are 0 as they should
+            # add proportions of children 5 years old and above who are wasted to the dictionary
+            above5s = df.loc[df.is_alive & df.age_exact_years >= 5]
+            wasting_prev_dict[f'mod__5y+'] = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum() / len(above5s)
+            wasting_prev_dict[f'sev__5y+'] = (above5s.un_WHZ_category == 'WHZ<-3').sum() / len(above5s)
 
-        # add to dictionary proportion of all wasted children under 5 years
-        wasting_prev_dict['total_under5_prop'] = (under5s.un_WHZ_category != 'WHZ>=-2').sum() / len(under5s)
+        # add to dictionary proportion of all moderately/severely wasted children under 5 years
+        wasting_prev_dict['total_mod_under5_prop'] = (under5s.un_WHZ_category == '-3<=WHZ<-2').sum() / len(under5s)
+        wasting_prev_dict['total_sev_under5_prop'] = (under5s.un_WHZ_category == 'WHZ<-3').sum() / len(under5s)
         # log wasting prevalence
         logger.info(key='wasting_prevalence_props', data=wasting_prev_dict)
