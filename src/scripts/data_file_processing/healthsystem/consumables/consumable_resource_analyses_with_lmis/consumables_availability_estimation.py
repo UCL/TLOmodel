@@ -629,14 +629,23 @@ def recategorize_modules_into_consumable_categories(_df):
 
     # Create a general consumables category
     general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
-                         82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960]
+                         82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960, 9,
+                         19,20, 40, 47, 49, 50, 75, 112, 127, 128, 135, 141, 154, 1933, 1960]
     cond_general = _df['item_code'].isin(general_cons_list)
     _df.loc[cond_general, 'item_category'] = 'general'
+
 
     # Fill gaps in categories
     dict_for_missing_categories = {292: 'acute lower respiratory infections', 293: 'acute lower respiratory infections',
                                    307: 'reproductive_health', 2019: 'reproductive_health',
-                                   2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer'}
+                                   2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer',
+                                   10: "reproductive_health", 39: "reproductive_health", 41: "reproductive_health",
+                                   64: "neonatal_health", 117: "reproductive_health", 150: "epi", 151: "epi",
+                                   153: "epi", 155: "epi", 157: "epi", 158: "epi", 175: "tb", 184: "tb", 190: "hiv",
+                                   197: "hiv", 216: "cardiometabolicdisorders", 234: "cardiometabolicdisorders",
+                                   261: "cancer", 280: "ncds", 285: "other_childhood_illnesses",
+                                   286: "other_childhood_illnesses", 1197: "epi", 1221: "other_childhood_illnesses",
+                                   2064: "ncds", 2670: "reproductive_health"}
     # Use map to create a new series from item_code to fill missing values in category
     mapped_categories = _df['item_code'].map(dict_for_missing_categories)
     # Use fillna on the 'item_category' column to fill missing values using the mapped_categories
