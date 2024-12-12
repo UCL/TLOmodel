@@ -181,9 +181,9 @@ def test_natural_history(seed):
     active_event_run.apply(population=sim.population)
 
     # check properties set
-    assert df.at[tb_case, 'tb_inf'] == 'active'
-    assert df.at[tb_case, 'tb_date_active'] == sim.date
-    assert df.at[tb_case, 'tb_smear']
+    assert df.loc[tb_case, 'tb_inf'] == 'active'
+    assert df.loc[tb_case, 'tb_date_active'] == sim.date
+    assert df.loc[tb_case, 'tb_smear']
 
     # check symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
