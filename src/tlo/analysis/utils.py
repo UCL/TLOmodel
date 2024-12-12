@@ -364,20 +364,18 @@ def compute_summary_statistics(
 
     """
     stats = dict()
+    grouped_results = results.groupby(axis=1, by='draw', sort=False)
 
     if central_measure == 'mean':
-        stats['central'] = results.groupby(axis=1, by='draw', sort=False).mean()
+        stats['central'] = grouped_results.mean()
     elif central_measure == 'median':
-        stats['central'] = results.groupby(axis=1, by='draw', sort=False).median()
+        stats['central'] = grouped_results.median()
     else:
         raise ValueError(f"Unknown stat: {central_measure}")
 
-    stats.update(
-        {
-            'lower': results.groupby(axis=1, by='draw', sort=False).quantile((1.-width_of_range)/2.),
-            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(1.-(1.-width_of_range)/2.),
-        }
-    )
+    lower_quantile = (1. - width_of_range) / 2.
+    stats["lower"] = grouped_results.quantile(lower_quantile)
+    stats["upper"] = grouped_results.quantile(1 - lower_quantile)
 
     summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
