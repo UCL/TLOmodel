@@ -574,7 +574,7 @@ def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
     sim.simulate(end_date=Date(year_of_change + 2, 1, 1))
 
 
-def test_summarise():
+def test_compute_summary_statistics():
     """Check that the summarize utility function works as expected."""
 
     results_multiple_draws = pd.DataFrame(
@@ -644,7 +644,7 @@ def test_summarise():
         summarise(results_one_draw, central_measure='mean', collapse_columns=True),
     )
 
-    # Check that summarize() produces legacy behaviour:
+    # Check that summarize() produces the expected legacy behaviour (i.e., uses mean)
     pd.testing.assert_frame_equal(
         summarise(results_multiple_draws, central_measure='mean').rename(columns={'central': 'mean'}, level=1),
         summarize(results_multiple_draws)
