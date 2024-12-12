@@ -81,8 +81,8 @@ class WastingAnalyses:
     def plot_wasting_incidence(self):
         """ plot the incidence of wasting over time """
         w_inc_df = self.__logs_dict['wasting_incidence_count']
-        w_inc_df.set_index(w_inc_df.date.dt.year, inplace=True)
-        w_inc_df.drop(columns='date', inplace=True)
+        w_inc_df = w_inc_df.set_index(w_inc_df.date.dt.year)
+        w_inc_df = w_inc_df.drop(columns='date')
         # check no incidence of well-nourished
         all_zeros = w_inc_df['WHZ>=-2'].apply(lambda x: all(value == 0 for value in x.values()))
         assert all(all_zeros)
