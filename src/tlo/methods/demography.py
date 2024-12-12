@@ -342,7 +342,7 @@ class Demography(Module):
                             'multiply-up results so that they correspond to the real population size.'
             )
             if self.equal_allocation_by_district:
-                scaling_factor_district = 1.0 / self.initial_model_to_data_popsize_ratio
+                scaling_factor_district = 1.0 / self.initial_model_to_data_popsize_ratio_district
                 _logger.warning(
                     key='scaling_factor_district',
                     data={'scaling_factor_district': scaling_factor_district.to_dict()},
