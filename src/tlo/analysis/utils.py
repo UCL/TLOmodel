@@ -422,7 +422,7 @@ def summarize(
         "This can be done by using the function `compute_summary_statistics`."
         ""
     )
-    output = summarise(
+    output = compute_summary_statistics(
         results=results,
         central_measure='mean',
         only_central=only_mean,
