@@ -83,7 +83,11 @@ class WastingAnalyses:
         w_inc_df = self.__logs_dict['wasting_incidence_count']
         w_inc_df.set_index(w_inc_df.date.dt.year, inplace=True)
         w_inc_df.drop(columns='date', inplace=True)
-        # get age year. doesn't matter what wasting category you choose for
+        # check no incidence of well-nourished
+        all_zeros = w_inc_df['WHZ>=-2'].apply(lambda x: all(value == 0 for value in x.values()))
+        assert all(all_zeros)
+        w_inc_df = w_inc_df[["WHZ<-3", "-3<=WHZ<-2"]]
+        # get age_years, doesn't matter what wasting category you choose,
         # they all have same age groups
         age_years = list(w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys(
 
@@ -94,6 +98,7 @@ class WastingAnalyses:
         _col_counter = 0
         # plot setup
         fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True, figsize=(10, 6))
+        fig.delaxes(axes[1, 2])
         for _age in age_years:
             new_df = pd.DataFrame()
             for state in w_inc_df.columns:
@@ -101,8 +106,7 @@ class WastingAnalyses:
                     w_inc_df.apply(lambda row: row[state][_age], axis=1)
             # convert into proportions
             new_df = new_df.apply(lambda _row: _row / _row.sum(), axis=1)
-            plotting = new_df[["WHZ<-3", "-3<=WHZ<-2"]]
-            plotting = plotting.rename(columns=self.__wasting_types_desc)
+            plotting = new_df.rename(columns=self.__wasting_types_desc)
             ax = plotting.plot(kind='bar', stacked=True,
                                ax=axes[_row_counter, _col_counter],
                                title=f"incidence of wasting in {_age} old",
