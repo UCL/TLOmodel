@@ -1514,3 +1514,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # log wasting prevalence
         logger.info(key='wasting_prevalence_props', data=wasting_prev_dict)
+
+        # log under5s pop size
+        logger.info(key='under5s pop size', data=len(under5s))
+
