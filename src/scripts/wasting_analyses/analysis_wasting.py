@@ -144,23 +144,31 @@ class WastingAnalyses:
         """ Plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
         children wasted in a particular age-group divided by the total number of children per that age-group"""
         w_prev_df = self.__logs_dict["wasting_prevalence_props"]
-        w_prev_df = w_prev_df.drop(columns={'total_under5_prop'})
+        w_prev_df = w_prev_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
         w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
-        w_prev_df = w_prev_df.loc[w_prev_df.index == 2023]
+        w_prev_df = w_prev_df.loc[w_prev_df.index == 2020]
         w_prev_df = w_prev_df.drop(columns='date')
-        order_x_axis = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo']
-        # Assert that all columns are included
-        assert set(w_prev_df.columns) == set(order_x_axis), "Not all columns are included in the order_x_axis."
-        w_prev_df = w_prev_df[order_x_axis]
+        plotting = {'severe wasting': {}, 'moderate wasting': {}}
+        for col in w_prev_df.columns:
+            prefix, age_group = col.split('__')
+            if prefix == 'sev':
+                plotting['severe wasting'][age_group] = w_prev_df[col].values[0]
+            elif prefix == 'mod':
+                plotting['moderate wasting'][age_group] = w_prev_df[col].values[0]
+        plotting = pd.DataFrame(plotting)
+        order_x_axis = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
+        # Assert all age groups are included
+        assert set(plotting.index) == set(order_x_axis), "age groups are not in line with the order_x_axis."
+        plotting = plotting.reindex(order_x_axis)
 
-        fig, ax = plt.subplots(figsize=(10, 6))
         # Plot wasting prevalence
-        w_prev_df.squeeze().plot(kind='bar', stacked=False,
-                                 ax=ax,
-                                 title="Wasting prevalence in children 0-59 months per each age group in 2023",
-                                 ylabel='proportion',
-                                 xlabel='age group',
-                                 ylim=[0, 0.3])
+        fig, ax = plt.subplots(figsize=(10, 6))
+        plotting.squeeze().plot(kind='bar', stacked=True,
+                                ax=ax,
+                                title="Wasting prevalence in children 0-59 months per each age group in 2020",
+                                ylabel='proportion',
+                                xlabel='age group',
+                                ylim=[0, 0.3])
         # Adjust the layout to make space for the footnote
         plt.subplots_adjust(bottom=0.85)  # Adjust the bottom margin
         # Add footnote
