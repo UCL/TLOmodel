@@ -572,11 +572,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # check total cost calculated is increased as expected
     # also checked (in excel) that the yearly_hr_count (s_0 and s_1) are expanded as expected
     years = range(2025, the_target_period[1].year + 1)
+    budget_growth_rate = 0.042  # 0.042, 0.058, 0.026
     for s in param_names[1:]:
         assert (abs(
             total_cost.loc[(total_cost.year == 2034) & (total_cost.draw == s), 'all_cadres'].values[0] -
-            (1 + 0.042) ** len(years) * total_cost.loc[(total_cost.year == 2025) & (total_cost.draw == 's_0'),
-                                                       'all_cadres'].values[0]
+            (1 + budget_growth_rate) ** len(years) * total_cost.loc[
+                (total_cost.year == 2025) & (total_cost.draw == 's_0'), 'all_cadres'].values[0]
         ) < 1e-6).all()
 
     # Absolute Number of Deaths and DALYs and Services
