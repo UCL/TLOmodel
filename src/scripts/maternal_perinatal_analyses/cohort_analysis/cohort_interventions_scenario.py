@@ -59,7 +59,6 @@ class BaselineScenario(BaseScenario):
         avail_for_draw = [0.0, 1.0,
                           0.0, 1.0,
                           0.0, 1.0,
-                          0.0, 1.0,
                           ]
 
         return {'PregnancySupervisor': {
