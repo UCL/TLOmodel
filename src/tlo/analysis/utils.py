@@ -366,9 +366,9 @@ def summarise(
     stats = dict()
 
     if central_measure == 'mean':
-        stats.update({'central': results.groupby(axis=1, by='draw', sort=False).mean()})
+        stats['central'] = results.groupby(axis=1, by='draw', sort=False).mean()
     elif central_measure == 'median':
-        stats.update({'central': results.groupby(axis=1, by='draw', sort=False).median()})
+        stats['central'] = results.groupby(axis=1, by='draw', sort=False).median()
     else:
         raise ValueError(f"Unknown stat: {central_measure}")
 
