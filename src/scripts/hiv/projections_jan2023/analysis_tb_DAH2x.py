@@ -39,7 +39,7 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
 
-results_folder = get_scenario_outputs('Tb_DAH_impact04-2024-12-11T192630Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
