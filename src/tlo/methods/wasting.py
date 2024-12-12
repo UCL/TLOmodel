@@ -1482,7 +1482,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
         # Wasting totals (prevalence at logging time)
-        under5s = df.loc[df.is_alive & df.age_exact_years < 5]
+        under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
         # declare a dictionary that will hold proportions of wasting prevalence per each age group
         wasting_prev_dict: Dict[str, Any] = dict()
         # loop through different age groups and get proportions of wasting prevalence per each age group
