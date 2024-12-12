@@ -89,7 +89,7 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
 
 def merge_log_files(log_path_1: Path, log_path_2: Path, output_path: Path) -> None:
     """Merge two log files, skipping any repeated header lines.
-    
+
     :param log_path_1: Path to first log file to merge. Records from this log file will
         appear first in merged log file.
     :param log_path_2: Path to second log file to merge. Records from this log file will
@@ -343,7 +343,7 @@ def extract_results(results_folder: Path,
     return _concat
 
 
-def summarise(
+def compute_summary_statistics(
     results: pd.DataFrame,
     central_measure: Literal["mean", "median"] = "median",
     width_of_range: float = 0.95,
@@ -417,6 +417,11 @@ def summarize(
      version of `summarize` that allows the use of medians and is flexible to allow other forms of summary measure in
      the future.
     """
+    warnings.warn(
+        "This function uses MEAN as the central measure. We now recommend using MEDIAN instead. "
+        "This can be done by using the function `compute_summary_statistics`."
+        ""
+    )
     output = summarise(
         results=results,
         central_measure='mean',
