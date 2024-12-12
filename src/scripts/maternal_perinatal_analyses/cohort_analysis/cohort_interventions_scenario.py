@@ -54,8 +54,7 @@ class BaselineScenario(BaseScenario):
 
         interventions_for_analysis = ['mgso4','mgso4',
                                       'ectopic_pregnancy_treatment', 'ectopic_pregnancy_treatment',
-                                      'pph_treatment_mrrp', 'pph_treatment_mrrp',
-                                      'pph_treatment_surg', 'pph_treatment_surg']
+                                      'pph_treatment_mrrp', 'pph_treatment_mrrp']
 
         avail_for_draw = [0.0, 1.0,
                           0.0, 1.0,

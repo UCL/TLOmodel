@@ -61,6 +61,22 @@ def generate_mnh_outcome_counter():
                     'home_birth_delivery', 'hospital_delivery', 'health_centre_delivery',
                     'm_pnc0', 'm_pnc1', 'm_pnc2', 'm_pnc3+', 'n_pnc0', 'n_pnc1', 'n_pnc2', 'n_pnc3+']
 
+    all_ints = ["urine_dipstick", "bp_measurement", "iron_folic_acid", "protein_supplement", "calcium_supplement",
+                "hb_test", "syphilis_test", "syphilis_treatment", "gdm_test", "full_blood_count", "blood_transfusion",
+                "oral_antihypertensives", "iv_antihypertensives", "mgso4", "abx_for_prom", "gdm_treatment_diet",
+                "gdm_treatment_orals", "gdm_treatment_insulin", "post_abortion_care_core",
+                "ectopic_pregnancy_treatment", "antenatal_corticosteroids", "birth_kit", "avd",
+                "sepsis_treatment", "amtsl", "pph_treatment_uterotonics", "pph_treatment_mrrp",
+                "pph_treatment_surg", "caesarean_section", "fistula_treatment", "neo_resus", "kmc",
+                "neo_sepsis_treatment_supp_care", "neo_sepsis_treatment_abx"]
+
+    interventions = []
+
+    for i in all_ints:
+        interventions.append(f'{i}_req')
+        interventions.append(f'{i}_deliv')
+
+    outcome_list.extend(interventions)
     mnh_outcome_counter = {k: 0 for k in outcome_list}
 
     return {'counter': mnh_outcome_counter,
@@ -100,8 +116,12 @@ def check_int_deliverable(self, int_name, hsi_event,
     individual_id = hsi_event.target
     p_params = self.sim.modules['PregnancySupervisor'].current_parameters
     l_params = self.sim.modules['Labour'].current_parameters
+    c = self.sim.modules['PregnancySupervisor'].mnh_outcome_counter
 
-    # assert int_name in p_params['all_interventions']
+    assert int_name in p_params['all_interventions']
+
+    int_will_run = None
+    c[f'{int_name}_req'] += 1
 
     # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
     # delivery is being overridden
@@ -114,7 +134,7 @@ def check_int_deliverable(self, int_name, hsi_event,
 
         # The intervention has no effect
         if not can_int_run_analysis:
-            return False
+            int_will_run = False
 
         else:
             # The intervention will have an effect. If this is an intervention which leads to an outcome dependent on
@@ -123,17 +143,17 @@ def check_int_deliverable(self, int_name, hsi_event,
                 test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
 
                 if test[0].target_categories is None and (df.at[individual_id, test[0].property]):
-                    return True
+                    int_will_run = True
 
                 elif ((test[0].target_categories is not None) and
                       (df.at[individual_id, test[0].property] in test[0].target_categories)):
-                    return True
+                    int_will_run = True
 
                 else:
-                    return False
+                    int_will_run = False
 
             else:
-                return True
+                int_will_run = True
 
     elif (l_params['la_analysis_in_progress'] or
           (p_params['ps_analysis_in_progress'] and not p_params['interventions_under_analysis'])):
@@ -159,10 +179,10 @@ def check_int_deliverable(self, int_name, hsi_event,
             # probability of intervention delivery is determined by an analysis parameter
             if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
                 if self.rng.random_sample() < params[analysis_dict[k][1]]:
-                    return True
+                    int_will_run = True
 
                 else:
-                    return False
+                    int_will_run = False
 
     else:
 
@@ -193,10 +213,17 @@ def check_int_deliverable(self, int_name, hsi_event,
             test = True
 
         if quality and consumables and test:
-            return True
+            int_will_run = True
 
         else:
-            return False
+            int_will_run = False
+
+    assert int_will_run is not None
+
+    if int_will_run:
+        c[f'{int_name}_deliv'] += 1
+
+    return int_will_run
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):

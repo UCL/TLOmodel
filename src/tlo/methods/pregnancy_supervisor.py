@@ -2307,6 +2307,18 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                           'm_pnc1+': rate(m_pnc1, total_births, 100),
                           'n_pnc1+': rate(n_pnc1, total_births, 100)})
 
+        # Intervention met need
+        int_data = {}
+        for int in self.module.current_parameters['all_interventions']:
+            assert c[f'{int}_deliv'] <= c[f'{int}_req']
+
+            if c[f'{int}_req'] == 0:
+                int_data.update({f'{int}_coverage': None})
+            else:
+                int_data.update({f'{int}_coverage': round(rate(c[f'{int}_deliv'], c[f'{int}_req'], 100), 1)})
+
+        logger.info(key='intervention_coverage', data=int_data)
+
         # Reset the dictionary so all values = 0
         mnh_oc = pregnancy_helper_functions.generate_mnh_outcome_counter()
         outcome_list = mnh_oc['outcomes']
