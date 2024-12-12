@@ -134,7 +134,7 @@ class Demography(Module):
         ),
 
         'district_num_of_residence': Property(
-            Types.CATEGORICAL, 
+            Types.CATEGORICAL,
             'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
@@ -246,10 +246,6 @@ class Demography(Module):
         """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
 
-        # Compute the initial population scaling factor
-        self.initial_model_to_data_popsize_ratio = \
-            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
-
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
@@ -257,14 +253,17 @@ class Demography(Module):
             init_pop,
             max_age=self.parameters['max_age_initial']
         )
+
         if self.equal_allocation_by_district:
-            init_pop = self._edit_init_pop_so_that_equal_number_in_each_district(init_pop)
+            init_pop_scaled = self._edit_init_pop_so_that_equal_number_in_each_district(init_pop)
+        else:
+            init_pop_scaled = init_pop
 
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
-        demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
+        demog_char_to_assign = init_pop_scaled.iloc[self.rng.choice(init_pop_scaled.index.values,
                                                              size=len(df),
                                                              replace=True,
-                                                             p=init_pop.prob)][
+                                                             p=init_pop_scaled.prob)][
             ['District', 'District_Num', 'Region', 'Sex', 'Age']] \
             .reset_index(drop=True)
 
@@ -304,6 +303,21 @@ class Demography(Module):
                 logger.warning(key="warning",
                                data="No men found. Direct birth mothers search will exclude woman at person_id=0.")
 
+        # Compute the initial scaling factor
+        self.initial_model_to_data_popsize_ratio = \
+            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
+
+        # Compute the initial population scaling factor by district
+        if self.equal_allocation_by_district:
+            # compute the scaling factors by district
+            # get the actual numbers in each district in 2010
+            district_pop = init_pop.groupby('District')['Count'].sum().reset_index()
+            # get the numbers in new population dataframe by district
+            model_pop = df.groupby('district_of_residence').size().reset_index()
+
+            self.initial_model_to_data_popsize_ratio_district = \
+                self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
+
     def initialise_simulation(self, sim):
         """
         * Schedule the AgeUpdateEvent, the OtherDeathPoll and the DemographyLoggingEvent
@@ -327,6 +341,14 @@ class Demography(Module):
                 description='The data-to-model scaling factor (based on the initial population size, used to '
                             'multiply-up results so that they correspond to the real population size.'
             )
+            if self.equal_allocation_by_district:
+                scaling_factor_district = 1.0 / self.initial_model_to_data_popsize_ratio
+                _logger.warning(
+                    key='scaling_factor_district',
+                    data={'scaling_factor_district': scaling_factor_district.to_dict()},
+                    description='The data-to-model scaling factor (based on the initial population size, used to '
+                                'multiply-up results so that they correspond to the real population size.'
+                )
 
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
@@ -629,6 +651,31 @@ class Demography(Module):
         :returns: Ratio of ``initial_population`` to 2010 baseline population.
         """
         return initial_population_size / self.parameters['pop_2010']['Count'].sum()
+
+
+    def compute_initial_model_to_data_popsize_ratio_by_district(self, district_pop, model_pop):
+        """Compute ratio of initial model population size to estimated population size in 2010.
+
+        Uses the total of the per-region estimated populations in 2010 used to
+        initialise the simulation population as the baseline figure, with this value
+        corresponding to the 2010 projected population from [wpp2019]_.
+
+        .. [wpp2019] World Population Prospects 2019. United Nations Department of
+        Economic and Social Affairs. URL:
+        https://population.un.org/wpp/Download/Standard/Population/
+
+        :param initial_population_size: Initial population size to calculate ratio for.
+
+        :returns: Ratio of ``initial_population`` to 2010 baseline population.
+        """
+        # Set district names as the index
+        district_pop_indexed = district_pop.set_index('District')
+        model_pop_indexed = model_pop.set_index('district_of_residence')
+
+        # Align and divide
+        district_scaling_factor = model_pop_indexed[0] / district_pop_indexed['Count']
+        # this returns a series, with index=district
+        return district_scaling_factor
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
