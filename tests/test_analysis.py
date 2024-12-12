@@ -10,6 +10,7 @@ import pytest
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.analysis.utils import (
     colors_in_matplotlib,
+    compute_summary_statistics,
     flatten_multi_index_series_into_dict_for_logging,
     get_coarse_appt_type,
     get_color_cause_of_death_or_daly_label,
@@ -24,7 +25,6 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    summarise,
     summarize,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -621,7 +621,7 @@ def test_compute_summary_statistics():
                 ]
             ),
         ),
-        summarise(results_multiple_draws, central_measure='mean'),
+        compute_summary_statistics(results_multiple_draws, central_measure='mean'),
     )
 
     # Without collapsing and only mean
@@ -631,7 +631,7 @@ def test_compute_summary_statistics():
             index=["TimePoint0", "TimePoint1"],
             data=np.array([[10.0, 1500.0], [10.0, 1500.0]]),
         ),
-        summarise(results_multiple_draws, central_measure='mean', only_central=True),
+        compute_summary_statistics(results_multiple_draws, central_measure='mean', only_central=True),
     )
 
     # With collapsing (as only one draw)
@@ -641,20 +641,20 @@ def test_compute_summary_statistics():
             index=["TimePoint0", "TimePoint1"],
             data=np.array([[0.5, 10.0, 19.5], [0.5, 10.0, 19.5], ]),
         ),
-        summarise(results_one_draw, central_measure='mean', collapse_columns=True),
+        compute_summary_statistics(results_one_draw, central_measure='mean', collapse_columns=True),
     )
 
     # Check that summarize() produces the expected legacy behaviour (i.e., uses mean)
     pd.testing.assert_frame_equal(
-        summarise(results_multiple_draws, central_measure='mean').rename(columns={'central': 'mean'}, level=1),
+        compute_summary_statistics(results_multiple_draws, central_measure='mean').rename(columns={'central': 'mean'}, level=1),
         summarize(results_multiple_draws)
     )
     pd.testing.assert_frame_equal(
-        summarise(results_multiple_draws, central_measure='mean', only_central=True),
+        compute_summary_statistics(results_multiple_draws, central_measure='mean', only_central=True),
         summarize(results_multiple_draws, only_mean=True)
     )
     pd.testing.assert_frame_equal(
-        summarise(results_one_draw, central_measure='mean', collapse_columns=True),
+        compute_summary_statistics(results_one_draw, central_measure='mean', collapse_columns=True),
         summarize(results_one_draw, collapse_columns=True)
     )
 
