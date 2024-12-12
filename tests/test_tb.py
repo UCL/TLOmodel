@@ -181,9 +181,9 @@ def test_natural_history(seed):
     active_event_run.apply(population=sim.population)
 
     # check properties set
-    assert df.loc[tb_case, 'tb_inf'] == 'active'
-    assert df.loc[tb_case, 'tb_date_active'] == sim.date
-    assert df.loc[tb_case, 'tb_smear']
+    assert df.at[tb_case, 'tb_inf'] == 'active'
+    assert df.at[tb_case, 'tb_date_active'] == sim.date
+    assert df.at[tb_case, 'tb_smear']
 
     # check symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
@@ -762,9 +762,9 @@ def test_active_tb_linear_model(seed):
     df = sim.population.props
 
     # set properties - no risk factors
-    df.loc[df.is_alive, 'tb_inf'] = 'uninfected'
-    df.loc[df.is_alive, 'age_years'] = 25
-    df.loc[df.is_alive, 'va_bcg_all_doses'] = True
+    df.at[df.is_alive, 'tb_inf'] = 'uninfected'
+    df.at[df.is_alive, 'age_years'] = 25
+    df.at[df.is_alive, 'va_bcg_all_doses'] = True
 
     df.at[df.is_alive, 'li_bmi'] = 1  # 4=obese
     df.at[df.is_alive, 'li_ex_alc'] = False
