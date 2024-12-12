@@ -15,7 +15,12 @@ import tlo.util
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
-from tlo.util import DEFAULT_MOTHER_ID, convert_excel_files_to_csv, read_csv_files
+from tlo.util import (
+    DEFAULT_MOTHER_ID,
+    convert_excel_files_to_csv,
+    parse_csv_values_for_columns_with_mixed_datatypes,
+    read_csv_files,
+)
 
 path_to_files = Path(os.path.dirname(__file__))
 
@@ -498,3 +503,23 @@ def test_convert_excel_files_method(tmpdir):
     # check behaviours are as expected. New folders containing csv files should be created with names resembling the
     # Excel file they were created from
     check_logic_of_converting_excel_files_to_csv_files(tmpdir_resourcefilepath, excel_files)
+
+def test_parse_values_in_mixed_datatypes_columns():
+    """ parse values from a mixed datatype column. Here we create a dataframe with a column that resembles output from
+    read csv when presented with a mixed datatype column
+    """
+
+    # define a dataframe with mixed type column setting all values as string(This is the default behaviour when reading
+    # csv files columns with mixed datatype column
+    mixed_data_df = pd.DataFrame(data={'param_values':['54', 'inc_malaria', '[1,2,3]', '0.2']})
+    # confirm all values are strings
+    for value in mixed_data_df.param_values:
+        assert isinstance(value, str)
+    # expected datatypes
+    exp_dtypes = [int, str, list, float]
+    # parse values
+    mixed_data_df['param_values'] = mixed_data_df[
+        'param_values'].apply(parse_csv_values_for_columns_with_mixed_datatypes)
+    # confirm value data type is now as expected
+    for _index, exp_dtype in enumerate(exp_dtypes):
+        assert isinstance(mixed_data_df.loc[_index, "param_values"], exp_dtype)

@@ -153,6 +153,7 @@ jobs:
           mkdir -p "${task_output_dir}"
 
           tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
+          tlo parse-log ${task_output_dir}
         working-directory: "${{ needs.setup.outputs.worktree_path }}"
 
   # Do the postprocessing

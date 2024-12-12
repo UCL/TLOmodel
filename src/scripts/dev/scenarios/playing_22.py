@@ -14,14 +14,13 @@ class Playing22(BaseScenario):
         super().__init__()
         self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 1)
-        self.pop_size = 200
-        self.number_of_draws = 5
-        self.runs_per_draw = 1
+        self.end_date = Date(2013, 1, 1)
+        self.pop_size = 1000
+        self.number_of_draws = 3
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
-            # 'filename': 'my-scenario',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
@@ -39,9 +38,8 @@ class Playing22(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'Lifestyle': {
-                'init_p_urban': rng.randint(10, 20) / 100.0,
-                'init_p_high_sugar': 0.52,
+            'Demography': {
+                'max_age_initial': [80, 90, 100][draw_number],
             },
         }
 
