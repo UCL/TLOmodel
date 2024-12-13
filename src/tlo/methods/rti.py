@@ -2872,7 +2872,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, 'rt_debugging_DALY_wt'] = 0
         df.loc[diedfromrtiidx, 'rt_in_shock'] = False
         # reset whether they have been selected for an injury this month
-        df['rt_road_traffic_inc'] = False
+        df.loc[diedfromrtiidx,'rt_road_traffic_inc'] = False
 
         # --------------------------------- UPDATING OF RTI OVER TIME -------------------------------------------------
         # Currently we have the following conditions for being able to be involved in a road traffic injury, they are
@@ -2922,7 +2922,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
             NN_model = self.sample_NN_model(len(selected_for_rti))
      
             # HS USAGE
-            # Get the total number of different types of appts accessed as a result of this polling event and add to rolling count.
+            # Get the total number of different types of appts that will be accessed as a result of this polling event and add to rolling count.
             for column in self.sim.modules['RTI'].HS_Use_Type:
                 self.sim.modules['RTI'].HS_Use_by_RTI[column] += NN_model[column].sum()  # Sum all values in the column
      
