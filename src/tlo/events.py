@@ -97,7 +97,7 @@ class Event:
                 # First add event info
                 link_info = {
                     'person_ID': idx,
-                    'event': str(self),
+                    'event': type(self).__name__,
                     'event_date': self.sim.date,
                 }
                 
@@ -136,7 +136,7 @@ class Event:
                     # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                     row = self.sim.population.props.loc[[abs(self.target)]]
                     row['person_ID'] = self.target
-                    row['event'] = str(self)
+                    row['event'] = type(self).__name__
                     row['event_date'] = self.sim.date
                     row['when'] = 'Before'
                     self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
@@ -164,7 +164,7 @@ class Event:
                 link_info = {
                     #'person_ID' : self.target,
                     'person_ID' : self.target,
-                    'event' : str(self),
+                    'event' : type(self).__name__,
                     'event_date' : self.sim.date,
                 }
                 # Store (if any) property changes as a result of the event for this individual
@@ -179,7 +179,7 @@ class Event:
                     # Print entire row
                     row = self.sim.population.props.loc[[abs(self.target)]] # Use abs to avoid potentil issue with direct births
                     row['person_ID'] = self.target
-                    row['event'] = str(self)
+                    row['event'] = type(self).__name__
                     row['event_date'] = self.sim.date
                     row['when'] = 'After'
                     self.sim.event_chains = pd.concat([self.sim.event_chains, row], ignore_index=True)
@@ -202,13 +202,13 @@ class Event:
                         indices = change.index
                         new_rows_before = df_before.loc[indices]
                         new_rows_before['person_ID'] = new_rows_before.index
-                        new_rows_before['event'] = self
+                        new_rows_before['event'] = type(self).__name__
                         new_rows_before['event_date'] = self.sim.date
                         new_rows_before['when'] = 'Before'
 
                         new_rows_after = df_after.loc[indices]
                         new_rows_after['person_ID'] = new_rows_after.index
-                        new_rows_after['event'] = self
+                        new_rows_after['event'] = type(self).__name__
                         new_rows_after['event_date'] = self.sim.date
                         new_rows_after['when'] = 'After'
 

@@ -222,7 +222,7 @@ class HSI_Event:
                     # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                     row = self.sim.population.props.loc[[abs(self.target)]]
                     row['person_ID'] = self.target
-                    row['event'] = str(self)
+                    row['event'] = type(self).__name__ #str(self.event_name)
                     row['event_date'] = self.sim.date
                     row['when'] = 'Before'
                 
@@ -268,7 +268,7 @@ class HSI_Event:
                 
             link_info = {
                 'person_ID': self.target,
-                'event' : str(self),
+                'event' : type(self).__name__,
                 'event_date' : self.sim.date,
                 'appt_footprint' : record_footprint,
                 'level' : record_level,
@@ -285,7 +285,7 @@ class HSI_Event:
                 # TO BE REMOVED This is currently just used for debugging. Will be removed from final version of PR.
                 row = self.sim.population.props.loc[[abs(self.target)]]
                 row['person_ID'] = self.target
-                row['event'] = str(self)
+                row['event'] = type(self).__name__
                 row['event_date'] = self.sim.date
                 row['when'] = 'After'
                 row['appt_footprint'] = record_footprint
