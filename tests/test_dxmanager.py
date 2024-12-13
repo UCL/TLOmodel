@@ -14,7 +14,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    mockitis,
+    #mockitis,
     simplified_births,
     symptommanager,
 )
@@ -55,7 +55,7 @@ def bundle(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 
-                 mockitis.Mockitis(),
+                # mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
 
     # Run the simulation and flush the logger

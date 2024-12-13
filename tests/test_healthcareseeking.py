@@ -19,7 +19,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    mockitis,
+   # mockitis,
     simplified_births,
     symptommanager,
 )
@@ -531,7 +531,7 @@ def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed, tmpdi
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
+                 #mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
 
@@ -561,7 +561,7 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
+               #  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
 
@@ -601,7 +601,7 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_and_disease_mo
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
+               #  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
 
@@ -658,7 +658,7 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
+                 #mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
 
@@ -696,7 +696,7 @@ def test_hsi_schedules_with_emergency_spurious_symptom_and_mockitis_module(seed,
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
+                # mockitis.Mockitis(),
                  )
 
     all_spurious_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']

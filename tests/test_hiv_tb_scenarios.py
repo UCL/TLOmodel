@@ -70,7 +70,8 @@ def test_scenario_parameters(seed):
     scenario_change_event = tb.ScenarioSetupEvent(module=sim.modules['Tb'])
     scenario_change_event.apply(sim.population)
 
-    # check parameters have changed for scenario 3
+    # check parameters have changed for scenario
+    print(sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"])
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == 0.5
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == 0.1
     assert sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] == 0.75

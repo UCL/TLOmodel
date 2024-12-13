@@ -117,6 +117,7 @@ def test_cause_of_death_being_registered(tmpdir, seed):
         demography.Demography(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=rfp),
         hiv.Hiv(resourcefilepath=rfp),
+        tb.Tb(resourcefilepath=rfp),
         symptommanager.Symptommanager(resourcefilepath=rfp),
         simplified_births.Simplified_births(resourcefilepath=rfp),
         enhanced_lifestyle.EnhancedLifestyle(resourcefilepath=rfp),
