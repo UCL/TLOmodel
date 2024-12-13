@@ -1405,7 +1405,7 @@ class HealthSystem(Module):
         assert hsi_event.TREATMENT_ID != ''
         
         # Check that the target of the HSI is not the entire population
-        assert hsi_event.target is not tlo.population.Population
+        assert not isinstance(hsi_event.target, tlo.population.Population)
 
         # This is an individual-scoped HSI event.
         # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
