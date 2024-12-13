@@ -2005,7 +2005,7 @@ class HealthSystem(Module):
                 self._summary_counter._appts_by_level[level_number][category] += value
                 
         # Reset emulator counter.
-        self.sim.modules['RTI'].HS_Use_by_RTI = Counter({col: 0 for col in module.HS_Use_Type})
+        self.sim.modules['RTI'].HS_Use_by_RTI = Counter({col: 0 for col in self.sim.modules['RTI'].HS_Use_Type})
             
         self._summary_counter.write_to_log_and_reset_counters()
         self.consumables.on_end_of_year()

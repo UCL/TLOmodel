@@ -25,6 +25,9 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
+# Decide whether to use emulator or not
+use_emulator = True
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -1537,12 +1540,17 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """
         # Begin modelling road traffic injuries
         sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
-        # Begin checking whether the persons injuries are healed
-        sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
-        # Begin checking whether those with untreated injuries die
-        sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
+        
+        if use_emulator is False:
+            # Begin checking whether the persons injuries are healed
+            sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
+            # Begin checking whether those with untreated injuries die
+            sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
+        
         # Begin logging the RTI events
         sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
+        
+        
         # Look-up consumable item codes
         self.look_up_consumable_item_codes()
 
@@ -2814,7 +2822,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def sample_NN_model(self, N):
         data = {
-        "is_alive_after_RTI": np.random.choice([True, False], size=N),
+        "is_alive_after_RTI": np.random.choice([True, False], size=N, p=[0.98, 0.02]),
         "duration_days": np.random.randint(0, 366, size=N),
         "rt_disability_average": np.random.uniform(0, 1, size=N),
         "rt_disability_permanent": np.random.uniform(0, 1, size=N),
@@ -2911,8 +2919,7 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Set the date that people were injured to now
         df.loc[selected_for_rti, 'rt_date_inj'] = now
 
-        # Decide whether to use emulator or not
-        use_emulator = True
+
         
         if use_emulator:
             # This is where we want to replace normal course of events for RTI with emulator.
