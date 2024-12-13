@@ -2233,9 +2233,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                       priority=next_event_tuple.priority
                      )
 
-            elif not (
-                event.target in alive_persons
-            ):
+            elif event.target not in alive_persons:
                 # if individual level event and the person who is the target is no longer alive, do nothing more,
                 # i.e. remove from heapq
                 pass
@@ -2328,9 +2326,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                           priority=next_event_tuple.priority
                          )
 
-                elif not (
-                    event.target in alive_persons
-                ):
+                elif event.target not in alive_persons:
                     # if individual level event and the person who is the target is no longer alive,
                     # do nothing more, i.e. remove from heapq
                     pass
@@ -2504,9 +2500,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                       priority=next_event_tuple.priority
                      )
 
-            elif not (
-                event.target in alive_persons
-            ):
+            elif event.target not in alive_persons:
                 # if individual level event and the person who is the target is no longer alive,
                 # do nothing more, i.e. remove from heapq
                 pass
