@@ -1980,14 +1980,6 @@ class HealthSystem(Module):
             self._write_hsi_event_counts_to_log_and_reset()
             self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
-    def run_population_level_events(self, _list_of_population_hsi_event_tuples: List[HSIEventQueueItem]) -> None:
-        """Run a list of population level events."""
-        while len(_list_of_population_hsi_event_tuples) > 0:
-            pop_level_hsi_event_tuple = _list_of_population_hsi_event_tuples.pop()
-            pop_level_hsi_event = pop_level_hsi_event_tuple.hsi_event
-            pop_level_hsi_event.run(squeeze_factor=0)
-            self.record_hsi_event(hsi_event=pop_level_hsi_event)
-
     def run_individual_level_events_in_mode_0_or_1(self,
                                                    _list_of_individual_hsi_event_tuples:
                                                    List[HSIEventQueueItem]) -> List:
@@ -2211,10 +2203,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         """Interrogate the HSI_EVENT queue object to remove from it the events due today, and to return these in two
         lists:
          * list_of_individual_hsi_event_tuples_due_today
-         * list_of_population_hsi_event_tuples_due_today
         """
         _list_of_individual_hsi_event_tuples_due_today = list()
-        _list_of_population_hsi_event_tuples_due_today = list()
         _list_of_events_not_due_today = list()
 
         # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
@@ -2228,7 +2218,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
         )
 
-        # Traverse the queue and split events into the three lists (due-individual, due-population, not_due)
+        # Traverse the queue and split events into the two lists (due-individual, not_due)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -2264,24 +2254,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         while len(_list_of_events_not_due_today) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(_list_of_events_not_due_today))
 
-        return _list_of_individual_hsi_event_tuples_due_today, _list_of_population_hsi_event_tuples_due_today
+        return _list_of_individual_hsi_event_tuples_due_today
 
     def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
             # Get the events that are due today:
             (
-                list_of_individual_hsi_event_tuples_due_today,
-                list_of_population_hsi_event_tuples_due_today
+                list_of_individual_hsi_event_tuples_due_today
              ) = self._get_events_due_today()
 
             if (
                 (len(list_of_individual_hsi_event_tuples_due_today) == 0)
-                and (len(list_of_population_hsi_event_tuples_due_today) == 0)
             ):
                 break
-
-            # Run the list of population-level HSI events
-            self.module.run_population_level_events(list_of_population_hsi_event_tuples_due_today)
 
             # For each individual level event, check whether the equipment it has already declared is available. If it
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
@@ -2319,7 +2304,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
         )
 
-        list_of_population_hsi_event_tuples_due_today = list()
         list_of_events_not_due_today = list()
 
         # Traverse the queue and run events due today until have capabilities still available

@@ -169,13 +169,13 @@ class HSI_Event:
     def _run_after_hsi_event(self) -> None:
         """
         Do things following the event's `apply` and `post_apply_hook` functions running.
-         * Impose the bed-days footprint (if target of the HSI is a person_id)
+         * Impose the bed-days footprint
          * Record the equipment that has been added before and during the course of the HSI Event.
         """
-        if isinstance(self.target, int):
-            self.healthcare_system.bed_days.impose_beddays_footprint(
-                person_id=self.target, footprint=self.bed_days_allocated_to_this_event
-            )
+
+        self.healthcare_system.bed_days.impose_beddays_footprint(
+            person_id=self.target, footprint=self.bed_days_allocated_to_this_event
+        )
 
         if self.facility_info is not None:
             # If there is a facility_info (e.g., healthsystem not running in disabled mode), then record equipment used
