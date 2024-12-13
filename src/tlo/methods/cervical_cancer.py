@@ -1698,6 +1698,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         decimal_year = self.sim.date.year + (day_of_year - 1) / 365.25
         rounded_decimal_year = round(decimal_year, 2)
 
+        df['rounded_decimal_year'] = rounded_decimal_year
+
         date_1_year_ago = self.sim.date - pd.DateOffset(days=365)
         date_30_days_ago = self.sim.date - pd.DateOffset(days=30)
         n_deaths_past_year = df.ce_date_death.between(date_1_year_ago, self.sim.date).sum()
@@ -1881,52 +1883,52 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ? move to using the logger:
         # i.e. logger.info(key='cervical_cancer_stats_every_month', description='XX', data=out)
 
-        print(self.sim.date, 'total_none:', out['total_none'], 'total_hpv:', out['total_hpv'], 'total_cin1:',out['total_cin1'],
-              'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
-              'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
-              'total_stage3:', out['total_stage3'],'total_stage4:', out['total_stage4'],
-              'total_hivneg_none:', out['total_hivneg_none'], 'total_hivneg_hpv:', out['total_hivneg_hpv'], 'total_hivneg_cin1:', out['total_hivneg_cin1'],
-              'total_hivneg_cin2:', out['total_hivneg_cin2'], 'total_hivneg_cin3:', out['total_hivneg_cin3'], 'total_hivneg_stage1:', out['total_hivneg_stage1'],
-              'total_hivneg_stage2a:', out['total_hivneg_stage2a'], 'total_hivneg_stage2b:', out['total_hivneg_stage2b'],
-              'total_hivneg_stage3:', out['total_hivneg_stage3'], 'total_hivneg_stage4:', out['total_hivneg_stage4'],
-              'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],out['n_via_past_year'],out['n_xpert_past_year'],
-              'n_deaths_cc_hivneg_past_year:', out['n_deaths_cc_hivneg_past_year'],
-              'n_deaths_cc_hivpos_past_year:', out['n_deaths_cc_hivpos_past_year'],
-              'n_deaths_cc_hiv_past_year:', out['n_deaths_cc_hiv_past_year'],
-              'treated past year:', out['n_treated_past_year'], 'prop cc hiv:', out['prop_cc_hiv'],
-              'n_vaginal_bleeding_stage1:', out['n_vaginal_bleeding_stage1'],
-              'n_vaginal_bleeding_stage2a:', out['n_vaginal_bleeding_stage2a'],
-              'n_vaginal_bleeding_stage2b:', out['n_vaginal_bleeding_stage2b'],
-              'n_vaginal_bleeding_stage3:', out['n_vaginal_bleeding_stage3'],
-              'n_vaginal_bleeding_stage4:', out['n_vaginal_bleeding_stage4'],
-              'diagnosed_past_year_stage1:', out['n_diagnosed_past_year_stage1'],
-              'diagnosed_past_year_stage2a:', out['n_diagnosed_past_year_stage2a'],
-              'diagnosed_past_year_stage2b:', out['n_diagnosed_past_year_stage2b'],
-              'diagnosed_past_year_stage3:', out['n_diagnosed_past_year_stage3'],
-              'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'],
-              'n_ever_diagnosed', out['n_ever_diagnosed'],
-              'n_screened_xpert_this_month:', out['n_screened_xpert_this_month'],
-              'n_screened_via_this_month:', out['n_screened_via_this_month'],
-              'n_women_alive', out['n_women_alive'],
-              'n_women_alive_1549', out['n_women_alive_1549'],
-              'n_women_vaccinated', out['n_women_vaccinated'],
-              'n_ever_screened', out['n_ever_screened'],
-              'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
-              'n_cured_past_year:', out['n_cured_past_year'],
-              'n_thermoabl_past_year:', out['n_thermoabl_past_year'],
-              'n_cryotherapy_past_year:', out['n_cryotherapy_past_year'],
-              'n_women_alive:', out['n_women_alive'],
-              'rate_diagnosed_cc:', out['rate_diagnosed_cc'],
-              'n_women_with_cc:', out['cc'],
-              'n_women_living_with_diagnosed_cc:', out['n_women_living_with_diagnosed_cc'],
-              'n_women_living_with_diagnosed_cc_age_lt_30:', out['n_women_living_with_diagnosed_cc_age_lt_30'],
-              'n_women_living_with_diagnosed_cc_age_3050:', out['n_women_living_with_diagnosed_cc_age_3050'],
-              'n_women_living_with_diagnosed_cc_age_gt_50:', out['n_women_living_with_diagnosed_cc_age_gt_50'],
-              'n_diagnosed_1_year_ago_died:', out['n_diagnosed_1_year_ago_died'],
-              'n_diagnosed_1_year_ago:', out['n_diagnosed_1_year_ago'],
-              'n_women_hiv_unsuppressed:', out['n_women_hiv_unsuppressed'],
-              'n_women_hivneg', out['n_women_hivneg'],
-              'n_women_hivpos', out['n_women_hivpos'])
+#       print(self.sim.date, 'total_none:', out['total_none'], 'total_hpv:', out['total_hpv'], 'total_cin1:',out['total_cin1'],
+#             'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
+#             'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
+#             'total_stage3:', out['total_stage3'],'total_stage4:', out['total_stage4'],
+#             'total_hivneg_none:', out['total_hivneg_none'], 'total_hivneg_hpv:', out['total_hivneg_hpv'], 'total_hivneg_cin1:', out['total_hivneg_cin1'],
+#             'total_hivneg_cin2:', out['total_hivneg_cin2'], 'total_hivneg_cin3:', out['total_hivneg_cin3'], 'total_hivneg_stage1:', out['total_hivneg_stage1'],
+#             'total_hivneg_stage2a:', out['total_hivneg_stage2a'], 'total_hivneg_stage2b:', out['total_hivneg_stage2b'],
+#             'total_hivneg_stage3:', out['total_hivneg_stage3'], 'total_hivneg_stage4:', out['total_hivneg_stage4'],
+#             'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],out['n_via_past_year'],out['n_xpert_past_year'],
+#             'n_deaths_cc_hivneg_past_year:', out['n_deaths_cc_hivneg_past_year'],
+#             'n_deaths_cc_hivpos_past_year:', out['n_deaths_cc_hivpos_past_year'],
+#             'n_deaths_cc_hiv_past_year:', out['n_deaths_cc_hiv_past_year'],
+#             'treated past year:', out['n_treated_past_year'], 'prop cc hiv:', out['prop_cc_hiv'],
+#             'n_vaginal_bleeding_stage1:', out['n_vaginal_bleeding_stage1'],
+#             'n_vaginal_bleeding_stage2a:', out['n_vaginal_bleeding_stage2a'],
+#             'n_vaginal_bleeding_stage2b:', out['n_vaginal_bleeding_stage2b'],
+#             'n_vaginal_bleeding_stage3:', out['n_vaginal_bleeding_stage3'],
+#             'n_vaginal_bleeding_stage4:', out['n_vaginal_bleeding_stage4'],
+#             'diagnosed_past_year_stage1:', out['n_diagnosed_past_year_stage1'],
+#             'diagnosed_past_year_stage2a:', out['n_diagnosed_past_year_stage2a'],
+#             'diagnosed_past_year_stage2b:', out['n_diagnosed_past_year_stage2b'],
+#             'diagnosed_past_year_stage3:', out['n_diagnosed_past_year_stage3'],
+#             'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'],
+#             'n_ever_diagnosed', out['n_ever_diagnosed'],
+#             'n_screened_xpert_this_month:', out['n_screened_xpert_this_month'],
+#             'n_screened_via_this_month:', out['n_screened_via_this_month'],
+#             'n_women_alive', out['n_women_alive'],
+#             'n_women_alive_1549', out['n_women_alive_1549'],
+#             'n_women_vaccinated', out['n_women_vaccinated'],
+#             'n_ever_screened', out['n_ever_screened'],
+#             'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
+#             'n_cured_past_year:', out['n_cured_past_year'],
+#             'n_thermoabl_past_year:', out['n_thermoabl_past_year'],
+#             'n_cryotherapy_past_year:', out['n_cryotherapy_past_year'],
+#             'n_women_alive:', out['n_women_alive'],
+#             'rate_diagnosed_cc:', out['rate_diagnosed_cc'],
+#             'n_women_with_cc:', out['cc'],
+#             'n_women_living_with_diagnosed_cc:', out['n_women_living_with_diagnosed_cc'],
+#             'n_women_living_with_diagnosed_cc_age_lt_30:', out['n_women_living_with_diagnosed_cc_age_lt_30'],
+#             'n_women_living_with_diagnosed_cc_age_3050:', out['n_women_living_with_diagnosed_cc_age_3050'],
+#             'n_women_living_with_diagnosed_cc_age_gt_50:', out['n_women_living_with_diagnosed_cc_age_gt_50'],
+#             'n_diagnosed_1_year_ago_died:', out['n_diagnosed_1_year_ago_died'],
+#             'n_diagnosed_1_year_ago:', out['n_diagnosed_1_year_ago'],
+#             'n_women_hiv_unsuppressed:', out['n_women_hiv_unsuppressed'],
+#             'n_women_hivneg', out['n_women_hivneg'],
+#             'n_women_hivpos', out['n_women_hivpos'])
 
         # comment out this below when running tests
 
@@ -1985,14 +1987,15 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 #       selected_columns = ["hv_inf", "ce_hiv_unsuppressed", "hv_art", "ce_hpv_cc_status",'ce_cured_date_cc']
 
-        selected_columns = ["ce_selected_for_via_this_month", "ce_selected_for_xpert_this_month",
+        selected_columns = ["rounded_decimal_year","ce_hpv_cc_status","ce_selected_for_via_this_month", "ce_selected_for_xpert_this_month",
                             "ce_ever_screened", "ce_date_last_screened", "ce_date_cin_removal",
                             "ce_xpert_hpv_ever_pos", "ce_via_cin_ever_detected",  "ce_date_thermoabl","ce_date_cryotherapy",
                             "ce_biopsy"]
 
         # selected_columns = ["ce_hpv_cc_status"]
 
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & (df['hv_inf'])]
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & (df['hv_inf'])
+                           & df['ce_ever_screened']]
 
 #       pd.set_option('display.max_rows', None)
         print(selected_rows[selected_columns])
