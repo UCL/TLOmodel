@@ -208,12 +208,24 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.wasting_symptom = 'weight_loss'
 
         # dict to hold counters for the number of episodes by wasting-type and age-group
-        blank_counter = dict(
+        blank_inc_counter = dict(
             zip(self.wasting_states, [list() for _ in self.wasting_states]))
         self.wasting_incident_case_tracker_blank = {
-            _agrp: copy.deepcopy(blank_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
-
+            _agrp: copy.deepcopy(blank_inc_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
         self.wasting_incident_case_tracker = copy.deepcopy(self.wasting_incident_case_tracker_blank)
+
+        self.recovery_options = ['mod_nat_recov',
+                                 'mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov',
+                                 'sev_MAM_tx_full_recov', 'sev_SAM_tx_full_recov',
+                                 'mod_SAM_tx_recov_to_MAM', 'sev_SAM_tx_recov_to_MAM',
+                                 'mod_not_yet_recovered', 'sev_not_yet_recovered']
+        blank_length_counter = dict(
+            zip(self.recovery_options, [list() for _ in self.recovery_options]))
+        self.wasting_length_tracker_blank = {
+            _agrp: copy.deepcopy(blank_length_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
+        self.wasting_length_tracker = copy.deepcopy(self.wasting_length_tracker_blank)
+
+        self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
 
     def read_parameters(self, data_folder):
         """
@@ -877,6 +889,11 @@ class Wasting_NaturalRecovery_Event(Event, IndividualScopeEventMixin):
         if whz == '-3<=WHZ<-2':
             # improve WHZ
             df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
+            age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
+            self.module.wasting_length_tracker[age_group]['mod_nat_recov'].append(
+                (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
+            )
+
         else:
             # whz == 'WHZ<-3'
             # improve WHZ
@@ -903,6 +920,16 @@ class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEven
 
         if not df.at[person_id, 'is_alive']:
             return
+
+        if df.at[person_id, 'un_WHZ_category'] != 'WHZ>=-2':
+            if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
+                recov_opt = f"mod_{df.at[person_id, 'un_clinical_acute_malnutrition']}_tx_full_recov"
+            elif df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
+                recov_opt = f"sev_{df.at[person_id, 'un_clinical_acute_malnutrition']}_tx_full_recov"
+            age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
+            self.module.wasting_length_tracker[age_group][recov_opt].append(
+                (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
+            )
 
         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
@@ -952,6 +979,14 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
                                                p['proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC']])
 
             if mam_classification == 'mam_by_muac_only':
+                if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
+                    recov_opt = "mod_SAM_tx_recov_to_MAM"
+                elif df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
+                    recov_opt = "sev_SAM_tx_recov_to_MAM"
+                age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
+                self.module.wasting_length_tracker[age_group][recov_opt].append(
+                    (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
+                )
                 df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
 
@@ -1464,6 +1499,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
+
+        # ----- INCIDENCE LOG ----------------
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
         inc_df = pd.DataFrame(index=self.module.wasting_incident_case_tracker.keys(),
@@ -1476,18 +1513,74 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(key='wasting_incidence_count', data=inc_df.to_dict())
 
-        # Reset the counters and the date_last_run
-        self.module.wasting_incident_case_tracker = copy.deepcopy(
-            self.module.wasting_incident_case_tracker_blank)
+        # Reset the tracker and the date_last_run
+        self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
         self.date_last_run = self.sim.date
 
+        # ----- LENGTH LOG ----------------
+        # Convert the list of lengths to an avg length
+        # and check that all the lengths are positive
+        length_df = pd.DataFrame(index=self.module.wasting_length_tracker.keys(),
+                                 columns=self.module.recovery_options)
+        for age_grp in self.module.wasting_length_tracker.keys():
+            for recov_opt in self.module.recovery_options:
+                if self.module.wasting_length_tracker[age_grp][recov_opt]:
+                    length_df.loc[age_grp, recov_opt] = (sum(self.module.wasting_length_tracker[age_grp][recov_opt]) /
+                                                         len(self.module.wasting_length_tracker[age_grp][recov_opt]))
+                else:
+                    length_df.loc[age_grp, recov_opt] = 0
+                assert not np.isnan(length_df.loc[age_grp, recov_opt])
+                assert all(length > 0 for length in self.module.wasting_length_tracker[age_grp][recov_opt])
+
+        # Reset the tracker
+        self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
+
+        under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
+
+        for age_ys in range(5):
+            age_grp = self.module.age_grps.get(age_ys, '5+y')
+
+            # get those children who are wasted
+            mod_wasted_whole_ys_agegrp = under5s[(
+                under5s.age_years.between(age_ys, age_ys + 1, inclusive='left') &
+                (under5s.un_WHZ_category == '-3<=WHZ<-2')
+            )]
+            sev_wasted_whole_ys_agegrp = under5s[(
+                under5s.age_years.between(age_ys, age_ys + 1, inclusive='left') &
+                (under5s.un_WHZ_category == 'WHZ<-3')
+            )]
+            mod_wasted_whole_ys_agegrp['wasting_length'] = \
+                (self.sim.date - mod_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
+            sev_wasted_whole_ys_agegrp['wasting_length'] = \
+                (self.sim.date - sev_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
+            if len(mod_wasted_whole_ys_agegrp) > 0:
+                assert not np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).all()
+                assert all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length'])
+                length_df.loc[age_grp, 'mod_not_yet_recovered'] = (
+                    sum(mod_wasted_whole_ys_agegrp['wasting_length']) / len(mod_wasted_whole_ys_agegrp['wasting_length'])
+                )
+            else:
+                length_df.loc[age_grp, 'mod_not_yet_recovered'] = 0
+            assert not np.isnan(length_df.loc[age_grp, 'mod_not_yet_recovered'])
+            if len(sev_wasted_whole_ys_agegrp) > 0:
+                assert not np.isnan(sev_wasted_whole_ys_agegrp['wasting_length']).all()
+                assert all(length > 0 for length in sev_wasted_whole_ys_agegrp['wasting_length'])
+                length_df.loc[age_grp, 'sev_not_yet_recovered'] = (
+                    sum(sev_wasted_whole_ys_agegrp['wasting_length']) / len(sev_wasted_whole_ys_agegrp['wasting_length'])
+                )
+            else:
+                length_df.loc[age_grp, 'sev_not_yet_recovered'] = 0
+            assert not np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered'])
+
+        logger.info(key='wasting_length_avg', data=length_df.to_dict())
+
+        # ----- PREVALENCE LOG ----------------
         # Wasting totals (prevalence & pop size at logging time)
         # declare a dictionary that will hold proportions of wasting prevalence per each age group
         wasting_prev_dict: Dict[str, Any] = dict()
         # declare a dictionary that will hold pop sizes
         pop_sizes_dict: Dict[str, Any] = dict()
 
-        under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
         # loop through different age groups and get proportions of wasting prevalence per each age group
         for low_bound_mos, high_bound_mos in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
             low_bound_age_in_years = low_bound_mos / 12.0
