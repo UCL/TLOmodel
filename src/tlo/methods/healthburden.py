@@ -12,6 +12,7 @@ import pandas as pd
 from tlo import Date, DateOffset, Module, Parameter, Types, logging
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
+from tlo.methods import tb
 from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
