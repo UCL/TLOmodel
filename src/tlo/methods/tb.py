@@ -2607,6 +2607,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         self.number_of_occurrences += 1
 
         df = self.sim.population.props  # shortcut to the dataframe
+        now = self.sim.date
 
         person = df.loc[person_id]
 
@@ -2618,6 +2619,19 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         ):
             return
 
+        # refer for HIV testing: all ages
+        # do not run if already HIV diagnosed or had test in last week
+        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                    person_id=person_id,
+                    module=self.sim.modules["Hiv"],
+                    referred_from="Tb",
+                ),
+                priority=1,
+                topen=now,
+                tclose=None,
+            )
         # if currently have symptoms of TB, refer for screening/testing
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         if any(x in self.module.symptom_list for x in persons_symptoms):
