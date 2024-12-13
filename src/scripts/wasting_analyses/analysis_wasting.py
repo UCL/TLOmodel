@@ -46,8 +46,9 @@ class WastingAnalyses:
         sim_results_folder_path_run0_draw0 = sim_results_parent_folder_name + '/' + sim_results_folder_name + '/0/0/'
         sim_results_file_name_prefix = scenario_filename
         sim_results_file_name_extension = '.log.gz'
-        gz_results_file_path = Path(glob.glob(os.path.join(sim_results_folder_path_run0_draw0,
-                                                           f"{sim_results_file_name_prefix}*{sim_results_file_name_extension}"))[0])
+        gz_results_file_path = \
+            Path(glob.glob(os.path.join(sim_results_folder_path_run0_draw0,
+                                        f"{sim_results_file_name_prefix}*{sim_results_file_name_extension}"))[0])
 
         # Path to the decompressed .log file
         log_results_file_path = gz_results_file_path.with_suffix('')
@@ -59,8 +60,12 @@ class WastingAnalyses:
 
         self.__log_file_path = log_results_file_path
         # parse wasting logs
-        self.__logs_dict = \
-            parse_log_file(self.__log_file_path)['tlo.methods.wasting']
+        self.__w_logs_dict =  parse_log_file(self.__log_file_path)['tlo.methods.wasting']
+        # parse scaling factor log
+        self.__scaling_factor = \
+            parse_log_file(self.__log_file_path)['tlo.methods.population']['scaling_factor'].set_index('date').loc[
+                '2010-01-01', 'scaling_factor'
+            ]
 
         # gender description
         self.__gender_desc = {'M': 'Males',
@@ -80,7 +85,7 @@ class WastingAnalyses:
 
     def plot_wasting_incidence(self):
         """ plot the incidence of wasting over time """
-        w_inc_df = self.__logs_dict['wasting_incidence_count']
+        w_inc_df = self.__w_logs_dict['wasting_incidence_count']
         w_inc_df = w_inc_df.set_index(w_inc_df.date.dt.year)
         w_inc_df = w_inc_df.drop(columns='date')
         # check no incidence of well-nourished
@@ -92,28 +97,39 @@ class WastingAnalyses:
         age_years = list(w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys(
 
         ))
-        age_years.remove('5+y')
+        # age_years.remove('5+y')
 
         _row_counter = 0
         _col_counter = 0
         # plot setup
         fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True, figsize=(10, 6))
-        fig.delaxes(axes[1, 2])
+        axes[1, 2].axis('off')  # 5+y has no data (no new cases in 5+y), its space is used to display the label
         for _age in age_years:
-            new_df = pd.DataFrame()
+            plotting = pd.DataFrame()
             for state in w_inc_df.columns:
-                new_df[state] = \
+                plotting[state] = \
                     w_inc_df.apply(lambda row: row[state][_age], axis=1)
-            # convert into proportions
-            new_df = new_df.apply(lambda _row: _row / _row.sum(), axis=1)
-            plotting = new_df.rename(columns=self.__wasting_types_desc)
+            # remove sev cases from mod cases (all sev cases went through mod state)
+            plotting["-3<=WHZ<-2"] = plotting["-3<=WHZ<-2"] - plotting["WHZ<-3"]
+            # rescale nmbs from simulated pop_size to pop size of Malawi
+            plotting = plotting * self.__scaling_factor
+            plotting = plotting.rename(columns=self.__wasting_types_desc)
+
             ax = plotting.plot(kind='bar', stacked=True,
                                ax=axes[_row_counter, _col_counter],
-                               title=f"incidence of wasting in {_age} old",
-                               ylim=[0, 1])
-            ax.legend(loc='lower right')
+                               title=f"incidence of wasting in {_age} old")#,
+                               #ylim=[0, 1])
+            show_legend = (_row_counter == 1 and _col_counter == 2)
+            # show_x_axis_label = (_row_counter == 0 and _col_counter == 2)
+            if show_legend:
+                ax.legend(loc='center')
+                ax.set_title('')
+            else:
+                ax.get_legend().remove()
+            # if show_x_axis_label:
+            #     ax.set_xlabel('Year')  # TODO: this is not working
             ax.set_xlabel('year')
-            ax.set_ylabel('proportion')
+            ax.set_ylabel('number of incidence cases')
             # move to another row
             if _col_counter == 2:
                 _row_counter += 1
@@ -124,10 +140,59 @@ class WastingAnalyses:
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
 
+    # def plot_wasting_incidence_mod_to_sev_props(self):
+    #     """ plot the incidence of wasting over time """
+    #     w_inc_df = self.__w_logs_dict['wasting_incidence_count']
+    #     w_inc_df = w_inc_df.set_index(w_inc_df.date.dt.year)
+    #     w_inc_df = w_inc_df.drop(columns='date')
+    #     # check no incidence of well-nourished
+    #     all_zeros = w_inc_df['WHZ>=-2'].apply(lambda x: all(value == 0 for value in x.values()))
+    #     assert all(all_zeros)
+    #     w_inc_df = w_inc_df[["WHZ<-3", "-3<=WHZ<-2"]]
+    #     # get age_years, doesn't matter what wasting category you choose,
+    #     # they all have same age groups
+    #     age_years = list(w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys(
+    #
+    #     ))
+    #     age_years.remove('5+y')
+    #
+    #     _row_counter = 0
+    #     _col_counter = 0
+    #     # plot setup
+    #     fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True, figsize=(10, 6))
+    #     fig.delaxes(axes[1, 2])
+    #     for _age in age_years:
+    #         new_df = pd.DataFrame()
+    #         for state in w_inc_df.columns:
+    #             new_df[state] = \
+    #                 w_inc_df.apply(lambda row: row[state][_age], axis=1)
+    #         # convert into proportions
+    #         new_df = new_df.apply(lambda _row: _row / _row.sum(), axis=1)
+    #         plotting = new_df.rename(columns=self.__wasting_types_desc)
+    #         ax = plotting.plot(kind='bar', stacked=True,
+    #                            ax=axes[_row_counter, _col_counter],
+    #                            title=f"incidence of wasting in {_age} old",
+    #                            ylim=[0, 1])
+    #         ax.legend(loc='lower right')
+    #         ax.set_xlabel('year')
+    #         ax.set_ylabel('proportion')
+    #         # move to another row
+    #         if _col_counter == 2:
+    #             _row_counter += 1
+    #             _col_counter = -1
+    #         _col_counter += 1  # increment column counter
+    #
+    #     handles, labels = axes[1, 1].get_legend_handles_labels()
+    #     fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1.05, 0.5))
+    #     fig_output_name = ('wasting_incidence_mod_to_sev_props__' + self.datestamp)
+    #     fig.tight_layout()
+    #     self.save_fig__store_pdf_file(fig, fig_output_name)
+    #     # plt.show()
+
     def plot_wasting_prevalence_per_year(self):
         """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
         children wasted divide by the total number of children less than 5 years"""
-        w_prev_df = self.__logs_dict["wasting_prevalence_props"]
+        w_prev_df = self.__w_logs_dict["wasting_prevalence_props"]
         w_prev_df = w_prev_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']]
         w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
         w_prev_df = w_prev_df.drop(columns='date')
@@ -147,7 +212,7 @@ class WastingAnalyses:
     def plot_wasting_prevalence_by_age_group(self):
         """ Plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
         children wasted in a particular age-group divided by the total number of children per that age-group"""
-        w_prev_df = self.__logs_dict["wasting_prevalence_props"]
+        w_prev_df = self.__w_logs_dict["wasting_prevalence_props"]
         w_prev_df = w_prev_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
         w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
         w_prev_df = w_prev_df.loc[w_prev_df.index == 2020]
@@ -198,7 +263,7 @@ class WastingAnalyses:
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
                     fmt='o', color='#000', label="GBD")
-        ax.set_title('Direct deaths due to wasting')
+        ax.set_title('Direct deaths due to severe acute malnutrition')
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc=2)
@@ -249,6 +314,9 @@ if __name__ == "__main__":
 
     # plot wasting incidence
     wasting_analyses.plot_wasting_incidence()
+
+    # plot wasting incidence mod:sev proportions
+    # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
 
     # plot wasting prevalence
     wasting_analyses.plot_wasting_prevalence_per_year()
