@@ -1362,6 +1362,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
                 )
             else:
                 if random_value <= p['prob_thermoabl_successful']:
+                    df.at[person_id, "ce_date_cin_removal"] = self.sim.date
                     df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
 
@@ -1405,6 +1406,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
                 )
             else:
                 if random_value <= p['prob_cryotherapy_successful']:
+                    df.at[person_id, "ce_date_cin_removal"] = self.sim.date
                     df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
 
