@@ -60,7 +60,7 @@ class Consumables:
         self._item_code_designations = item_code_designations
 
         # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
-        self.item_codes,  self._processed_consumables_data = \
+        self.item_codes, self._processed_consumables_data = \
             self._process_consumables_data(availability_data=availability_data)
 
         # Set the availability based on the argument provided (this can be updated later after the class is initialised)
@@ -199,7 +199,8 @@ class Consumables:
 
     def _request_consumables(self,
                              facility_info: 'FacilityInfo',  # noqa: F821
-                             item_codes: dict,
+                             essential_item_codes: dict,
+                             optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
                              treatment_id: Optional[str] = None
                              ) -> dict:
@@ -208,40 +209,52 @@ class Consumables:
 
         :param facility_info: The facility_info from which the request for consumables originates
         :param item_codes: dict of the form {<item_code>: <quantity>} for the items requested
+        :param optional_item_codes: dict of the form {<item_code>: <quantity>} for the optional items requested
         :param to_log: whether the request is logged.
         :param treatment_id: the TREATMENT_ID of the HSI (which is entered to the log, if provided).
         :return: dict of the form {<item_code>: <bool>} indicating the availability of each item requested.
         """
+        # If optional_item_codes is None, treat it as an empty dictionary
+        optional_item_codes = optional_item_codes or {}
+        _all_item_codes = {**essential_item_codes, **optional_item_codes}
 
         # Issue warning if any item_code is not recognised.
-        if not self.item_codes.issuperset(item_codes.keys()):
-            self._not_recognised_item_codes.add((treatment_id, tuple(set(item_codes.keys()) - self.item_codes)))
+        not_recognised_item_codes = _all_item_codes.keys() - self.item_codes
+        if len(not_recognised_item_codes) > 0:
+            self._not_recognised_item_codes[treatment_id] |= not_recognised_item_codes
 
         # Look-up whether each of these items is available in this facility currently:
-        available = self._lookup_availability_of_consumables(item_codes=item_codes, facility_info=facility_info)
+        available = self._lookup_availability_of_consumables(item_codes=_all_item_codes, facility_info=facility_info)
 
         # Log the request and the outcome:
         if to_log:
-            items_available = {k: v for k, v in item_codes.items() if available[k]}
-            items_not_available = {k: v for k, v in item_codes.items() if not available[k]}
-            logger.info(key='Consumables',
-                        data={
-                            'TREATMENT_ID': (treatment_id if treatment_id is not None else ""),
-                            'Item_Available': str(items_available),
-                            'Item_NotAvailable': str(items_not_available),
-                        },
-                        # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
-                        description="Record of each consumable item that is requested."
-                        )
+            items_available = {k: v for k, v in _all_item_codes.items() if available[k]}
+            items_not_available = {k: v for k, v in _all_item_codes.items() if not available[k]}
 
-            self._summary_counter.record_availability(items_available=items_available,
-                                                      items_not_available=items_not_available)
+            # Log items used if all essential items are available
+            items_used = items_available if all(available.get(k, False) for k in essential_item_codes) else {}
+
+            logger.info(
+                key='Consumables',
+                data={
+                    'TREATMENT_ID': treatment_id or "",
+                    'Item_Available': str(items_available),
+                    'Item_NotAvailable': str(items_not_available),
+                    'Item_Used': str(items_used),
+                },
+                description="Record of requested and used consumable items."
+            )
+            self._summary_counter.record_availability(
+                items_available=items_available,
+                items_not_available=items_not_available,
+                items_used=items_used,
+            )
 
         # Return the result of the check on availability
         return available
 
     def _lookup_availability_of_consumables(self,
-                                            facility_info: 'FacilityInfo',   # noqa: F821
+                                            facility_info: 'FacilityInfo',  # noqa: F821
                                             item_codes: dict
                                             ) -> dict:
         """Lookup whether a particular item_code is in the set of available items for that facility (in
@@ -265,15 +278,24 @@ class Consumables:
         return avail
 
     def on_simulation_end(self):
-        """Do tasks at the end of the simulation: Raise warnings and enter to log about item_codes not recognised."""
-        if self._not_recognised_item_codes:
-            warnings.warn(UserWarning(f"Item_Codes were not recognised./n"
-                                      f"{self._not_recognised_item_codes}"))
-            for _treatment_id, _item_codes in self._not_recognised_item_codes:
-                logger.info(
-                    key="item_codes_not_recognised",
-                    data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
+        """Do tasks at the end of the simulation.
+
+        Raise warnings and enter to log about item_codes not recognised.
+        """
+        if len(self._not_recognised_item_codes) > 0:
+            not_recognised_item_codes = {
+                treatment_id if treatment_id is not None else "": sorted(codes)
+                for treatment_id, codes in self._not_recognised_item_codes.items()
+            }
+            warnings.warn(
+                UserWarning(
+                    f"Item_Codes were not recognised.\n{not_recognised_item_codes}"
                 )
+            )
+            logger.info(
+                key="item_codes_not_recognised",
+                data=not_recognised_item_codes,
+            )
 
     def on_end_of_year(self):
         self._summary_counter.write_to_log_and_reset_counters()
@@ -353,10 +375,11 @@ class ConsumablesSummaryCounter:
 
         self._items = {
             'Available': defaultdict(int),
-            'NotAvailable': defaultdict(int)
+            'NotAvailable': defaultdict(int),
+            'Used': defaultdict(int),
         }
 
-    def record_availability(self, items_available: dict, items_not_available: dict) -> None:
+    def record_availability(self, items_available: dict, items_not_available: dict, items_used: dict) -> None:
         """Add information about the availability of requested items to the running summaries."""
 
         # Record items that were available
@@ -366,6 +389,10 @@ class ConsumablesSummaryCounter:
         # Record items that were not available
         for _item, _num in items_not_available.items():
             self._items['NotAvailable'][_item] += _num
+
+        # Record items that were used
+        for _item, _num in items_used.items():
+            self._items['Used'][_item] += _num
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics and reset the data structures."""
@@ -377,6 +404,7 @@ class ConsumablesSummaryCounter:
             data={
                 "Item_Available": self._items['Available'],
                 "Item_NotAvailable": self._items['NotAvailable'],
+                "Item_Used": self._items['Used'],
             },
         )
 
