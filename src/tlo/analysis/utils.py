@@ -230,8 +230,18 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
 
     return output
 
+def extract_draw_names(results_folder: Path) -> dict[int, str]:
+    """Returns dict keyed by the draw-number giving the 'draw-name' declared for that draw in the Scenario at
+    draw_names()."""
+    draws = [f for f in os.scandir(results_folder) if f.is_dir()]
+    return {
+        int(d.name):
+            load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
+        for d in draws
+    }
 
-def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
+
+def extract_params(results_folder: Path, use_draw_names: bool = False) -> Optional[pd.DataFrame]:
     """Utility function to get overridden parameters from scenario runs
 
     Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
@@ -258,6 +268,11 @@ def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
         params.index.name = 'draw'
         params = params.rename(columns={'new_value': 'value'})
         params = params.sort_index()
+
+        if use_draw_names:
+            # use draw_names instead of draw_number in the index
+            draw_names = extract_draw_names(results_folder)
+            params.index = params.index.map(draw_names)
         return params
 
     except KeyError:
