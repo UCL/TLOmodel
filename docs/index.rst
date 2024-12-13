@@ -18,6 +18,8 @@ It is developed in a collaboration between:
 
 * `University of York <https://www.york.ac.uk/che/>`_
 
+* `East, Central and Southern Africa Health Community (ECSA-HC) <https://ecsahc.org/>`_
+
 It benefits from a close partnership between this team and the Ministry of Health, Malawi.
 
 
@@ -52,6 +54,7 @@ Contents
    azure_batch
    reference/index
    resources/index
+   parameters
    learning
    publications
    contributors

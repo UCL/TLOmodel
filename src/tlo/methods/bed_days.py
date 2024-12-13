@@ -318,6 +318,60 @@ class BedDays:
 
         return available_footprint
 
+    def combine_footprints_for_same_patient(
+        self, fp1: Dict[str, int], fp2: Dict[str, int]
+    ) -> Dict[str, int]:
+        """
+        Given two footprints that are due to start on the same day, combine the two footprints by
+        overlaying the higher-priority bed over the lower-priority beds.
+
+        As an example, given the footprints,
+        fp1 = {"bedtype1": 2, "bedtype2": 0}
+        fp2 = {"bedtype1": 1, "bedtype2": 6}
+
+        where bedtype1 is higher priority than bedtype2, we expect the combined allocation to be
+        {"bedtype1": 2, "bedtype2": 5}.
+
+        This is because footprints are assumed to run in the order of the bedtypes priority; so
+        fp2's second day of being allocated to bedtype2 is overwritten by the higher-priority
+        allocation to bedtype1 from fp1. The remaining 5 days are allocated to bedtype2 since
+        fp1 does not require a bed after the first 2 days, but fp2 does.
+
+        :param fp1: Footprint, to be combined with the other argument.
+        :param pf2: Footprint, to be combined with the other argument.
+        """
+        fp1_length = sum(days for days in fp1.values())
+        fp2_length = sum(days for days in fp2.values())
+        max_length = max(fp1_length, fp2_length)
+
+        # np arrays where each entry is the priority of bed allocated by the footprint
+        # on that day. fp_priority[i] = priority of the bed allocated by the footprint on
+        # day i (where the current day is day 0).
+        # By default, fill with priority equal to the lowest bed priority; though all
+        # the values will have been explicitly overwritten after the next loop completes.
+        fp1_priority = np.ones((max_length,), dtype=int) * (len(self.bed_types) - 1)
+        fp2_priority = fp1_priority.copy()
+
+        fp1_at = 0
+        fp2_at = 0
+        for priority, bed_type in enumerate(self.bed_types):
+            # Bed type priority is dictated by list order, so it is safe to loop here.
+            # We will start with the highest-priority bed type and work to the lowest
+            fp1_priority[fp1_at:fp1_at + fp1[bed_type]] = priority
+            fp1_at += fp1[bed_type]
+            fp2_priority[fp2_at:fp2_at + fp2[bed_type]] = priority
+            fp2_at += fp2[bed_type]
+
+        # Element-wise minimum of the two priority arrays is then the bed to assign
+        final_priorities = np.minimum(fp1_priority, fp2_priority)
+        # Final footprint is then formed by converting the priorities into blocks of days
+        return {
+            # Cast to int here since pd.datetime.timedelta doesn't know what to do with
+            # np.int64 types
+            bed_type: int(sum(final_priorities == priority))
+            for priority, bed_type in enumerate(self.bed_types)
+        }
+
     def impose_beddays_footprint(self, person_id, footprint):
         """This is called to reflect that a new occupancy of bed-days should be recorded:
         * Cause to be reflected in the bed_tracker that an hsi_event is being run that will cause bed to be
@@ -345,9 +399,7 @@ class BedDays:
             remaining_footprint = self.get_remaining_footprint(person_id)
 
             # combine the remaining footprint with the new footprint, with days in each bed-type running concurrently:
-            combo_footprint = {bed_type: max(footprint[bed_type], remaining_footprint[bed_type])
-                               for bed_type in self.bed_types
-                               }
+            combo_footprint = self.combine_footprints_for_same_patient(footprint, remaining_footprint)
 
             # remove the old footprint and apply the combined footprint
             self.remove_beddays_footprint(person_id)
