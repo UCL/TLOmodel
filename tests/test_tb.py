@@ -30,8 +30,6 @@ try:
 except NameError:
     # running interactively
     resourcefilepath = 'resources'
-
-
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
