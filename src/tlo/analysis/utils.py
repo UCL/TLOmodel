@@ -1269,6 +1269,51 @@ def get_parameters_for_standard_mode2_runs() -> Dict:
     }
 
 
+def get_parameters_for_hrh_historical_scaling_and_rescaling_for_mode2() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    scenario runs that involve:
+    mode switch from 1 to 2 in 2020,
+    rescaling hrh capabilities to effective capabilities in the end of 2019 (the previous year of mode switch),
+    hrh historical scaling from 2020 to 2024.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': 1.0,
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            'Service_Availability': ['*'],
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 2,
+            "year_mode_switch": 2020,  # <-- Given that the data in HRH capabilities resource file are for year 2019
+            # and that the model has been calibrated to data by 2019, we want the rescaling to effective capabilities
+            # to happen in the end of year 2019, which should be the previous year of mode switch to mode 2.
+            "scale_to_effective_capabilities": True,
+            'yearly_HR_scaling_mode': 'historical_scaling',  # <-- for 5 years of 2020-2024; the yearly historical
+            # scaling factor are stored in the sheet "historical_scaling" in ResourceFile_dynamic_HR_scaling.
+            "tclose_overwrite": 1,  # <-- In most of our runs in mode 2, we chose to overwrite tclose
+            "tclose_days_offset_overwrite": 7,  # <-- and usually set it to 7.
+            "cons_availability": "default",
+            "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+            "policy_name": 'Naive',
+        },
+    }
+
+
 def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     resourcefilepath: Path,
     max_healthsystem_function: Optional[bool] = False,
