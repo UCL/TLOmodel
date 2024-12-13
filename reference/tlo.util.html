@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.util module &mdash; TLOmodel 0.1.dev2476+g58256ce documentation</title>
+  <title>tlo.util module &mdash; TLOmodel 0.1.dev2485+gd6fcffd.d20241213 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=04b6525c"></script>
+      <script src="../_static/documentation_options.js?v=01c4fe84"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -498,6 +498,23 @@ initialised with a list of multiple file names</p></li>
 </div></blockquote>
 </p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.util.parse_csv_values_for_columns_with_mixed_datatypes">
+<span class="sig-name descname"><span class="pre">parse_csv_values_for_columns_with_mixed_datatypes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.util.parse_csv_values_for_columns_with_mixed_datatypes" title="Link to this definition"></a></dt>
+<dd><p>Pandas <code class="xref py py-func docutils literal notranslate"><span class="pre">pandas.read_csv()</span></code> function handles columns with mixed data types by defaulting to the object
+data type, which often results in values being interpreted as strings. The most common place for this in TLO is
+when we are reading parameters. This is not a problem when the parameters are read in read parameters method
+using load_parameters_from_dataframe method as parameter values are mapped to their defined datatypes.</p>
+<p>Problems arise when you’re trying to directly use the output from the csv files like it is within some few files
+in TLO. This method tries to provide a fix by parsing the parameter values in those few places to their best
+possible data types</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – mixed datatype column value</p>
 </dd>
 </dl>
 </dd></dl>

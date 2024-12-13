@@ -436,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'Contraception', 'Labour', 'Lifestyle', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'Lifestyle', 'Labour', 'Contraception', 'CareOfWomenDuringPregnancy'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x33f6d8450>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x33f6818d0>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x33f680290>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x33f681e50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x33f680a90>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x33f681350>, 'eclampsia': <tlo.methods.causes.Cause object at 0x33f681290>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x33f6811d0>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x16a957c50>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x16ab58f10>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x16ab5afd0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x16ab5a310>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x16ab58d90>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x16ab5add0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x16ab5aad0>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x16ab5ab50>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x33f681cd0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x16ab5b050>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Malaria', 'HealthBurden', 'CardioMetabolicDisorders', 'Hiv'}
+     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'HealthBurden', 'Malaria', 'Hiv'}
 
      __annotations__ : {}
 

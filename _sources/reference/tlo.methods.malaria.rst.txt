@@ -18,18 +18,6 @@ tlo.methods.malaria module
         * - Item
           - Type
           - Description
-        * - interv
-          - REAL
-          - data frame of intervention coverage by year
-        * - clin_inc
-          - REAL
-          - data frame of clinical incidence by age, district, intervention coverage
-        * - inf_inc
-          - REAL
-          - data frame of infection incidence by age, district, intervention coverage
-        * - sev_inc
-          - REAL
-          - data frame of severe case incidence by age, district, intervention coverage
         * - itn_district
           - REAL
           - data frame of ITN usage rates by district
@@ -190,13 +178,13 @@ tlo.methods.malaria module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x33f3d2490>}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x16a86dcd0>}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x33f3d2510>}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x16a86c790>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'Contraception', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'Contraception', 'HealthSystem', 'SymptomManager'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
