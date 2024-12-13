@@ -71,7 +71,7 @@ class HSIEventQueueItem(NamedTuple):
 class HSI_Event:
     """Base HSI event class, from which all others inherit.
 
-    Concrete subclasses should also inherit from one of the EventMixin classes
+    Concrete subclasses should also inherit from `IndividualScopeEventMixin`
     defined in `src/tlo/events.py`, and implement at least an `apply` and
     `did_not_run` method.
     """
@@ -321,7 +321,7 @@ class HSI_Event:
 
         # Over-write ACCEPTED_FACILITY_LEVEL to to redirect all '1b' appointments to '2'
         self._adjust_facility_level_to_merge_1b_and_2()
-        
+
         self.facility_info = health_system.get_facility_info(self)
 
         # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
