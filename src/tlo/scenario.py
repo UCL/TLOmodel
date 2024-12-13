@@ -63,7 +63,6 @@ import abc
 import argparse
 import datetime
 import json
-import pickle
 from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
@@ -72,7 +71,6 @@ from typing import List, Optional
 import numpy as np
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
 from tlo.util import str_to_pandas_date
 
 logger = logging.getLogger(__name__)
@@ -445,13 +443,6 @@ class SampleRunner:
         else:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()
-
-        if sim.log_filepath is not None:
-            outputs = parse_log_file(sim.log_filepath)
-            for key, output in outputs.items():
-                if key.startswith("tlo."):
-                    with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
-                        pickle.dump(output, f)
 
     def run(self):
         """Run all samples for the scenario. Used by `tlo scenario-run` to run the scenario locally"""
