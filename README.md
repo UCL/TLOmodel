@@ -58,5 +58,5 @@ This work has been funded by grants from [Wellcome](https://wellcome.org/),
 [arc-link]: https://www.ucl.ac.uk/arc
 [york-link]: https://www.york.ac.uk/
 [che-link]: https://www.york.ac.uk/che/
-[ecsea-hc-link]: https://ecsahc.org/
+[ecsa-hc-link]: https://ecsahc.org/
 [contributors-link]: https://www.tlomodel.org/contributors.html
