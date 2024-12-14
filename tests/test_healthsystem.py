@@ -1743,9 +1743,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
             tclose=None,
             priority=sim.modules['DummyModule'].rng.randint(0, 3))
 
-    (list_of_individual_hsi_event_tuples_due_today,
-        list_of_population_hsi_event_tuples_due_today
-     ) = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
+    list_of_individual_hsi_event_tuples_due_today = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
 
     # Check that HealthSystemScheduler is recovering the correct number of events for today
     assert len(list_of_individual_hsi_event_tuples_due_today) == Ntoday
