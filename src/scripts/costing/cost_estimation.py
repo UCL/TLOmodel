@@ -831,18 +831,76 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
                                             _add_figname_suffix = ''):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Make a copy of the dataframe to avoid modifying the original
-    _df = _df[_df.stat == 'mean'].copy()
-    # Convert 'value' to millions
-    _df['cost'] = _df['cost'] / 1e6
-    if _draws == None:
-        subset_df = _df
-    else:
-        subset_df = _df[_df.draw.isin(_draws)]
+    _df_mean = _df[_df.stat == 'mean'].copy()
+    _df_lower = _df[_df.stat == 'lower'].copy()
+    _df_upper = _df[_df.stat == 'upper'].copy()
 
-    if _year == 'all':
-        subset_df = subset_df
+    # Subset the dataframes to keep the s=relevant categories for the plot
+    dfs = {"_df_mean": _df_mean, "_df_lower": _df_lower, "_df_upper": _df_upper} # create a dict of dataframes
+    for name, df in dfs.items():
+        dfs[name] = df.copy()  # Choose the dataframe to modify
+        # Convert 'cost' to millions
+        dfs[name]['cost'] = dfs[name]['cost'] / 1e6
+        # Subset data
+        if _draws is not None:
+            dfs[name] = dfs[name][dfs[name].draw.isin(_draws)]
+        if _year != 'all':
+            dfs[name] = dfs[name][dfs[name]['year'].isin(_year)]
+        if _cost_category != 'all':
+            dfs[name] = dfs[name][dfs[name]['cost_category'] == _cost_category]
+
+    # Extract the updated DataFrames back from the dictionary
+    _df_mean, _df_lower, _df_upper = dfs["_df_mean"], dfs["_df_lower"], dfs["_df_upper"]
+
+    if _cost_category == 'all':
+        if (_disaggregate_by_subgroup == True):
+            raise ValueError(f"Invalid input for _disaggregate_by_subgroup: '{_disaggregate_by_subgroup}'. "
+                             f"Value can be True only when plotting a specific _cost_category")
+        else:
+            pivot_mean = _df_mean.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
+            pivot_lower = _df_lower.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
+            pivot_upper = _df_upper.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
     else:
-        subset_df = subset_df[subset_df['year'].isin(_year)]
+        if (_disaggregate_by_subgroup == True):
+            for name, df in dfs.items():
+                dfs[name] = df.copy()  # Choose the dataframe to modify
+                # If sub-groups are more than 10 in number, then disaggregate the top 10 and group the rest into an 'other' category
+                if (len(dfs[name]['cost_subgroup'].unique()) > 10):
+                    # Calculate total cost per subgroup
+                    subgroup_totals = dfs[name].groupby('cost_subgroup')['cost'].sum()
+                    # Identify the top 10 subgroups by cost
+                    top_10_subgroups = subgroup_totals.nlargest(10).index.tolist()
+                    # Label the remaining subgroups as 'other'
+                    dfs[name]['cost_subgroup'] = dfs[name]['cost_subgroup'].apply(
+                        lambda x: x if x in top_10_subgroups else 'All other items'
+                    )
+
+            # Extract the updated DataFrames back from the dictionary
+            _df_mean, _df_lower, _df_upper = dfs["_df_mean"], dfs["_df_lower"], dfs["_df_upper"]
+
+            pivot_mean = _df_mean.pivot_table(index='draw', columns='cost_subgroup',
+                                             values='cost', aggfunc='sum')
+            pivot_lower = _df_lower.pivot_table(index='draw', columns='cost_subgroup',
+                                        values='cost', aggfunc='sum')
+            pivot_upper = _df_upper.pivot_table(index='draw', columns='cost_subgroup',
+                                        values='cost', aggfunc='sum')
+
+            plt_name_suffix = '_by_subgroup'
+        else:
+            pivot_mean = _df_mean.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
+            pivot_lower = _df_lower.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
+            pivot_upper = _df_upper.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
+            plt_name_suffix = ''
+
+    # Sort pivot_df columns in ascending order by total cost
+    sorted_columns = pivot_mean.sum(axis=0).sort_values().index
+    pivot_mean = pivot_mean[sorted_columns]
+    pivot_lower = pivot_lower[sorted_columns]
+    pivot_upper = pivot_upper[sorted_columns]
+
+    # Error bars
+    lower_bounds = pivot_mean.sum(axis=1) - pivot_lower.sum(axis=1)
+    upper_bounds = pivot_upper.sum(axis=1) - pivot_mean.sum(axis=1)
 
     if _cost_category == 'all':
         # Predefined color mapping for cost categories
@@ -855,57 +913,51 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
         }
         # Default color for unexpected categories
         default_color = 'gray'
-
-        if (_disaggregate_by_subgroup == True):
-            raise ValueError(f"Invalid input for _disaggregate_by_subgroup: '{_disaggregate_by_subgroup}'. "
-                             f"Value can be True only when plotting a specific _cost_category")
-        else:
-            pivot_df = subset_df.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
-            plt_name_suffix = ''
-    else:
-        subset_df = subset_df[subset_df['cost_category'] == _cost_category]
-        if (_disaggregate_by_subgroup == True):
-            # If sub-groups are more than 10 in number, then disaggregate the top 10 and group the rest into an 'other' category
-            if (len(subset_df['cost_subgroup'].unique()) > 10):
-                # Calculate total cost per subgroup
-                subgroup_totals = subset_df.groupby('cost_subgroup')['cost'].sum()
-                # Identify the top 10 subgroups by cost
-                top_10_subgroups = subgroup_totals.nlargest(10).index.tolist()
-                # Label the remaining subgroups as 'other'
-                subset_df['cost_subgroup'] = subset_df['cost_subgroup'].apply(
-                    lambda x: x if x in top_10_subgroups else 'All other consumables'
-                )
-
-                pivot_df = subset_df.pivot_table(index=['draw', 'cost_subcategory'], columns='cost_subgroup',
-                                                 values='cost', aggfunc='sum')
-
-            else:
-                pivot_df = subset_df.pivot_table(index=['draw', 'cost_subcategory'], columns='cost_subgroup',
-                                                 values='cost', aggfunc='sum')
-
-            plt_name_suffix = '_by_subgroup'
-        else:
-            pivot_df = subset_df.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
-            plt_name_suffix = ''
-
-    # Sort pivot_df columns in ascending order by total cost
-    sorted_columns = pivot_df.sum(axis=0).sort_values().index
-    pivot_df = pivot_df[sorted_columns]  # Rearrange columns by sorted order
+        plt_name_suffix = ''
 
     # Define custom colors for the bars
     if _cost_category == 'all':
         column_colors = [color_mapping.get(col, default_color) for col in sorted_columns]
         # Plot the stacked bar chart with set colours
-        ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
+        ax = pivot_mean.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
+
+        # Add data labels
+        for c in ax.containers:
+            # Add label only if the value of the segment is > 1.20th of the ylim
+            max_y = ax.get_ylim()[1]
+            labels = [round(v.get_height(),1) if v.get_height() > max_y/20 else '' for v in c]
+            # remove the labels parameter if it's not needed for customized labels
+            ax.bar_label(c, labels=labels, label_type='center')
+
+        # Add error bars
+        x_pos = np.arange(len(pivot_mean.index))
+        total_means = pivot_mean.sum(axis=1)
+        error_bars = [lower_bounds, upper_bounds]
+        ax.errorbar(x_pos, total_means, yerr=error_bars, fmt='o', color='black', capsize=5)
+
     else:
         # Plot the stacked bar chart without set colours
-        ax = pivot_df.plot(kind='bar', stacked=True, figsize=(10, 6))
+        ax = pivot_mean.plot(kind='bar', stacked=True, figsize=(10, 6))
+
+        # Add data labels
+        for c in ax.containers:
+            # Add label only if the value of the segment is > 1.20th of the ylim
+            max_y = ax.get_ylim()[1]
+            labels = [round(v.get_height(),1) if v.get_height() > max_y/20 else '' for v in c]
+            # remove the labels parameter if it's not needed for customized labels
+            ax.bar_label(c, labels=labels, label_type='center')
+
+        # Add error bars
+        x_pos = np.arange(len(pivot_mean.index))
+        total_means = pivot_mean.sum(axis=1)
+        error_bars = [lower_bounds, upper_bounds]
+        ax.errorbar(x_pos, total_means, yerr=error_bars, fmt='o', color='black', capsize=5)
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
         labels = [_scenario_dict.get(label, label) for label in pivot_df.index]
     else:
-        labels = pivot_df.index.astype(str)
+        labels = pivot_mean.index.astype(str)
 
     # Wrap x-tick labels for readability
     wrapped_labels = [textwrap.fill(str(label), 20) for label in labels]
@@ -913,7 +965,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 
     # Period included for plot title and name
     if _year == 'all':
-        period = (f"{min(_df['year'].unique())} - {max(_df['year'].unique())}")
+        period = (f"{min(_df_mean['year'].unique())} - {max(_df_mean['year'].unique())}")
     elif (len(_year) == 1):
         period = (f"{_year[0]}")
     else:
