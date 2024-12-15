@@ -60,7 +60,7 @@ class WastingAnalyses:
 
         self.__log_file_path = log_results_file_path
         # parse wasting logs
-        self.__w_logs_dict =  parse_log_file(self.__log_file_path)['tlo.methods.wasting']
+        self.__w_logs_dict = parse_log_file(self.__log_file_path)['tlo.methods.wasting']
         # parse scaling factor log
         self.__scaling_factor = \
             parse_log_file(self.__log_file_path)['tlo.methods.population']['scaling_factor'].set_index('date').loc[
@@ -77,6 +77,15 @@ class WastingAnalyses:
                                      'WHZ>=-2': 'not undernourished'}
 
         self.fig_files = []
+
+        cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        # # define colo(u)rs to use:
+        self.__colors = {
+            'severe wasting': cycle[0],
+            'moderate wasting': cycle[1],
+            'SAM': cycle[2],
+            'MAM': cycle[3],
+        }
 
     def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
         fig.savefig(self.outcomes_path_name + "/" + fig_output_name + '.png', format='png')
@@ -188,6 +197,69 @@ class WastingAnalyses:
     #     fig.tight_layout()
     #     self.save_fig__store_pdf_file(fig, fig_output_name)
     #     # plt.show()
+
+    def plot_wasting_length(self):
+        """ plot the average length of wasting over time """
+        w_length_df = self.__w_logs_dict['wasting_length_avg']
+        w_length_df = w_length_df.set_index(w_length_df.date.dt.year)
+        w_length_df = w_length_df.drop(columns='date')
+        # get age_years, doesn't matter from which dict
+        age_years = list(w_length_df.loc[w_length_df.index[0], 'mod_MAM_tx_full_recov'].keys())
+        print(f"{w_length_df=}")
+        # age_years.remove('5+y')
+        w_length_df = w_length_df.loc[:, ['mod_nat_recov', 'mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov',
+                                              'mod_SAM_tx_recov_to_MAM', 'mod_not_yet_recovered',
+                                              'sev_SAM_tx_full_recov', 'sev_SAM_tx_recov_to_MAM',
+                                              'sev_not_yet_recovered']]
+
+        for recov_opt in w_length_df.columns:
+            _row_counter = 0
+            _col_counter = 0
+            # plot setup
+            fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True, figsize=(10, 7))
+            # axes[1, 2].axis('off')  # 5+y has no data (no new cases in 5+y), its space is used to display the label
+            for _age in age_years:
+                print(f"{_col_counter=}, {_col_counter=}")
+                plotting = pd.DataFrame()
+                # dict to dataframe
+                plotting[recov_opt] = \
+                    w_length_df.apply(lambda row: row[recov_opt][_age], axis=1)
+                print(f"{plotting=}")
+
+                if recov_opt.startswith("mod_"):
+                    colour_to_use = self.__colors['moderate wasting']
+                    y_upper_lim = 355
+                else:
+                    colour_to_use = self.__colors['severe wasting']
+                    y_upper_lim = 1000
+                ax = plotting.plot(kind='bar', stacked=False,
+                                   ax=axes[_row_counter, _col_counter],
+                                   title=f"length of wasting in {_age} old",
+                                   color=colour_to_use,
+                                   ylim=[0, y_upper_lim])
+                # show_legend = (_row_counter == 0 and _col_counter == 0)
+                # # show_x_axis_label = (_row_counter == 0 and _col_counter == 2)
+                # if show_legend:
+                #     ax.legend(loc='upper right', bbox_to_anchor=(0.5, 1.2),
+                #               fancybox=True, shadow=True, ncol=5)
+                # else:
+                ax.get_legend().remove()
+                # if show_x_axis_label:
+                #     ax.set_xlabel('Year')  # TODO: this is not working
+                ax.set_xlabel('year')
+                ax.set_ylabel('avg length of wasting (days)')
+                # move to another row
+                if _col_counter == 2:
+                    _row_counter += 1
+                    _col_counter = -1
+                _col_counter += 1  # increment column counter
+
+            fig.suptitle(f'{recov_opt}', fontsize=16)
+            # Adjust layout to make room for the suptitle
+            fig.tight_layout(rect=[0, 0, 1, 0.95])
+            fig_output_name = ('wasting_length__' + recov_opt + self.datestamp)
+            self.save_fig__store_pdf_file(fig, fig_output_name)
+            # plt.show()
 
     def plot_wasting_prevalence_per_year(self):
         """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
@@ -317,6 +389,9 @@ if __name__ == "__main__":
 
     # plot wasting incidence mod:sev proportions
     # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
+
+    # plot wasting length
+    wasting_analyses.plot_wasting_length()
 
     # plot wasting prevalence
     wasting_analyses.plot_wasting_prevalence_per_year()
