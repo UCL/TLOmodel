@@ -306,7 +306,7 @@ class WastingAnalyses:
                                 title="Wasting prevalence in children 0-59 months per each age group in 2020",
                                 ylabel='proportion',
                                 xlabel='age group',
-                                ylim=[0, 0.3])
+                                ylim=[0, 0.2])
         # Adjust the layout to make space for the footnote
         plt.subplots_adjust(bottom=0.85)  # Adjust the bottom margin
         # Add footnote
@@ -318,6 +318,49 @@ class WastingAnalyses:
         fig_output_name = ('wasting_prevalence_per_each_age_group__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
+
+    def plot_wasting_initial_prevalence_by_age_group(self):
+        """ Plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
+        children wasted in a particular age-group divided by the total number of children per that age-group"""
+        w_prev_df = self.__w_logs_dict["wasting_init_prevalence_props"]
+        w_prev_df = w_prev_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
+        w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
+        w_prev_df = w_prev_df.drop(columns='date')
+        plotting = {'severe wasting': {}, 'moderate wasting': {}}
+        for col in w_prev_df.columns:
+            prefix, age_group = col.split('__')
+            if prefix == 'sev':
+                plotting['severe wasting'][age_group] = w_prev_df[col].values[0]
+            elif prefix == 'mod':
+                plotting['moderate wasting'][age_group] = w_prev_df[col].values[0]
+        plotting = pd.DataFrame(plotting)
+        order_x_axis = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
+        # Assert all age groups are included
+        assert set(plotting.index) == set(order_x_axis), "age groups are not in line with the order_x_axis."
+        plotting = plotting.reindex(order_x_axis)
+
+        # Plot wasting prevalence
+        fig, ax = plt.subplots(figsize=(10, 6))
+        plotting.squeeze().plot(kind='bar', stacked=True,
+                                ax=ax,
+                                ylabel='proportion',
+                                xlabel='age group',
+                                ylim=[0, 0.2])
+        ax.set_title(r"Wasting prevalence in children 0-59 months per each age group $\bf{at}$ $\bf{initiation}$")
+        # Adjust the layout to make space for the footnote
+        plt.subplots_adjust(bottom=0.85)  # Adjust the bottom margin
+        # Add footnote
+        fig.figure.text(0.45, 0.88,
+                        "proportion = number of wasted children in the age group "
+                        "/ total number of children in the age group",
+                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
+        plt.tight_layout()
+        fig_output_name = ('wasting_initial_prevalence_per_each_age_group__' + self.datestamp)
+        self.save_fig__store_pdf_file(fig, fig_output_name)
+        # plt.show()
+
+    def add_wasting_initial_prevalence_by_age_group(self):
+        self.fig_files.append('wasting_initial_prevalence_per_each_age_group__' + self.datestamp + '.pdf')
 
     def plot_modal_gbd_deaths_by_gender(self):
         """ compare modal and GBD deaths by gender """
@@ -395,6 +438,9 @@ if __name__ == "__main__":
 
     # plot wasting prevalence by age group
     wasting_analyses.plot_wasting_prevalence_by_age_group()
+
+    # plot wasting initial prevalence by age group
+    wasting_analyses.plot_wasting_initial_prevalence_by_age_group()
 
     # plot wasting deaths by gender as compared to GBD deaths
     wasting_analyses.plot_modal_gbd_deaths_by_gender()
