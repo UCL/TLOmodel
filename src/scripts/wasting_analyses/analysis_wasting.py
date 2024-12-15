@@ -205,7 +205,6 @@ class WastingAnalyses:
         w_length_df = w_length_df.drop(columns='date')
         # get age_years, doesn't matter from which dict
         age_years = list(w_length_df.loc[w_length_df.index[0], 'mod_MAM_tx_full_recov'].keys())
-        print(f"{w_length_df=}")
         # age_years.remove('5+y')
         w_length_df = w_length_df.loc[:, ['mod_nat_recov', 'mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov',
                                               'mod_SAM_tx_recov_to_MAM', 'mod_not_yet_recovered',
@@ -219,12 +218,10 @@ class WastingAnalyses:
             fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True, figsize=(10, 7))
             # axes[1, 2].axis('off')  # 5+y has no data (no new cases in 5+y), its space is used to display the label
             for _age in age_years:
-                print(f"{_col_counter=}, {_col_counter=}")
                 plotting = pd.DataFrame()
                 # dict to dataframe
                 plotting[recov_opt] = \
                     w_length_df.apply(lambda row: row[recov_opt][_age], axis=1)
-                print(f"{plotting=}")
 
                 if recov_opt.startswith("mod_"):
                     colour_to_use = self.__colors['moderate wasting']
