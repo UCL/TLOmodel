@@ -309,6 +309,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         * the main logging event.
         """
 
+        sim.schedule_event(Wasting_InitLoggingEvent(self), sim.date)
         sim.schedule_event(Wasting_InitiateGrowthMonitoring(self), sim.date)
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=3))
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1) - DateOffset(days=1))
@@ -1626,4 +1627,72 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # log pop sizes
         logger.info(key='pop sizes', data=pop_sizes_dict)
+
+
+class Wasting_InitLoggingEvent(Event, PopulationScopeEventMixin):
+    """
+        This Event logs the number of incident cases that have occurred since the previous logging event.
+         Analysis scripts expect that the frequency of this logging event is once per year.
+        """
+
+    def __init__(self, module):
+        # This event to occur every year
+        super().__init__(module)
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        # ----- PREVALENCE LOG ----------------
+        # Wasting totals (prevalence & pop size at logging time)
+        # declare a dictionary that will hold proportions of wasting prevalence per each age group
+        wasting_prev_dict: Dict[str, Any] = dict()
+        # declare a dictionary that will hold pop sizes
+        pop_sizes_dict: Dict[str, Any] = dict()
+
+        under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
+        # loop through different age groups and get proportions of wasting prevalence per each age group
+        for low_bound_mos, high_bound_mos in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
+            low_bound_age_in_years = low_bound_mos / 12.0
+            high_bound_age_in_years = (1 + high_bound_mos) / 12.0
+            # get those children who are wasted
+            mod_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                     inclusive='left') & (under5s.un_WHZ_category
+                                                                                          == '-3<=WHZ<-2')).sum()
+            sev_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                     inclusive='left') & (under5s.un_WHZ_category
+                                                                                          == 'WHZ<-3')).sum()
+            total_per_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                    inclusive='left')).sum()
+            # add moderate and severe wasting prevalence to the dictionary
+            wasting_prev_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = mod_wasted_agegrp_nmb / total_per_agegrp_nmb
+            wasting_prev_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = sev_wasted_agegrp_nmb / total_per_agegrp_nmb
+            # add pop sizes to the dataframe
+            pop_sizes_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = mod_wasted_agegrp_nmb
+            pop_sizes_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = sev_wasted_agegrp_nmb
+            pop_sizes_dict[f'total__{low_bound_mos}_{high_bound_mos}mo'] = total_per_agegrp_nmb
+        # log prevalence & pop size for children above 5y
+        above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
+        assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive])
+        mod_wasted_above5_nmb = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum()
+        sev_wasted_above5_nmb = (above5s.un_WHZ_category == 'WHZ<-3').sum()
+        wasting_prev_dict['mod__5y+'] = mod_wasted_above5_nmb / len(above5s)
+        wasting_prev_dict['sev__5y+'] = sev_wasted_above5_nmb / len(above5s)
+        pop_sizes_dict['mod__5y+'] = mod_wasted_above5_nmb
+        pop_sizes_dict['sev__5y+'] = sev_wasted_above5_nmb
+        pop_sizes_dict['total__5y+'] = len(above5s)
+
+        # add to dictionary proportion of all moderately/severely wasted children under 5 years
+        mod_under5_nmb = (under5s.un_WHZ_category == '-3<=WHZ<-2').sum()
+        sev_under5_nmb = (under5s.un_WHZ_category == 'WHZ<-3').sum()
+        wasting_prev_dict['total_mod_under5_prop'] = mod_under5_nmb / len(under5s)
+        wasting_prev_dict['total_sev_under5_prop'] = sev_under5_nmb / len(under5s)
+        pop_sizes_dict['mod__under5'] = mod_under5_nmb
+        pop_sizes_dict['sev__under5'] = sev_under5_nmb
+        pop_sizes_dict['total__under5'] = len(under5s)
+
+        # log wasting prevalence
+        logger.info(key='wasting_init_prevalence_props', data=wasting_prev_dict)
+
+        # log pop sizes
+        logger.info(key='init pop sizes', data=pop_sizes_dict)
 
