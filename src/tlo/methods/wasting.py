@@ -215,10 +215,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.wasting_incident_case_tracker = copy.deepcopy(self.wasting_incident_case_tracker_blank)
 
         self.recovery_options = ['mod_nat_recov',
-                                 'mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov',
-                                 'sev_MAM_tx_full_recov', 'sev_SAM_tx_full_recov',
-                                 'mod_SAM_tx_recov_to_MAM', 'sev_SAM_tx_recov_to_MAM',
-                                 'mod_not_yet_recovered', 'sev_not_yet_recovered']
+                                 'mod_MAM_tx_full_recov',
+                                 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
+                                 'mod_not_yet_recovered',
+                                 'sev_SAM_tx_full_recov', 'sev_SAM_tx_recov_to_MAM',
+                                 'sev_not_yet_recovered']
         blank_length_counter = dict(
             zip(self.recovery_options, [list() for _ in self.recovery_options]))
         self.wasting_length_tracker_blank = {
