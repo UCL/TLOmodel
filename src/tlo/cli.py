@@ -855,7 +855,9 @@ def combine_runs(output_results_directory: Path, additional_result_directories: 
     results_directories = (output_results_directory,) + additional_result_directories
     draws_per_directory = [
         sorted(
-            int(draw_directory.name) for draw_directory in results_directory.iterdir()
+            int(draw_directory.name)
+            for draw_directory in results_directory.iterdir()
+            if draw_directory.is_dir()
         )
         for results_directory in results_directories
     ]
@@ -871,6 +873,7 @@ def combine_runs(output_results_directory: Path, additional_result_directories: 
         sorted(
             int(run_directory.name)
             for run_directory in (output_results_directory / str(draw)).iterdir()
+            if run_directory.is_dir()
         )
         for draw in draws
     ]
@@ -882,12 +885,12 @@ def combine_runs(output_results_directory: Path, additional_result_directories: 
         for draw in draws:
             run_counter = len(runs_per_draw[draw])
             for source_path in sorted((results_directory / str(draw)).iterdir()):
-                destination_path = (
-                    output_results_directory / str(draw) / str(run_counter)
-                )
+                if not source_path.is_dir():
+                    continue
+                destination_path = output_results_directory / str(draw) / str(run_counter)
                 run_counter = run_counter + 1
                 copytree(source_path, destination_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli(obj={})
