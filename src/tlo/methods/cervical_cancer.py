@@ -1271,56 +1271,68 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
         year = self.sim.date.year
         p = self.sim.modules['CervicalCancer'].parameters
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_cervical_can['screening_biopsy_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_cervical_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
+        if cons_avail:
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
-        # Use a biopsy to diagnose whether the person has cervical cancer
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='biopsy_for_cervical_cancer',
-            hsi_event=self
-        )
+            # Use a biopsy to diagnose whether the person has cervical cancer
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='biopsy_for_cervical_cancer',
+                hsi_event=self
+            )
 
-        df.at[person_id, "ce_biopsy"] = True
+            df.at[person_id, "ce_biopsy"] = True
 
         if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
             perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
+            # Don't have cervical cancer, then send them back to get CIN treatment
+            if (dx_result == False) and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
+                perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
 
-        elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
-                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
-            # Record date of diagnosis:
-            df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
-            df.at[person_id, 'ce_stage_at_diagnosis'] = df.at[person_id, 'ce_hpv_cc_status']
-            df.at[person_id, 'ce_current_cc_diagnosed'] = True
-            df.at[person_id, 'ce_ever_diagnosed'] = True
+            elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
+                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
+                # Record date of diagnosis:
+                df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
+                df.at[person_id, 'ce_stage_at_diagnosis'] = df.at[person_id, 'ce_hpv_cc_status']
+                df.at[person_id, 'ce_current_cc_diagnosed'] = True
+                df.at[person_id, 'ce_ever_diagnosed'] = True
 
             # Check if is in stage4:
             in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
             # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+                # Check if is in stage4:
+                in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
+                # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
 
-            if not in_stage4:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                if not in_stage4:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_CervicalCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
-            if in_stage4:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                if in_stage4:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_CervicalCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin):
