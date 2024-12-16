@@ -376,12 +376,17 @@ def compute_summary_statistics(
     :param central_measure: The name of the central measure to use - either 'mean' or 'median'.
     :param width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
     :param use_standard_error: Whether the range should represent the standard error; otherwise it is just a
-     description of the variation of runs
+     description of the variation of runs. If selected, then the central measure is always the mean.
     :param collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise).
     :param only_central: Whether to only report the central value (dropping the range).
     :return: A dataframe with computed summary statistics.
-
     """
+
+    if use_standard_error:
+        if not central_measure == 'mean':
+            warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
+            central_measure = 'mean'
+
     stats = dict()
     grouped_results = results.groupby(axis=1, by='draw', sort=False)
 
