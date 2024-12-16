@@ -1286,8 +1286,6 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
 
             df.at[person_id, "ce_biopsy"] = True
 
-        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
-            perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
             # Don't have cervical cancer, then send them back to get CIN treatment
             if (dx_result == False) and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
                 perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
