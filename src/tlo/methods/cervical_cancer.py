@@ -1362,7 +1362,8 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
 
             random_value = self.module.rng.random()
 
-            if df.at[person_id, "ce_hpv_cc_status"] in (hpv_cin_options):
+            # If you have not yet done biopsy and have cin or stage, you require biopsy
+            if (df.at[person_id, "ce_hpv_cc_status"] in (hpv_cin_options)) & (~df.at[person_id, "ce_biopsy"] == True):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_Biopsy(
                         module=self.module,
