@@ -1538,19 +1538,28 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
 
         under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
+        above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
 
-        for age_ys in range(5):
+        for age_ys in range(6):
             age_grp = self.module.age_grps.get(age_ys, '5+y')
 
             # get those children who are wasted
-            mod_wasted_whole_ys_agegrp = under5s[(
-                under5s.age_years.between(age_ys, age_ys + 1, inclusive='left') &
-                (under5s.un_WHZ_category == '-3<=WHZ<-2')
-            )]
-            sev_wasted_whole_ys_agegrp = under5s[(
-                under5s.age_years.between(age_ys, age_ys + 1, inclusive='left') &
-                (under5s.un_WHZ_category == 'WHZ<-3')
-            )]
+            if age_ys < 5:
+                mod_wasted_whole_ys_agegrp = under5s[(
+                    under5s.age_years.between(age_ys, age_ys + 1, inclusive='left') &
+                    (under5s.un_WHZ_category == '-3<=WHZ<-2')
+                )]
+                sev_wasted_whole_ys_agegrp = under5s[(
+                    under5s.age_years.between(age_ys, age_ys + 1, inclusive='left') &
+                    (under5s.un_WHZ_category == 'WHZ<-3')
+                )]
+            else:
+                mod_wasted_whole_ys_agegrp = above5s[(
+                    above5s.un_WHZ_category == '-3<=WHZ<-2'
+                )]
+                sev_wasted_whole_ys_agegrp = above5s[(
+                    above5s.un_WHZ_category == 'WHZ<-3'
+                )]
             mod_wasted_whole_ys_agegrp['wasting_length'] = \
                 (self.sim.date - mod_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
             sev_wasted_whole_ys_agegrp['wasting_length'] = \
