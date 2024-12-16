@@ -2097,12 +2097,9 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
     already preceded by a sequence of tests
     """
 
-    def __init__(self, module, person_id, suppress_footprint=False):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
-
-        assert isinstance(suppress_footprint, bool)
-        self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Culture"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"LabTBMicro": 1})
@@ -2139,12 +2136,6 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
-
-        # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
