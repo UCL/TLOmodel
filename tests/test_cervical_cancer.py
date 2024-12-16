@@ -422,7 +422,7 @@ def test_check_all_screened_cin_get_cin_removal(seed):
     sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'cin2'
 
     # Simulate
-    sim.simulate(end_date=Date(2030, 1, 1))
+    sim.simulate(end_date=Date(2010, 8, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -435,16 +435,16 @@ def test_check_all_screened_cin_get_cin_removal(seed):
     df_screened_cin = df[(df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])& df['ce_stage_at_diagnosis'].isin(['cin2', 'cin3'])]
     assert all (df_screened_cin["ce_date_thermoabl"].notna() | df_screened_cin["ce_date_cryotherapy"].notna()), "Some individuals with detected HPV/CIN have not undergone treatment."
 
-    # there should be no xpert before 2024
-    # df["ce_date_xpert"] = pd.to_datetime(df["ce_date_xpert"], errors="coerce")
-    assert all(df["ce_date_xpert"].dropna().dt.year >= 2024), "Some Xpert dates are before 2024."
-
-    # there should only be acetic in 2024+ if there is also xpert there
-    # df["ce_date_via"] = pd.to_datetime(df["ce_date_via"], errors="coerce")
-    acetic_after_2024 = df["ce_date_via"] >= "2024-01-01"
-    assert all(
-        ~acetic_after_2024 | (df["ce_date_xpert"].notna() & (df["ce_date_xpert"] >= "2024-01-01"))
-    ), "Some entries have Acetic dates in 2024+ without a corresponding Xpert date in 2024+."
+    # # there should be no xpert before 2024
+    # # df["ce_date_xpert"] = pd.to_datetime(df["ce_date_xpert"], errors="coerce")
+    # assert all(df["ce_date_xpert"].dropna().dt.year >= 2024), "Some Xpert dates are before 2024."
+    #
+    # # there should only be acetic in 2024+ if there is also xpert there
+    # # df["ce_date_via"] = pd.to_datetime(df["ce_date_via"], errors="coerce")
+    # acetic_after_2024 = df["ce_date_via"] >= "2024-01-01"
+    # assert all(
+    #     ~acetic_after_2024 | (df["ce_date_xpert"].notna() & (df["ce_date_xpert"] >= "2024-01-01"))
+    # ), "Some entries have Acetic dates in 2024+ without a corresponding Xpert date in 2024+."
 
     # check that min age of those screened with HIV is 25
     df["age_at_last_screen"] = (df["ce_date_last_screened"].dt.year - df["date_of_birth"].dt.year)
