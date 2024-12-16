@@ -1301,13 +1301,9 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'ce_current_cc_diagnosed'] = True
                 df.at[person_id, 'ce_ever_diagnosed'] = True
 
-            # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
-            # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
                 # Check if is in stage4:
                 in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
                 # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
-
                 if not in_stage4:
                     # start treatment:
                     hs.schedule_hsi_event(
