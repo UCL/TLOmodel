@@ -962,8 +962,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             'thermoabl': days_since_last_thermoabl,
             'cryotherapy': days_since_last_cryotherapy
         }).min(axis=1)
-        days_since_last_via = (self.sim.date - df.ce_date_via).dt.days
-        days_since_last_xpert = (self.sim.date - df.ce_date_xpert).dt.days
+        # days_since_last_via = (self.sim.date - df.ce_date_via).dt.days
+        # days_since_last_xpert = (self.sim.date - df.ce_date_xpert).dt.days
 
 
         # Define screening age and interval criteria based on HIV status
