@@ -838,16 +838,14 @@ def add_tasks(batch_service_client, user_identity, job_id,
     nargs=-1,
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
-def combine_runs(
-    output_results_directory: Path, additional_result_directories: tuple[Path]
-) -> None:
+def combine_runs(output_results_directory: Path, additional_result_directories: tuple[Path]) -> None:
     """Combine runs from multiple batch jobs locally.
-    
+
     Merges runs from each draw in one or more additional results directories in
     to corresponding draws in output results directory.
-    
+
     All results directories must contain same draw numbers and the draw numbers
-    must be consecutive integers starting from 0. All run numbers in the output 
+    must be consecutive integers starting from 0. All run numbers in the output
     result directory draw directories must be consecutive integers starting
     from 0.
     """
@@ -878,7 +876,7 @@ def combine_runs(
     ]
     for runs in runs_per_draw:
         if not runs == list(range(len(runs))):
-            msg = "All runs in output directory be consecutively numbered from 0."
+            msg = "All runs in output directory must be consecutively numbered from 0."
             raise click.UsageError(msg)
     for results_directory in additional_result_directories:
         for draw in draws:
