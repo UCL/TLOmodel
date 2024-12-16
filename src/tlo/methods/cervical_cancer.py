@@ -472,8 +472,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'ce_current_cc_diagnosed'] = False
         df.loc[df.is_alive, "ce_selected_for_via_this_month"] = False
         df.loc[df.is_alive, "ce_selected_for_xpert_this_month"] = False
-        df.at[df.is_alive, "days_since_last_via"] = pd.NaT
-        df.at[df.is_alive, "days_since_last_xpert"] = pd.NaT
+        # df.at[df.is_alive, "days_since_last_via"] = pd.NaT
+        # df.at[df.is_alive, "days_since_last_xpert"] = pd.NaT
         df.loc[df.is_alive, "ce_biopsy"] = False
         df.loc[df.is_alive, "ce_ever_screened"] = False
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
