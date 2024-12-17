@@ -63,7 +63,7 @@ class WastingAnalysis(BaseScenario):
                 healthsystem.HealthSystem(resourcefilepath=self.resources,
                                           service_availability=['*'], use_funded_or_actual_staffing='actual',
                                           mode_appt_constraints=1,
-                                          cons_availability='default', beds_availability='default',
+                                          cons_availability='all', beds_availability='all',
                                           equip_availability='all'),
                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
                 healthburden.HealthBurden(resourcefilepath=self.resources),
