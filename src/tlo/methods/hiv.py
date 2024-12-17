@@ -1499,20 +1499,20 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         df = self.sim.population.props
 
-        # get number of tests performed in last time period
-        if self.sim.date.year == 2011:
-            number_tests_new = df.hv_number_tests.sum()
+        if not self.stored_test_numbers:
+            # If it's the first year, set previous_test_numbers to 0
             previous_test_numbers = 0
-
         else:
+            # For subsequent years, retrieve the last stored number
             previous_test_numbers = self.stored_test_numbers[-1]
 
-            # calculate number of tests now performed - cumulative, include those who have died
-            number_tests_new = df.hv_number_tests.sum()
+        # Calculate number of tests now performed - cumulative, include those who have died
+        number_tests_new = df.hv_number_tests.sum()
 
+        # Store the number of tests performed in this year for future reference
         self.stored_test_numbers.append(number_tests_new)
 
-        # number of tests performed in last time period
+        # Number of tests performed in the last time period
         number_tests_in_last_period = number_tests_new - previous_test_numbers
 
         # per-capita testing rate
@@ -2489,6 +2489,14 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
+        # get confirmatory test
+        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+            dx_tests_to_run="hiv_rapid_test", hsi_event=self
+        )
+        if test_result is not None:
+            df.at[person_id, "hv_number_tests"] += 1
+            df.at[person_id, "hv_last_test_date"] = self.sim.date
+
         # if person not circumcised, perform the procedure
         if not person["li_is_circ"]:
             # Check/log use of consumables, if materials available, do circumcision and schedule follow-up appts
@@ -2826,6 +2834,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # ART is first item in drugs_available dict
         if drugs_available.get('art', False):
+
+            # get confirmatory test
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="hiv_rapid_test", hsi_event=self
+            )
+            if test_result is not None:
+                df.at[person_id, "hv_number_tests"] += 1
+                df.at[person_id, "hv_last_test_date"] = self.sim.date
+
             # Assign person to be suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset)

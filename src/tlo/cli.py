@@ -4,6 +4,7 @@ import datetime
 import json
 import math
 import os
+import pickle
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -22,6 +23,7 @@ from azure.keyvault.secrets import SecretClient
 from azure.storage.fileshare import ShareClient, ShareDirectoryClient, ShareFileClient
 from git import Repo
 
+from tlo.analysis.utils import parse_log_file
 from tlo.scenario import SampleRunner, ScenarioLoader
 
 JOB_LABEL_PADDING = len("State transition time")
@@ -88,6 +90,21 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None, scenari
     else:
         runner.run()
 
+@cli.command()
+@click.argument("LOG_DIRECTORY", type=click.Path(exists=True))
+def parse_log(log_directory):
+    assert os.path.isdir(log_directory), f"{log_directory} must be a directory"
+
+    path = Path(log_directory)
+
+    log_files = list(path.glob("*.log"))
+    assert len(log_files) == 1, f"directory {log_directory} must contain exactly one file with extension .log"
+
+    outputs = parse_log_file(log_files[0])
+    for key, output in outputs.items():
+        if key.startswith("tlo."):
+            with open(path / f"{key}.pickle", "wb") as f:
+                pickle.dump(output, f)
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
@@ -237,6 +254,7 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     pip install -r requirements/base.txt
     env | grep "^AZ_" | while read line; do echo "$line"; done
     {py_opt} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    tlo --config-file tlo.example.conf parse-log {working_dir}/{{draw_number}}/{{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
