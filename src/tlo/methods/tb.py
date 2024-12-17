@@ -3,8 +3,6 @@
     It schedules TB treatment and follow-up appointments along with preventive therapy
     for eligible people (HIV+ and paediatric contacts of active TB cases
 """
-
-import os
 from functools import reduce
 
 import pandas as pd
@@ -17,7 +15,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import parse_csv_values_for_columns_with_mixed_datatypes, random_date, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -399,9 +397,7 @@ class Tb(Module):
         """
 
         # 1) Read the ResourceFiles
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_TB.xlsx"), sheet_name=None
-        )
+        workbook = read_csv_files(self.resourcefilepath/"ResourceFile_TB", files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
@@ -927,6 +923,10 @@ class Tb(Module):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
         scaled_params_workbook = p["scaleup_parameters"]
+        for col in scaled_params_workbook.columns:
+            scaled_params_workbook[col] = scaled_params_workbook[col].apply(
+                parse_csv_values_for_columns_with_mixed_datatypes
+            )
 
         if p['type_of_scaleup'] == 'target':
             scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
