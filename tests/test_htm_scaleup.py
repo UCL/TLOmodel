@@ -19,8 +19,7 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-from tlo.methods.tb import parse_csv_columns_with_mixed_datatypes
-from tlo.util import read_csv_files
+from tlo.util import parse_csv_values_for_columns_with_mixed_datatypes, read_csv_files
 
 resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
@@ -57,7 +56,7 @@ def get_sim(seed):
 def check_initial_params(sim):
 
     original_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files='parameters')
-    original_params.value = original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    original_params.value = original_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     # check initial parameters
     assert sim.modules["Hiv"].parameters["beta"] == \
@@ -77,7 +76,7 @@ def test_hiv_scale_up(seed):
     and on correct date """
 
     original_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="parameters")
-    original_params.value = original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    original_params.value = original_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
     new_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="scaleup_parameters")
 
     popsize = 100
@@ -110,7 +109,7 @@ def test_hiv_scale_up(seed):
     # check malaria parameters unchanged
     mal_original_params = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
                                         files="parameters")
-    mal_original_params.value = mal_original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    mal_original_params.value = mal_original_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     mal_rdt_testing = read_csv_files(resourcefilepath / 'malaria' / 'ResourceFile_malaria',
                                     files="WHO_TestData2023")
@@ -128,7 +127,7 @@ def test_hiv_scale_up(seed):
 
     # check tb parameters unchanged
     tb_original_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="parameters")
-    tb_original_params.value = tb_original_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    tb_original_params.value = tb_original_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
     tb_testing = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="NTP2019")
 
     pd.testing.assert_series_equal(sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"],
@@ -151,7 +150,7 @@ def test_htm_scale_up(seed):
 
     # Load data on HIV prevalence
     original_hiv_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="parameters")
-    original_hiv_params.value = original_hiv_params.value.apply(parse_csv_columns_with_mixed_datatypes)
+    original_hiv_params.value = original_hiv_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
     new_hiv_params = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="scaleup_parameters")
 
     popsize = 100
@@ -202,7 +201,7 @@ def test_htm_scale_up(seed):
 
     # check tb parameters changed
     new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")
-    new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_columns_with_mixed_datatypes)
+    new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
         new_tb_params.parameter == "tb_treatment_coverage", "target_value"].values[0]).all()
