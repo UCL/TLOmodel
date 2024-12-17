@@ -1230,6 +1230,7 @@ def get_parameters_for_status_quo() -> Dict:
             "cons_availability": "default",
             "beds_availability": "default",
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+            # "consumables_availability_time_trend": True, # <-- not included yet, but future update should include.
         },
     }
 
