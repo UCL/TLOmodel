@@ -435,32 +435,22 @@ def test_check_all_screened_cin_get_cin_removal(seed):
     df_screened_cin = df[(df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])& df['ce_stage_at_diagnosis'].isin(['cin2', 'cin3'])]
     assert all (df_screened_cin["ce_date_thermoabl"].notna() | df_screened_cin["ce_date_cryotherapy"].notna()), "Some individuals with detected HPV/CIN have not undergone treatment."
 
-    # # there should be no xpert before 2024
-    # # df["ce_date_xpert"] = pd.to_datetime(df["ce_date_xpert"], errors="coerce")
-    # assert all(df["ce_date_xpert"].dropna().dt.year >= 2024), "Some Xpert dates are before 2024."
-    #
-    # # there should only be acetic in 2024+ if there is also xpert there
-    # # df["ce_date_via"] = pd.to_datetime(df["ce_date_via"], errors="coerce")
-    # acetic_after_2024 = df["ce_date_via"] >= "2024-01-01"
-    # assert all(
-    #     ~acetic_after_2024 | (df["ce_date_xpert"].notna() & (df["ce_date_xpert"] >= "2024-01-01"))
-    # ), "Some entries have Acetic dates in 2024+ without a corresponding Xpert date in 2024+."
+    df["age_at_last_screen"] = df["ce_date_last_screened"].dt.year - df["date_of_birth"].dt.year
+    df["age_at_last_screen"] = df["age_at_last_screen"].astype("Int64")  # Nullable integer type
 
-    # check that min age of those screened with HIV is 25
-    df["age_at_last_screen"] = (df["ce_date_last_screened"].dt.year - df["date_of_birth"].dt.year)
 
-    # Assert for hv_diagnosed == True (minimum age 25)
-    assert all(
-        df.loc[df["hv_diagnosed"] == True, "age_at_last_screen"] >= 25
-    ), "Some individuals diagnosed with HV were screened below age 25."
+    hv_screened = df.loc[
+        (df["hv_diagnosed"] == True) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+    ]
+    # Perform the assertion safely
+    assert (hv_screened.dropna() >= 25).all(), "Some individuals diagnosed with HIV were screened below age 25."
 
     # Assert for hv_diagnosed == False (minimum age 30)
-    assert all(
-        df.loc[df["hv_diagnosed"] == False, "age_at_last_screen"] >= 30
-    ), "Some individuals NOT diagnosed with HV were screened below age 30."
-
-    # check that min age of those screened without HIV is 30
-
+    hv_non_screened = df.loc[
+        (df["hv_diagnosed"] == False) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+    ]
+    # Perform the assertion safely
+    assert (hv_non_screened.dropna() >= 30).all(), "Some individuals without HIV were screened below age 30."
 
 def test_check_all_cin_removed(seed):
     sim = make_simulation_healthsystemdisabled(seed=seed)
@@ -502,3 +492,57 @@ def test_check_all_cin_removed(seed):
 # if you have have HIV, screened between ages of 25 and 50
 
 
+
+
+def test_transition_year_logic(seed):
+    sim = make_simulation_healthsystemdisabled(seed=seed)
+    sim = make_screening_mandatory(sim)
+
+    transition_year = 2011
+
+    sim.modules['CervicalCancer'].parameters['transition_testing_year'] = transition_year
+    sim.modules['CervicalCancer'].parameters['transition_screening_year'] = transition_year
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2013, 1, 1))
+
+    df = sim.population.props
+
+    # All XPERT screening after 2024
+    assert all(df["ce_date_xpert"].dropna().dt.year >= transition_year), "Some Xpert dates are before 2024."
+
+    # Identify VIA entries in 2024 or later
+    acetic_after_2024 = df["ce_date_via"].dt.year >= transition_year
+
+    # Identify rows where there is a positive XPERT
+    positive_xpert = df["ce_date_xpert"].notna() & df["ce_xpert_hpv_ever_pos"]
+
+    # # Assertion: No VIA in 2024+ unless there is a positive XPERT
+    # assert all(~acetic_after_2024 | positive_xpert), (
+    #     "Some entries have VIA dates in 2024+ without a corresponding positive XPERT."
+    # )
+
+    sample_df = df[
+        (df["ce_date_via"].notna() & (df["ce_date_via"].dt.year < transition_year)) |
+        (
+            df["ce_date_via"].notna() &
+            (df["ce_date_via"].dt.year >= transition_year) &
+            df["ce_date_xpert"].notna() &
+            df["ce_xpert_hpv_ever_pos"]
+        )
+        ]
+
+    print('hi')
+    # Create the logical condition
+    via_df = df[~df['ce_date_via'].isna()]
+    condition = (
+        (via_df["ce_date_via"].dt.year < transition_year) |  # Before transition year
+        (
+            (via_df["ce_date_via"].dt.year >= transition_year) &
+            (via_df["ce_date_xpert"].notna()) &
+            (via_df["ce_xpert_hpv_ever_pos"])
+        )
+    )
+
+    # Assert that all rows satisfy the condition
+    assert condition.all(), "Some rows violate the VIA/Xpert date conditions."
