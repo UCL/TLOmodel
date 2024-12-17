@@ -54,7 +54,7 @@ class Consumables:
         self._prob_item_codes_available = None  # Data on the probability of each item_code being available
         self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
-        self._not_recognised_item_codes = set()  # The item codes requested but which are not recognised.
+        self._not_recognised_item_codes = defaultdict(set)  # The item codes requested but which are not recognised.
 
         # Save designations
         self._item_code_designations = item_code_designations
