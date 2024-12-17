@@ -20,7 +20,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
@@ -228,7 +228,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     }
 
     def read_parameters(self, data_folder):
-        workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+        # workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+        workbook = read_csv_files(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria', files=None)
         self.load_parameters_from_dataframe(workbook['parameters'])
 
         p = self.parameters
