@@ -61,7 +61,8 @@ class WastingAnalysis(BaseScenario):
     def modules(self):
         return [demography.Demography(resourcefilepath=self.resources),
                 healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                          service_availability=['*'], cons_availability='default'),
+                                          service_availability=['*'], cons_availability='all', beds_availability='all',
+                                          equip_availability='all'),
                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
                 healthburden.HealthBurden(resourcefilepath=self.resources),
                 symptommanager.SymptomManager(resourcefilepath=self.resources),
