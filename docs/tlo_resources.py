@@ -99,7 +99,7 @@ def excel_to_rst_table(input_path: Path, output_path: Path) -> None:
 def generate_docs_pages_from_resource_files(
     resources_directory: Path,
     docs_directory: Path,
-    max_file_size_bytes: int = 2**20,
+    max_file_size_bytes: int = 2**15,
 ) -> None:
     root_output_directory = docs_directory / "resources"
     root_output_directory.mkdir(exist_ok=True)

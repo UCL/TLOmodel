@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
-popsize = 1000
+popsize = 25000
 
 # scenario = 1
 
@@ -51,7 +51,7 @@ log_config = {
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.demography.detail": logging.WARNING,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
         # "tlo.methods.healthsystem": logging.INFO,
         # "tlo.methods.healthburden": logging.INFO,
     },
@@ -70,7 +70,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
-        cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+        cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         use_funded_or_actual_staffing="actual",  # actual: use numbers/distribution of staff available currently
@@ -87,9 +87,9 @@ sim.register(
 )
 
 # set the scenario
-# sim.modules["Hiv"].parameters["beta"] = 0.129671
-# sim.modules["Tb"].parameters["scaling_factor_WHO"] = 1.5
-# sim.modules["Tb"].parameters["scenario"] = scenario
+sim.modules["Hiv"].parameters["do_scaleup"] = True
+sim.modules["Hiv"].parameters["scaleup_start_year"] = 2019
+sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
 
