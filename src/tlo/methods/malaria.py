@@ -70,19 +70,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     }
 
     PARAMETERS = {
-        'interv': Parameter(Types.REAL, 'data frame of intervention coverage by year'),
-        'clin_inc': Parameter(
-            Types.REAL,
-            'data frame of clinical incidence by age, district, intervention coverage',
-        ),
-        'inf_inc': Parameter(
-            Types.REAL,
-            'data frame of infection incidence by age, district, intervention coverage',
-        ),
-        'sev_inc': Parameter(
-            Types.REAL,
-            'data frame of severe case incidence by age, district, intervention coverage',
-        ),
         'itn_district': Parameter(
             Types.REAL, 'data frame of ITN usage rates by district'
         ),
@@ -236,16 +223,15 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         # baseline characteristics
-        p['interv'] = workbook['interventions']
         p['itn_district'] = workbook['MAP_ITNrates']
         p['irs_district'] = workbook['MAP_IRSrates']
 
         p['sev_symp_prob'] = workbook['severe_symptoms']
         p['rdt_testing_rates'] = workbook['WHO_TestData2023']
 
-        p['inf_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
-        p['clin_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
-        p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
+        inf_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
+        clin_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
+        sev_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
@@ -281,13 +267,13 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         # ===============================================================================
         # put the all incidence data into single table with month/admin/llin/irs index
         # ===============================================================================
-        inf_inc = p['inf_inc'].set_index(['month', 'admin', 'llin', 'irs', 'age'])
+        inf_inc = inf_inc_sheet.set_index(['month', 'admin', 'llin', 'irs', 'age'])
         inf_inc = inf_inc.loc[:, ['monthly_prob_inf']]
 
-        clin_inc = p['clin_inc'].set_index(['month', 'admin', 'llin', 'irs', 'age'])
+        clin_inc = clin_inc_sheet.set_index(['month', 'admin', 'llin', 'irs', 'age'])
         clin_inc = clin_inc.loc[:, ['monthly_prob_clin']]
 
-        sev_inc = p['sev_inc'].set_index(['month', 'admin', 'llin', 'irs', 'age'])
+        sev_inc = sev_inc_sheet.set_index(['month', 'admin', 'llin', 'irs', 'age'])
         sev_inc = sev_inc.loc[:, ['monthly_prob_sev']]
 
         all_inc = pd.concat([inf_inc, clin_inc, sev_inc], axis=1)
