@@ -29,6 +29,8 @@ except NameError:
 # parameters for whole suite of tests:
 start_date = Date(2010, 1, 1)
 popsize = 5000
+hpv_cin_options = ['hpv', 'cin1', 'cin2', 'cin3']
+hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
 
 
 # %% Construction of simulation objects:
@@ -155,7 +157,7 @@ def get_population_of_interest(sim):
         sim.population.props.is_alive & (sim.population.props.age_years >= 15) & (sim.population.props.sex == 'F')
     return population_of_interest
 
-def get_population_of_interest_narrow(sim):
+def get_population_of_interest_30_to_50(sim):
     # Function to make filtering the simulation population for the population of interest easier
     # Population of interest in this module is living females aged 15 and above
     population_of_interest = \
@@ -407,18 +409,17 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     assert 'YLL_CervicalCancer_CervicalCancer' not in yll.columns
 
 @pytest.mark.slow
-def test_check_all_screened_cin_get_cin_removal(seed):
+def test_screening_age_conditions(seed):
     sim = make_simulation_healthsystemdisabled(seed=seed)
 
     # make screening mandatory:
     sim = make_screening_mandatory(sim)
 
-    # Make
-
     # make initial population
     sim.make_initial_population(n=popsize)
-    # force params
-    population_of_interest = get_population_of_interest_narrow(sim)
+
+    # force initial ce_hpv_cc_status to cin2 to ensure CIN treatment occurs
+    population_of_interest = get_population_of_interest_30_to_50(sim)
     sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'cin2'
 
     # Simulate
@@ -426,51 +427,36 @@ def test_check_all_screened_cin_get_cin_removal(seed):
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
-
-    hpv_cin_options = ['hpv', 'cin1', 'cin2', 'cin3']
-    hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
-
     df = sim.population.props
-
-    df_screened_cin = df[(df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])& df['ce_stage_at_diagnosis'].isin(['cin2', 'cin3'])]
-    assert all (df_screened_cin["ce_date_thermoabl"].notna() | df_screened_cin["ce_date_cryotherapy"].notna()), "Some individuals with detected HPV/CIN have not undergone treatment."
 
     df["age_at_last_screen"] = df["ce_date_last_screened"].dt.year - df["date_of_birth"].dt.year
     df["age_at_last_screen"] = df["age_at_last_screen"].astype("Int64")  # Nullable integer type
 
-
+    # If have HIV, screening 25+
     hv_screened = df.loc[
         (df["hv_diagnosed"] == True) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
     ]
-    # Perform the assertion safely
     assert (hv_screened.dropna() >= 25).all(), "Some individuals diagnosed with HIV were screened below age 25."
 
-    # Assert for hv_diagnosed == False (minimum age 30)
+    # If have HIV, screening 30+
     hv_non_screened = df.loc[
         (df["hv_diagnosed"] == False) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
     ]
-    # Perform the assertion safely
     assert (hv_non_screened.dropna() >= 30).all(), "Some individuals without HIV were screened below age 30."
 
 def test_check_all_cin_removed(seed):
     sim = make_simulation_healthsystemdisabled(seed=seed)
 
-    # make screening mandatory:
+    # make screening mandatory
     sim = make_screening_mandatory(sim)
 
-    # make screening mandatory:
-    sim = make_screening_mandatory(sim)
+    # make cin treatment perfect
     sim = make_cin_treatment_perfect(sim)
-
-    # Make
 
     # make initial population
     sim.make_initial_population(n=popsize)
 
-    hpv_cin_options = ['hpv', 'cin1', 'cin2', 'cin3']
-    hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
-
-    population_of_interest = get_population_of_interest_narrow(sim)
+    population_of_interest = get_population_of_interest_30_to_50(sim)
     sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'cin2'
     sim.population.props.loc[population_of_interest, "ce_hpv_cc_status_original"] = sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"]
     check_configuration_of_population(sim)
@@ -478,64 +464,31 @@ def test_check_all_cin_removed(seed):
     # Simulate
     sim.simulate(end_date=Date(2010, 6, 1))
 
-    df = sim.population.props
-    df = df[population_of_interest]
+    df = sim.population.props[population_of_interest]
     df_screened_cin = df[(df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"]) & df['ce_hpv_cc_status_original'].isin(hpv_cin_options) & df['ce_hpv_cc_status'].isin(['none'])]
     assert all (df_screened_cin["ce_date_cin_removal"].notna() & ((~df_screened_cin["ce_date_cryotherapy"].isna()) | (~df_screened_cin["ce_date_thermoabl"].isna())) & df_screened_cin["ce_hpv_cc_status"].isin(['none'])), "Some individuals with detected CIN have not had it removed ."
-
-# if its before 2024 get sent to via
-
-# if its after 2024 get sent to xpert
-
-# if you have don't have HIV, screened between ages of 30 and 50
-
-# if you have have HIV, screened between ages of 25 and 50
-
-
 
 
 def test_transition_year_logic(seed):
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_screening_mandatory(sim)
 
+    # Update transition_year so that simulation does not need to run through 2024
     transition_year = 2011
-
     sim.modules['CervicalCancer'].parameters['transition_testing_year'] = transition_year
     sim.modules['CervicalCancer'].parameters['transition_screening_year'] = transition_year
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=Date(2013, 1, 1))
+    sim.simulate(end_date=Date(transition_year+2, 1, 1))
 
     df = sim.population.props
 
     # All XPERT screening after 2024
     assert all(df["ce_date_xpert"].dropna().dt.year >= transition_year), "Some Xpert dates are before 2024."
 
-    # Identify VIA entries in 2024 or later
-    acetic_after_2024 = df["ce_date_via"].dt.year >= transition_year
-
-    # Identify rows where there is a positive XPERT
-    positive_xpert = df["ce_date_xpert"].notna() & df["ce_xpert_hpv_ever_pos"]
-
-    # # Assertion: No VIA in 2024+ unless there is a positive XPERT
-    # assert all(~acetic_after_2024 | positive_xpert), (
-    #     "Some entries have VIA dates in 2024+ without a corresponding positive XPERT."
-    # )
-
-    sample_df = df[
-        (df["ce_date_via"].notna() & (df["ce_date_via"].dt.year < transition_year)) |
-        (
-            df["ce_date_via"].notna() &
-            (df["ce_date_via"].dt.year >= transition_year) &
-            df["ce_date_xpert"].notna() &
-            df["ce_xpert_hpv_ever_pos"]
-        )
-        ]
-
-    print('hi')
-    # Create the logical condition
+    # All VIA before 2024 unless it is a confirmation test following XPET
     via_df = df[~df['ce_date_via'].isna()]
-    condition = (
+    condition_via = (
         (via_df["ce_date_via"].dt.year < transition_year) |  # Before transition year
         (
             (via_df["ce_date_via"].dt.year >= transition_year) &
@@ -543,6 +496,4 @@ def test_transition_year_logic(seed):
             (via_df["ce_xpert_hpv_ever_pos"])
         )
     )
-
-    # Assert that all rows satisfy the condition
-    assert condition.all(), "Some rows violate the VIA/Xpert date conditions."
+    assert condition_via.all(), "Some rows violate the VIA/Xpert date conditions."
