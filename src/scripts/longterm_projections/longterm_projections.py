@@ -48,9 +48,14 @@ class LongRun(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        return {'Baseline': self._baseline()}
+        return {'Baseline': self._baseline(),
+                'Perfect World': self._perfect_world(),
+                'HTM Scale-up': self._htm_scaleup}
 
     def _baseline(self) -> Dict:
+        return get_parameters_for_status_quo()
+
+    def _perfect_world(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
         return mix_scenarios(
             get_parameters_for_status_quo(),
@@ -70,11 +75,58 @@ class LongRun(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 },
-
+                "Malaria": {
+                    'type_of_scaleup': 'max',
+                    'scaleup_start_year': self.YEAR_OF_CHANGE,
+                },
+                "Tb": {
+                        'type_of_scaleup': 'max',
+                        'scaleup_start_year': self.YEAR_OF_CHANGE,
+                    },
+                "Hiv": {
+                        'type_of_scaleup': 'max',
+                        'scaleup_start_year': self.YEAR_OF_CHANGE,
+                    }
              },
         )
 
+    def _htm_scaleup(self) -> Dict:
+            return mix_scenarios(
+                get_parameters_for_status_quo(),
+                {"Malaria": {
+                'type_of_scaleup': 'target',
+                'scaleup_start_year': self.YEAR_OF_CHANGE,
+                },
+                "Tb": {
+                    'type_of_scaleup': 'target',
+                     'scaleup_start_year': self.YEAR_OF_CHANGE,
+                    },
+                "Hiv": {
+                    'type_of_scaleup': 'target',
+                    'scaleup_start_year': self.YEAR_OF_CHANGE,
+                    }
+                }
+            )
 
+    def _lifestyle_factors(self) -> Dict:
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {"Lifestyle": {
+                'r_urban': 1,
+                'r_rural': 1,
+                'r_higher_bmi': 1,
+                'r_lower_bmi': 1,
+                'r_high_salt_urban': 1,
+                'r_high_sugar': 1,
+                'r_low_ex':1,
+                'r_not_low_ex':1,
+                'r_tob':1,
+                'r_not_tob':1,
+                'r_ex_alc':1,
+                'r_not_ex_alc' 1,
+                'r_non_wood_burn_stove':1
+            }}
+        )
 if __name__ == '__main__':
     from tlo.cli import scenario_run
 
