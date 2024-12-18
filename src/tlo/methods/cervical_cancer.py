@@ -1339,8 +1339,8 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
 
             random_value = self.module.rng.random()
 
-            # If you have not yet done biopsy and have cin or stage, you require biopsy
-            if (df.at[person_id, "ce_hpv_cc_status"] in (hpv_cin_options)) & (~df.at[person_id, "ce_biopsy"] == True):
+            # If you have not yet done biopsy and have stage, you require biopsy, CIN treatment will not work
+            if (df.at[person_id, "ce_hpv_cc_status"] in hpv_stage_options) & (~df.at[person_id, "ce_biopsy"] == True):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_Biopsy(
                         module=self.module,
@@ -1350,7 +1350,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
                     topen=self.sim.date,
                     tclose=None
                 )
-            else:
+            elif df.at[person_id, "ce_hpv_cc_status"] in hpv_cin_options:
                 if random_value <= p['prob_thermoabl_successful']:
                     df.at[person_id, "ce_date_cin_removal"] = self.sim.date
                     df.at[person_id, "ce_hpv_cc_status"] = 'none'
@@ -1385,7 +1385,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
             random_value = self.module.rng.random()
 
             # If you have not yet done biopsy and have cin or stage, you require biopsy
-            if (df.at[person_id, "ce_hpv_cc_status"] in (hpv_cin_options)) & (~df.at[person_id, "ce_biopsy"] == True):
+            if (df.at[person_id, "ce_hpv_cc_status"] in hpv_stage_options) & (~df.at[person_id, "ce_biopsy"] == True):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_Biopsy(
                         module=self.module,
@@ -1395,7 +1395,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
                     topen=self.sim.date,
                     tclose=None
                 )
-            else:
+            elif df.at[person_id, "ce_hpv_cc_status"] in hpv_cin_options:
                 if random_value <= p['prob_cryotherapy_successful']:
                     df.at[person_id, "ce_date_cin_removal"] = self.sim.date
                     df.at[person_id, "ce_hpv_cc_status"] = 'none'
