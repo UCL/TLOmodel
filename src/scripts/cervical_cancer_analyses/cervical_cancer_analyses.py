@@ -43,7 +43,11 @@ def hash_dataframe(df):
 
 
 # Where outputs will go
-output_csv_file = Path("./outputs/output1_data.csv")
+output_csv_file = Path("outputs/output1_data.csv")
+if output_csv_file.exists():
+    output_csv_file.unlink()
+else:
+    output_csv_file.touch()
 seed = 3
 
 # date-stamp to label log files and any other outputs

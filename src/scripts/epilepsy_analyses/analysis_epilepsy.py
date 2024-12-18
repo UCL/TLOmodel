@@ -28,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020,  1, 1)
-popsize = 200000
+popsize = 100_000
 
 # Establish the simulation object
 log_config = {
@@ -40,10 +40,11 @@ log_config = {
         'tlo.methods.demography': logging.INFO,
         'tlo.methods.healthsystem': logging.WARNING,
         'tlo.methods.healthburden': logging.WARNING,
+        'tlo.methods.population': logging.INFO,
     }
 }
 
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -125,7 +126,8 @@ n_seiz_stat_1_3 = pd.Series(
 )
 n_seiz_stat_1_3.plot()
 plt.title('Number with epilepsy (past or current)')
-plt.ylim(0, 800000)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 
@@ -135,10 +137,24 @@ n_seiz_stat_2_3 = pd.Series(
 )
 n_seiz_stat_2_3.plot()
 plt.title('Number with epilepsy (infrequent or frequent seizures)')
-plt.ylim(0, 300000)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 plt.clf()
+
+
+prop_antiepilep_seiz_infreq_or_freq = pd.Series(
+    output['tlo.methods.epilepsy']['epilepsy_logging']['prop_freq_or_infreq_seiz_on_antiep'].values,
+    index=output['tlo.methods.epilepsy']['epilepsy_logging']['date']
+)
+prop_antiepilep_seiz_infreq_or_freq.plot(color='r')
+plt.title('Proportion on antiepileptics\namongst people that have infrequent or frequent epileptic seizures')
+plt.ylim(0, 1)
+plt.tight_layout()
+plt.show()
+plt.clf()
+
 
 prop_antiepilep_seiz_stat_1 = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['prop_antiepilep_seiz_stat_1'].values,
@@ -179,7 +195,8 @@ n_epi_death = pd.Series(
 )
 n_epi_death.plot()
 plt.title('Number of deaths from epilepsy')
-plt.ylim(0, 50)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 plt.clf()
@@ -190,10 +207,20 @@ n_antiep = pd.Series(
 )
 n_antiep.plot()
 plt.title('Number of people on antiepileptics')
-plt.ylim(0, 50000)
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
 plt.tight_layout()
 plt.show()
 plt.clf()
+
+(n_antiep / popsize).plot()
+plt.title('Proportion of of people (whole population) on antiepileptics')
+plt.gca().set_ylim(bottom=0)
+plt.ylabel("Number (not scaled)")
+plt.tight_layout()
+plt.show()
+plt.clf()
+
 
 epi_death_rate = pd.Series(
     output['tlo.methods.epilepsy']['epilepsy_logging']['epi_death_rate'].values,
@@ -233,8 +260,7 @@ fig, axs = plt.subplots(nrows=2, ncols=1, sharey=True, sharex=True)
 for _row, period in enumerate(('2010-2014', '2015-2019')):
     ax = axs[_row]
     comparison.loc[(period, slice(None), slice(None), CAUSE_NAME)]\
-              .droplevel([0, 1, 3])\
-              .groupby(axis=0, level=0)\
+              .groupby(axis=0, level=1)\
               .sum()\
               .plot(use_index=True, ax=ax)
     ax.set_ylabel('Deaths per year')
