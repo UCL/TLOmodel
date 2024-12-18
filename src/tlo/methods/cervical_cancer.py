@@ -301,11 +301,11 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         "stage4_daly_wt": Parameter(
             Types.REAL, "stage4_daly_wt"
         ),
-        "yrs_between_screen_cin_treated": Parameter(
-            Types.REAL, "yrs_between_screen_cin_treated"
+        "min_yrs_between_screening_if_cin_screened": Parameter(
+            Types.REAL, "minimum years between screening if individual has been screened for CIN previously"
         ),
-        "yrs_between_cin_treatment": Parameter(
-            Types.REAL, "yrs_between_cin_treatment"
+        "min_yrs_between_screening_if_cin_treated": Parameter(
+            Types.REAL, "minimum years between screening if individual has been treated for CIN previously"
         )
     }
 
@@ -984,8 +984,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         (
                             ((~df["ce_date_cryotherapy"].isna()) | (
                             ~df["ce_date_thermoabl"].isna())) &
-                                (days_since_last_screen > p['yrs_between_screen_cin_treated'] * 365) &
-                                (days_since_last_cin_treatment < p['yrs_between_cin_treatment'] * 365)
+                                (days_since_last_screen > p['min_yrs_between_screening_if_cin_screened'] * 365) &
+                                (days_since_last_cin_treatment > p['min_yrs_between_screening_if_cin_treated'] * 365)
                         )
                 )
         )
