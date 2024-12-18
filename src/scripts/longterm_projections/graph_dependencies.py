@@ -1,18 +1,18 @@
 """Construct a graph showing dependencies between modules."""
 
 import argparse
-from pathlib import Path
-from types import MappingProxyType
-from typing import Mapping, Set, Type
-import numpy as np
-from tlo import Module
 import importlib
 import inspect
 import os
 import pkgutil
+from pathlib import Path
+from types import MappingProxyType
+from typing import Mapping, Set, Type
+
+import numpy as np
 
 import tlo.methods
-
+from tlo import Module
 from tlo.analysis.utils import _standardize_short_treatment_id
 from tlo.dependencies import DependencyGetter, get_all_dependencies, is_valid_tlo_module_subclass
 from tlo.methods import Metadata

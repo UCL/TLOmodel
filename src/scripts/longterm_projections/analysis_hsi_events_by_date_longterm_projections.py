@@ -17,13 +17,13 @@ from tlo.analysis.utils import (
     extract_results,
     get_coarse_appt_type,
     get_color_short_treatment_id,
+    get_scenario_info,
     load_pickled_dataframes,
     order_of_short_treatment_ids,
     plot_stacked_bar_chart,
     squarify_neat,
     summarize,
     unflatten_flattened_multi_index_in_logging,
-    get_scenario_info
 )
 
 PREFIX_ON_FILENAME = '3'

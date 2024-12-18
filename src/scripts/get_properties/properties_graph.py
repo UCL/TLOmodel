@@ -1,6 +1,7 @@
 """Construct a graph showing the property dependency between modules."""
 
 import argparse
+import csv
 import importlib
 import inspect
 import os
@@ -8,9 +9,6 @@ import pkgutil
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Set, Type, Union
-import csv
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-
 
 import numpy as np
 
@@ -18,6 +16,7 @@ import tlo.methods
 from tlo import Module
 from tlo.analysis.utils import _standardize_short_treatment_id
 from tlo.dependencies import DependencyGetter, is_valid_tlo_module_subclass
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 
 try:

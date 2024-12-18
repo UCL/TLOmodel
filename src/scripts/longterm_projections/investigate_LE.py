@@ -1,8 +1,10 @@
 from pathlib import Path
-import pandas as pd
-from tlo.analysis.utils import extract_results, summarize, load_pickled_dataframes
-from tlo import Date
+
 import matplotlib.pyplot as plt
+import pandas as pd
+
+from tlo import Date
+from tlo.analysis.utils import extract_results, load_pickled_dataframes, summarize
 
 folder = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
 nd = extract_results(

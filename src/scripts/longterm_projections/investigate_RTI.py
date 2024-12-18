@@ -16,7 +16,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-
 seed = 100
 
 log_config_no_hs = {

@@ -4,18 +4,18 @@ import argparse
 import importlib
 import inspect
 import os
+import pkgutil
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type, Union
 
 import numpy as np
-import pkgutil
 import pydot
 
 import tlo.methods
 from tlo import Module
-from tlo.methods import Metadata
 from tlo.dependencies import DependencyGetter, get_all_dependencies, is_valid_tlo_module_subclass
+from tlo.methods import Metadata
 from tlo.methods.hiv import Hiv
 from tlo.methods.tb import Tb
 
