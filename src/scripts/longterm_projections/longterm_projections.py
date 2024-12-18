@@ -50,7 +50,9 @@ class LongRun(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {'Baseline': self._baseline(),
                 'Perfect World': self._perfect_world(),
-                'HTM Scale-up': self._htm_scaleup}
+                'HTM Scale-up': self._htm_scaleup,
+                'Lifestyle Changes CMD': self._lifestyle_factors_CMD(),
+                'Lifestyle Changes Cancer': self._lifestyle_factors_cancer()}
 
     def _baseline(self) -> Dict:
         return get_parameters_for_status_quo()
@@ -108,25 +110,34 @@ class LongRun(BaseScenario):
                 }
             )
 
-    def _lifestyle_factors(self) -> Dict:
+    def _lifestyle_factors_CMD(self) -> Dict:
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {"Lifestyle": {
-                'r_urban': 1,
-                'r_rural': 1,
-                'r_higher_bmi': 1,
-                'r_lower_bmi': 1,
-                'r_high_salt_urban': 1,
-                'r_high_sugar': 1,
-                'r_low_ex':1,
-                'r_not_low_ex':1,
-                'r_tob':1,
-                'r_not_tob':1,
-                'r_ex_alc':1,
-                'r_not_ex_alc' 1,
-                'r_non_wood_burn_stove':1
+                'r_urban': 0.0005 * 2,
+                'r_higher_bmi': 0.0005 * 2,
+                'r_high_salt': 0.003 * 2,
+                'r_high_sugar': 0.0001 * 2,
+                'r_low_ex':0.001 * 2,
+                'r_tob': 0.0004 * 2,
+                'r_ex_alc': 0.003 * 2,
+                'r_non_wood_burn_stove': 0.001 * 2,
+                'r_clean_drinking_water': 0.001 * 2,
+                'r_improved_sanitation':0.001 * 2,
+                'r_access_handwashing': 0.001 * 2,
             }}
         )
+
+    def _lifestyle_factors_cancer(self) -> Dict:
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {"Lifestyle": {
+                'r_tob': 0.0004 * 2,
+                'r_ex_alc': 0.003 * 2,
+            }}
+        )
+
+
 if __name__ == '__main__':
     from tlo.cli import scenario_run
 
