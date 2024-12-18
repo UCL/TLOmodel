@@ -25,7 +25,6 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, List
 
 import numpy as np
@@ -40,7 +39,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -339,6 +338,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
+        "increase_in_prob_circ_2019": Parameter(
+            Types.REAL,
+            "increase in probability that a male will be circumcised, if HIV-negative, following testing"
+            "from 2019 onwards",
+        ),
         "prob_circ_for_child_before_2020": Parameter(
             Types.REAL,
             "Probability that a male aging <15 yrs will be circumcised before year 2020",
@@ -410,6 +414,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
+        "interval_for_viral_load_measurement_months": Parameter(
+            Types.REAL,
+            " the interval for viral load monitoring in months"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -423,10 +431,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_HIV.xlsx"),
-            sheet_name=None,
-        )
+        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
@@ -597,6 +602,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_after_hiv_test"],
             Predictor("hv_inf").when(False, 1.0).otherwise(0.0),
             Predictor("sex").when("M", 1.0).otherwise(0.0),
+            Predictor("year",
+                      external=True,
+                      conditions_are_mutually_exclusive=True).when("<2019", 1)
+            .otherwise(p["increase_in_prob_circ_2019"])
         )
 
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
@@ -2418,7 +2427,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person["sex"] == "M") & (~person["li_is_circ"]):
                         x = self.module.lm["lm_circ"].predict(
-                            df.loc[[person_id]], self.module.rng
+                            df.loc[[person_id]], self.module.rng,
+                            year=self.sim.date.year,
                         )
                         if x:
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2877,13 +2887,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        p = self.module.parameters
 
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
+            _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
