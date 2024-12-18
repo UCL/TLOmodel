@@ -43,7 +43,7 @@ hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
 polling_frequency = 1
 
 def screen_population(year, p, eligible_population, df, rng, sim, module):
-    """Function to define whether individual will be screened and which screening is to be assigned to individual.
+    """Function to define whether individual will be screened and which screening is to be assigned to individual. If year is >= transition_screening_year then Xpert, else VIA
     :param year: the year of the screening
     :param p: parameters
     :param eligible_population: population that can be screened based on age, sex, HIV status
@@ -61,7 +61,7 @@ def screen_population(year, p, eligible_population, df, rng, sim, module):
             'selected_column': 'ce_selected_for_xpert_this_month'
         }
     }
-    selected_method = 'VIA' if year <= p['transition_screening_year'] else 'Xpert'
+    selected_method = 'VIA' if year < p['transition_screening_year'] else 'Xpert'
     method_info = screening_methods[selected_method]
 
     # Randomly select for screening
@@ -78,7 +78,7 @@ def screen_population(year, p, eligible_population, df, rng, sim, module):
             tclose=None
         )
 def perform_cin_procedure(year, p, person_id, hs, module, sim):
-    """Function to decide treatment for individuals with CIN
+    """Function to decide treatment for individuals with CIN based on year. If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
     :param year: the year of the screening
     :param p: parameters
     :param person_id: person of interest
@@ -251,43 +251,43 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "sensitivity of via for cin and cervical cancer bu stage"
         ),
         "prob_xpert_screen": Parameter(
-            Types.REAL, "prob_xpert_screen"
+            Types.REAL, "probability of xpert screening"
         ),
         "prob_via_screen": Parameter(
-            Types.REAL, "prob_via_screen"
+            Types.REAL, "probability of via screening"
         ),
         "prob_thermoabl_successful": Parameter(
-            Types.REAL, "prob_thermoabl_successful"
+            Types.REAL, "probability of thermoablation treatment successful in removing CIN (ce_hpv_cc_status set to none)"
         ),
         "prob_cryotherapy_successful": Parameter(
-            Types.REAL, "prob_cryotherapy_successful"
+            Types.REAL, "probability of cryotherapy treatment successful in removing CIN (ce_hpv_cc_status set to none)"
         ),
         "transition_testing_year": Parameter(
-            Types.REAL, "transition_testing_year"
+            Types.REAL, "year testing recommendation switches from VIA to Xpert"
         ),
         "transition_screening_year": Parameter(
-            Types.REAL, "transition_screening_year"
+            Types.REAL, "year screening recommendation switches from Cryo to Thermo"
         ),
         "min_age_hpv": Parameter(
-            Types.REAL, "min_age_hpv"
+            Types.REAL, "minimum age individual can be diagnosed with HPV"
         ),
         "screening_min_age_hv_neg": Parameter(
-            Types.REAL, "screening_min_age_hv_neg"
+            Types.REAL, "minimum age individual to be screened if HIV negative"
         ),
         "screening_max_age_hv_neg": Parameter(
-            Types.REAL, "screening_max_age_hv_neg"
+            Types.REAL, "maximum age individual to be screened if HIV negative"
         ),
         "screening_min_age_hv_pos": Parameter(
-            Types.REAL, "screening_min_age_hv_pos"
+            Types.REAL, "minimum age individual to be screened if HIV positive"
         ),
         "screening_max_age_hv_pos": Parameter(
-            Types.REAL, "screening_max_age_hv_pos"
+            Types.REAL, "maximum age individual to be screened if HIV positive"
         ),
         "yrs_between_screen_hv_pos": Parameter(
-            Types.REAL, "yrs_between_screen_hv_pos"
+            Types.REAL, "minimum years between screening if HIV positive"
         ),
         "yrs_between_screen_hv_neg": Parameter(
-            Types.REAL, "yrs_between_screen_hv_neg"
+            Types.REAL, "minimum years between screening if HIV negative"
         ),
         "palliative_care_bed_days": Parameter(
             Types.REAL, "palliative_care_bed_days"
