@@ -113,17 +113,17 @@ class LongRun(BaseScenario):
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {"Lifestyle": {
-                'r_urban': 0.0005 * 2,
-                'r_higher_bmi': 0.0005 * 2,
-                'r_high_salt': 0.003 * 2,
-                'r_high_sugar': 0.0001 * 2,
-                'r_low_ex':0.001 * 2,
-                'r_tob': 0.0004 * 2,
-                'r_ex_alc': 0.003 * 2,
-                'r_non_wood_burn_stove': 0.001 * 2,
-                'r_clean_drinking_water': 0.001 * 2,
-                'r_improved_sanitation':0.001 * 2,
-                'r_access_handwashing': 0.001 * 2,
+                'r_urban': 0.0005 * 1.5,
+                'r_higher_bmi': 0.0005 * 1.5,
+                'r_high_salt': 0.003 * 1.5,
+                'r_high_sugar': 0.0001 * 1.5,
+                'r_low_ex':0.001 * 1.5,
+                'r_tob': 0.0004 / 1.5, # as if there was a cessation programme/public awareness
+                'r_ex_alc': 0.003 * 1.5,
+                'r_non_wood_burn_stove': 0.001 * 1.5,
+                'r_clean_drinking_water': 0.001 * 1.5,
+                'r_improved_sanitation':0.001 * 1.5,
+                'r_access_handwashing': 0.001 * 1.5,
             }}
         )
 
@@ -131,8 +131,8 @@ class LongRun(BaseScenario):
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {"Lifestyle": {
-                'r_tob': 0.0004 * 2,
-                'r_ex_alc': 0.003 * 2,
+                'r_tob': 0.0004 * 1.5,
+                'r_ex_alc': 0.003 * 1.5,
             }}
         )
 
