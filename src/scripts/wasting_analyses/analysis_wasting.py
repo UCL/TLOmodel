@@ -229,6 +229,9 @@ class WastingAnalyses:
                 else:
                     colour_to_use = self.__colors['severe wasting']
                     y_upper_lim = 1000
+                if recov_opt.endswith("not_yet_recovered"):
+                    y_upper_lim = 4000
+
                 ax = plotting.plot(kind='bar', stacked=False,
                                    ax=axes[_row_counter, _col_counter],
                                    title=f"length of wasting in {_age} old",
