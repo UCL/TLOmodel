@@ -1191,26 +1191,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
             if person['hv_diagnosed']:
                 if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options+hpv_stage_options)
                                 ):
-                    if year >= p['transition_testing_year']:
-                        hs.schedule_hsi_event(
-                                hsi_event=HSI_CervicalCancer_Thermoablation_CIN(
-                                    module=self.module,
-                                    person_id=person_id
-                                       ),
-                                priority=0,
-                                topen=self.sim.date,
-                                tclose=None
-                                       )
-                    else:
-                        hs.schedule_hsi_event(
-                                hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
-                                    module=self.module,
-                                    person_id=person_id
-                                       ),
-                                priority=0,
-                                topen=self.sim.date,
-                                tclose=None
-                                       )
+                    perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
 
             # sy_chosen_via_screening_for_cin_cervical_cancer reset to 0
             # if df.at[person_id, 'sy_chosen_xpert_screening_for_hpv_cervical_cancer'] == 2:
