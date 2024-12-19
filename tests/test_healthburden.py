@@ -18,6 +18,7 @@ from tlo.methods import (
     healthsystem,
     tb,
     epi,
+    hiv,
     mockitis,
     symptommanager,
 )
@@ -65,6 +66,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  tb.Tb(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
                  auto_register_dependencies= True
@@ -252,7 +254,10 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
-        tb.Tb(resourcefilepath=rfp),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(persons_affected=0),
         DiseaseThatCausesB(persons_affected=1),
         DiseaseThatCausesAandB(persons_affected=2),
@@ -342,6 +347,7 @@ def test_arithmetic_of_dalys_calcs(seed):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
         auto_register_dependencies=True,
@@ -381,6 +387,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
         auto_register_dependencies=True
     )
     sim.make_initial_population(n=1)
@@ -468,6 +475,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
         auto_register_dependencies=True
     )
@@ -630,6 +638,7 @@ def test_mapper_for_dalys_created(tmpdir, seed):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
         DiseaseThatCausesDeathOnly(),
         sort_modules=False,
         auto_register_dependencies=True
