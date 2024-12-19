@@ -382,10 +382,9 @@ def compute_summary_statistics(
     :return: A dataframe with computed summary statistics.
     """
 
-    if use_standard_error:
-        if not central_measure == 'mean':
-            warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
-            central_measure = 'mean'
+    if use_standard_errorr and not central_measure == 'mean':
+        warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
+        central_measure = 'mean'
 
     stats = dict()
     grouped_results = results.groupby(axis=1, by='draw', sort=False)
