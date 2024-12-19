@@ -67,7 +67,9 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                 # tb.Tb(resourcefilepath=rfp),
                  epi.Epi(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 auto_register_dependencies= True
+                  )
 
 
     # Run the simulation
