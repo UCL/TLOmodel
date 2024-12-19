@@ -380,7 +380,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
-        #auto_register_dependencies=True
+        auto_register_dependencies=True
     )
     sim.make_initial_population(n=1)
 
@@ -455,7 +455,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, auto_register_dependencies=True, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {
@@ -467,8 +467,8 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
-
-        DiseaseThatCausesA()
+        DiseaseThatCausesA(),
+        auto_register_dependencies=True
     )
     sim.make_initial_population(n=1)
 
