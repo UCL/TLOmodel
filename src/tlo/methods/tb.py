@@ -276,6 +276,9 @@ class Tb(Module):
         "probability_community_chest_xray": Parameter(
             Types.REAL, "probability of being selected for outreach xray"
         ),
+       "probability_access_to_xray": Parameter(
+            Types.REAL, "probability of accessing xray"
+        ),
         # ------------------ diagnostic tests ------------------ #
         "sens_xpert_smear_negative": Parameter(
             Types.REAL, "sensitivity of Xpert test in smear negative TB cases"),
