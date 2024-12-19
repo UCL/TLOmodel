@@ -12,7 +12,6 @@ import pandas as pd
 from tlo import Date, DateOffset, Module, Parameter, Types, logging
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods import tb
 from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
@@ -90,17 +89,17 @@ class HealthBurden(Module):
         sex_index = ['M', 'F']
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
-       # tb_inf = sim.modules['Tb'].PROPERTIES['tb_inf'].categories
+        tb_inf = sim.modules['Tb'].PROPERTIES['tb_inf'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
         print("Modules loaded:", sim.modules.keys())
-        self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
+        self.multi_index_for_age_and_wealth_and_time_and_tb_inf= pd.MultiIndex.from_product(
            # [sex_index, age_index, wealth_index, tb_inf, year_index], names=['sex', 'age_range', 'li_wealth', 'tb_inf', 'year'])
-            [sex_index, age_index, wealth_index, year_index], names = ['sex', 'age_range', 'li_wealth', 'year'])
+            [sex_index, age_index, wealth_index, tb_inf, year_index], names = ['sex', 'age_range', 'li_wealth', 'year'])
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
-        self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
-        self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
+        self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
+        self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
+        self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
+        self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
@@ -319,10 +318,11 @@ class HealthBurden(Module):
             """Returns pd.Series which is the same as in the argument `_yll` except that the multi-index has been
             expanded to include sex and li_wealth and rearranged so that it matched the expected multi-index format
             (sex/age_range/li_wealth/year)."""
-            return pd.DataFrame(_yll)\
-                     .assign(tb_inf=tb_status, sex=sex, li_wealth=wealth)\
-                     .set_index(['sex', 'li_wealth', 'tb_inf'], append=True)\
-                     .reorder_levels(['sex', 'age_range', 'li_wealth', 'tb_inf', 'year'])[_yll.name]
+            return pd.DataFrame(_yll) \
+                .assign(tb_inf=tb_status, sex=sex, li_wealth=wealth) \
+                .set_index(['sex', 'li_wealth', 'tb_inf'], append=True) \
+                .reorder_levels(['sex', 'age_range', 'li_wealth', 'tb_inf', 'year'])[_yll.name]
+
 
         assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
         assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
