@@ -922,6 +922,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         screening_interval = np.where(df.hv_diagnosed, p['yrs_between_screen_hv_pos'], p['yrs_between_screen_hv_neg']) * 365
 
         # Define the eligible population
+
         eligible_population = (
                 (df.is_alive) &
                 (df.sex == 'F') &
