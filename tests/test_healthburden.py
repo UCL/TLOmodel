@@ -18,7 +18,7 @@ from tlo.methods import (
     healthsystem,
     tb,
     epi,
-    #mockitis,
+    mockitis,
     symptommanager,
 )
 from tlo.methods.causes import Cause
@@ -66,7 +66,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                 # tb.Tb(resourcefilepath=rfp),
                  epi.Epi(resourcefilepath=resourcefilepath),
-                 #mockitis.Mockitis(),
+                 mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
 
 
@@ -341,6 +341,7 @@ def test_arithmetic_of_dalys_calcs(seed):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
     )
     sim.make_initial_population(n=1)
@@ -378,7 +379,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
-        auto_register_dependencies=True
+        #auto_register_dependencies=True
     )
     sim.make_initial_population(n=1)
 
