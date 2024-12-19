@@ -2469,7 +2469,8 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         treatment_regimen = self.select_treatment(person_id)
         # treatment supplied in kits, one kit per treatment course
         treatment_available = self.get_consumables(
-            item_codes={self.module.item_codes_for_consumables_required[treatment_regimen]: 1}
+           # item_codes={self.module.item_codes_for_consumables_required[treatment_regimen]: 1}
+             item_codes = self.module.item_codes_for_consumables_required[treatment_regimen]
         )
 
         # if require MDR treatment, and not currently at level 2, refer to level 2
@@ -2769,23 +2770,26 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         else:
             # Check/log use of consumables, and give IPT if available
 
-            # if child and HIV+ or child under 2 yrs
-            if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
-
-                # 6 months dispensation, once daily
-                drugs_available = self.get_consumables(
-                    item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
-
-            # for all others
-            else:
-                # 12 weeks dispensation, once weekly
-                drugs_available = self.get_consumables(
-                    item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12}
-                )
+            # # if child and HIV+ or child under 2 yrs
+            # if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
+            #
+            #     # 6 months dispensation, once daily
+            #     drugs_available = self.get_consumables(
+            #         item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
+            #
+            # # for all others
+            # else:
+            #     # 12 weeks dispensation, once weekly
+            #     drugs_available = self.get_consumables(
+            #         item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12}
+            #     )
 
             # if available, schedule IPT decision
-            if drugs_available:
+            # if drugs_available:
                 # Update properties
+            if self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
+            ):
                 df.at[person_id, "tb_on_ipt"] = True
                 df.at[person_id, "tb_date_ipt"] = self.sim.date
 
