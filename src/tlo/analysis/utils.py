@@ -361,7 +361,7 @@ def extract_results(results_folder: Path,
 
 def compute_summary_statistics(
     results: pd.DataFrame,
-    central_measure: Optional[Literal["mean", "median"]] = None,
+    central_measure: Union[Literal["mean", "median"], None] = None,
     width_of_range: float = 0.95,
     use_standard_error: bool = False,
     only_central: bool = False,
@@ -373,7 +373,7 @@ def compute_summary_statistics(
      measure of the median and a 95% interval range.
 
     :param results: The dataframe of results to compute summary statistics of.
-    :param central_measure: The name of the central measure to use - either 'mean' or 'median'.
+    :param central_measure: The name of the central measure to use - either 'mean' or 'median' (defaults to 'median')
     :param width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
     :param use_standard_error: Whether the range should represent the standard error; otherwise it is just a
      description of the variation of runs. If selected, then the central measure is always the mean.
