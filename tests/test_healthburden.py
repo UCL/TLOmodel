@@ -334,7 +334,7 @@ def test_arithmetic_of_dalys_calcs(seed):
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, auto_register_dependencies=True)
+    sim = Simulation(start_date=start_date, seed=seed)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -343,6 +343,7 @@ def test_arithmetic_of_dalys_calcs(seed):
         epi.Epi(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
+        auto_register_dependencies=True,
     )
     sim.make_initial_population(n=1)
 
