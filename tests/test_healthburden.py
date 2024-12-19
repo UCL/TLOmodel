@@ -16,6 +16,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthburden,
     healthsystem,
+    tb,
     mockitis,
     symptommanager,
 )
@@ -24,6 +25,7 @@ from tlo.methods.demography import InstantaneousDeath, age_at_date
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthburden import Get_Current_DALYS
+
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -61,6 +63,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                                            disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 #tb.Tb(resourcefilepath=rfp),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
 
@@ -245,6 +248,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
+        tb.Tb(resourcefilepath=rfp),
         DiseaseThatCausesA(persons_affected=0),
         DiseaseThatCausesB(persons_affected=1),
         DiseaseThatCausesAandB(persons_affected=2),
@@ -332,6 +336,7 @@ def test_arithmetic_of_dalys_calcs(seed):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
+        tb.Tb(resourcefilepath=rfp),
         DiseaseThatCausesA(),
     )
     sim.make_initial_population(n=1)
@@ -367,6 +372,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
+        tb.Tb(resourcefilepath=rfp),
     )
     sim.make_initial_population(n=1)
 
@@ -451,6 +457,8 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
+        tb.Tb(resourcefilepath=rfp),
+
         DiseaseThatCausesA()
     )
     sim.make_initial_population(n=1)
