@@ -49,7 +49,6 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-
 def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected.
     """
@@ -64,7 +63,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                                            disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                # tb.Tb(resourcefilepath=rfp),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -375,7 +374,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed,resourcefilepath=resourcefilepath )
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -457,7 +456,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath, log_config={
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {
@@ -630,6 +629,7 @@ def test_mapper_for_dalys_created(tmpdir, seed):
         epi.Epi(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         DiseaseThatCausesDeathOnly(),
         sort_modules=False,
         auto_register_dependencies=True
