@@ -93,8 +93,8 @@ class HealthBurden(Module):
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
         print("Modules loaded:", sim.modules.keys())
         self.multi_index_for_age_and_wealth_and_time_and_tb_inf= pd.MultiIndex.from_product(
-           # [sex_index, age_index, wealth_index, tb_inf, year_index], names=['sex', 'age_range', 'li_wealth', 'tb_inf', 'year'])
-            [sex_index, age_index, wealth_index, tb_inf, year_index], names = ['sex', 'age_range', 'li_wealth', 'year'])
+        [sex_index, age_index, wealth_index, tb_inf, year_index], names=['sex', 'age_range', 'li_wealth', 'tb_inf', 'year'])
+            #[sex_index, age_index, wealth_index, tb_inf, year_index], names = ['sex', 'age_range', 'li_wealth', 'year'])
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
         self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
         self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
