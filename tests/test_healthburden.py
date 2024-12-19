@@ -17,7 +17,8 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     tb,
-    mockitis,
+    epi,
+    #mockitis,
     symptommanager,
 )
 from tlo.methods.causes import Cause
@@ -57,15 +58,17 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath, auto_register_dependencies=True),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath, auto_register_dependencies=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, auto_register_dependencies=True,
                                            disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 #tb.Tb(resourcefilepath=rfp),
-                 mockitis.Mockitis(),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, auto_register_dependencies=True),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath, auto_register_dependencies=True),
+                # tb.Tb(resourcefilepath=rfp),
+                 epi.Epi(resourcefilepath=resourcefilepath,auto_register_dependencies=True),
+                 #mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
+
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -337,6 +340,7 @@ def test_arithmetic_of_dalys_calcs(seed):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
+        epi.Epi(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
     )
     sim.make_initial_population(n=1)
@@ -373,6 +377,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
     sim.make_initial_population(n=1)
 
@@ -458,6 +463,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
+        epi.Epi(resourcefilepath=resourcefilepath),
 
         DiseaseThatCausesA()
     )
@@ -616,6 +622,7 @@ def test_mapper_for_dalys_created(tmpdir, seed):
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         tb.Tb(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         DiseaseThatCausesDeathOnly(),
