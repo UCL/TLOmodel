@@ -55,7 +55,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir}, auto_register_dependencies=True)
+    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -453,7 +453,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config={
+    sim = Simulation(start_date=start_date, seed=seed, auto_register_dependencies=True, log_config={
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {
