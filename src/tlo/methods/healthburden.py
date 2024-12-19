@@ -92,19 +92,22 @@ class HealthBurden(Module):
         tb_inf = sim.modules['Tb'].PROPERTIES['tb_inf'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
         print("Modules loaded:", sim.modules.keys())
+
         self.multi_index_for_age_and_wealth_and_time_and_tb_inf= pd.MultiIndex.from_product(
         [sex_index, age_index, wealth_index, tb_inf, year_index], names=['sex', 'age_range', 'li_wealth', 'tb_inf', 'year'])
             #[sex_index, age_index, wealth_index, tb_inf, year_index], names = ['sex', 'age_range', 'li_wealth', 'year'])
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
-        self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
-        self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
-        self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
-        self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
+        self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
+        # self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
+        # self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
+        # self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time_and_tb_inf)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
             m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
         ]
+
+
 
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.recognised_modules_names:

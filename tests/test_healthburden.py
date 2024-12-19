@@ -131,7 +131,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     class ModuleWithPersonsAffected(Module):
-        
+
         def __init__(self, persons_affected, name=None):
             super().__init__(name=name)
             self.persons_affected = persons_affected
@@ -249,7 +249,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         DiseaseThatCausesB(persons_affected=1),
         DiseaseThatCausesAandB(persons_affected=2),
         # intentionally two instances of DiseaseThatCausesC
-        DiseaseThatCausesC(persons_affected=3, name='DiseaseThatCausesC1'),  
+        DiseaseThatCausesC(persons_affected=3, name='DiseaseThatCausesC1'),
         DiseaseThatCausesC(persons_affected=3, name='DiseaseThatCausesC2'),
         DiseaseThatCausesNothing(),
         # Disable sorting to allow registering multiple instances of DiseaseThatCausesC
@@ -607,6 +607,7 @@ def test_mapper_for_dalys_created(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         DiseaseThatCausesDeathOnly(),
