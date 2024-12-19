@@ -76,6 +76,7 @@ class LongRun(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 },
+                "Sch"
                 "Malaria": {
                     'type_of_scaleup': 'max',
                     'scaleup_start_year': self.YEAR_OF_CHANGE,
