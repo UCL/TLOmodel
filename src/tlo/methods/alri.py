@@ -367,10 +367,6 @@ class Alri(Module):
                       ),
 
         # Probability of complications -----
-        'overall_progression_to_severe_ALRI':
-            Parameter(Types.REAL,
-                      'probability of progression to severe ALRI'
-                      ),
         'prob_pulmonary_complications_in_pneumonia':
             Parameter(Types.REAL,
                       'probability of pulmonary complications in (CXR+) pneumonia'
@@ -437,10 +433,6 @@ class Alri(Module):
                       ),
 
         # Risk of death parameters -----
-        'scaler_on_risk_of_death':
-            Parameter(Types.REAL,
-                      "Multiplicative scaler on the overall risk of death, for the purpose of calibration."
-                      ),
         'base_odds_death_ALRI_age<2mo':
             Parameter(Types.REAL,
                       'baseline odds of death from ALRI for young infants aged 0 month and severe pneumonia '
@@ -486,14 +478,6 @@ class Alri(Module):
         'or_death_ALRI_age2_59mo_SAM':
             Parameter(Types.REAL,
                       'odds ratio of death from ALRI for children with severe acute malnutrition'
-                      ),
-        'or_death_ALRI_age2_59mo_-3<=WHZ<-2':
-            Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with moderate wasting, -3<=WHZ<-2'
-                      ),
-        'or_death_ALRI_age2_59mo_WHZ<-3':
-            Parameter(Types.REAL,
-                      'odds ratio of death from ALRI for children with severe wasting, WHZ<-3'
                       ),
         'or_death_ALRI_age2_59mo_SpO2<90%':
             Parameter(Types.REAL,
@@ -619,10 +603,6 @@ class Alri(Module):
                       'relative rate of acquiring S. pneumoniae all types Alri '
                       'for children immunised wth PCV13'
                       ),
-        'effectiveness_Hib_vaccine_on_Hib_strains':
-            Parameter(Types.REAL,
-                      'effectiveness of Hib vaccine against H. influenzae typ-b ALRI'
-                      ),
         'rr_Hib_ALRI_with_Hib_vaccine':
             Parameter(Types.REAL,
                       'relative rate of acquiring H. influenzae type-b Alri '
@@ -709,26 +689,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of treatment failure by end of IV therapy for 2nd line antibiotic either cloxacillin'
                       ' or ceftriaxone to treat severe pneumonia (danger-signs)'
-                      ),
-        'rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%':
-            Parameter(Types.REAL,
-                      'relative risk of treatment failure if pneumonia with SpO2<90% were given 1st line IV antibiotics'
-                      'compared to oral antibiotics'
-                      ),
-        'rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%':
-            Parameter(Types.REAL,
-                      'relative risk of treatment failure if pneumonia with SpO2<90% were given 2nd line IV antibiotics'
-                      'compared to oral antibiotics'
-                      ),
-        'rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%':
-            Parameter(Types.REAL,
-                      'relative risk of treatment failure if pneumonia with SpO2>=90% were given '
-                      '1st line IV antibiotics compared to oral antibiotics'
-                      ),
-        'rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%':
-            Parameter(Types.REAL,
-                      'relative risk of treatment failure if pneumonia with SpO2>=90% were given '
-                      '2nd line IV antibiotics compared to oral antibiotics'
                       ),
 
         # sensitivities for correct classification by health workers
@@ -823,13 +783,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'tmp param'
                       ),
-        'rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%':
-            Parameter(Types.REAL,
-                      'Relative risk of treatment failure if pneumonia with SpO2<90% '
-                      'were given parenteral antibiotics'
-                      'compared to oral antibiotics'
-                      ),
-
         'rr_tf_oral_antibiotics_if_danger_signs':
             Parameter(Types.REAL,
                       'Relative risk of oral antibiotic treatment failure if general danger signs'
@@ -838,12 +791,7 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'Relative risk of oral antibiotic treatment failure if respiratory distress signs'
                       ),
-        'rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2>=90%':
-            Parameter(Types.REAL,
-                      'relative risk of treatment failure if non-severe pneumonia with SpO2>90% '
-                      'were given parenteral antibiotics'
-                      'compared to oral antibiotics'
-                      ),
+
         'prob_respiratory_distress_in_pneumonia':
             Parameter(Types.REAL,
                       'Probability of respiratory distress in pneumonia disease type'
@@ -923,12 +871,13 @@ class Alri(Module):
                       ),
         'or_care_seeking_hospital_age2_11mo':
             Parameter(Types.REAL,
-                      'tmp param'
+                      'Odds ratio of seeking care at hospital if age between 2-11 months'
                       ),
         'or_care_seeking_hospital_age12_23mo':
             Parameter(Types.REAL,
-                      'tmp param'
+                      'Odds ratio of seeking care at hospital if age between 2-11 months'
                       ),
+
         'or_care_seeking_hospital_danger_signs':
             Parameter(Types.REAL,
                       'Odds ratio of seeking care at hospital if presenting danger signs'
@@ -968,18 +917,6 @@ class Alri(Module):
         'scenario_baseline_ant_ox_coverage_by_facility':
             Parameter(Types.LIST,
                       'Coverages of oxygen across the facility levels [2, 1b, 1a] for baseline scenario'
-                      ),
-        'scenario_existing_psa_po_coverage_by_facility':
-            Parameter(Types.LIST,
-                      'Coverages of PO across the facility levels [2, 1b, 1a] for existing PSA scenario'
-                      ),
-        'scenario_planned_psa_po_coverage_by_facility':
-            Parameter(Types.LIST,
-                      'Coverages of PO across the facility levels [2, 1b, 1a] for planned PSA scenario'
-                      ),
-        'scenario_all_district_psa_po_coverage_by_facility':
-            Parameter(Types.LIST,
-                      'Coverages of PO across the facility levels [2, 1b, 1a] for all district PSA scenario'
                       ),
 
         'oxygen_unit_cost_by_po_implementation_existing_psa_perfect_hw_dx':
@@ -1052,6 +989,8 @@ class Alri(Module):
                       'Odds ratio of treatment failure for severe cases with initial treatment with oral antibiotics'
                       ),
 
+
+
         'availability_amoxicillin_tablet_by_facility_level':
             Parameter(Types.LIST,
                       'Probability of availability of oral amoxicillin tablet by facility level [0, 1a, 1b, 2, 3]'
@@ -1086,7 +1025,6 @@ class Alri(Module):
             Parameter(Types.LIST,
                       'Probability of availability of fluoxacillin for injection by facility level [0, 1a, 1b, 2, 3]'
                       ),
-
     }
 
     PROPERTIES = {
@@ -1687,7 +1625,8 @@ class Alri(Module):
             un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
             antibiotic_provided=antibiotic_provided,
             oxygen_provided=oxygen_provided,
-            pre_referral_oxygen='not_applicable'
+            pre_referral_oxygen='not_applicable',
+            this_is_follow_up=False
         )
 
         # store the information of the first appointment
@@ -3486,7 +3425,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             tclose=self.sim.date + pd.DateOffset(days=1),
             priority=0)
 
-    def _schedule_follow_up_following_treatment_failure(self):
+    def _schedule_follow_up_following_treatment_failure(self, inpatient):
         """Schedule a copy of this event to occur in 5 days time as a 'follow-up' appointment at this level
         (if above "0") and as an in-patient (for most cases).
         (rare outpatient at follow-up, only if no treatment was given at initial appointment)."""
@@ -3494,7 +3433,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             HSI_Alri_Treatment(
                 module=self.module,
                 person_id=self.target,
-                inpatient=self._is_as_in_patient,
+                inpatient=self._is_as_in_patient if inpatient == True else self._as_out_patient,
                 facility_level=self.ACCEPTED_FACILITY_LEVEL if self.ACCEPTED_FACILITY_LEVEL != "0" else "1a",
                 is_followup_following_treatment_failure=True,
             ),
@@ -3816,6 +3755,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         the ideal treatment."""
         p = self.module.parameters
         rng = self.module.rng
+        person_id = self.target
 
         def _provide_consumable_and_refer(cons: str) -> None:
             """Provide a consumable (ignoring availability) and refer patient to next level up."""
@@ -3879,10 +3819,17 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     # oral antibiotics failure - seek follow-up appointment
                     elif antibiotic_provided.startswith('Amoxicillin_tablet'):
                         if not self.is_followup_following_treatment_failure:
-                            # apply a 50% will follow-up if oral treatment fails for those without a schedule recovery date
-                            if self.sim.population.props.loc[self.target, 'ri_scheduled_recovery_date'] == pd.NaT:
-                                if 0.5 > rng.random_sample():
-                                    self._schedule_follow_up_following_treatment_failure()
+                            follow_up_care = self.module.follow_up_treatment_failure(
+                                original_classification_given=classification_for_treatment_decision,
+                                symptoms=self.sim.modules['SymptomManager'].has_what(person_id))
+                            if follow_up_care[0]:
+                                if follow_up_care[1] == 'chest_indrawing_pneumonia':
+                                    self._schedule_follow_up_following_treatment_failure(inpatient=False)
+                                elif follow_up_care[1] == 'danger_signs_pneumonia':
+                                    self._schedule_follow_up_following_treatment_failure(inpatient=True)
+                                else:
+                                    raise ValueError('follow-up care classification not specified')
+
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""
@@ -3969,39 +3916,15 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         ):
             return
 
-        # HIV status, not on ART
-        hiv_infected_and_not_on_art = person.hv_inf and (person.hv_art != "on_VL_suppressed")
-        # acute malnutrition status
-        un_clinical_acute_malnutrition = person.un_clinical_acute_malnutrition
-
-        pulse_oximeter_available = self._get_cons('Pulse_oximetry')
-        # Assessment process if not an in-patient:
-        classification_for_treatment_decision = self._get_disease_classification_for_treatment_decision(
-            age_exact_years=person.age_exact_years, symptoms=person.symptoms,
-            oxygen_saturation=person.oxygen_saturation, facility_level=self.ACCEPTED_FACILITY_LEVEL,
-            use_oximeter=pulse_oximeter_available, hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
-            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition)
-        self._provide_bronchodilator_if_wheeze(
-            facility_level=self.ACCEPTED_FACILITY_LEVEL,
-            symptoms=person.symptoms,
-        )
-
-        # get a follow-up classification
-        followup_classification = ''
-        # cough or cold, and fast-breathing pneumonia classifications will be given oral antibiotics, treat outpatient
-        if classification_for_treatment_decision in ('cough_or_cold', 'fast_breathing_pneumonia'):
-            followup_classification = 'chest_indrawing_pneumonia'
-        # chest-indrawing and danger signs pneumonia classifications will be given inpatient care
-        else:
-            followup_classification = 'danger_signs_pneumonia'
+        follow_up_classification = 'danger_signs_pneumonia' if self._is_as_in_patient else 'chest_indrawing_pneumonia'
 
         # do the effect of treatment - cure determine in the function
         self._do_action_given_classification(
-            classification_for_treatment_decision=followup_classification,
+            classification_for_treatment_decision=follow_up_classification,
             age_exact_years=person.age_exact_years,
             facility_level=self.ACCEPTED_FACILITY_LEVEL,
-            use_oximeter=pulse_oximeter_available,
-            oxygen_saturation=person.oxygen_saturation,
+            use_oximeter=False,
+            oxygen_saturation=person.ri_SpO2_level,
         )
 
     def apply(self, person_id, squeeze_factor):
@@ -4417,20 +4340,12 @@ def _reduce_hw_dx_sensitivity(alri_module):
     health workers diagnostic accuracy is at 30%"""
     p = alri_module.parameters
 
-    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 0.3
-    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 0.3
-    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 0.3
-    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 0.3
-    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 0.3
-    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 0.3
-
-    # Change respective cost for this condition
-    p['oxygen_unit_cost_by_po_implementation_existing_psa_imperfect_hw_dx'] = \
-        [0.0167841508524565, 0.00926022115997598, 0.00635414926419273, 0.00446207421001029, 0.00429132200096448]
-    p['oxygen_unit_cost_by_po_implementation_planned_psa_imperfect_hw_dx'] = \
-        [0.0142747188864335, 0.00826537109557841, 0.00551370534960769, 0.00383253630298794, 0.0036877605349842]
-    p['oxygen_unit_cost_by_po_implementation_all_district_psa_imperfect_hw_dx'] = \
-        [0.0286146949852482, 0.0165326378779786, 0.0110544589933642, 0.00769319228358011, 0.00723704307846086]
+    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 0.5
+    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 0.5
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 0.5
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 0.5
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 0.5
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 0.5
 
 
 def _prioritise_oxygen_to_hospitals(alri_module):
@@ -4440,14 +4355,6 @@ def _prioritise_oxygen_to_hospitals(alri_module):
 
     p['scenario_existing_psa_ox_coverage_by_facility'] = [1, 0.03, 0]
     p['scenario_planned_psa_ox_coverage_by_facility'] = [1, 1, 0.94]
-
-    # Change respective cost for this condition
-    p['oxygen_unit_cost_by_po_implementation_existing_psa_imperfect_hw_dx'] = \
-        [0.00645054596605153, 0.00603118423066993, 0.00519326397877533, 0.00394158505920955, 0.00380774765607967]
-    p['oxygen_unit_cost_by_po_implementation_planned_psa_imperfect_hw_dx'] = \
-        [0.00547761189189517, 0.0051350610605493, 0.00436034217101729, 0.00329684408052527, 0.00318278915942758]
-    p['oxygen_unit_cost_by_po_implementation_all_district_psa_imperfect_hw_dx'] = \
-        [0.0109790253401836, 0.0102926367248479, 0.00874632510421351, 0.00661490893230276, 0.00638693209973874]
 
 
 def _make_treatment_perfect(alri_module):

@@ -272,18 +272,18 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     for (
         classification_for_treatment_decision,
         age_exact_years,
-        use_oximeter,
+        facility_level,
         oxygen_saturation
     ) in itertools.product(
         alri_module.classifications,
         np.arange(0, 2, 0.05),
-        [False, True],
+        ['2', '1b', '1a', '0'],
         ['<90%', '90-92%', '>=93%']
     ):
         _ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
             classification_for_treatment_decision=classification_for_treatment_decision,
-            age_exact_years=age_exact_years, use_oximeter=use_oximeter, oxygen_saturation=oxygen_saturation)
-        print(f"{_ultimate_treatment=}")
+            age_exact_years=age_exact_years, facility_level=facility_level, oxygen_saturation=oxygen_saturation)
+        # print(f"{_ultimate_treatment=}, {classification_for_treatment_decision}, {facility_level}, {age_exact_years}, {oxygen_saturation}")
         assert isinstance(_ultimate_treatment['antibiotic_indicated'], tuple)
         assert len(_ultimate_treatment['antibiotic_indicated'])
         assert _ultimate_treatment['antibiotic_indicated'][0] in (alri_module.antibiotics + [''])
@@ -302,6 +302,8 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
         un_clinical_acute_malnutrition,
         antibiotic_provided,
         oxygen_provided,
+        pre_referral_oxygen,
+        this_is_follow_up
     ) in itertools.product(
         ('fast_breathing_pneumonia', 'danger_signs_pneumonia', 'chest_indrawing_pneumonia', 'cough_or_cold'),
         ('<90%', '90-92%', '>=93%'),
@@ -313,6 +315,8 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
         ('MAM', 'SAM', 'well'),
         alri_module.antibiotics,
         (False, True),
+        ('provided', 'not_provided', 'not_applicable'),
+        (False, True)
     ):
         kwargs = {
             'imci_symptom_based_classification': imci_symptom_based_classification,
@@ -325,6 +329,8 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
             'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
             'antibiotic_provided': antibiotic_provided,
             'oxygen_provided': oxygen_provided,
+            'pre_referral_oxygen': pre_referral_oxygen,
+            'this_is_follow_up': this_is_follow_up
         }
         res = models._prob_treatment_fails(**kwargs)
         if kwargs['antibiotic_provided'] != '1st_line_IV_antibiotics' and kwargs['oxygen_provided'] == True:
@@ -773,6 +779,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
         p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
         p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
         p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+        p['pulse_oximeter_usage_rate'] = 1.0
 
     sim = sim_hs_all_consumables
     make_hw_assesement_perfect(sim)
@@ -815,7 +822,7 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
          {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
           'child_is_younger_than_2_months': True}),
         ('danger_signs_pneumonia',
-         {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'chest_indrawing'],
+         {'symptoms': ['cough', 'danger_signs', 'difficult_breathing', 'fever', 'tachypnoea'],
           'child_is_younger_than_2_months': True}),
     )
 
@@ -837,7 +844,9 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
             symptoms=chars['symptoms'],
             oxygen_saturation='>=93%',
             facility_level='1b',
-            use_oximeter=False
+            use_oximeter=False,
+            hiv_infected_and_not_on_art=False,
+            un_clinical_acute_malnutrition='well'
         )
 
         # If no oximeter available and does need oxygen, and perfect HW assessment: classification given should be the
@@ -847,7 +856,9 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
             symptoms=chars['symptoms'],
             oxygen_saturation='<90%',
             facility_level='1b',
-            use_oximeter=False
+            use_oximeter=False,
+            hiv_infected_and_not_on_art=False,
+            un_clinical_acute_malnutrition='well'
         )
 
         # If oximeter available and does need oxygen, then classification should be the 'danger_signs_pneumonia'
@@ -856,7 +867,9 @@ def test_classification_based_on_symptoms_and_imci(sim_hs_all_consumables):
             symptoms=chars['symptoms'],
             oxygen_saturation='<90%',
             facility_level='1b',
-            use_oximeter=True
+            use_oximeter=True,
+            hiv_infected_and_not_on_art=False,
+            un_clinical_acute_malnutrition='well'
         ), f"{_correct_imci_classification_on_symptoms=}"
 
 
@@ -1003,6 +1016,7 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
         params['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 1.0
         params['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
         params['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
+        params['pulse_oximeter_usage_rate'] = 1.0
 
     def make_non_emergency_hsi_happen_immediately(sim):
         """Set the delay between symptoms onset and the generic HSI occurring to the least possible number of days."""
@@ -1083,12 +1097,14 @@ def test_treatment_pathway_if_all_consumables_mild_case(tmpdir, seed):
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
+                                      age_of_person_under_2_months=False,
                                       treatment_effect='perfectly_effective')
 
     # - If Treatment Does Not Work --> No follow-up or one follow-up as an outpatient
     assert [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1a'), # follow-up as in-patient at next level up.
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_ineffective') or \
@@ -1099,7 +1115,6 @@ def test_treatment_pathway_if_all_consumables_mild_case(tmpdir, seed):
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_ineffective')
-
 
 
 @pytest.mark.slow
@@ -1125,8 +1140,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
     assert [
                ('FirstAttendance_Emergency', '1b'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
-               # ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b')
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b')
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_ineffective',
@@ -1137,8 +1151,8 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
     # - If Treatments Works --> No follow-up
     assert [
                ('FirstAttendance_Emergency', '1b'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
@@ -1165,7 +1179,6 @@ def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
     # following non-emergency appointment, plus follow-up appointment because treatment was not successful.
     assert [
                ('FirstAttendance_NonEmergency', '0'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '2'),  # <-- referral due to lack of consumables
