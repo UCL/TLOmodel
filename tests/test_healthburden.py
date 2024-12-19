@@ -378,6 +378,7 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
         healthburden.HealthBurden(resourcefilepath=rfp),
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
+        auto_register_dependencies=True
     )
     sim.make_initial_population(n=1)
 
