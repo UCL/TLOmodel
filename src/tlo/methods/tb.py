@@ -592,10 +592,11 @@ class Tb(Module):
                 p["rr_ipt_adult"]),
         ]
 
-        conditional_predictors = [
-            Predictor("nc_diabetes").when(True, p['rr_relapse_diabetes']),
-        ]
-        if "CardioMetabolicDisorders" in self.sim.modules else []
+        conditional_predictors = (
+            [Predictor("nc_diabetes").when(True, p['rr_relapse_diabetes'])]
+            if "CardioMetabolicDisorders" in self.sim.modules
+            else []
+        )
 
         self.lm["risk_relapse_2yrs"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
