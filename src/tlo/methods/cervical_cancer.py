@@ -932,6 +932,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 (
                         pd.isna(df.ce_date_last_screened) |
                         (days_since_last_screen > screening_interval) |
+                # If CIN screening or treatment occurred recently, then can reduce the minimum time allowed between screening
                         (
                             ((~df["ce_date_cryotherapy"].isna()) | (
                             ~df["ce_date_thermoabl"].isna())) &
