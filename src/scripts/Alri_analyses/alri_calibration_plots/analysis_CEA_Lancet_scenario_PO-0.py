@@ -52,19 +52,19 @@ NUM_REPS_FOR_EACH_CASE = 20
 # scenario = 'existing_psa_with_po_level2'
 # scenario = 'existing_psa_with_po_level1b'
 # scenario = 'existing_psa_with_po_level1a'
-# scenario = 'existing_psa_with_po_level0'
+scenario = 'existing_psa_with_po_level0'
 # scenario = 'planned_psa'
 # scenario = 'planned_psa_with_po_level2'
 # scenario = 'planned_psa_with_po_level1b'
 # scenario = 'planned_psa_with_po_level1a'
-scenario = 'planned_psa_with_po_level0'
+# scenario = 'planned_psa_with_po_level0'
 # scenario = 'all_district_psa'
 # scenario = 'all_district_psa_with_po_level2'
 # scenario = 'all_district_psa_with_po_level1b'
 # scenario = 'all_district_psa_with_po_level1a'
 # scenario = 'all_district_psa_with_po_level0'
 
-dx_accuracy = 'imperfect'
+dx_accuracy = 'perfect'
 
 # False if main analysis, True if a sensitivity analysis (HW Dx Accuracy, or Prioritise oxygen in Hospitals)
 sensitivity_analysis = False

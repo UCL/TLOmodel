@@ -62,7 +62,7 @@ scenario = 'planned_psa'
 # scenario = 'all_district_psa_with_po_level2'
 # scenario = 'all_district_psa_with_po_level1b'
 # scenario = 'all_district_psa_with_po_level1a'
-# scenario = 'all_district_psa_with_po_level0'
+# scenario = 'all_district_psa_with_po_level0''
 
 dx_accuracy = 'imperfect'
 
@@ -399,9 +399,6 @@ def treatment_efficacy(
                                                   treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 5])
     eligible_for_follow_up_care_no_amox = all([ultimate_treatment['antibiotic_indicated'][0] == '',
                                                treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 3])
-
-    # eligible_for_follow_up_care = all([not ultimate_treatment['antibiotic_indicated'][0].startswith('1st_line_IV'),
-    #                                    treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 5])
 
     eligible_for_follow_up_care = any([eligible_for_follow_up_care_3_day_amox,
                                        eligible_for_follow_up_care_5_day_amox,
@@ -1331,83 +1328,3 @@ check = tlo_availability_df.groupby(['Facility_Level', 'item_code']).mean()
 # erythromycin 123 --- 0: 0.15414, 1a: 0.30827, 1b: 0.43940, 2: 0.59340, 3: 0.84973
 # azithromycin --- 1a and 1b 0.5077 - assume 1a: 0.4577, 1b: 0.5577, half of 1a for 0: 0.22885, 2: 0.78655, 3: 0.900975
 
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Define the dataset
-interventions = ['Scenario 0', 'Scenario 0.PO-2', 'Scenario 0.PO-1b', 'Scenario 0.PO-1a', 'Scenario 0.PO-0',
-                 'Scenario 1', 'Scenario 1.PO-2', 'Scenario 1.PO-1b', 'Scenario 1.PO-1a', 'Scenario 1.PO-0',
-                 'Scenario 2', 'Scenario 2.PO-2', 'Scenario 2.PO-1b', 'Scenario 2.PO-1a', 'Scenario 2.PO-0',
-                 'Scenario 3', 'Scenario 3.PO-2', 'Scenario 3.PO-1b', 'Scenario 3.PO-1a', 'Scenario 3.PO-0']
-costs = [832300.817, 843773.248, 868415.539, 916512.278, 923313.384,
-         913758.772, 925209.575, 949688.096, 994772.516, 1001151.764,
-         973034.166, 984282.582, 1008389.223, 1050203.791, 1056056.903,
-         1123030.591,
-         1134348.459,
-         1158582.825,
-         1196655.298,
-         1201932.238]
-
-effects = [66785,
-           66108,
-           65246,
-           64139,
-           64016,
-           58231,
-           57554,
-           56262,
-           54539,
-           54108,
-           49124,
-           48386,
-           46416,
-           43893,
-           43463,
-           49063,
-           48324,
-           46355,
-           43893,
-           47278
-           ]
-
-# Calculate the incremental cost-effectiveness ratio (ICER)
-ICERs = []
-for i in range(len(interventions)-1):
-    ICER = (costs[i+1] - costs[0]) / (effects[0] - effects[i+1])
-    ICERs.append(ICER)
-
-dalys_averteds = []
-for i in range(len(interventions)-1):
-    dalys_averted = effects[0] - effects[i+1]
-    dalys_averteds.append(dalys_averted)
-
-# Create a cost-effectiveness plane
-plt.scatter(effects, costs)
-plt.xlabel('Effectiveness')
-plt.ylabel('Cost')
-plt.title('Cost-Effectiveness Plane')
-for i in range(len(interventions)):
-    plt.annotate(interventions[i], (effects[i], costs[i]))
-
-# Calculate the net monetary benefit (NMB)
-WTP = np.linspace(0, 1000, 101)
-NMBs = []
-for i in range(len(interventions)-1):
-    NMB = dalys_averteds[i] * WTP - costs[i+1]
-    NMBs.append(NMB)
-
-# Plot the cost-effectiveness acceptability curve (CEAC)
-CEAC = []
-for wtp in WTP:
-    num = sum([1 for i in range(len(interventions)-1) if any(NMBs[i] >= wtp)])
-    prob = num / (len(interventions)-1)
-    CEAC.append(prob)
-
-plt.figure()
-plt.plot(WTP, CEAC)
-plt.xlabel('Willingness-to-Pay')
-plt.ylabel('Probability of Cost-Effectiveness')
-plt.title('Cost-Effectiveness Acceptability Curve')
-
-# Show the plots
-plt.show()

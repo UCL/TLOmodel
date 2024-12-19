@@ -628,7 +628,7 @@ def generate_table():
     risk_of_death = list()
 
     hw_dx_perfect = True if dx_accuracy == 'perfect' else False
-    new_policy = False
+    new_policy = True
 
     for x in df.itertuples():
         # For Antibiotics only scenario
@@ -931,10 +931,10 @@ if __name__ == "__main__":
     # accuracy
 
     # disease_classification2 = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy_level2"]
-    disease_classification1a = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1a"]
+    disease_classification1a = table["classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a"]
     disease_classification2 = table['classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2']
-    low_oxygen = (table["oxygen_saturation"] == "<90%").replace({True: '<90%', False: ">=90%"})
-    # low_oxygen = (table["oxygen_saturation"])
+    # low_oxygen = (table["oxygen_saturation"] == "<90%").replace({True: '<90%', False: ">=90%"})
+    low_oxygen = (table["oxygen_saturation"])
     fraction = risk_of_death['fraction']
     number_cases = table.groupby(by=[disease_classification2, low_oxygen]).size()
     dx_accuracy = 'perfect'
@@ -1024,32 +1024,52 @@ if __name__ == "__main__":
     if results.index.size == 12:  # broken down by 3 SpO2 levels
         # rename the index - to shorten the labels
         results.index = pd.MultiIndex.from_tuples(
-            [(x[0], f'SpO2_{x[1]}') if x[1] == '90-92%' else (x[0], x[1]) for x in results.index],
+            [('cough/cold', f'SpO2={x[1]}') if x == ('cough_or_cold', '90-92%') else (x[0], x[1]) for x in
+             results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
-            [('cough/cold', f'SpO2{x[1]}') if x[0] == 'cough_or_cold' else (x[0], x[1]) for x in results.index],
+            [('cough/cold', f'SpO2{x[1]}') if x in (('cough_or_cold', '<90%'), ('cough_or_cold', '>=93%')) else (
+                x[0], x[1]) for x in results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
-            [('fb-pneumonia', f'SpO2{x[1]}') if x[0] == 'fast_breathing_pneumonia' else (x[0], x[1]) for x in results.index],
+            [('fb-pneumonia', f'SpO2={x[1]}') if x == ('fast_breathing_pneumonia', '90-92%') else (x[0], x[1]) for x in
+             results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
-            [('ci-pneumonia', f'SpO2{x[1]}') if x[0] == 'chest_indrawing_pneumonia' else (x[0], x[1]) for x in results.index],
+            [('fb-pneumonia', f'SpO2{x[1]}') if x in (
+                ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '>=93%')) else (x[0], x[1]) for x in
+             results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
-            [('ds-pneumonia', f'SpO2{x[1]}') if x[0] == 'danger_signs_pneumonia' else (x[0], x[1]) for x in results.index],
+            [('ci-pneumonia', f'SpO2={x[1]}') if x == ('chest_indrawing_pneumonia', '90-92%') else (x[0], x[1]) for x in
+             results.index],
+            names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
+        results.index = pd.MultiIndex.from_tuples(
+            [('ci-pneumonia', f'SpO2{x[1]}') if x in (
+                ('chest_indrawing_pneumonia', '<90%'), ('chest_indrawing_pneumonia', '>=93%')) else (x[0], x[1]) for x in
+             results.index],
+            names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
+        results.index = pd.MultiIndex.from_tuples(
+            [('ds-pneumonia', f'SpO2={x[1]}') if x == ('danger_signs_pneumonia', '90-92%') else (x[0], x[1]) for x in
+             results.index],
+            names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
+        results.index = pd.MultiIndex.from_tuples(
+            [('ds-pneumonia', f'SpO2{x[1]}') if x in (
+                ('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '>=93%')) else (x[0], x[1]) for x in
+             results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
 
         reorderlist = [('cough/cold', 'SpO2>=93%'),
-                       ('cough/cold', 'SpO2_90-92%'),
+                       ('cough/cold', 'SpO2=90-92%'),
                        ('cough/cold', 'SpO2<90%'),
                        ('fb-pneumonia', 'SpO2>=93%'),
-                       ('fb-pneumonia', 'SpO2_90-92%'),
+                       ('fb-pneumonia', 'SpO2=90-92%'),
                        ('fb-pneumonia', 'SpO2<90%'),
                        ('ci-pneumonia', 'SpO2>=93%'),
-                       ('ci-pneumonia', 'SpO2_90-92%'),
+                       ('ci-pneumonia', 'SpO2=90-92%'),
                        ('ci-pneumonia', 'SpO2<90%'),
                        ('ds-pneumonia', 'SpO2>=93%'),
-                       ('ds-pneumonia', 'SpO2_90-92%'),
+                       ('ds-pneumonia', 'SpO2=90-92%'),
                        ('ds-pneumonia', 'SpO2<90%'),
                        ]
 
@@ -1082,7 +1102,7 @@ if __name__ == "__main__":
 
     elif results.index.size == 8:
         results.index = pd.MultiIndex.from_tuples(
-            [(x[0], '>=90%') if x[1] == '90-92%' else (x[0], x[1]) for x in results.index],
+            [(x[0], 'SpO2>=90%') if x[1] == '90-92%' else (x[0], x[1]) for x in results.index],
             names=("classification_for_treatment_decision_without_oximeter_perfect_accuracy", "oxygen_saturation"))
         results.index = pd.MultiIndex.from_tuples(
             [('cough/cold', f'SpO2{x[1]}') if x[0] == 'cough_or_cold' else (x[0], x[1]) for x in results.index],
@@ -1115,48 +1135,81 @@ if __name__ == "__main__":
     # index = results.index.tolist()  -- > copy this to match the multiindex
 
     assign_colors = dict()
+    new_legend_lab_map = dict()
 
     if results.index.size == 12:
-        assign_colors = {('cough/_cold', 'SpO2>=93%'): '#fa8405',
-                         ('cough/cold', 'SpO2_90-92%'): 'gold',
+        assign_colors = {('cough/cold', 'SpO2>=93%'): 'tab:orange',
+                         ('cough/cold', 'SpO2=90-92%'): 'gold',
                          ('cough/cold', 'SpO2<90%'): 'navajowhite',
                          ('fb-pneumonia', 'SpO2>=93%'): 'navy',
-                         ('fb-pneumonia', 'SpO2_90-92%'): 'blue',
+                         ('fb-pneumonia', 'SpO2=90-92%'): 'blue',
                          ('fb-pneumonia', 'SpO2<90%'): 'deepskyblue',
                          ('ci-pneumonia', 'SpO2>=93%'): 'darkgreen',
-                         ('ci-pneumonia', 'SpO2_90-92%'): 'seagreen',
+                         ('ci-pneumonia', 'SpO2=90-92%'): 'seagreen',
                          ('ci-pneumonia', 'SpO2<90%'): 'lightgreen',
                          ('ds-pneumonia', 'SpO2>=93%'): 'darkred',
-                         ('ds-pneumonia', 'SpO2_90-92%'): 'orangered',
+                         ('ds-pneumonia', 'SpO2=90-92%'): 'orangered',
                          ('ds-pneumonia', 'SpO2<90%'): 'darksalmon',
                          }
+        new_legend_lab_map = {
+            ('cough/cold', 'SpO2>=93%'): u'cough/cold, SpO\u2082≥93%',
+            ('cough/cold', 'SpO2=90-92%'): u'cough/cold, SpO\u2082=90-92%',
+            ('cough/cold', 'SpO2<90%'): u'cough/cold, SpO\u2082<90%',
+            ('fb-pneumonia', 'SpO2>=93%'): u'fb-pneumonia, SpO\u2082≥93%',
+            ('fb-pneumonia', 'SpO2=90-92%'): u'fb-pneumonia, SpO\u2082=90-92%',
+            ('fb-pneumonia', 'SpO2<90%'): u'fb-pneumonia, SpO\u2082<90%',
+            ('ci-pneumonia', 'SpO2>=93%'): u'ci-pneumonia, SpO\u2082≥93%',
+            ('ci-pneumonia', 'SpO2=90-92%'): u'ci-pneumonia, SpO\u2082=90-92%',
+            ('ci-pneumonia', 'SpO2<90%'): u'ci-pneumonia, SpO\u2082<90%',
+            ('ds-pneumonia', 'SpO2>=93%'): u'ds-pneumonia, SpO\u2082≥93%',
+            ('ds-pneumonia', 'SpO2=90-92%'): u'ds-pneumonia, SpO\u2082=90-92%',
+            ('ds-pneumonia', 'SpO2<90%'): u'ds-pneumonia, SpO\u2082<90%'
+        }
+
     elif results.index.size == 5:
-        assign_colors = {('cough/cold', 'SpO2>=90%'): 'tab:orange',
+        assign_colors = {('cough/cold', 'SpO2>=90%'): '#ff8b00',
                          ('fb-pneumonia', 'SpO2>=90%'): 'mediumblue',
                          ('ci-pneumonia', 'SpO2>=90%'): 'tab:green',
                          ('ds-pneumonia', 'SpO2>=90%'): 'firebrick',
                          ('any severity', 'SpO2<90%'): 'palevioletred'
                          }
+        new_legend_lab_map = {
+            ('cough/cold', 'SpO2>=90%'): u'cough/cold, SpO\u2082≥90%',
+            ('fb-pneumonia', 'SpO2>=90%'): u'fb-pneumonia, SpO\u2082≥90%',
+            ('ci-pneumonia', 'SpO2>=90%'): u'ci-pneumonia, SpO\u2082≥90%',
+            ('ds-pneumonia', 'SpO2>=90%'): u'ds-pneumonia, SpO\u2082≥90%',
+            ('any severity', 'SpO2<90%'): u'any classification, SpO\u2082<90%'
+        }
 
     elif results.index.size == 8:
-        assign_colors = {('cough/cold', 'SpO2>=90%'): 'tab:orange',
+        assign_colors = {('cough/cold', 'SpO2>=90%'): '#ff8b00',
                          ('cough/cold', 'SpO2<90%'): 'navajowhite',
                          ('fb-pneumonia', 'SpO2>=90%'): 'mediumblue',
                          ('fb-pneumonia', 'SpO2<90%'): 'deepskyblue',
                          ('ci-pneumonia', 'SpO2>=90%'): 'tab:green',
                          ('ci-pneumonia', 'SpO2<90%'): 'lightgreen',
-                         ('ds-pneumonia', 'SpO2>=90%'): 'firebrick',
-                         ('ds-pneumonia', 'SpO2<90%'): 'darksalmon'
+                         ('ds-pneumonia', 'SpO2>=90%'): '#d40000',
+                         ('ds-pneumonia', 'SpO2<90%'): 'darksalmon',
                          }
+        new_legend_lab_map = {
+            ('cough/cold', 'SpO2>=90%'): u'cough/cold, SpO\u2082≥90%',
+            ('cough/cold', 'SpO2<90%'): u'cough/cold, SpO\u2082<90%',
+            ('fb-pneumonia', 'SpO2>=90%'): u'fb-pneumonia, SpO\u2082≥90%',
+            ('fb-pneumonia', 'SpO2<90%'): u'fb-pneumonia, SpO\u2082<90%',
+            ('ci-pneumonia', 'SpO2>=90%'): u'ci-pneumonia, SpO\u2082≥90%',
+            ('ci-pneumonia', 'SpO2<90%'): u'ci-pneumonia, SpO\u2082<90%',
+            ('ds-pneumonia', 'SpO2>=90%'): u'ds-pneumonia, SpO\u2082≥90%',
+            ('ds-pneumonia', 'SpO2<90%'): u'ds-pneumonia, SpO\u2082<90%'
+        }
 
     else:
         raise ValueError(f'Index size not recognised {results.index.size}')
 
     # PLOTS!!
-    fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)
-    results.T.plot.bar(stacked=True, ax=ax, width=0.6, legend=False,
+    fig, ax = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    results.T.plot.bar(stacked=True, ax=ax, width=0.7, legend=False,
              color=results.index.map(assign_colors))
-    plt.xticks(rotation=0, ha='center')
+    plt.xticks(rotation=0, ha='center', fontsize=12)
 
     # Create a dictionary to map old names to new names
     label_mapping = {
@@ -1168,16 +1221,17 @@ if __name__ == "__main__":
     new_labels = [label_mapping.get(label, label) for label in results.columns.get_level_values(1)]
     ax.set_xticklabels(new_labels)
 
-    ax.set_ylabel('Deaths per 100,000 cases of ALRI')
-    # ax.set_title(f"", fontsize=10)
+    ax.set_ylabel('Deaths per 100,000 cases of ALRI', fontsize=12)
     ax.grid(axis='y', linestyle='--', alpha=0.7, linewidth=0.5)
+
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(reversed(handles), reversed(labels),
+    new_legend_labels = [new_legend_lab_map.get(label, label) for label in results.index]
+    ax.legend(reversed(handles), reversed(new_legend_labels),
               title='Case Type',
               loc='upper left',
               bbox_to_anchor=(1, 1),
-              fontsize=7,
-              title_fontsize=9)
+              fontsize=8,
+              title_fontsize=10)
 
     fig.suptitle('Current policy - enhance IMCI at rural hospitals', fontsize=12, fontweight='semibold')
     fig.show()

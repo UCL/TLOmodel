@@ -44,7 +44,7 @@ MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
 # scenario = 'baseline_ant'
-scenario = 'baseline_ant_with_po_level2'
+# scenario = 'baseline_ant_with_po_level2'
 # scenario = 'baseline_ant_with_po_level1b'
 # scenario = 'baseline_ant_with_po_level1a'
 # scenario = 'baseline_ant_with_po_level0'
@@ -54,7 +54,7 @@ scenario = 'baseline_ant_with_po_level2'
 # scenario = 'existing_psa_with_po_level1a'
 # scenario = 'existing_psa_with_po_level0'
 # scenario = 'planned_psa'
-# scenario = 'planned_psa_with_po_level2'
+scenario = 'planned_psa_with_po_level2'
 # scenario = 'planned_psa_with_po_level1b'
 # scenario = 'planned_psa_with_po_level1a'
 # scenario = 'planned_psa_with_po_level0'
