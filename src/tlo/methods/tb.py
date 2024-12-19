@@ -391,26 +391,26 @@ class Tb(Module):
             "probability of referral to TB screening HSI if presenting with TB-related symptoms"
         ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
-        # "type_of_scaleup": Parameter(
-        #     Types.STRING, "argument to determine type scale-up of program which will be implemented, "
-        #                   "can be 'none', 'target' or 'max'",
-        # ),
+        "type_of_scaleup": Parameter(
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
+        ),
         "scenario_SI": Parameter(
             Types.STRING,
             "sub-set of scenarios used for sensitivity analysis"
         ),
-        # "scaleup_start_year": Parameter(
-        #     Types.INT,
-        #     "the year when the scale-up starts (it will occur on 1st January of that year)"
-        # ),
+        "scaleup_start_year": Parameter(
+            Types.INT,
+            "the year when the scale-up starts (it will occur on 1st January of that year)"
+        ),
         "outreach_xray_start_date": Parameter(
             Types.DATE,
             "date from which outreach xray starts"
         ),
-        # "scaleup_parameters": Parameter(
-        #     Types.DATA_FRAME,
-        #     "the parameters and values changed in scenario analysis"
-        # )
+        "scaleup_parameters": Parameter(
+            Types.DATA_FRAME,
+            "the parameters and values changed in scenario analysis"
+        )
     }
 
     def read_parameters(self, data_folder):
