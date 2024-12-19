@@ -55,7 +55,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir}, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -336,7 +336,7 @@ def test_arithmetic_of_dalys_calcs(seed):
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed,resourcefilepath=resourcefilepath)
     sim.register(
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -623,7 +623,7 @@ def test_mapper_for_dalys_created(tmpdir, seed):
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir}, auto_register_dependencies=True)
+    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir}, resourcefilepath=resourcefilepath)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         tb.Tb(resourcefilepath=resourcefilepath),
@@ -631,7 +631,8 @@ def test_mapper_for_dalys_created(tmpdir, seed):
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         DiseaseThatCausesDeathOnly(),
-        sort_modules=False
+        sort_modules=False,
+        auto_register_dependencies=True
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date)
