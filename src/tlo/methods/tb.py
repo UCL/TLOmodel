@@ -661,8 +661,13 @@ class Tb(Module):
 
         # TB Sputum smear test
         # assume that if smear-positive, sputum smear test is 100% specific and sensitive
-        self.item_codes_for_consumables_required['sputum_test'] = \
-            hs.get_item_codes_from_package_name("Microscopy Test")
+        self.item_codes_for_consumables_required['sputum_test'] = hs.get_item_code_from_item_name("ZN Stain")
+        self.item_codes_for_consumables_required['sputum_container'] = hs.get_item_code_from_item_name(
+            "Sputum container")
+        self.item_codes_for_consumables_required['slides'] = hs.get_item_code_from_item_name(
+            "Microscope slides, lime-soda-glass, pack of 50")
+        self.item_codes_for_consumables_required['gloves'] = hs.get_item_code_from_item_name(
+            "Gloves, exam, latex, disposable, pair")
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_sputum_test_smear_positive=DxTest(
@@ -670,7 +675,10 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_sputum_smear_positive"],
                 specificity=p["spec_sputum_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['sputum_test']
+                item_codes=self.item_codes_for_consumables_required['sputum_test'],
+                optional_item_codes=[self.item_codes_for_consumables_required['sputum_container'],
+                                     self.item_codes_for_consumables_required['slides'],
+                                     self.item_codes_for_consumables_required['gloves']]
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -679,13 +687,16 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=0.0,
                 specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['sputum_test']
+                item_codes=self.item_codes_for_consumables_required['sputum_test'],
+                optional_item_codes=[self.item_codes_for_consumables_required['sputum_container'],
+                                     self.item_codes_for_consumables_required['slides'],
+                                     self.item_codes_for_consumables_required['gloves']]
             )
         )
 
         # TB GeneXpert
         self.item_codes_for_consumables_required['xpert_test'] = \
-            hs.get_item_codes_from_package_name("Xpert test")
+            hs.get_item_code_from_item_name("Xpert")
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -694,7 +705,10 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xpert_smear_positive"],
                 specificity=p["spec_xpert_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['xpert_test']
+                item_codes=self.item_codes_for_consumables_required['xpert_test'],
+                optional_item_codes=[self.item_codes_for_consumables_required['sputum_container'],
+                                     self.item_codes_for_consumables_required['slides'],
+                                     self.item_codes_for_consumables_required['gloves']]
             )
         )
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -703,13 +717,17 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xpert_smear_negative"],
                 specificity=p["spec_xpert_smear_negative"],
-                item_codes=self.item_codes_for_consumables_required['xpert_test']
+                item_codes=self.item_codes_for_consumables_required['xpert_test'],
+                optional_item_codes=[self.item_codes_for_consumables_required['sputum_container'],
+                                     self.item_codes_for_consumables_required['slides'],
+                                     self.item_codes_for_consumables_required['gloves']]
             )
         )
 
         # TB Chest x-ray
-        self.item_codes_for_consumables_required['chest_xray'] = {
-            hs.get_item_code_from_item_name("X-ray"): 1}
+        self.item_codes_for_consumables_required['chest_xray'] = hs.get_item_code_from_item_name("X-ray")
+        self.item_codes_for_consumables_required['lead_apron'] = hs.get_item_code_from_item_name(
+            "Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST")
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -718,7 +736,8 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_positive"],
                 specificity=p["spec_xray_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray']
+                item_codes=self.item_codes_for_consumables_required['chest_xray'],
+                optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
             )
         )
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -727,7 +746,8 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_negative"],
                 specificity=p["spec_xray_smear_negative"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray']
+                item_codes=self.item_codes_for_consumables_required['chest_xray'],
+                optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
             )
         )
 
@@ -1723,7 +1743,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 if self.facility_level == "1a":
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Tb_ScreeningAndRefer(
-                            person_id=person_id, module=self.module, facility_level="2"
+                            person_id=person_id, module=self.module, facility_level="1b"
                         ),
                         topen=self.sim.date + DateOffset(days=1),
                         tclose=None,
