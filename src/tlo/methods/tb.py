@@ -992,40 +992,40 @@ class Tb(Module):
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
 
-    # def update_parameters_for_program_scaleup(self):
-    #     """ options for program scale-up are 'target' or 'max' """
-    #     p = self.parameters
-    #     scaled_params_workbook = p["scaleup_parameters"]
-    #     for col in scaled_params_workbook.columns:
-    #         scaled_params_workbook[col] = scaled_params_workbook[col].apply(
-    #             parse_csv_values_for_columns_with_mixed_datatypes
-    #         )
-    #
-    #     if p['type_of_scaleup'] == 'target':
-    #         scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
-    #     else:
-    #         scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
-    #
-    #     # scale-up TB program
-    #     # use NTP treatment rates
-    #     p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
-    #
-    #     # increase tb treatment success rates
-    #     p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
-    #     p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
-    #     p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
-    #     p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
-    #
-    #     # change first-line testing for TB to xpert
-    #     p["first_line_test"] = scaled_params["first_line_test"]
-    #     p["second_line_test"] = scaled_params["second_line_test"]
-    #
-    #     # increase coverage of IPT
-    #     p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
-    #     p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
-    #
-    #     # update exising linear models to use new scaled-up paramters
-    #     self._build_linear_models()
+    def update_parameters_for_program_scaleup(self):
+        """ options for program scale-up are 'target' or 'max' """
+        p = self.parameters
+        scaled_params_workbook = p["scaleup_parameters"]
+        for col in scaled_params_workbook.columns:
+            scaled_params_workbook[col] = scaled_params_workbook[col].apply(
+                parse_csv_values_for_columns_with_mixed_datatypes
+            )
+
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        else:
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+
+        # scale-up TB program
+        # use NTP treatment rates
+        p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
+
+        # increase tb treatment success rates
+        p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
+        p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
+        p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
+        p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
+
+        # change first-line testing for TB to xpert
+        p["first_line_test"] = scaled_params["first_line_test"]
+        p["second_line_test"] = scaled_params["second_line_test"]
+
+        # increase coverage of IPT
+        p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
+        p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
+
+        # update exising linear models to use new scaled-up paramters
+        self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
