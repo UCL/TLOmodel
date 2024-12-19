@@ -408,7 +408,8 @@ def compute_summary_statistics(
         #  Use standard error concept whereby we're using the intervals to express a 95% CI on the value of the mean.
         #  This will make width of uncertainty become narrower with more runs.
         std_deviation = grouped_results.std()
-        std_error = std_deviation / np.sqrt(len(grouped_results))
+        num_runs_per_draw = grouped_results.size().T
+        std_error = std_deviation.div(np.sqrt(num_runs_per_draw))
         z_value = st.norm.ppf(1 - (1. - width_of_range) / 2.)
         stats["lower"] = stats['central'] - z_value * std_error
         stats["upper"] = stats['central'] + z_value * std_error
