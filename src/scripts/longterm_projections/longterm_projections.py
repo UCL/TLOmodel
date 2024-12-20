@@ -88,7 +88,7 @@ class LongRun(BaseScenario):
                 "Hiv": {
                         'type_of_scaleup': 'max',
                         'scaleup_start_year': self.YEAR_OF_CHANGE,
-                    }
+                    },
                 "Schisto":{
                     'MDA_event': True
                 }
