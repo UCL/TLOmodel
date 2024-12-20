@@ -1065,7 +1065,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
 
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run='screening_with_xpert_for_cin_and_cervical_cancer ',
+                dx_tests_to_run='screening_with_xpert_for_cin_and_cervical_cancer',
                 hsi_event=self
             )
             df.at[person_id, "ce_date_last_screened"] = self.sim.date
