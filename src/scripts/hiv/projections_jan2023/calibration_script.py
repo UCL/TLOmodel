@@ -69,7 +69,7 @@ class TestScenario(BaseScenario):
         self.runs_per_draw = runs_per_draw
 
         self.sampled_parameters = pd.read_excel(
-            os.path.join(self.resources, "../../../../resources/ResourceFile_HIV.xlsx"),
+            os.path.join(self.resources, "../../../../resources/ResourceFile_HIV/parameters.csv"),
             sheet_name="LHC_samples",
         )
 

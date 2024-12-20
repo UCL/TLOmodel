@@ -260,6 +260,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             collapse_columns=True,
             only_mean=True
         )
+        num_by_age = num_by_age.reindex(make_age_grp_types().categories)
         return num_by_age
 
     for year in [2010, 2015, 2018, 2029, 2049]:
@@ -718,6 +719,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 deaths_by_agesexperiod.loc[
                     (deaths_by_agesexperiod['Period'] == period) & (deaths_by_agesexperiod['Sex'] == sex)].groupby(
                     by=['Variant', 'Age_Grp'])['Count'].sum()).unstack()
+
             tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
             tot_deaths_byage = tot_deaths_byage.transpose()
 

@@ -77,7 +77,7 @@ data_tb_ntp.index = pd.to_datetime(data_tb_ntp["year"], format="%Y")
 data_tb_ntp = data_tb_ntp.drop(columns=["year"])
 
 # HIV resourcefile
-xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
+xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV/parameters.csv")
 
 # HIV UNAIDS data
 data_hiv_unaids = pd.read_excel(xls, sheet_name="unaids_infections_art2021")
