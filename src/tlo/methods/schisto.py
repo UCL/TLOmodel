@@ -86,9 +86,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future '
                                             'rounds, with the frequency given in months'),
+        'MDA_event':Parameter(Types.BOOL,
+                                            'Whether MDA events are scheduled'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
+    def __init__(self, name=None, resourcefilepath=None, mda_execute=self.MDA_event):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.mda_execute = mda_execute
