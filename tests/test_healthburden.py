@@ -67,11 +67,11 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                  tb.Tb(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome(),
-                 auto_register_dependencies= True
+                 #added resourcefile path to mockititis and chronic syndrome
+                 mockitis.Mockitis(resourcefilepath=resourcefilepath),
+                 chronicsyndrome.ChronicSyndrome(resourcefilepath=resourcefilepath),
+                 auto_register_dependencies=True
                   )
-
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -470,10 +470,11 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
             "tlo.methods.healthburden": logging.INFO}}
                      )
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-        healthburden.HealthBurden(resourcefilepath=rfp),
-        tb.Tb(resourcefilepath=rfp),
+        #added resourcefilepath in full other than rfp in the sim.register
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
         hiv.Hiv(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
