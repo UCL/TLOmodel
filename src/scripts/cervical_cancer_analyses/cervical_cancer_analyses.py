@@ -34,14 +34,6 @@ from tlo.methods import (
 )
 import hashlib
 
-# Function to hash the DataFrame
-def hash_dataframe(df):
-    # Generate hash for each row
-    row_hashes = pd.util.hash_pandas_object(df).values
-    # Create a single hash for the DataFrame
-    return hashlib.sha256(row_hashes).hexdigest()
-
-
 # Where outputs will go
 output_csv_file = Path("outputs/output1_data.csv")
 if output_csv_file.exists():
@@ -50,7 +42,7 @@ else:
     output_csv_file.touch()
 seed = 3
 
-# date-stamp to label log files and any other outputs
+# Date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
@@ -66,7 +58,6 @@ log_config = {
         "tlo.methods.healthsystem": logging.INFO,
     }
 }
-
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
@@ -100,21 +91,7 @@ def run_sim(service_availability):
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-    # df_hash_population_props = hash_dataframe(sim.population.props)
-    #
-    # print(f"Hash: {df_hash_population_props}")
-    #
-    # # Save hash to a file
-    # with open('/Users/marianasuarez/Downloads/TLOmodelTest/df_hash_test.txt', 'w') as f:
-    #     f.write(df_hash_population_props)
-    # df_hash_population_props = hash_dataframe(sim.population.props)
-    #
-    # print(f"Hash: {df_hash_population_props}")
-    #
-    # # Save hash to a file
-    # with open('/Users/marianasuarez/Downloads/TLOmodelTest/df_hash_test.txt', 'w') as f:
-    #     f.write(df_hash_population_props)
-    # parse the simulation logfile to get the output dataframes
+
     log_df = parse_log_file(sim.log_filepath)
 
     return log_df
@@ -125,9 +102,10 @@ if output_csv_file.exists():
 
 log_df  = run_sim(service_availability=['*'])
 
-
 scale_factor = malawi_country_pop / popsize
 print(scale_factor)
+
+# todo: remove plotting with CSV file and replace with log df
 #
 # plot number of cervical cancer deaths in past year
 out_df = pd.read_csv(output_csv_file)
