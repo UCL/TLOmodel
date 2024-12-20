@@ -22,6 +22,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -197,8 +198,8 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Breast_Cancer.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Breast_Cancer",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
@@ -244,7 +245,7 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         if brc_status_any_stage.sum():
             sum_probs = sum(p['init_prop_breast_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_breast_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['init_prop_breast_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[brc_status_any_stage, "brc_status"] = self.rng.choice(
                     [val for val in df.brc_status.cat.categories if val != 'none'],
@@ -550,10 +551,10 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons.loc[
             (
                 ~pd.isnull(df.brc_date_treatment) & (
-                    (df.brc_status == "stage1") |
-                    (df.brc_status == "stage2") |
-                    (df.brc_status == "stage3")
-                ) & (df.brc_status == df.brc_stage_at_which_treatment_given)
+                (df.brc_status == "stage1") |
+                (df.brc_status == "stage2") |
+                (df.brc_status == "stage3")
+            ) & (df.brc_status == df.brc_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['stage_1_3_treated']
 
@@ -656,6 +657,8 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[selected_to_die, 'brc_date_death'] = self.sim.date
 
     # ---------------------------------------------------------------------------------------------------------
+
+
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
@@ -742,6 +745,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
                         tclose=None
                     )
 
+
 #   todo: we would like to note that the symptom has been investigated in a diagnostic test and the diagnosis was
 #   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
 #   todo: though the symptom remains we don't want to keep repeating the HSI which triggers the diagnostic test
@@ -776,8 +780,8 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             hs.schedule_hsi_event(
                 hsi_event=HSI_BreastCancer_PalliativeCare(
-                     module=self.module,
-                     person_id=person_id,
+                    module=self.module,
+                    person_id=person_id,
                 ),
                 topen=self.sim.date,
                 tclose=None,
@@ -819,7 +823,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 topen=self.sim.date + DateOffset(months=12),
                 tclose=None,
                 priority=0
-        )
+            )
 
 
 class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
@@ -1007,7 +1011,7 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_newly_diagnosed_stage3': n_newly_diagnosed_stage3,
             'n_newly_diagnosed_stage4': n_newly_diagnosed_stage4,
             'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
-            'n_diagnosed_age_30_49':  n_diagnosed_age_30_49,
+            'n_diagnosed_age_30_49': n_diagnosed_age_30_49,
             'n_diagnosed_age_50p': n_diagnosed_age_50p,
             'n_diagnosed': n_diagnosed
         })
