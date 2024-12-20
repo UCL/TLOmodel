@@ -159,11 +159,10 @@ def get_population_of_interest(sim):
 
 def get_population_of_interest_30_to_50(sim):
     # Function to make filtering the simulation population for the population of interest easier
-    # Population of interest in this module is living females aged 15 and above
+    # Population of interest for this function is 30 to 50 as it encompasses both HIV and non-HIV individuals eligible for screening
     population_of_interest = \
         sim.population.props.is_alive & (sim.population.props.age_years >= 30) & (sim.population.props.age_years < 50) & (sim.population.props.sex == 'F')
     return population_of_interest
-
 
 # %% Checks:
 def check_dtypes(sim):
@@ -172,7 +171,6 @@ def check_dtypes(sim):
     orig = sim.population.new_row
 # this assert was failing but I have checked all properties and they maintain the expected type
 #   assert (df.dtypes == orig.dtypes).all()
-
 
 def check_configuration_of_population(sim):
     # get df for alive persons:
@@ -192,7 +190,7 @@ def check_configuration_of_population(sim):
     assert 0 == (df.loc[~pd.isnull(df.ce_date_treatment)].ce_stage_at_which_treatment_given == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:
-# todo: not sure what is wrong with this assert as I am fairly certain the intended assert is true
+# todo: not sure what is wrong with this assert as I am fairly certain the intended assert is true, review vaginal bleeding
 
 #   assert set(sim.modules['SymptomManager'].who_has('vaginal_bleeding')).issubset(
 #       df.index[df.ce_cc_ever])
@@ -219,7 +217,7 @@ def check_configuration_of_population(sim):
 
 # %% Tests:
 def test_initial_config_of_pop_high_prevalence(seed):
-    """Tests of the the way the population is configured: with high initial prevalence values """
+    """Tests of the way the population is configured: with high initial prevalence values """
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_high_init_prev(sim)
     sim.make_initial_population(n=popsize)
@@ -228,7 +226,7 @@ def test_initial_config_of_pop_high_prevalence(seed):
 
 
 def test_initial_config_of_pop_zero_prevalence(seed):
-    """Tests of the the way the population is configured: with zero initial prevalence values """
+    """Tests of the way the population is configured: with zero initial prevalence values """
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = zero_out_init_prev(sim)
     sim.make_initial_population(n=popsize)
@@ -239,12 +237,11 @@ def test_initial_config_of_pop_zero_prevalence(seed):
 
 
 def test_initial_config_of_pop_usual_prevalence(seed):
-    """Tests of the the way the population is configured: with usual initial prevalence values"""
+    """Tests of the way the population is configured: with usual initial prevalence values"""
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
-
 
 @pytest.mark.slow
 def test_run_sim_from_high_prevalence(seed):
@@ -410,6 +407,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
 
 @pytest.mark.slow
 def test_screening_age_conditions(seed):
+    """Ensure individuals screened are of the corresponding eligible screening age"""
     sim = make_simulation_healthsystemdisabled(seed=seed)
 
     # make screening mandatory:
@@ -445,6 +443,7 @@ def test_screening_age_conditions(seed):
     assert (hv_non_screened.dropna() >= 30).all(), "Some individuals without HIV were screened below age 30."
 
 def test_check_all_cin_removed(seed):
+    """Ensure that individuals that are successfully treated for CIN have CIN removed """
     sim = make_simulation_healthsystemdisabled(seed=seed)
 
     # make screening mandatory
@@ -470,6 +469,8 @@ def test_check_all_cin_removed(seed):
 
 
 def test_transition_year_logic(seed):
+    """Ensure that different screenings occur based on transition year """
+
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_screening_mandatory(sim)
 
