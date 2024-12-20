@@ -100,11 +100,11 @@ for i in auxiliary.columns[3:]:  # for all equal-fraction scenarios
     auxiliary.loc[:, i] = auxiliary.loc[:, i] / auxiliary.loc[:, i].sum()
 # for "gap" allocation strategy
 # auxiliary.loc[:, 's_2'] = [0.4586, 0.0272, 0.3502, 0.1476, 0.0164]  # without historical scaling; "default" settings
-# auxiliary.loc[:, 's_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + main settings
+auxiliary.loc[:, 's_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + main settings
 # auxiliary.loc[:, 's_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + more_budget; same as above
 # auxiliary.loc[:, 's_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + less_budget; same as above
 # auxiliary.loc[:, 's_2'] = [0.4252, 0.0261, 0.3752, 0.1362, 0.0373]  # historical scaling + default_cons
-auxiliary.loc[:, 's_2'] = [0.5133, 0.0085, 0.2501, 0.1551, 0.073]  # historical scaling + max_hs_function
+# auxiliary.loc[:, 's_2'] = [0.5133, 0.0085, 0.2501, 0.1551, 0.073]  # historical scaling + max_hs_function
 
 # define extra budget fracs for each cadre
 extra_budget_fracs = pd.DataFrame(index=cadre_all, columns=combination_list)
@@ -164,12 +164,14 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
     new_data = prev_data[['Annual_Salary_USD', 'scale_up_factor']].copy()
     new_data['Staff_Count'] = prev_data.Staff_Count + prev_data.extra_staff
     new_data['annual_cost'] = prev_data.annual_cost + prev_data.extra_budget
+    new_data['increase_rate'] = new_data['scale_up_factor'] - 1.0
 
     return new_data
 
 
 # calculate scale up factors for all defined scenarios and years
 staff_cost['scale_up_factor'] = 1
+staff_cost['increase_rate'] = 0.0
 scale_up_factor_dict = {s: {y: {} for y in range(2025, 2035)} for s in extra_budget_fracs.columns}
 for s in extra_budget_fracs.columns:
     # for the initial/current year of 2024
@@ -200,9 +202,33 @@ for s in total_cost.columns[1:]:
             scale_up_factor_dict[s][yr].loc[:, 'scale_up_factor'].values
         )
 
+# get normal average increase rate over all years
+sum_increase_rate = pd.DataFrame(index=cadre_all, columns=total_cost.columns).fillna(0.0)
+for s in total_cost.columns[1:]:
+    for yr in range(2025, 2035):
+        sum_increase_rate.loc[:, s] = (
+            sum_increase_rate.loc[:, s].values +
+            scale_up_factor_dict[s][yr].loc[:, 'increase_rate'].values
+        )
+avg_increase_rate = pd.DataFrame(sum_increase_rate / 10)
+
 # get the staff increase rate: 2034 vs 2025
-hr_increase_rates_2034 = pd.DataFrame(integrated_scale_up_factor - 1.0)
-hr_avg_yearly_increase_rate = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
+increase_rate_2034 = pd.DataFrame(integrated_scale_up_factor - 1.0)
+avg_increase_rate_exp = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
+
+
+def func_of_avg_increase_rate(cadre, scenario='s_2', r=0.042):
+    """
+    This return the average growth rate of the staff of a cadre from 2025 to 2034.
+    The total HRH cost growth rate is r.
+    """
+    overall_scale_up = 1 + (staff_cost.annual_cost.sum()
+                            * extra_budget_fracs.loc[cadre, scenario]
+                            / staff_cost.loc[cadre, 'annual_cost']
+                            * ((1+r)**10 - 1)
+                            )
+
+    return overall_scale_up ** (1/10) - 1.0
 
 # Checked that for s_2, the integrated scale up factors of C/N/P cadres are comparable with shortage estimates from \
 # She et al 2024: https://human-resources-health.biomedcentral.com/articles/10.1186/s12960-024-00949-2

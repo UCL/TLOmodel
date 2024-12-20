@@ -19,7 +19,7 @@ from matplotlib import pyplot as plt
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
     Minute_Salary_by_Cadre_Level,
     extra_budget_fracs,
-    hr_increase_rates_2034,
+    avg_increase_rate_exp,
 )
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget import (
     HRHExpansionByCadreWithExtraBudget,
@@ -247,7 +247,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         colors = [scenario_color[s] for s in _df.index]
 
-        fig, ax = plt.subplots(figsize=(18, 6))
+        fig, ax = plt.subplots(figsize=(21, 7))
         ax.bar(
             xticks.keys(),
             _df['mean'].values,
@@ -267,7 +267,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                        _df_percent['lower'].values,
                                                        _df_percent['upper'].values):
                 text = f"{int(round(text1 * 100, 2))}%\n{[round(text2, 2),round(text3, 2)]}"
-                ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize='xx-small')
+                ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize='x-small')
 
         ax.set_xticks(list(xticks.keys()))
 
@@ -277,7 +277,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         legend_labels = list(scenario_groups[1].keys())
         legend_handles = [plt.Rectangle((0, 0), 1, 1,
                                         color=scenario_groups[1][label]) for label in legend_labels]
-        ax.legend(legend_handles, legend_labels, loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
+        ax.legend(legend_handles, legend_labels, loc='center left', bbox_to_anchor=(1, 0.5),
                   title='Scenario groups')
 
         ax.grid(axis="y")
@@ -999,7 +999,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # reorder index to be consistent with descending order of DALYs averted
         use = use.reindex(num_dalys_summarized.index)
 
+        # add columns 'total' and 'other'
+        use['all'] = use.sum(axis=1)
+        use['Other'] = use[['Dental', 'Laboratory', 'Mental', 'Radiography']].sum(axis=1)
+        use.drop(columns=['Dental', 'Laboratory', 'Mental', 'Radiography'], inplace=True)
+
         use_increased = use.subtract(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
+
+        use_increase_percent = use.subtract(use.loc['s_0', :], axis=1).divide(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
 
         return use, use_increased
 
@@ -1047,6 +1054,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         hcw_cost_gap_percent.loc[i, :] = hcw_cost_gap.loc[i, :] / hcw_cost_gap.loc[i, :].sum()
     # add a column of 'other' to sum up other cadres
     hcw_cost_gap_percent['Other'] = hcw_cost_gap_percent[
+        ['Dental', 'Laboratory', 'Mental', 'Radiography']
+    ].sum(axis=1)
+    hcw_cost_gap['Other'] = hcw_cost_gap[
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
 
@@ -1254,8 +1264,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
     # prepare hrh increase rates in the same format for regression analysis
-    hr_increase_rates = hr_increase_rates_2034.T.reindex(num_dalys_summarized.index)
-    hr_increase_rates['Other'] = hr_increase_rates['Dental'].copy()
+    increase_rate_avg_exp = avg_increase_rate_exp.T.reindex(num_dalys_summarized.index)
+    increase_rate_avg_exp['Other'] = increase_rate_avg_exp['Dental'].copy()
 
     name_of_plot = f'3D DALYs averted (%) vs no extra budget allocation, {target_period()}'
     # name_of_plot = f'DALYs averted (%) vs no HCW expansion investment, {target_period()}'
@@ -1433,21 +1443,56 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # outcome_data = num_services_increased_percent['mean']
     # outcome_data = num_treatments_total_increased_percent['mean']
     regression_data = pd.merge(outcome_data,
-                               # hr_increase_rates,
-                               extra_budget_allocation,
+                               increase_rate_avg_exp,
+                               # extra_budget_allocation,
                                left_index=True, right_index=True, how='inner')
+    # regression_data.drop(index='s_2', inplace=True)
     # regression_data['C*P'] = regression_data['Clinical'] * regression_data['Pharmacy']
     # regression_data['C*N'] = regression_data['Clinical'] * regression_data['Nursing_and_Midwifery']
     # regression_data['N*P'] = regression_data['Pharmacy'] * regression_data['Nursing_and_Midwifery']
     # regression_data['C*N*P'] = (regression_data['Clinical'] * regression_data['Pharmacy']
-    #                             * regression_data['Nursing_and_Midwifery'])
-    cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography', 'Other']
+    #                              * regression_data['Nursing_and_Midwifery'])
+    cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
     regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
     predictor = regression_data[regression_data.columns[1:]]
     outcome = regression_data['mean']
     predictor = sm.add_constant(predictor)
     est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
     print(est.summary())
+
+    # calculate the predicted DALYs based on the regression results
+    for i in regression_data.index:
+        regression_data.loc[i, 'predicted'] = (
+            regression_data.loc[i, ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']].dot(
+                est.params[['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']]
+            )
+            + est.params['const']
+        )
+
+    # plot mean and predicted DALYs from regression analysis
+    # name_of_plot = f'DALYs-averted simulated vs predicted from linear regression on extra budget allocation'
+    name_of_plot = f'DALYs-averted simulated vs predicted from linear regression on HRH increase rate (exp)'
+    fig, ax = plt.subplots(figsize=(9, 6))
+    data_to_plot = regression_data[['mean', 'predicted']] * 100
+    data_to_plot['strategy'] = data_to_plot.index
+    data_to_plot.rename(columns={'mean': 'simulated'}, inplace=True)
+    data_to_plot.plot.scatter(x='strategy', y='simulated', color='blue', label= 'simulated', ax=ax)
+    data_to_plot.plot.scatter(x='strategy', y='predicted', color='orange', label='predicted', ax=ax)
+    ax.set_ylabel('DALYs averted %', fontsize='small')
+    ax.set(xlabel=None)
+
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
+    plt.legend(loc='upper right')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
 
     # todo: could do regression analysis of DALYs averted and Services increased
 
@@ -1707,7 +1752,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plt.close(fig)
 
     name_of_plot = f'HCW time used by cadre in delivering services , {target_period()}'
-    data_to_plot = (hcw_time_used / 1e6).reindex(num_dalys_summarized.index)
+    data_to_plot = (hcw_time_used.drop(columns='all') / 1e6).reindex(num_dalys_summarized.index)
     column_dcsa = data_to_plot.pop('DCSA')
     data_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
@@ -1742,16 +1787,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'HCW cost needed by cadre to deliver never ran appointments, {target_period()}'
-    hcw_cost_gap_to_plot = (hcw_cost_gap / 1e6).reindex(num_dalys_summarized.index)
+    name_of_plot = f'HCW cost gap by cadre to deliver never ran appointments, {target_period()}'
+    cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA', 'Other']
+    hcw_cost_gap_to_plot = (hcw_cost_gap[cadres_to_plot] / 1e6).reindex(num_dalys_summarized.index)
     column_dcsa = hcw_cost_gap_to_plot.pop('DCSA')
     hcw_cost_gap_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
     hcw_cost_gap_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('USD in Millions', fontsize='small')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+
     xtick_labels = [substitute_labels[v] for v in hcw_cost_gap_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    xtick_colors = [scenario_color[v] for v in hcw_cost_gap_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
     plt.title(name_of_plot)
@@ -1781,15 +1832,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Cost proportions of never ran appointments that require specific cadres only, {target_period()}'
+    name_of_plot = f'HCW cost proportions of never ran appointments that require specific cadres only, {target_period()}'
     data_to_plot = p_cost * 100
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(9, 6))
     data_to_plot.plot(kind='bar', stacked=True, color=cadre_comb_color, rot=0, ax=ax)
-    ax.set_ylim(0, 100)
+    # ax.set_ylim(0, 100)
     ax.set_ylabel('Percentage %')
-    ax.set_xlabel('Extra budget allocation scenario')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90)
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Cadre combination', reverse=True)
     # # plot the average proportions of all scenarios
     # for c in data_to_plot.columns:
@@ -1823,14 +1879,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'Cost distribution of never ran appointments that require specific cadres only, {target_period()}'
+    name_of_plot = f'HCW cost of never ran appointments that require specific cadres only, {target_period()}'
     data_to_plot = a_cost / 1e6
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(9, 6))
     data_to_plot.plot(kind='bar', stacked=True, color=cadre_comb_color, rot=0, ax=ax)
     ax.set_ylabel('USD in millions')
-    ax.set_xlabel('Extra budget allocation scenario')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90)
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Cadre combination', reverse=True)
     # # plot the average cost of all scenarios
     # for c in data_to_plot.columns:
@@ -1863,22 +1924,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'HCW cost gap by cadre distribution of never ran appointments, {target_period()}'
+    name_of_plot = f'HCW cost gap proportion by cadre to deliver never ran appointments, {target_period()}'
     cadres_to_plot = ['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA', 'Other']
     hcw_cost_gap_percent_to_plot = hcw_cost_gap_percent[cadres_to_plot] * 100
-    fig, ax = plt.subplots(figsize=(12, 8))
-    hcw_cost_gap_percent_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    fig, ax = plt.subplots(figsize=(9, 6))
+    # hcw_cost_gap_percent_to_plot.plot(kind='bar', color=officer_category_color, rot=0, alpha=0.6, ax=ax)
+    hcw_cost_gap_percent_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     #ax.set_ylim(0, 100)
     ax.set_ylabel('Percentage %')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+
     xtick_labels = [substitute_labels[v] for v in hcw_cost_gap_percent_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90)
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category')
+    xtick_colors = [scenario_color[v] for v in hcw_cost_gap_percent_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', reverse=True)
     # plot the average proportions of all scenarios
-    for c in cadres_to_plot:
-        plt.axhline(y=hcw_cost_gap_percent_to_plot[c].mean(),
-                    linestyle='--', color=officer_category_color[c], alpha=1.0, linewidth=2,
-                    label=c)
+    # for c in cadres_to_plot:
+    #     plt.axhline(y=hcw_cost_gap_percent_to_plot[c].mean(),
+    #                 linestyle='--', color=officer_category_color[c], alpha=1.0, linewidth=2,
+    #                 label=c)
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -2217,18 +2284,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'Services increased by treatment type \nvs no extra budget allocation, {target_period()}'
     data_to_plot = num_treatments_increased / 1e6
-    yerr_services = np.array([
-        (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
-        (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
-    ]) / 1e6
+    # yerr_services = np.array([
+    #     (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
+    #     (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
+    # ]) / 1e6
     fig, ax = plt.subplots(figsize=(10, 6))
     data_to_plot.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
-    ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
-                fmt=".", color="black", zorder=100)
+    # ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set(xlabel=None)
+
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
                fontsize='small', reverse=True)
     plt.title(name_of_plot)
@@ -2258,15 +2330,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     name_of_plot = f'HCW time-used increased by cadre \nvs no extra budget allocation, {target_period()}'
-    data_to_plot = hcw_time_increased_by_cadre / 1e6
+    data_to_plot = hcw_time_increased_by_cadre.drop(columns='all') / 1e6
     column_dcsa = data_to_plot.pop('DCSA')
     data_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
     data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Millions', fontsize='small')
+    ax.set_ylabel('Millions minutes', fontsize='small')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
     plt.title(name_of_plot)
@@ -2279,18 +2356,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'DALYs by cause averted vs no extra budget allocation, {target_period()}'
     num_dalys_by_cause_averted_in_millions = num_dalys_by_cause_averted / 1e6
-    yerr_dalys = np.array([
-        (num_dalys_averted['mean'] - num_dalys_averted['lower']).values,
-        (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
-    ]) / 1e6
+    # yerr_dalys = np.array([
+    #     (num_dalys_averted['mean'] - num_dalys_averted['lower']).values,
+    #     (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
+    # ]) / 1e6
     fig, ax = plt.subplots(figsize=(9, 6))
     num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
-    ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
-                fmt=".", color="black", zorder=100)
+    # ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
+    #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('Millions', fontsize='small')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+
     xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_averted.index]
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')
+    xtick_colors = [scenario_color[v] for v in num_dalys_by_cause_averted.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
     fig.subplots_adjust(right=0.7)
     ax.legend(
         loc="center left",
