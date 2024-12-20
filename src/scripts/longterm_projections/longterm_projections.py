@@ -49,7 +49,7 @@ class LongRun(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {'Baseline': self._baseline(),
                 'Perfect World': self._perfect_world(),
-                'HTM Scale-up': self._htm_scaleup,
+                'HTM Scale-up': self._htm_scaleup(),
                 'Lifestyle Changes CMD': self._lifestyle_factors_CMD(),
                 'Lifestyle Changes Cancer': self._lifestyle_factors_cancer()}
 

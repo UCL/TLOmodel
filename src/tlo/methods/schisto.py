@@ -85,13 +85,15 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                              'historic rounds'),
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future '
-                                            'rounds, with the frequency given in months')
+                                            'rounds, with the frequency given in months'),
+        'MDA_event':Parameter(Types.BOOL,
+                                            'Whether MDA events are scheduled'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, mda_execute = True):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.mda_execute = mda_execute
+        self.mda_execute = self.PARAMETERS.mda_execute
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
