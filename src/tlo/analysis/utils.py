@@ -18,6 +18,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 import squarify
 
 from tlo import Date, Simulation, logging, util
@@ -364,6 +365,7 @@ def compute_summary_statistics(
     width_of_range: float = 0.95,
     only_central: bool = False,
     collapse_columns: bool = False,
+    use_standard_error: bool = False,
 ) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
@@ -388,9 +390,16 @@ def compute_summary_statistics(
     else:
         raise ValueError(f"Unknown stat: {central_measure}")
 
-    lower_quantile = (1. - width_of_range) / 2.
-    stats["lower"] = grouped_results.quantile(lower_quantile)
-    stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+    if not use_standard_error:
+        lower_quantile = (1. - width_of_range) / 2.
+        stats["lower"] = grouped_results.quantile(lower_quantile)
+        stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+    else:
+        std_deviation = grouped_results.std()
+        std_error = std_deviation / np.sqrt(len(grouped_results))
+        z_value = st.norm.ppf(1 - (1. - width_of_range) / 2.)  # (import scipy.stats as st)
+        stats["lower"] = stats['central'] - z_value * std_error
+        stats["upper"] = stats['central'] + z_value * std_error
 
     summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
@@ -419,7 +428,8 @@ def compute_summary_statistics(
 def summarize(
     results: pd.DataFrame,
     only_mean: bool = False,
-    collapse_columns: bool = False
+    collapse_columns: bool = False,
+    use_standard_error: bool = True,
 ):
     """Utility function to compute summary statistics
 
@@ -440,6 +450,7 @@ def summarize(
         central_measure='mean',
         only_central=only_mean,
         collapse_columns=collapse_columns,
+        use_standard_error=use_standard_error,
     )
     if output.columns.nlevels > 1:
         output = output.rename(columns={'central': 'mean'}, level=1)  # rename 'central' to 'mean'
