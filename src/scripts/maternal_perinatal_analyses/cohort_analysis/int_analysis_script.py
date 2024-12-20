@@ -15,71 +15,60 @@ from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize,
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
-scenario = 'block_intervention_big_run-2024-12-04T115735Z'
-results_folder= get_scenario_outputs(scenario, outputspath)[-1]
+
 # create_pickles_locally(results_folder, compressed_file_name_prefix='block_intervention_big_run')
 
-interventions =['sepsis_treatment', 'amtsl', 'blood_transfusion',
-                'pph_treatment_uterotonics', 'iv_antihypertensives', 'birth_kit',  'post_abortion_care_core' ]
+def get_table_one():
+    columns = ['age_years', 'la_parity', 'region_of_residence', 'li_wealth', 'li_bmi', 'li_mar_stat', 'li_ed_lev',
+                'li_urban', 'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
+    categorical = ['region_of_residence', 'li_wealth', 'li_bmi' ,'li_mar_stat', 'li_ed_lev', 'li_urban',
+                    'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
+    continuous = ['age_years', 'la_parity']
 
-int_analysis = ['baseline']
+    rename = {'age_years': 'Age (years)',
+               'la_parity': 'Parity',
+               'region_of_residence': 'Region',
+               'li_wealth': 'Wealth Quintile',
+               'li_bmi': 'BMI level',
+               'li_mar_stat': 'Marital Status',
+               'li_ed_lev': 'Education Level',
+               'li_urban': 'Urban/Rural',
+               'ps_prev_spont_abortion': 'Previous Miscarriage',
+               'ps_prev_stillbirth': 'Previous Stillbirth',
+               'ps_prev_pre_eclamp': 'Previous Pre-eclampsia',
+               'ps_prev_gest_diab': 'Previous Gestational Diabetes',
+              }
 
-for i in interventions:
-    int_analysis.append(f'{i}_min')
-    int_analysis.append(f'{i}_max')
+    all_preg_df = pd.read_excel(Path("./resources/maternal cohort") /
+                                        'ResourceFile_All2024PregnanciesCohortModel.xlsx')
+    population = 40_000
 
-draws = [x for x in range(len(int_analysis))]
+    # Only select rows equal to the desired population size
+    if population <= len(all_preg_df):
+        preg_pop = all_preg_df.loc[0:population-1]
+    else:
+        # Calculate the number of rows needed to reach the desired length
+        additional_rows = population - len(all_preg_df)
 
-columns = ['age_years', 'la_parity', 'region_of_residence', 'li_wealth', 'li_bmi', 'li_mar_stat', 'li_ed_lev',
-            'li_urban', 'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
-categorical = ['region_of_residence', 'li_wealth', 'li_bmi' ,'li_mar_stat', 'li_ed_lev', 'li_urban',
-                'ps_prev_spont_abortion', 'ps_prev_stillbirth', 'ps_prev_pre_eclamp', 'ps_prev_gest_diab']
-continuous = ['age_years', 'la_parity']
+        # Initialize an empty DataFrame for additional rows
+        rows_to_add = pd.DataFrame(columns=all_preg_df.columns)
 
-rename = {'age_years': 'Age (years)',
-           'la_parity': 'Parity',
-           'region_of_residence': 'Region',
-           'li_wealth': 'Wealth Quintile',
-           'li_bmi': 'BMI level',
-           'li_mar_stat': 'Marital Status',
-           'li_ed_lev': 'Education Level',
-           'li_urban': 'Urban/Rural',
-           'ps_prev_spont_abortion': 'Previous Miscarriage',
-           'ps_prev_stillbirth': 'Previous Stillbirth',
-           'ps_prev_pre_eclamp': 'Previous Pre-eclampsia',
-           'ps_prev_gest_diab': 'Previous Gestational Diabetes',
-          }
+        # Loop to fill the required additional rows
+        while additional_rows > 0:
+            if additional_rows >= len(all_preg_df):
+                rows_to_add = pd.concat([rows_to_add, all_preg_df], ignore_index=True)
+                additional_rows -= len(all_preg_df)
+            else:
+                rows_to_add = pd.concat([rows_to_add, all_preg_df.iloc[:additional_rows]], ignore_index=True)
+                additional_rows = 0
 
-all_preg_df = pd.read_excel(Path("./resources/maternal cohort") /
-                                    'ResourceFile_All2024PregnanciesCohortModel.xlsx')
-population = 40_000
+        # Concatenate the original DataFrame with the additional rows
+        preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
 
-# Only select rows equal to the desired population size
-if population <= len(all_preg_df):
-    preg_pop = all_preg_df.loc[0:population-1]
-else:
-    # Calculate the number of rows needed to reach the desired length
-    additional_rows = population - len(all_preg_df)
-
-    # Initialize an empty DataFrame for additional rows
-    rows_to_add = pd.DataFrame(columns=all_preg_df.columns)
-
-    # Loop to fill the required additional rows
-    while additional_rows > 0:
-        if additional_rows >= len(all_preg_df):
-            rows_to_add = pd.concat([rows_to_add, all_preg_df], ignore_index=True)
-            additional_rows -= len(all_preg_df)
-        else:
-            rows_to_add = pd.concat([rows_to_add, all_preg_df.iloc[:additional_rows]], ignore_index=True)
-            additional_rows = 0
-
-    # Concatenate the original DataFrame with the additional rows
-    preg_pop = pd.concat([all_preg_df, rows_to_add], ignore_index=True)
-
-mytable = TableOne(preg_pop[columns], categorical=categorical,
-                   continuous=continuous, rename=rename, pval=False)
-print(mytable.tabulate(tablefmt = "fancy_grid"))
-mytable.to_excel(Path(f"{outputspath}/{scenario}/0/table_one.xlsx") )
+    mytable = TableOne(preg_pop[columns], categorical=categorical,
+                       continuous=continuous, rename=rename, pval=False)
+    print(mytable.tabulate(tablefmt = "fancy_grid"))
+    mytable.to_excel(Path(f"{outputspath}/{scenario}/0/table_one.xlsx") )
 
 def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
     """Utility function to compute summary statistics
@@ -112,6 +101,22 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
     summary = summary.sort_index(axis=1)
 
     return summary
+
+scenario = 'block_intervention_big_run-2024-12-04T115735Z'
+results_folder= get_scenario_outputs(scenario, outputspath)[-1]
+
+interventions =['sepsis_treatment', 'amtsl', 'blood_transfusion',
+                'pph_treatment_uterotonics', 'iv_antihypertensives', 'birth_kit',  'post_abortion_care_core', 'mgso4',
+                'ectopic_pregnancy_treatment', 'pph_treatment_mrrp']
+
+int_analysis = ['baseline']
+
+for i in interventions:
+    int_analysis.append(f'{i}_min')
+    int_analysis.append(f'{i}_max')
+
+info = get_scenario_info(results_folder)
+draws = info['number_of_draws']
 
 # Access dataframes generated from pregnancy supervisor
 def get_ps_data_frames(key, results_folder):
