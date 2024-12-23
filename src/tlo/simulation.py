@@ -370,7 +370,9 @@ class Simulation:
         if self.show_progress_bar:
             progress_bar.stop()
         end_time = time.time()- start_time
-        print("Time taken", end_time)
+        with open('duration_time.txt', 'a') as file:
+            # Append text to the file
+            file.write(f"Time taken, {end_time}\n")
 
     def simulate(self, *, end_date: Date) -> None:
         """Simulate until the given end date

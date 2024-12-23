@@ -22,6 +22,7 @@ from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 from sdv.single_table import CTGANSynthesizer
+from sdv.single_table import GaussianCopulaSynthesizer
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -70,7 +71,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     # Initialize the counter with all items set to 0
     HS_Use_by_RTI = Counter({col: 0 for col in HS_Use_Type})
     
-    RTI_emulator = CTGANSynthesizer.load(
+    RTI_emulator = GaussianCopulaSynthesizer.load(
         filepath=emulator_path
     )
 
@@ -2950,30 +2951,30 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 duration_days = int(NN_model.loc[count,'duration_days'])
                 
                 # Individual experiences an immediate death
-             #   if is_alive_after_RTI is False and duration_days == 0:
+                if is_alive_after_RTI is False and duration_days == 0:
                     # Keep track of who experience pre-hospital mortality with the property rt_imm_death
                     # Do we need to keep this? Could probably ignore if using emulator.
-              #      df.loc[person_id, 'rt_imm_death'] = True
+                    df.loc[person_id, 'rt_imm_death'] = True
                     # For each person selected to experience pre-hospital mortality, schedule an InstantaneosDeath event
-              #      self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
-              #                                              originating_module=self.module)
+                    self.sim.modules['Demography'].do_death(individual_id=individual_id, cause="RTI_imm_death",
+                                                            originating_module=self.module)
                                                             
                 # Else individual doesn't immediately die, therefore schedule resolution
-              #  else:
-                # Set disability to what will be the average over duration of the episode
-                df.loc[person_id,'rt_disability'] = NN_model.loc[count,'rt_disability_average']
-                
-                # Make sure this person is not 'discoverable' by polling event next month.
-                df.loc[person_id,'rt_inj_severity'] = 'mild' # instead of "none", but actually we don't know how severe it is
-                
-                # Schedule resolution
-                if is_alive_after_RTI:
-                    # Store permanent disability incurred now to be accessed when Recovery Event is invoked.
-                    df.loc[person_id,'rt_disability_permanent'] = NN_model.loc[count,'rt_disability_permanent']
-                    self.sim.schedule_event(RTI_NNResolution_Recovery_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
                 else:
-                    self.sim.schedule_event(RTI_NNResolution_Death_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
-                
+                    # Set disability to what will be the average over duration of the episode
+                    df.loc[person_id,'rt_disability'] = NN_model.loc[count,'rt_disability_average']
+                    
+                    # Make sure this person is not 'discoverable' by polling event next month.
+                    df.loc[person_id,'rt_inj_severity'] = 'mild' # instead of "none", but actually we don't know how severe it is
+                    
+                    # Schedule resolution
+                    if is_alive_after_RTI:
+                        # Store permanent disability incurred now to be accessed when Recovery Event is invoked.
+                        df.loc[person_id,'rt_disability_permanent'] = NN_model.loc[count,'rt_disability_permanent']
+                        self.sim.schedule_event(RTI_NNResolution_Recovery_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
+                    else:
+                        self.sim.schedule_event(RTI_NNResolution_Death_Event(self.module, person_id), df.loc[person_id, 'rt_date_inj']  + DateOffset(days=duration_days))
+                    
                 count += 1
         
         else:
