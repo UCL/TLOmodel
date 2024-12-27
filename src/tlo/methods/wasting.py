@@ -179,20 +179,24 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of last episode of wasting'),
 
         # Properties related to clinical acute malnutrition
-        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state based'
-                                                                      ' on WHZ and/or MUAC and/or nutritional oedema',
+        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state '
+                                                                      'based on WHZ and/or MUAC and/or nutritional '
+                                                                      'oedema',
                                                    categories=['MAM', 'SAM', 'well']),
-        'un_am_nutritional_oedema': Property(Types.BOOL, 'bilateral pitting oedema present in wasting episode'),
+        'un_am_nutritional_oedema': Property(Types.BOOL, 'bilateral pitting oedema present in wasting '
+                                                         'episode'),
         'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories, based on WHO '
                                                            'cut-offs',
                                         categories=['<115mm', '[115-125)mm', '>=125mm']),
         'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM episode'),
         'un_sam_death_date': Property(Types.DATE, 'death date from severe acute malnutrition'),
-        'un_am_recovery_date': Property(Types.DATE, 'recovery date from last acute malnutrition episode (MAM/SAM)'),
-        'un_am_discharge_date': Property(Types.DATE, 'discharge date from last treatment of MAM/SAM'),
+        'un_am_recovery_date': Property(Types.DATE, 'recovery date from last acute malnutrition episode '
+                                                    '(MAM/SAM)'),
+        'un_am_discharge_date': Property(Types.DATE, 'planned discharge date from last treatment of MAM/SAM '
+                                                     'when recovery will happen if not yet recovered'),
         'un_am_tx_start_date': Property(Types.DATE, 'treatment start date, if currently on treatment'),
-        'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment type for acute malnutrition the person '
-                                         'is currently on; set to not_applicable if well hence no treatment required',
+        'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment type for acute malnutrition the person'
+                                         ' is currently on; set to not_applicable if well hence no treatment required',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
                                              'none', 'not_applicable']),
     }
