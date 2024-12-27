@@ -1600,18 +1600,26 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for low_bound_mos, high_bound_mos in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
             low_bound_age_in_years = low_bound_mos / 12.0
             high_bound_age_in_years = (1 + high_bound_mos) / 12.0
-            # get those children who are wasted
-            mod_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
-                                                                     inclusive='left') & (under5s.un_WHZ_category
-                                                                                          == '-3<=WHZ<-2')).sum()
-            sev_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
-                                                                     inclusive='left') & (under5s.un_WHZ_category
-                                                                                          == 'WHZ<-3')).sum()
             total_per_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
                                                                     inclusive='left')).sum()
-            # add moderate and severe wasting prevalence to the dictionary
-            wasting_prev_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = mod_wasted_agegrp_nmb / total_per_agegrp_nmb
-            wasting_prev_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = sev_wasted_agegrp_nmb / total_per_agegrp_nmb
+            if total_per_agegrp_nmb > 0:
+                # get those children who are wasted
+                mod_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                         inclusive='left') & (under5s.un_WHZ_category
+                                                                                              == '-3<=WHZ<-2')).sum()
+                sev_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                                         inclusive='left') & (under5s.un_WHZ_category
+                                                                                           == 'WHZ<-3')).sum()
+                # add moderate and severe wasting prevalence to the dictionary
+                wasting_prev_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = \
+                    mod_wasted_agegrp_nmb / total_per_agegrp_nmb
+                wasting_prev_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = \
+                    sev_wasted_agegrp_nmb / total_per_agegrp_nmb
+            else:
+                # add zero moderate and severe wasting prevalence to the dictionary
+                wasting_prev_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = 0
+                wasting_prev_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = 0
+
             # add pop sizes to the dataframe
             pop_sizes_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = mod_wasted_agegrp_nmb
             pop_sizes_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = sev_wasted_agegrp_nmb
