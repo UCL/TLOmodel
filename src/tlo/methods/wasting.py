@@ -1639,7 +1639,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 length_df.loc[age_grp, 'sev_not_yet_recovered'] = 0
             assert not np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered'])
 
-        logger.info(key='wasting_length_avg', data=length_df.to_dict())
+        logger.debug(key='wasting_length_avg', data=length_df.to_dict())
 
         # ----- PREVALENCE LOG ----------------
         # Wasting totals (prevalence & pop size at logging time)
