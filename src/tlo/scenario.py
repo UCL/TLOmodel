@@ -243,6 +243,11 @@ class BaseScenario(abc.ABC):
         """
         return None
 
+    def draw_name(self, draw_number) -> str:
+        """Returns the name of the draw corresponding to the given draw number. This is offered for convenience so that
+        the logfile contain a 'user-friendly' label for the draw."""
+        return str(draw_number)
+
     def get_log_config(self, override_output_directory=None):
         """Returns the log configuration for the scenario, with some post_processing."""
         log_config = self.log_configuration()
@@ -328,6 +333,7 @@ class DrawGenerator:
         return {
             "draw_number": draw_number,
             "parameters": self.scenario.draw_parameters(draw_number, self.scenario.rng),
+            "draw_name": self.scenario.draw_name(draw_number),
         }
 
     def get_run_config(self, scenario_path):
@@ -419,6 +425,7 @@ class SampleRunner:
                 log_config=log_config,
             )
             sim.register(*self.scenario.modules())
+            logger.info(key="draw_name", data={'draw_name': draw['draw_name']}, description="The draw name")
 
             if sample["parameters"] is not None:
                 self.override_parameters(sim, sample["parameters"])
