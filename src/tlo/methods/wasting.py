@@ -998,9 +998,8 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
-        m = self.module
-        rng = m.rng
-        p = m.parameters
+        rng = self.module.rng
+        p = self.module.parameters
 
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM'):
             return
@@ -1076,8 +1075,8 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
         """
 
         df = population.props
-        p = self.module.parameters
         rng = self.module.rng
+        p = self.module.parameters
 
         # TODO: including treated children?
         index_under5 = df.index[df.is_alive & (df.age_exact_years < 5)]
@@ -1118,8 +1117,8 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
         """Return the expected appointment footprint based on attendance at the HSI event."""
-        p = self.module.parameters
         rng = self.module.rng
+        p = self.module.parameters
         person_age = self.sim.population.props.loc[self.target].age_exact_years
 
         def get_attendance_prob(age):
@@ -1139,8 +1138,8 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug', data='This is HSI_Wasting_GrowthMonitoring')
 
         df = self.sim.population.props
-        p = self.module.parameters
         rng = self.module.rng
+        p = self.module.parameters
 
         # TODO: Will they be monitored during the treatment? Can we assume, that after the treatment they will be
         #  always properly checked (all measurements and oedema checked), or should be the assumed "treatment outcome"
@@ -1415,8 +1414,8 @@ class WastingModels:
 
     def __init__(self, module):
         self.module = module
-        self.params = module.parameters
         self.rng = module.rng
+        self.params = module.parameters
 
         # a linear model to predict the probability of individual's recovery from moderate acute malnutrition
         self.acute_malnutrition_recovery_mam_lm = LinearModel.multiplicative(
