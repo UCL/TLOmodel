@@ -6,6 +6,9 @@ Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
 at some point we may need to specify the treatment eg total hysterectomy plus or minus chemotherapy
 but we agree not now
+
+consider in future making hpv acquisition risk depend on current prevalence of hpv
+
 """
 
 from __future__ import annotations
@@ -1829,7 +1832,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # comment out this below when running tests
 
         # Specify the file path for the CSV file
-        out_csv = Path("./outputs/output1_data.csv")
+        out_csv = Path("./outputs/output9_data.csv")
 
 # comment out this code below only when running tests
 

@@ -35,12 +35,12 @@ from tlo.methods import (
 import hashlib
 
 # Where outputs will go
-output_csv_file = Path("outputs/output1_data.csv")
+output_csv_file = Path("outputs/output9_data.csv")
 if output_csv_file.exists():
     output_csv_file.unlink()
 else:
     output_csv_file.touch()
-seed = 3
+seed = 9
 
 # Date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -63,7 +63,7 @@ log_config = {
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
 malawi_country_pop = 17000000
-popsize = 17000
+popsize = 170000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
