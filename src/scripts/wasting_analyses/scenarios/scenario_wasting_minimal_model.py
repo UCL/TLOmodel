@@ -53,7 +53,7 @@ class WastingAnalysis(BaseScenario):
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.population": logging.INFO,
-                "tlo.methods.wasting": logging.DEBUG,
+                "tlo.methods.wasting": logging.INFO,
                 '*': logging.WARNING
             }
         }
