@@ -107,13 +107,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'duration_of_untreated_sev_wasting': Parameter(
             Types.REAL, 'duration of untreated severe wasting (days)'),
         'progression_severe_wasting_by_agegp': Parameter(
-            Types.LIST, 'List with progression rates to severe wasting by age group'),
+            Types.LIST, 'list with progression rates to severe wasting by age group'),
         'prob_complications_in_SAM': Parameter(
             Types.REAL, 'probability of medical complications in SAM '),
         'duration_sam_to_death': Parameter(
             Types.REAL, 'duration of SAM till death if supposed to die due to SAM (days)'),
-        'death_rate_untreated_SAM_by_agegp': Parameter(
-            Types.LIST, 'List with death rates due to untreated SAM by age group'),
+        'base_death_rate_untreated_SAM': Parameter(
+            Types.REAL, 'base death rate due to untreated SAM for age group of children <0.5 months old'),
+        'rr_death_rate_by_agegp': Parameter(
+            Types.LIST, 'list with relative risks of death due to untreated SAM by age gp, reference gp <0.5 months'),
         # MUAC distributions
         'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
             Types.REAL, 'proportion of individuals with severe wasting who have MUAC < 115 mm'),
@@ -1450,15 +1452,17 @@ class WastingModels:
         self.wasting_incidence_lm = self.get_wasting_incidence()
 
         # Linear model for the probability of death due to SAM
-        self.death_due_to_sam_lm = LinearModel.multiplicative(
+        self.death_due_to_sam_lm =  LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            self.params['base_death_rate_untreated_SAM'],
             Predictor('age_exact_years',
                       conditions_are_mutually_exclusive=True, conditions_are_exhaustive=False)
-            .when('<0.5', self.params['death_rate_untreated_SAM_by_agegp'][0])
-            .when('.between(0.5,1, inclusive="left")', self.params['death_rate_untreated_SAM_by_agegp'][1])
-            .when('.between(1,2, inclusive="left")', self.params['death_rate_untreated_SAM_by_agegp'][2])
-            .when('.between(2,3, inclusive="left")', self.params['death_rate_untreated_SAM_by_agegp'][3])
-            .when('.between(3,4, inclusive="left")', self.params['death_rate_untreated_SAM_by_agegp'][4])
-            .when('.between(4,5, inclusive="left")', self.params['death_rate_untreated_SAM_by_agegp'][5]),
+            .when('<0.5', self.params['rr_death_rate_by_agegp'][0])
+            .when('.between(0.5,1, inclusive="left")', self.params['rr_death_rate_by_agegp'][1])
+            .when('.between(1,2, inclusive="left")', self.params['rr_death_rate_by_agegp'][2])
+            .when('.between(2,3, inclusive="left")', self.params['rr_death_rate_by_agegp'][3])
+            .when('.between(3,4, inclusive="left")', self.params['rr_death_rate_by_agegp'][4])
+            .when('.between(4,5, inclusive="left")', self.params['rr_death_rate_by_agegp'][5]),
             Predictor().when('un_clinical_acute_malnutrition != "SAM"', 0),
         )
 
