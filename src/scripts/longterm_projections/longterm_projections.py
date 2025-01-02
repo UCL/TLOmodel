@@ -76,7 +76,6 @@ class LongRun(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 },
-                "Sch"
                 "Malaria": {
                     'type_of_scaleup': 'max',
                     'scaleup_start_year': self.YEAR_OF_CHANGE,
@@ -119,7 +118,7 @@ class LongRun(BaseScenario):
             {"Lifestyle": {
                 'r_urban': 0.0005 * 1.5,
                 'r_higher_bmi': 0.0005 * 1.5,
-                'r_high_salt': 0.003 * 1.5,
+                'r_high_salt_urban': 0.003 * 1.5,
                 'r_high_sugar': 0.0001 * 1.5,
                 'r_low_ex':0.001 * 1.5,
                 'r_tob': 0.0004 / 1.5, # as if there was a cessation programme/public awareness
