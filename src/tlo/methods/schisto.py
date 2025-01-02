@@ -86,14 +86,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'MDA_coverage_prognosed': Parameter(Types.DATA_FRAME,
                                             'Probability of getting PZQ in the MDA for PSAC, SAC and Adults in future '
                                             'rounds, with the frequency given in months'),
-        'MDA_event':Parameter(Types.BOOL,
-                                            'Whether MDA events are scheduled'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.mda_execute = self.PARAMETERS.mda_execute
+        self.mda_execute = mda_execute
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
@@ -215,14 +213,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
                                                                     fill_value=0.0)
-
-    def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of schisto for all individuals
-        df = self.sim.population.props
-        is_infected = (df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection'])).any()
-        total_prev = len(is_infected)/ len(df[df['is_alive']])
-
-        return {'Schisto': total_prev}
 
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
