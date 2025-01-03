@@ -60,7 +60,7 @@ class Deviance(Module):
         """Make a dict of all data to be used in calculating calibration score"""
 
         # # HIV read in resource files for data
-        xls = pd.ExcelFile(self.resourcefilepath / "ResourceFile_HIV.xlsx")
+        xls = pd.ExcelFile(self.resourcefilepath / "ResourceFile_HIV/parameters.csv")
 
         # MPHIA HIV data - age-structured
         data_hiv_mphia_inc = pd.read_excel(xls, sheet_name="MPHIA_incidence2015")
