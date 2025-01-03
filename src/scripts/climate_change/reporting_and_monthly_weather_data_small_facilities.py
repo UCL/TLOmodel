@@ -169,10 +169,21 @@ distances = cdist(coordinates, coordinates, metric='euclidean')
 np.fill_diagonal(distances, np.inf)
 expanded_facility_info['minimum_distance'] = np.nanmin(distances, axis=1)
 
+average_precipitation_by_facility = {
+    facility: np.mean(precipitation)
+    for facility, precipitation in weather_data_by_facility.items()
+}
 
+average_precipitation_df = pd.DataFrame.from_dict(
+    average_precipitation_by_facility, orient='index', columns=['average_precipitation']
+)
+
+average_precipitation_df.index.name = "Fname"
+expanded_facility_info['average_precipitation'] = expanded_facility_info.index.map(
+    average_precipitation_df['average_precipitation']
+)
 expanded_facility_info = expanded_facility_info.T
 expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
-
 if ANC:
     expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv")
 elif Inpatient:
