@@ -10,7 +10,7 @@ from netCDF4 import Dataset
 ANC = True
 # facility data
 multiplier = 1000
-five_day = False
+five_day = True
 cumulative = True
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
@@ -59,7 +59,6 @@ base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/H
 
 years = range(2011, 2025)
 month_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-window_size = 1
 max_average_by_grid = {}
 
 for year in years:
@@ -115,12 +114,15 @@ for year in years:
         if matching_facility_name:
             match_name = matching_facility_name[0]  # Access the string directly
             # Initialize facility key if not already
-            if reporting_facility not in max_average_by_facility:
-                max_average_by_facility[reporting_facility] = []
+
             lat_for_facility = facilities_with_lat_long.loc[
                 facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
             long_for_facility = facilities_with_lat_long.loc[
                 facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
+            if pd.isna(lat_for_facility):
+                continue
+            if reporting_facility not in max_average_by_facility:
+                max_average_by_facility[reporting_facility] = []
             index_for_x = ((long_data - long_for_facility) ** 2).argmin()
             index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
             pr_data_for_square = pr_data[:, index_for_y, index_for_x]
@@ -134,13 +136,11 @@ for year in years:
                 for day in range(month_length - window_size + 1):
                     window_average = sum(days_for_grid[day:day + window_size]) / window_size_for_average
                     moving_averages.append(window_average)
-
                 max_moving_average = max(moving_averages)
                 max_average_by_facility[reporting_facility].append(max_moving_average * multiplier)
 
                 begin_day += month_length
 #
-print(max_average_by_facility)
 df_of_facilities = pd.DataFrame.from_dict(max_average_by_facility, orient='index')
 df_of_facilities = df_of_facilities.iloc[:, :-3] ## THESE ARE OCT/NOV/DEC OF 2024, and for moment don't have that reporting data
 df_of_facilities = df_of_facilities.T

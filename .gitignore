@@ -129,3 +129,9 @@ docs/parameters.rst
 docs/reference/modules.rst
 docs/reference/tlo*.rst
 docs/resources/**/*.rst
+
+# Climate data
+src/scripts/climate_change/assessing_CMIP6_data_min_med_max.ipynb
+best_model_weather_monthly_total_precip.pkl
+best_model_ANC_prediction_monthly_total_precip.pkl
+best_model_monthly_total_precip.pkl

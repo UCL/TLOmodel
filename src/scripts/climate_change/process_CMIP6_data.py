@@ -11,8 +11,8 @@ import pandas as pd
 from netCDF4 import Dataset
 import geopandas as gpd
 
-five_day = True
-monthly_cumulative = False
+five_day = False
+monthly_cumulative = True
 multiplier = 86400
 years = range(2015, 2100)
 reporting_data = pd.read_csv(
@@ -69,6 +69,31 @@ def extract_nc_files_from_unzipped_folders(directory):
                 # Only copy if the file does not already exist in the output directory
                 if not os.path.exists(destination_file_path):
                     shutil.copy2(source_file_path, output_directory)
+
+
+def get_facility_lat_long(reporting_facility, facilities_df, cutoff=0.90, n_matches=3):
+    """
+    Function to find the closest matching facility name and return its latitude and longitude.
+
+    Parameters:
+    - reporting_facility: The facility name for which latitude and longitude are needed.
+    - facilities_df : DataFrame containing facility names ('Fname') and their corresponding latitudes ('A109__Latitude') and longitudes ('A109__Longitude').
+    - cutoff: The minimum similarity score for a match. Default is 0.90.
+    - n_matches: The maximum number of matches to consider. Default is 3.
+
+    Returns: match_name, lat_for_facility, long_for_facility
+
+    """
+    matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_df['Fname'], n=n_matches,
+                                                       cutoff=cutoff)
+
+    if matching_facility_name:
+        match_name = matching_facility_name[0]  # Access the string directly
+        lat_for_facility = facilities_df.loc[facilities_df['Fname'] == match_name, "A109__Latitude"].iloc[0]
+        long_for_facility = facilities_df.loc[facilities_df['Fname'] == match_name, "A109__Longitude"].iloc[0]
+        return match_name, lat_for_facility, long_for_facility
+    else:
+        return np.nan, np.nan, np.nan
 
 
 # unzip files and extract the netCDF files
@@ -180,6 +205,7 @@ for scenario in scenarios:
                         cumulative_sum_by_grid[grid].append(max_cumulative_sums)
                         begin_day += month_length
         df_cumulative_sum = pd.DataFrame.from_dict(cumulative_sum_by_grid, orient='index')
+        df_cumulative_sum.astype(float)
         df_cumulative_sum = df_cumulative_sum.T
         df_cumulative_sum.to_csv(Path(scenario_directory) / "five_day_cumulative_sum_by_grid.csv")
 
@@ -188,22 +214,16 @@ for scenario in scenarios:
         facilities_with_location = []
         cumulative_sum_by_facility = {}
         for reporting_facility in reporting_data.columns:
-            matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_with_lat_long['Fname'], n=3, cutoff=0.90)
-            if matching_facility_name:
-                match_name = matching_facility_name[0]  # Access the string directly
-                facilities_with_location.append(reporting_facility)
-                lat_for_facility = facilities_with_lat_long.loc[
-                    facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
-                long_for_facility = facilities_with_lat_long.loc[
-                    facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
-                index_for_x = ((long_data - long_for_facility)**2).argmin()
-                index_for_y= ((lat_data - lat_for_facility)**2).argmin()
+            match_name, lat_for_facility, long_for_facility = get_facility_lat_long(reporting_facility, facilities_with_lat_long)
+
+            index_for_x = ((long_data - long_for_facility)**2).argmin()
+            index_for_y= ((lat_data - lat_for_facility)**2).argmin()
                 # which grid number is it
-                grid = index_for_x * index_for_y + 1
-                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]  # across all time points
+            grid = index_for_x * index_for_y + 1
+            cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]  # across all time points
 
             ## below are not in facilities file?
-            elif reporting_facility == "Central East Zone":
+            if reporting_facility == "Central East Zone":
                 grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[
                     0]  # furtherst east zone
                 cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]
@@ -239,7 +259,9 @@ for scenario in scenarios:
                     max_cumulative_sums = max(cumulative_sums)
                     cumulative_sum_by_grid[grid].append(max_cumulative_sums)
                     begin_day += month_length
+
         df_cumulative_sum = pd.DataFrame.from_dict(cumulative_sum_by_grid, orient='index')
+        df_cumulative_sum.astype(float)
         df_cumulative_sum = df_cumulative_sum.T
         df_cumulative_sum.to_csv(Path(scenario_directory) / "monthly_cumulative_sum_by_grid.csv")
 
@@ -248,23 +270,16 @@ for scenario in scenarios:
         ############### NOW HAVE LAT/LONG OF FACILITIES #####################
         facilities_with_location = []
         for reporting_facility in reporting_data.columns:
-            matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_with_lat_long['Fname'],
-                                                               n=3, cutoff=0.90)
-            if matching_facility_name:
-                match_name = matching_facility_name[0]  # Access the string directly
-                facilities_with_location.append(reporting_facility)
-                lat_for_facility = facilities_with_lat_long.loc[
-                    facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
-                long_for_facility = facilities_with_lat_long.loc[
-                    facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
-                index_for_x = ((long_data - long_for_facility) ** 2).argmin()
-                index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
+            match_name, lat_for_facility, long_for_facility = get_facility_lat_long(reporting_facility, facilities_with_lat_long)
+
+            index_for_x = ((long_data - long_for_facility) ** 2).argmin()
+            index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
                 # which grid number is it
-                grid = index_for_x*index_for_y + 1
-                cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]  # across all time points
+            grid = index_for_x*index_for_y + 1
+            cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]  # across all time points
 
             ## below are not in facilities file?
-            elif reporting_facility == "Central East Zone":
+            if reporting_facility == "Central East Zone":
                 grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[
                     0]  # furtherst east zone
                 cumulative_sum_by_facility[reporting_facility] = df_cumulative_sum[grid]

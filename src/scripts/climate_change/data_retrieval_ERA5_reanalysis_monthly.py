@@ -2,7 +2,7 @@ import os
 
 import cdsapi
 
-base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical"
+base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data"
 os.chdir(base_dir)
 dataset = "reanalysis-era5-single-levels-monthly-means"
 request = {

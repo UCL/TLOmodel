@@ -107,6 +107,8 @@ for year in years:
                 facilities_with_lat_long['Fname'] == match_name, "A109__Latitude"].iloc[0]
             long_for_facility = facilities_with_lat_long.loc[
                 facilities_with_lat_long['Fname'] == match_name, "A109__Longitude"].iloc[0]
+            if pd.isna(lat_for_facility):
+                continue
             index_for_x = ((long_data - long_for_facility) ** 2).argmin()
             index_for_y = ((lat_data - lat_for_facility) ** 2).argmin()
             pr_data_for_square = pr_data[:, index_for_y, index_for_x]

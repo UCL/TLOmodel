@@ -4,38 +4,38 @@ import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
 
-# # Load the dataset and the variable
-# file_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/139ef85ab4df0a12fc01854395fc9a6d.nc"
-# dataset = Dataset(file_path, mode='r')
-# pr_data = dataset.variables['tp'][:] # in kg m-2 s-1 = mm s-1 x 86400 to get to day
-# time_data = dataset.variables['date'][:]
-# lat_data = dataset.variables['latitude'][:]
-# long_data = dataset.variables['longitude'][:]
-#
-# ## Initial plot
-# for i in range(len(lat_data)):
-#     for j in range(len(long_data)):
-#         pr_data_time_series_grid_1 = pr_data[:, i, j]
-#         pr_data_time_series_grid_1 *= 86400 # to get to days
-#         plt.plot(pr_data_time_series_grid_1)
-#
-# plt.title('Average Precipitation Over Time - Grid ')
-# plt.ylabel('Precip (mm)')
-# plt.xlabel('Time')
-# # plt.show()
-#
-#
-# weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv", index_col=0)
-#
-# for i in range(len(weather_data_historical.columns)):
-#     plt.plot(weather_data_historical.iloc[:, i], label = weather_data_historical.columns[i])
-#
-# plt.title('Average Precipitation Over Time - Facility ')
-# plt.ylabel('Precip (mm)')
-# plt.xlabel('Time')
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-# #plt.show()
-#
+# Load the dataset and the variable
+file_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/724bab97773bb7ba4e1635356ad0d12.nc"
+dataset = Dataset(file_path, mode='r')
+pr_data = dataset.variables['tp'][:]
+time_data = dataset.variables['date'][:]
+lat_data = dataset.variables['latitude'][:]
+long_data = dataset.variables['longitude'][:]
+
+## Initial plot
+for i in range(len(lat_data)):
+    for j in range(len(long_data)):
+        pr_data_time_series_grid_1 = pr_data[:, i, j]
+        pr_data_time_series_grid_1 *= 1000 # to get to days
+        plt.plot(pr_data_time_series_grid_1)
+
+plt.title('Average Precipitation Over Time - Grid ')
+plt.ylabel('Precip (mm)')
+plt.xlabel('Time')
+plt.show()
+
+
+weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv", index_col=0)
+
+for i in range(len(weather_data_historical.columns)):
+    plt.plot(weather_data_historical.iloc[:, i], label = weather_data_historical.columns[i])
+
+plt.title('Average Precipitation Over Time - Facility ')
+plt.ylabel('Precip (mm)')
+plt.xlabel('Time')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+#plt.show()
+
 #
 #
 # monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
@@ -63,25 +63,25 @@ from netCDF4 import Dataset
 # #plt.show()
 
 
-
-########### Plot daily maximum data - why is it so high? ##########
-
-file_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/2011/d7caf4e3506d13b9726aa4f77589c384.nc"
-dataset = Dataset(file_path, mode='r')
-pr_data = dataset.variables['tp'][:] # m per day, so multiply by 1000 to get mm per day
-time_data = dataset.variables['valid_time'][:]
-lat_data = dataset.variables['latitude'][:]
-long_data = dataset.variables['longitude'][:]
-
-## Initial plot
-for i in range(len(lat_data)):
-    for j in range(len(long_data)):
-        pr_data_time_series_grid = pr_data[:, i, j]
-        pr_data_time_series_grid *= 1000 # to get to mm
-        plt.plot(pr_data_time_series_grid)
-
-plt.title('Daily Maximum Precipitation Over Time - Grid ')
-plt.ylabel('Precip (mm)')
-plt.xlabel('Time')
-plt.show()
-
+#
+# ########### Plot daily maximum data - why is it so high? ##########
+#
+# file_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/2011/d7caf4e3506d13b9726aa4f77589c384.nc"
+# dataset = Dataset(file_path, mode='r')
+# pr_data = dataset.variables['tp'][:] # m per day, so multiply by 1000 to get mm per day
+# time_data = dataset.variables['valid_time'][:]
+# lat_data = dataset.variables['latitude'][:]
+# long_data = dataset.variables['longitude'][:]
+#
+# ## Initial plot
+# for i in range(len(lat_data)):
+#     for j in range(len(long_data)):
+#         pr_data_time_series_grid = pr_data[:, i, j]
+#         pr_data_time_series_grid *= 1000 # to get to mm
+#         plt.plot(pr_data_time_series_grid)
+#
+# plt.title('Daily Maximum Precipitation Over Time - Grid ')
+# plt.ylabel('Precip (mm)')
+# plt.xlabel('Time')
+# plt.show()
+#
