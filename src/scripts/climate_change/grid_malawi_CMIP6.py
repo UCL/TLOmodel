@@ -11,7 +11,7 @@ import matplotlib.cm as cm
 
 # Load netCDF data for gridding info
 #file_path = "/Users/rem76/Downloads/821bebfbcee0609d233c09e8b2bbc1f3/pr_Amon_UKESM1-0-LL_ssp119_r1i1p1f2_gn_20150116-20991216.nc"
-file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/139ef85ab4df0a12fc01854395fc9a6d.nc"
+file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
 dataset = Dataset(file_path_historical_data, mode='r')
 print(dataset.variables.keys())
 pr_data = dataset.variables['tp'][:] # ['pr'][:] pr for projections, tp for historical
@@ -90,5 +90,42 @@ for scenario in scenarios:
         ax.set_xlabel('Longitude')
         ax.set_ylabel('Latitude')
 
+
+plt.show()
+
+# Add in facility information
+expanded_facility_info = pd.read_csv(
+    "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+    index_col=0
+)
+
+# Transpose and reset index to reshape into long format
+long_format = expanded_facility_info.T.reset_index()
+long_format.columns = ['Facility', 'Zonename', 'Resid', 'A105', 'A109__Altitude', 'Ftype',
+                       'A109__Latitude', 'A109__Longitude', 'minimum_distance']
+
+facilities_gdf = gpd.GeoDataFrame(
+    long_format,
+    geometry=gpd.points_from_xy(long_format['A109__Longitude'], long_format['A109__Latitude']),
+    crs="EPSG:4326"
+)
+
+# Read Malawi shapefile
+fig, ax = plt.subplots(figsize=(10, 10))
+
+# Plot the map of Malawi
+malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
+#grid.plot(ax=ax, edgecolor='#1C6E8C',  color='white')
+grid_clipped_ADM2.plot(ax=ax,edgecolor='#1C6E8C', alpha=0.4)
+grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=cmap, edgecolor='#1C6E8C', alpha=0.7)
+
+# Plot the facilities
+facilities_gdf.plot(ax=ax, color='#FEB95F', markersize=10, label='Facilities')
+
+# Customize the plot
+plt.title("Malawi with Facilities")
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
+plt.legend()
 
 plt.show()
