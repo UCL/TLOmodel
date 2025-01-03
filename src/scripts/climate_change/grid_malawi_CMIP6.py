@@ -135,6 +135,5 @@ cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
 cbar.set_label('Average Precipitation')
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
-plt.legend()
 
 plt.show()
