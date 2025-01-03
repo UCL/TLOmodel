@@ -1,10 +1,10 @@
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from statsmodels.genmod.generalized_linear_model import GLM
 from statsmodels.genmod.families import Binomial
-import joblib
+from statsmodels.genmod.generalized_linear_model import GLM
 
 min_year_for_analyis = 2015
 absolute_min_year = 2011

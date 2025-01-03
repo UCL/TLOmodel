@@ -1,15 +1,15 @@
+import difflib
 import glob
 import os
 import re
 import shutil
 import zipfile
 from pathlib import Path
-import difflib
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
-import geopandas as gpd
 
 five_day = False
 monthly_cumulative = True

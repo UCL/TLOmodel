@@ -1,10 +1,10 @@
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from statsmodels.genmod.families import NegativeBinomial, Poisson
 from statsmodels.genmod.generalized_linear_model import GLM
-from statsmodels.genmod.families import Poisson, NegativeBinomial
-import joblib
 
 ANC = True
 daily_max = False
@@ -529,7 +529,7 @@ max_year_for_analysis = 2071
 data_path = "/Users/rem76/Desktop/Climate_change_health/Data/"
 
 # Define SSP scenario
-ssp_scenario = "ssp245"  # Change this to "ssp5_8_5" as needed
+ssp_scenario = "ssp585"  # Change this to "ssp585" as needed
 
 # Load and preprocess weather data
 if use_all_weather:
@@ -648,9 +648,7 @@ X_basis_weather = np.column_stack([
 
 X_basis_weather_filtered = X_basis_weather[X_basis_weather[:, 0] > mask_threshold]
 # format output
-print(X_basis_weather_filtered[:, 3])
 year_month_labels = np.array([f"{y}-{m}" for y, m in zip(X_basis_weather_filtered[:, 2], X_basis_weather[:, 3])])
-print(year_month_labels)
 predictions_weather = results_of_weather_model.predict(X_basis_weather_filtered)
 if log_y:
     data_weather_predictions = pd.DataFrame({

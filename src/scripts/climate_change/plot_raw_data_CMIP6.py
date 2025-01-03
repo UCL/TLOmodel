@@ -1,11 +1,12 @@
+import math
+
 import geopandas as gpd
+import imageio.v2 as imageio
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
-import matplotlib.animation as animation
-import math
-import imageio.v2 as imageio
 
 # Load the dataset and the variable
 file_path = "/Users/rem76/Downloads/821bebfbcee0609d233c09e8b2bbc1f3/pr_Amon_UKESM1-0-LL_ssp119_r1i1p1f2_gn_20150116-20991216.nc"

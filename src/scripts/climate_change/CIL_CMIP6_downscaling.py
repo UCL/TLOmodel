@@ -3,19 +3,17 @@
 
 # From https://planetarycomputer.microsoft.com/dataset/cil-gdpcir-cc0#Ensemble-example
 
-import planetary_computer
-import pystac_client
+import collections
 
-# required to load a zarr array using xarray
-import xarray as xr
 import numpy as np
 # optional imports used in this notebook
 import pandas as pd
+import planetary_computer
+import pystac_client
+# required to load a zarr array using xarray
+import xarray as xr
 from dask.diagnostics import ProgressBar
 from tqdm.auto import tqdm
-
-import collections
-
 
 # Load and organise data
 
