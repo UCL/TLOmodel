@@ -803,16 +803,17 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Log that the episode has ended
-        logger.info(
-            key='end_of_case',
-            data={
-                'person_id': person_id,
-                'date_of_onset': person.gi_date_of_onset,
-                'outcome': outcome
-            },
-            description='information when a case is ended by recovery, cure or death.'
-        )
+        # todo remove unneeded logger
+        # # Log that the episode has ended
+        # logger.info(
+        #     key='end_of_case',
+        #     data={
+        #         'person_id': person_id,
+        #         'date_of_onset': person.gi_date_of_onset,
+        #         'outcome': outcome
+        #     },
+        #     description='information when a case is ended by recovery, cure or death.'
+        # )
 
         # Store the totals of days * daly_weight incurred during the episode
         if 'HealthBurden' in self.sim.modules:
@@ -1521,6 +1522,33 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
 
         # Resolve all the symptoms and reset the properties
         self.module.end_episode(person_id=person_id, outcome='cure')
+
+
+class Diarrhoea_Incident_Tracker(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+
+        # ------------------------------------ TRACK NEW CASES ------------------------------------
+        # prop clinical episodes which had treatment, all ages
+
+        # sum all the counters for previous year
+        incident = df['gi_number_of_episodes'].sum()
+
+        to_log = {
+            'number_episodes': incident,
+        }
+
+        logger.info(key='diarrhoea_episodes',
+                    data=to_log,
+                    description='Number of diarrhoea episodes occurring in timeperiod')
+
+        # reset counters
+        df['gi_number_of_episodes'] = 0
 
 
 # ---------------------------------------------------------------------------------------------------------

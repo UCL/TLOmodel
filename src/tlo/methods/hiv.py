@@ -3201,11 +3201,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             n_pop = df.loc[df.sex == sex].groupby(by=["age_range"])["hv_inf"].count()
             prev_by_age_and_sex[sex] = (n_hiv / n_pop).to_dict()
 
-        logger.info(
-            key="prev_by_age_and_sex",
-            data=prev_by_age_and_sex,
-            description="Prevalence of HIV split by age and sex",
-        )
+        # logger.info(
+        #     key="prev_by_age_and_sex",
+        #     data=prev_by_age_and_sex,
+        #     description="Prevalence of HIV split by age and sex",
+        # )
 
         male_prev_1524 = len(
             df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
@@ -3297,31 +3297,31 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                     & df.age_years.between(25, 49)])
         female_inc_2549 = n_new_infections_female_2549 / denom_female_2549 if denom_female_2549 else 0
 
-        logger.info(
-            key="infections_by_2age_groups_and_sex",
-            data={
-                "male_prev_1524": male_prev_1524,
-                "male_prev_2549": male_prev_2549,
-                "female_prev_1524": female_prev_1524,
-                "female_prev_2549": female_prev_2549,
-                "total_prev": total_prev,
-                "n_new_infections_male_1524": n_new_infections_male_1524,
-                "n_new_infections_male_2549": n_new_infections_male_2549,
-                "n_new_infections_male_1549": n_new_infections_male_1549,
-                "n_new_infections_female_1524": n_new_infections_female_1524,
-                "n_new_infections_female_2549": n_new_infections_female_2549,
-                "male_inc_1524": male_inc_1524,
-                "male_inc_2549": male_inc_2549,
-                "female_inc_1524": female_inc_1524,
-                "female_inc_2549": female_inc_2549,
-            },
-            description="HIV infections split by 2 age-groups age and sex",
-        )
-        logger.info(
-            key="prev_by_age_and_sex",
-            data=prev_by_age_and_sex,
-            description="Prevalence of HIV split by age and sex",
-        )
+        # logger.info(
+        #     key="infections_by_2age_groups_and_sex",
+        #     data={
+        #         "male_prev_1524": male_prev_1524,
+        #         "male_prev_2549": male_prev_2549,
+        #         "female_prev_1524": female_prev_1524,
+        #         "female_prev_2549": female_prev_2549,
+        #         "total_prev": total_prev,
+        #         "n_new_infections_male_1524": n_new_infections_male_1524,
+        #         "n_new_infections_male_2549": n_new_infections_male_2549,
+        #         "n_new_infections_male_1549": n_new_infections_male_1549,
+        #         "n_new_infections_female_1524": n_new_infections_female_1524,
+        #         "n_new_infections_female_2549": n_new_infections_female_2549,
+        #         "male_inc_1524": male_inc_1524,
+        #         "male_inc_2549": male_inc_2549,
+        #         "female_inc_1524": female_inc_1524,
+        #         "female_inc_2549": female_inc_2549,
+        #     },
+        #     description="HIV infections split by 2 age-groups age and sex",
+        # )
+        # logger.info(
+        #     key="prev_by_age_and_sex",
+        #     data=prev_by_age_and_sex,
+        #     description="Prevalence of HIV split by age and sex",
+        # )
 
         # ------------------------------------ TESTING ------------------------------------
         # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
@@ -3451,31 +3451,31 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
 
-        logger.info(
-            key="hiv_program_coverage",
-            description="Coverage of interventions for HIV among adult (15+) and children (0-14s)",
-            data={
-                "number_adults_tested": n_tested,
-                "prop_tested_adult": tested,
-                "prop_tested_adult_male": testing_by_sex["M"],
-                "prop_tested_adult_female": testing_by_sex["F"],
-                "per_capita_testing_rate": current_testing_rate,
-                "testing_yield": testing_yield,
-                "dx_adult": dx_adult,
-                "dx_childen": dx_children,
-                "art_coverage_adult": art_cov_adult,
-                "art_coverage_adult_VL_suppression": art_cov_vs_adult,
-                "art_coverage_child": art_cov_children,
-                "art_coverage_child_VL_suppression": art_cov_vs_children,
-                "n_on_art_total": n_on_art_total,
-                "n_on_art_male_15plus": n_on_art_male_15plus,
-                "n_on_art_female_15plus": n_on_art_female_15plus,
-                "n_on_art_children": n_on_art_children,
-                "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
-                "prop_fsw_on_prep": prop_fsw_on_prep,
-                "prop_men_circ": prop_men_circ,
-            },
-        )
+        # logger.info(
+        #     key="hiv_program_coverage",
+        #     description="Coverage of interventions for HIV among adult (15+) and children (0-14s)",
+        #     data={
+        #         "number_adults_tested": n_tested,
+        #         "prop_tested_adult": tested,
+        #         "prop_tested_adult_male": testing_by_sex["M"],
+        #         "prop_tested_adult_female": testing_by_sex["F"],
+        #         "per_capita_testing_rate": current_testing_rate,
+        #         "testing_yield": testing_yield,
+        #         "dx_adult": dx_adult,
+        #         "dx_childen": dx_children,
+        #         "art_coverage_adult": art_cov_adult,
+        #         "art_coverage_adult_VL_suppression": art_cov_vs_adult,
+        #         "art_coverage_child": art_cov_children,
+        #         "art_coverage_child_VL_suppression": art_cov_vs_children,
+        #         "n_on_art_total": n_on_art_total,
+        #         "n_on_art_male_15plus": n_on_art_male_15plus,
+        #         "n_on_art_female_15plus": n_on_art_female_15plus,
+        #         "n_on_art_children": n_on_art_children,
+        #         "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
+        #         "prop_fsw_on_prep": prop_fsw_on_prep,
+        #         "prop_men_circ": prop_men_circ,
+        #     },
+        # )
 
         # ------------------------------------ TREATMENT DELAYS ------------------------------------
         # for every person initiated on treatment, record time from onset to treatment

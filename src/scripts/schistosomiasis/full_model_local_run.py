@@ -57,15 +57,17 @@ def run_simulation(popsize,
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date, seed=100, log_config={"filename": "schisto_test_runs",
-                                                                "custom_levels": custom_levels, })
+                                                                  "custom_levels": custom_levels, })
     sim.register(*fullmodel(resourcefilepath=resourcefilepath,
-                           use_simplified_births=True,
-                           module_kwargs={
-                               "HealthSystem": {"disable_and_reject_all": hs_disable_and_reject_all},
-                               "Schisto": {"single_district": single_district,
-                                           "mda_execute": mda_execute,},
-                               "Demography": {"equal_allocation_by_district": equal_allocation_by_district}}
-                           ))
+                            use_simplified_births=True,
+                            module_kwargs={
+                                "HealthSystem": {"disable_and_reject_all": hs_disable_and_reject_all},
+                                "Schisto": {"single_district": single_district,
+                                            "mda_execute": mda_execute, },
+                                "Demography": {"equal_allocation_by_district": equal_allocation_by_district},
+                                "Alri": {"log_indivdual": None},
+                            }
+                            ))
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
     sim.modules["Schisto"].parameters["scaleup_WASH"] = False
@@ -101,5 +103,3 @@ with open(outputpath / "test_run.pickle", "wb") as f:
 # load the results
 with open(outputpath / "test_run.pickle", "rb") as f:
     output = pickle.load(f)
-
-
