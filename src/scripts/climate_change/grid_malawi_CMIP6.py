@@ -8,7 +8,7 @@ import pandas as pd
 from netCDF4 import Dataset
 from shapely.geometry import Polygon
 import matplotlib.cm as cm
-
+from matplotlib import colors as mcolors
 # Load netCDF data for gridding info
 #file_path = "/Users/rem76/Downloads/821bebfbcee0609d233c09e8b2bbc1f3/pr_Amon_UKESM1-0-LL_ssp119_r1i1p1f2_gn_20150116-20991216.nc"
 file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
@@ -91,18 +91,22 @@ for scenario in scenarios:
         ax.set_ylabel('Latitude')
 
 
-plt.show()
+#plt.show()
 
 # Add in facility information
+
 expanded_facility_info = pd.read_csv(
     "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
     index_col=0
 )
 
-# Transpose and reset index to reshape into long format
 long_format = expanded_facility_info.T.reset_index()
-long_format.columns = ['Facility', 'Zonename', 'Resid', 'A105', 'A109__Altitude', 'Ftype',
-                       'A109__Latitude', 'A109__Longitude', 'minimum_distance']
+long_format.columns = [
+    'Facility', 'Zonename', 'Resid', 'A105', 'A109__Altitude', 'Ftype',
+    'A109__Latitude', 'A109__Longitude', 'minimum_distance', 'average_precipitation'
+]
+
+long_format = long_format.dropna(subset=['A109__Latitude'])
 
 facilities_gdf = gpd.GeoDataFrame(
     long_format,
@@ -110,20 +114,25 @@ facilities_gdf = gpd.GeoDataFrame(
     crs="EPSG:4326"
 )
 
-# Read Malawi shapefile
+facilities_gdf['average_precipitation'] = pd.to_numeric(facilities_gdf['average_precipitation'], errors='coerce')
+
+norm = mcolors.Normalize(vmin=facilities_gdf['average_precipitation'].min(),
+                          vmax=facilities_gdf['average_precipitation'].max())
+cmap_facilities = plt.cm.YlOrBr
+facilities_gdf['color'] = facilities_gdf['average_precipitation'].apply(lambda x: cmap_facilities(norm(x)))
+
 fig, ax = plt.subplots(figsize=(10, 10))
 
-# Plot the map of Malawi
 malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
-#grid.plot(ax=ax, edgecolor='#1C6E8C',  color='white')
-grid_clipped_ADM2.plot(ax=ax,edgecolor='#1C6E8C', alpha=0.4)
+grid_clipped_ADM2.plot(ax=ax, edgecolor='#1C6E8C', alpha=0.4)
 grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=cmap, edgecolor='#1C6E8C', alpha=0.7)
 
-# Plot the facilities
-facilities_gdf.plot(ax=ax, color='#FEB95F', markersize=10, label='Facilities')
+facilities_gdf.plot(ax=ax, color=facilities_gdf['color'], markersize=10, label='Facilities')
 
-# Customize the plot
-plt.title("Malawi with Facilities")
+sm = plt.cm.ScalarMappable(cmap=cmap_facilities, norm=norm)
+sm.set_array([])
+cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
+cbar.set_label('Average Precipitation')
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
 plt.legend()
