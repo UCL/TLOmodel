@@ -565,6 +565,7 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
         # Schedule the main polling event (to first occur immediately)
         sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date)
+        sim.schedule_event(Diarrhoea_Incident_Tracker(self), sim.date)
 
         if self.do_checks:
             # Schedule the event that does checking every day (with time-offset to ensure it's the last event done):
@@ -1400,21 +1401,22 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             disease_module=self.module
         )
 
+        # todo remove unneeded logger
         # Log this incident case:
-        logger.info(
-            key='incident_case',
-            data={
-                'person_id': person_id,
-                'age_years': person.age_years,
-                'pathogen': props_new['gi_pathogen'],
-                'type': props_new['gi_type'],
-                'dehydration': props_new['gi_dehydration'],
-                'duration_longer_than_13days': props_new['gi_duration_longer_than_13days'],
-                'date_of_outcome': date_of_outcome,
-                'will_die': pd.isnull(props_new['gi_scheduled_date_recovery'])
-            },
-            description='each incicdent case of diarrhoea'
-        )
+        # logger.info(
+        #     key='incident_case',
+        #     data={
+        #         'person_id': person_id,
+        #         'age_years': person.age_years,
+        #         'pathogen': props_new['gi_pathogen'],
+        #         'type': props_new['gi_type'],
+        #         'dehydration': props_new['gi_dehydration'],
+        #         'duration_longer_than_13days': props_new['gi_duration_longer_than_13days'],
+        #         'date_of_outcome': date_of_outcome,
+        #         'will_die': pd.isnull(props_new['gi_scheduled_date_recovery'])
+        #     },
+        #     description='each incicdent case of diarrhoea'
+        # )
 
         # Increment the counter for the number of cases of diarrhoea had
         df.at[person_id, 'gi_number_of_episodes'] += 1

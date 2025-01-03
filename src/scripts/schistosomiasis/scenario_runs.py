@@ -69,7 +69,9 @@ class SchistoScenarios(BaseScenario):
                          use_simplified_births=True,
                          module_kwargs={
                              "Schisto": {"single_district": False},
-                             "Demography": {"equal_allocation_by_district": True}}
+                             "Demography": {"equal_allocation_by_district": True},
+                             "Alri": {"log_indivdual": None},
+                         }
                          )
 
     def draw_parameters(self, draw_number, rng):
@@ -84,6 +86,11 @@ class SchistoScenarios(BaseScenario):
         return {
             "Baseline":
                     scenario_definitions.baseline(),
+
+            "WASH only":
+                mix_scenarios(
+                    scenario_definitions.scaleup_WASH(),
+                ),
 
             # - - - Modify future MDA schedules with/without WASH activities - - -
             "MDA SAC with no WASH":
