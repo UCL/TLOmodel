@@ -57,6 +57,10 @@ class SchistoScenarios(BaseScenario):
                 "tlo.methods.schisto": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.hiv": logging.INFO,
+                "tlo.methods.alri": logging.INFO,
+                "tlo.methods.diarrhoea": logging.INFO,
+                "tlo.methods.bladder_cancer": logging.INFO,
             }
         }
 

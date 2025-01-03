@@ -53,13 +53,17 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2014, 12, 31)
+    end_date = Date(2013, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
         "tlo.methods.schisto": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
-        # "tlo.methods.healthburden": logging.INFO
+        # "tlo.methods.healthburden": logging.INFO,
+        "tlo.methods.hiv": logging.INFO,
+        "tlo.methods.alri": logging.INFO,
+        "tlo.methods.diarrhoea": logging.INFO,
+        "tlo.methods.bladder_cancer": logging.INFO,
     }
 
     # Establish the simulation object
@@ -100,8 +104,8 @@ def run_simulation(popsize,
     sim.simulate(end_date=end_date)
 
     output = parse_log_file(sim.log_filepath)
-    return sim, output
 
+    return sim, output
 
 # todo update these parameters
 sim, output = run_simulation(popsize=2_000,
