@@ -127,7 +127,7 @@ malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
 grid_clipped_ADM2.plot(ax=ax, edgecolor='#1C6E8C', alpha=0.4)
 grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=cmap, edgecolor='#1C6E8C', alpha=0.7)
 
-facilities_gdf.plot(ax=ax, color=facilities_gdf['color'], markersize=10, label='Facilities')
+facilities_gdf.plot(ax=ax, color=facilities_gdf['color'], markersize=10)
 
 sm = plt.cm.ScalarMappable(cmap=cmap_facilities, norm=norm)
 sm.set_array([])
