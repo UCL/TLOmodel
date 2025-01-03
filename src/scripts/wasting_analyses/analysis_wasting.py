@@ -9,6 +9,7 @@ import shutil
 import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from PyPDF2 import PdfReader, PdfWriter
@@ -80,11 +81,15 @@ class WastingAnalyses:
 
         cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
         # # define colo(u)rs to use:
-        self.__colors = {
+        self.__colors_model = {
             'severe wasting': cycle[0],
             'moderate wasting': cycle[1],
             'SAM': cycle[2],
             'MAM': cycle[3],
+        }
+        self.__colors_data = {
+            'severe wasting': '#82C1EC',
+            'moderate wasting': '#C71E1E',
         }
 
     def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
@@ -225,10 +230,10 @@ class WastingAnalyses:
                         w_length_df.apply(lambda row: row[recov_opt][_age], axis=1)
 
                     if recov_opt.startswith("mod_"):
-                        colour_to_use = self.__colors['moderate wasting']
+                        colour_to_use = self.__colors_model['moderate wasting']
                         y_upper_lim = 355
                     else:
-                        colour_to_use = self.__colors['severe wasting']
+                        colour_to_use = self.__colors_model['severe wasting']
                         y_upper_lim = 1000
                     if recov_opt.endswith("not_yet_recovered"):
                         y_upper_lim = 4000
@@ -265,18 +270,54 @@ class WastingAnalyses:
     def plot_wasting_prevalence_per_year(self):
         """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
         children wasted divide by the total number of children less than 5 years"""
+        w_prev_calib_data_years_only_df = pd.DataFrame({
+            'sev_wast_calib': [0.015, 0.011, 0.006, 0.007],
+            'mod_wast_calib': [0.025, 0.027, 0.021, 0.019]
+        }, index=[2010, 2014, 2016, 2020])
+        date_range = pd.Index(range(2010, 2031), name='date')
+        w_prev_calib = pd.DataFrame(index=date_range)
+        # filling missing values with 0
+        w_prev_calib_df = w_prev_calib.merge(
+            w_prev_calib_data_years_only_df, left_index=True, right_index=True, how='left'
+        ).fillna(0)
+
         w_prev_df = self.__w_logs_dict["wasting_prevalence_props"]
         w_prev_df = w_prev_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']]
         w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
         w_prev_df = w_prev_df.drop(columns='date')
+
+        w_prev_plot_df = pd.merge(w_prev_df, w_prev_calib_df, on='date')
+        columns_to_plot = [['total_sev_under5_prop', 'total_mod_under5_prop'], ['sev_wast_calib', 'mod_wast_calib']]
+        colors_to_plot = {
+            'total_sev_under5_prop': self.__colors_model['severe wasting'],
+            'total_mod_under5_prop': self.__colors_model['moderate wasting'],
+            'sev_wast_calib': self.__colors_data['severe wasting'],
+            'mod_wast_calib': self.__colors_data['moderate wasting']
+        }
+        labels_to_plot = {
+            'total_sev_under5_prop': 'severe wasting (model)',
+            'total_mod_under5_prop': 'moderate wasting (model)',
+            'sev_wast_calib': 'severe wasting (data)',
+            'mod_wast_calib': 'moderate wasting (data)'
+        }
+
         fig, ax = plt.subplots()
-        w_prev_df.plot(kind='bar', stacked=True,
-                            ax=ax,
-                            title="Wasting prevalence in children 0-59 months per year",
-                            ylabel='proportion of wasted children in the year',
-                            xlabel='year',
-                            ylim=[0, 0.15])
-        # add_footnote(fig, "proportion of wasted children within each age-group")
+        bar_spots = len(columns_to_plot)
+        bar_width = 0.8 / bar_spots
+        pos = np.arange(len(w_prev_plot_df))
+        dodge_offsets = np.linspace(-bar_spots * bar_width / 2, bar_spots * bar_width / 2, bar_spots, endpoint=False)
+        for columns, offset in zip(columns_to_plot, dodge_offsets):
+            bottom = 0
+            for col in ([columns] if isinstance(columns, str) else columns):
+                ax.bar(pos + offset, w_prev_plot_df[col], bottom=bottom, width=bar_width, align='edge',
+                       label=labels_to_plot[col], color=colors_to_plot[col])
+                bottom += w_prev_plot_df[col]
+        ax.set_xticks(pos)
+        ax.set_xticklabels(w_prev_plot_df.index, rotation=90)
+        ax.set_title("Wasting prevalence in children 0-59 months per year")
+        ax.set_ylabel('proportion of wasted children in the year')
+        ax.set_xlabel('year')
+        ax.legend()
         plt.tight_layout()
         fig_output_name = ('wasting_prevalence_per_year__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
