@@ -2246,9 +2246,21 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         women_with_hysterectomy = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) &
                                                (df.age_years < 50) & df.la_has_had_hysterectomy)])
 
-        yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
-        yearly_prev_pe = (women_with_previous_pe / women_reproductive_age) * 100
-        yearly_prev_hysterectomy = (women_with_hysterectomy / women_reproductive_age) * 100
+        #yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
+        if women_reproductive_age != 0:
+            yearly_prev_sa = (women_with_previous_sa / women_reproductive_age) * 100
+        else:
+            yearly_prev_sa = 0  # or some appropriate default value, depending on the context
+
+        if women_with_previous_pe != 0:
+            yearly_prev_pe = (women_with_previous_pe / women_reproductive_age) * 100
+        else:
+            yearly_prev_pe = 0  # or some appropriate default value, depending on the context
+
+        if women_with_hysterectomy != 0:
+            yearly_prev_hysterectomy = (women_with_hysterectomy / women_reproductive_age) * 100
+        else:
+            yearly_prev_hysterectomy = 0  # or some appropriate default value, depending on the context
 
         parity_list = list()
         for parity in [0, 1, 2, 3, 4, 5]:
@@ -2258,8 +2270,11 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             else:
                 par = len(df.index[(df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50) &
                                     (df.la_parity >= parity))])
+            if women_reproductive_age != 0:
+                yearly_prev = (par / women_reproductive_age) * 100
+            else:
+                yearly_prev = 0  # or some appropriate default value, depending on the context
 
-            yearly_prev = (par / women_reproductive_age) * 100
             parity_list.append(yearly_prev)
 
         logger.info(key='preg_info',

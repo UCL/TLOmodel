@@ -3226,10 +3226,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
         ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) if len(
             df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) else 0
-
-        total_prev = len(
-            df[df.hv_inf & df.is_alive]
-        ) / len(df[df.is_alive])
+        #
+        # total_prev = len(
+        #     df[df.hv_inf & df.is_alive]
+        # ) / len(df[df.is_alive])
+        denominator = len(df[df.is_alive])
+        if denominator != 0:
+            total_prev = len(df[df.hv_inf & df.is_alive]) / denominator
+        else:
+            total_prev = 0  # or some appropriate default value, depending on the context
 
         # incidence by age-group and sex
         n_new_infections_male_1524 = len(

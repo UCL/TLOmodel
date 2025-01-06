@@ -3090,7 +3090,12 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ACTIVE
         num_active_tb_cases = len(df[(df.tb_inf == "active") & df.is_alive])
-        prev_active = num_active_tb_cases / len(df[df.is_alive])
+        #prev_active = num_active_tb_cases / len(df[df.is_alive])
+        denominator = len(df[df.is_alive])
+        if denominator != 0:
+            prev_active = num_active_tb_cases / denominator
+        else:
+            prev_active = 0  # or another appropriate default value
 
         assert prev_active <= 1
 
@@ -3119,7 +3124,16 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # LATENT
         # proportion of population with latent TB - all pop
         num_latent = len(df[(df.tb_inf == "latent") & df.is_alive])
-        prev_latent = num_latent / len(df[df.is_alive])
+        #prev_latent = num_latent / len(df[df.is_alive])
+        # Calculate the number of alive individuals
+        denominator = len(df[df.is_alive])
+
+        # Check if the denominator is not zero before performing the division
+        if denominator != 0:
+            prev_latent = num_latent / denominator
+        else:
+            prev_latent = 0  # or another appropriate default value, depending on your context
+
         assert prev_latent <= 1
 
         # proportion of population with latent TB - adults

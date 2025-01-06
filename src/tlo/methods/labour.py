@@ -3474,12 +3474,30 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         inpatient = df.is_alive & (df.sex == 'F') & df.hs_is_inpatient & (df.age_years > 14) & (df.age_years
                                                                                                 < 50)
 
-        prop_hyst = (len(hysterectomy.loc[hysterectomy]) / len(repro_women.loc[repro_women])) * 100
-        prop_in_labour = (len(labour.loc[labour]) / len(repro_women.loc[repro_women])) * 100
-        prop_pn = (len(postnatal.loc[postnatal]) / len(repro_women.loc[repro_women])) * 100
-        prop_ip = (len(inpatient.loc[inpatient]) / len(repro_women.loc[repro_women])) * 100
-
-        logger.info(key='women_data_debug', data={'hyst': prop_hyst,
-                                                  'labour': prop_in_labour,
-                                                  'pn': prop_pn,
-                                                  'ip': prop_ip})
+        # prop_hyst = (len(hysterectomy.loc[hysterectomy]) / len(repro_women.loc[repro_women])) * 100
+        # prop_in_labour = (len(labour.loc[labour]) / len(repro_women.loc[repro_women])) * 100
+        # prop_pn = (len(postnatal.loc[postnatal]) / len(repro_women.loc[repro_women])) * 100
+        # prop_ip = (len(inpatient.loc[inpatient]) / len(repro_women.loc[repro_women])) * 100
+        #
+        # logger.info(key='women_data_debug', data={'hyst': prop_hyst,
+        #                                           'labour': prop_in_labour,
+        #                                           'pn': prop_pn,
+        #                                           'ip': prop_ip})
+        repro_count = len(repro_women.loc[repro_women])
+        if repro_count > 0:
+            prop_hyst = (len(hysterectomy.loc[hysterectomy]) / repro_count) * 100
+            prop_in_labour = (len(labour.loc[labour]) / repro_count) * 100
+            prop_pn = (len(postnatal.loc[postnatal]) / repro_count) * 100
+            prop_ip = (len(inpatient.loc[inpatient]) / repro_count) * 100
+        else:
+            def apply(self, target):
+                # If no reproductive women are found, log the information with structured data
+                if len(repro_women) == 0:
+                    logger.warning("No reproductive women found. Setting all proportions to 0.", extra={
+                        "data": {
+                            "hyst": 0,
+                            "labour": 0,
+                            "pn": 0,
+                            "ip": 0
+                        }
+                    })

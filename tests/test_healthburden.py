@@ -20,7 +20,13 @@ from tlo.methods import (
     epi,
     hiv,
     mockitis,
+    postnatal_supervisor,
+    labour,
+    pregnancy_supervisor,
+    care_of_women_during_pregnancy,
+    newborn_outcomes,
     symptommanager,
+    contraception,
 )
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath, age_at_date
@@ -53,7 +59,6 @@ def check_dtypes(simulation):
 def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """Check that everything runs in the simple cases of Mockitis and Chronic Syndrome and that outputs are as expected.
     """
-
     # Establish the simulation object
     sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir}, resourcefilepath=resourcefilepath)
 
@@ -63,10 +68,16 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  tb.Tb(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  #added resourcefile path to mockititis and chronic syndrome
                  mockitis.Mockitis(resourcefilepath=resourcefilepath),
                  chronicsyndrome.ChronicSyndrome(resourcefilepath=resourcefilepath),
@@ -258,6 +269,13 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         epi.Epi(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
         hiv.Hiv(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(persons_affected=0),
         DiseaseThatCausesB(persons_affected=1),
         DiseaseThatCausesAandB(persons_affected=2),
@@ -348,7 +366,14 @@ def test_arithmetic_of_dalys_calcs(seed):
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
         hiv.Hiv(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
         auto_register_dependencies=True,
     )
@@ -388,6 +413,13 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
         tb.Tb(resourcefilepath=rfp),
         epi.Epi(resourcefilepath=resourcefilepath),
         hiv.Hiv(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         auto_register_dependencies=True
     )
     sim.make_initial_population(n=1)
@@ -477,6 +509,13 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         tb.Tb(resourcefilepath=resourcefilepath),
         epi.Epi(resourcefilepath=resourcefilepath),
         hiv.Hiv(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         DiseaseThatCausesA(),
         auto_register_dependencies=True
     )
@@ -640,6 +679,12 @@ def test_mapper_for_dalys_created(tmpdir, seed):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         hiv.Hiv(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         DiseaseThatCausesDeathOnly(),
         sort_modules=False,
         auto_register_dependencies=True
