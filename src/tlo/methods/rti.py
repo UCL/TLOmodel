@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from tlo.population import IndividualProperties
 
 # Decide whether to use emulator or not
-use_emulator = True
+use_emulator = False
 
 emulator_path = '/Users/mm2908/Desktop/CTGAN/RTI_emulator.pkl'
 # ---------------------------------------------------------------------------------------------------------
@@ -1054,6 +1054,14 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                                     'Injury status relating to road traffic injury: none, mild, severe',
                                     categories=['none', 'mild', 'severe'],
                                     ),
+        'rt_disability': Property(Types.REAL, 'disability weight for current month'),
+        'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
+        'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
+        'rt_road_traffic_inc': Property(Types.BOOL, 'involved in a road traffic injury'),
+        'rt_inj_severity': Property(Types.CATEGORICAL,
+                                    'Injury status relating to road traffic injury: none, mild, severe',
+                                    categories=['none', 'mild', 'severe'],
+                                    ),
         **{
             f'rt_injury_{injury_index}': Property(
                 Types.CATEGORICAL,
@@ -1095,9 +1103,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'rt_unavailable_med_death': Property(Types.BOOL, 'death in the following month without medical intervention '
                                                          'being able to be provided'),
         'rt_recovery_no_med': Property(Types.BOOL, 'recovery without medical intervention True/False'),
-        'rt_disability': Property(Types.REAL, 'disability weight for current month'),
-        'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
-        'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
+
         'rt_med_int': Property(Types.BOOL, 'whether this person is currently undergoing medical treatment'),
         'rt_in_icu_or_hdu': Property(Types.BOOL, 'whether this person is currently in ICU for RTI'),
         'rt_MAIS_military_score': Property(Types.INT, 'the maximum AIS-military score, used as a proxy to calculate the'

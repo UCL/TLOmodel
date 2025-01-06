@@ -373,6 +373,7 @@ class Simulation:
         with open('duration_time.txt', 'a') as file:
             # Append text to the file
             file.write(f"Time taken, {end_time}\n")
+        print("Time taken", end_time)
 
     def simulate(self, *, end_date: Date) -> None:
         """Simulate until the given end date
