@@ -654,7 +654,7 @@ def test_compute_summary_statistics():
         summarize(results_multiple_draws, only_mean=True)
     )
     pd.testing.assert_frame_equal(
-        compute_summary_statistics(results_one_draw, central_measure='mean', collapse_columns=True),
+        compute_summary_statistics(results_one_draw, central_measure='mean', collapse_columns=True).rename(columns={'central': 'mean'}, level=0),
         summarize(results_one_draw, collapse_columns=True)
     )
 
