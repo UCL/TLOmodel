@@ -522,21 +522,12 @@ axs[0].legend(loc='upper left', borderaxespad=0.)
 
 ############### ADD IN CMIP DATA ###########################
 def get_weather_data(ssp_scenario, model_type):
-    if model_type == 'highest':
-        file_suffix = 'highest'
-    elif model_type == 'median':
-        file_suffix = 'median'
-    elif model_type == 'lowest':
-        file_suffix = 'lowest'
-    else:
-        raise ValueError("Model type must be one of 'highest', 'median', or 'lowest'")
-
     weather_data_prediction_five_day_cumulative_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{file_suffix}_model_daily_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_model_daily_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
         dtype={'column_name': 'float64'}
     )
     weather_data_prediction_monthly_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{file_suffix}_model_monthly_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_model_monthly_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
         dtype={'column_name': 'float64'}
     )
 
