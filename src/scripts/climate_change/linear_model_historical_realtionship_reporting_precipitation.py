@@ -302,11 +302,15 @@ X = np.column_stack([
     altitude,
     np.array(minimum_distance)
 ])
-
+coefficient_names = ["year", "month", resid_encoded.columns, zone_encoded.columns, owner_encoded.columns, ftype_encoded.columns, facility_encoded.columns, "altitude", "minimum_distance"]
+coefficient_names = pd.Series(coefficient_names)
 results, y_pred, mask_ANC_data = build_model(X , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold)
 coefficients = results.params
 coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
-coefficients_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical.csv')
+p_values = results.pvalues
+p_values_df = pd.DataFrame(p_values, columns=['p_values'])
+results_df = pd.concat([coefficient_names, coefficients_df, p_values_df], axis=1)
+results_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical.csv')
 if use_residuals:
     if log_y:
         y_weather = (y[mask_ANC_data] - np.exp(y_pred)) + 1 # for poisson
@@ -436,9 +440,15 @@ else:
 
     results_of_weather_model, y_pred_weather, mask_all_data = build_model(X_weather, y, poisson = poisson, log_y=log_y,
                                                                  X_mask_mm=mask_threshold)
-coefficients = results_of_weather_model.params
-coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
-coefficients_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical.csv')
+coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "year", "month", resid_encoded.columns, zone_encoded.columns, owner_encoded.columns, ftype_encoded.columns, "lag_1_month","lag_2_month","lag_3_month", "lag_4_month", "lag_1_5_day", "lag_2_5_day","lag_3_5_day", "lag_4_5_day",facility_encoded.columns, "altitude", "minimum_distance"]
+coefficient_names_weather = pd.Series(coefficient_names_weather)
+coefficients_weather = results_of_weather_model.params
+coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficients'])
+p_values_weather = results_of_weather_model.pvalues
+p_values_weather_df = pd.DataFrame(p_values_weather, columns=['p_values'])
+results_weather_df = pd.concat([coefficient_names_weather, coefficients_weather_df, p_values_weather_df], axis=1)
+results_weather_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical.csv')
+
 print("All predictors", results_of_weather_model.summary())
 #
 
