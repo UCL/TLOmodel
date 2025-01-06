@@ -521,7 +521,31 @@ axs[0].legend(loc='upper left', borderaxespad=0.)
 
 
 ############### ADD IN CMIP DATA ###########################
+def get_weather_data(ssp_scenario, model_type):
+    if model_type == 'highest':
+        file_suffix = 'highest'
+    elif model_type == 'median':
+        file_suffix = 'median'
+    elif model_type == 'lowest':
+        file_suffix = 'lowest'
+    else:
+        raise ValueError("Model type must be one of 'highest', 'median', or 'lowest'")
 
+    weather_data_prediction_five_day_cumulative_original = pd.read_csv(
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{file_suffix}_model_daily_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
+        dtype={'column_name': 'float64'}
+    )
+    weather_data_prediction_monthly_original = pd.read_csv(
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{file_suffix}_model_monthly_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
+        dtype={'column_name': 'float64'}
+    )
+
+    weather_data_prediction_monthly_df = weather_data_prediction_monthly_original.drop(columns=zero_sum_columns)
+    weather_data_prediction_five_day_cumulative_df = weather_data_prediction_five_day_cumulative_original.drop(
+        columns=zero_sum_columns)
+
+    return weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df
+model_types = ['lowest', 'median', 'highest']
 # Configuration and constants
 min_year_for_analysis = 2025
 absolute_min_year = 2025
@@ -529,233 +553,228 @@ max_year_for_analysis = 2071
 data_path = "/Users/rem76/Desktop/Climate_change_health/Data/"
 
 # Define SSP scenario
-ssp_scenario = "ssp585"  # Change this to "ssp585" as needed
+ssp_scenarios = ["ssp245", "ssp585"]
 
 # Load and preprocess weather data
-if use_all_weather:
-        weather_data_prediction_five_day_cumulative_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/highest_model_daily_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
-        dtype={'column_name': 'float64'})
-        weather_data_prediction_monthly_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/highest_model_monthly_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
-        dtype={'column_name': 'float64'})
-        weather_data_prediction_monthly_df = weather_data_prediction_monthly_original.drop(columns=zero_sum_columns)
-        weather_data_prediction_five_day_cumulative_df = weather_data_prediction_five_day_cumulative_original.drop(columns=zero_sum_columns)
+for ssp_scenario in ssp_scenarios:
+    for model_type in model_types:
+        if use_all_weather:
+                weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df = get_weather_data(ssp_scenario,
+                                                                                                                  model_type)
+                lag_1_month_prediction = weather_data_prediction_monthly_df.shift(1).values
+                lag_2_month_prediction = weather_data_prediction_monthly_df.shift(2).values
+                lag_3_month_prediction = weather_data_prediction_monthly_df.shift(3).values
+                lag_4_month_prediction = weather_data_prediction_monthly_df.shift(4).values
 
-        lag_1_month_prediction = weather_data_prediction_monthly_df.shift(1).values
-        lag_2_month_prediction = weather_data_prediction_monthly_df.shift(2).values
-        lag_3_month_prediction = weather_data_prediction_monthly_df.shift(3).values
-        lag_4_month_prediction = weather_data_prediction_monthly_df.shift(4).values
+                lag_1_month_prediction = lag_1_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                lag_2_month_prediction = lag_2_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                lag_3_month_prediction = lag_3_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                lag_4_month_prediction = lag_4_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
 
-        lag_1_month_prediction = lag_1_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_2_month_prediction = lag_2_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_3_month_prediction = lag_3_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_4_month_prediction = lag_4_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                lag_1_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(1).values
+                lag_2_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(2).values
+                lag_3_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(3).values
+                lag_4_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(4).values
 
-        lag_1_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(1).values
-        lag_2_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(2).values
-        lag_3_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(3).values
-        lag_4_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(4).values
+                lag_1_5_day_prediction = lag_1_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                lag_2_5_day_prediction = lag_2_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                lag_3_5_day_prediction = lag_3_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                lag_4_5_day_prediction = lag_4_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                weather_data_prediction_five_day_cumulative = weather_data_prediction_five_day_cumulative_df # keep these seperate for binary features
 
-        lag_1_5_day_prediction = lag_1_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_2_5_day_prediction = lag_2_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_3_5_day_prediction = lag_3_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        lag_4_5_day_prediction = lag_4_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
-        weather_data_prediction_five_day_cumulative = weather_data_prediction_five_day_cumulative_df # keep these seperate for binary features
+                # need for binary comparison
+                lag_12_month = weather_data_prediction_monthly_df.shift(12).values
+                lag_12_month = lag_12_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
 
-        # need for binary comparison
-        lag_12_month = weather_data_prediction_monthly_df.shift(12).values
-        lag_12_month = lag_12_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+                weather_data_prediction_monthly = weather_data_prediction_monthly_df # keep these seperate for binary features
 
-        weather_data_prediction_monthly = weather_data_prediction_monthly_df # keep these seperate for binary features
+                weather_data_prediction_five_day_cumulative = weather_data_prediction_five_day_cumulative.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
+                weather_data_prediction_monthly = weather_data_prediction_monthly.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
+                weather_data_prediction_monthly_flattened = weather_data_prediction_monthly.values.flatten()
+                weather_data_prediction_five_day_cumulative_flattened = weather_data_prediction_five_day_cumulative.values.flatten()
+                weather_data_prediction_flatten = np.vstack((weather_data_prediction_monthly_flattened, weather_data_prediction_five_day_cumulative_flattened)).T
+                num_facilities = len(weather_data_prediction_monthly.columns)
+        else:
+            if five_day:
+                weather_data_prediction = pd.read_csv(
+                    f"{data_path}Precipitation_data/Downscaled_CMIP6_data/{ssp_scenario}/prediction_weather_by_smaller_facilities_with_ANC_lm.csv", index_col=0,
+                    dtype={'column_name': 'float64'})
+            else:
+                weather_data_prediction = pd.read_csv(
+                    f"{data_path}Precipitation_data/Downscaled_CMIP6_data/{ssp_scenario}/prediction_weather_monthly_by_smaller_facilities_with_ANC_lm.csv",
+                    index_col=0, dtype={'column_name': 'float64'})
+            weather_data_prediction = weather_data_prediction.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
+            weather_data_prediction_flatten = weather_data_prediction.values.flatten()
+            num_facilities = len(weather_data_prediction.columns)
 
-        weather_data_prediction_five_day_cumulative = weather_data_prediction_five_day_cumulative.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
-        weather_data_prediction_monthly = weather_data_prediction_monthly.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
-        weather_data_prediction_monthly_flattened = weather_data_prediction_monthly.values.flatten()
-        weather_data_prediction_five_day_cumulative_flattened = weather_data_prediction_five_day_cumulative.values.flatten()
-        weather_data_prediction_flatten = np.vstack((weather_data_prediction_monthly_flattened, weather_data_prediction_five_day_cumulative_flattened)).T
-        num_facilities = len(weather_data_prediction_monthly.columns)
-else:
-    if five_day:
-        weather_data_prediction = pd.read_csv(
-            f"{data_path}Precipitation_data/Downscaled_CMIP6_data/{ssp_scenario}/prediction_weather_by_smaller_facilities_with_ANC_lm.csv", index_col=0,
-            dtype={'column_name': 'float64'})
-    else:
-        weather_data_prediction = pd.read_csv(
-            f"{data_path}Precipitation_data/Downscaled_CMIP6_data/{ssp_scenario}/prediction_weather_monthly_by_smaller_facilities_with_ANC_lm.csv",
-            index_col=0, dtype={'column_name': 'float64'})
-    weather_data_prediction = weather_data_prediction.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
-    weather_data_prediction_flatten = weather_data_prediction.values.flatten()
-    num_facilities = len(weather_data_prediction.columns)
+        missing_facility = [col for col in expanded_facility_info.index if col not in weather_data_prediction_monthly.columns]
+        expanded_facility_info = expanded_facility_info.drop(missing_facility)
+        year_range_prediction = range(min_year_for_analysis, max_year_for_analysis)
+        month_repeated_prediction = [m for _ in year_range_prediction for m in range(1, 13)]
+        year_flattened_prediction = np.repeat(year_range_prediction, 12 * num_facilities)
+        month_flattened_prediction = month_repeated_prediction * num_facilities
+        facility_flattened_prediction = np.tile(range(num_facilities), len(year_flattened_prediction) // num_facilities)
+        # Encode facilities and create above/below average weather data
+        facility_encoded_prediction = pd.get_dummies(facility_flattened_prediction, drop_first=True)
 
-missing_facility = [col for col in expanded_facility_info.index if col not in weather_data_prediction_monthly.columns]
-expanded_facility_info = expanded_facility_info.drop(missing_facility)
-year_range_prediction = range(min_year_for_analysis, max_year_for_analysis)
-month_repeated_prediction = [m for _ in year_range_prediction for m in range(1, 13)]
-year_flattened_prediction = np.repeat(year_range_prediction, 12 * num_facilities)
-month_flattened_prediction = month_repeated_prediction * num_facilities
-facility_flattened_prediction = np.tile(range(num_facilities), len(year_flattened_prediction) // num_facilities)
-# Encode facilities and create above/below average weather data
-facility_encoded_prediction = pd.get_dummies(facility_flattened_prediction, drop_first=True)
+        # Load and preprocess facility information
+        zone_info_prediction = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range_prediction, historical = False)
+        zone_encoded_prediction = pd.get_dummies(zone_info_prediction, drop_first=True)
 
-# Load and preprocess facility information
-zone_info_prediction = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range_prediction, historical = False)
-zone_encoded_prediction = pd.get_dummies(zone_info_prediction, drop_first=True)
+        resid_info_prediction = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range_prediction, historical = False)
 
-resid_info_prediction = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range_prediction, historical = False)
+        resid_encoded_prediction = pd.get_dummies(resid_info_prediction, drop_first=True)
+        owner_info_prediction = repeat_info(expanded_facility_info['A105'], num_facilities, year_range_prediction, historical = False)
+        owner_encoded_prediction = pd.get_dummies(owner_info_prediction, drop_first=True)
+        ftype_info_prediction = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range_prediction, historical = False)
+        ftype_encoded_prediction = pd.get_dummies(ftype_info_prediction, drop_first=True)
+        altitude_prediction = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'],num_facilities, year_range_prediction, historical = False)]
+        minimum_distance_prediction = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'],num_facilities, year_range_prediction, historical = False)]
+        # minimum_distance_prediction = np.nan_to_num(minimum_distance_prediction, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
 
-resid_encoded_prediction = pd.get_dummies(resid_info_prediction, drop_first=True)
-owner_info_prediction = repeat_info(expanded_facility_info['A105'], num_facilities, year_range_prediction, historical = False)
-owner_encoded_prediction = pd.get_dummies(owner_info_prediction, drop_first=True)
-ftype_info_prediction = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range_prediction, historical = False)
-ftype_encoded_prediction = pd.get_dummies(ftype_info_prediction, drop_first=True)
-altitude_prediction = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'],num_facilities, year_range_prediction, historical = False)]
-minimum_distance_prediction = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'],num_facilities, year_range_prediction, historical = False)]
-# minimum_distance_prediction = np.nan_to_num(minimum_distance_prediction, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
+        altitude_prediction = np.array(altitude_prediction)
+        altitude_prediction = np.where(altitude_prediction < 0, np.nan, altitude_prediction)
+        mean_altitude_prediction = round(np.nanmean(altitude_prediction))
+        altitude_prediction = np.where(np.isnan(altitude_prediction), float(mean_altitude), altitude_prediction)
+        altitude_prediction = np.nan_to_num(altitude_prediction, nan=mean_altitude_prediction, posinf=mean_altitude_prediction, neginf=mean_altitude_prediction)
+        altitude_prediction = list(altitude_prediction)
 
-altitude_prediction = np.array(altitude_prediction)
-altitude_prediction = np.where(altitude_prediction < 0, np.nan, altitude_prediction)
-mean_altitude_prediction = round(np.nanmean(altitude_prediction))
-altitude_prediction = np.where(np.isnan(altitude_prediction), float(mean_altitude), altitude_prediction)
-altitude_prediction = np.nan_to_num(altitude_prediction, nan=mean_altitude_prediction, posinf=mean_altitude_prediction, neginf=mean_altitude_prediction)
-altitude_prediction = list(altitude_prediction)
+        minimum_distance_prediction = np.nan_to_num(minimum_distance_prediction, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
 
-minimum_distance_prediction = np.nan_to_num(minimum_distance_prediction, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
+        # Weather data
 
-# Weather data
+        X_basis_weather = np.column_stack([
+            weather_data_prediction_flatten,
+            np.array(year_flattened_prediction),
+            np.array(month_flattened_prediction),
+            resid_encoded_prediction,
+            zone_encoded_prediction,
+            owner_encoded_prediction,
+            ftype_encoded_prediction,
+            lag_1_month_prediction,
+            lag_2_month_prediction,
+            lag_3_month_prediction,
+            lag_4_month_prediction,
+            lag_1_5_day_prediction,
+            lag_2_5_day_prediction,
+            lag_3_5_day_prediction,
+            lag_4_5_day_prediction,
+            facility_encoded_prediction,
+            altitude_prediction,
+            minimum_distance_prediction,
+            #above_below_X_prediction
+        ])
 
-X_basis_weather = np.column_stack([
-    weather_data_prediction_flatten,
-    np.array(year_flattened_prediction),
-    np.array(month_flattened_prediction),
-    resid_encoded_prediction,
-    zone_encoded_prediction,
-    owner_encoded_prediction,
-    ftype_encoded_prediction,
-    lag_1_month_prediction,
-    lag_2_month_prediction,
-    lag_3_month_prediction,
-    lag_4_month_prediction,
-    lag_1_5_day_prediction,
-    lag_2_5_day_prediction,
-    lag_3_5_day_prediction,
-    lag_4_5_day_prediction,
-    facility_encoded_prediction,
-    altitude_prediction,
-    minimum_distance_prediction,
-    #above_below_X_prediction
-])
+        X_basis_weather_filtered = X_basis_weather[X_basis_weather[:, 0] > mask_threshold]
+        # format output
+        year_month_labels = np.array([f"{y}-{m}" for y, m in zip(X_basis_weather_filtered[:, 2], X_basis_weather[:, 3])])
+        predictions_weather = results_of_weather_model.predict(X_basis_weather_filtered)
+        if log_y:
+            data_weather_predictions = pd.DataFrame({
+                'Year_Month': year_month_labels,
+                'y_pred_weather': np.exp(predictions_weather)
+            })
+        else:
+            data_weather_predictions = pd.DataFrame({
+                'Year_Month': year_month_labels,
+                'y_pred_weather': predictions_weather
+            })
 
-X_basis_weather_filtered = X_basis_weather[X_basis_weather[:, 0] > mask_threshold]
-# format output
-year_month_labels = np.array([f"{y}-{m}" for y, m in zip(X_basis_weather_filtered[:, 2], X_basis_weather[:, 3])])
-predictions_weather = results_of_weather_model.predict(X_basis_weather_filtered)
-if log_y:
-    data_weather_predictions = pd.DataFrame({
-        'Year_Month': year_month_labels,
-        'y_pred_weather': np.exp(predictions_weather)
-    })
-else:
-    data_weather_predictions = pd.DataFrame({
-        'Year_Month': year_month_labels,
-        'y_pred_weather': predictions_weather
-    })
+        if use_residuals:
+            predictions = results_of_weather_model.predict(X_basis_weather_filtered)
+        else:
+            X_bases_ANC = np.column_stack([
+                year_flattened_prediction,
+                month_flattened_prediction,
+                resid_encoded_prediction,
+                zone_encoded_prediction,
+                owner_encoded_prediction,
+                ftype_encoded_prediction,
+                facility_encoded_prediction,
+                altitude_prediction,
+                minimum_distance_prediction
+            ])
 
-if use_residuals:
-    predictions = results_of_weather_model.predict(X_basis_weather_filtered)
-else:
-    X_bases_ANC = np.column_stack([
-        year_flattened_prediction,
-        month_flattened_prediction,
-        resid_encoded_prediction,
-        zone_encoded_prediction,
-        owner_encoded_prediction,
-        ftype_encoded_prediction,
-        facility_encoded_prediction,
-        altitude_prediction,
-        minimum_distance_prediction
-    ])
+            y_pred_ANC = results.predict(X_bases_ANC)
+            if log_y:
+                predictions = np.exp(predictions_weather) - np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
+                data_weather_predictions['y_pred_no_weather'] = np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
 
-    y_pred_ANC = results.predict(X_bases_ANC)
-    if log_y:
-        predictions = np.exp(predictions_weather) - np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
-        data_weather_predictions['y_pred_no_weather'] = np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
-
-    else:
-        predictions = predictions_weather - y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]
-        data_weather_predictions['y_pred_no_weather'] = y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]
+            else:
+                predictions = predictions_weather - y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]
+                data_weather_predictions['y_pred_no_weather'] = y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]
 
 
-data_weather_predictions['difference_in_expectation'] = predictions
-data_weather_predictions['weather'] = X_basis_weather[X_basis_weather[:, 0] > mask_threshold, 0]
-data_weather_predictions_grouped = data_weather_predictions.groupby('Year_Month').mean().reset_index()
+        data_weather_predictions['difference_in_expectation'] = predictions
+        data_weather_predictions['weather'] = X_basis_weather[X_basis_weather[:, 0] > mask_threshold, 0]
+        data_weather_predictions_grouped = data_weather_predictions.groupby('Year_Month').mean().reset_index()
 
-# Plotting results
-fig, axs = plt.subplots(1, 2, figsize=(14, 6))
-#axs[0].scatter(data_weather_predictions['Year_Month'], data_weather_predictions['difference_in_expectation'], color='#9AC4F8', alpha=0.1, label ='Predictions from weather model')
-axs[0].scatter(data_weather_predictions_grouped['Year_Month'], data_weather_predictions_grouped['difference_in_expectation'], color='red', alpha=0.7, label='Mean of predictions')
-axs[0].set_xlabel('Year/Month')
-xticks = data_weather_predictions['Year_Month'][::len(year_range) * 12 * num_facilities]
-axs[0].set_xticks(xticks)
-axs[0].set_xticklabels(xticks, rotation=45, ha='right')
-axs[0].set_ylabel('Difference Predicted ANC visits due to rainfall')
-axs[0].legend(loc='upper left')
-#
-# # if log_y:
-# #
-# #     axs[1].scatter(X_basis_weather_filtered[:, 0], np.exp(data_weather_predictions['y_pred_weather']), color='#9AC4F8',
-# #                    alpha=0.3, label='Predictions of weather model')
-# #     axs[1].scatter(X_basis_weather_filtered[:, 0], np.exp(data_weather_predictions['y_pred_no_weather']), color='#9AC4F8',
-# #                    alpha=1, label='Predictions of no weather model')
-# # else:
-# #     axs[1].scatter(X_basis_weather_filtered[:, 0], data_weather_predictions['y_pred_weather'], color='#9AC4F8', alpha=0.7,
-# #                    label='Predictions of weather model')
-# #
-# #     axs[1].scatter(X_basis_weather_filtered[:, 0], data_weather_predictions['y_pred_no_weather'], color='#9AC4F8', alpha=1,
-# #                    label='Predictions of no weather model')
-# # axs[1].set_xlabel('Precipitation (mm)')
-# # axs[1].set_ylabel('Frequency')
-# # axs[1].legend()
-#plt.tight_layout()
-plt.show()
+        # Plotting results
+        fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+        #axs[0].scatter(data_weather_predictions['Year_Month'], data_weather_predictions['difference_in_expectation'], color='#9AC4F8', alpha=0.1, label ='Predictions from weather model')
+        axs[0].scatter(data_weather_predictions_grouped['Year_Month'], data_weather_predictions_grouped['difference_in_expectation'], color='red', alpha=0.7, label='Mean of predictions')
+        axs[0].set_xlabel('Year/Month')
+        xticks = data_weather_predictions['Year_Month'][::len(year_range) * 12 * num_facilities]
+        axs[0].set_xticks(xticks)
+        axs[0].set_xticklabels(xticks, rotation=45, ha='right')
+        axs[0].set_ylabel('Difference Predicted ANC visits due to rainfall')
+        axs[0].legend(loc='upper left')
+        #
+        # # if log_y:
+        # #
+        # #     axs[1].scatter(X_basis_weather_filtered[:, 0], np.exp(data_weather_predictions['y_pred_weather']), color='#9AC4F8',
+        # #                    alpha=0.3, label='Predictions of weather model')
+        # #     axs[1].scatter(X_basis_weather_filtered[:, 0], np.exp(data_weather_predictions['y_pred_no_weather']), color='#9AC4F8',
+        # #                    alpha=1, label='Predictions of no weather model')
+        # # else:
+        # #     axs[1].scatter(X_basis_weather_filtered[:, 0], data_weather_predictions['y_pred_weather'], color='#9AC4F8', alpha=0.7,
+        # #                    label='Predictions of weather model')
+        # #
+        # #     axs[1].scatter(X_basis_weather_filtered[:, 0], data_weather_predictions['y_pred_no_weather'], color='#9AC4F8', alpha=1,
+        # #                    label='Predictions of no weather model')
+        # # axs[1].set_xlabel('Precipitation (mm)')
+        # # axs[1].set_ylabel('Frequency')
+        # # axs[1].legend()
+        #plt.tight_layout()
+        plt.show()
 
-fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+        fig, axs = plt.subplots(1, 2, figsize=(14, 6))
 
-axs[0].scatter(data_weather_predictions['weather'],data_weather_predictions['difference_in_expectation'], color='#9AC4F8', alpha=0.1,
-                   label='Predictions')
+        axs[0].scatter(data_weather_predictions['weather'],data_weather_predictions['difference_in_expectation'], color='#9AC4F8', alpha=0.1,
+                           label='Predictions')
 
-axs[0].set_xlabel('Precipitation (mm)')
-axs[0].set_ylabel('Difference in of ANC visits between weather and non-weather model')
+        axs[0].set_xlabel('Precipitation (mm)')
+        axs[0].set_ylabel('Difference in of ANC visits between weather and non-weather model')
 
-plt.tight_layout()
-plt.show()
+        plt.tight_layout()
+        plt.show()
 
-## Save predictions
+        ## Save predictions
 
-# Format output: Add all relevant X variables
-full_data_weather_predictions = pd.DataFrame({
-    'Year': year_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
-    'Month': np.array(month_flattened_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Facility_ID': facility_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
-    'Altitude': np.array(altitude_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Zone': np.array(zone_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Resid': np.array(resid_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Owner': np.array(owner_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Facility_Type': np.array(ftype_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Precipitation': X_basis_weather[X_basis_weather[:, 0] > mask_threshold, 0],
-    'Lag_1_Precipitation': np.array(lag_1_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Lag_2_Precipitation': np.array(lag_2_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Lag_3_Precipitation': np.array(lag_3_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Lag_4_Precipitation': np.array(lag_4_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
-    'Predicted_Weather_Model': np.exp(predictions_weather),
-    'Predicted_No_Weather_Model': np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]),
-    'Difference_in_Expectation': predictions,
-})
+        # Format output: Add all relevant X variables
+        full_data_weather_predictions = pd.DataFrame({
+            'Year': year_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
+            'Month': np.array(month_flattened_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Facility_ID': facility_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
+            'Altitude': np.array(altitude_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Zone': np.array(zone_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Resid': np.array(resid_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Owner': np.array(owner_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Facility_Type': np.array(ftype_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Precipitation': X_basis_weather[X_basis_weather[:, 0] > mask_threshold, 0],
+            'Lag_1_Precipitation': np.array(lag_1_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Lag_2_Precipitation': np.array(lag_2_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Lag_3_Precipitation': np.array(lag_3_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Lag_4_Precipitation': np.array(lag_4_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'Predicted_Weather_Model': np.exp(predictions_weather),
+            'Predicted_No_Weather_Model': np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]),
+            'Difference_in_Expectation': predictions,
+        })
 
-# Save the results
-full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}.csv", index=False)
+        # Save the results
+        full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}.csv", index=False)
 
-X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered)
+        X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered)
 
-# Save to CSV
-X_basis_weather_filtered.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/X_basis_weather_filtered_predictions_{ssp_scenario}.csv', index=False)
+        # Save to CSV
+        X_basis_weather_filtered.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/X_basis_weather_filtered_predictions_{ssp_scenario}_{model_type}.csv', index=False)
