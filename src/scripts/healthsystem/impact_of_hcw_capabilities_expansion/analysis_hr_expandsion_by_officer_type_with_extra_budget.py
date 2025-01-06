@@ -1268,9 +1268,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     increase_rate_avg_exp['Other'] = increase_rate_avg_exp['Dental'].copy()
 
     name_of_plot = f'3D DALYs averted (%) vs no extra budget allocation, {target_period()}'
-    # name_of_plot = f'DALYs averted (%) vs no HCW expansion investment, {target_period()}'
+    # name_of_plot = f'DALYs averted (%) vs no HCW expansion investment (avg. HCW increase rate), {target_period()}'
     heat_data = pd.merge(num_dalys_averted_percent['mean'],
                          extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
+                         # increase_rate_avg_exp[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
                          left_index=True, right_index=True, how='inner')
     # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
     # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
@@ -1295,6 +1296,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
               [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
               linestyle='--', color='gray', alpha=0.8)
     ax.set_xlabel('Fraction of extra budget allocated to \nClinical cadre', fontsize='small')
+    # ax.set_xlabel('Avg. annual increase rate of \nClinical cadre', fontsize='small')
     ax.set_ylabel('Pharmacy cadre', fontsize='small')
     #ax.invert_xaxis()
     ax.invert_yaxis()
