@@ -304,7 +304,9 @@ X = np.column_stack([
 ])
 
 results, y_pred, mask_ANC_data = build_model(X , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold)
-
+coefficients = results.params
+coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
+coefficients_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical.csv')
 if use_residuals:
     if log_y:
         y_weather = (y[mask_ANC_data] - np.exp(y_pred)) + 1 # for poisson
@@ -434,6 +436,9 @@ else:
 
     results_of_weather_model, y_pred_weather, mask_all_data = build_model(X_weather, y, poisson = poisson, log_y=log_y,
                                                                  X_mask_mm=mask_threshold)
+coefficients = results_of_weather_model.params
+coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
+coefficients_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical.csv')
 print("All predictors", results_of_weather_model.summary())
 #
 
@@ -536,7 +541,7 @@ def get_weather_data(ssp_scenario, model_type):
         columns=zero_sum_columns)
 
     return weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df
-model_types = ['lowest', 'median', 'highest']
+model_types = ['lowest']#, 'median', 'highest']
 # Configuration and constants
 min_year_for_analysis = 2025
 absolute_min_year = 2025
@@ -631,7 +636,7 @@ for ssp_scenario in ssp_scenarios:
         altitude_prediction = list(altitude_prediction)
 
         minimum_distance_prediction = np.nan_to_num(minimum_distance_prediction, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
-
+        print(lag_4_month_prediction)
         # Weather data
 
         X_basis_weather = np.column_stack([
