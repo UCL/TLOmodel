@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
 
 import git
 import matplotlib.colors as mcolors
@@ -230,8 +230,18 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
 
     return output
 
+def extract_draw_names(results_folder: Path) -> dict[int, str]:
+    """Returns dict keyed by the draw-number giving the 'draw-name' declared for that draw in the Scenario at
+    draw_names()."""
+    draws = [f for f in os.scandir(results_folder) if f.is_dir()]
+    return {
+        int(d.name):
+            load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
+        for d in draws
+    }
 
-def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
+
+def extract_params(results_folder: Path, use_draw_names: bool = False) -> Optional[pd.DataFrame]:
     """Utility function to get overridden parameters from scenario runs
 
     Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw
@@ -258,6 +268,11 @@ def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
         params.index.name = 'draw'
         params = params.rename(columns={'new_value': 'value'})
         params = params.sort_index()
+
+        if use_draw_names:
+            # use draw_names instead of draw_number in the index
+            draw_names = extract_draw_names(results_folder)
+            params.index = params.index.map(draw_names)
         return params
 
     except KeyError:
@@ -343,41 +358,92 @@ def extract_results(results_folder: Path,
     return _concat
 
 
-def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
+def compute_summary_statistics(
+    results: pd.DataFrame,
+    central_measure: Literal["mean", "median"] = "median",
+    width_of_range: float = 0.95,
+    only_central: bool = False,
+    collapse_columns: bool = False,
+) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
-    Finds mean value and 95% interval across the runs for each draw.
-    """
+    Finds a central value and a specified interval across the runs for each draw. By default, this uses a central
+     measure of the median and a 95% interval range.
 
-    summary = pd.concat(
-        {
-            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
-            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
-            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
-        },
-        axis=1
-    )
+    :param results: The dataframe of results to compute summary statistics of.
+    :param central_measure: The name of the central measure to use - either 'mean' or 'median'.
+    :param width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
+    :param collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise).
+    :param only_central: Whether to only report the central value (dropping the range).
+    :return: A dataframe with computed summary statistics.
+
+    """
+    stats = dict()
+    grouped_results = results.groupby(axis=1, by='draw', sort=False)
+
+    if central_measure == 'mean':
+        stats['central'] = grouped_results.mean()
+    elif central_measure == 'median':
+        stats['central'] = grouped_results.median()
+    else:
+        raise ValueError(f"Unknown stat: {central_measure}")
+
+    lower_quantile = (1. - width_of_range) / 2.
+    stats["lower"] = grouped_results.quantile(lower_quantile)
+    stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+
+    summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
     summary.columns.names = ['draw', 'stat']
-    summary = summary.sort_index(axis=1)
+    summary = summary.sort_index(axis=1).reindex(columns=['lower', 'central', 'upper'], level=1)
 
-    if only_mean and (not collapse_columns):
-        # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
-        om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
-        om.columns = [c[0] for c in om.columns.to_flat_index()]
-        om.columns.name = 'draw'
-        return om
+    if only_central and (not collapse_columns):
+        # Remove other metrics and simplify if 'only_central' across runs for each draw is required:
+        oc: pd.DataFrame = summary.loc[:, (slice(None), "central")]
+        oc.columns = [c[0] for c in oc.columns.to_flat_index()]
+        oc.columns.name = 'draw'
+        return oc
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
         # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
         summary_droppedlevel = summary.droplevel('draw', axis=1)
-        if only_mean:
-            return summary_droppedlevel['mean']
+        if only_central:
+            return summary_droppedlevel['central']
         else:
             return summary_droppedlevel
 
     else:
         return summary
+
+
+def summarize(
+    results: pd.DataFrame,
+    only_mean: bool = False,
+    collapse_columns: bool = False
+):
+    """Utility function to compute summary statistics
+
+    Finds mean value and 95% interval across the runs for each draw.
+
+    NOTE: This provides the legacy functionality of `summarize` that is hard-wired to use `means` (the kwarg is
+     `only_mean` and the name of the column in the output is `mean`). Please move to using the new and more flexible
+     version of `summarize` that allows the use of medians and is flexible to allow other forms of summary measure in
+     the future.
+    """
+    warnings.warn(
+        "This function uses MEAN as the central measure. We now recommend using MEDIAN instead. "
+        "This can be done by using the function `compute_summary_statistics`."
+        ""
+    )
+    output = compute_summary_statistics(
+        results=results,
+        central_measure='mean',
+        only_central=only_mean,
+        collapse_columns=collapse_columns,
+    )
+    if output.columns.nlevels > 1:
+        output = output.rename(columns={'central': 'mean'}, level=1)  # rename 'central' to 'mean'
+    return output
 
 
 def get_grid(params: pd.DataFrame, res: pd.Series):
@@ -1199,6 +1265,51 @@ def get_parameters_for_standard_mode2_runs() -> Dict:
             "cons_availability": "default",
             "beds_availability": "default",
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+        },
+    }
+
+
+def get_parameters_for_hrh_historical_scaling_and_rescaling_for_mode2() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    scenario runs that involve:
+    mode switch from 1 to 2 in 2020,
+    rescaling hrh capabilities to effective capabilities in the end of 2019 (the previous year of mode switch),
+    hrh historical scaling from 2020 to 2024.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': 1.0,
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            'Service_Availability': ['*'],
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 2,
+            "year_mode_switch": 2020,  # <-- Given that the data in HRH capabilities resource file are for year 2019
+            # and that the model has been calibrated to data by 2019, we want the rescaling to effective capabilities
+            # to happen in the end of year 2019, which should be the previous year of mode switch to mode 2.
+            "scale_to_effective_capabilities": True,
+            'yearly_HR_scaling_mode': 'historical_scaling',  # <-- for 5 years of 2020-2024; the yearly historical
+            # scaling factor are stored in the sheet "historical_scaling" in ResourceFile_dynamic_HR_scaling.
+            "tclose_overwrite": 1,  # <-- In most of our runs in mode 2, we chose to overwrite tclose
+            "tclose_days_offset_overwrite": 7,  # <-- and usually set it to 7.
+            "cons_availability": "default",
+            "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+            "policy_name": 'Naive',
         },
     }
 
