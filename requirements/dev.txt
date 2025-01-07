@@ -164,7 +164,7 @@ psutil==5.9.5
     # via tlo (pyproject.toml)
 pycparser==2.21
     # via cffi
-pyinstrument==4.7.3
+pyinstrument==4.5.3
     # via tlo (pyproject.toml)
 pyjwt[crypto]==2.8.0
     # via

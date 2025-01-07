@@ -17,7 +17,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
-from tlo.util import BitsetHandler
+from tlo.util import BitsetHandler, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -620,9 +620,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
     }
 
     def read_parameters(self, data_folder):
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
-                                                                          'Attendance.xlsx',
-                                            sheet_name='parameter_values')
+        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
+                                                                          'Attendance',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):

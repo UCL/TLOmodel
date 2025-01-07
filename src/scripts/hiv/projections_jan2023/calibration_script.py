@@ -37,7 +37,6 @@ from pathlib import Path
 
 import pandas as pd
 
-from scripts.data_file_processing.healthsystem.equipment.equipment_availability_estimation import resourcefilepath
 from tlo import Date, logging
 from tlo.methods import (
     demography,
