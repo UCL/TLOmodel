@@ -25,7 +25,6 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
     'rawfiles'
 ]
 
@@ -56,7 +55,6 @@ if not on_rtd:  # only set the theme if we're building docs locally
     html_theme = 'sphinx_rtd_theme'
 
 html_use_smartypants = True
-html_last_updated_fmt = '%b %d, %Y'
 html_split_index = False
 html_show_copyright = False
 html_sidebars = {
@@ -105,6 +103,9 @@ autodoc_default_options = {
     # List below what you don't want to see documented:
     'exclude-members': '__dict__, name, rng, sim'  # , read_parameters',
 }
+
+# Include both class level and __init__ docstring content in class documentation
+autoclass_content = 'both'
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',
