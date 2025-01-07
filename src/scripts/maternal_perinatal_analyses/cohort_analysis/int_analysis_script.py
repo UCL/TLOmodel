@@ -116,7 +116,7 @@ for i in interventions:
     int_analysis.append(f'{i}_max')
 
 info = get_scenario_info(results_folder)
-draws = info['number_of_draws']
+draws = [x for x in range(info['number_of_draws'])]
 
 # Access dataframes generated from pregnancy supervisor
 def get_ps_data_frames(key, results_folder):
