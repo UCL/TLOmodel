@@ -35,12 +35,12 @@ from tlo.methods import (
 import hashlib
 
 # Where outputs will go
-output_csv_file = Path("outputs/output9_data.csv")
+output_csv_file = Path("outputs/output7_data.csv")
 if output_csv_file.exists():
     output_csv_file.unlink()
 else:
     output_csv_file.touch()
-seed = 9
+seed = 7
 
 # Date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

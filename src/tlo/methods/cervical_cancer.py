@@ -1832,7 +1832,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # comment out this below when running tests
 
         # Specify the file path for the CSV file
-        out_csv = Path("./outputs/output9_data.csv")
+        out_csv = Path("./outputs/output7_data.csv")
 
 # comment out this code below only when running tests
 
