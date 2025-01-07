@@ -18,6 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.util import read_csv_files
 
 start_time = time.time()
 
@@ -86,8 +87,7 @@ model_date = model_date.apply(lambda x: x.year)
 
 # ------------------------------------- DATA  ------------------------------------- #
 # import vaccine coverage data
-workbook = pd.read_excel(os.path.join(resourcefilepath,
-                                      'ResourceFile_EPI_WHO_estimates.xlsx'), sheet_name=None)
+workbook = read_csv_files(Path(resourcefilepath)/'ResourceFile_EPI_WHO_estimates', files=None)
 
 coverage_data = workbook["WHO_estimates"]
 
