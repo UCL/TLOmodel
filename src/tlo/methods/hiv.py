@@ -1302,6 +1302,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         return dalys
 
+    def report_prevalence(self):
+        # This reports on the prevalence of HIV for all individuals
+
+        df = self.sim.population.props
+        total_prev = len(
+            df[df.hv_inf & df.is_alive]
+        ) / len(df[df.is_alive])
+        return {'HIV': total_prev}
     def mtct_during_breastfeeding(self, mother_id, child_id):
         """
         Compute risk of mother-to-child transmission and schedule HivInfectionDuringBreastFeedingEvent.
