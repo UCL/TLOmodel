@@ -8,46 +8,34 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from tlo.util import read_csv_files
+
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # ----------------------------------- CREATE PLOTS-----------------------------------
-
+# read from resourcefile_malaria folder
+rsf = read_csv_files(Path(resourcefilepath) / "malaria/ResourceFile_malaria", files=None)
 # import malaria data
 # MAP
-incMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
-    sheet_name="MAP_InfectionData2023",
-)
-txMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="txCov_MAPdata",
-)
+incMAP_data = rsf["MAP_InfectionData2023"]
+txMAP_data = rsf["txCov_MAPdata"]
 
 # WHO
-WHO_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_CaseData2023",
-)
+WHO_data = rsf["WHO_CaseData2023"]
 
 # MAP mortality
-MAP_mort = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="mortalityRate_MAPdata",
-)
+MAP_mort = rsf["mortalityRate_MAPdata"]
 
 # MAP commodities
-MAP_comm = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="MAP_CommoditiesData2023",
-)
+MAP_comm = rsf["MAP_CommoditiesData2023"]
 
 # WHO commodities
-WHO_comm = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_TestData2023",
-)
+WHO_comm = rsf["WHO_TestData2023"]
 
 # NMCP rdt data
-NMCP_comm = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="NMCP",
-)
+NMCP_comm = rsf["NMCP"]
 
 # ---------------------------------------------------------------------- #
 # %%: MODEL OUTPUTS
