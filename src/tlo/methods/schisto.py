@@ -213,7 +213,13 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
                                                                     fill_value=0.0)
+    def report_prevalence(self):
+        # This returns dataframe that reports on the prevalence of schisto for all individuals
+        df = self.sim.population.props
+        is_infected = (df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection'])).any()
+        total_prev = len(is_infected)/ len(df[df['is_alive']])
 
+        return {'Schisto': total_prev}
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
