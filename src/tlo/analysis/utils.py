@@ -22,7 +22,7 @@ import squarify
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
-from tlo.util import create_age_range_lookup, read_csv_files
+from tlo.util import create_age_range_lookup, read_csv_files, parse_csv_values_for_columns_with_mixed_datatypes
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1281,6 +1281,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     # Collect parameters that will be changed (collecting the first encountered non-NAN value)
     params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
                                       .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+    params_to_change = params_to_change.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     # Convert to dictionary
     params = defaultdict(lambda: defaultdict(dict))
