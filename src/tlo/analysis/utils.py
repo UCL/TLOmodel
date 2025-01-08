@@ -862,7 +862,6 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     '*': 'black',
 
     'FirstAttendance*': 'darkgrey',
-    'Inpatient*': 'silver',
 
     'Contraception*': 'darkseagreen',
     'AntenatalCare*': 'green',
@@ -933,6 +932,7 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Lower respiratory infections': 'darkorange',
     'Childhood Diarrhoea': 'tan',
+    'Childhood Undernutrition': 'tomato',
 
     'AIDS': 'deepskyblue',
     'Malaria': 'lightsteelblue',
