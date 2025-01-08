@@ -31,10 +31,8 @@ Job ID: calibration_script-2022-04-12T190518Z
 
 """
 
-import os
 import random
-
-import pandas as pd
+from pathlib import Path
 
 from tlo import Date, logging
 from tlo.methods import (
@@ -51,6 +49,7 @@ from tlo.methods import (
     tb,
 )
 from tlo.scenario import BaseScenario
+from tlo.util import read_csv_files
 
 number_of_draws = 1
 runs_per_draw = 5
@@ -68,9 +67,9 @@ class TestScenario(BaseScenario):
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
 
-        self.sampled_parameters = pd.read_excel(
-            os.path.join(self.resources, "../../../../resources/ResourceFile_HIV/parameters.csv"),
-            sheet_name="LHC_samples",
+        self.sampled_parameters = read_csv_files(
+            Path("./resources")/"ResourceFile_HIV",
+            files="LHC_samples",
         )
 
     def log_configuration(self):
