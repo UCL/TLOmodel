@@ -106,7 +106,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'duration of untreated moderate wasting (days)'),
         'duration_of_untreated_sev_wasting': Parameter(
             Types.REAL, 'duration of untreated severe wasting (days)'),
-        'progression_severe_wasting_by_agegp': Parameter(
+        'progression_severe_wasting_monthly_by_agegp': Parameter(
             Types.LIST, 'list with progression rates to severe wasting by age group'),
         'prob_complications_in_SAM': Parameter(
             Types.REAL, 'probability of medical complications in SAM '),
@@ -255,6 +255,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 odds_ratio_health_seeking_in_children=20.0,
             )
         )
+        # Adjust monthly severe wasting incidence to the duration of untreated moderate wasting
+        p = self.parameters
+        p['progression_severe_wasting_by_agegp'] = \
+            [s/30*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
 
     def initialise_population(self, population):
         """
