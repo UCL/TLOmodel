@@ -25,7 +25,8 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
-    'rawfiles'
+    'rawfiles',
+    'sphinxcontrib.youtube',
 ]
 
 if os.getenv('SPELLCHECK'):
