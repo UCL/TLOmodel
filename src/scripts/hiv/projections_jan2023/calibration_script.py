@@ -31,11 +31,8 @@ Job ID: calibration_script-2022-04-12T190518Z
 
 """
 
-import os
 import random
 from pathlib import Path
-
-import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods import (
