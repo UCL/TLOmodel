@@ -463,8 +463,10 @@ def summarize(
         only_central=only_mean,
         collapse_columns=collapse_columns,
     )
-    if output.columns.nlevels > 1:
-        output = output.rename(columns={'central': 'mean'}, level=1)  # rename 'central' to 'mean'
+    # rename 'central' to 'mean' if needed
+    if isinstance(output, pd.DataFrame):
+        output = output.rename(columns={'central': 'mean'},
+                               level=0 if output.columns.nlevels == 1 else 1)
     return output
 
 
