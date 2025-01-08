@@ -4,7 +4,7 @@ contraception
 .. toctree::
     :maxdepth: 1
 
-    ResourceFile_Contraception.xlsx
+    ResourceFile_Contraception/index.rst
     ResourceFile_ContraceptionAnalysisParams.csv
     ResourceFile_ContraceptionParams.csv
 

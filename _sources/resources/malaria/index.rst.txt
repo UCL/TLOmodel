@@ -4,7 +4,7 @@ malaria
 .. toctree::
     :maxdepth: 1
 
-    ResourceFile_malaria.xlsx
+    ResourceFile_malaria/index.rst
     ResourceFile_malaria_ClinInc.csv
     ResourceFile_malaria_ClinInc_expanded.csv
     ResourceFile_malaria_InfInc.csv

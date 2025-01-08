@@ -1,0 +1,19 @@
+Symptoms (.csv)
+===============
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/Symptoms.csv>`
+
+====  ==================  ======================  ============  =========================  =================
+  ..  Symptom             HSB\_mapped\_symptom      Prevalence  Reference                  Infection\_type
+====  ==================  ======================  ============  =========================  =================
+   0  anemia              other                         0.9     assumption                 both
+   1  fever               fever                         0.3     assumption                 both
+   2  haematuria          other                         0.625   van der Werf et al., 2003  haematobium
+   3  hydronephrosis      stomach\_ache                 0.083   van der Werf et al., 2003  haematobium
+   4  dysuria             stomach\_ache                 0.2857  van der Werf et al., 2003  haematobium
+   5  bladder\_pathology  stomach\_ache                 0.7857  van der Werf et al., 2003  haematobium
+   6  ascites             stomach\_ache                 0.0054  van der Werf et al., 2003  mansoni
+   7  diarrhoea           diarrhoea                     0.0144  van der Werf et al., 2003  mansoni
+   8  vomiting            vomit                         0.0172  van der Werf et al., 2003  mansoni
+   9  hepatomegaly        stomach\_ache                 0.1574  van der Werf et al., 2003  mansoni
+====  ==================  ======================  ============  =========================  =================

@@ -1,0 +1,21 @@
+severe symptoms (.csv)
+======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/malaria/ResourceFile_malaria/severe_symptoms.csv>`
+
+====  =================  ============  =============  =============
+  ..  symptom            age\_group      prop\_lower    prop\_upper
+====  =================  ============  =============  =============
+   0  jaundice           0\_5                   0.1            0.5
+   1  acidosis           0\_5                   0.4            0.45
+   2  coma\_convulsions  0\_5                   0.3            0.4
+   3  renal\_failure     0\_5                   0.05           0.15
+   4  severe\_anaemia    0\_5                   0.4            0.5
+   5  shock              0\_5                   0.05           0.15
+   6  jaundice           5\_60                  0.1            0.6
+   7  acidosis           5\_60                  0.45           0.6
+   8  coma\_convulsions  5\_60                  0.38           0.45
+   9  renal\_failure     5\_60                  0.1            0.5
+  10  severe\_anaemia    5\_60                  0.1            0.45
+  11  shock              5\_60                  0.1            0.2
+====  =================  ============  =============  =============

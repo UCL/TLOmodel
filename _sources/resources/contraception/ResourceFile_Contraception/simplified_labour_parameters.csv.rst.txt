@@ -1,0 +1,10 @@
+simplified labour parameters (.csv)
+===================================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/contraception/ResourceFile_Contraception/simplified_labour_parameters.csv>`
+
+====  =================  =======  ==============================================
+  ..  parameter\_name      value  Notes
+====  =================  =======  ==============================================
+   0  prob\_live\_birth     0.73  For use in SimplifiedPregnancyAndLabour Module
+====  =================  =======  ==============================================

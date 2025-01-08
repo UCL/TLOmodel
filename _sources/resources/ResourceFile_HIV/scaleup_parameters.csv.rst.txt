@@ -1,0 +1,19 @@
+scaleup parameters (.csv)
+=========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_HIV/scaleup_parameters.csv>`
+
+====  ============================================================  ===============  ============  ============
+  ..  parameter                                                       target\_value    min\_value    max\_value
+====  ============================================================  ===============  ============  ============
+   0  reduction\_in\_hiv\_beta                                                 0.9              1             0
+   1  prob\_prep\_for\_fsw\_after\_hiv\_test                                   0.5              0             1
+   2  prob\_prep\_for\_agyw                                                    0.1              0             1
+   3  probability\_of\_being\_retained\_on\_prep\_every\_3\_months             0.75             0             1
+   4  probability\_of\_being\_retained\_on\_art\_every\_3\_months              1                0             1
+   5  prob\_circ\_after\_hiv\_test                                             0.25             0             1
+   6  annual\_testing\_rate\_adults                                            0.4              0             1
+   7  prob\_hiv\_test\_at\_anc\_or\_delivery                                   0.95             0             1
+   8  prob\_hiv\_test\_for\_newborn\_infant                                    0.95             0             1
+   9  virally\_suppressed\_on\_art                                            95                0           100
+====  ============================================================  ===============  ============  ============

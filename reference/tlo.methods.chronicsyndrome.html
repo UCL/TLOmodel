@@ -6,8 +6,8 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.chronicsyndrome module &mdash; TLOmodel 0.1.dev2485+gd6fcffd.d20241213 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+  <title>tlo.methods.chronicsyndrome module &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=01c4fe84"></script>
+      <script src="../_static/documentation_options.js?v=1cf5572f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -55,6 +55,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../videos.html">HEPU Videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
@@ -199,10 +200,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x15e3b7a50&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x15e3b6010&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x15537e390&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘ChronicSyndrome’: &lt;tlo.methods.causes.Cause object at 0x3156fa390&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘SymptomManager’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class ChronicSyndrome):</strong></p>
@@ -538,44 +539,55 @@ to allow the rescheduling. This is called each time that the event is tried to b
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_ChronicSyndrome_PopulationWideBehaviourChange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange" title="Link to this definition"></a></dt>
-<dd><p>This is a Population-Wide Health System Interaction Event - will change the variables to do with risk for
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome_PopulationWideBehaviourChange">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ChronicSyndrome_PopulationWideBehaviourChange</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome_PopulationWideBehaviourChange" title="Link to this definition"></a></dt>
+<dd><p>This is a Population-Wide Event - will change the variables to do with risk for
 ChronicSyndrome</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
-<p>Bases: <a class="reference internal" href="tlo.methods.hsi_event.html#tlo.methods.hsi_event.HSI_Event" title="tlo.methods.hsi_event.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.hsi_event.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p><strong>Functions (defined or overridden in class HSI_ChronicSyndrome_PopulationWideBehaviourChange):</strong></p>
+<p><strong>Functions (defined or overridden in class ChronicSyndrome_PopulationWideBehaviourChange):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.__init__" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome_PopulationWideBehaviourChange.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome_PopulationWideBehaviourChange.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
 All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_PopulationWideBehaviourChange.apply" title="Link to this definition"></a></dt>
-<dd><p>Apply this event to the population.</p>
+<dt class="sig sig-object py" id="tlo.methods.chronicsyndrome.ChronicSyndrome_PopulationWideBehaviourChange.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.chronicsyndrome.ChronicSyndrome_PopulationWideBehaviourChange.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

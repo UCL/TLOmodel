@@ -1,0 +1,71 @@
+parameters (.csv)
+=================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/parameters.csv>`
+
+====  =========================================  =======  ==================  =======  ==================
+  ..  parameter\_name                            value    lower               upper    notes
+====  =========================================  =======  ==================  =======  ==================
+   0  scaling\_factor\_WHO                       1.60303
+   1  prop\_mdr2010                              0.0186
+   2  monthly\_prob\_relapse\_tx\_complete       0.0027   0.0014              0.00405
+   3  monthly\_prob\_relapse\_tx\_incomplete     0.0116   0.0058              0.0174
+   4  monthly\_prob\_relapse\_2yrs               0.0001   5e-05               0.0015
+   5  rr\_relapse\_hiv                           4.7
+   6  rr\_relapse\_diabetes                      1.86                                  Huangfu et al 2019
+   7  duration\_active\_disease\_years           3
+   8  prop\_smear\_positive                      0.62     0.42                0.8
+   9  prop\_smear\_positive\_hiv                 0.35     0.19                0.54
+  10  death\_rate\_child0\_4\_treated            0.05
+  11  death\_rate\_child5\_14\_treated           0.06
+  12  death\_rate\_adult\_treated                0.107    changed from 0.086
+  13  death\_rate\_smear\_pos\_untreated         0.7
+  14  death\_rate\_smear\_neg\_untreated         0.2
+  15  rr\_death\_diabetes                        1.51                                  Huangfu et al 2019
+  16  rr\_tb\_child                              0.1      assumed
+  17  rr\_tb\_bcg                                0.42
+  18  rr\_tb\_hiv                                5        assumed                      20.6getahun2010
+  19  rr\_tb\_aids                               26       assumed                      26williams\_pnas
+  20  rr\_tb\_art\_adult                         0.35
+  21  rr\_tb\_art\_child                         0.3
+  22  rr\_tb\_obese                              0.4
+  23  rr\_tb\_diabetes                           3
+  24  rr\_tb\_alcohol                            2.9
+  25  rr\_tb\_smoking                            1.3
+  26  rr\_ipt\_adult                             0.4
+  27  rr\_ipt\_child                             0.55
+  28  rr\_ipt\_adult\_hiv                        0.68
+  29  rr\_ipt\_child\_hiv                        0.31
+  30  rr\_ipt\_art\_child                        0.76
+  31  rr\_ipt\_art\_adult                        0.63
+  32  sens\_xpert\_smear\_negative               0.68
+  33  sens\_xpert\_smear\_positive               0.98
+  34  spec\_xpert\_smear\_negative               0.99
+  35  spec\_xpert\_smear\_positive               0.99
+  36  sens\_sputum\_smear\_positive              1
+  37  spec\_sputum\_smear\_positive              1
+  38  sens\_clinical                             0.209    0.12                0.33
+  39  spec\_clinical                             0.953    0.92                0.97
+  40  sens\_xray\_smear\_negative                0.8
+  41  sens\_xray\_smear\_positive                0.91
+  42  spec\_xray\_smear\_negative                0.67
+  43  spec\_xray\_smear\_positive                0.67
+  44  prob\_tx\_success\_ds                      0.837
+  45  prob\_tx\_success\_mdr                     0.597
+  46  prob\_tx\_success\_0\_4                    0.94
+  47  prob\_tx\_success\_5\_14                   0.92
+  48  rate\_testing\_general\_pop                0.025
+  49  ds\_treatment\_length                      6
+  50  ds\_retreatment\_length                    8
+  51  mdr\_treatment\_length                     24
+  52  prob\_retained\_ipt\_6\_months             0.9
+  53  age\_eligibility\_for\_ipt                 5
+  54  ipt\_start\_date                           2014
+  55  first\_line\_test                          sputum
+  56  second\_line\_test                         xpert
+  57  tb\_healthseekingbehaviour\_cap            5
+  58  data\_end                                  2022
+  59  length\_of\_inpatient\_stay\_if\_terminal  [5,10]
+  60  type\_of\_scaleup                          none
+  61  scaleup\_start\_year                       2025
+====  =========================================  =======  ==================  =======  ==================

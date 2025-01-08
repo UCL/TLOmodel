@@ -6,8 +6,8 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2485+gd6fcffd.d20241213 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+  <title>tlo.methods.hsi_event module &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=01c4fe84"></script>
+      <script src="../_static/documentation_options.js?v=1cf5572f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -55,6 +55,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../videos.html">HEPU Videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
@@ -93,7 +94,7 @@
 <dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event" title="Link to this definition"></a></dt>
 <dd><p>Base HSI event class, from which all others inherit.</p>
-<p>Concrete subclasses should also inherit from one of the EventMixin classes
+<p>Concrete subclasses should also inherit from <cite>IndividualScopeEventMixin</cite>
 defined in <cite>src/tlo/events.py</cite>, and implement at least an <cite>apply</cite> and
 <cite>did_not_run</cite> method.</p>
 <p>Create a new event.</p>
@@ -109,12 +110,12 @@ constructor, but may also take further keyword arguments.</p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {‘module’: ‘Module’, ‘target’: ‘int’, ‘TREATMENT_ID’: ‘str’, ‘ACCEPTED_FACILITY_LEVEL’: ‘str’, ‘BEDDAYS_FOOTPRINT’: ‘Dict[str, Union[float, int]]’, ‘_received_info_about_bed_days’: ‘Dict[str, Union[float, int]]’, ‘expected_time_requests’: ‘Counter’, ‘facility_info’: ‘FacilityInfo’}</p>
 <p>_received_info_about_bed_days : None</p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x15dfd02c0&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x31529fec0&gt;</p>
 <p>expected_time_requests : {}</p>
 <p>facility_info : None</p>
-<p>healthcare_system : &lt;property object at 0x15dfd0360&gt;</p>
-<p>is_all_declared_equipment_available : &lt;property object at 0x15dfd03b0&gt;</p>
-<p>sim : &lt;property object at 0x15dfd0310&gt;</p>
+<p>healthcare_system : &lt;property object at 0x31529ff60&gt;</p>
+<p>is_all_declared_equipment_available : &lt;property object at 0x31529ffb0&gt;</p>
+<p>sim : &lt;property object at 0x31529ff10&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hsi_event.HSI_Event.__init__">
@@ -169,7 +170,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 <span class="sig-name descname"><span class="pre">_run_after_hsi_event</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#tlo.methods.hsi_event.HSI_Event._run_after_hsi_event" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>Do things following the event’s <cite>apply</cite> and <cite>post_apply_hook</cite> functions running.</dt><dd><ul class="simple">
-<li><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p></li>
+<li><p>Impose the bed-days footprint</p></li>
 <li><p>Record the equipment that has been added before and during the course of the HSI Event.</p></li>
 </ul>
 </dd>

@@ -1,0 +1,14 @@
+calibrated transmission rates (.csv)
+====================================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/calibrated_transmission_rates.csv>`
+
+====  ======  ========  =======  ==========
+  ..    draw       hiv       tb    deviance
+====  ======  ========  =======  ==========
+   0       1  0.125176  16.7101    0.814946
+   1      12  0.121988  18.0221    0.83383
+   2       0  0.10922   15.8241    0.862322
+   3       9  0.115698  19.2184    0.92932
+   4      16  0.13272   15.4037    0.96256
+====  ======  ========  =======  ==========

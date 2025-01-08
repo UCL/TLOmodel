@@ -1,0 +1,31 @@
+details rates (.csv)
+====================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/details_rates.csv>`
+
+====  =====================================  ========  ========  ========  ========  =====================  ======================  ============  ==================  =====================================================
+  ..  parameter                                value1  value2    value3    value4    monthly\_rate          monthly\_probability    Unnamed: 7    source              Unnamed: 9
+====  =====================================  ========  ========  ========  ========  =====================  ======================  ============  ==================  =====================================================
+   0  prop\_fast\_progressor                   0.14                                                                                               vynnycky
+   1  transmission\_rate                       4.9                                                                                                juan
+   2  annual\_progression\_to\_active\_rate    0.05                                  0.004166666666666667   0.004157998154890041                  horsburgh
+   3  rr\_tb\_with\_hiv\_stages                3.44    6.76      13.28     26.06                                                                  williams\_pnas2010
+   4  rr\_tb\_art                              0.35                                                                                               suthar\_juan
+   5  rr\_tb\_ipt                              0.63                                                                                               rangaka\_juan
+   6  rr\_tb\_malnourished                     2.1                                                                                                lonroth2010\_dcp3
+   7  rr\_tb\_diabetes1                        3                                                                                                  joen2008\_dcp3
+   8  rr\_tb\_alcohol                          2.9                                                                                                lonroth2008\_dcp3
+   9  rr\_tb\_smoking                          2.6                                                                                                lin2007\_dcp3
+  10  rr\_tb\_pollution                        1.5                                                                                                lin2007\_dcp3
+  11  rel\_infectiousness\_hiv                 0.68                                                                                               juan
+  12  annual\_rate\_self\_cure\_old\_value     0.2                                   0.016666666666666666   0.01652854617838251                   dye\_1998\_lancet
+  13  annual\_rate\_self\_cure                 0.33                                                                                               Tiemersma           https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3070694/
+  14  tb\_mortality\_rate                      0.15                                  0.012499999999999999   0.012422199506118559                  juan
+  15  tb\_mortality\_hiv\_rate                 0.84                                  0.06999999999999999    0.06760618009405173                   juan
+  16  prop\_mdr2010                            0.0186                                                                                             abouyannis
+  17  prop\_mdr\_new                           0.075                                                                                              who2017reports
+  18  prop\_mdr\_retreated                     0.064                                                                                              who2017reports
+  19  rate\_relapse\_tx\_complete              0.032                                 0.0026666666666666666  0.002663114269499056                  juan\_tableparams
+  20  rate\_relapse\_tx\_incomplete            0.14                                  0.011666666666666667   0.011598875001476161                  juan\_tableparams
+  21  rate\_relapse\_2yrs                      0.0015                                0.000125               0.00012499218782546784                juan\_tableparams
+====  =====================================  ========  ========  ========  ========  =====================  ======================  ============  ==================  =====================================================

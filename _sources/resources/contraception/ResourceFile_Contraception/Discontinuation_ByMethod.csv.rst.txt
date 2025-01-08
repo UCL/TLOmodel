@@ -1,0 +1,10 @@
+Discontinuation ByMethod (.csv)
+===============================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/contraception/ResourceFile_Contraception/Discontinuation_ByMethod.csv>`
+
+====  =========  =========  ============  ==========  ==============  =======================  ===============  ======================  ============  ====================
+  ..       pill        IUD    injections     implant    male\_condom    female\_sterilization    other\_modern    periodic\_abstinence    withdrawal    other\_traditional
+====  =========  =========  ============  ==========  ==============  =======================  ===============  ======================  ============  ====================
+   0  0.0496232  0.0111009     0.0333511  0.00627062       0.0503725                        0        0.0332874               0.0422692     0.0423377             0.0497931
+====  =========  =========  ============  ==========  ==============  =======================  ===============  ======================  ============  ====================

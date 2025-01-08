@@ -189,6 +189,9 @@ tlo.methods.hiv module
         * - prob_circ_after_hiv_test
           - REAL
           - Probability that a male will be circumcised, if HIV-negative, following testing
+        * - increase_in_prob_circ_2019
+          - REAL
+          - increase in probability that a male will be circumcised, if HIV-negative, following testingfrom 2019 onwards
         * - prob_circ_for_child_before_2020
           - REAL
           - Probability that a male aging <15 yrs will be circumcised before year 2020
@@ -240,6 +243,9 @@ tlo.methods.hiv module
         * - scaleup_parameters
           - DATA_FRAME
           - the parameters and values changed in scenario analysis
+        * - interval_for_viral_load_measurement_months
+          - REAL
+          -  the interval for viral load monitoring in months
 
 
      **PROPERTIES:**
@@ -291,13 +297,13 @@ tlo.methods.hiv module
 
      ADDITIONAL_DEPENDENCIES : {'Tb', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x15e5af650>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x15e5ad6d0>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x3160cc610>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x3160ce690>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x15e5af8d0>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x3160cfa90>}
 
-     INIT_DEPENDENCIES : {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'Lifestyle', 'HealthSystem'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -640,7 +646,7 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x15e5d2ac0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x31605d0d0>
 
      __annotations__ : {}
 

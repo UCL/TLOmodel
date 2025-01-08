@@ -6,6 +6,16 @@ Resource  files used in ``TLOmodel`` simulations
 .. toctree::
     :maxdepth: 1
 
+    ResourceFile_AntenatalCare/index.rst
+    ResourceFile_EPI_WHO_estimates/index.rst
+    ResourceFile_HIV/index.rst
+    ResourceFile_LabourSkilledBirthAttendance/index.rst
+    ResourceFile_Measles/index.rst
+    ResourceFile_NewbornOutcomes/index.rst
+    ResourceFile_PostnatalSupervisor/index.rst
+    ResourceFile_PregnancySupervisor/index.rst
+    ResourceFile_Schisto/index.rst
+    ResourceFile_TB/index.rst
     cmd/index.rst
     contraception/index.rst
     costing/index.rst
@@ -17,7 +27,6 @@ Resource  files used in ``TLOmodel`` simulations
     mapping/index.rst
     ResourceFile_AbortionAndMiscarriage.xlsx
     ResourceFile_Alri.xlsx
-    ResourceFile_AntenatalCare.xlsx
     ResourceFile_Bladder_Cancer.xlsx
     ResourceFile_Breast_Cancer.xlsx
     ResourceFile_Childhood_Pneumonia.xlsx
@@ -25,25 +34,16 @@ Resource  files used in ``TLOmodel`` simulations
     ResourceFile_DALY_Weights.csv
     ResourceFile_Depression.xlsx
     ResourceFile_Diarrhoea.xlsx
-    ResourceFile_EPI_WHO_estimates.xlsx
     ResourceFile_EPI_vaccine_coverage.csv
     ResourceFile_GenericSymptoms_and_HealthSeeking.csv
-    ResourceFile_HIV.xlsx
     ResourceFile_HealthSeekingBehaviour.csv
     ResourceFile_HypertensiveDisordersOfPregnancy.xlsx
     ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx
-    ResourceFile_LabourSkilledBirthAttendance.xlsx
     ResourceFile_Lifestyle_Enhanced.xlsx
-    ResourceFile_Measles.xlsx
-    ResourceFile_NewbornOutcomes.xlsx
     ResourceFile_Oesophageal_Cancer.xlsx
     ResourceFile_Other_Adult_Cancers.xlsx
-    ResourceFile_PostnatalSupervisor.xlsx
-    ResourceFile_PregnancySupervisor.xlsx
     ResourceFile_Prostate_Cancer.xlsx
     ResourceFile_RTI.xlsx
-    ResourceFile_Schisto.xlsx
     ResourceFile_Stunting.xlsx
     ResourceFile_SymptomManager.csv
-    ResourceFile_TB.xlsx
 

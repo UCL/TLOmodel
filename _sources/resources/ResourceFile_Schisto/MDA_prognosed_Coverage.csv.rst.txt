@@ -1,0 +1,41 @@
+MDA prognosed Coverage (.csv)
+=============================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/MDA_prognosed_Coverage.csv>`
+
+====  =============  ========  ===========  ===============  ==============  =================
+  ..  District       Region      Frequency    Coverage PSAC    Coverage SAC    Coverage Adults
+====  =============  ========  ===========  ===============  ==============  =================
+   0  Blantyre       Southern           12              0.5             0.8                0.5
+   1  Chiradzulu     Southern           12              0.5             0.8                0.5
+   2  Mulanje        Southern           12              0.5             0.8                0.5
+   3  Nkhotakota     Central            12              0.5             0.8                0.5
+   4  Nsanje         Southern           12              0.5             0.8                0.5
+   5  Phalombe       Southern           12              0.5             0.8                0.5
+   6  Balaka         Southern            0              0               0.8                0.5
+   7  Blantyre City  Southern            0              0               0.8                0.5
+   8  Chikwawa       Southern            0              0               0.8                0.5
+   9  Chitipa        Northern            0              0               0.8                0.5
+  10  Dedza          Central             0              0               0.8                0.5
+  11  Dowa           Central             0              0               0                  0
+  12  Karonga        Northern            0              0               0.8                0.5
+  13  Kasungu        Central             0              0               0.8                0.5
+  14  Likoma         Northern            0              0               0.8                0.5
+  15  Lilongwe       Central             0              0               0.8                0.5
+  16  Lilongwe City  Central             0              0               0.8                0.5
+  17  Machinga       Southern            0              0               0.8                0.5
+  18  Mangochi       Southern            0              0               0.8                0.5
+  19  Mchinji        Central             0              0               0.8                0.5
+  20  Mwanza         Southern            0              0               0.8                0.5
+  21  Mzimba         Northern            0              0               0.8                0.5
+  22  Mzuzu City     Northern            0              0               0.8                0.5
+  23  Neno           Southern            0              0               0.8                0.5
+  24  Nkhata Bay     Northern            0              0               0.8                0.5
+  25  Ntcheu         Central             0              0               0.8                0.5
+  26  Ntchisi        Central             0              0               0.8                0.5
+  27  Rumphi         Northern            0              0               0                  0
+  28  Salima         Central             0              0               0.8                0.5
+  29  Thyolo         Southern            0              0               0.8                0.5
+  30  Zomba          Southern            0              0               0.8                0.5
+  31  Zomba City     Southern            0              0               0.8                0.5
+====  =============  ========  ===========  ===============  ==============  =================

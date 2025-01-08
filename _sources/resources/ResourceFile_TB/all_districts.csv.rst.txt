@@ -1,0 +1,41 @@
+all districts (.csv)
+====================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/all_districts.csv>`
+
+====  ================
+  ..  district\_name
+====  ================
+   0  Balaka
+   1  Blantyre
+   2  Blantyre City
+   3  Chikwawa
+   4  Chiradzulu
+   5  Chitipa
+   6  Dedza
+   7  Dowa
+   8  Karonga
+   9  Kasungu
+  10  Likoma
+  11  Lilongwe
+  12  Lilongwe City
+  13  Machinga
+  14  Mangochi
+  15  Mchinji
+  16  Mulanje
+  17  Mwanza
+  18  Mzimba
+  19  Mzuzu City
+  20  Neno
+  21  Nkhata Bay
+  22  Nkhotakota
+  23  Nsanje
+  24  Ntcheu
+  25  Ntchisi
+  26  Phalombe
+  27  Rumphi
+  28  Salima
+  29  Thyolo
+  30  Zomba
+  31  Zomba City
+====  ================

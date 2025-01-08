@@ -1,0 +1,297 @@
+MAP IRSrates (.csv)
+===================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/malaria/ResourceFile_malaria/MAP_IRSrates.csv>`
+
+====  ===============  =============  ======  ============
+  ..  Region           District         Year    irs\_rates
+====  ===============  =============  ======  ============
+   0  Southern Region  Balaka           2010      0
+   1  Southern Region  Balaka           2011      0
+   2  Southern Region  Balaka           2012      0
+   3  Southern Region  Balaka           2013      0
+   4  Southern Region  Balaka           2014      0
+   5  Southern Region  Balaka           2015      0
+   6  Southern Region  Balaka           2016      0
+   7  Southern Region  Balaka           2017      0
+   8  Southern Region  Balaka           2018      0
+   9  Southern Region  Blantyre         2010      0
+  10  Southern Region  Blantyre         2011      0
+  11  Southern Region  Blantyre         2012      0
+  12  Southern Region  Blantyre         2013      0
+  13  Southern Region  Blantyre         2014      0
+  14  Southern Region  Blantyre         2015      0
+  15  Southern Region  Blantyre         2016      0
+  16  Southern Region  Blantyre         2017      0
+  17  Southern Region  Blantyre         2018      0
+  18  Southern Region  Blantyre City    2010      0
+  19  Southern Region  Blantyre City    2011      0
+  20  Southern Region  Blantyre City    2012      0
+  21  Southern Region  Blantyre City    2013      0
+  22  Southern Region  Blantyre City    2014      0
+  23  Southern Region  Blantyre City    2015      0
+  24  Southern Region  Blantyre City    2016      0
+  25  Southern Region  Blantyre City    2017      0
+  26  Southern Region  Blantyre City    2018      0
+  27  Southern Region  Chikwawa         2010      0.458223
+  28  Southern Region  Chikwawa         2011      0
+  29  Southern Region  Chikwawa         2012      0.403927
+  30  Southern Region  Chikwawa         2013      0
+  31  Southern Region  Chikwawa         2014      0
+  32  Southern Region  Chikwawa         2015      0
+  33  Southern Region  Chikwawa         2016      0
+  34  Southern Region  Chikwawa         2017      0
+  35  Southern Region  Chikwawa         2018      0
+  36  Southern Region  Chiradzulu       2010      0
+  37  Southern Region  Chiradzulu       2011      0
+  38  Southern Region  Chiradzulu       2012      0
+  39  Southern Region  Chiradzulu       2013      0
+  40  Southern Region  Chiradzulu       2014      0
+  41  Southern Region  Chiradzulu       2015      0
+  42  Southern Region  Chiradzulu       2016      0
+  43  Southern Region  Chiradzulu       2017      0
+  44  Southern Region  Chiradzulu       2018      0
+  45  Northern Region  Chitipa          2010      0
+  46  Northern Region  Chitipa          2011      0
+  47  Northern Region  Chitipa          2012      0
+  48  Northern Region  Chitipa          2013      0
+  49  Northern Region  Chitipa          2014      0
+  50  Northern Region  Chitipa          2015      0
+  51  Northern Region  Chitipa          2016      0
+  52  Northern Region  Chitipa          2017      0
+  53  Northern Region  Chitipa          2018      0
+  54  Central Region   Dedza            2010      0
+  55  Central Region   Dedza            2011      0
+  56  Central Region   Dedza            2012      0
+  57  Central Region   Dedza            2013      0
+  58  Central Region   Dedza            2014      0
+  59  Central Region   Dedza            2015      0
+  60  Central Region   Dedza            2016      0
+  61  Central Region   Dedza            2017      0
+  62  Central Region   Dedza            2018      0
+  63  Central Region   Dowa             2010      0
+  64  Central Region   Dowa             2011      0
+  65  Central Region   Dowa             2012      0
+  66  Central Region   Dowa             2013      0
+  67  Central Region   Dowa             2014      0
+  68  Central Region   Dowa             2015      0
+  69  Central Region   Dowa             2016      0
+  70  Central Region   Dowa             2017      0
+  71  Central Region   Dowa             2018      0
+  72  Northern Region  Karonga          2010      0.835191
+  73  Northern Region  Karonga          2011      0
+  74  Northern Region  Karonga          2012      0.733117
+  75  Northern Region  Karonga          2013      0
+  76  Northern Region  Karonga          2014      0
+  77  Northern Region  Karonga          2015      0.697537
+  78  Northern Region  Karonga          2016      0
+  79  Northern Region  Karonga          2017      0
+  80  Northern Region  Karonga          2018      0
+  81  Central Region   Kasungu          2010      0
+  82  Central Region   Kasungu          2011      0
+  83  Central Region   Kasungu          2012      0
+  84  Central Region   Kasungu          2013      0
+  85  Central Region   Kasungu          2014      0
+  86  Central Region   Kasungu          2015      0
+  87  Central Region   Kasungu          2016      0
+  88  Central Region   Kasungu          2017      0
+  89  Central Region   Kasungu          2018      0
+  90  Northern Region  Likoma           2010      0
+  91  Northern Region  Likoma           2011      0
+  92  Northern Region  Likoma           2012      0
+  93  Northern Region  Likoma           2013      0
+  94  Northern Region  Likoma           2014      0
+  95  Northern Region  Likoma           2015      0
+  96  Northern Region  Likoma           2016      0
+  97  Northern Region  Likoma           2017      0
+  98  Northern Region  Likoma           2018      0
+  99  Central Region   Lilongwe         2010      0
+ 100  Central Region   Lilongwe         2011      0
+ 101  Central Region   Lilongwe         2012      0
+ 102  Central Region   Lilongwe         2013      0
+ 103  Central Region   Lilongwe         2014      0
+ 104  Central Region   Lilongwe         2015      0
+ 105  Central Region   Lilongwe         2016      0
+ 106  Central Region   Lilongwe         2017      0
+ 107  Central Region   Lilongwe         2018      0
+ 108  Central Region   Lilongwe City    2010      0
+ 109  Central Region   Lilongwe City    2011      0
+ 110  Central Region   Lilongwe City    2012      0
+ 111  Central Region   Lilongwe City    2013      0
+ 112  Central Region   Lilongwe City    2014      0
+ 113  Central Region   Lilongwe City    2015      0
+ 114  Central Region   Lilongwe City    2016      0
+ 115  Central Region   Lilongwe City    2017      0
+ 116  Central Region   Lilongwe City    2018      0
+ 117  Southern Region  Machinga         2010      0
+ 118  Southern Region  Machinga         2011      0
+ 119  Southern Region  Machinga         2012      0
+ 120  Southern Region  Machinga         2013      0
+ 121  Southern Region  Machinga         2014      0
+ 122  Southern Region  Machinga         2015      0
+ 123  Southern Region  Machinga         2016      0
+ 124  Southern Region  Machinga         2017      0
+ 125  Southern Region  Machinga         2018      0
+ 126  Southern Region  Mangochi         2010      0.264321
+ 127  Southern Region  Mangochi         2011      0
+ 128  Southern Region  Mangochi         2012      0.236382
+ 129  Southern Region  Mangochi         2013      0
+ 130  Southern Region  Mangochi         2014      0
+ 131  Southern Region  Mangochi         2015      0
+ 132  Southern Region  Mangochi         2016      0
+ 133  Southern Region  Mangochi         2017      0
+ 134  Southern Region  Mangochi         2018      0
+ 135  Central Region   Mchinji          2010      0
+ 136  Central Region   Mchinji          2011      0
+ 137  Central Region   Mchinji          2012      0
+ 138  Central Region   Mchinji          2013      0
+ 139  Central Region   Mchinji          2014      0
+ 140  Central Region   Mchinji          2015      0.374022
+ 141  Central Region   Mchinji          2016      0
+ 142  Central Region   Mchinji          2017      0
+ 143  Central Region   Mchinji          2018      0
+ 144  Southern Region  Mulanje          2010      0
+ 145  Southern Region  Mulanje          2011      0
+ 146  Southern Region  Mulanje          2012      0
+ 147  Southern Region  Mulanje          2013      0
+ 148  Southern Region  Mulanje          2014      0
+ 149  Southern Region  Mulanje          2015      0
+ 150  Southern Region  Mulanje          2016      0
+ 151  Southern Region  Mulanje          2017      0
+ 152  Southern Region  Mulanje          2018      0
+ 153  Southern Region  Mwanza           2010      0
+ 154  Southern Region  Mwanza           2011      0
+ 155  Southern Region  Mwanza           2012      0
+ 156  Southern Region  Mwanza           2013      0
+ 157  Southern Region  Mwanza           2014      0
+ 158  Southern Region  Mwanza           2015      0
+ 159  Southern Region  Mwanza           2016      0
+ 160  Southern Region  Mwanza           2017      0
+ 161  Southern Region  Mwanza           2018      0
+ 162  Northern Region  Mzimba           2010      0
+ 163  Northern Region  Mzimba           2011      0
+ 164  Northern Region  Mzimba           2012      0
+ 165  Northern Region  Mzimba           2013      0
+ 166  Northern Region  Mzimba           2014      0
+ 167  Northern Region  Mzimba           2015      0
+ 168  Northern Region  Mzimba           2016      0
+ 169  Northern Region  Mzimba           2017      0
+ 170  Northern Region  Mzimba           2018      0
+ 171  Northern Region  Mzuzu City       2010      0
+ 172  Northern Region  Mzuzu City       2011      0
+ 173  Northern Region  Mzuzu City       2012      0
+ 174  Northern Region  Mzuzu City       2013      0
+ 175  Northern Region  Mzuzu City       2014      0
+ 176  Northern Region  Mzuzu City       2015      0
+ 177  Northern Region  Mzuzu City       2016      0
+ 178  Northern Region  Mzuzu City       2017      0
+ 179  Northern Region  Mzuzu City       2018      0
+ 180  Southern Region  Neno             2010      0
+ 181  Southern Region  Neno             2011      0
+ 182  Southern Region  Neno             2012      0
+ 183  Southern Region  Neno             2013      0
+ 184  Southern Region  Neno             2014      0
+ 185  Southern Region  Neno             2015      0
+ 186  Southern Region  Neno             2016      0
+ 187  Southern Region  Neno             2017      0
+ 188  Southern Region  Neno             2018      0
+ 189  Northern Region  Nkhata Bay       2010      1
+ 190  Northern Region  Nkhata Bay       2011      0
+ 191  Northern Region  Nkhata Bay       2012      0.883861
+ 192  Northern Region  Nkhata Bay       2013      0
+ 193  Northern Region  Nkhata Bay       2014      0
+ 194  Northern Region  Nkhata Bay       2015      0
+ 195  Northern Region  Nkhata Bay       2016      0
+ 196  Northern Region  Nkhata Bay       2017      0
+ 197  Northern Region  Nkhata Bay       2018      0
+ 198  Central Region   Nkhotakota       2010      0.376786
+ 199  Central Region   Nkhotakota       2011      0.575915
+ 200  Central Region   Nkhotakota       2012      0.58515
+ 201  Central Region   Nkhotakota       2013      0
+ 202  Central Region   Nkhotakota       2014      0
+ 203  Central Region   Nkhotakota       2015      0
+ 204  Central Region   Nkhotakota       2016      0
+ 205  Central Region   Nkhotakota       2017      0
+ 206  Central Region   Nkhotakota       2018      0
+ 207  Southern Region  Nsanje           2010      0.84936
+ 208  Southern Region  Nsanje           2011      0
+ 209  Southern Region  Nsanje           2012      0.748723
+ 210  Southern Region  Nsanje           2013      0
+ 211  Southern Region  Nsanje           2014      0
+ 212  Southern Region  Nsanje           2015      0
+ 213  Southern Region  Nsanje           2016      0
+ 214  Southern Region  Nsanje           2017      0
+ 215  Southern Region  Nsanje           2018      0
+ 216  Central Region   Ntcheu           2010      0
+ 217  Central Region   Ntcheu           2011      0
+ 218  Central Region   Ntcheu           2012      0
+ 219  Central Region   Ntcheu           2013      0
+ 220  Central Region   Ntcheu           2014      0
+ 221  Central Region   Ntcheu           2015      0
+ 222  Central Region   Ntcheu           2016      0
+ 223  Central Region   Ntcheu           2017      0
+ 224  Central Region   Ntcheu           2018      0
+ 225  Central Region   Ntchisi          2010      0
+ 226  Central Region   Ntchisi          2011      0
+ 227  Central Region   Ntchisi          2012      0
+ 228  Central Region   Ntchisi          2013      0
+ 229  Central Region   Ntchisi          2014      0
+ 230  Central Region   Ntchisi          2015      0
+ 231  Central Region   Ntchisi          2016      0
+ 232  Central Region   Ntchisi          2017      0
+ 233  Central Region   Ntchisi          2018      0
+ 234  Southern Region  Phalombe         2010      0
+ 235  Southern Region  Phalombe         2011      0
+ 236  Southern Region  Phalombe         2012      0
+ 237  Southern Region  Phalombe         2013      0
+ 238  Southern Region  Phalombe         2014      0
+ 239  Southern Region  Phalombe         2015      0
+ 240  Southern Region  Phalombe         2016      0
+ 241  Southern Region  Phalombe         2017      0
+ 242  Southern Region  Phalombe         2018      0
+ 243  Northern Region  Rumphi           2010      0
+ 244  Northern Region  Rumphi           2011      0
+ 245  Northern Region  Rumphi           2012      0
+ 246  Northern Region  Rumphi           2013      0
+ 247  Northern Region  Rumphi           2014      0
+ 248  Northern Region  Rumphi           2015      0
+ 249  Northern Region  Rumphi           2016      0
+ 250  Northern Region  Rumphi           2017      0
+ 251  Northern Region  Rumphi           2018      0
+ 252  Central Region   Salima           2010      0.335071
+ 253  Central Region   Salima           2011      0
+ 254  Central Region   Salima           2012      0.535895
+ 255  Central Region   Salima           2013      0.50138
+ 256  Central Region   Salima           2014      0
+ 257  Central Region   Salima           2015      0
+ 258  Central Region   Salima           2016      0
+ 259  Central Region   Salima           2017      0
+ 260  Central Region   Salima           2018      0
+ 261  Southern Region  Thyolo           2010      0
+ 262  Southern Region  Thyolo           2011      0
+ 263  Southern Region  Thyolo           2012      0
+ 264  Southern Region  Thyolo           2013      0
+ 265  Southern Region  Thyolo           2014      0
+ 266  Southern Region  Thyolo           2015      0
+ 267  Southern Region  Thyolo           2016      0
+ 268  Southern Region  Thyolo           2017      0
+ 269  Southern Region  Thyolo           2018      0
+ 270  Southern Region  Zomba            2010      0
+ 271  Southern Region  Zomba            2011      0
+ 272  Southern Region  Zomba            2012      0
+ 273  Southern Region  Zomba            2013      0
+ 274  Southern Region  Zomba            2014      0
+ 275  Southern Region  Zomba            2015      0
+ 276  Southern Region  Zomba            2016      0
+ 277  Southern Region  Zomba            2017      0
+ 278  Southern Region  Zomba            2018      0
+ 279  Southern Region  Zomba City       2010      0
+ 280  Southern Region  Zomba City       2011      0
+ 281  Southern Region  Zomba City       2012      0
+ 282  Southern Region  Zomba City       2013      0
+ 283  Southern Region  Zomba City       2014      0
+ 284  Southern Region  Zomba City       2015      0
+ 285  Southern Region  Zomba City       2016      0
+ 286  Southern Region  Zomba City       2017      0
+ 287  Southern Region  Zomba City       2018      0
+====  ===============  =============  ======  ============

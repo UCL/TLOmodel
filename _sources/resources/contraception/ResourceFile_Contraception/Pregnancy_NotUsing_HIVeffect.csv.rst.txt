@@ -1,0 +1,44 @@
+Pregnancy NotUsing HIVeffect (.csv)
+===================================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/contraception/ResourceFile_Contraception/Pregnancy_NotUsing_HIVeffect.csv>`
+
+====  =======  ===============
+  ..    age\_    RR\_pregnancy
+====  =======  ===============
+   0       15              1.4
+   1       16              1.4
+   2       17              1.4
+   3       18              1.4
+   4       19              1.4
+   5       20              0.9
+   6       21              0.9
+   7       22              0.9
+   8       23              0.9
+   9       24              0.9
+  10       25              0.8
+  11       26              0.8
+  12       27              0.8
+  13       28              0.8
+  14       29              0.8
+  15       30              0.7
+  16       31              0.7
+  17       32              0.7
+  18       33              0.7
+  19       34              0.7
+  20       35              0.5
+  21       36              0.5
+  22       37              0.5
+  23       38              0.5
+  24       39              0.5
+  25       40              0.4
+  26       41              0.4
+  27       42              0.4
+  28       43              0.4
+  29       44              0.4
+  30       45              0.3
+  31       46              0.3
+  32       47              0.3
+  33       48              0.3
+  34       49              0.3
+====  =======  ===============

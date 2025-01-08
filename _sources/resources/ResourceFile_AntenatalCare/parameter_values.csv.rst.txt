@@ -1,0 +1,39 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_AntenatalCare/parameter_values.csv>`
+
+====  ==============================================  ========================================  ============
+  ..  parameter\_name                                 value                                     Unnamed: 2
+====  ==============================================  ========================================  ============
+   0  prob\_seek\_anc2                                [0.98, 0.98]
+   1  prob\_seek\_anc3                                [0.55, 0.55]                              [0.77, 0.77]
+   2  prob\_seek\_anc5                                [0.125, 0.125]
+   3  prob\_seek\_anc6                                [0.0625, 0.0625]
+   4  prob\_seek\_anc7                                [0.03125, 0.03125]
+   5  prob\_seek\_anc8                                [0.03125, 0.03125]
+   6
+   7  effect\_of\_ifa\_for\_resolving\_anaemia        [0.7, 0.7]
+   8  treatment\_effect\_blood\_transfusion\_anaemia  [0.9, 0.9]
+   9
+  10  prob\_intervention\_delivered\_urine\_ds        [0.53, 0.53]
+  11  prob\_intervention\_delivered\_bp               [0.70, 0.69]
+  12  prob\_adherent\_ifa                             [0.37, 0.34]
+  13  prob\_intervention\_delivered\_syph\_test       [0.43, 0.14]
+  14  prob\_intervention\_delivered\_gdm\_test        [0.48, 0.48]
+  15  prob\_delivery\_modes\_ec                       [[0,  0, 1], [0,  0, 1]]
+  16  prob\_delivery\_modes\_spe                      [[0.05,  0.05, 0.9], [0.05,  0.05, 0.9]]
+  17
+  18  sensitivity\_bp\_monitoring                     [0.74, 0.74]
+  19  specificity\_bp\_monitoring                     [0.79, 0.79]
+  20  sensitivity\_urine\_protein\_1\_plus            [0.541, 0.541]
+  21  specificity\_urine\_protein\_1\_plus            [0.841, 0.841]
+  22  sensitivity\_poc\_hb\_test                      [0.851, 0.851]
+  23  specificity\_poc\_hb\_test                      [0.801, 0.801]
+  24  sensitivity\_fbc\_hb\_test                      [1.0, 1.0]
+  25  specificity\_fbc\_hb\_test                      [1.0, 1.0]
+  26  sensitivity\_blood\_test\_glucose               [1.0, 1.0]
+  27  specificity\_blood\_test\_glucose               [1.0, 1.0]
+  28  sensitivity\_blood\_test\_syphilis              [0.82, 0.82]
+  29  specificity\_blood\_test\_syphilis              [0.96, 0.96]
+====  ==============================================  ========================================  ============

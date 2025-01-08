@@ -1,0 +1,68 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_PostnatalSupervisor/parameter_values.csv>`
+
+====  ==================================================  ==========================================================  ==========================================================================================================================================================================================================================================
+  ..  parameter\_name                                     value                                                       Unnamed: 2
+====  ==================================================  ==========================================================  ==========================================================================================================================================================================================================================================
+   0  prob\_obstetric\_fistula                            [0.00426, 0.00426]
+   1  rr\_obstetric\_fistula\_obstructed\_labour          [14.8, 14.8]                                                https://pubmed.ncbi.nlm.nih.gov/28550462/
+   2  prevalence\_type\_of\_fistula                       [[0.924, 0.076] , [0.924, 0.076]]                           https://pubmed.ncbi.nlm.nih.gov/17869256/#:~:text=This%20study%20from%20Southern%20Malawi,were%20not%20of%20obstetric%20origin.
+   3
+   4  prob\_secondary\_pph                                [0.0002, 0.00034]
+   5  rr\_secondary\_pph\_endometritis                    [1, 1]                                                      Delete?
+   6  prob\_secondary\_pph\_severity                      [[0.33, 0.33, 0.34], [0.33, 0.33, 0.34]]
+   7  cfr\_secondary\_postpartum\_haemorrhage             [0.22, 0.08]
+   8
+   9  prob\_htn\_resolves                                 [0.167, 0.167]
+  10  weekly\_prob\_gest\_htn\_pn                         [0.0025, 0.0025]
+  11  rr\_gest\_htn\_obesity                              [3.31, 3.31]
+  12  weekly\_prob\_pre\_eclampsia\_pn                    [0.0017, 0.0017]                                            [0.0016, 0.0016]
+  13  rr\_pre\_eclampsia\_obesity                         [3.2, 3.2]
+  14  rr\_pre\_eclampsia\_chronic\_htn                    [2.26, 2.26]
+  15  rr\_pre\_eclampsia\_diabetes\_mellitus              [3.7, 3.7]
+  16  probs\_for\_mgh\_matrix\_pn                         [[0.918, 0.032, 0.05, 0, 0], [0.918, 0.032, 0.05, 0, 0]]    [[0.884, 0.066, 0.05, 0, 0], [0.884, 0.066, 0.05, 0, 0]]
+  17  probs\_for\_sgh\_matrix\_pn                         [[0, 0.92, 0, 0.08, 0], [0, 0.92, 0, 0.08, 0]]
+  18  probs\_for\_mpe\_matrix\_pn                         [[0, 0, 0.95, 0.05, 0], [0, 0, 0.95, 0.05, 0]]              [[0, 0, 0.89, 0.11, 0], [0, 0, 0.89, 0.11, 0]]
+  19  probs\_for\_spe\_matrix\_pn                         [[0, 0, 0, 0.95, 0.05], [0, 0, 0, 0.95, 0.05]]
+  20  probs\_for\_ec\_matrix\_pn                          [[0, 0, 0, 0, 1],  [0, 0, 0, 0, 1]]
+  21  cfr\_eclampsia                                      [0.028, 0.03]
+  22  cfr\_severe\_pre\_eclampsia                         [0.018, 0.018]
+  23  weekly\_prob\_death\_severe\_gest\_htn              [0.00002, 0.00002]
+  24
+  25  baseline\_prob\_anaemia\_per\_week                  [0.017, 0.024]
+  26  rr\_anaemia\_maternal\_malaria                      [1.45, 1.45]
+  27  rr\_anaemia\_recent\_haemorrhage                    [1.93, 1.93]
+  28  rr\_anaemia\_hiv\_no\_art                           [4.19, 4.19]
+  29  prob\_type\_of\_anaemia\_pn                         [[0.52,0.475, 0.005], [0.52,0.475, 0.005]]
+  30
+  31  prob\_late\_sepsis\_endometritis                    [0.000069, 0.000062]
+  32  rr\_sepsis\_endometritis\_post\_cs                  [12.1, 12.1]
+  33  prob\_late\_sepsis\_urinary\_tract                  [0.000054, 0.000054]
+  34  prob\_late\_sepsis\_skin\_soft\_tissue              [0.000039, 0.000035]
+  35  rr\_sepsis\_sst\_post\_cs                           [3.9, 3.9]                                                  https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-018-1891-1
+  36  cfr\_postpartum\_sepsis                             [0.75, 0.49]
+  37
+  38  prob\_early\_onset\_neonatal\_sepsis\_week\_1       [0.02, 0.017]
+  39  rr\_eons\_maternal\_chorio                          [6.6, 6.6]
+  40  rr\_eons\_maternal\_prom                            [4.9, 4.9]
+  41  rr\_eons\_preterm\_neonate                          [3.36, 3.36]
+  42  cfr\_early\_onset\_neonatal\_sepsis                 [0.064, 0.056]
+  43  prob\_late\_onset\_neonatal\_sepsis                 [0.0045, 0.0038]
+  44  cfr\_late\_neonatal\_sepsis                         [0.064, 0.056]
+  45  prob\_sepsis\_disabilities                          [[0.4, 0.1,  0.3,  0.1, 0.1], [0.4, 0.1,  0.3,  0.1, 0.1]]
+  46
+  47  prob\_care\_seeking\_postnatal\_emergency           [0.782, 0.782]                                              Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.
+  48  prob\_care\_seeking\_postnatal\_emergency\_neonate  [0.782, 0.782]                                              Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.
+  49  odds\_care\_seeking\_fistula\_repair                [1.5, 1.5]
+  50  aor\_cs\_fistula\_age\_15\_19                       [0.31, 0.31]
+  51  aor\_cs\_fistula\_age\_lowest\_education            [0.69, 0.69]
+  52
+  53  treatment\_effect\_iron\_folic\_acid\_anaemia       [0.3, 0.3]
+  54  treatment\_effect\_early\_init\_bf                  [0.55, 0.55]
+  55  treatment\_effect\_abx\_prom                        [0.67, 0.67]
+  56  treatment\_effect\_cord\_care                       [0.77,0.77]
+  57  treatment\_effect\_clean\_birth                     [0.73, 0.73]
+  58  treatment\_effect\_anti\_htns\_progression\_pn      [0.49, 0.49]
+====  ==================================================  ==========================================================  ==========================================================================================================================================================================================================================================

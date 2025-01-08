@@ -1,0 +1,21 @@
+ResourceFile_Contraception
+==========================
+
+.. toctree::
+    :maxdepth: 1
+
+    Discontinuation_ByAge.csv
+    Discontinuation_ByMethod.csv
+    Failure_ByMethod.csv
+    Initiation_AfterBirth.csv
+    Initiation_ByAge.csv
+    Initiation_ByMethod.csv
+    Interventions_PPFP.csv
+    Interventions_Pop.csv
+    Method_Use_In_2010.csv
+    Pregnancy_NotUsing_HIVeffect.csv
+    Pregnancy_NotUsing_In_2010.csv
+    Prob_Switch_From.csv
+    Prob_Switch_From_And_To.csv
+    simplified_labour_parameters.csv
+

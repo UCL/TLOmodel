@@ -1,0 +1,19 @@
+IPTdistricts (.csv)
+===================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/IPTdistricts.csv>`
+
+====  ================  ========
+  ..  district\_name    region
+====  ================  ========
+   0  Lilongwe City     central
+   1  Blantyre          southern
+   2  Mangochi          southern
+   3  Machinga          southern
+   4  Chikwawa          southern
+   5  Mzimba            northern
+   6  Thyolo            southern
+   7  Mulanje           southern
+   8  Nsanje            southern
+   9  Chiradzulu        southern
+====  ================  ========

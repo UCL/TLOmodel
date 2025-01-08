@@ -6,8 +6,8 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.scenario module &mdash; TLOmodel 0.1.dev2485+gd6fcffd.d20241213 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+  <title>tlo.scenario module &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
 
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=01c4fe84"></script>
+      <script src="../_static/documentation_options.js?v=1cf5572f"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -55,6 +55,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../parameters.html">Parameters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../videos.html">HEPU Videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
@@ -100,8 +101,8 @@ run of a draw has a different seed but is otherwise identical. Each run has its 
 simulation seed, introducing randomness into each simulation. A collection of runs for a
 given draw describes the random variation in the simulation.</p>
 <p>A simple example of a subclass of <code class="docutils literal notranslate"><span class="pre">BaseScenario</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyTestScenario</span><span class="p">(</span><span class="n">BaseScenario</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyTestScenario</span><span class="p">(</span><span class="n">BaseScenario</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">seed</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
             <span class="n">start_date</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -111,20 +112,20 @@ given draw describes the random variation in the simulation.</p>
             <span class="n">runs_per_draw</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">log_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;my_test_scenario&#39;</span><span class="p">,</span>
             <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="s1">&#39;./outputs&#39;</span><span class="p">,</span>
             <span class="s1">&#39;custom_levels&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">}</span>
         <span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">modules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">modules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="n">demography</span><span class="o">.</span><span class="n">Demography</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">),</span>
             <span class="n">enhanced_lifestyle</span><span class="o">.</span><span class="n">Lifestyle</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resources</span><span class="p">),</span>
         <span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">draw_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">draw_number</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">&#39;Lifestyle&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s1">&#39;init_p_urban&#39;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">,</span>
@@ -273,6 +274,13 @@ returns <code class="docutils literal notranslate"><span class="pre">None</span>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.scenario.BaseScenario.draw_name">
+<span class="sig-name descname"><span class="pre">draw_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">draw_number</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#tlo.scenario.BaseScenario.draw_name" title="Link to this definition"></a></dt>
+<dd><p>Returns the name of the draw corresponding to the given draw number. This is offered for convenience so that
+the logfile contain a ‘user-friendly’ label for the draw.</p>
 </dd></dl>
 
 <dl class="py method">

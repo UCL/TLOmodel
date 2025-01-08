@@ -1,0 +1,635 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>unaids pmtct2021 (.csv) &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1cf5572f"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="unaids program perf (.csv)" href="unaids_program_perf.csv.html" />
+    <link rel="prev" title="unaids mortality dalys2021 (.csv)" href="unaids_mortality_dalys2021.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_HIV</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="DHS_prevalence.csv.html">DHS prevalence (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LHC_samples.csv.html">LHC samples (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MPHIA_incidence2020.csv.html">MPHIA incidence2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MPHIA_prevalence_art2020.csv.html">MPHIA prevalence art2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_CPT_IPT2020.csv.html">MoH CPT IPT2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_number_art.csv.html">MoH number art (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_numbers_tests.csv.html">MoH numbers tests (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="art_coverage.csv.html">art coverage (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="calibration_from_aids_info.csv.html">calibration from aids info (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="children0_14_prev_AIDSinfo.csv.html">children0 14 prev AIDSinfo (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hiv_prevalence.csv.html">hiv prevalence (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="parameters.csv.html">parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scaleup_parameters.csv.html">scaleup parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="spectrum_treatment_cascade.csv.html">spectrum treatment cascade (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="time_since_infection_at_baselin.csv.html">time since infection at baselin (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_infections_art2021.csv.html">unaids infections art2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_mortality_dalys2021.csv.html">unaids mortality dalys2021 (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">unaids pmtct2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_program_perf.csv.html">unaids program perf (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI.xlsx.html">RTI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_HIV</a></li>
+      <li class="breadcrumb-item active">unaids pmtct2021 (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_HIV/unaids_pmtct2021.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="unaids-pmtct2021-csv">
+<h1>unaids pmtct2021 (.csv)<a class="headerlink" href="#unaids-pmtct2021-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_HIV/unaids_pmtct2021.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>year</p></th>
+<th class="head"><p>Mothers needing PMTCT</p></th>
+<th class="head"><p>Mothers receiving PMTCT</p></th>
+<th class="head"><p>Single dose nevirapine</p></th>
+<th class="head"><p>Dual ARV</p></th>
+<th class="head"><p>Option A - maternal</p></th>
+<th class="head"><p>Option B - triple prophylaxis from 14 weeks</p></th>
+<th class="head"><p>Option B+: ART started before current pregnancy</p></th>
+<th class="head"><p>Option B+: ART started during current pregnancy &gt; 4 weeks before delivery</p></th>
+<th class="head"><p>Option B+: ART started during current pregnancy &lt; 4 weeks before delivery</p></th>
+<th class="head"><p>PMTCT coverage</p></th>
+<th class="head"><p>PMTCT coverage of more efficacious regimens</p></th>
+<th class="head"><p>MTCT rate at 6 weeks</p></th>
+<th class="head"><p>Final transmission rate including breastfeeding period</p></th>
+<th class="head"><p>Number of HIV+ breastfeeding women at 3 months</p></th>
+<th class="head"><p>Number of HIV+ breastfeeding women at 12 months</p></th>
+<th class="head"><p>Number of new child infections due to mother-to-child transmission</p></th>
+<th class="head"><p>Treatment coverage for HIV+ pregnant women</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>2010</p></td>
+<td><p>51687</p></td>
+<td><p>25927</p></td>
+<td><p>11960</p></td>
+<td><p>10038</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>3708</p></td>
+<td><p>221</p></td>
+<td><p>50.16</p></td>
+<td><p>27.02</p></td>
+<td><p>15.03</p></td>
+<td><p>29.87</p></td>
+<td><p>48007</p></td>
+<td><p>47649</p></td>
+<td><p>15437</p></td>
+<td><p>7.6</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>2011</p></td>
+<td><p>50214</p></td>
+<td><p>33387</p></td>
+<td><p>8073</p></td>
+<td><p>14353</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>10268</p></td>
+<td><p>693</p></td>
+<td><p>66.49</p></td>
+<td><p>50.41</p></td>
+<td><p>11.31</p></td>
+<td><p>23.82</p></td>
+<td><p>47531</p></td>
+<td><p>47286</p></td>
+<td><p>11959</p></td>
+<td><p>21.83</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>2012</p></td>
+<td><p>48891</p></td>
+<td><p>30866</p></td>
+<td><p>632</p></td>
+<td><p>1704</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>8221</p></td>
+<td><p>19373</p></td>
+<td><p>936</p></td>
+<td><p>63.13</p></td>
+<td><p>61.84</p></td>
+<td><p>10.92</p></td>
+<td><p>20.53</p></td>
+<td><p>46592</p></td>
+<td><p>46395</p></td>
+<td><p>10036</p></td>
+<td><p>58.35</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>2013</p></td>
+<td><p>48100</p></td>
+<td><p>33145</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>12325</p></td>
+<td><p>15382</p></td>
+<td><p>5438</p></td>
+<td><p>68.91</p></td>
+<td><p>68.91</p></td>
+<td><p>9.86</p></td>
+<td><p>18.37</p></td>
+<td><p>46065</p></td>
+<td><p>45901</p></td>
+<td><p>8836</p></td>
+<td><p>68.91</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>2014</p></td>
+<td><p>47418</p></td>
+<td><p>35306</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>15786</p></td>
+<td><p>15068</p></td>
+<td><p>4452</p></td>
+<td><p>74.46</p></td>
+<td><p>74.46</p></td>
+<td><p>8.52</p></td>
+<td><p>16.17</p></td>
+<td><p>45573</p></td>
+<td><p>45210</p></td>
+<td><p>7668</p></td>
+<td><p>74.46</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>2015</p></td>
+<td><p>46457</p></td>
+<td><p>37964</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>18956</p></td>
+<td><p>15085</p></td>
+<td><p>3923</p></td>
+<td><p>81.72</p></td>
+<td><p>81.72</p></td>
+<td><p>6.88</p></td>
+<td><p>13.62</p></td>
+<td><p>44686</p></td>
+<td><p>44132</p></td>
+<td><p>6328</p></td>
+<td><p>81.72</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>2016</p></td>
+<td><p>45333</p></td>
+<td><p>41150</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>22110</p></td>
+<td><p>15842</p></td>
+<td><p>3198</p></td>
+<td><p>90.77</p></td>
+<td><p>90.77</p></td>
+<td><p>4.95</p></td>
+<td><p>10.77</p></td>
+<td><p>43518</p></td>
+<td><p>42958</p></td>
+<td><p>4882</p></td>
+<td><p>90.77</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>2017</p></td>
+<td><p>44142</p></td>
+<td><p>42745</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>25783</p></td>
+<td><p>14362</p></td>
+<td><p>2600</p></td>
+<td><p>96.84</p></td>
+<td><p>96.84</p></td>
+<td><p>3.52</p></td>
+<td><p>8.46</p></td>
+<td><p>42064</p></td>
+<td><p>41500</p></td>
+<td><p>3733</p></td>
+<td><p>96.84</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>2018</p></td>
+<td><p>42895</p></td>
+<td><p>41864</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>27632</p></td>
+<td><p>12139</p></td>
+<td><p>2093</p></td>
+<td><p>97.6</p></td>
+<td><p>97.6</p></td>
+<td><p>3.13</p></td>
+<td><p>7.68</p></td>
+<td><p>40914</p></td>
+<td><p>40366</p></td>
+<td><p>3294</p></td>
+<td><p>97.6</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>2019</p></td>
+<td><p>41495</p></td>
+<td><p>42071</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>27692</p></td>
+<td><p>12877</p></td>
+<td><p>1502</p></td>
+<td><p>101.39</p></td>
+<td><p>100</p></td>
+<td><p>2.48</p></td>
+<td><p>6.6</p></td>
+<td><p>39703</p></td>
+<td><p>39171</p></td>
+<td><p>2740</p></td>
+<td><p>100</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>2020</p></td>
+<td><p>39927</p></td>
+<td><p>41391</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>29558</p></td>
+<td><p>10747</p></td>
+<td><p>1086</p></td>
+<td><p>103.67</p></td>
+<td><p>100</p></td>
+<td><p>2.31</p></td>
+<td><p>6.27</p></td>
+<td><p>38200</p></td>
+<td><p>37689</p></td>
+<td><p>2504</p></td>
+<td><p>100</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>2021</p></td>
+<td><p>38200</p></td>
+<td><p>37436</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>29447</p></td>
+<td><p>7175</p></td>
+<td><p>815</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.6</p></td>
+<td><p>6.11</p></td>
+<td><p>36449</p></td>
+<td><p>35961</p></td>
+<td><p>2334</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>2022</p></td>
+<td><p>36544</p></td>
+<td><p>35813</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>29305</p></td>
+<td><p>5921</p></td>
+<td><p>588</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.57</p></td>
+<td><p>6.2</p></td>
+<td><p>34868</p></td>
+<td><p>34401</p></td>
+<td><p>2265</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>2023</p></td>
+<td><p>34992</p></td>
+<td><p>34292</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>29021</p></td>
+<td><p>4850</p></td>
+<td><p>421</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.48</p></td>
+<td><p>6.05</p></td>
+<td><p>33386</p></td>
+<td><p>32939</p></td>
+<td><p>2117</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>2024</p></td>
+<td><p>33437</p></td>
+<td><p>32768</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>28544</p></td>
+<td><p>3927</p></td>
+<td><p>298</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.38</p></td>
+<td><p>5.85</p></td>
+<td><p>31902</p></td>
+<td><p>31474</p></td>
+<td><p>1958</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>2025</p></td>
+<td><p>31877</p></td>
+<td><p>31239</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>27896</p></td>
+<td><p>3135</p></td>
+<td><p>208</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.31</p></td>
+<td><p>5.7</p></td>
+<td><p>30413</p></td>
+<td><p>30005</p></td>
+<td><p>1816</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>2026</p></td>
+<td><p>30301</p></td>
+<td><p>29695</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>27091</p></td>
+<td><p>2462</p></td>
+<td><p>143</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.24</p></td>
+<td><p>5.57</p></td>
+<td><p>28908</p></td>
+<td><p>28521</p></td>
+<td><p>1687</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>2027</p></td>
+<td><p>28726</p></td>
+<td><p>28152</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>26159</p></td>
+<td><p>1897</p></td>
+<td><p>96</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.2</p></td>
+<td><p>5.47</p></td>
+<td><p>27406</p></td>
+<td><p>27039</p></td>
+<td><p>1571</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>2028</p></td>
+<td><p>27185</p></td>
+<td><p>26641</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>25145</p></td>
+<td><p>1432</p></td>
+<td><p>63</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.17</p></td>
+<td><p>5.4</p></td>
+<td><p>25935</p></td>
+<td><p>25588</p></td>
+<td><p>1468</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>2029</p></td>
+<td><p>25678</p></td>
+<td><p>25164</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>24066</p></td>
+<td><p>1057</p></td>
+<td><p>41</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.14</p></td>
+<td><p>5.36</p></td>
+<td><p>24497</p></td>
+<td><p>24169</p></td>
+<td><p>1377</p></td>
+<td><p>98</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>2030</p></td>
+<td><p>24207</p></td>
+<td><p>23723</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>22937</p></td>
+<td><p>761</p></td>
+<td><p>26</p></td>
+<td><p>98</p></td>
+<td><p>98</p></td>
+<td><p>2.14</p></td>
+<td><p>5.37</p></td>
+<td><p>23094</p></td>
+<td><p>22785</p></td>
+<td><p>1301</p></td>
+<td><p>98</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="unaids_mortality_dalys2021.csv.html" class="btn btn-neutral float-left" title="unaids mortality dalys2021 (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="unaids_program_perf.csv.html" class="btn btn-neutral float-right" title="unaids program perf (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+WHO latentTB2017 (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/WHO_latentTB2017.csv>`
+
+====  ===============================  =====================================================================================================================================================================  ========
+  ..  variable                         definition                                                                                                                                                             value
+====  ===============================  =====================================================================================================================================================================  ========
+   0  year                                                                                                                                                                                                    2017
+   1  source\_hh                       Source of estimate of average household size                                                                                                                           DHS 2015
+   2  e\_hh\_size                      Estimated average household size                                                                                                                                       4.508918
+   3  prevtx\_data\_available          Are data available on the number of children aged under 5 who are household contacts of TB cases and started on TB preventive therapy?                                 60
+   4  newinc\_con04\_prevtx            Number of children aged under 5 started on TB preventive therapy who are household contacts of bacteriologically-confirmed new and relapse TB cases notified           3068
+   5  ptsurvey\_newinc                 Number of bacteriologically-confirmed TB new and relapse cases notified in the reporting year whose medical records or treatment cards were included in a survey
+   6  ptsurvey\_newinc\_con04\_prevtx  Number of children aged under 5 started on TB preventive therapy who are household contacts of the TB cases in ptsurvey\_newinc
+   7  e\_prevtx\_eligible              Estimated number of children aged under 5 who are household contacts of TB cases who are eligible for TB preventive therapy                                            4400
+   8  e\_prevtx\_eligible\_hi          Estimated number of children aged under 5 who are household contacts of TB cases who are eligible for TB preventive therapy: high bound                                4000
+   9  e\_prevtx\_eligible\_lo          Estimated number of children aged under 5 who are household contacts of TB cases who are eligible for TB preventive therapy: low bound                                 4800
+  10  e\_prevtx\_kids\_pct             Estimated % of children received TB preventive therapy aged under 5 who are household contacts of TB cases and who are eligible for TB preventive therapy              69
+  11  e\_prevtx\_kids\_pct\_hi         Estimated % of children received TB preventive therapy aged under 5 who are household contacts of TB cases and who are eligible for TB preventive therapy: High bound  64
+  12  e\_prevtx\_kids\_pct\_lo         Estimated % of children received TB preventive therapy aged under 5 who are household contacts of TB cases and who are eligible for TB preventive therapy: Low bound   76
+====  ===============================  =====================================================================================================================================================================  ========

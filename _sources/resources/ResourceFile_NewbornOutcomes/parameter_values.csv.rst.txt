@@ -1,0 +1,84 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_NewbornOutcomes/parameter_values.csv>`
+
+====  ===================================================  ========================================================================================================================================================================================================  ============  ==========================================================================================================================================================================================================================================
+  ..  parameter\_name                                      value                                                                                                                                                                                                     Unnamed: 2    Unnamed: 3
+====  ===================================================  ========================================================================================================================================================================================================  ============  ==========================================================================================================================================================================================================================================
+   0  prob\_care\_seeking\_for\_complication               [0.782, 0.782]                                                                                                                                                                                                          Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.
+   1
+   2  prob\_day\_reaches\_week\_one\_event                 [[0.4, 0.3, 0.2, 0.05, 0.05], [0.4, 0.3, 0.2, 0.05, 0.05]]
+   3
+   4  prob\_early\_onset\_neonatal\_sepsis\_day\_0         [0.02, 0.017]
+   5  rr\_eons\_maternal\_chorio                           [6.6, 6.6]
+   6  rr\_eons\_maternal\_prom                             [4.9, 4.9]
+   7  rr\_eons\_preterm\_neonate                           [3.36, 3.36]
+   8  cfr\_early\_onset\_sepsis                            [0.064, 0.056]
+   9  cfr\_late\_onset\_sepsis                             [0.064, 0.056]
+  10  prob\_mild\_impairment\_post\_sepsis                 [0.12, 0.12]
+  11  prob\_mod\_severe\_impairment\_post\_sepsis          [0.23, 0.23]
+  12
+  13  prob\_failure\_to\_transition                        [0.01, 0.01]
+  14  prob\_enceph\_no\_resus                              [0.5, 0.5]
+  15  cfr\_failed\_to\_transition                          [0.2, 0.2]
+  16
+  17  prob\_encephalopathy                                 [0.0097, 0.0097]
+  18  rr\_enceph\_neonatal\_sepsis                         [8.67, 8.67]
+  19  rr\_enceph\_obstructed\_labour                       [3.8, 3.8]
+  20  rr\_enceph\_acute\_hypoxic\_event                    [8.74, 8.74]
+  21  prob\_enceph\_severity                               [[0.422, 0.338, 0.24], [0.422, 0.338, 0.24]]
+  22  prob\_mild\_impairment\_post\_enceph                 [0.21, 0.21]
+  23  prob\_mod\_severe\_impairment\_post\_enceph          [0.269, 0.269]
+  24  cfr\_enceph                                          [0.48, 0.28]
+  25  cfr\_multiplier\_severe\_enceph                      [1.91, 3.28]
+  26
+  27  prob\_respiratory\_distress\_preterm                 [0.12, 0.12]
+  28  rr\_rds\_early\_preterm                              [2.64, 2.64]
+  29  rr\_rds\_maternal\_diabetes\_mellitus                [2.66, 2.66]
+  30  rr\_rds\_maternal\_gestational\_diab                 [1.57, 1.57]
+  31  cfr\_respiratory\_distress\_syndrome                 [0.29, 0.2]
+  32
+  33  prob\_mild\_disability\_preterm\_<32weeks            [0.324, 0.324]
+  34  prob\_mod\_severe\_disability\_preterm\_<32weeks     [0.246, 0.246]
+  35  prob\_mild\_disability\_preterm\_32\_36weeks         [0.034, 0.034]
+  36  prob\_mod\_severe\_disability\_preterm\_32\_36weeks  [0.018, 0.018]
+  37
+  38  prob\_retinopathy\_preterm\_early                    [0.365, 0.365]
+  39  prob\_retinopathy\_preterm\_late                     [0.077, 0.077]
+  40  prob\_retinopathy\_severity\_no\_treatment           [[0.28,0.03, 0.1, 0.12, 0.47], [0.28,0.03, 0.1, 0.12, 0.47]]
+  41  cfr\_preterm\_birth                                  [0.0227, 0.0187]
+  42  rr\_preterm\_death\_early\_preterm                   [1.66, 1.66]
+  43  prob\_preterm\_death\_by\_day                        [[0.4, 0.2, 0.15, 0.05, 0.02, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018], [0.4, 0.2, 0.15, 0.05, 0.02, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018, 0.018]]
+  44
+  45  prob\_congenital\_heart\_anomaly                     [0.009, 0.009]
+  46  prob\_limb\_musc\_skeletal\_anomaly                  [0.008, 0.008]
+  47  prob\_urogenital\_anomaly                            [0.003, 0.003]
+  48  prob\_digestive\_anomaly                             [0.0007, 0.0007]
+  49  prob\_other\_anomaly                                 [0.0004, 0.0004]
+  50  cfr\_congenital\_heart\_anomaly                      [0.062, 0.062]
+  51  cfr\_limb\_or\_musculoskeletal\_anomaly              [0.0069, 0.0069]
+  52  cfr\_urogenital\_anomaly                             [0.0085, 0.0085]
+  53  cfr\_digestive\_anomaly                              [0.2829, 0.2829]
+  54  cfr\_other\_anomaly                                  [0.131, 0.131]
+  55  prob\_cba\_death\_by\_age\_group                     [[0.27, 0.08, 0.38, 0.2, 0.02, 0.01, 0.04], [0.3, 0.09, 0.35, 0.18, 0.03, 0.02, 0.03]]
+  56
+  57
+  58  prob\_early\_breastfeeding\_hb                       [0.94, 0.67]
+  59  prob\_early\_breastfeeding\_hf                       [0.94, 0.77]
+  60  prob\_breastfeeding\_type                            [[0.005, 0.277, 0.718], [0.101, 0.289 ,0.61]]
+  61
+  62  prob\_pnc\_check\_newborn                            [0.60,0.60]
+  63  prob\_timings\_pnc\_newborns                         [[0.97, 0.03], [0.97, 0.03]]
+  64  prob\_kmc\_available                                 [0.62, 0.62]
+  65  treatment\_effect\_inj\_abx\_sep                     [0.35, 0.35]
+  66  treatment\_effect\_supp\_care\_sep                   [0.2, 0.2]
+  67  treatment\_effect\_cord\_care                        [0.77, 0.77]
+  68  treatment\_effect\_clean\_birth                      [0.73, 0.73]
+  69  treatment\_effect\_early\_init\_bf                   [0.55, 0.55]
+  70  treatment\_effect\_abx\_prom                         [0.67, 0.67]
+  71  treatment\_effect\_resuscitation                     [0.63, 0.63]
+  72  treatment\_effect\_resuscitation\_preterm            [0.81, 0.81]
+  73  treatment\_effect\_kmc                               [0.49, 0.49]
+  74  treatment\_effect\_steroid\_preterm                  [0.71, 0.71]
+====  ===================================================  ========================================================================================================================================================================================================  ============  ==========================================================================================================================================================================================================================================

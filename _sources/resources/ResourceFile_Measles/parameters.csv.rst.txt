@@ -1,0 +1,17 @@
+parameters (.csv)
+=================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Measles/parameters.csv>`
+
+====  ==========================  ========  =========================================
+  ..  parameter\_name                value  Unnamed: 2
+====  ==========================  ========  =========================================
+   0  beta\_baseline               0.00216
+   1  beta\_scale                  1
+   2  phase\_shift                 5
+   3  period                      12
+   4  vaccine\_efficacy\_1         0.85
+   5  vaccine\_efficacy\_2         0.99
+   6  prob\_severe                 0.05
+   7  risk\_death\_on\_treatment   0.38     https://pubmed.ncbi.nlm.nih.gov/20348126/
+====  ==========================  ========  =========================================

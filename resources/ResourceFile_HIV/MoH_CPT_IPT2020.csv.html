@@ -1,0 +1,4755 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoH CPT IPT2020 (.csv) &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1cf5572f"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="MoH number art (.csv)" href="MoH_number_art.csv.html" />
+    <link rel="prev" title="MPHIA prevalence art2020 (.csv)" href="MPHIA_prevalence_art2020.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_HIV</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="DHS_prevalence.csv.html">DHS prevalence (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LHC_samples.csv.html">LHC samples (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MPHIA_incidence2020.csv.html">MPHIA incidence2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MPHIA_prevalence_art2020.csv.html">MPHIA prevalence art2020 (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">MoH CPT IPT2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_number_art.csv.html">MoH number art (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_numbers_tests.csv.html">MoH numbers tests (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="art_coverage.csv.html">art coverage (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="calibration_from_aids_info.csv.html">calibration from aids info (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="children0_14_prev_AIDSinfo.csv.html">children0 14 prev AIDSinfo (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hiv_prevalence.csv.html">hiv prevalence (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="parameters.csv.html">parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scaleup_parameters.csv.html">scaleup parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="spectrum_treatment_cascade.csv.html">spectrum treatment cascade (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="time_since_infection_at_baselin.csv.html">time since infection at baselin (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_infections_art2021.csv.html">unaids infections art2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_mortality_dalys2021.csv.html">unaids mortality dalys2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_pmtct2021.csv.html">unaids pmtct2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_program_perf.csv.html">unaids program perf (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI.xlsx.html">RTI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_HIV</a></li>
+      <li class="breadcrumb-item active">MoH CPT IPT2020 (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_HIV/MoH_CPT_IPT2020.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="moh-cpt-ipt2020-csv">
+<h1>MoH CPT IPT2020 (.csv)<a class="headerlink" href="#moh-cpt-ipt2020-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_HIV/MoH_CPT_IPT2020.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>year</p></th>
+<th class="head"><p>quarter</p></th>
+<th class="head"><p>district</p></th>
+<th class="head"><p>Total</p></th>
+<th class="head"><p>On CPT number</p></th>
+<th class="head"><p>On CPT proportion</p></th>
+<th class="head"><p>On IPT number</p></th>
+<th class="head"><p>On IPT proportion</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>National</p></td>
+<td><p>761817</p></td>
+<td><p>691184</p></td>
+<td><p>0.91</p></td>
+<td><p>238331.0</p></td>
+<td><p>0.31</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>74327</p></td>
+<td><p>62343</p></td>
+<td><p>0.84</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Chitipa</p></td>
+<td><p>5493</p></td>
+<td><p>4583</p></td>
+<td><p>0.83</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Karonga</p></td>
+<td><p>13201</p></td>
+<td><p>8036</p></td>
+<td><p>0.61</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>8807</p></td>
+<td><p>8378</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Rumphi</p></td>
+<td><p>7765</p></td>
+<td><p>7757</p></td>
+<td><p>1</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>24120</p></td>
+<td><p>20489</p></td>
+<td><p>0.85</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>14302</p></td>
+<td><p>12466</p></td>
+<td><p>0.87</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Likoma</p></td>
+<td><p>639</p></td>
+<td><p>634</p></td>
+<td><p>0.99</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>60153</p></td>
+<td><p>58356</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>11527</p></td>
+<td><p>11513</p></td>
+<td><p>1</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Kasungu</p></td>
+<td><p>16161</p></td>
+<td><p>15557</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4458</p></td>
+<td><p>4282</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Dowa</p></td>
+<td><p>12280</p></td>
+<td><p>12014</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Salima</p></td>
+<td><p>15727</p></td>
+<td><p>14991</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>156812</p></td>
+<td><p>150635</p></td>
+<td><p>0.96</p></td>
+<td><p>59866.0</p></td>
+<td><p>0.38</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>97306</p></td>
+<td><p>93285</p></td>
+<td><p>0.96</p></td>
+<td><p>59866.0</p></td>
+<td><p>0.62</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Mchinji</p></td>
+<td><p>15912</p></td>
+<td><p>15054</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Dedza</p></td>
+<td><p>18107</p></td>
+<td><p>17445</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>25478</p></td>
+<td><p>24851</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>South West Zone</p></td>
+<td><p>237082</p></td>
+<td><p>207077</p></td>
+<td><p>0.87</p></td>
+<td><p>137353.0</p></td>
+<td><p>0.58</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>38739</p></td>
+<td><p>35698</p></td>
+<td><p>0.92</p></td>
+<td><p>30297.0</p></td>
+<td><p>0.78</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Blantyre</p></td>
+<td><p>85289</p></td>
+<td><p>69873</p></td>
+<td><p>0.82</p></td>
+<td><p>64484.0</p></td>
+<td><p>0.76</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Mwanza</p></td>
+<td><p>5925</p></td>
+<td><p>5662</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Thyolo</p></td>
+<td><p>51822</p></td>
+<td><p>48953</p></td>
+<td><p>0.94</p></td>
+<td><p>42571.0</p></td>
+<td><p>0.72</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>26620</p></td>
+<td><p>21162</p></td>
+<td><p>0.79</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Nsanje</p></td>
+<td><p>20512</p></td>
+<td><p>17729</p></td>
+<td><p>0.86</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Neno</p></td>
+<td><p>8175</p></td>
+<td><p>8000</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>South East Zone</p></td>
+<td><p>233443</p></td>
+<td><p>212772</p></td>
+<td><p>0.91</p></td>
+<td><p>41112.0</p></td>
+<td><p>0.18</p></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Mangochi</p></td>
+<td><p>49243</p></td>
+<td><p>46780</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Machinga</p></td>
+<td><p>29551</p></td>
+<td><p>28373</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Zomba</p></td>
+<td><p>51936</p></td>
+<td><p>46130</p></td>
+<td><p>0.89</p></td>
+<td><p>41112.0</p></td>
+<td><p>0.79</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Mulanje</p></td>
+<td><p>51158</p></td>
+<td><p>46782</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Phalombe</p></td>
+<td><p>31263</p></td>
+<td><p>25206</p></td>
+<td><p>0.81</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>2018</p></td>
+<td><p>Q1</p></td>
+<td><p>Balaka</p></td>
+<td><p>20292</p></td>
+<td><p>19501</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>National</p></td>
+<td><p>775645</p></td>
+<td><p>714603</p></td>
+<td><p>0.92</p></td>
+<td><p>255420.0</p></td>
+<td><p>0.33</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>75558</p></td>
+<td><p>68147</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Chitipa</p></td>
+<td><p>5650</p></td>
+<td><p>4275</p></td>
+<td><p>0.76</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Karonga</p></td>
+<td><p>13429</p></td>
+<td><p>11939</p></td>
+<td><p>0.89</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>9413</p></td>
+<td><p>8827</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Rumphi</p></td>
+<td><p>7693</p></td>
+<td><p>7470</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>20440</p></td>
+<td><p>22143</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>14726</p></td>
+<td><p>12866</p></td>
+<td><p>0.87</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Likoma</p></td>
+<td><p>643</p></td>
+<td><p>628</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>61738</p></td>
+<td><p>57128</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12478</p></td>
+<td><p>11359</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Kasungu</p></td>
+<td><p>16373</p></td>
+<td><p>15597</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4524</p></td>
+<td><p>4313</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Dowa</p></td>
+<td><p>12450</p></td>
+<td><p>10334</p></td>
+<td><p>0.83</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Salima</p></td>
+<td><p>15913</p></td>
+<td><p>15525</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>158863</p></td>
+<td><p>150479</p></td>
+<td><p>0.95</p></td>
+<td><p>78416.0</p></td>
+<td><p>0.49</p></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>98716</p></td>
+<td><p>92232</p></td>
+<td><p>0.93</p></td>
+<td><p>78416.0</p></td>
+<td><p>0.79</p></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Mchinji</p></td>
+<td><p>16253</p></td>
+<td><p>15416</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Dedza</p></td>
+<td><p>18356</p></td>
+<td><p>17970</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>25538</p></td>
+<td><p>24861</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>South West Zone</p></td>
+<td><p>241505</p></td>
+<td><p>223252</p></td>
+<td><p>0.92</p></td>
+<td><p>136944.0</p></td>
+<td><p>0.57</p></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>39459</p></td>
+<td><p>36243</p></td>
+<td><p>0.92</p></td>
+<td><p>33338.0</p></td>
+<td><p>0.84</p></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Blantyre</p></td>
+<td><p>87168</p></td>
+<td><p>78459</p></td>
+<td><p>0.9</p></td>
+<td><p>64498.0</p></td>
+<td><p>0.74</p></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Mwanza</p></td>
+<td><p>5874</p></td>
+<td><p>5777</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Thyolo</p></td>
+<td><p>52373</p></td>
+<td><p>48520</p></td>
+<td><p>0.93</p></td>
+<td><p>39109.0</p></td>
+<td><p>0.75</p></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>27720</p></td>
+<td><p>26296</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Nsanje</p></td>
+<td><p>20641</p></td>
+<td><p>19769</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Neno</p></td>
+<td><p>8270</p></td>
+<td><p>8187</p></td>
+<td><p>0.99</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>South East Zone</p></td>
+<td><p>237981</p></td>
+<td><p>215597</p></td>
+<td><p>0.91</p></td>
+<td><p>40060.0</p></td>
+<td><p>0.17</p></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Mangochi</p></td>
+<td><p>50944</p></td>
+<td><p>48742</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Machinga</p></td>
+<td><p>30168</p></td>
+<td><p>28960</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Zomba</p></td>
+<td><p>52150</p></td>
+<td><p>44821</p></td>
+<td><p>0.86</p></td>
+<td><p>40060.0</p></td>
+<td><p>0.77</p></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Mulanje</p></td>
+<td><p>52185</p></td>
+<td><p>47510</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Phalombe</p></td>
+<td><p>31895</p></td>
+<td><p>26095</p></td>
+<td><p>0.82</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>2018</p></td>
+<td><p>Q2</p></td>
+<td><p>Balaka</p></td>
+<td><p>20639</p></td>
+<td><p>19469</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>National</p></td>
+<td><p>788728</p></td>
+<td><p>710776</p></td>
+<td><p>0.9</p></td>
+<td><p>239581.0</p></td>
+<td><p>0.3</p></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>77679</p></td>
+<td><p>70293</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Chitipa</p></td>
+<td><p>5858</p></td>
+<td><p>5002</p></td>
+<td><p>0.85</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Karonga</p></td>
+<td><p>13852</p></td>
+<td><p>13017</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>9518</p></td>
+<td><p>8745</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Rumphi</p></td>
+<td><p>7984</p></td>
+<td><p>7639</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>24692</p></td>
+<td><p>22242</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>15213</p></td>
+<td><p>13001</p></td>
+<td><p>0.85</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Likoma</p></td>
+<td><p>652</p></td>
+<td><p>647</p></td>
+<td><p>0.99</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>62223</p></td>
+<td><p>58915</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12034</p></td>
+<td><p>11237</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Kasungu</p></td>
+<td><p>17012</p></td>
+<td><p>15635</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4538</p></td>
+<td><p>4377</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Dowa</p></td>
+<td><p>12587</p></td>
+<td><p>12276</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Salima</p></td>
+<td><p>16052</p></td>
+<td><p>15390</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>160205</p></td>
+<td><p>151301</p></td>
+<td><p>0.94</p></td>
+<td><p>76284.0</p></td>
+<td><p>0.48</p></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>99452</p></td>
+<td><p>92761</p></td>
+<td><p>0.93</p></td>
+<td><p>76284.0</p></td>
+<td><p>0.77</p></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Mchinji</p></td>
+<td><p>16386</p></td>
+<td><p>15777</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Dedza</p></td>
+<td><p>18595</p></td>
+<td><p>17850</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>25772</p></td>
+<td><p>24913</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>South West Zone</p></td>
+<td><p>246281</p></td>
+<td><p>210139</p></td>
+<td><p>0.85</p></td>
+<td><p>120413.0</p></td>
+<td><p>0.49</p></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>39610</p></td>
+<td><p>36034</p></td>
+<td><p>0.91</p></td>
+<td><p>33077.0</p></td>
+<td><p>0.77</p></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Blantyre</p></td>
+<td><p>89971</p></td>
+<td><p>64406</p></td>
+<td><p>0.72</p></td>
+<td><p>49235.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Mwanza</p></td>
+<td><p>5978</p></td>
+<td><p>5587</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Thyolo</p></td>
+<td><p>53330</p></td>
+<td><p>49303</p></td>
+<td><p>0.92</p></td>
+<td><p>38100.0</p></td>
+<td><p>0.49</p></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>28066</p></td>
+<td><p>26769</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.84</p></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Nsanje</p></td>
+<td><p>21018</p></td>
+<td><p>19787</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.55</p></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Neno</p></td>
+<td><p>8308</p></td>
+<td><p>8251</p></td>
+<td><p>0.99</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>South East Zone</p></td>
+<td><p>242340</p></td>
+<td><p>220127</p></td>
+<td><p>0.91</p></td>
+<td><p>42885.0</p></td>
+<td><p>0.71</p></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Mangochi</p></td>
+<td><p>52586</p></td>
+<td><p>50617</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Machinga</p></td>
+<td><p>30329</p></td>
+<td><p>29092</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Zomba</p></td>
+<td><p>53056</p></td>
+<td><p>44770</p></td>
+<td><p>0.84</p></td>
+<td><p>42885.0</p></td>
+<td><p>0.18</p></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Mulanje</p></td>
+<td><p>52910</p></td>
+<td><p>46149</p></td>
+<td><p>0.87</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Phalombe</p></td>
+<td><p>32476</p></td>
+<td><p>29799</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>2018</p></td>
+<td><p>Q3</p></td>
+<td><p>Balaka</p></td>
+<td><p>20983</p></td>
+<td><p>19700</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>National</p></td>
+<td><p>798864</p></td>
+<td><p>723391</p></td>
+<td><p>0.91</p></td>
+<td><p>248299.0</p></td>
+<td><p>0.31</p></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>78975</p></td>
+<td><p>64380</p></td>
+<td><p>0.82</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Chitipa</p></td>
+<td><p>5972</p></td>
+<td><p>2240</p></td>
+<td><p>0.38</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Karonga</p></td>
+<td><p>13740</p></td>
+<td><p>11230</p></td>
+<td><p>0.82</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>9697</p></td>
+<td><p>8889</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8316</p></td>
+<td><p>7782</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>25415</p></td>
+<td><p>23259</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>15160</p></td>
+<td><p>10306</p></td>
+<td><p>0.68</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Likoma</p></td>
+<td><p>675</p></td>
+<td><p>674</p></td>
+<td><p>1</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>621984</p></td>
+<td><p>59814</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12066</p></td>
+<td><p>11091</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Kasungu</p></td>
+<td><p>17200</p></td>
+<td><p>16481</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4609</p></td>
+<td><p>4458</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Dowa</p></td>
+<td><p>12834</p></td>
+<td><p>12438</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Salima</p></td>
+<td><p>16275</p></td>
+<td><p>15346</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>163745</p></td>
+<td><p>151833</p></td>
+<td><p>0.93</p></td>
+<td><p>73325.0</p></td>
+<td><p>0.45</p></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>101716</p></td>
+<td><p>92002</p></td>
+<td><p>0.9</p></td>
+<td><p>73325.0</p></td>
+<td><p>0.72</p></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Mchinji</p></td>
+<td><p>16852</p></td>
+<td><p>16171</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Dedza</p></td>
+<td><p>18932</p></td>
+<td><p>18590</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>124</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>26245</p></td>
+<td><p>25070</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>125</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>South West Zone</p></td>
+<td><p>249225</p></td>
+<td><p>221668</p></td>
+<td><p>0.89</p></td>
+<td><p>136434.0</p></td>
+<td><p>0.55</p></td>
+</tr>
+<tr class="row-even"><td><p>126</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>39568</p></td>
+<td><p>35738</p></td>
+<td><p>0.9</p></td>
+<td><p>32563.0</p></td>
+<td><p>0.82</p></td>
+</tr>
+<tr class="row-odd"><td><p>127</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Blantyre</p></td>
+<td><p>91265</p></td>
+<td><p>76111</p></td>
+<td><p>0.83</p></td>
+<td><p>63884.0</p></td>
+<td><p>0.7</p></td>
+</tr>
+<tr class="row-even"><td><p>128</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6033</p></td>
+<td><p>5673</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>129</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Thyolo</p></td>
+<td><p>53887</p></td>
+<td><p>49748</p></td>
+<td><p>0.92</p></td>
+<td><p>39986.0</p></td>
+<td><p>0.74</p></td>
+</tr>
+<tr class="row-even"><td><p>130</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>28643</p></td>
+<td><p>27100</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>131</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Nsanje</p></td>
+<td><p>21475</p></td>
+<td><p>19445</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>132</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Neno</p></td>
+<td><p>8354</p></td>
+<td><p>7854</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>133</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>South East Zone</p></td>
+<td><p>243935</p></td>
+<td><p>225697</p></td>
+<td><p>0.93</p></td>
+<td><p>38541.0</p></td>
+<td><p>0.16</p></td>
+</tr>
+<tr class="row-even"><td><p>134</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Mangochi</p></td>
+<td><p>52801</p></td>
+<td><p>50842</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>135</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Machinga</p></td>
+<td><p>30428</p></td>
+<td><p>28510</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>136</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Zomba</p></td>
+<td><p>53033</p></td>
+<td><p>48126</p></td>
+<td><p>0.91</p></td>
+<td><p>38541.0</p></td>
+<td><p>0.73</p></td>
+</tr>
+<tr class="row-odd"><td><p>137</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Mulanje</p></td>
+<td><p>53753</p></td>
+<td><p>49804</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>138</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Phalombe</p></td>
+<td><p>32938</p></td>
+<td><p>29468</p></td>
+<td><p>0.89</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>139</p></td>
+<td><p>2018</p></td>
+<td><p>Q4</p></td>
+<td><p>Balaka</p></td>
+<td><p>20982</p></td>
+<td><p>18947</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>140</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>National</p></td>
+<td><p>806823</p></td>
+<td><p>717142</p></td>
+<td><p>0.89</p></td>
+<td><p>244504.0</p></td>
+<td><p>0.3</p></td>
+</tr>
+<tr class="row-odd"><td><p>141</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>80601</p></td>
+<td><p>72568</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>142</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6185</p></td>
+<td><p>5209</p></td>
+<td><p>0.84</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>143</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Karonga</p></td>
+<td><p>13753</p></td>
+<td><p>12417</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>144</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>9799</p></td>
+<td><p>9177</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>145</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8373</p></td>
+<td><p>7993</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>146</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>26211</p></td>
+<td><p>21831</p></td>
+<td><p>0.83</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>147</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>15568</p></td>
+<td><p>15272</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>148</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Likoma</p></td>
+<td><p>712</p></td>
+<td><p>669</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>149</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>64058</p></td>
+<td><p>60549</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>150</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12239</p></td>
+<td><p>11540</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>151</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Kasungu</p></td>
+<td><p>17504</p></td>
+<td><p>15963</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>152</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4763</p></td>
+<td><p>4616</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>153</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Dowa</p></td>
+<td><p>13022</p></td>
+<td><p>12247</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>154</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Salima</p></td>
+<td><p>16530</p></td>
+<td><p>16182</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>155</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>165878</p></td>
+<td><p>139384</p></td>
+<td><p>0.84</p></td>
+<td><p>67949.0</p></td>
+<td><p>0.41</p></td>
+</tr>
+<tr class="row-even"><td><p>156</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>102785</p></td>
+<td><p>82930</p></td>
+<td><p>0.81</p></td>
+<td><p>67949.0</p></td>
+<td><p>0.66</p></td>
+</tr>
+<tr class="row-odd"><td><p>157</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Mchinji</p></td>
+<td><p>17333</p></td>
+<td><p>16603</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>158</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Dedza</p></td>
+<td><p>19133</p></td>
+<td><p>13905</p></td>
+<td><p>0.73</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>159</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>26627</p></td>
+<td><p>25946</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>160</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>South West Zone</p></td>
+<td><p>252155</p></td>
+<td><p>215569</p></td>
+<td><p>0.85</p></td>
+<td><p>133000.0</p></td>
+<td><p>0.53</p></td>
+</tr>
+<tr class="row-odd"><td><p>161</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>39621</p></td>
+<td><p>33507</p></td>
+<td><p>0.85</p></td>
+<td><p>30003.0</p></td>
+<td><p>0.76</p></td>
+</tr>
+<tr class="row-even"><td><p>162</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Blantyre</p></td>
+<td><p>92351</p></td>
+<td><p>77099</p></td>
+<td><p>0.83</p></td>
+<td><p>67194.0</p></td>
+<td><p>0.73</p></td>
+</tr>
+<tr class="row-odd"><td><p>163</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6176</p></td>
+<td><p>1651</p></td>
+<td><p>0.27</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>164</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Thyolo</p></td>
+<td><p>54729</p></td>
+<td><p>50265</p></td>
+<td><p>0.92</p></td>
+<td><p>35802.0</p></td>
+<td><p>0.65</p></td>
+</tr>
+<tr class="row-odd"><td><p>165</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>29043</p></td>
+<td><p>23585</p></td>
+<td><p>0.81</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>166</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Nsanje</p></td>
+<td><p>21811</p></td>
+<td><p>21246</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>167</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Neno</p></td>
+<td><p>8424</p></td>
+<td><p>8215</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>168</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>South East Zone</p></td>
+<td><p>244131</p></td>
+<td><p>299072</p></td>
+<td><p>0.94</p></td>
+<td><p>43555.0</p></td>
+<td><p>0.18</p></td>
+</tr>
+<tr class="row-odd"><td><p>169</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Mangochi</p></td>
+<td><p>51706</p></td>
+<td><p>49228</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>170</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Machinga</p></td>
+<td><p>29713</p></td>
+<td><p>27005</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>171</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Zomba</p></td>
+<td><p>53861</p></td>
+<td><p>49774</p></td>
+<td><p>0.92</p></td>
+<td><p>43555.0</p></td>
+<td><p>0.81</p></td>
+</tr>
+<tr class="row-even"><td><p>172</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Mulanje</p></td>
+<td><p>53837</p></td>
+<td><p>50725</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>173</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Phalombe</p></td>
+<td><p>33708</p></td>
+<td><p>31658</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>174</p></td>
+<td><p>2019</p></td>
+<td><p>Q1</p></td>
+<td><p>Balaka</p></td>
+<td><p>21306</p></td>
+<td><p>20681</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>175</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>National</p></td>
+<td><p>819947</p></td>
+<td><p>743147</p></td>
+<td><p>0.91</p></td>
+<td><p>239987.0</p></td>
+<td><p>0.29</p></td>
+</tr>
+<tr class="row-even"><td><p>176</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>81449</p></td>
+<td><p>73251</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>177</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6286</p></td>
+<td><p>4809</p></td>
+<td><p>0.76</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>178</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Karonga</p></td>
+<td><p>14255</p></td>
+<td><p>12877</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>179</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>10070</p></td>
+<td><p>7737</p></td>
+<td><p>0.77</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>180</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8252</p></td>
+<td><p>8038</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>181</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>26040</p></td>
+<td><p>24413</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>182</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>15830</p></td>
+<td><p>14669</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>183</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Likoma</p></td>
+<td><p>716</p></td>
+<td><p>709</p></td>
+<td><p>0.99</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>184</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>65001</p></td>
+<td><p>61421</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>185</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12537</p></td>
+<td><p>12053</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>186</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Kasungu</p></td>
+<td><p>17728</p></td>
+<td><p>17170</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>187</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4803</p></td>
+<td><p>4599</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>188</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Dowa</p></td>
+<td><p>13049</p></td>
+<td><p>12591</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>189</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Salima</p></td>
+<td><p>16884</p></td>
+<td><p>15008</p></td>
+<td><p>0.89</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>190</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>167917</p></td>
+<td><p>157708</p></td>
+<td><p>0.94</p></td>
+<td><p>72592.0</p></td>
+<td><p>0.43</p></td>
+</tr>
+<tr class="row-odd"><td><p>191</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>104273</p></td>
+<td><p>98019</p></td>
+<td><p>0.93</p></td>
+<td><p>72592.0</p></td>
+<td><p>0.7</p></td>
+</tr>
+<tr class="row-even"><td><p>192</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Mchinji</p></td>
+<td><p>17191</p></td>
+<td><p>15865</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>193</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Dedza</p></td>
+<td><p>19392</p></td>
+<td><p>18646</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>194</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>27061</p></td>
+<td><p>26177</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>195</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>South West Zone</p></td>
+<td><p>254597</p></td>
+<td><p>217910</p></td>
+<td><p>0.86</p></td>
+<td><p>131844.0</p></td>
+<td><p>0.52</p></td>
+</tr>
+<tr class="row-even"><td><p>196</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>40255</p></td>
+<td><p>36757</p></td>
+<td><p>0.91</p></td>
+<td><p>31222.0</p></td>
+<td><p>0.78</p></td>
+</tr>
+<tr class="row-odd"><td><p>197</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Blantyre</p></td>
+<td><p>93288</p></td>
+<td><p>69559</p></td>
+<td><p>0.75</p></td>
+<td><p>63176.0</p></td>
+<td><p>0.68</p></td>
+</tr>
+<tr class="row-even"><td><p>198</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6269</p></td>
+<td><p>5926</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>199</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Thyolo</p></td>
+<td><p>54701</p></td>
+<td><p>50543</p></td>
+<td><p>0.92</p></td>
+<td><p>37445.0</p></td>
+<td><p>0.68</p></td>
+</tr>
+<tr class="row-even"><td><p>200</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>29685</p></td>
+<td><p>28066</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>201</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Nsanje</p></td>
+<td><p>21940</p></td>
+<td><p>18842</p></td>
+<td><p>0.86</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>202</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Neno</p></td>
+<td><p>8459</p></td>
+<td><p>8216</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>203</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>South East Zone</p></td>
+<td><p>250983</p></td>
+<td><p>232858</p></td>
+<td><p>0.93</p></td>
+<td><p>35551.0</p></td>
+<td><p>0.14</p></td>
+</tr>
+<tr class="row-even"><td><p>204</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Mangochi</p></td>
+<td><p>53396</p></td>
+<td><p>50214</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>205</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Machinga</p></td>
+<td><p>30660</p></td>
+<td><p>28928</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>206</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Zomba</p></td>
+<td><p>54302</p></td>
+<td><p>50774</p></td>
+<td><p>0.94</p></td>
+<td><p>35551.0</p></td>
+<td><p>0.65</p></td>
+</tr>
+<tr class="row-odd"><td><p>207</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Mulanje</p></td>
+<td><p>56732</p></td>
+<td><p>50981</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>208</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Phalombe</p></td>
+<td><p>34205</p></td>
+<td><p>31114</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>209</p></td>
+<td><p>2019</p></td>
+<td><p>Q2</p></td>
+<td><p>Balaka</p></td>
+<td><p>21688</p></td>
+<td><p>20848</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>210</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>National</p></td>
+<td><p>826102</p></td>
+<td><p>716840</p></td>
+<td><p>0.87</p></td>
+<td><p>220418.0</p></td>
+<td><p>0.27</p></td>
+</tr>
+<tr class="row-odd"><td><p>211</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>81610</p></td>
+<td><p>72422</p></td>
+<td><p>0.89</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>212</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6460</p></td>
+<td><p>4778</p></td>
+<td><p>0.74</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>213</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Karonga</p></td>
+<td><p>14319</p></td>
+<td><p>11678</p></td>
+<td><p>0.82</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>214</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>10193</p></td>
+<td><p>9691</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>215</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8276</p></td>
+<td><p>7838</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>216</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>25724</p></td>
+<td><p>23364</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>217</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>15884</p></td>
+<td><p>14335</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>218</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Likoma</p></td>
+<td><p>754</p></td>
+<td><p>739</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>219</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>65597</p></td>
+<td><p>62327</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>220</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12729</p></td>
+<td><p>12002</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>221</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Kasungu</p></td>
+<td><p>17888</p></td>
+<td><p>16851</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>222</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4864</p></td>
+<td><p>4760</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>223</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Dowa</p></td>
+<td><p>13114</p></td>
+<td><p>12630</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>224</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Salima</p></td>
+<td><p>17002</p></td>
+<td><p>16085</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>225</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>168958</p></td>
+<td><p>153744</p></td>
+<td><p>0.91</p></td>
+<td><p>58612.0</p></td>
+<td><p>0.35</p></td>
+</tr>
+<tr class="row-even"><td><p>226</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>105262</p></td>
+<td><p>95030</p></td>
+<td><p>0.9</p></td>
+<td><p>58612.0</p></td>
+<td><p>0.56</p></td>
+</tr>
+<tr class="row-odd"><td><p>227</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Mchinji</p></td>
+<td><p>16901</p></td>
+<td><p>15998</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>228</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Dedza</p></td>
+<td><p>19610</p></td>
+<td><p>18962</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>229</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>27185</p></td>
+<td><p>23754</p></td>
+<td><p>0.87</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>230</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>South West Zone</p></td>
+<td><p>257639</p></td>
+<td><p>214968</p></td>
+<td><p>0.83</p></td>
+<td><p>125479.0</p></td>
+<td><p>0.49</p></td>
+</tr>
+<tr class="row-odd"><td><p>231</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>41140</p></td>
+<td><p>35877</p></td>
+<td><p>0.87</p></td>
+<td><p>30473.0</p></td>
+<td><p>0.74</p></td>
+</tr>
+<tr class="row-even"><td><p>232</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Blantyre</p></td>
+<td><p>94575</p></td>
+<td><p>71477</p></td>
+<td><p>0.76</p></td>
+<td><p>59512.0</p></td>
+<td><p>0.63</p></td>
+</tr>
+<tr class="row-odd"><td><p>233</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6224</p></td>
+<td><p>5803</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>234</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Thyolo</p></td>
+<td><p>55994</p></td>
+<td><p>46666</p></td>
+<td><p>0.83</p></td>
+<td><p>35493.0</p></td>
+<td><p>0.63</p></td>
+</tr>
+<tr class="row-odd"><td><p>235</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>29764</p></td>
+<td><p>26451</p></td>
+<td><p>0.89</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>236</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Nsanje</p></td>
+<td><p>21389</p></td>
+<td><p>20250</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>237</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Neno</p></td>
+<td><p>8523</p></td>
+<td><p>8445</p></td>
+<td><p>0.99</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>238</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>South East Zone</p></td>
+<td><p>252298</p></td>
+<td><p>213379</p></td>
+<td><p>0.85</p></td>
+<td><p>36327.0</p></td>
+<td><p>0.14</p></td>
+</tr>
+<tr class="row-odd"><td><p>239</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Mangochi</p></td>
+<td><p>53990</p></td>
+<td><p>49514</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>240</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Machinga</p></td>
+<td><p>30597</p></td>
+<td><p>24361</p></td>
+<td><p>0.8</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>241</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Zomba</p></td>
+<td><p>55334</p></td>
+<td><p>46369</p></td>
+<td><p>0.84</p></td>
+<td><p>36327.0</p></td>
+<td><p>0.66</p></td>
+</tr>
+<tr class="row-even"><td><p>242</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Mulanje</p></td>
+<td><p>58895</p></td>
+<td><p>47321</p></td>
+<td><p>0.83</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>243</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Phalombe</p></td>
+<td><p>33630</p></td>
+<td><p>25979</p></td>
+<td><p>0.77</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>244</p></td>
+<td><p>2019</p></td>
+<td><p>Q3</p></td>
+<td><p>Balaka</p></td>
+<td><p>21852</p></td>
+<td><p>19836</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>245</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>National</p></td>
+<td><p>833277</p></td>
+<td><p>729267</p></td>
+<td><p>0.88</p></td>
+<td><p>207334.0</p></td>
+<td><p>0.25</p></td>
+</tr>
+<tr class="row-even"><td><p>246</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>83419</p></td>
+<td><p>75579</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>247</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6544</p></td>
+<td><p>4838</p></td>
+<td><p>0.74</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>248</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Karonga</p></td>
+<td><p>14571</p></td>
+<td><p>13947</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>249</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>10399</p></td>
+<td><p>9807</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>250</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8505</p></td>
+<td><p>8327</p></td>
+<td><p>0.98</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>251</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>26559</p></td>
+<td><p>24517</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>252</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>16056</p></td>
+<td><p>13981</p></td>
+<td><p>0.87</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>253</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Likoma</p></td>
+<td><p>785</p></td>
+<td><p>163</p></td>
+<td><p>0.21</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>254</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>65904</p></td>
+<td><p>61476</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>255</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12719</p></td>
+<td><p>11881</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>256</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Kasungu</p></td>
+<td><p>18041</p></td>
+<td><p>16655</p></td>
+<td><p>0.92</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>257</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4864</p></td>
+<td><p>4737</p></td>
+<td><p>0.97</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>258</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Dowa</p></td>
+<td><p>13227</p></td>
+<td><p>11910</p></td>
+<td><p>0.9</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>259</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Salima</p></td>
+<td><p>17053</p></td>
+<td><p>16292</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>260</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>170397</p></td>
+<td><p>153673</p></td>
+<td><p>0.9</p></td>
+<td><p>61526.0</p></td>
+<td><p>0.36</p></td>
+</tr>
+<tr class="row-odd"><td><p>261</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>106061</p></td>
+<td><p>97089</p></td>
+<td><p>0.92</p></td>
+<td><p>61526.0</p></td>
+<td><p>0.58</p></td>
+</tr>
+<tr class="row-even"><td><p>262</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Mchinji</p></td>
+<td><p>17206</p></td>
+<td><p>13273</p></td>
+<td><p>0.77</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>263</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Dedza</p></td>
+<td><p>19543</p></td>
+<td><p>18334</p></td>
+<td><p>0.94</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>264</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>27587</p></td>
+<td><p>24977</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>265</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>South West Zone</p></td>
+<td><p>256971</p></td>
+<td><p>223542</p></td>
+<td><p>0.87</p></td>
+<td><p>115040.0</p></td>
+<td><p>0.45</p></td>
+</tr>
+<tr class="row-even"><td><p>266</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>40778</p></td>
+<td><p>36566</p></td>
+<td><p>0.9</p></td>
+<td><p>31869.0</p></td>
+<td><p>0.78</p></td>
+</tr>
+<tr class="row-odd"><td><p>267</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Blantyre</p></td>
+<td><p>95125</p></td>
+<td><p>78991</p></td>
+<td><p>0.83</p></td>
+<td><p>48458.0</p></td>
+<td><p>0.51</p></td>
+</tr>
+<tr class="row-even"><td><p>268</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6407</p></td>
+<td><p>5939</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>269</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Thyolo</p></td>
+<td><p>57398</p></td>
+<td><p>51743</p></td>
+<td><p>0.9</p></td>
+<td><p>34713.0</p></td>
+<td><p>0.6</p></td>
+</tr>
+<tr class="row-even"><td><p>270</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>27851</p></td>
+<td><p>25396</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>271</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Nsanje</p></td>
+<td><p>20870</p></td>
+<td><p>16385</p></td>
+<td><p>0.79</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>272</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Neno</p></td>
+<td><p>8542</p></td>
+<td><p>8522</p></td>
+<td><p>1</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>273</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>South East Zone</p></td>
+<td><p>256586</p></td>
+<td><p>214998</p></td>
+<td><p>0.84</p></td>
+<td><p>30769.0</p></td>
+<td><p>0.12</p></td>
+</tr>
+<tr class="row-even"><td><p>274</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Mangochi</p></td>
+<td><p>53437</p></td>
+<td><p>43942</p></td>
+<td><p>0.82</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>275</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Machinga</p></td>
+<td><p>31475</p></td>
+<td><p>26245</p></td>
+<td><p>0.83</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>276</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Zomba</p></td>
+<td><p>56742</p></td>
+<td><p>48882</p></td>
+<td><p>0.86</p></td>
+<td><p>30769.0</p></td>
+<td><p>0.54</p></td>
+</tr>
+<tr class="row-odd"><td><p>277</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Mulanje</p></td>
+<td><p>57604</p></td>
+<td><p>50466</p></td>
+<td><p>0.88</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>278</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Phalombe</p></td>
+<td><p>35531</p></td>
+<td><p>25631</p></td>
+<td><p>0.72</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>279</p></td>
+<td><p>2019</p></td>
+<td><p>Q4</p></td>
+<td><p>Balaka</p></td>
+<td><p>21797</p></td>
+<td><p>19833</p></td>
+<td><p>0.91</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>280</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>National</p></td>
+<td><p>840229</p></td>
+<td><p>658773</p></td>
+<td><p>0.78</p></td>
+<td><p>92773.0</p></td>
+<td><p>0.11</p></td>
+</tr>
+<tr class="row-odd"><td><p>281</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>83963</p></td>
+<td><p>65387</p></td>
+<td><p>0.78</p></td>
+<td><p>785.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>282</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6660</p></td>
+<td><p>4849</p></td>
+<td><p>0.73</p></td>
+<td><p>14.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>283</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Karonga</p></td>
+<td><p>14656</p></td>
+<td><p>12235</p></td>
+<td><p>0.83</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>284</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>10465</p></td>
+<td><p>9713</p></td>
+<td><p>0.93</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>285</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8544</p></td>
+<td><p>8128</p></td>
+<td><p>0.95</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>286</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>26760</p></td>
+<td><p>15848</p></td>
+<td><p>0.59</p></td>
+<td><p>592.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>287</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>16098</p></td>
+<td><p>16850</p></td>
+<td><p>0.86</p></td>
+<td><p>57.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>288</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Likoma</p></td>
+<td><p>780</p></td>
+<td><p>764</p></td>
+<td><p>0.98</p></td>
+<td><p>122.0</p></td>
+<td><p>0.16</p></td>
+</tr>
+<tr class="row-odd"><td><p>289</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>66636</p></td>
+<td><p>61017</p></td>
+<td><p>0.92</p></td>
+<td><p>2659.0</p></td>
+<td><p>0.04</p></td>
+</tr>
+<tr class="row-even"><td><p>290</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>12938</p></td>
+<td><p>12144</p></td>
+<td><p>0.94</p></td>
+<td><p>26.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>291</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Kasungu</p></td>
+<td><p>18204</p></td>
+<td><p>15942</p></td>
+<td><p>0.88</p></td>
+<td><p>49.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>292</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4894</p></td>
+<td><p>4732</p></td>
+<td><p>0.97</p></td>
+<td><p>8.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>293</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Dowa</p></td>
+<td><p>13455</p></td>
+<td><p>12948</p></td>
+<td><p>0.96</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>294</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Salima</p></td>
+<td><p>17145</p></td>
+<td><p>15251</p></td>
+<td><p>0.89</p></td>
+<td><p>2576.0</p></td>
+<td><p>0.15</p></td>
+</tr>
+<tr class="row-odd"><td><p>295</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>173023</p></td>
+<td><p>144149</p></td>
+<td><p>0.83</p></td>
+<td><p>10103.0</p></td>
+<td><p>0.06</p></td>
+</tr>
+<tr class="row-even"><td><p>296</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>107915</p></td>
+<td><p>91197</p></td>
+<td><p>0.85</p></td>
+<td><p>9247.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-odd"><td><p>297</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Mchinji</p></td>
+<td><p>17482</p></td>
+<td><p>15444</p></td>
+<td><p>0.88</p></td>
+<td><p>20.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>298</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Dedza</p></td>
+<td><p>19923</p></td>
+<td><p>12789</p></td>
+<td><p>0.64</p></td>
+<td><p>4.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>299</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>27703</p></td>
+<td><p>24719</p></td>
+<td><p>0.89</p></td>
+<td><p>833.0</p></td>
+<td><p>0.03</p></td>
+</tr>
+<tr class="row-even"><td><p>300</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>South West Zone</p></td>
+<td><p>264610</p></td>
+<td><p>192149</p></td>
+<td><p>0.73</p></td>
+<td><p>52165.0</p></td>
+<td><p>0.2</p></td>
+</tr>
+<tr class="row-odd"><td><p>301</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>41240</p></td>
+<td><p>28671</p></td>
+<td><p>0.7</p></td>
+<td><p>16331.0</p></td>
+<td><p>0.4</p></td>
+</tr>
+<tr class="row-even"><td><p>302</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Blantyre</p></td>
+<td><p>97097</p></td>
+<td><p>73804</p></td>
+<td><p>0.76</p></td>
+<td><p>23976.0</p></td>
+<td><p>0.25</p></td>
+</tr>
+<tr class="row-odd"><td><p>303</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6468</p></td>
+<td><p>406</p></td>
+<td><p>0.06</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>304</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Thyolo</p></td>
+<td><p>57928</p></td>
+<td><p>32184</p></td>
+<td><p>0.56</p></td>
+<td><p>8316.0</p></td>
+<td><p>0.14</p></td>
+</tr>
+<tr class="row-odd"><td><p>305</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>31065</p></td>
+<td><p>28594</p></td>
+<td><p>0.92</p></td>
+<td><p>2678.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-even"><td><p>306</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Nsanje</p></td>
+<td><p>22137</p></td>
+<td><p>21006</p></td>
+<td><p>0.95</p></td>
+<td><p>805.0</p></td>
+<td><p>0.04</p></td>
+</tr>
+<tr class="row-odd"><td><p>307</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Neno</p></td>
+<td><p>8675</p></td>
+<td><p>7485</p></td>
+<td><p>0.86</p></td>
+<td><p>59.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>308</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>South East Zone</p></td>
+<td><p>251997</p></td>
+<td><p>196070</p></td>
+<td><p>0.78</p></td>
+<td><p>27060.0</p></td>
+<td><p>0.11</p></td>
+</tr>
+<tr class="row-odd"><td><p>309</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Mangochi</p></td>
+<td><p>53272</p></td>
+<td><p>35420</p></td>
+<td><p>0.66</p></td>
+<td><p>13630.0</p></td>
+<td><p>0.26</p></td>
+</tr>
+<tr class="row-even"><td><p>310</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Machinga</p></td>
+<td><p>30328</p></td>
+<td><p>24176</p></td>
+<td><p>0.8</p></td>
+<td><p>439.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-odd"><td><p>311</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Zomba</p></td>
+<td><p>54537</p></td>
+<td><p>39871</p></td>
+<td><p>0.73</p></td>
+<td><p>12966.0</p></td>
+<td><p>0.24</p></td>
+</tr>
+<tr class="row-even"><td><p>312</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Mulanje</p></td>
+<td><p>56531</p></td>
+<td><p>51122</p></td>
+<td><p>0.9</p></td>
+<td><p>26.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>313</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Phalombe</p></td>
+<td><p>35452</p></td>
+<td><p>26636</p></td>
+<td><p>0.75</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>314</p></td>
+<td><p>2020</p></td>
+<td><p>Q1</p></td>
+<td><p>Balaka</p></td>
+<td><p>21877</p></td>
+<td><p>18845</p></td>
+<td><p>0.86</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>315</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>National</p></td>
+<td><p>846164</p></td>
+<td><p>603346</p></td>
+<td><p>0.71</p></td>
+<td><p>54647.0</p></td>
+<td><p>0.06</p></td>
+</tr>
+<tr class="row-even"><td><p>316</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>84339</p></td>
+<td><p>61593</p></td>
+<td><p>0.73</p></td>
+<td><p>2010.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>317</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6739</p></td>
+<td><p>3970</p></td>
+<td><p>0.59</p></td>
+<td><p>294.0</p></td>
+<td><p>0.04</p></td>
+</tr>
+<tr class="row-even"><td><p>318</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Karonga</p></td>
+<td><p>14842</p></td>
+<td><p>11242</p></td>
+<td><p>0.76</p></td>
+<td><p>339.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>319</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>10444</p></td>
+<td><p>7722</p></td>
+<td><p>0.74</p></td>
+<td><p>421.0</p></td>
+<td><p>0.04</p></td>
+</tr>
+<tr class="row-even"><td><p>320</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8422</p></td>
+<td><p>7363</p></td>
+<td><p>0.87</p></td>
+<td><p>142.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>321</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>26765</p></td>
+<td><p>20398</p></td>
+<td><p>0.76</p></td>
+<td><p>577.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-even"><td><p>322</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>16314</p></td>
+<td><p>10742</p></td>
+<td><p>0.66</p></td>
+<td><p>239.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-odd"><td><p>323</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Likoma</p></td>
+<td><p>813</p></td>
+<td><p>158</p></td>
+<td><p>0.19</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>324</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>67115</p></td>
+<td><p>56908</p></td>
+<td><p>0.85</p></td>
+<td><p>2665.0</p></td>
+<td><p>0.04</p></td>
+</tr>
+<tr class="row-odd"><td><p>325</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>13074</p></td>
+<td><p>12155</p></td>
+<td><p>0.93</p></td>
+<td><p>56.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>326</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Kasungu</p></td>
+<td><p>18333</p></td>
+<td><p>11888</p></td>
+<td><p>0.65</p></td>
+<td><p>332.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>327</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4952</p></td>
+<td><p>4401</p></td>
+<td><p>0.89</p></td>
+<td><p>482.0</p></td>
+<td><p>0.1</p></td>
+</tr>
+<tr class="row-even"><td><p>328</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Dowa</p></td>
+<td><p>13438</p></td>
+<td><p>12733</p></td>
+<td><p>0.95</p></td>
+<td><p>209.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>329</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Salima</p></td>
+<td><p>17318</p></td>
+<td><p>15731</p></td>
+<td><p>0.91</p></td>
+<td><p>1585.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-even"><td><p>330</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>174362</p></td>
+<td><p>127269</p></td>
+<td><p>0.73</p></td>
+<td><p>8266.0</p></td>
+<td><p>0.05</p></td>
+</tr>
+<tr class="row-odd"><td><p>331</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>109068</p></td>
+<td><p>85224</p></td>
+<td><p>0.78</p></td>
+<td><p>6089.0</p></td>
+<td><p>0.06</p></td>
+</tr>
+<tr class="row-even"><td><p>332</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Mchinji</p></td>
+<td><p>17499</p></td>
+<td><p>11339</p></td>
+<td><p>0.65</p></td>
+<td><p>465.0</p></td>
+<td><p>0.03</p></td>
+</tr>
+<tr class="row-odd"><td><p>333</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Dedza</p></td>
+<td><p>19924</p></td>
+<td><p>11526</p></td>
+<td><p>0.58</p></td>
+<td><p>121.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>334</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>27871</p></td>
+<td><p>19180</p></td>
+<td><p>0.69</p></td>
+<td><p>1591.0</p></td>
+<td><p>0.06</p></td>
+</tr>
+<tr class="row-odd"><td><p>335</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>South West Zone</p></td>
+<td><p>263907</p></td>
+<td><p>175494</p></td>
+<td><p>0.66</p></td>
+<td><p>21331.0</p></td>
+<td><p>0.08</p></td>
+</tr>
+<tr class="row-even"><td><p>336</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>41114</p></td>
+<td><p>24012</p></td>
+<td><p>0.58</p></td>
+<td><p>5065.0</p></td>
+<td><p>0.12</p></td>
+</tr>
+<tr class="row-odd"><td><p>337</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Blantyre</p></td>
+<td><p>97548</p></td>
+<td><p>66296</p></td>
+<td><p>0.68</p></td>
+<td><p>8581.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-even"><td><p>338</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6511</p></td>
+<td><p>4168</p></td>
+<td><p>0.64</p></td>
+<td><p>150.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>339</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Thyolo</p></td>
+<td><p>56449</p></td>
+<td><p>34822</p></td>
+<td><p>0.62</p></td>
+<td><p>5180.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-even"><td><p>340</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>31036</p></td>
+<td><p>21438</p></td>
+<td><p>0.69</p></td>
+<td><p>598.0</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>341</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Nsanje</p></td>
+<td><p>22344</p></td>
+<td><p>16799</p></td>
+<td><p>0.75</p></td>
+<td><p>963.0</p></td>
+<td><p>0.04</p></td>
+</tr>
+<tr class="row-even"><td><p>342</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Neno</p></td>
+<td><p>8905</p></td>
+<td><p>7960</p></td>
+<td><p>0.89</p></td>
+<td><p>793.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-odd"><td><p>343</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>South East Zone</p></td>
+<td><p>256441</p></td>
+<td><p>182082</p></td>
+<td><p>0.71</p></td>
+<td><p>20375.0</p></td>
+<td><p>0.08</p></td>
+</tr>
+<tr class="row-even"><td><p>344</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Mangochi</p></td>
+<td><p>53001</p></td>
+<td><p>39089</p></td>
+<td><p>0.74</p></td>
+<td><p>8261.0</p></td>
+<td><p>0.16</p></td>
+</tr>
+<tr class="row-odd"><td><p>345</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Machinga</p></td>
+<td><p>31230</p></td>
+<td><p>14550</p></td>
+<td><p>0.47</p></td>
+<td><p>0.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-even"><td><p>346</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Zomba</p></td>
+<td><p>57189</p></td>
+<td><p>39501</p></td>
+<td><p>0.69</p></td>
+<td><p>5076.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-odd"><td><p>347</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Mulanje</p></td>
+<td><p>57010</p></td>
+<td><p>47329</p></td>
+<td><p>0.83</p></td>
+<td><p>5602.0</p></td>
+<td><p>0.1</p></td>
+</tr>
+<tr class="row-even"><td><p>348</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Phalombe</p></td>
+<td><p>35720</p></td>
+<td><p>26338</p></td>
+<td><p>0.74</p></td>
+<td><p>36.0</p></td>
+<td><p>0.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>349</p></td>
+<td><p>2020</p></td>
+<td><p>Q2</p></td>
+<td><p>Balaka</p></td>
+<td><p>22291</p></td>
+<td><p>15274</p></td>
+<td><p>0.69</p></td>
+<td><p>1401.0</p></td>
+<td><p>0.06</p></td>
+</tr>
+<tr class="row-even"><td><p>350</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>National</p></td>
+<td><p>852425</p></td>
+<td><p>604764</p></td>
+<td><p>0.71</p></td>
+<td><p>89967.0</p></td>
+<td><p>0.11</p></td>
+</tr>
+<tr class="row-odd"><td><p>351</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>84588</p></td>
+<td><p>66771</p></td>
+<td><p>0.79</p></td>
+<td><p>12623.0</p></td>
+<td><p>0.15</p></td>
+</tr>
+<tr class="row-even"><td><p>352</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6826</p></td>
+<td><p>4524</p></td>
+<td><p>0.66</p></td>
+<td><p>660.0</p></td>
+<td><p>0.1</p></td>
+</tr>
+<tr class="row-odd"><td><p>353</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Karonga</p></td>
+<td><p>14810</p></td>
+<td><p>12068</p></td>
+<td><p>0.81</p></td>
+<td><p>181.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>354</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>10828</p></td>
+<td><p>9250</p></td>
+<td><p>0.85</p></td>
+<td><p>2127.0</p></td>
+<td><p>0.2</p></td>
+</tr>
+<tr class="row-odd"><td><p>355</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8469</p></td>
+<td><p>6728</p></td>
+<td><p>0.79</p></td>
+<td><p>1377.0</p></td>
+<td><p>0.16</p></td>
+</tr>
+<tr class="row-even"><td><p>356</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>26783</p></td>
+<td><p>20452</p></td>
+<td><p>0.76</p></td>
+<td><p>6171.0</p></td>
+<td><p>0.23</p></td>
+</tr>
+<tr class="row-odd"><td><p>357</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>16080</p></td>
+<td><p>12957</p></td>
+<td><p>0.81</p></td>
+<td><p>1711.0</p></td>
+<td><p>0.11</p></td>
+</tr>
+<tr class="row-even"><td><p>358</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Likoma</p></td>
+<td><p>792</p></td>
+<td><p>792</p></td>
+<td><p>1</p></td>
+<td><p>396.0</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>359</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>66945</p></td>
+<td><p>52280</p></td>
+<td><p>0.78</p></td>
+<td><p>9659.0</p></td>
+<td><p>0.14</p></td>
+</tr>
+<tr class="row-even"><td><p>360</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>13013</p></td>
+<td><p>10431</p></td>
+<td><p>0.8</p></td>
+<td><p>1157.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-odd"><td><p>361</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Kasungu</p></td>
+<td><p>18159</p></td>
+<td><p>14128</p></td>
+<td><p>0.78</p></td>
+<td><p>1345.0</p></td>
+<td><p>0.07</p></td>
+</tr>
+<tr class="row-even"><td><p>362</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4939</p></td>
+<td><p>4101</p></td>
+<td><p>0.83</p></td>
+<td><p>668.0</p></td>
+<td><p>0.14</p></td>
+</tr>
+<tr class="row-odd"><td><p>363</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Dowa</p></td>
+<td><p>13430</p></td>
+<td><p>9582</p></td>
+<td><p>0.71</p></td>
+<td><p>423.0</p></td>
+<td><p>0.03</p></td>
+</tr>
+<tr class="row-even"><td><p>364</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Salima</p></td>
+<td><p>17404</p></td>
+<td><p>14039</p></td>
+<td><p>0.81</p></td>
+<td><p>6067.0</p></td>
+<td><p>0.35</p></td>
+</tr>
+<tr class="row-odd"><td><p>365</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>175719</p></td>
+<td><p>139436</p></td>
+<td><p>0.79</p></td>
+<td><p>20066.0</p></td>
+<td><p>0.11</p></td>
+</tr>
+<tr class="row-even"><td><p>366</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>110142</p></td>
+<td><p>86325</p></td>
+<td><p>0.78</p></td>
+<td><p>14118.0</p></td>
+<td><p>0.13</p></td>
+</tr>
+<tr class="row-odd"><td><p>367</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Mchinji</p></td>
+<td><p>17664</p></td>
+<td><p>13233</p></td>
+<td><p>0.75</p></td>
+<td><p>186.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>368</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Dedza</p></td>
+<td><p>20018</p></td>
+<td><p>17444</p></td>
+<td><p>0.87</p></td>
+<td><p>4307.0</p></td>
+<td><p>0.22</p></td>
+</tr>
+<tr class="row-odd"><td><p>369</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>27895</p></td>
+<td><p>22343</p></td>
+<td><p>0.8</p></td>
+<td><p>1454.0</p></td>
+<td><p>0.05</p></td>
+</tr>
+<tr class="row-even"><td><p>370</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>South West Zone</p></td>
+<td><p>266977</p></td>
+<td><p>178168</p></td>
+<td><p>0.67</p></td>
+<td><p>25577.0</p></td>
+<td><p>0.1</p></td>
+</tr>
+<tr class="row-odd"><td><p>371</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>41064</p></td>
+<td><p>25897</p></td>
+<td><p>0.62</p></td>
+<td><p>2888.0</p></td>
+<td><p>0.07</p></td>
+</tr>
+<tr class="row-even"><td><p>372</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Blantyre</p></td>
+<td><p>99026</p></td>
+<td><p>53415</p></td>
+<td><p>0.54</p></td>
+<td><p>7184.0</p></td>
+<td><p>0.07</p></td>
+</tr>
+<tr class="row-odd"><td><p>373</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6586</p></td>
+<td><p>4199</p></td>
+<td><p>0.64</p></td>
+<td><p>67.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>374</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Thyolo</p></td>
+<td><p>56946</p></td>
+<td><p>43161</p></td>
+<td><p>0.76</p></td>
+<td><p>4000.0</p></td>
+<td><p>0.07</p></td>
+</tr>
+<tr class="row-odd"><td><p>375</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>31204</p></td>
+<td><p>25488</p></td>
+<td><p>0.82</p></td>
+<td><p>8094.0</p></td>
+<td><p>0.26</p></td>
+</tr>
+<tr class="row-even"><td><p>376</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Nsanje</p></td>
+<td><p>22661</p></td>
+<td><p>17448</p></td>
+<td><p>0.77</p></td>
+<td><p>2364.0</p></td>
+<td><p>0.1</p></td>
+</tr>
+<tr class="row-odd"><td><p>377</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Neno</p></td>
+<td><p>8950</p></td>
+<td><p>8560</p></td>
+<td><p>0.96</p></td>
+<td><p>980.0</p></td>
+<td><p>0.11</p></td>
+</tr>
+<tr class="row-even"><td><p>378</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>South East Zone</p></td>
+<td><p>258196</p></td>
+<td><p>168109</p></td>
+<td><p>0.65</p></td>
+<td><p>22042.0</p></td>
+<td><p>0.09</p></td>
+</tr>
+<tr class="row-odd"><td><p>379</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Mangochi</p></td>
+<td><p>52545</p></td>
+<td><p>33528</p></td>
+<td><p>0.64</p></td>
+<td><p>6812.0</p></td>
+<td><p>0.13</p></td>
+</tr>
+<tr class="row-even"><td><p>380</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Machinga</p></td>
+<td><p>31023</p></td>
+<td><p>19679</p></td>
+<td><p>0.63</p></td>
+<td><p>2003.0</p></td>
+<td><p>0.06</p></td>
+</tr>
+<tr class="row-odd"><td><p>381</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Zomba</p></td>
+<td><p>58566</p></td>
+<td><p>35996</p></td>
+<td><p>0.61</p></td>
+<td><p>4920.0</p></td>
+<td><p>0.08</p></td>
+</tr>
+<tr class="row-even"><td><p>382</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Mulanje</p></td>
+<td><p>57871</p></td>
+<td><p>39664</p></td>
+<td><p>0.69</p></td>
+<td><p>4425.0</p></td>
+<td><p>0.08</p></td>
+</tr>
+<tr class="row-odd"><td><p>383</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Phalombe</p></td>
+<td><p>35799</p></td>
+<td><p>24511</p></td>
+<td><p>0.68</p></td>
+<td><p>455.0</p></td>
+<td><p>0.01</p></td>
+</tr>
+<tr class="row-even"><td><p>384</p></td>
+<td><p>2020</p></td>
+<td><p>Q3</p></td>
+<td><p>Balaka</p></td>
+<td><p>22212</p></td>
+<td><p>14731</p></td>
+<td><p>0.66</p></td>
+<td><p>3427.0</p></td>
+<td><p>0.15</p></td>
+</tr>
+<tr class="row-odd"><td><p>385</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>National</p></td>
+<td><p>864491</p></td>
+<td><p>616843</p></td>
+<td><p>0.71</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>386</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>86561</p></td>
+<td><p>67731</p></td>
+<td><p>0.78</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>387</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Chitipa</p></td>
+<td><p>6920</p></td>
+<td><p>2781</p></td>
+<td><p>0.4</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>388</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Karonga</p></td>
+<td><p>14910</p></td>
+<td><p>11161</p></td>
+<td><p>0.75</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>389</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>11065</p></td>
+<td><p>10070</p></td>
+<td><p>0.91</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>390</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8830</p></td>
+<td><p>8061</p></td>
+<td><p>0.91</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>391</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>27485</p></td>
+<td><p>22351</p></td>
+<td><p>0.81</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>392</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>16545</p></td>
+<td><p>12735</p></td>
+<td><p>0.77</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>393</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Likoma</p></td>
+<td><p>806</p></td>
+<td><p>572</p></td>
+<td><p>0.71</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>394</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>68338</p></td>
+<td><p>58886</p></td>
+<td><p>0.86</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>395</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>13556</p></td>
+<td><p>11583</p></td>
+<td><p>0.85</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>396</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Kasungu</p></td>
+<td><p>18605</p></td>
+<td><p>15678</p></td>
+<td><p>0.84</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>397</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4960</p></td>
+<td><p>4673</p></td>
+<td><p>0.94</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>398</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Dowa</p></td>
+<td><p>13595</p></td>
+<td><p>10982</p></td>
+<td><p>0.81</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>399</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Salima</p></td>
+<td><p>17622</p></td>
+<td><p>15971</p></td>
+<td><p>0.91</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>400</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>178392</p></td>
+<td><p>112222</p></td>
+<td><p>0.63</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>401</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>111298</p></td>
+<td><p>67320</p></td>
+<td><p>0.6</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>402</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Mchinji</p></td>
+<td><p>18309</p></td>
+<td><p>8101</p></td>
+<td><p>0.44</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>403</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Dedza</p></td>
+<td><p>20339</p></td>
+<td><p>13451</p></td>
+<td><p>0.66</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>404</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>28446</p></td>
+<td><p>23349</p></td>
+<td><p>0.82</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>405</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>South West Zone</p></td>
+<td><p>269482</p></td>
+<td><p>198439</p></td>
+<td><p>0.74</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>406</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>41641</p></td>
+<td><p>30805</p></td>
+<td><p>0.74</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>407</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Blantyre</p></td>
+<td><p>101252</p></td>
+<td><p>69292</p></td>
+<td><p>0.68</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>408</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6700</p></td>
+<td><p>2362</p></td>
+<td><p>0.35</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>409</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Thyolo</p></td>
+<td><p>56749</p></td>
+<td><p>41892</p></td>
+<td><p>0.74</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>410</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>31185</p></td>
+<td><p>25837</p></td>
+<td><p>0.83</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>411</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Nsanje</p></td>
+<td><p>23065</p></td>
+<td><p>20112</p></td>
+<td><p>0.87</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>412</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Neno</p></td>
+<td><p>8890</p></td>
+<td><p>8140</p></td>
+<td><p>0.92</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>413</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>South East Zone</p></td>
+<td><p>261718</p></td>
+<td><p>179565</p></td>
+<td><p>0.69</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>414</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Mangochi</p></td>
+<td><p>55035</p></td>
+<td><p>37492</p></td>
+<td><p>0.68</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>415</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Machinga</p></td>
+<td><p>31860</p></td>
+<td><p>23410</p></td>
+<td><p>0.73</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>416</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Zomba</p></td>
+<td><p>58737</p></td>
+<td><p>38890</p></td>
+<td><p>0.66</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>417</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Mulanje</p></td>
+<td><p>57932</p></td>
+<td><p>41253</p></td>
+<td><p>0.91</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>418</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Phalombe</p></td>
+<td><p>35653</p></td>
+<td><p>20202</p></td>
+<td><p>0.57</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>419</p></td>
+<td><p>2020</p></td>
+<td><p>Q4</p></td>
+<td><p>Balaka</p></td>
+<td><p>22501</p></td>
+<td><p>18317</p></td>
+<td><p>0.81</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>420</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>National</p></td>
+<td><p>871098</p></td>
+<td><p>660603</p></td>
+<td><p>0.76</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>421</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Northern Zone</p></td>
+<td><p>87509</p></td>
+<td><p>73411</p></td>
+<td><p>0.84</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>422</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Chitipa</p></td>
+<td><p>7004</p></td>
+<td><p>4589</p></td>
+<td><p>0.66</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>423</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Karonga</p></td>
+<td><p>14946</p></td>
+<td><p>12506</p></td>
+<td><p>0.84</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>424</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhata Bay</p></td>
+<td><p>11465</p></td>
+<td><p>9867</p></td>
+<td><p>0.86</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>425</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Rumphi</p></td>
+<td><p>8786</p></td>
+<td><p>7447</p></td>
+<td><p>0.85</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>426</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba North</p></td>
+<td><p>27755</p></td>
+<td><p>25131</p></td>
+<td><p>0.91</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>427</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Mzimba South</p></td>
+<td><p>16707</p></td>
+<td><p>13011</p></td>
+<td><p>0.78</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>428</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Likoma</p></td>
+<td><p>846</p></td>
+<td><p>829</p></td>
+<td><p>0.98</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>429</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Central East Zone</p></td>
+<td><p>68085</p></td>
+<td><p>44835</p></td>
+<td><p>0.66</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>430</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Nkhotakota</p></td>
+<td><p>13173</p></td>
+<td><p>6453</p></td>
+<td><p>0.49</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>431</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Kasungu</p></td>
+<td><p>18755</p></td>
+<td><p>11707</p></td>
+<td><p>0.62</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>432</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntchisi</p></td>
+<td><p>4896</p></td>
+<td><p>3113</p></td>
+<td><p>0.64</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>433</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Dowa</p></td>
+<td><p>13559</p></td>
+<td><p>10467</p></td>
+<td><p>0.77</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>434</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Salima</p></td>
+<td><p>17702</p></td>
+<td><p>13095</p></td>
+<td><p>0.74</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>435</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Central West Zone</p></td>
+<td><p>179401</p></td>
+<td><p>149539</p></td>
+<td><p>0.83</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>436</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Lilongwe</p></td>
+<td><p>111655</p></td>
+<td><p>94632</p></td>
+<td><p>0.85</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>437</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Mchinji</p></td>
+<td><p>18350</p></td>
+<td><p>12252</p></td>
+<td><p>0.67</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>438</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Dedza</p></td>
+<td><p>20678</p></td>
+<td><p>19645</p></td>
+<td><p>0.95</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>439</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Ntcheu</p></td>
+<td><p>28718</p></td>
+<td><p>23010</p></td>
+<td><p>0.8</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>440</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>South West Zone</p></td>
+<td><p>272660</p></td>
+<td><p>204220</p></td>
+<td><p>0.75</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>441</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Chiradzulu</p></td>
+<td><p>41912</p></td>
+<td><p>28098</p></td>
+<td><p>0.67</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>442</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Blantyre</p></td>
+<td><p>102559</p></td>
+<td><p>74244</p></td>
+<td><p>0.72</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>443</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Mwanza</p></td>
+<td><p>6759</p></td>
+<td><p>5441</p></td>
+<td><p>0.8</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>444</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Thyolo</p></td>
+<td><p>57575</p></td>
+<td><p>44252</p></td>
+<td><p>0.77</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>445</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Chikwawa</p></td>
+<td><p>31750</p></td>
+<td><p>26958</p></td>
+<td><p>0.79</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>446</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Nsanje</p></td>
+<td><p>23207</p></td>
+<td><p>18544</p></td>
+<td><p>0.8</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>447</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Neno</p></td>
+<td><p>8898</p></td>
+<td><p>8682</p></td>
+<td><p>0.98</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>448</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>South East Zone</p></td>
+<td><p>263443</p></td>
+<td><p>188599</p></td>
+<td><p>0.72</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>449</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Mangochi</p></td>
+<td><p>55409</p></td>
+<td><p>40097</p></td>
+<td><p>0.72</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>450</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Machinga</p></td>
+<td><p>32444</p></td>
+<td><p>22986</p></td>
+<td><p>0.71</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>451</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Zomba</p></td>
+<td><p>59766</p></td>
+<td><p>36501</p></td>
+<td><p>0.61</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>452</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Mulanje</p></td>
+<td><p>58054</p></td>
+<td><p>44674</p></td>
+<td><p>0.77</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>453</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Phalombe</p></td>
+<td><p>35215</p></td>
+<td><p>26149</p></td>
+<td><p>0.74</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>454</p></td>
+<td><p>2021</p></td>
+<td><p>Q1</p></td>
+<td><p>Balaka</p></td>
+<td><p>22555</p></td>
+<td><p>18192</p></td>
+<td><p>0.81</p></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="MPHIA_prevalence_art2020.csv.html" class="btn btn-neutral float-left" title="MPHIA prevalence art2020 (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="MoH_number_art.csv.html" class="btn btn-neutral float-right" title="MoH number art (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

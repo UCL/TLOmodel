@@ -1,0 +1,41 @@
+District Params haematobium (.csv)
+==================================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/District_Params_haematobium.csv>`
+
+====  =============  ========  ===========  ===========  ==============  ===========  ============  ====================================================
+  ..  District       Region      Reservoir    R0\_value    alpha\_value  Reference      Prevalence  Reference\_prevalence
+====  =============  ========  ===========  ===========  ==============  ===========  ============  ====================================================
+   0  Balaka         Southern      0            1.12425       0.061841   fitted          0.154602   2011 SCI / MoH, ESPEN
+   1  Blantyre       Southern      1.87216      1.12956       0.107616   fitted          0.26904    rural, 2011 SCI / MoH. ESPEN
+   2  Blantyre City  Southern      0            1.1253        0.04664    fitted          0.1166     2011 SCI / MoH
+   3  Chikwawa       Southern      0            1.1248        0.0805     fitted          0.20125    2008 WFP / MoH, ESPEN
+   4  Chiradzulu     Southern      2.81222      1.14141       0.1377     fitted          0.34425    2010 MoH, ESPEN
+   5  Chitipa        Northern      0            1.12577       0.08905    fitted          0.222625   2010 MoH, ESPEN
+   6  Dedza          Central       0            1.12423       0.0698     fitted          0.1745     2010 MoH, ESPEN
+   7  Dowa           Central       0            0             0          fitted          0          ESPEN
+   8  Karonga        Northern      0            1.12421       0.0643     fitted          0.16075    2010 COM
+   9  Kasungu        Central       0            1.12471       0.0793714  fitted          0.198429   2008 WFP/MoH, 2010 MoH, ESPEN
+  10  Likoma         Northern      0            1.13144       0.114      fitted          0.285      ESPEN
+  11  Lilongwe       Central       0            1.12704       0.0967167  fitted          0.241792   2008 WFP / MoH, Jemu SK et al, 2011 SCI/MoH, , ESPEN
+  12  Lilongwe City  Central       0            1.12437       0.05852    fitted          0.1463     2011 SCI / MoH
+  13  Machinga       Southern      0            1.12429       0.0718     fitted          0.1795     2010 MoH, ESPEN
+  14  Mangochi       Southern      0            1.12421       0.0643333  fitted          0.160833   ESPEN
+  15  Mchinji        Central       0            1.12448       0.076      fitted          0.19       2010 MoH, ESPEN
+  16  Mulanje        Southern      3.05         1.14496       0.144      fitted          0.36       2010 MoH, ESPEN
+  17  Mwanza         Southern      0            1.12506       0.0832457  fitted          0.208114   2011 SCI / MoH, ESPEN
+  18  Mzimba         Northern      0            1.12536       0.046129   fitted          0.115323   2010 MoH, ESPEN
+  19  Mzuzu City     Northern      0            1.13018       0.02004    fitted          0.0501     2011 SCI / MoH
+  20  Neno           Southern      0            1.12631       0.03896    fitted          0.0974     2011 SCI / MoH, ESPEN
+  21  Nkhata Bay     Northern      0            1.13233       0.01225    fitted          0.030625   ESPEN
+  22  Nkhotakota     Central       2.19995      1.13321       0.119188   fitted          0.297971   2010 MoH, ESPEN
+  23  Nsanje         Southern      2.39017      1.13559       0.125333   fitted          0.313333   2008 WFP / MoH, ESPEN
+  24  Ntcheu         Central       0            1.12421       0.0684143  fitted          0.171036   2008 WFP/MoH, 2010 MoH, ESPEN
+  25  Ntchisi        Central       0            1.12433       0.073      fitted          0.1825     ESPEN
+  26  Phalombe       Southern      5.31723      1.1841        0.188      fitted          0.47       ESPEN
+  27  Rumphi         Northern      0            0             0          fitted          0          ESPEN
+  28  Salima         Central       0            1.12873       0.0261176  fitted          0.0652941  ESPEN
+  29  Thyolo         Southern      0            1.12421       0.06865    fitted          0.171625   2010 MoH, ESPEN
+  30  Zomba          Southern      0            1.1262        0.0397333  fitted          0.0993333  ESPEN
+  31  Zomba City     Southern      0            1.1262        0.0397333  fitted          0.0993333  ESPEN copy from Zomba
+====  =============  ========  ===========  ===========  ==============  ===========  ============  ====================================================

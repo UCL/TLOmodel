@@ -1,0 +1,524 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WHO tx success rates2021 (.csv) &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1cf5572f"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="additional params (.csv)" href="additional_params.csv.html" />
+    <link rel="prev" title="WHO mdrTB2017 (.csv)" href="WHO_mdrTB2017.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_TB</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="IPTdistricts.csv.html">IPTdistricts (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NTP2019.csv.html">NTP2019 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="WHO_activeTB2023.csv.html">WHO activeTB2023 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="WHO_latentTB2017.csv.html">WHO latentTB2017 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="WHO_mdrTB2017.csv.html">WHO mdrTB2017 (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">WHO tx success rates2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="additional_params.csv.html">additional params (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="all_districts.csv.html">all districts (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="calibrated_transmission_rates.csv.html">calibrated transmission rates (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cases2010district.csv.html">cases2010district (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="details_rates.csv.html">details rates (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="followup.csv.html">followup (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ipt_coverage.csv.html">ipt coverage (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="latent_TB2014_summary.csv.html">latent TB2014 summary (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="parameters.csv.html">parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pulm_tb.csv.html">pulm tb (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scaleup_parameters.csv.html">scaleup parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="testing_rates.csv.html">testing rates (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI.xlsx.html">RTI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_TB</a></li>
+      <li class="breadcrumb-item active">WHO tx success rates2021 (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_TB/WHO_tx_success_rates2021.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="who-tx-success-rates2021-csv">
+<h1>WHO tx success rates2021 (.csv)<a class="headerlink" href="#who-tx-success-rates2021-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/WHO_tx_success_rates2021.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>year</p></th>
+<th class="head"><p>Are outcomes of relapse cases included in the newrel outcome variables?</p></th>
+<th class="head"><p>Outcomes for all new and relapse cases (but only new cases if rel_with_new_flg = 0): cohort size</p></th>
+<th class="head"><p>Outcomes for all new and relapse cases (but only new cases if rel_with_new_flg = 0): treatment success (cured or treatment completed)</p></th>
+<th class="head"><p>Outcomes for all new and relapse cases (but only new cases if rel_with_new_flg = 0): treatment failed</p></th>
+<th class="head"><p>Outcomes for all new and relapse cases (but only new cases if rel_with_new_flg = 0): died</p></th>
+<th class="head"><p>Outcomes for all new and relapse cases (but only new cases if rel_with_new_flg = 0): lost to follow-up</p></th>
+<th class="head"><p>Treatment success rate for all new cases (including relapse cases if rel_with_new_flg = 1), percent</p></th>
+<th class="head"><p>Outcomes for previously treated patients (excluding relapse cases if rel_with_new_flg = 1): cohort size</p></th>
+<th class="head"><p>Outcomes for previously treated patients (excluding relapse cases if rel_with_new_flg = 1): treatment success (cured or treatment completed)</p></th>
+<th class="head"><p>Outcomes for previously treated patients (excluding relapse cases if rel_with_new_flg = 1): treatment failed</p></th>
+<th class="head"><p>Outcomes for previously treated patients (excluding relapse cases if rel_with_new_flg = 1): died</p></th>
+<th class="head"><p>Outcomes for previously treated patients (excluding relapse cases if rel_with_new_flg = 1): lost to follow-up</p></th>
+<th class="head"><p>Treatment success rate for re-treatment cases (excluding relapse cases if rel_with_new_flg = 1), percent</p></th>
+<th class="head"><p>Outcomes for HIV-positive TB cases, all types: cohort size</p></th>
+<th class="head"><p>Outcomes for HIV-positive TB cases, all types: treatment success (cured or treatment completed)</p></th>
+<th class="head"><p>Outcomes for HIV-positive TB cases, all types: treatment failed</p></th>
+<th class="head"><p>Outcomes for HIV-positive TB cases, all types: died</p></th>
+<th class="head"><p>Outcomes for HIV-positive TB cases, all types: lost to follow-up</p></th>
+<th class="head"><p>Treatment success rate for HIV-positive TB cases, percent</p></th>
+<th class="head"><p>Outcomes for new and relapse cases in children aged 0-14 years: cohort size</p></th>
+<th class="head"><p>Outcomes for new and relapse cases in children aged 0-14 years: treatment success</p></th>
+<th class="head"><p>Outcomes for new and relapse cases in children aged 0-14 years: treatment failed</p></th>
+<th class="head"><p>Outcomes for new and relapse cases in children aged 0-14 years: died</p></th>
+<th class="head"><p>Outcomes for new and relapse cases in children aged 0-14 years: lost to follow-up</p></th>
+<th class="head"><p>Treatment success rate for new and relapse cases in children aged 0-14 years, percent</p></th>
+<th class="head"><p>Outcomes for MDR-TB cases: cohort size</p></th>
+<th class="head"><p>Outcomes for MDR-TB cases: treatment success (Cured or treatment completed)</p></th>
+<th class="head"><p>Outcomes for MDR-TB cases: treatment failed</p></th>
+<th class="head"><p>Outcomes for MDR-TB cases: died</p></th>
+<th class="head"><p>Outcomes for MDR-TB cases: lost to follow-up</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>2010</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>83</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>77.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>26.0</p></td>
+<td><p>18.0</p></td>
+<td><p>2.0</p></td>
+<td><p>5.0</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>2011</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>83</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>82.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>16.0</p></td>
+<td><p>11.0</p></td>
+<td></td>
+<td><p>4.0</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>2012</p></td>
+<td><p>1.0</p></td>
+<td><p>19361.0</p></td>
+<td><p>15849.0</p></td>
+<td><p>159.0</p></td>
+<td><p>2015.0</p></td>
+<td><p>292.0</p></td>
+<td><p>82</p></td>
+<td><p>1493.0</p></td>
+<td><p>847.0</p></td>
+<td><p>8.0</p></td>
+<td><p>136.0</p></td>
+<td><p>8.0</p></td>
+<td><p>57.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>19.0</p></td>
+<td><p>12.0</p></td>
+<td><p>0.0</p></td>
+<td><p>6.0</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>2013</p></td>
+<td><p>1.0</p></td>
+<td><p>17779.0</p></td>
+<td><p>14506.0</p></td>
+<td><p>139.0</p></td>
+<td><p>1710.0</p></td>
+<td><p>312.0</p></td>
+<td><p>82</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>19.0</p></td>
+<td><p>10.0</p></td>
+<td><p>0.0</p></td>
+<td><p>7.0</p></td>
+<td><p>1.0</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>2014</p></td>
+<td><p>1.0</p></td>
+<td><p>16267.0</p></td>
+<td><p>13867.0</p></td>
+<td><p>148.0</p></td>
+<td><p>1414.0</p></td>
+<td><p>332.0</p></td>
+<td><p>85</p></td>
+<td><p>1456.0</p></td>
+<td><p>1086.0</p></td>
+<td><p>8.0</p></td>
+<td><p>152.0</p></td>
+<td><p>30.0</p></td>
+<td><p>75.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>53.0</p></td>
+<td><p>31.0</p></td>
+<td><p>0.0</p></td>
+<td><p>18.0</p></td>
+<td><p>2.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>2015</p></td>
+<td><p>1.0</p></td>
+<td><p>15597.0</p></td>
+<td><p>12585.0</p></td>
+<td><p>164.0</p></td>
+<td><p>1576.0</p></td>
+<td><p>358.0</p></td>
+<td><p>81</p></td>
+<td><p>1284.0</p></td>
+<td><p>977.0</p></td>
+<td><p>9.0</p></td>
+<td><p>218.0</p></td>
+<td><p>32.0</p></td>
+<td><p>76.0</p></td>
+<td><p>7799.0</p></td>
+<td><p>6320.0</p></td>
+<td><p>92.0</p></td>
+<td><p>959.0</p></td>
+<td><p>108.0</p></td>
+<td><p>81.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>64.0</p></td>
+<td><p>39.0</p></td>
+<td><p>0.0</p></td>
+<td><p>21.0</p></td>
+<td><p>3.0</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>2016</p></td>
+<td><p>1.0</p></td>
+<td><p>15683.0</p></td>
+<td><p>12877.0</p></td>
+<td><p>153.0</p></td>
+<td><p>1590.0</p></td>
+<td><p>311.0</p></td>
+<td><p>82</p></td>
+<td><p>1023.0</p></td>
+<td><p>828.0</p></td>
+<td><p>11.0</p></td>
+<td><p>130.0</p></td>
+<td><p>14.0</p></td>
+<td><p>81.0</p></td>
+<td><p>7804.0</p></td>
+<td><p>6244.0</p></td>
+<td><p>101.0</p></td>
+<td><p>938.0</p></td>
+<td><p>121.0</p></td>
+<td><p>80.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>58.0</p></td>
+<td><p>34.0</p></td>
+<td><p>1.0</p></td>
+<td><p>17.0</p></td>
+<td><p>5.0</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>2017</p></td>
+<td><p>1.0</p></td>
+<td><p>16321.0</p></td>
+<td><p>14003.0</p></td>
+<td><p>104.0</p></td>
+<td><p>1586.0</p></td>
+<td><p>266.0</p></td>
+<td><p>86</p></td>
+<td><p>352.0</p></td>
+<td><p>281.0</p></td>
+<td><p>9.0</p></td>
+<td><p>37.0</p></td>
+<td><p>11.0</p></td>
+<td><p>80.0</p></td>
+<td><p>7763.0</p></td>
+<td><p>6498.0</p></td>
+<td><p>67.0</p></td>
+<td><p>938.0</p></td>
+<td><p>117.0</p></td>
+<td><p>84.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>58.0</p></td>
+<td><p>32.0</p></td>
+<td><p>1.0</p></td>
+<td><p>20.0</p></td>
+<td><p>4.0</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>2018</p></td>
+<td><p>1.0</p></td>
+<td><p>15435.0</p></td>
+<td><p>13522.0</p></td>
+<td><p>140.0</p></td>
+<td><p>1286.0</p></td>
+<td><p>246.0</p></td>
+<td><p>88</p></td>
+<td><p>321.0</p></td>
+<td><p>259.0</p></td>
+<td><p>13.0</p></td>
+<td><p>21.0</p></td>
+<td><p>19.0</p></td>
+<td><p>81.0</p></td>
+<td><p>7268.0</p></td>
+<td><p>6222.0</p></td>
+<td><p>81.0</p></td>
+<td><p>790.0</p></td>
+<td><p>73.0</p></td>
+<td><p>86.0</p></td>
+<td><p>1183.0</p></td>
+<td><p>1096.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td><p>93.0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="WHO_mdrTB2017.csv.html" class="btn btn-neutral float-left" title="WHO mdrTB2017 (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="additional_params.csv.html" class="btn btn-neutral float-right" title="additional params (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,993 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parameter values (.csv) &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1cf5572f"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="ResourceFile_Schisto" href="../ResourceFile_Schisto/index.html" />
+    <link rel="prev" title="ResourceFile_PregnancySupervisor" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_PregnancySupervisor</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">parameter values (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI.xlsx.html">RTI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_PregnancySupervisor</a></li>
+      <li class="breadcrumb-item active">parameter values (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_PregnancySupervisor/parameter_values.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="parameter-values-csv">
+<h1>parameter values (.csv)<a class="headerlink" href="#parameter-values-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_PregnancySupervisor/parameter_values.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>Primary Source (or calibration data)</p></th>
+<th class="head"><p>Unnamed: 3</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>prob_ectopic_pregnancy</p></td>
+<td><p>[0.01, 0.01]</p></td>
+<td><p>[0.004937, 0.00366]</p></td>
+<td><p>Institute of Health Metrics and Evaluation (2019) GBD Results Tool | GHDx, 2019. Available at: <a class="reference external" href="http://ghdx.healthdata.org/gbd-results-tool">http://ghdx.healthdata.org/gbd-results-tool</a> (Accessed: 6 July 2021).</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>prob_care_seeking_ectopic_pre_rupture</p></td>
+<td><p>[0.08, 0.08]</p></td>
+<td><p>Flores, A. H. et al. (2015) ‘Frequency of utilisation of ultrasound in the diagnosis of ectopic pregnancy in Sub-Saharan Africa countries: A systematic review’, in African Journal of Emergency Medicine. African Federation for Emergency Medicine, pp. 31–36. doi: 10.1016/j.afjem.2014.08.001.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>prob_ectopic_pregnancy_death</p></td>
+<td><p>[0.02, 0.012]</p></td>
+<td><p>Ministry of Health Malawi et al. (2010) Malawi 2010 EmONC Needs Assessment Final Report.</p>
+<p>Ministry of Health Malawi et al. (2015) Malawi Emergency Obstetric and Newborn Care Needs Assessment, 2014.</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>prob_multiples</p></td>
+<td><p>[0.0399, 0.0399]</p></td>
+<td><p>Monden, C. W. S. and Smits, J. (2017) ‘Mortality among twins and singletons in sub-Saharan Africa between 1995 and 2014: a pooled analysis of data from 90 Demographic and Health Surveys in 30 countries’, The Lancet Global Health. Elsevier Ltd, 5(7), pp. e673–e679. doi: 10.1016/S2214-109X(17)30197-3.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>prob_placenta_praevia</p></td>
+<td><p>[0.005,0.0058]</p></td>
+<td><p>Senkoro, E. E. et al. (2017) ‘Frequency, Risk Factors, and Adverse Fetomaternal Outcomes of Placenta Previa in Northern Tanzania’, Journal of Pregnancy. Hindawi Limited, 2017. doi: 10.1155/2017/5936309.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>rr_placenta_praevia_previous_cs</p></td>
+<td><p>[1.47,1.47]</p></td>
+<td><p>Yang, Q. et al. (2007) ‘Association of caesarean delivery for first birth with placenta praevia and placental abruption in second pregnancy’, BJOG: An International Journal of Obstetrics and Gynaecology. BJOG, 114(5), pp. 609–613. doi: 10.1111/j.1471-0528.2007.01295.x.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>prob_syphilis_during_pregnancy</p></td>
+<td><p>[0.028, 0.028]</p></td>
+<td><p>Malawi Integrated HIV Program Reports</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>prob_previous_miscarriage_at_baseline</p></td>
+<td><p>0.047</p></td>
+<td><p>National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>prob_spontaneous_abortion_per_month</p></td>
+<td><p>[[0.025, 0.037, 0.05, 0.037, 0.025], [0.025, 0.037, 0.05, 0.037, 0.025]]</p></td>
+<td><p>Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: <a class="reference external" href="https://www.jstor.org/stable/41959960">https://www.jstor.org/stable/41959960</a> (Accessed: 5 July 2021).</p>
+<p>Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639.</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>rr_spont_abortion_age_35</p></td>
+<td><p>[4, 4]</p></td>
+<td><p>Dellicour, S. et al. (2016) ‘Weekly miscarriage rates in a community-based prospective cohort study in rural western Kenya’, BMJ Open, 6(4). doi: 10.1136/bmjopen-2016-011088.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>rr_spont_abortion_age_31_34</p></td>
+<td><p>[2.31, 2.31]</p></td>
+<td><p>Dellicour, S. et al. (2016) ‘Weekly miscarriage rates in a community-based prospective cohort study in rural western Kenya’, BMJ Open, 6(4). doi: 10.1136/bmjopen-2016-011088.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>rr_spont_abortion_prev_sa</p></td>
+<td><p>[2.23, 2.23]</p></td>
+<td><p>Dellicour, S. et al. (2016) ‘Weekly miscarriage rates in a community-based prospective cohort study in rural western Kenya’, BMJ Open, 6(4). doi: 10.1136/bmjopen-2016-011088.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>prob_complicated_sa</p></td>
+<td><p>[0.11, 0.11]</p></td>
+<td><p>Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: <a class="reference external" href="https://www.jstor.org/stable/41959960">https://www.jstor.org/stable/41959960</a> (Accessed: 5 July 2021).</p>
+<p>Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639.</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>prob_induced_abortion_per_month</p></td>
+<td><p>[0.038, 0.038]</p></td>
+<td><p>Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: <a class="reference external" href="https://www.jstor.org/stable/41959960">https://www.jstor.org/stable/41959960</a> (Accessed: 5 July 2021).</p>
+<p>Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639.</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>prob_complicated_ia</p></td>
+<td><p>[0.37 ,0.37]</p></td>
+<td><p>Levandowski, B. A. et al. (2013) The Incidence of Induced Abortion in Malawi, Perspectives on Sexual and Reproductive Health. Available at: <a class="reference external" href="https://www.jstor.org/stable/41959960">https://www.jstor.org/stable/41959960</a> (Accessed: 5 July 2021).</p>
+<p>Polis, C. B. et al. (2017) ‘Incidence of induced abortion in Malawi, 2015’, PLoS ONE. Public Library of Science, 12(4). doi: 10.1371/journal.pone.0173639.</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>prob_haemorrhage_post_abortion</p></td>
+<td><p>[0.23, 0.23]</p></td>
+<td><p>The magnitude and severity of abortion-related morbidity in settings with limited access to abortion services: a systematic review and meta-regression’, BMJ Global Health. BMJ Publishing Group, 3(3), p. e000692. doi: 10.1136/bmjgh-2017-000692.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>prob_sepsis_post_abortion</p></td>
+<td><p>[0.137, 0.137]</p></td>
+<td><p>Kalilani-Phiri, L. et al. (2015) ‘The severity of abortion complications in Malawi’, International Journal of Gynecology &amp; Obstetrics. Elsevier Ireland Ltd, 128(2), pp. 160–164. doi: 10.1016/j.ijgo.2014.08.022.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>prob_injury_post_abortion</p></td>
+<td><p>[0.056, 0.056]</p></td>
+<td><p>Kalilani-Phiri, L. et al. (2015) ‘The severity of abortion complications in Malawi’, International Journal of Gynecology &amp; Obstetrics. Elsevier Ireland Ltd, 128(2), pp. 160–164. doi: 10.1016/j.ijgo.2014.08.022.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>prob_spontaneous_abortion_death</p></td>
+<td><p>[0.01, 0.005]</p></td>
+<td><p>Ministry of Health Malawi et al. (2010) Malawi 2010 EmONC Needs Assessment Final Report.</p>
+<p>Ministry of Health Malawi et al. (2015) Malawi Emergency Obstetric and Newborn Care Needs Assessment, 2014.</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>prob_induced_abortion_death</p></td>
+<td><p>[0.005, 0.0025]</p></td>
+<td><p>Ministry of Health Malawi et al. (2010) Malawi 2010 EmONC Needs Assessment Final Report.</p>
+<p>Ministry of Health Malawi et al. (2015) Malawi Emergency Obstetric and Newborn Care Needs Assessment, 2014.</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>baseline_prob_anaemia_per_month</p></td>
+<td><p>[0.1, 0.12]</p></td>
+<td><p>National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011.</p>
+<p>National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017</p>
+</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>rr_anaemia_maternal_malaria</p></td>
+<td><p>[1.45, 1.45]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>rr_anaemia_hiv_no_art</p></td>
+<td><p>[4.19, 4.19]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>prob_mild_mod_sev_anaemia</p></td>
+<td><p>[[0.52,0.475, 0.005], [0.50, 0.46, 0.04]]</p></td>
+<td><p>National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011.
+National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>prob_gest_diab_per_month</p></td>
+<td><p>[0.0056, 0.0056]</p></td>
+<td><p>Phiri, T. J., Kasiya, M. and Allain, T. (2019) Full Prevalence Of Gestational Diabetes In Urban Women In Blantyre, Malawi: A Cross Sectional Study And Comparison Of Who And IADPSG Criteria. doi: 10.21203/rs.2.13491/v1.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>rr_gest_diab_obesity</p></td>
+<td><p>[3.97, 3.97]</p></td>
+<td><p>Santos, S. et al. (2019) ‘Impact of maternal body mass index and gestational weight gain on pregnancy complications: an individual participant data meta-analysis of European, North American and Australian cohorts’, BJOG: An International Journal of Obstetrics and Gynaecology. Blackwell Publishing Ltd, 126(8), pp. 984–995. doi: 10.1111/1471-0528.15661.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>prob_gest_htn_per_month</p></td>
+<td><p>[0.0073, 0.0073]</p></td>
+<td><p>[0.0084, 0.0083]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>rr_gest_htn_obesity</p></td>
+<td><p>[3.31, 3.31]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>prob_pre_eclampsia_per_month</p></td>
+<td><p>[0.0065,0.0065]</p></td>
+<td><p>[0.00825,0.00825]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>rr_pre_eclampsia_obesity</p></td>
+<td><p>[3.2, 3.2]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>rr_pre_eclampsia_multiple_pregnancy</p></td>
+<td><p>[4.07, 4.07]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>rr_pre_eclampsia_chronic_htn</p></td>
+<td><p>[2.26, 2.26]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>rr_pre_eclampsia_diabetes_mellitus</p></td>
+<td><p>[3.7, 3.7]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>probs_for_mgh_matrix</p></td>
+<td><p>[[0.918, 0.032, 0.05, 0, 0], [0.918, 0.032, 0.05, 0, 0]]</p></td>
+<td><p>[[0.686, 0.264, 0.05, 0, 0], [0.686, 0.264, 0.05, 0, 0]]</p></td>
+<td><p>[[0.884, 0.066, 0.05, 0, 0], [0.884, 0.066, 0.05, 0, 0]]</p></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>probs_for_sgh_matrix</p></td>
+<td><p>[[0, 0.87, 0, 0.13, 0], [0, 0.87, 0, 0.13, 0]]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>probs_for_mpe_matrix</p></td>
+<td><p>[[0, 0, 0.78, 0.22, 0], [0, 0, 0.78, 0.22, 0]]</p></td>
+<td><p>[[0, 0, 0.89, 0.11, 0], [0, 0, 0.89, 0.11, 0]]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>probs_for_spe_matrix</p></td>
+<td><p>[[0, 0, 0, 0.16, 0.84], [0, 0, 0, 0.16, 0.84]]</p></td>
+<td><p>[[0, 0, 0, 0.868, 0.132], [0, 0, 0, 0.868, 0.132]]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>probs_for_ec_matrix</p></td>
+<td><p>[[0, 0, 0, 0, 1], [0, 0, 0, 0, 1]]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>prob_severe_pre_eclampsia_death</p></td>
+<td><p>[0.018, 0.018]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>prob_eclampsia_death</p></td>
+<td><p>[0.028, 0.03]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>prob_monthly_death_severe_htn</p></td>
+<td><p>[0.0001, 0.0001]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>prob_placental_abruption_per_month</p></td>
+<td><p>[0.0005, 0.0005]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>rr_placental_abruption_hypertension</p></td>
+<td><p>[2.2, 2.2]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>rr_placental_abruption_previous_cs</p></td>
+<td><p>[1.3, 1.3]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>prob_aph_placenta_praevia</p></td>
+<td><p>[0.09, 0.09]</p></td>
+<td><p>[0.0865, 0.0865]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>prob_aph_placental_abruption</p></td>
+<td><p>[0.9, 0.9]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>prob_mod_sev_aph</p></td>
+<td><p>[[0.8, 0.2], [0.8, 0.2]]</p></td>
+<td><p>[[0.4, 0.6], [0.4, 0.6]]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>prob_antepartum_haemorrhage_death</p></td>
+<td><p>[0.11, 0.04]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>prob_prom_per_month</p></td>
+<td><p>[0.0064, 0.0064]</p></td>
+<td><p>[0.0064, 0.0064]</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>prob_chorioamnionitis</p></td>
+<td><p>[0.015, 0.013]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>prob_antenatal_sepsis_death</p></td>
+<td><p>[0.75, 0.49]</p></td>
+<td><p>[0.5, 0.415]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>baseline_prob_early_labour_onset</p></td>
+<td><p>[[0.0008, 0.0033,0.017, 0.04], [0.0008, 0.0033,0.017, 0.04]]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>rr_preterm_labour_post_prom</p></td>
+<td><p>[5.9, 5.9]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>rr_preterm_labour_anaemia</p></td>
+<td><p>[4.58, 4.58]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>rr_preterm_labour_malaria</p></td>
+<td><p>[3.08, 3.08]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>rr_preterm_labour_multiple_pregnancy</p></td>
+<td><p>[3.44, 3.44]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>prob_still_birth_per_month</p></td>
+<td><p>[0.0031, 0.0026]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>rr_still_birth_ga_41</p></td>
+<td><p>[2.24, 2.24]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>rr_still_birth_ga_42</p></td>
+<td><p>[3.88, 3.88]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>rr_still_birth_ga_&gt;42</p></td>
+<td><p>[6.94, 6.94]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>rr_still_birth_gest_diab</p></td>
+<td><p>[3.91, 3.91]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>rr_still_birth_diab_mellitus</p></td>
+<td><p>[3.52, 3.52]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>rr_still_birth_maternal_malaria</p></td>
+<td><p>[1.81, 1.81]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>rr_still_birth_maternal_syphilis</p></td>
+<td><p>[6.87, 6.87]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>rr_still_birth_pre_eclampsia</p></td>
+<td><p>[4.15, 4.15]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>rr_still_birth_eclampsia</p></td>
+<td><p>[4.15, 4.15]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>rr_still_birth_gest_htn</p></td>
+<td><p>[1.21, 1.21]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>rr_still_birth_chronic_htn</p></td>
+<td><p>[2.32, 2.23]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>rr_still_birth_aph</p></td>
+<td><p>[2.1, 2.1]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>rr_still_birth_chorio</p></td>
+<td><p>[2, 2]</p></td>
+<td><p><a class="reference external" href="https://www.tandfonline.com/doi/full/10.1080/14767058.2020.1852206">https://www.tandfonline.com/doi/full/10.1080/14767058.2020.1852206</a></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>prob_seek_care_pregnancy_complication</p></td>
+<td><p>[0.782, 0.782]</p></td>
+<td><p>Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>prob_seek_care_pregnancy_loss</p></td>
+<td><p>[0.782, 0.782]</p></td>
+<td><p>Chinkhumba, J. et al. (2017) ‘Household costs and time to seek care for pregnancy related complications: The role of results-based financing’, PLOS ONE. Public Library of Science, 12(9), p. e0182326. doi: 10.1371/JOURNAL.PONE.0182326.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>prob_seek_care_induction</p></td>
+<td><p>[0.2, 0.2]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>prob_anc1_months_2_to_4</p></td>
+<td><p>[[0.165, 0.165, 0.67], [0.165, 0.364, 0.471]]</p></td>
+<td><p>National Statistical Office (NSO), ICF Macro. Malawi Demographic and Health Survey 2010. Zomba, Malawi, and Calverton, Maryland, USA: NSO and ICF Macro, 2011.
+National Statistical Office (NSO) [Malawi], ICF. Malawi Demographic and Health Survey 2015-16. Zomba, Malawi, and Rockville, Maryland, USA: NSO and ICF, 2017</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>prob_anc1_months_5_to_9</p></td>
+<td><p>[[0.345, 0.245, 0.28, 0.015, 0.015, 0.1], [0.41, 0.25, 0.21, 0.015, 0.015, 0.1]]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>odds_early_init_anc4</p></td>
+<td><p>[0.32, 0.58]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>aor_early_anc4_20_24</p></td>
+<td><p>[1.26, 1.26]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>aor_early_anc4_25_29</p></td>
+<td><p>[1.44, 1.44]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>aor_early_anc4_30_34</p></td>
+<td><p>[1.49, 1.49]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>aor_early_anc4_35_39</p></td>
+<td><p>[1.64, 1.64]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>aor_early_anc4_40_44</p></td>
+<td><p>[1.51, 1.51]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>aor_early_anc4_45_49</p></td>
+<td><p>[1.91, 1.91]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>aor_early_anc4_2010</p></td>
+<td><p>[1.51, 1.51]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>aor_early_anc4_2015</p></td>
+<td><p>[2.03, 2.03]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>aor_early_anc4_parity_2_3</p></td>
+<td><p>[0.74, 0.74]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>aor_early_anc4_parity_4_5</p></td>
+<td><p>[0.65, 0.65]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>aor_early_anc4_parity_6+</p></td>
+<td><p>[0.61, 0.61]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>aor_early_anc4_secondary_edu</p></td>
+<td><p>[1.24, 1.24]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>aor_early_anc4_tertiary_edu</p></td>
+<td><p>[2.64, 2.64]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>aor_early_anc4_richest_wealth</p></td>
+<td><p>[1.32, 1.32]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>prob_late_initiation_anc4</p></td>
+<td><p>[0.3, 0.29]</p></td>
+<td><p>[0.215, 0.143]</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>prob_early_initiation_anc_below4</p></td>
+<td><p>[0.115, 0.101]</p></td>
+<td><p>As above.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>prob_early_anc_at_facility_level_1_2</p></td>
+<td><p>[[0.5, 0.5], [0.5, 0.5]]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>treatment_effect_ectopic_pregnancy_treatment</p></td>
+<td><p>[0.1, 0.1]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>treatment_effect_post_abortion_care</p></td>
+<td><p>[0.2, 0.2]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>treatment_effect_iron_folic_acid_anaemia</p></td>
+<td><p>[0.3, 0.3]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>treatment_effect_calcium_pre_eclamp</p></td>
+<td><p>[0.45, 0.45]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td><p>treatment_effect_gest_htn_calcium</p></td>
+<td><p>[0.65, 0.65]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>treatment_effect_anti_htns_progression</p></td>
+<td><p>[0.49, 0.49]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>prob_glycaemic_control_diet_exercise</p></td>
+<td><p>[0.5, 0.5]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>prob_glycaemic_control_orals</p></td>
+<td><p>[0.936, 0.936]</p></td>
+<td><p>Glibenclamide, metformin, and insulin for the treatment of gestational diabetes: a systematic review and meta-analysis.</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>treatment_effect_gdm_case_management</p></td>
+<td><p>[0.9, 0.9]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>treatment_effect_still_birth_food_sups</p></td>
+<td><p>[0.6, 0.6]</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>anc_service_structure</p></td>
+<td><p>8</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>ps_analysis_in_progress</p></td>
+<td><p>False</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td><p>alternative_anc_coverage</p></td>
+<td><p>False</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>124</p></td>
+<td><p>alternative_anc_quality</p></td>
+<td><p>False</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>125</p></td>
+<td><p>anc_availability_odds</p></td>
+<td><p>9</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>126</p></td>
+<td><p>anc_availability_probability</p></td>
+<td><p>0.9</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>127</p></td>
+<td><p>alternative_ip_anc_quality</p></td>
+<td><p>False</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>128</p></td>
+<td><p>ip_anc_availability_probability</p></td>
+<td><p>0.9</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>129</p></td>
+<td><p>sens_analysis_min</p></td>
+<td><p>False</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>130</p></td>
+<td><p>sens_analysis_max</p></td>
+<td><p>False</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>131</p></td>
+<td><p>analysis_year</p></td>
+<td><p>2023</p></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="ResourceFile_PregnancySupervisor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../ResourceFile_Schisto/index.html" class="btn btn-neutral float-right" title="ResourceFile_Schisto" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -70,13 +70,13 @@ tlo.methods.chronicsyndrome module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x15e3b7a50>}
+     CAUSES_OF_DEATH : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x15537e390>}
 
-     CAUSES_OF_DISABILITY : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x15e3b6010>}
+     CAUSES_OF_DISABILITY : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x3156fa390>}
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Demography', 'SymptomManager', 'HealthSystem'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -221,9 +221,9 @@ tlo.methods.chronicsyndrome module
 
 
 
-.. autoclass:: HSI_ChronicSyndrome_PopulationWideBehaviourChange
+.. autoclass:: ChronicSyndrome_PopulationWideBehaviourChange
 
-     Bases: :class:`tlo.methods.hsi_event.HSI_Event`, :class:`tlo.events.PopulationScopeEventMixin`
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
 
@@ -231,7 +231,7 @@ tlo.methods.chronicsyndrome module
 
      __annotations__ : {}
 
-     **Functions (defined or overridden in class HSI_ChronicSyndrome_PopulationWideBehaviourChange):**
+     **Functions (defined or overridden in class ChronicSyndrome_PopulationWideBehaviourChange):**
 
      .. automethod:: __init__
 

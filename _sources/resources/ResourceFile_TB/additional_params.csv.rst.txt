@@ -1,0 +1,17 @@
+additional params (.csv)
+========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/additional_params.csv>`
+
+====  ===================  =====
+  ..  prop\_pulm             0.8
+====  ===================  =====
+   0  prop\_pulm\_hiv       0.5
+   1  prop\_pulm\_1yr       0.7
+   2  prop\_pulm\_1\_2yr    0.74
+   3  prop\_pulm\_2\_5yr    0.91
+   4  prop\_pulm\_5\_10yr   0.89
+   5  prop\_pulm\_10yr      0.99
+   6  rr\_tbm\_bcg          0.27
+   7  rr\_miliary\_bcg      0.23
+====  ===================  =====

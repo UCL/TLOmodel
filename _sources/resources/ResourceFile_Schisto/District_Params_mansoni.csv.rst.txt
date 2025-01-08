@@ -1,0 +1,41 @@
+District Params mansoni (.csv)
+==============================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/District_Params_mansoni.csv>`
+
+====  =============  ========  ===========  ===========  ==============  ===========  ============  ===============================
+  ..  District       Region      Reservoir    R0\_value    alpha\_value  Reference      Prevalence  Reference\_prevalence
+====  =============  ========  ===========  ===========  ==============  ===========  ============  ===============================
+   0  Balaka         Southern    0.0103949      3.28891       0.0528333  fitted         0.00944444  ESPEN
+   1  Blantyre       Southern    0.0796066      1.46175       0.0652093  fitted         0.0506977   ESPEN
+   2  Blantyre City  Southern    0.0796066      1.46175       0.0652093  fitted         0.0506977   copy from Blantyre
+   3  Chikwawa       Southern    0.0243277      2.18968       0.056      fitted         0.02        ESPEN
+   4  Chiradzulu     Southern    0.158777       1.26817       0.07445    fitted         0.0815      ESPEN
+   5  Chitipa        Northern    0              0             0.05       fitted         0           ESPEN
+   6  Dedza          Central     0              0             0.05       fitted         0           ESPEN
+   7  Dowa           Central     0              0             0.05       fitted         0           ESPEN
+   8  Karonga        Northern    0.0891927      1.42196       0.0665     fitted         0.055       average of all mansoni in Espen
+   9  Kasungu        Central     0              0             0.05       fitted         0           ESPEN
+  10  Likoma         Northern    1.12359        1.06177       0.125      fitted         0.25        ESPEN
+  11  Lilongwe       Central     0.187713       1.23539       0.0772459  fitted         0.0908197   ESPEN
+  12  Lilongwe City  Central     0.187713       1.23539       0.0772459  fitted         0.0908197   copy from Lilongwe
+  13  Machinga       Southern    0              0             0.05       fitted         0           ESPEN
+  14  Mangochi       Southern    0.114042       1.34757       0.0695882  fitted         0.0652941   ESPEN
+  15  Mchinji        Central     0              0             0.05       fitted         0           ESPEN
+  16  Mulanje        Southern    0              0             0.05       fitted         0           ESPEN
+  17  Mwanza         Southern    0.0411611      1.78166       0.0592308  fitted         0.0307692   ESPEN
+  18  Mzimba         Northern    0.0236342      2.21729       0.0558548  fitted         0.0195161   ESPEN
+  19  Mzuzu City     Northern    0.0891927      1.42196       0.0665     fitted         0.055       average of all mansoni in Espen
+  20  Neno           Southern    0              0             0.05       fitted         0           ESPEN
+  21  Nkhata Bay     Northern    0.0377989      1.83686       0.058625   fitted         0.02875     ESPEN
+  22  Nkhotakota     Central     0.172451       1.25145       0.0758     fitted         0.086       ESPEN
+  23  Nsanje         Southern    0              0             0.05       fitted         0           ESPEN
+  24  Ntcheu         Central     0.0194311      2.42068       0.05495    fitted         0.0165      ESPEN
+  25  Ntchisi        Central     0.203152       1.22138       0.07865    fitted         0.0955      ESPEN
+  26  Phalombe       Southern    0              0             0.05       fitted         0           ESPEN
+  27  Rumphi         Northern    0              0             0.05       fitted         0           ESPEN
+  28  Salima         Central     0.190781       1.23244       0.0775294  fitted         0.0917647   ESPEN
+  29  Thyolo         Southern    0              0             0.05       fitted         0           ESPEN
+  30  Zomba          Southern    0.172451       1.25145       0.0758     fitted         0.086       ESPEN
+  31  Zomba City     Southern    0.172451       1.25145       0.0758     fitted         0.086       copy from Zomba
+====  =============  ========  ===========  ===========  ==============  ===========  ============  ===============================

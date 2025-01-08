@@ -1,0 +1,297 @@
+MAP ITNrates (.csv)
+===================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/malaria/ResourceFile_malaria/MAP_ITNrates.csv>`
+
+====  =============  ======  ============
+  ..  District         Year    itn\_rates
+====  =============  ======  ============
+   0  Balaka           2010      0.521244
+   1  Balaka           2011      0.274477
+   2  Balaka           2012      0.511939
+   3  Balaka           2013      0.767694
+   4  Balaka           2014      0.616508
+   5  Balaka           2015      0.43172
+   6  Balaka           2016      0.631228
+   7  Balaka           2017      0.579129
+   8  Balaka           2018      0.639857
+   9  Blantyre         2010      0.497626
+  10  Blantyre         2011      0.242974
+  11  Blantyre         2012      0.390966
+  12  Blantyre         2013      0.582557
+  13  Blantyre         2014      0.471654
+  14  Blantyre         2015      0.393023
+  15  Blantyre         2016      0.623982
+  16  Blantyre         2017      0.566047
+  17  Blantyre         2018      0.625569
+  18  Blantyre City    2010      0.497626
+  19  Blantyre City    2011      0.242974
+  20  Blantyre City    2012      0.390966
+  21  Blantyre City    2013      0.582557
+  22  Blantyre City    2014      0.471654
+  23  Blantyre City    2015      0.393023
+  24  Blantyre City    2016      0.623982
+  25  Blantyre City    2017      0.566047
+  26  Blantyre City    2018      0.625569
+  27  Chikwawa         2010      0.544138
+  28  Chikwawa         2011      0.28005
+  29  Chikwawa         2012      0.39404
+  30  Chikwawa         2013      0.561043
+  31  Chikwawa         2014      0.411775
+  32  Chikwawa         2015      0.315652
+  33  Chikwawa         2016      0.553993
+  34  Chikwawa         2017      0.524377
+  35  Chikwawa         2018      0.594699
+  36  Chiradzulu       2010      0.471552
+  37  Chiradzulu       2011      0.231961
+  38  Chiradzulu       2012      0.400059
+  39  Chiradzulu       2013      0.610585
+  40  Chiradzulu       2014      0.477679
+  41  Chiradzulu       2015      0.375405
+  42  Chiradzulu       2016      0.616408
+  43  Chiradzulu       2017      0.576603
+  44  Chiradzulu       2018      0.641855
+  45  Chitipa          2010      0.244568
+  46  Chitipa          2011      0.263096
+  47  Chitipa          2012      0.446601
+  48  Chitipa          2013      0.591468
+  49  Chitipa          2014      0.47333
+  50  Chitipa          2015      0.354737
+  51  Chitipa          2016      0.532004
+  52  Chitipa          2017      0.368413
+  53  Chitipa          2018      0.362133
+  54  Dedza            2010      0.348831
+  55  Dedza            2011      0.199702
+  56  Dedza            2012      0.410086
+  57  Dedza            2013      0.670524
+  58  Dedza            2014      0.54142
+  59  Dedza            2015      0.385613
+  60  Dedza            2016      0.536496
+  61  Dedza            2017      0.423663
+  62  Dedza            2018      0.466716
+  63  Dowa             2010      0.310249
+  64  Dowa             2011      0.24767
+  65  Dowa             2012      0.406621
+  66  Dowa             2013      0.585187
+  67  Dowa             2014      0.516896
+  68  Dowa             2015      0.456088
+  69  Dowa             2016      0.623975
+  70  Dowa             2017      0.484461
+  71  Dowa             2018      0.519161
+  72  Karonga          2010      0.345913
+  73  Karonga          2011      0.328335
+  74  Karonga          2012      0.612484
+  75  Karonga          2013      0.816124
+  76  Karonga          2014      0.671558
+  77  Karonga          2015      0.491945
+  78  Karonga          2016      0.696926
+  79  Karonga          2017      0.636762
+  80  Karonga          2018      0.683414
+  81  Kasungu          2010      0.308033
+  82  Kasungu          2011      0.266252
+  83  Kasungu          2012      0.429144
+  84  Kasungu          2013      0.584827
+  85  Kasungu          2014      0.482641
+  86  Kasungu          2015      0.407742
+  87  Kasungu          2016      0.609376
+  88  Kasungu          2017      0.515558
+  89  Kasungu          2018      0.564448
+  90  Likoma           2010      0.343523
+  91  Likoma           2011      0.35892
+  92  Likoma           2012      0.538744
+  93  Likoma           2013      0.673362
+  94  Likoma           2014      0.551109
+  95  Likoma           2015      0.4219
+  96  Likoma           2016      0.55146
+  97  Likoma           2017      0.430005
+  98  Likoma           2018      0.463335
+  99  Lilongwe         2010      0.318563
+ 100  Lilongwe         2011      0.225922
+ 101  Lilongwe         2012      0.404454
+ 102  Lilongwe         2013      0.611781
+ 103  Lilongwe         2014      0.509486
+ 104  Lilongwe         2015      0.411051
+ 105  Lilongwe         2016      0.586703
+ 106  Lilongwe         2017      0.47719
+ 107  Lilongwe         2018      0.522011
+ 108  Lilongwe City    2010      0.318563
+ 109  Lilongwe City    2011      0.225922
+ 110  Lilongwe City    2012      0.404454
+ 111  Lilongwe City    2013      0.611781
+ 112  Lilongwe City    2014      0.509486
+ 113  Lilongwe City    2015      0.411051
+ 114  Lilongwe City    2016      0.586703
+ 115  Lilongwe City    2017      0.47719
+ 116  Lilongwe City    2018      0.522011
+ 117  Machinga         2010      0.474908
+ 118  Machinga         2011      0.238978
+ 119  Machinga         2012      0.461242
+ 120  Machinga         2013      0.731416
+ 121  Machinga         2014      0.565238
+ 122  Machinga         2015      0.384904
+ 123  Machinga         2016      0.603192
+ 124  Machinga         2017      0.570361
+ 125  Machinga         2018      0.637599
+ 126  Mangochi         2010      0.441229
+ 127  Mangochi         2011      0.24207
+ 128  Mangochi         2012      0.518339
+ 129  Mangochi         2013      0.78664
+ 130  Mangochi         2014      0.586769
+ 131  Mangochi         2015      0.338443
+ 132  Mangochi         2016      0.527198
+ 133  Mangochi         2017      0.495119
+ 134  Mangochi         2018      0.563417
+ 135  Mchinji          2010      0.354379
+ 136  Mchinji          2011      0.295646
+ 137  Mchinji          2012      0.386612
+ 138  Mchinji          2013      0.494747
+ 139  Mchinji          2014      0.491413
+ 140  Mchinji          2015      0.519166
+ 141  Mchinji          2016      0.686686
+ 142  Mchinji          2017      0.537583
+ 143  Mchinji          2018      0.566874
+ 144  Mulanje          2010      0.424577
+ 145  Mulanje          2011      0.207422
+ 146  Mulanje          2012      0.376602
+ 147  Mulanje          2013      0.599515
+ 148  Mulanje          2014      0.435492
+ 149  Mulanje          2015      0.313186
+ 150  Mulanje          2016      0.570447
+ 151  Mulanje          2017      0.566461
+ 152  Mulanje          2018      0.641328
+ 153  Mwanza           2010      0.510064
+ 154  Mwanza           2011      0.242336
+ 155  Mwanza           2012      0.322212
+ 156  Mwanza           2013      0.51159
+ 157  Mwanza           2014      0.505847
+ 158  Mwanza           2015      0.522302
+ 159  Mwanza           2016      0.718756
+ 160  Mwanza           2017      0.615649
+ 161  Mwanza           2018      0.656705
+ 162  Mzimba           2010      0.253036
+ 163  Mzimba           2011      0.248646
+ 164  Mzimba           2012      0.463346
+ 165  Mzimba           2013      0.650647
+ 166  Mzimba           2014      0.49509
+ 167  Mzimba           2015      0.352556
+ 168  Mzimba           2016      0.563074
+ 169  Mzimba           2017      0.495705
+ 170  Mzimba           2018      0.554879
+ 171  Mzuzu City       2010      0.253036
+ 172  Mzuzu City       2011      0.248646
+ 173  Mzuzu City       2012      0.463346
+ 174  Mzuzu City       2013      0.650647
+ 175  Mzuzu City       2014      0.49509
+ 176  Mzuzu City       2015      0.352556
+ 177  Mzuzu City       2016      0.563074
+ 178  Mzuzu City       2017      0.495705
+ 179  Mzuzu City       2018      0.554879
+ 180  Neno             2010      0.51421
+ 181  Neno             2011      0.251517
+ 182  Neno             2012      0.385391
+ 183  Neno             2013      0.611444
+ 184  Neno             2014      0.554046
+ 185  Neno             2015      0.50717
+ 186  Neno             2016      0.697608
+ 187  Neno             2017      0.604436
+ 188  Neno             2018      0.649194
+ 189  Nkhata Bay       2010      0.371624
+ 190  Nkhata Bay       2011      0.376911
+ 191  Nkhata Bay       2012      0.595822
+ 192  Nkhata Bay       2013      0.738537
+ 193  Nkhata Bay       2014      0.5447
+ 194  Nkhata Bay       2015      0.376116
+ 195  Nkhata Bay       2016      0.612325
+ 196  Nkhata Bay       2017      0.588713
+ 197  Nkhata Bay       2018      0.655951
+ 198  Nkhotakota       2010      0.398526
+ 199  Nkhotakota       2011      0.367991
+ 200  Nkhotakota       2012      0.572883
+ 201  Nkhotakota       2013      0.744573
+ 202  Nkhotakota       2014      0.666086
+ 203  Nkhotakota       2015      0.585193
+ 204  Nkhotakota       2016      0.731053
+ 205  Nkhotakota       2017      0.615616
+ 206  Nkhotakota       2018      0.650146
+ 207  Nsanje           2010      0.434865
+ 208  Nsanje           2011      0.207987
+ 209  Nsanje           2012      0.341707
+ 210  Nsanje           2013      0.551004
+ 211  Nsanje           2014      0.403663
+ 212  Nsanje           2015      0.304227
+ 213  Nsanje           2016      0.550599
+ 214  Nsanje           2017      0.534343
+ 215  Nsanje           2018      0.607801
+ 216  Ntcheu           2010      0.472703
+ 217  Ntcheu           2011      0.259354
+ 218  Ntcheu           2012      0.498451
+ 219  Ntcheu           2013      0.746156
+ 220  Ntcheu           2014      0.593414
+ 221  Ntcheu           2015      0.411739
+ 222  Ntcheu           2016      0.606281
+ 223  Ntcheu           2017      0.546452
+ 224  Ntcheu           2018      0.605481
+ 225  Ntchisi          2010      0.290157
+ 226  Ntchisi          2011      0.24619
+ 227  Ntchisi          2012      0.417184
+ 228  Ntchisi          2013      0.58758
+ 229  Ntchisi          2014      0.488724
+ 230  Ntchisi          2015      0.403572
+ 231  Ntchisi          2016      0.579688
+ 232  Ntchisi          2017      0.454175
+ 233  Ntchisi          2018      0.493145
+ 234  Phalombe         2010      0.464213
+ 235  Phalombe         2011      0.257946
+ 236  Phalombe         2012      0.442517
+ 237  Phalombe         2013      0.655912
+ 238  Phalombe         2014      0.490564
+ 239  Phalombe         2015      0.373927
+ 240  Phalombe         2016      0.660634
+ 241  Phalombe         2017      0.688238
+ 242  Phalombe         2018      0.761216
+ 243  Rumphi           2010      0.233508
+ 244  Rumphi           2011      0.221174
+ 245  Rumphi           2012      0.442382
+ 246  Rumphi           2013      0.647515
+ 247  Rumphi           2014      0.49768
+ 248  Rumphi           2015      0.354453
+ 249  Rumphi           2016      0.563182
+ 250  Rumphi           2017      0.47639
+ 251  Rumphi           2018      0.523302
+ 252  Salima           2010      0.431517
+ 253  Salima           2011      0.341394
+ 254  Salima           2012      0.611721
+ 255  Salima           2013      0.812768
+ 256  Salima           2014      0.648068
+ 257  Salima           2015      0.42467
+ 258  Salima           2016      0.586592
+ 259  Salima           2017      0.500394
+ 260  Salima           2018      0.553259
+ 261  Thyolo           2010      0.448203
+ 262  Thyolo           2011      0.211596
+ 263  Thyolo           2012      0.350933
+ 264  Thyolo           2013      0.539436
+ 265  Thyolo           2014      0.385145
+ 266  Thyolo           2015      0.279378
+ 267  Thyolo           2016      0.516124
+ 268  Thyolo           2017      0.485511
+ 269  Thyolo           2018      0.55659
+ 270  Zomba            2010      0.492926
+ 271  Zomba            2011      0.249782
+ 272  Zomba            2012      0.442018
+ 273  Zomba            2013      0.685268
+ 274  Zomba            2014      0.549356
+ 275  Zomba            2015      0.423389
+ 276  Zomba            2016      0.657868
+ 277  Zomba            2017      0.624096
+ 278  Zomba            2018      0.686783
+ 279  Zomba City       2010      0.492926
+ 280  Zomba City       2011      0.249782
+ 281  Zomba City       2012      0.442018
+ 282  Zomba City       2013      0.685268
+ 283  Zomba City       2014      0.549356
+ 284  Zomba City       2015      0.423389
+ 285  Zomba City       2016      0.657868
+ 286  Zomba City       2017      0.624096
+ 287  Zomba City       2018      0.686783
+====  =============  ======  ============

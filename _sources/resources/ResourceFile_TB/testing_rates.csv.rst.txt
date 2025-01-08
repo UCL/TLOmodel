@@ -1,0 +1,50 @@
+testing rates (.csv)
+====================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/testing_rates.csv>`
+
+====  ======  ==============================  =====================  =================================
+  ..    year    testing\_rate\_active\_cases    treatment\_coverage  source
+====  ======  ==============================  =====================  =================================
+   0    2010                              45                     45  assumed
+   1    2011                              45                     45  assumed
+   2    2012                              47                     47  who\_reports\_treatment\_coverage
+   3    2013                              44                     44  who\_reports\_treatment\_coverage
+   4    2014                              45                     45  who\_reports\_treatment\_coverage
+   5    2015                              50                     50  who\_reports\_treatment\_coverage
+   6    2016                              58                     58  who\_reports\_treatment\_coverage
+   7    2017                              71                     71  who\_reports\_treatment\_coverage
+   8    2018                              75                     75  assumed
+   9    2019                              75                     75  assumed
+  10    2020                              75                     75  assumed
+  11    2021                              75                     75  assumed
+  12    2022                              75                     75  assumed
+  13    2023                              75                     75  assumed
+  14    2024                              75                     75  assumed
+  15    2025                              75                     75  assumed
+  16    2026                              75                     75  assumed
+  17    2027                              75                     75  assumed
+  18    2028                              75                     75  assumed
+  19    2029                              75                     75  assumed
+  20    2030                              75                     75  assumed
+  21    2031                              75                     75  assumed
+  22    2032                              75                     75  assumed
+  23    2033                              75                     75  assumed
+  24    2034                              75                     75  assumed
+  25    2035                              75                     75  assumed
+  26    2036                              75                     75  assumed
+  27    2037                              75                     75  assumed
+  28    2038                              75                     75  assumed
+  29    2039                              75                     75  assumed
+  30    2040                              75                     75  assumed
+  31    2041                              75                     75  assumed
+  32    2042                              75                     75  assumed
+  33    2043                              75                     75  assumed
+  34    2044                              75                     75  assumed
+  35    2045                              75                     75  assumed
+  36    2046                              75                     75  assumed
+  37    2047                              75                     75  assumed
+  38    2048                              75                     75  assumed
+  39    2049                              75                     75  assumed
+  40    2050                              75                     75  assumed
+====  ======  ==============================  =====================  =================================

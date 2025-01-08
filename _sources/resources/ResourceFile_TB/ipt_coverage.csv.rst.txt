@@ -1,0 +1,50 @@
+ipt coverage (.csv)
+===================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_TB/ipt_coverage.csv>`
+
+====  ======  =================  =================  ======================  =========
+  ..    year    coverage\_plhiv  source               coverage\_paediatric  source2
+====  ======  =================  =================  ======================  =========
+   0    2010               0     not\_implemented                        0
+   1    2011               0     not\_implemented                        0
+   2    2012               0     not\_implemented                        0
+   3    2013               0     not\_implemented                        0
+   4    2014               0     not\_implemented                       35  NTP2019
+   5    2015               0     not\_implemented                       42  NTP2019
+   6    2016               0     not\_implemented                       51  NTP2019
+   7    2017               0     not\_implemented                       61  NTP2019
+   8    2018               0.31  MoH\_quart\_repQ1                      57  NTP2019
+   9    2019               0.3   MoH\_quart\_repQ2                      57  NTP2020
+  10    2020               0.11  MoH\_quart\_repQ3                      48  NTP2020
+  11    2021               0.3   no\_data                               41  NTP2021
+  12    2022               0.3   no\_data                               57
+  13    2023               0.3   no\_data                               57
+  14    2024               0.3   no\_data                               57
+  15    2025               0.3   no\_data                               57
+  16    2026               0.3   no\_data                               57
+  17    2027               0.3   no\_data                               57
+  18    2028               0.3   no\_data                               57
+  19    2029               0.3   no\_data                               57
+  20    2030               0.3   no\_data                               57
+  21    2031               0.3   no\_data                               57
+  22    2032               0.3   no\_data                               57
+  23    2033               0.3   no\_data                               57
+  24    2034               0.3   no\_data                               57
+  25    2035               0.3   no\_data                               57
+  26    2036               0.3   no\_data                               57
+  27    2037               0.3   no\_data                               57
+  28    2038               0.3   no\_data                               57
+  29    2039               0.3   no\_data                               57
+  30    2040               0.3   no\_data                               57
+  31    2041               0.3   no\_data                               57
+  32    2042               0.3   no\_data                               57
+  33    2043               0.3   no\_data                               57
+  34    2044               0.3   no\_data                               57
+  35    2045               0.3   no\_data                               57
+  36    2046               0.3   no\_data                               57
+  37    2047               0.3   no\_data                               57
+  38    2048               0.3   no\_data                               57
+  39    2049               0.3   no\_data                               57
+  40    2050               0.3   no\_data                               57
+====  ======  =================  =================  ======================  =========

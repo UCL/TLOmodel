@@ -130,9 +130,9 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Demography', 'Hiv', 'Wasting', 'Diarrhoea', 'NewbornOutcomes'}
+     INIT_DEPENDENCIES : {'Demography', 'NewbornOutcomes', 'Wasting', 'Diarrhoea', 'Hiv'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      __annotations__ : {}
 

@@ -1,0 +1,30 @@
+vaccine schedule (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_EPI_WHO_estimates/vaccine_schedule.csv>`
+
+====  ==========  ============================
+  ..  vaccine       date\_administration\_days
+====  ==========  ============================
+   0  bcg                                  1
+   1  opv1                                 1
+   2  opv2                                42
+   3  opv3                                70
+   4  opvIpv4                             98
+   5  dtpHibHep1                          42
+   6  dtpHibHep2                          70
+   7  dtpHibHep3                          98
+   8  pneumo1                             42
+   9  pneumo2                             70
+  10  pneumo3                             98
+  11  rota1                               42
+  12  rota2                               70
+  13  vitA1                              183
+  14  vitA2                              365
+  15  vitA3                              549
+  16  vitA4                              732
+  17  vitA5                              915
+  18  vitA6                             1098
+  19  MR1                                274.5
+  20  MR2                                457.5
+====  ==========  ============================

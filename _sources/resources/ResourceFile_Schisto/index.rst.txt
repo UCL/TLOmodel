@@ -1,0 +1,14 @@
+ResourceFile_Schisto
+====================
+
+.. toctree::
+    :maxdepth: 1
+
+    DALYs.csv
+    District_Params_haematobium.csv
+    District_Params_mansoni.csv
+    MDA_historical_Coverage.csv
+    MDA_prognosed_Coverage.csv
+    Parameters.csv
+    Symptoms.csv
+

@@ -1,0 +1,10 @@
+Failure ByMethod (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/contraception/ResourceFile_Contraception/Failure_ByMethod.csv>`
+
+====  ==========  =====  ============  ===========  ==============  =======================  ===============  ======================  ============  ====================
+  ..        pill    IUD    injections      implant    male\_condom    female\_sterilization    other\_modern    periodic\_abstinence    withdrawal    other\_traditional
+====  ==========  =====  ============  ===========  ==============  =======================  ===============  ======================  ============  ====================
+   0  0.00192848      0   0.000530667  9.50789e-05      0.00117109                        0                0             0.000552797    0.00358032              0.004923
+====  ==========  =====  ============  ===========  ==============  =======================  ===============  ======================  ============  ====================

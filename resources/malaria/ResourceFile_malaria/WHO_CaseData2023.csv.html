@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WHO CaseData2023 (.csv) &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=1cf5572f"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="WHO MalReport (.csv)" href="WHO_MalReport.csv.html" />
+    <link rel="prev" title="PfPR MAPdata (.csv)" href="PfPR_MAPdata.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">malaria</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">ResourceFile_malaria</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="MAP_CommoditiesData2023.csv.html">MAP CommoditiesData2023 (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="MAP_IRSrates.csv.html">MAP IRSrates (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="MAP_ITNrates.csv.html">MAP ITNrates (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="MAP_InfectionData2023.csv.html">MAP InfectionData2023 (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="NMCP.csv.html">NMCP (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="PfPR_MAPdata.csv.html">PfPR MAPdata (.csv)</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">WHO CaseData2023 (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="WHO_MalReport.csv.html">WHO MalReport (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="WHO_TestData2023.csv.html">WHO TestData2023 (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="WHOcommodities.csv.html">WHOcommodities (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="highrisk_districts.csv.html">highrisk districts (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="inc1000py_MAPdata.csv.html">inc1000py MAPdata (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="interventions.csv.html">interventions (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mortalityRate_MAPdata.csv.html">mortalityRate MAPdata (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="parameters.csv.html">parameters (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="scaleup_parameters.csv.html">scaleup parameters (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="severe_symptoms.csv.html">severe symptoms (.csv)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="txCov_MAPdata.csv.html">txCov MAPdata (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../ResourceFile_malaria_ClinInc.csv.html">malaria ClinInc (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ResourceFile_malaria_ClinInc_expanded.csv.html">malaria ClinInc expanded (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ResourceFile_malaria_InfInc.csv.html">malaria InfInc (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ResourceFile_malaria_InfInc_expanded.csv.html">malaria InfInc expanded (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ResourceFile_malaria_SevInc.csv.html">malaria SevInc (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ResourceFile_malaria_SevInc_expanded.csv.html">malaria SevInc expanded (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_RTI.xlsx.html">RTI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">malaria</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_malaria</a></li>
+      <li class="breadcrumb-item active">WHO CaseData2023 (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/resources/malaria/ResourceFile_malaria/WHO_CaseData2023.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="who-casedata2023-csv">
+<h1>WHO CaseData2023 (.csv)<a class="headerlink" href="#who-casedata2023-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/malaria/ResourceFile_malaria/WHO_CaseData2023.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Year</p></th>
+<th class="head"><p>NumMalariaCases</p></th>
+<th class="head"><p>NumMalariaCasesLow</p></th>
+<th class="head"><p>NumMalariaCasesHigh</p></th>
+<th class="head"><p>IncidencePer1000</p></th>
+<th class="head"><p>IncidencePer1000Low</p></th>
+<th class="head"><p>IncidencePer1000High</p></th>
+<th class="head"><p>NumPresumedCases</p></th>
+<th class="head"><p>NumConfirmedCases</p></th>
+<th class="head"><p>NumDeaths</p></th>
+<th class="head"><p>NumDeathsLow</p></th>
+<th class="head"><p>NumDeathsHigh</p></th>
+<th class="head"><p>MortalityRatePer100_000</p></th>
+<th class="head"><p>MortalityRatePer100_000Low</p></th>
+<th class="head"><p>MortalityRatePer100_000_High</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>2020</p></td>
+<td><p>4370301</p></td>
+<td><p>2354000</p></td>
+<td><p>7403000</p></td>
+<td><p>228.5</p></td>
+<td><p>123.1</p></td>
+<td><p>387</p></td>
+<td><p>30577.0</p></td>
+<td><p>7139065.0</p></td>
+<td><p>7165</p></td>
+<td><p>6150</p></td>
+<td><p>8700</p></td>
+<td><p>37.45</p></td>
+<td><p>32.16</p></td>
+<td><p>45.49</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>2019</p></td>
+<td><p>3835146</p></td>
+<td><p>2613000</p></td>
+<td><p>5384000</p></td>
+<td><p>205.9</p></td>
+<td><p>140.3</p></td>
+<td><p>289</p></td>
+<td><p>21813.0</p></td>
+<td><p>5184107.0</p></td>
+<td><p>6856</p></td>
+<td><p>6130</p></td>
+<td><p>7830</p></td>
+<td><p>36.8</p></td>
+<td><p>32.89</p></td>
+<td><p>42.02</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>2018</p></td>
+<td><p>3782274</p></td>
+<td><p>2850000</p></td>
+<td><p>4901000</p></td>
+<td><p>208.5</p></td>
+<td><p>157.1</p></td>
+<td><p>270.1</p></td>
+<td></td>
+<td><p>5865476.0</p></td>
+<td><p>6820</p></td>
+<td><p>6150</p></td>
+<td><p>7690</p></td>
+<td><p>37.59</p></td>
+<td><p>33.87</p></td>
+<td><p>42.4</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>2017</p></td>
+<td><p>3851092</p></td>
+<td><p>2954000</p></td>
+<td><p>4948000</p></td>
+<td><p>217.9</p></td>
+<td><p>167.2</p></td>
+<td><p>280</p></td>
+<td><p>988905.0</p></td>
+<td><p>4947443.0</p></td>
+<td><p>6854</p></td>
+<td><p>6210</p></td>
+<td><p>7640</p></td>
+<td><p>38.79</p></td>
+<td><p>35.13</p></td>
+<td><p>43.23</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>2016</p></td>
+<td><p>3868572</p></td>
+<td><p>2979000</p></td>
+<td><p>4944000</p></td>
+<td><p>224.8</p></td>
+<td><p>173.2</p></td>
+<td><p>287.4</p></td>
+<td><p>338013.0</p></td>
+<td><p>4827373.0</p></td>
+<td><p>6792</p></td>
+<td><p>6240</p></td>
+<td><p>7430</p></td>
+<td><p>39.48</p></td>
+<td><p>36.27</p></td>
+<td><p>43.17</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>2015</p></td>
+<td><p>4032938</p></td>
+<td><p>3096000</p></td>
+<td><p>5159000</p></td>
+<td><p>240.8</p></td>
+<td><p>184.9</p></td>
+<td><p>308.1</p></td>
+<td><p>1272178.0</p></td>
+<td><p>3661238.0</p></td>
+<td><p>6868</p></td>
+<td><p>6390</p></td>
+<td><p>7400</p></td>
+<td><p>41.01</p></td>
+<td><p>38.14</p></td>
+<td><p>44.19</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>2014</p></td>
+<td><p>4265161</p></td>
+<td><p>3246000</p></td>
+<td><p>5483000</p></td>
+<td><p>261.8</p></td>
+<td><p>199.3</p></td>
+<td><p>336.6</p></td>
+<td><p>2160393.0</p></td>
+<td><p>2905310.0</p></td>
+<td><p>7221</p></td>
+<td><p>6800</p></td>
+<td><p>7700</p></td>
+<td><p>44.33</p></td>
+<td><p>41.75</p></td>
+<td><p>47.25</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>2013</p></td>
+<td><p>4547495</p></td>
+<td><p>3504000</p></td>
+<td><p>5836000</p></td>
+<td><p>287.1</p></td>
+<td><p>221.2</p></td>
+<td><p>368.4</p></td>
+<td><p>2625946.0</p></td>
+<td><p>1280892.0</p></td>
+<td><p>7853</p></td>
+<td><p>7460</p></td>
+<td><p>8300</p></td>
+<td><p>49.58</p></td>
+<td><p>47.07</p></td>
+<td><p>52.38</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>2012</p></td>
+<td><p>4929530</p></td>
+<td><p>3861000</p></td>
+<td><p>6223000</p></td>
+<td><p>320.2</p></td>
+<td><p>250.7</p></td>
+<td><p>404.2</p></td>
+<td><p>3357612.0</p></td>
+<td><p>1564984.0</p></td>
+<td><p>8978</p></td>
+<td><p>8530</p></td>
+<td><p>9460</p></td>
+<td><p>58.31</p></td>
+<td><p>55.4</p></td>
+<td><p>61.44</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>2011</p></td>
+<td><p>5460330</p></td>
+<td><p>4381000</p></td>
+<td><p>6703000</p></td>
+<td><p>364.9</p></td>
+<td><p>292.8</p></td>
+<td><p>448</p></td>
+<td><p>5034202.0</p></td>
+<td><p>304499.0</p></td>
+<td><p>9903</p></td>
+<td><p>9380</p></td>
+<td><p>10500</p></td>
+<td><p>66.19</p></td>
+<td><p>62.68</p></td>
+<td><p>70.01</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>2010</p></td>
+<td><p>5516206</p></td>
+<td><p>4455000</p></td>
+<td><p>6793000</p></td>
+<td><p>379.4</p></td>
+<td><p>306.4</p></td>
+<td><p>467.2</p></td>
+<td><p>6851108.0</p></td>
+<td></td>
+<td><p>10951</p></td>
+<td><p>10300</p></td>
+<td><p>11700</p></td>
+<td><p>75.32</p></td>
+<td><p>71.15</p></td>
+<td><p>80.17</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="PfPR_MAPdata.csv.html" class="btn btn-neutral float-left" title="PfPR MAPdata (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="WHO_MalReport.csv.html" class="btn btn-neutral float-right" title="WHO MalReport (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

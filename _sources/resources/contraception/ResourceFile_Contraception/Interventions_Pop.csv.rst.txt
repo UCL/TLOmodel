@@ -1,0 +1,10 @@
+Interventions Pop (.csv)
+========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/contraception/ResourceFile_Contraception/Interventions_Pop.csv>`
+
+====  ======  =====  ============  =========  ==============  =======================  ===============  ======================  ============  ====================
+  ..    pill    IUD    injections    implant    male\_condom    female\_sterilization    other\_modern    periodic\_abstinence    withdrawal    other\_traditional
+====  ======  =====  ============  =========  ==============  =======================  ===============  ======================  ============  ====================
+   0     2.5     11           1.6          8             2.6                        2                5                       1             1                     1
+====  ======  =====  ============  =========  ==============  =======================  ===============  ======================  ============  ====================

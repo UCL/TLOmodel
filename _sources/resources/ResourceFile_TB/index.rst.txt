@@ -1,0 +1,25 @@
+ResourceFile_TB
+===============
+
+.. toctree::
+    :maxdepth: 1
+
+    IPTdistricts.csv
+    NTP2019.csv
+    WHO_activeTB2023.csv
+    WHO_latentTB2017.csv
+    WHO_mdrTB2017.csv
+    WHO_tx_success_rates2021.csv
+    additional_params.csv
+    all_districts.csv
+    calibrated_transmission_rates.csv
+    cases2010district.csv
+    details_rates.csv
+    followup.csv
+    ipt_coverage.csv
+    latent_TB2014_summary.csv
+    parameters.csv
+    pulm_tb.csv
+    scaleup_parameters.csv
+    testing_rates.csv
+

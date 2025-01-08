@@ -1,0 +1,20 @@
+beta (.csv)
+===========
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Measles/beta.csv>`
+
+====  ===========
+  ..         beta
+====  ===========
+   0  0.00108
+   1  0.00216
+   2  0.00324
+   3  0.00403061
+   4  0.00432
+   5  0.00403061
+   6  0.00324
+   7  0.00216
+   8  0.00108
+   9  0.000289385
+  10  0.000289385
+====  ===========

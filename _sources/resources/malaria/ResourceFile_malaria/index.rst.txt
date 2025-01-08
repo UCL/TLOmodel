@@ -1,0 +1,25 @@
+ResourceFile_malaria
+====================
+
+.. toctree::
+    :maxdepth: 1
+
+    MAP_CommoditiesData2023.csv
+    MAP_IRSrates.csv
+    MAP_ITNrates.csv
+    MAP_InfectionData2023.csv
+    NMCP.csv
+    PfPR_MAPdata.csv
+    WHO_CaseData2023.csv
+    WHO_MalReport.csv
+    WHO_TestData2023.csv
+    WHOcommodities.csv
+    highrisk_districts.csv
+    inc1000py_MAPdata.csv
+    interventions.csv
+    mortalityRate_MAPdata.csv
+    parameters.csv
+    scaleup_parameters.csv
+    severe_symptoms.csv
+    txCov_MAPdata.csv
+

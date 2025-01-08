@@ -1,0 +1,30 @@
+Parameters (.csv)
+=================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Schisto/Parameters.csv>`
+
+====  =============================================  =======  ===================  ==================
+  ..  Parameter                                        Value  Reference            Area
+====  =============================================  =======  ===================  ==================
+   0  delay\_till\_hsi\_a\_repeated                   5       assumption           HSI
+   1  delay\_till\_hsi\_b\_repeated                  20       assumption           HSI
+   2  prob\_sent\_to\_lab\_test\_children             0.9     assumption           HSI
+   3  prob\_sent\_to\_lab\_test\_adults               0.6     assumption           HSI
+   4  PZQ\_efficacy                                   1       assumption           HSI
+   5  high\_intensity\_threshold\_haematobium        20       WHO                  transmission model
+   6  high\_intensity\_threshold\_PSAC\_haematobium   5       assumption           transmission model
+   7  low\_intensity\_threshold\_haematobium          2       assumption           transmission model
+   8  worms\_fecundity\_haematobium                   0.005   Truscott et al       transmission model
+   9  worm\_lifespan\_haematobium                     6       Anderson et al 2016  transmission model
+  10  beta\_PSAC\_haematobium                         0.3     Truscott et al       transmission model
+  11  beta\_SAC\_haematobium                          1       Truscott et al       transmission model
+  12  beta\_Adults\_haematobium                       0.05    Truscott et al       transmission model
+  13  high\_intensity\_threshold\_mansoni            46       WHO                  transmission model
+  14  high\_intensity\_threshold\_PSAC\_mansoni      20       assumption           transmission model
+  15  low\_intensity\_threshold\_mansoni              2       assumption           transmission model
+  16  worms\_fecundity\_mansoni                       0.0006  Chan et al           transmission model
+  17  worm\_lifespan\_mansoni                         4       Anderson et al 2017  transmission model
+  18  beta\_PSAC\_mansoni                             0.3     Truscott et al       transmission model
+  19  beta\_SAC\_mansoni                              1       Truscott et al       transmission model
+  20  beta\_Adults\_mansoni                           0.05    Truscott et al       transmission model
+====  =============================================  =======  ===================  ==================

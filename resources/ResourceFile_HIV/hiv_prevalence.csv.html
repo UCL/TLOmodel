@@ -1,0 +1,2151 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hiv prevalence (.csv) &mdash; TLOmodel 0.1.dev2506+gbc4f583 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=1cf5572f"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="parameters (.csv)" href="parameters.csv.html" />
+    <link rel="prev" title="children0 14 prev AIDSinfo (.csv)" href="children0_14_prev_AIDSinfo.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_HIV</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="DHS_prevalence.csv.html">DHS prevalence (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="LHC_samples.csv.html">LHC samples (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MPHIA_incidence2020.csv.html">MPHIA incidence2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MPHIA_prevalence_art2020.csv.html">MPHIA prevalence art2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_CPT_IPT2020.csv.html">MoH CPT IPT2020 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_number_art.csv.html">MoH number art (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MoH_numbers_tests.csv.html">MoH numbers tests (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="art_coverage.csv.html">art coverage (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="calibration_from_aids_info.csv.html">calibration from aids info (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="children0_14_prev_AIDSinfo.csv.html">children0 14 prev AIDSinfo (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">hiv prevalence (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="parameters.csv.html">parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scaleup_parameters.csv.html">scaleup parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="spectrum_treatment_cascade.csv.html">spectrum treatment cascade (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="time_since_infection_at_baselin.csv.html">time since infection at baselin (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_infections_art2021.csv.html">unaids infections art2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_mortality_dalys2021.csv.html">unaids mortality dalys2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_pmtct2021.csv.html">unaids pmtct2021 (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unaids_program_perf.csv.html">unaids program perf (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI.xlsx.html">RTI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_HIV</a></li>
+      <li class="breadcrumb-item active">hiv prevalence (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_HIV/hiv_prevalence.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hiv-prevalence-csv">
+<h1>hiv prevalence (.csv)<a class="headerlink" href="#hiv-prevalence-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_HIV/hiv_prevalence.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>age_from</p></th>
+<th class="head"><p>age_to</p></th>
+<th class="head"><p>year</p></th>
+<th class="head"><p>sex</p></th>
+<th class="head"><p>pop_size</p></th>
+<th class="head"><p>prev</p></th>
+<th class="head"><p>prev_prop</p></th>
+<th class="head"><p>prevalence_simplified</p></th>
+<th class="head"><p>updated_prev_mw2021_v14</p></th>
+<th class="head"><p>prop_hiv_mw2021_v14</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>290951</p></td>
+<td><p>4618</p></td>
+<td><p>0.0158721</p></td>
+<td><p>0.019</p></td>
+<td><p>4688</p></td>
+<td><p>0.0161127</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>279629</p></td>
+<td><p>4759</p></td>
+<td><p>0.017019</p></td>
+<td><p>0.019</p></td>
+<td><p>4810</p></td>
+<td><p>0.0172014</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>269211</p></td>
+<td><p>4353</p></td>
+<td><p>0.0161695</p></td>
+<td><p>0.019</p></td>
+<td><p>4394</p></td>
+<td><p>0.0163218</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>3</p></td>
+<td><p>3</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>259626</p></td>
+<td><p>4618</p></td>
+<td><p>0.0177871</p></td>
+<td><p>0.019</p></td>
+<td><p>4665</p></td>
+<td><p>0.0179682</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>250803</p></td>
+<td><p>4598</p></td>
+<td><p>0.0183331</p></td>
+<td><p>0.019</p></td>
+<td><p>4648</p></td>
+<td><p>0.0185325</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>5</p></td>
+<td><p>5</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>242668</p></td>
+<td><p>4561</p></td>
+<td><p>0.0187952</p></td>
+<td><p>0.019</p></td>
+<td><p>4650</p></td>
+<td><p>0.019162</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>6</p></td>
+<td><p>6</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>235152</p></td>
+<td><p>4566</p></td>
+<td><p>0.0194172</p></td>
+<td><p>0.019</p></td>
+<td><p>4625</p></td>
+<td><p>0.0196681</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>228181</p></td>
+<td><p>4536</p></td>
+<td><p>0.019879</p></td>
+<td><p>0.019</p></td>
+<td><p>4595</p></td>
+<td><p>0.0201375</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>8</p></td>
+<td><p>8</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>221685</p></td>
+<td><p>4482</p></td>
+<td><p>0.0202179</p></td>
+<td><p>0.019</p></td>
+<td><p>4540</p></td>
+<td><p>0.0204795</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>9</p></td>
+<td><p>9</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>215590</p></td>
+<td><p>4401</p></td>
+<td><p>0.0204137</p></td>
+<td><p>0.019</p></td>
+<td><p>4460</p></td>
+<td><p>0.0206874</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>10</p></td>
+<td><p>10</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>209889</p></td>
+<td><p>4268</p></td>
+<td><p>0.0203346</p></td>
+<td><p>0.019</p></td>
+<td><p>4326</p></td>
+<td><p>0.0206109</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>11</p></td>
+<td><p>11</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>204569</p></td>
+<td><p>4090</p></td>
+<td><p>0.0199933</p></td>
+<td><p>0.019</p></td>
+<td><p>4150</p></td>
+<td><p>0.0202866</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>12</p></td>
+<td><p>12</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>199251</p></td>
+<td><p>3884</p></td>
+<td><p>0.019493</p></td>
+<td><p>0.019</p></td>
+<td><p>3945</p></td>
+<td><p>0.0197991</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>13</p></td>
+<td><p>13</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>193741</p></td>
+<td><p>3644</p></td>
+<td><p>0.0188086</p></td>
+<td><p>0.019</p></td>
+<td><p>3705</p></td>
+<td><p>0.0191235</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>14</p></td>
+<td><p>14</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>188151</p></td>
+<td><p>3379</p></td>
+<td><p>0.017959</p></td>
+<td><p>0.019</p></td>
+<td><p>3438</p></td>
+<td><p>0.0182726</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>15</p></td>
+<td><p>15</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>182718</p></td>
+<td><p>3932</p></td>
+<td><p>0.0215195</p></td>
+<td><p>0.1221</p></td>
+<td><p>3999</p></td>
+<td><p>0.0218862</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>16</p></td>
+<td><p>16</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>177308</p></td>
+<td><p>4759</p></td>
+<td><p>0.0268403</p></td>
+<td><p>0.1221</p></td>
+<td><p>4836</p></td>
+<td><p>0.0272746</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>17</p></td>
+<td><p>17</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>172159</p></td>
+<td><p>5755</p></td>
+<td><p>0.0334284</p></td>
+<td><p>0.1221</p></td>
+<td><p>5843</p></td>
+<td><p>0.0339396</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>18</p></td>
+<td><p>18</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>167381</p></td>
+<td><p>6850</p></td>
+<td><p>0.0409246</p></td>
+<td><p>0.1221</p></td>
+<td><p>6958</p></td>
+<td><p>0.0415698</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>19</p></td>
+<td><p>19</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>162782</p></td>
+<td><p>8009</p></td>
+<td><p>0.0492008</p></td>
+<td><p>0.1221</p></td>
+<td><p>8144</p></td>
+<td><p>0.0500301</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>20</p></td>
+<td><p>20</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>158195</p></td>
+<td><p>9219</p></td>
+<td><p>0.0582762</p></td>
+<td><p>0.1221</p></td>
+<td><p>9386</p></td>
+<td><p>0.0593318</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>21</p></td>
+<td><p>21</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>153823</p></td>
+<td><p>10491</p></td>
+<td><p>0.0682018</p></td>
+<td><p>0.1221</p></td>
+<td><p>10693</p></td>
+<td><p>0.069515</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>22</p></td>
+<td><p>22</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>148590</p></td>
+<td><p>11734</p></td>
+<td><p>0.078969</p></td>
+<td><p>0.1221</p></td>
+<td><p>11963</p></td>
+<td><p>0.0805101</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>23</p></td>
+<td><p>23</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>141995</p></td>
+<td><p>12861</p></td>
+<td><p>0.0905736</p></td>
+<td><p>0.1221</p></td>
+<td><p>13104</p></td>
+<td><p>0.0922849</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>24</p></td>
+<td><p>24</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>134608</p></td>
+<td><p>13847</p></td>
+<td><p>0.102869</p></td>
+<td><p>0.1221</p></td>
+<td><p>14092</p></td>
+<td><p>0.104689</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>25</p></td>
+<td><p>25</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>127415</p></td>
+<td><p>14667</p></td>
+<td><p>0.115112</p></td>
+<td><p>0.1221</p></td>
+<td><p>14900</p></td>
+<td><p>0.116941</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>26</p></td>
+<td><p>26</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>120117</p></td>
+<td><p>15386</p></td>
+<td><p>0.128092</p></td>
+<td><p>0.1221</p></td>
+<td><p>15602</p></td>
+<td><p>0.12989</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>27</p></td>
+<td><p>27</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>113769</p></td>
+<td><p>16071</p></td>
+<td><p>0.14126</p></td>
+<td><p>0.1221</p></td>
+<td><p>16268</p></td>
+<td><p>0.142992</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>28</p></td>
+<td><p>28</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>108961</p></td>
+<td><p>16802</p></td>
+<td><p>0.154202</p></td>
+<td><p>0.1221</p></td>
+<td><p>16980</p></td>
+<td><p>0.155836</p></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>29</p></td>
+<td><p>29</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>105161</p></td>
+<td><p>17559</p></td>
+<td><p>0.166973</p></td>
+<td><p>0.1221</p></td>
+<td><p>17717</p></td>
+<td><p>0.168475</p></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>30</p></td>
+<td><p>30</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>101286</p></td>
+<td><p>18236</p></td>
+<td><p>0.180045</p></td>
+<td><p>0.1221</p></td>
+<td><p>18373</p></td>
+<td><p>0.181397</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>31</p></td>
+<td><p>31</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>97601</p></td>
+<td><p>18729</p></td>
+<td><p>0.191894</p></td>
+<td><p>0.1221</p></td>
+<td><p>18839</p></td>
+<td><p>0.193021</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>32</p></td>
+<td><p>32</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>93629</p></td>
+<td><p>19024</p></td>
+<td><p>0.203185</p></td>
+<td><p>0.1221</p></td>
+<td><p>19101</p></td>
+<td><p>0.204007</p></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>33</p></td>
+<td><p>33</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>89039</p></td>
+<td><p>19054</p></td>
+<td><p>0.213996</p></td>
+<td><p>0.1221</p></td>
+<td><p>19094</p></td>
+<td><p>0.214445</p></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>34</p></td>
+<td><p>34</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>84121</p></td>
+<td><p>18830</p></td>
+<td><p>0.223844</p></td>
+<td><p>0.1221</p></td>
+<td><p>18831</p></td>
+<td><p>0.223856</p></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>35</p></td>
+<td><p>35</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>79492</p></td>
+<td><p>18343</p></td>
+<td><p>0.230753</p></td>
+<td><p>0.1221</p></td>
+<td><p>18303</p></td>
+<td><p>0.23025</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>36</p></td>
+<td><p>36</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>75030</p></td>
+<td><p>17689</p></td>
+<td><p>0.235759</p></td>
+<td><p>0.1221</p></td>
+<td><p>17614</p></td>
+<td><p>0.234759</p></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>37</p></td>
+<td><p>37</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>70857</p></td>
+<td><p>16873</p></td>
+<td><p>0.238127</p></td>
+<td><p>0.1221</p></td>
+<td><p>16771</p></td>
+<td><p>0.236688</p></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>38</p></td>
+<td><p>38</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>67095</p></td>
+<td><p>15946</p></td>
+<td><p>0.237663</p></td>
+<td><p>0.1221</p></td>
+<td><p>15826</p></td>
+<td><p>0.235875</p></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>39</p></td>
+<td><p>39</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>63664</p></td>
+<td><p>14949</p></td>
+<td><p>0.234811</p></td>
+<td><p>0.1221</p></td>
+<td><p>14816</p></td>
+<td><p>0.232722</p></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>40</p></td>
+<td><p>40</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>60343</p></td>
+<td><p>13913</p></td>
+<td><p>0.230565</p></td>
+<td><p>0.1221</p></td>
+<td><p>13772</p></td>
+<td><p>0.228229</p></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>41</p></td>
+<td><p>41</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>57163</p></td>
+<td><p>12865</p></td>
+<td><p>0.225058</p></td>
+<td><p>0.1221</p></td>
+<td><p>12720</p></td>
+<td><p>0.222522</p></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>42</p></td>
+<td><p>42</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>54226</p></td>
+<td><p>11838</p></td>
+<td><p>0.218309</p></td>
+<td><p>0.1221</p></td>
+<td><p>11693</p></td>
+<td><p>0.215635</p></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>43</p></td>
+<td><p>43</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>51558</p></td>
+<td><p>10847</p></td>
+<td><p>0.210384</p></td>
+<td><p>0.1221</p></td>
+<td><p>10704</p></td>
+<td><p>0.207611</p></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>44</p></td>
+<td><p>44</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>49122</p></td>
+<td><p>9906</p></td>
+<td><p>0.201661</p></td>
+<td><p>0.1221</p></td>
+<td><p>9766</p></td>
+<td><p>0.198811</p></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>45</p></td>
+<td><p>45</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>46837</p></td>
+<td><p>8953</p></td>
+<td><p>0.191152</p></td>
+<td><p>0.1221</p></td>
+<td><p>8815</p></td>
+<td><p>0.188206</p></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>46</p></td>
+<td><p>46</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>44700</p></td>
+<td><p>8050</p></td>
+<td><p>0.180089</p></td>
+<td><p>0.1221</p></td>
+<td><p>7916</p></td>
+<td><p>0.177092</p></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>47</p></td>
+<td><p>47</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>42728</p></td>
+<td><p>7213</p></td>
+<td><p>0.168812</p></td>
+<td><p>0.1221</p></td>
+<td><p>7084</p></td>
+<td><p>0.165793</p></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>48</p></td>
+<td><p>48</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>40914</p></td>
+<td><p>6451</p></td>
+<td><p>0.157672</p></td>
+<td><p>0.1221</p></td>
+<td><p>6328</p></td>
+<td><p>0.154666</p></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>49</p></td>
+<td><p>49</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>39237</p></td>
+<td><p>5763</p></td>
+<td><p>0.146877</p></td>
+<td><p>0.1221</p></td>
+<td><p>5647</p></td>
+<td><p>0.14392</p></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>50</p></td>
+<td><p>50</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>37705</p></td>
+<td><p>5150</p></td>
+<td><p>0.136587</p></td>
+<td><p>0.1221</p></td>
+<td><p>5040</p></td>
+<td><p>0.133669</p></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>51</p></td>
+<td><p>51</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>36349</p></td>
+<td><p>4601</p></td>
+<td><p>0.126578</p></td>
+<td><p>0.1221</p></td>
+<td><p>4498</p></td>
+<td><p>0.123745</p></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>52</p></td>
+<td><p>52</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>34940</p></td>
+<td><p>4101</p></td>
+<td><p>0.117373</p></td>
+<td><p>0.1221</p></td>
+<td><p>4005</p></td>
+<td><p>0.114625</p></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>53</p></td>
+<td><p>53</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>33378</p></td>
+<td><p>3643</p></td>
+<td><p>0.109144</p></td>
+<td><p>0.1221</p></td>
+<td><p>3554</p></td>
+<td><p>0.106477</p></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>54</p></td>
+<td><p>54</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>31774</p></td>
+<td><p>3229</p></td>
+<td><p>0.101624</p></td>
+<td><p>0.1221</p></td>
+<td><p>3148</p></td>
+<td><p>0.0990747</p></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>55</p></td>
+<td><p>55</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>30268</p></td>
+<td><p>2858</p></td>
+<td><p>0.0944232</p></td>
+<td><p>0.1221</p></td>
+<td><p>2783</p></td>
+<td><p>0.0919453</p></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>56</p></td>
+<td><p>56</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>28745</p></td>
+<td><p>2538</p></td>
+<td><p>0.0882936</p></td>
+<td><p>0.1221</p></td>
+<td><p>2470</p></td>
+<td><p>0.085928</p></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>57</p></td>
+<td><p>57</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>27692</p></td>
+<td><p>2280</p></td>
+<td><p>0.0823342</p></td>
+<td><p>0.1221</p></td>
+<td><p>2217</p></td>
+<td><p>0.0800592</p></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>58</p></td>
+<td><p>58</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>27338</p></td>
+<td><p>2082</p></td>
+<td><p>0.0761577</p></td>
+<td><p>0.1221</p></td>
+<td><p>2023</p></td>
+<td><p>0.0739996</p></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>59</p></td>
+<td><p>59</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>27408</p></td>
+<td><p>1926</p></td>
+<td><p>0.0702715</p></td>
+<td><p>0.1221</p></td>
+<td><p>1870</p></td>
+<td><p>0.0682283</p></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>60</p></td>
+<td><p>60</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>27430</p></td>
+<td><p>1795</p></td>
+<td><p>0.0654393</p></td>
+<td><p>0.1221</p></td>
+<td><p>1742</p></td>
+<td><p>0.0635071</p></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>61</p></td>
+<td><p>61</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>27538</p></td>
+<td><p>1671</p></td>
+<td><p>0.0606798</p></td>
+<td><p>0.1221</p></td>
+<td><p>1621</p></td>
+<td><p>0.0588641</p></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>62</p></td>
+<td><p>62</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>27217</p></td>
+<td><p>1543</p></td>
+<td><p>0.0566925</p></td>
+<td><p>0.1221</p></td>
+<td><p>1496</p></td>
+<td><p>0.0549656</p></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>63</p></td>
+<td><p>63</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>26177</p></td>
+<td><p>1406</p></td>
+<td><p>0.0537113</p></td>
+<td><p>0.1221</p></td>
+<td><p>1363</p></td>
+<td><p>0.0520686</p></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>64</p></td>
+<td><p>64</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>24667</p></td>
+<td><p>1267</p></td>
+<td><p>0.0513642</p></td>
+<td><p>0.1221</p></td>
+<td><p>1227</p></td>
+<td><p>0.0497426</p></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>65</p></td>
+<td><p>65</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>23238</p></td>
+<td><p>1136</p></td>
+<td><p>0.0488854</p></td>
+<td><p>0.1221</p></td>
+<td><p>1101</p></td>
+<td><p>0.0473793</p></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>66</p></td>
+<td><p>66</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>21788</p></td>
+<td><p>1020</p></td>
+<td><p>0.0468148</p></td>
+<td><p>0.1221</p></td>
+<td><p>988</p></td>
+<td><p>0.0453461</p></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>67</p></td>
+<td><p>67</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>20377</p></td>
+<td><p>914</p></td>
+<td><p>0.0448545</p></td>
+<td><p>0.1221</p></td>
+<td><p>886</p></td>
+<td><p>0.0434804</p></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>68</p></td>
+<td><p>68</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>19092</p></td>
+<td><p>820</p></td>
+<td><p>0.0429499</p></td>
+<td><p>0.1221</p></td>
+<td><p>794</p></td>
+<td><p>0.0415881</p></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>69</p></td>
+<td><p>69</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>17886</p></td>
+<td><p>735</p></td>
+<td><p>0.0410936</p></td>
+<td><p>0.1221</p></td>
+<td><p>712</p></td>
+<td><p>0.0398077</p></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>70</p></td>
+<td><p>70</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>16632</p></td>
+<td><p>657</p></td>
+<td><p>0.0395022</p></td>
+<td><p>0.1221</p></td>
+<td><p>636</p></td>
+<td><p>0.0382395</p></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>71</p></td>
+<td><p>71</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>15362</p></td>
+<td><p>584</p></td>
+<td><p>0.0380159</p></td>
+<td><p>0.1221</p></td>
+<td><p>566</p></td>
+<td><p>0.0368442</p></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>72</p></td>
+<td><p>72</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>14119</p></td>
+<td><p>516</p></td>
+<td><p>0.0365465</p></td>
+<td><p>0.1221</p></td>
+<td><p>499</p></td>
+<td><p>0.0353424</p></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>73</p></td>
+<td><p>73</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>12917</p></td>
+<td><p>451</p></td>
+<td><p>0.0349152</p></td>
+<td><p>0.1221</p></td>
+<td><p>437</p></td>
+<td><p>0.0338314</p></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>74</p></td>
+<td><p>74</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>11756</p></td>
+<td><p>390</p></td>
+<td><p>0.0331745</p></td>
+<td><p>0.1221</p></td>
+<td><p>378</p></td>
+<td><p>0.0321538</p></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>75</p></td>
+<td><p>75</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>10624</p></td>
+<td><p>336</p></td>
+<td><p>0.0316265</p></td>
+<td><p>0.1221</p></td>
+<td><p>326</p></td>
+<td><p>0.0306852</p></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>76</p></td>
+<td><p>76</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>9525</p></td>
+<td><p>289</p></td>
+<td><p>0.0303412</p></td>
+<td><p>0.1221</p></td>
+<td><p>280</p></td>
+<td><p>0.0293963</p></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>77</p></td>
+<td><p>77</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>8491</p></td>
+<td><p>249</p></td>
+<td><p>0.0293252</p></td>
+<td><p>0.1221</p></td>
+<td><p>242</p></td>
+<td><p>0.0285008</p></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>78</p></td>
+<td><p>78</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>7537</p></td>
+<td><p>217</p></td>
+<td><p>0.0287913</p></td>
+<td><p>0.1221</p></td>
+<td><p>210</p></td>
+<td><p>0.0278625</p></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>79</p></td>
+<td><p>79</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>6654</p></td>
+<td><p>190</p></td>
+<td><p>0.0285543</p></td>
+<td><p>0.1221</p></td>
+<td><p>185</p></td>
+<td><p>0.0278028</p></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>80</p></td>
+<td><p>80</p></td>
+<td><p>2010</p></td>
+<td><p>F</p></td>
+<td><p>5817</p></td>
+<td><p>560</p></td>
+<td><p>0.0962696</p></td>
+<td><p>0.1221</p></td>
+<td><p>538</p></td>
+<td><p>0.0924875</p></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>297207</p></td>
+<td><p>4724</p></td>
+<td><p>0.0158946</p></td>
+<td><p>0.0194</p></td>
+<td><p>4795</p></td>
+<td><p>0.0161335</p></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>1</p></td>
+<td><p>1</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>284655</p></td>
+<td><p>4853</p></td>
+<td><p>0.0170487</p></td>
+<td><p>0.0194</p></td>
+<td><p>4905</p></td>
+<td><p>0.0172314</p></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>273219</p></td>
+<td><p>4429</p></td>
+<td><p>0.0162104</p></td>
+<td><p>0.0194</p></td>
+<td><p>4471</p></td>
+<td><p>0.0163642</p></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>3</p></td>
+<td><p>3</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>262808</p></td>
+<td><p>4690</p></td>
+<td><p>0.0178457</p></td>
+<td><p>0.0194</p></td>
+<td><p>4738</p></td>
+<td><p>0.0180284</p></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>4</p></td>
+<td><p>4</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>253325</p></td>
+<td><p>4658</p></td>
+<td><p>0.0183874</p></td>
+<td><p>0.0194</p></td>
+<td><p>4710</p></td>
+<td><p>0.0185927</p></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>5</p></td>
+<td><p>5</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>244679</p></td>
+<td><p>4610</p></td>
+<td><p>0.018841</p></td>
+<td><p>0.0194</p></td>
+<td><p>4699</p></td>
+<td><p>0.0192048</p></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>6</p></td>
+<td><p>6</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>236775</p></td>
+<td><p>4604</p></td>
+<td><p>0.0194446</p></td>
+<td><p>0.0194</p></td>
+<td><p>4663</p></td>
+<td><p>0.0196938</p></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>229520</p></td>
+<td><p>4564</p></td>
+<td><p>0.019885</p></td>
+<td><p>0.0194</p></td>
+<td><p>4623</p></td>
+<td><p>0.020142</p></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>8</p></td>
+<td><p>8</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>222819</p></td>
+<td><p>4502</p></td>
+<td><p>0.0202047</p></td>
+<td><p>0.0194</p></td>
+<td><p>4561</p></td>
+<td><p>0.0204695</p></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>9</p></td>
+<td><p>9</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>216579</p></td>
+<td><p>4415</p></td>
+<td><p>0.0203852</p></td>
+<td><p>0.0194</p></td>
+<td><p>4474</p></td>
+<td><p>0.0206576</p></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>10</p></td>
+<td><p>10</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>210804</p></td>
+<td><p>4277</p></td>
+<td><p>0.020289</p></td>
+<td><p>0.0194</p></td>
+<td><p>4335</p></td>
+<td><p>0.0205641</p></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>11</p></td>
+<td><p>11</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>205498</p></td>
+<td><p>4094</p></td>
+<td><p>0.0199223</p></td>
+<td><p>0.0194</p></td>
+<td><p>4153</p></td>
+<td><p>0.0202094</p></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>12</p></td>
+<td><p>12</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>200078</p></td>
+<td><p>3880</p></td>
+<td><p>0.0193924</p></td>
+<td><p>0.0194</p></td>
+<td><p>3941</p></td>
+<td><p>0.0196973</p></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>13</p></td>
+<td><p>13</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>194256</p></td>
+<td><p>3631</p></td>
+<td><p>0.0186918</p></td>
+<td><p>0.0194</p></td>
+<td><p>3692</p></td>
+<td><p>0.0190058</p></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>14</p></td>
+<td><p>14</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>188230</p></td>
+<td><p>3357</p></td>
+<td><p>0.0178346</p></td>
+<td><p>0.0194</p></td>
+<td><p>3415</p></td>
+<td><p>0.0181427</p></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>15</p></td>
+<td><p>15</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>182424</p></td>
+<td><p>3102</p></td>
+<td><p>0.0170043</p></td>
+<td><p>0.0796</p></td>
+<td><p>3154</p></td>
+<td><p>0.0172894</p></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>16</p></td>
+<td><p>16</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>176678</p></td>
+<td><p>2816</p></td>
+<td><p>0.0159386</p></td>
+<td><p>0.0796</p></td>
+<td><p>2857</p></td>
+<td><p>0.0161707</p></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>17</p></td>
+<td><p>17</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>171239</p></td>
+<td><p>2523</p></td>
+<td><p>0.0147338</p></td>
+<td><p>0.0796</p></td>
+<td><p>2551</p></td>
+<td><p>0.0148973</p></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>18</p></td>
+<td><p>18</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>166249</p></td>
+<td><p>2332</p></td>
+<td><p>0.0140272</p></td>
+<td><p>0.0796</p></td>
+<td><p>2353</p></td>
+<td><p>0.0141535</p></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>19</p></td>
+<td><p>19</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>161507</p></td>
+<td><p>2343</p></td>
+<td><p>0.0145071</p></td>
+<td><p>0.0796</p></td>
+<td><p>2365</p></td>
+<td><p>0.0146433</p></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>20</p></td>
+<td><p>20</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>156796</p></td>
+<td><p>2572</p></td>
+<td><p>0.0164035</p></td>
+<td><p>0.0796</p></td>
+<td><p>2604</p></td>
+<td><p>0.0166076</p></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>21</p></td>
+<td><p>21</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>152312</p></td>
+<td><p>3008</p></td>
+<td><p>0.0197489</p></td>
+<td><p>0.0796</p></td>
+<td><p>3058</p></td>
+<td><p>0.0200772</p></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>22</p></td>
+<td><p>22</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>147100</p></td>
+<td><p>3603</p></td>
+<td><p>0.0244935</p></td>
+<td><p>0.0796</p></td>
+<td><p>3673</p></td>
+<td><p>0.0249694</p></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>23</p></td>
+<td><p>23</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>140712</p></td>
+<td><p>4287</p></td>
+<td><p>0.0304665</p></td>
+<td><p>0.0796</p></td>
+<td><p>4375</p></td>
+<td><p>0.0310919</p></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>24</p></td>
+<td><p>24</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>133658</p></td>
+<td><p>5002</p></td>
+<td><p>0.0374239</p></td>
+<td><p>0.0796</p></td>
+<td><p>5105</p></td>
+<td><p>0.0381945</p></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>25</p></td>
+<td><p>25</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>126800</p></td>
+<td><p>5712</p></td>
+<td><p>0.0450473</p></td>
+<td><p>0.0796</p></td>
+<td><p>5826</p></td>
+<td><p>0.0459464</p></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>26</p></td>
+<td><p>26</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>119850</p></td>
+<td><p>6429</p></td>
+<td><p>0.0536421</p></td>
+<td><p>0.0796</p></td>
+<td><p>6550</p></td>
+<td><p>0.0546516</p></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>27</p></td>
+<td><p>27</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>113865</p></td>
+<td><p>7165</p></td>
+<td><p>0.0629254</p></td>
+<td><p>0.0796</p></td>
+<td><p>7290</p></td>
+<td><p>0.0640232</p></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td><p>28</p></td>
+<td><p>28</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>109423</p></td>
+<td><p>7946</p></td>
+<td><p>0.0726173</p></td>
+<td><p>0.0796</p></td>
+<td><p>8073</p></td>
+<td><p>0.0737779</p></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>29</p></td>
+<td><p>29</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>105976</p></td>
+<td><p>8763</p></td>
+<td><p>0.0826885</p></td>
+<td><p>0.0796</p></td>
+<td><p>8888</p></td>
+<td><p>0.083868</p></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>30</p></td>
+<td><p>30</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>102428</p></td>
+<td><p>9563</p></td>
+<td><p>0.0933631</p></td>
+<td><p>0.0796</p></td>
+<td><p>9684</p></td>
+<td><p>0.0945445</p></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>31</p></td>
+<td><p>31</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>99030</p></td>
+<td><p>10283</p></td>
+<td><p>0.103837</p></td>
+<td><p>0.0796</p></td>
+<td><p>10395</p></td>
+<td><p>0.104968</p></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>32</p></td>
+<td><p>32</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>95289</p></td>
+<td><p>10901</p></td>
+<td><p>0.114399</p></td>
+<td><p>0.0796</p></td>
+<td><p>11002</p></td>
+<td><p>0.115459</p></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td><p>33</p></td>
+<td><p>33</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>90859</p></td>
+<td><p>11373</p></td>
+<td><p>0.125172</p></td>
+<td><p>0.0796</p></td>
+<td><p>11461</p></td>
+<td><p>0.126141</p></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>34</p></td>
+<td><p>34</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>86015</p></td>
+<td><p>11694</p></td>
+<td><p>0.135953</p></td>
+<td><p>0.0796</p></td>
+<td><p>11767</p></td>
+<td><p>0.136802</p></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>35</p></td>
+<td><p>35</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>81402</p></td>
+<td><p>11851</p></td>
+<td><p>0.145586</p></td>
+<td><p>0.0796</p></td>
+<td><p>11900</p></td>
+<td><p>0.146188</p></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>36</p></td>
+<td><p>36</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>76924</p></td>
+<td><p>11885</p></td>
+<td><p>0.154503</p></td>
+<td><p>0.0796</p></td>
+<td><p>11910</p></td>
+<td><p>0.154828</p></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>37</p></td>
+<td><p>37</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>72488</p></td>
+<td><p>11768</p></td>
+<td><p>0.162344</p></td>
+<td><p>0.0796</p></td>
+<td><p>11766</p></td>
+<td><p>0.162317</p></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>38</p></td>
+<td><p>38</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>68124</p></td>
+<td><p>11511</p></td>
+<td><p>0.168971</p></td>
+<td><p>0.0796</p></td>
+<td><p>11483</p></td>
+<td><p>0.16856</p></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td><p>39</p></td>
+<td><p>39</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>63853</p></td>
+<td><p>11132</p></td>
+<td><p>0.174338</p></td>
+<td><p>0.0796</p></td>
+<td><p>11080</p></td>
+<td><p>0.173524</p></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>40</p></td>
+<td><p>40</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>59678</p></td>
+<td><p>10648</p></td>
+<td><p>0.178424</p></td>
+<td><p>0.0796</p></td>
+<td><p>10576</p></td>
+<td><p>0.177218</p></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>41</p></td>
+<td><p>41</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>55603</p></td>
+<td><p>10088</p></td>
+<td><p>0.181429</p></td>
+<td><p>0.0796</p></td>
+<td><p>10001</p></td>
+<td><p>0.179864</p></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td><p>42</p></td>
+<td><p>42</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>51756</p></td>
+<td><p>9488</p></td>
+<td><p>0.183322</p></td>
+<td><p>0.0796</p></td>
+<td><p>9390</p></td>
+<td><p>0.181428</p></td>
+</tr>
+<tr class="row-even"><td><p>124</p></td>
+<td><p>43</p></td>
+<td><p>43</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>48202</p></td>
+<td><p>8874</p></td>
+<td><p>0.1841</p></td>
+<td><p>0.0796</p></td>
+<td><p>8769</p></td>
+<td><p>0.181922</p></td>
+</tr>
+<tr class="row-odd"><td><p>125</p></td>
+<td><p>44</p></td>
+<td><p>44</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>44907</p></td>
+<td><p>8258</p></td>
+<td><p>0.183891</p></td>
+<td><p>0.0796</p></td>
+<td><p>8149</p></td>
+<td><p>0.181464</p></td>
+</tr>
+<tr class="row-even"><td><p>126</p></td>
+<td><p>45</p></td>
+<td><p>45</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>41769</p></td>
+<td><p>7578</p></td>
+<td><p>0.181426</p></td>
+<td><p>0.0796</p></td>
+<td><p>7466</p></td>
+<td><p>0.178745</p></td>
+</tr>
+<tr class="row-odd"><td><p>127</p></td>
+<td><p>46</p></td>
+<td><p>46</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>38806</p></td>
+<td><p>6894</p></td>
+<td><p>0.177653</p></td>
+<td><p>0.0796</p></td>
+<td><p>6780</p></td>
+<td><p>0.174715</p></td>
+</tr>
+<tr class="row-even"><td><p>128</p></td>
+<td><p>47</p></td>
+<td><p>47</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>36081</p></td>
+<td><p>6232</p></td>
+<td><p>0.172722</p></td>
+<td><p>0.0796</p></td>
+<td><p>6119</p></td>
+<td><p>0.169591</p></td>
+</tr>
+<tr class="row-odd"><td><p>129</p></td>
+<td><p>48</p></td>
+<td><p>48</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>33614</p></td>
+<td><p>5609</p></td>
+<td><p>0.166865</p></td>
+<td><p>0.0796</p></td>
+<td><p>5500</p></td>
+<td><p>0.163622</p></td>
+</tr>
+<tr class="row-even"><td><p>130</p></td>
+<td><p>49</p></td>
+<td><p>49</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>31389</p></td>
+<td><p>5033</p></td>
+<td><p>0.160343</p></td>
+<td><p>0.0796</p></td>
+<td><p>4927</p></td>
+<td><p>0.156966</p></td>
+</tr>
+<tr class="row-odd"><td><p>131</p></td>
+<td><p>50</p></td>
+<td><p>50</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>29364</p></td>
+<td><p>4507</p></td>
+<td><p>0.153487</p></td>
+<td><p>0.0796</p></td>
+<td><p>4407</p></td>
+<td><p>0.150082</p></td>
+</tr>
+<tr class="row-even"><td><p>132</p></td>
+<td><p>51</p></td>
+<td><p>51</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>27540</p></td>
+<td><p>4028</p></td>
+<td><p>0.14626</p></td>
+<td><p>0.0796</p></td>
+<td><p>3933</p></td>
+<td><p>0.14281</p></td>
+</tr>
+<tr class="row-odd"><td><p>133</p></td>
+<td><p>52</p></td>
+<td><p>52</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>25940</p></td>
+<td><p>3590</p></td>
+<td><p>0.138396</p></td>
+<td><p>0.0796</p></td>
+<td><p>3501</p></td>
+<td><p>0.134965</p></td>
+</tr>
+<tr class="row-even"><td><p>134</p></td>
+<td><p>53</p></td>
+<td><p>53</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>24569</p></td>
+<td><p>3189</p></td>
+<td><p>0.129798</p></td>
+<td><p>0.0796</p></td>
+<td><p>3106</p></td>
+<td><p>0.126419</p></td>
+</tr>
+<tr class="row-odd"><td><p>135</p></td>
+<td><p>54</p></td>
+<td><p>54</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>23416</p></td>
+<td><p>2826</p></td>
+<td><p>0.120687</p></td>
+<td><p>0.0796</p></td>
+<td><p>2750</p></td>
+<td><p>0.117441</p></td>
+</tr>
+<tr class="row-even"><td><p>136</p></td>
+<td><p>55</p></td>
+<td><p>55</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>22391</p></td>
+<td><p>2499</p></td>
+<td><p>0.111607</p></td>
+<td><p>0.0796</p></td>
+<td><p>2430</p></td>
+<td><p>0.108526</p></td>
+</tr>
+<tr class="row-odd"><td><p>137</p></td>
+<td><p>56</p></td>
+<td><p>56</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>21427</p></td>
+<td><p>2215</p></td>
+<td><p>0.103374</p></td>
+<td><p>0.0796</p></td>
+<td><p>2151</p></td>
+<td><p>0.100387</p></td>
+</tr>
+<tr class="row-even"><td><p>138</p></td>
+<td><p>57</p></td>
+<td><p>57</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>20853</p></td>
+<td><p>1976</p></td>
+<td><p>0.0947585</p></td>
+<td><p>0.0796</p></td>
+<td><p>1917</p></td>
+<td><p>0.0919292</p></td>
+</tr>
+<tr class="row-odd"><td><p>139</p></td>
+<td><p>58</p></td>
+<td><p>58</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>20798</p></td>
+<td><p>1781</p></td>
+<td><p>0.0856332</p></td>
+<td><p>0.0796</p></td>
+<td><p>1727</p></td>
+<td><p>0.0830368</p></td>
+</tr>
+<tr class="row-even"><td><p>140</p></td>
+<td><p>59</p></td>
+<td><p>59</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>21057</p></td>
+<td><p>1619</p></td>
+<td><p>0.0768865</p></td>
+<td><p>0.0796</p></td>
+<td><p>1569</p></td>
+<td><p>0.074512</p></td>
+</tr>
+<tr class="row-odd"><td><p>141</p></td>
+<td><p>60</p></td>
+<td><p>60</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>21325</p></td>
+<td><p>1480</p></td>
+<td><p>0.0694021</p></td>
+<td><p>0.0796</p></td>
+<td><p>1433</p></td>
+<td><p>0.0671981</p></td>
+</tr>
+<tr class="row-even"><td><p>142</p></td>
+<td><p>61</p></td>
+<td><p>61</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>21695</p></td>
+<td><p>1351</p></td>
+<td><p>0.0622724</p></td>
+<td><p>0.0796</p></td>
+<td><p>1308</p></td>
+<td><p>0.0602904</p></td>
+</tr>
+<tr class="row-odd"><td><p>143</p></td>
+<td><p>62</p></td>
+<td><p>62</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>21668</p></td>
+<td><p>1224</p></td>
+<td><p>0.0564888</p></td>
+<td><p>0.0796</p></td>
+<td><p>1184</p></td>
+<td><p>0.0546428</p></td>
+</tr>
+<tr class="row-even"><td><p>144</p></td>
+<td><p>63</p></td>
+<td><p>63</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>20978</p></td>
+<td><p>1094</p></td>
+<td><p>0.0521499</p></td>
+<td><p>0.0796</p></td>
+<td><p>1058</p></td>
+<td><p>0.0504338</p></td>
+</tr>
+<tr class="row-odd"><td><p>145</p></td>
+<td><p>64</p></td>
+<td><p>64</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>19847</p></td>
+<td><p>965</p></td>
+<td><p>0.048622</p></td>
+<td><p>0.0796</p></td>
+<td><p>934</p></td>
+<td><p>0.04706</p></td>
+</tr>
+<tr class="row-even"><td><p>146</p></td>
+<td><p>65</p></td>
+<td><p>65</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>18783</p></td>
+<td><p>847</p></td>
+<td><p>0.045094</p></td>
+<td><p>0.0796</p></td>
+<td><p>819</p></td>
+<td><p>0.0436033</p></td>
+</tr>
+<tr class="row-odd"><td><p>147</p></td>
+<td><p>66</p></td>
+<td><p>66</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>17702</p></td>
+<td><p>743</p></td>
+<td><p>0.0419727</p></td>
+<td><p>0.0796</p></td>
+<td><p>718</p></td>
+<td><p>0.0405604</p></td>
+</tr>
+<tr class="row-even"><td><p>148</p></td>
+<td><p>67</p></td>
+<td><p>67</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>16592</p></td>
+<td><p>650</p></td>
+<td><p>0.0391755</p></td>
+<td><p>0.0796</p></td>
+<td><p>628</p></td>
+<td><p>0.0378496</p></td>
+</tr>
+<tr class="row-odd"><td><p>149</p></td>
+<td><p>68</p></td>
+<td><p>68</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>15502</p></td>
+<td><p>569</p></td>
+<td><p>0.0367049</p></td>
+<td><p>0.0796</p></td>
+<td><p>550</p></td>
+<td><p>0.0354793</p></td>
+</tr>
+<tr class="row-even"><td><p>150</p></td>
+<td><p>69</p></td>
+<td><p>69</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>14425</p></td>
+<td><p>498</p></td>
+<td><p>0.0345234</p></td>
+<td><p>0.0796</p></td>
+<td><p>481</p></td>
+<td><p>0.0333449</p></td>
+</tr>
+<tr class="row-odd"><td><p>151</p></td>
+<td><p>70</p></td>
+<td><p>70</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>13302</p></td>
+<td><p>434</p></td>
+<td><p>0.0326267</p></td>
+<td><p>0.0796</p></td>
+<td><p>419</p></td>
+<td><p>0.031499</p></td>
+</tr>
+<tr class="row-even"><td><p>152</p></td>
+<td><p>71</p></td>
+<td><p>71</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>12144</p></td>
+<td><p>375</p></td>
+<td><p>0.0308794</p></td>
+<td><p>0.0796</p></td>
+<td><p>363</p></td>
+<td><p>0.0298913</p></td>
+</tr>
+<tr class="row-odd"><td><p>153</p></td>
+<td><p>72</p></td>
+<td><p>72</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>11053</p></td>
+<td><p>323</p></td>
+<td><p>0.0292228</p></td>
+<td><p>0.0796</p></td>
+<td><p>312</p></td>
+<td><p>0.0282276</p></td>
+</tr>
+<tr class="row-even"><td><p>154</p></td>
+<td><p>73</p></td>
+<td><p>73</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>10073</p></td>
+<td><p>276</p></td>
+<td><p>0.0274</p></td>
+<td><p>0.0796</p></td>
+<td><p>267</p></td>
+<td><p>0.0265065</p></td>
+</tr>
+<tr class="row-odd"><td><p>155</p></td>
+<td><p>74</p></td>
+<td><p>74</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>9176</p></td>
+<td><p>235</p></td>
+<td><p>0.0256103</p></td>
+<td><p>0.0796</p></td>
+<td><p>227</p></td>
+<td><p>0.0247384</p></td>
+</tr>
+<tr class="row-even"><td><p>156</p></td>
+<td><p>75</p></td>
+<td><p>75</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>8290</p></td>
+<td><p>199</p></td>
+<td><p>0.0240048</p></td>
+<td><p>0.0796</p></td>
+<td><p>192</p></td>
+<td><p>0.0231604</p></td>
+</tr>
+<tr class="row-odd"><td><p>157</p></td>
+<td><p>76</p></td>
+<td><p>76</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>7435</p></td>
+<td><p>167</p></td>
+<td><p>0.0224613</p></td>
+<td><p>0.0796</p></td>
+<td><p>161</p></td>
+<td><p>0.0216543</p></td>
+</tr>
+<tr class="row-even"><td><p>158</p></td>
+<td><p>77</p></td>
+<td><p>77</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>6606</p></td>
+<td><p>140</p></td>
+<td><p>0.0211929</p></td>
+<td><p>0.0796</p></td>
+<td><p>135</p></td>
+<td><p>0.020436</p></td>
+</tr>
+<tr class="row-odd"><td><p>159</p></td>
+<td><p>78</p></td>
+<td><p>78</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>5796</p></td>
+<td><p>117</p></td>
+<td><p>0.0201863</p></td>
+<td><p>0.0796</p></td>
+<td><p>113</p></td>
+<td><p>0.0194962</p></td>
+</tr>
+<tr class="row-even"><td><p>160</p></td>
+<td><p>79</p></td>
+<td><p>79</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>5017</p></td>
+<td><p>98</p></td>
+<td><p>0.0195336</p></td>
+<td><p>0.0796</p></td>
+<td><p>95</p></td>
+<td><p>0.0189356</p></td>
+</tr>
+<tr class="row-odd"><td><p>161</p></td>
+<td><p>80</p></td>
+<td><p>80</p></td>
+<td><p>2010</p></td>
+<td><p>M</p></td>
+<td><p>4287</p></td>
+<td><p>243</p></td>
+<td><p>0.056683</p></td>
+<td><p>0.0796</p></td>
+<td><p>234</p></td>
+<td><p>0.0545836</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="children0_14_prev_AIDSinfo.csv.html" class="btn btn-neutral float-left" title="children0 14 prev AIDSinfo (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="parameters.csv.html" class="btn btn-neutral float-right" title="parameters (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
