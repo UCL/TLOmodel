@@ -22,7 +22,11 @@ import squarify
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
-from tlo.util import create_age_range_lookup, read_csv_files, parse_csv_values_for_columns_with_mixed_datatypes
+from tlo.util import (
+    create_age_range_lookup,
+    parse_csv_values_for_columns_with_mixed_datatypes,
+    read_csv_files,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
