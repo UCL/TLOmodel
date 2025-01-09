@@ -29,11 +29,12 @@ def _map_age_to_age_group(age: pd.Series) -> pd.Series:
     - pd.Series: Series of the 'age-group', corresponding the `age` argument.
     """
     # Define age groups in 5-year intervals
-    age_groups = ['0'] + ['1-4'] + [f'{start}-{start + 4}' for start in range(5, 90, 5)] + ['90']
+    #age_groups = ['0'] + ['1-4'] + [f'{start}-{start + 4}' for start in range(5, 90, 5)] + ['90']
+    age_groups = [f'{start}-{start + 0}' for start in range(0, 90, 1)] + ['90']
 
     return pd.cut(
         age,
-        bins=[0] + [1] + list(range(5, 95, 5)) + [float('inf')],
+        bins=list(range(0, 91, 1)) + [float('inf')],
         labels=age_groups, right=False
     )
 
@@ -112,11 +113,11 @@ def calculate_probability_of_dying(interval_width, fraction_of_last_age_survived
     death_rate_in_interval = death_rate_in_interval.fillna(0)
 
     if death_rate_in_interval.loc['90'] == 0:
-        death_rate_in_interval.loc['90'] = death_rate_in_interval.loc['85-89']
+        death_rate_in_interval.loc['90'] = 1
 
     condition = number_of_deaths_by_sex > (
 
-        person_years_by_sex / interval_width / interval_width)
+        person_years_by_sex / interval_width / interval_width/ fraction_of_last_age_survived)
 
     probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
 
@@ -127,6 +128,7 @@ def calculate_probability_of_dying(interval_width, fraction_of_last_age_survived
         1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
 
     probability_of_dying_in_interval.at['90'] = 1
+    print(death_rate_in_interval)
     return probability_of_dying_in_interval, death_rate_in_interval
 
 
