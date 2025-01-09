@@ -48,15 +48,15 @@ class ImpactOfTbDaH04(BaseScenario):
         self.seed = 2134
         # self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 12, 31)
-        self.pop_size = 5000
+        self.end_date = Date(2011, 1, 2)
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impact04',
+            'filename': 'Tb_DAH_scenario2x',
             'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -136,6 +136,6 @@ class ImpactOfTbDaH04(BaseScenario):
                 }
             },
         }
-if __name__ == '__main__':
-    from tlo.cli import scenario_run
-    scenario_run([__file__])
+# if __name__ == '__main__':
+#     from tlo.cli import scenario_run
+#     scenario_run([__file__])

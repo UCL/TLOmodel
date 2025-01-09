@@ -1,5 +1,5 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
-#python src/scripts/hiv/projections_jan2023/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+#python src/scripts/hiv/DAH/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
 
 import argparse
 from pathlib import Path
@@ -39,15 +39,18 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
 
-results_folder = get_scenario_outputs('', outputfilepath) [-1]
+#Tb_DAH_scenarios2x-2025-01-09T080402Z
+results_folder = get_scenario_outputs("Tb_DAH_impact04-2024-12-11T192630Z", outputfilepath)[-1]
+print(f'results folder: {results_folder}')
 log = load_pickled_dataframes(results_folder)
+
+print(f' the results is as followsr: {log}')
 info = get_scenario_info(results_folder)
 print(info)
 #info.to_excel(outputspath / "info.xlsx")
 params = extract_params(results_folder)
 print("the parameter info as follows")
-params.to_excel(outputfilepath / "parameters.xlsx")
-
+#params.to_excel(outputfilepath / "parameters.xlsx")
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
 
@@ -100,12 +103,12 @@ def get_tb_dalys(df_):
     years = df_['year'].value_counts().keys()
     dalys = pd.Series(dtype='float64', index=years)
     for year in years:
-       year_data = df_[df_['year'] == year]
-       dalys[year] = year_data.loc[:, ['AIDS', 'TB (non-AIDS)', 'Other']].sum().sum()
+        tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
+        dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
     dalys.sort_index()
     return dalys
 
-# Extract DALYs from the model and scale
+# Extract DALYs from model and scale
 tb_dalys = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
@@ -113,6 +116,7 @@ tb_dalys = extract_results(
     custom_generate_series=get_tb_dalys,
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
+
 dalys_summary = summarize(tb_dalys).sort_index()
 dalys_summary.to_excel(outputfilepath / "summarized_tb_dalys_all.xlsx")
 
