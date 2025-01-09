@@ -16,8 +16,8 @@ from PyPDF2 import PdfReader, PdfWriter
 
 from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, parse_log_file
 
-# start time of the analysis
-time_start = time.time()
+# start time of the whole analysis
+total_time_start = time.time()
 
 # ####### TO SET #######################################################################################################
 scenario_filename = 'wasting_analysis__minimal_model'
@@ -30,43 +30,30 @@ class WastingAnalyses:
     This class looks at plotting all important outputs from the wasting module
     """
 
-    def __init__(self, in_scenario_filename, in_outputs_path):
-
-        # Find sim_results_folder associated with a given batch_file (and get most recent [-1])
-        sim_results_folder = get_scenario_outputs(in_scenario_filename, in_outputs_path)[-1]
-        sim_results_parent_folder_name = str(sim_results_folder.parent)
-        sim_results_folder_name = sim_results_folder.name
-        self.outcomes_path_name = str(in_outputs_path) + "/" + sim_results_folder_name
-        # Get the datestamp
-        if sim_results_folder_name.startswith(scenario_filename + '-'):
-            self.datestamp = sim_results_folder_name[(len(scenario_filename)+1):]
-        else:
-            print("The scenario output name does not correspond with the set scenario_filename.")
-
-        # Path to the .log.gz file
-        sim_results_folder_path_run0_draw0 = sim_results_parent_folder_name + '/' + sim_results_folder_name + '/0/0/'
+    def __init__(self, in_sim_results_folder_path_draw_x_run_0, in_datestamp):
+        self.outcomes_path_name = in_sim_results_folder_path_draw_x_run_0
+        self.datestamp = in_datestamp
         sim_results_file_name_prefix = scenario_filename
         sim_results_file_name_extension = '.log.gz'
         gz_results_file_path = \
-            Path(glob.glob(os.path.join(sim_results_folder_path_run0_draw0,
+            Path(glob.glob(os.path.join(sim_results_folder_path_draw_x_run_0,
                                         f"{sim_results_file_name_prefix}*{sim_results_file_name_extension}"))[0])
 
         # Path to the decompressed .log file
-        log_results_file_path = gz_results_file_path.with_suffix('')
-
+        self.__log_file_path = gz_results_file_path.with_suffix('')
         # Decompress the .log.gz file
         with gzip.open(gz_results_file_path, 'rb') as f_in:
-            with open(log_results_file_path, 'wb') as f_out:
+            with open(self.__log_file_path, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-        self.__log_file_path = log_results_file_path
         # parse wasting logs
         self.__w_logs_dict = parse_log_file(self.__log_file_path)['tlo.methods.wasting']
+        # TODO: Why it prints the messages from parse_log_file() twice?
         # parse scaling factor log
-        self.__scaling_factor = \
-            parse_log_file(self.__log_file_path)['tlo.methods.population']['scaling_factor'].set_index('date').loc[
-                '2010-01-01', 'scaling_factor'
-            ]
+        # self.__scaling_factor = \
+        #     parse_log_file(self.__log_file_path)['tlo.methods.population']['scaling_factor'].set_index('date').loc[
+        #         '2010-01-01', 'scaling_factor'
+        #     ]
 
         # gender description
         self.__gender_desc = {'M': 'Males',
@@ -552,29 +539,60 @@ if __name__ == "__main__":
     # Path to the resource files used by the disease and intervention methods
     resources_path = Path("./resources")
 
-    # initialise the wasting class
-    wasting_analyses = WastingAnalyses(scenario_filename, outputs_path)
+    # Find sim_results_folder associated with a given batch_file (and get most recent [-1])
+    sim_results_folder = get_scenario_outputs(scenario_filename, outputs_path)[-1]
+    sim_results_parent_folder_name = str(sim_results_folder.parent)
+    sim_results_folder_name = sim_results_folder.name
+    # Get the datestamp
+    assert sim_results_folder_name.startswith(scenario_filename + '-'),\
+        "The scenario output name does not correspond with the set scenario_filename."
+    datestamp = sim_results_folder_name[(len(scenario_filename) + 1):]
 
-    # plot wasting incidence
-    wasting_analyses.plot_wasting_incidence()
+    # Path to the results folder
+    sim_results_folder_path =  sim_results_parent_folder_name + '/' + sim_results_folder_name
+    print(f"{sim_results_folder_path=}")
+    folders = [name for name in os.listdir(sim_results_folder_path) if \
+               os.path.isdir(os.path.join(sim_results_folder_path, name))]
 
-    # plot wasting incidence mod:sev proportions
-    # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
+    # Analyse each draw
+    for draw_nmb in range(len(folders)):
+        print(f"Analysing {draw_nmb=} ...")
+        time_start = time.time()
+        # Path to the draw folder
+        sim_results_folder_path_draw_x_run_0 = \
+            sim_results_parent_folder_name + '/' + sim_results_folder_name + f'/{draw_nmb}/0/'
 
-    # plot wasting length
-    wasting_analyses.plot_wasting_length()
+        # initialise the wasting class
+        wasting_analyses = WastingAnalyses(sim_results_folder_path_draw_x_run_0, datestamp)
 
-    # plot wasting prevalence
-    wasting_analyses.plot_wasting_prevalence_per_year()
+        # plot wasting incidence
+        wasting_analyses.plot_wasting_incidence()
 
-    # plot wasting initial prevalence by age group
-    wasting_analyses.plot_wasting_initial_prevalence_by_age_group()
+        # plot wasting incidence mod:sev proportions
+        # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
 
-    # plot wasting prevalence by age group
-    wasting_analyses.plot_wasting_prevalence_by_age_group()
+        # plot wasting length
+        wasting_analyses.plot_wasting_length()
 
-    # plot wasting deaths by gender as compared to GBD deaths
-    wasting_analyses.plot_modal_gbd_deaths_by_gender()
+        # plot wasting prevalence
+        wasting_analyses.plot_wasting_prevalence_per_year()
 
-    # save all figures in one pdf
-    wasting_analyses.plot_all_figs_in_one_pdf()
+        # plot wasting initial prevalence by age group
+        wasting_analyses.plot_wasting_initial_prevalence_by_age_group()
+
+        # plot wasting prevalence by age group
+        wasting_analyses.plot_wasting_prevalence_by_age_group()
+
+        # plot wasting deaths by gender as compared to GBD deaths
+        wasting_analyses.plot_modal_gbd_deaths_by_gender()
+
+        # save all figures in one pdf
+        wasting_analyses.plot_all_figs_in_one_pdf()
+
+        time_end = time.time()
+        print(f"... finished in (s): {(time_end - time_start)}")
+
+    total_time_end = time.time()
+    print(f"total running time (s): {(total_time_end - total_time_start)}")
+
+
