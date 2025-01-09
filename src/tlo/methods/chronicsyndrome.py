@@ -212,12 +212,12 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
         outreach_event = ChronicSyndrome_LaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=6))
 
-        # Schedule the occurance of a population wide change in risk that goes through the health system:
-        popwide_hsi_event = HSI_ChronicSyndrome_PopulationWideBehaviourChange(self)
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            popwide_hsi_event, priority=1, topen=self.sim.date, tclose=None
+        # Schedule the occurrence of a population wide change in risk:
+        popwide_event = ChronicSyndrome_PopulationWideBehaviourChange(self)
+        self.sim.schedule_event(
+            popwide_event, self.sim.date
         )
-        logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
+        logger.debug(key='debug', data='The population wide event has been scheduled successfully!')
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -512,9 +512,9 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         pass
 
 
-class HSI_ChronicSyndrome_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin):
+class ChronicSyndrome_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
     """
-    This is a Population-Wide Health System Interaction Event - will change the variables to do with risk for
+    This is a Population-Wide Event - will change the variables to do with risk for
     ChronicSyndrome
     """
 
@@ -522,11 +522,8 @@ class HSI_ChronicSyndrome_PopulationWideBehaviourChange(HSI_Event, PopulationSco
         super().__init__(module)
         assert isinstance(module, ChronicSyndrome)
 
-        # Define the necessary information for a Population level HSI
-        self.TREATMENT_ID = 'ChronicSyndrome_PopulationWideBehaviourChange'
-
-    def apply(self, population, squeeze_factor):
-        logger.debug(key='debug', data='This is HSI_ChronicSyndrome_PopulationWideBehaviourChange')
+    def apply(self, population):
+        logger.debug(key='debug', data='This is ChronicSyndrome_PopulationWideBehaviourChange')
 
         # As an example, we will reduce the chance of acquisition per year (due to behaviour change)
         self.module.parameters['p_acquisition_per_year'] = self.module.parameters['p_acquisition_per_year'] * 0.5

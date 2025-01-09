@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-import os
+from pathlib import Path
 from typing import TYPE_CHECKING, List
 
 import pandas as pd
@@ -13,7 +13,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -102,11 +102,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, resourcefilepath = None):
         """Read parameter values from file
         """
-
-        workbook = pd.read_excel(
-            os.path.join(resourcefilepath, "ResourceFile_Measles.xlsx"),
-            sheet_name=None,
-        )
+        workbook = read_csv_files(Path(resourcefilepath)/'ResourceFile_Measles', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         self.parameters["symptom_prob"] = workbook["symptoms"]

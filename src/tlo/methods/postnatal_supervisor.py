@@ -9,6 +9,7 @@ from tlo.lm import LinearModel
 from tlo.methods import Metadata, postnatal_supervisor_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -229,8 +230,8 @@ class PostnatalSupervisor(Module):
     }
 
     def read_parameters(self, resourcefilepath=None):
-        parameter_dataframe = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_PostnatalSupervisor.xlsx',
-                                            sheet_name='parameter_values')
+        parameter_dataframe = read_csv_files(Path(resourcefilepath) / 'ResourceFile_PostnatalSupervisor',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):

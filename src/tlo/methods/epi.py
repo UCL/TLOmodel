@@ -7,6 +7,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -71,9 +72,7 @@ class Epi(Module):
 
     def read_parameters(self, resourcefilepath=None):
         p = self.parameters
-        workbook = pd.read_excel(
-            Path(resourcefilepath) / 'ResourceFile_EPI_WHO_estimates.xlsx', sheet_name=None
-        )
+        workbook = read_csv_files(Path(resourcefilepath) / 'ResourceFile_EPI_WHO_estimates', files=None)
 
         self.load_parameters_from_dataframe(workbook["parameters"])
 
@@ -182,7 +181,10 @@ class Epi(Module):
         sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # HPV vaccine given from 2018 onwards
-        sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))
+        if self.sim.date.year < 2018:
+            sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))
+        else:
+            sim.schedule_event(HpvScheduleEvent(self), Date(self.sim.date.year, 1, 1))
 
         # Look up item codes for consumables
         self.get_item_codes()

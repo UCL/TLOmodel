@@ -14,7 +14,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -122,7 +122,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Read parameters and register symptoms."""
 
         # Load parameters
-        workbook = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
+        workbook = read_csv_files(Path(resourcefilepath) / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
         for _spec in self.species.values():
             self.parameters.update(_spec.load_parameters_from_workbook(workbook))

@@ -134,7 +134,7 @@ This file to be updated in full when TB module is completed.
 # # ------------------------------------- DATA  ------------------------------------- #
 # # import HIV data
 # aidsInfo_data = pd.read_excel(
-#     Path(resourcefilepath) / "ResourceFile_HIV.xlsx", sheet_name="aids_info",
+#     Path(resourcefilepath) / "ResourceFile_HIV/parameters.csv", sheet_name="aids_info",
 # )
 #
 # data_years = pd.to_datetime(aidsInfo_data.year, format="%Y")

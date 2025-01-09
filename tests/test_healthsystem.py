@@ -930,7 +930,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             } == set(detailed_hsi_event.columns)
     assert {'date', 'Frac_Time_Used_Overall', 'Frac_Time_Used_By_Facility_ID', 'Frac_Time_Used_By_OfficerType',
             } == set(detailed_capacity.columns)
-    assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable'
+    assert {'date', 'TREATMENT_ID', 'Item_Available', 'Item_NotAvailable', 'Item_Used'
             } == set(detailed_consumables.columns)
 
     bed_types = sim.modules['HealthSystem'].bed_days.bed_types
@@ -996,6 +996,9 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
                lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
     assert summary_consumables['Item_NotAvailable'].apply(pd.Series).sum().to_dict() == \
            detailed_consumables['Item_NotAvailable'].apply(
+               lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
+    assert summary_consumables['Item_Used'].apply(pd.Series).sum().to_dict() == \
+           detailed_consumables['Item_Used'].apply(
                lambda x: {f'{k}': v for k, v in eval(x).items()}).apply(pd.Series).sum().to_dict()
 
     #  - Bed-Days (bed-type by bed-type and year by year)
@@ -1710,9 +1713,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
             tclose=None,
             priority=sim.modules['DummyModule'].rng.randint(0, 3))
 
-    (list_of_individual_hsi_event_tuples_due_today,
-        list_of_population_hsi_event_tuples_due_today
-     ) = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
+    list_of_individual_hsi_event_tuples_due_today = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
 
     # Check that HealthSystemScheduler is recovering the correct number of events for today
     assert len(list_of_individual_hsi_event_tuples_due_today) == Ntoday

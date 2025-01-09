@@ -700,11 +700,8 @@ def test_linear_model_for_clinical_malaria(sim):
     # set perfect protection for IPTp against clinical malaria - no cases should occur
     sim.modules['Malaria'].parameters['rr_clinical_malaria_iptp'] = 0
 
-    # set clinical incidence probability to very high value
-    sim.modules['Malaria'].parameters['clin_inc']['monthly_prob_clin'] = 0.99
-
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=10)
+    sim.make_initial_population(n=25)
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -712,6 +709,8 @@ def test_linear_model_for_clinical_malaria(sim):
 
     # make the whole population infected with parasitaemia
     # and therefore eligible for clinical/severe malaria poll
+    df.loc[df.is_alive, "district_of_residence"] = "Balaka"  # put everyone in high-risk district
+    df.loc[df.is_alive, "district_num_of_residence"] = 28
     df.loc[df.is_alive, "ma_is_infected"] = True
     df.loc[df.is_alive, "ma_date_infected"] = sim.date
     df.loc[df.is_alive, "ma_inf_type"] = "asym"

@@ -34,8 +34,8 @@ resourcefilepath = './resources'
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2022, 1, 1)
-popsize = 5000
+end_date = Date(2014, 1, 1)
+popsize = 25000
 
 # scenario = 1
 
@@ -51,7 +51,7 @@ log_config = {
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.demography.detail": logging.WARNING,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
         # "tlo.methods.healthsystem": logging.INFO,
         # "tlo.methods.healthburden": logging.INFO,
     },
@@ -88,7 +88,7 @@ sim.register(
 # set the scenario
 sim.modules["Hiv"].parameters["do_scaleup"] = True
 sim.modules["Hiv"].parameters["scaleup_start_year"] = 2019
-# sim.modules["Tb"].parameters["scenario"] = scenario
+sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
 
