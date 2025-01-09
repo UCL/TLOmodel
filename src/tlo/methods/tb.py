@@ -476,21 +476,23 @@ class Tb(Module):
 
         # 3) Declare the Symptoms
         # additional healthcare-seeking behaviour with these symptoms
-        self.sim.modules["SymptomManager"].register_symptom(
-            Symptom(
-                name="fatigue",
-                odds_ratio_health_seeking_in_adults=5.0,
-                odds_ratio_health_seeking_in_children=5.0,
-            )
-        )
 
-        self.sim.modules["SymptomManager"].register_symptom(
-            Symptom(
-                name="night_sweats",
-                odds_ratio_health_seeking_in_adults=5.0,
-                odds_ratio_health_seeking_in_children=5.0,
+        if "SymptomManager" in self.sim.modules.keys():
+            self.sim.modules["SymptomManager"].register_symptom(
+                Symptom(
+                    name="fatigue",
+                    odds_ratio_health_seeking_in_adults=5.0,
+                    odds_ratio_health_seeking_in_children=5.0,
+                )
             )
-        )
+
+            self.sim.modules["SymptomManager"].register_symptom(
+                Symptom(
+                    name="night_sweats",
+                    odds_ratio_health_seeking_in_adults=5.0,
+                    odds_ratio_health_seeking_in_children=5.0,
+                )
+            )
 
     def pre_initialise_population(self):
         """Do things required before the population is created
