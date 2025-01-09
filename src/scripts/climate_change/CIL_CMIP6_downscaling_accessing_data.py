@@ -38,7 +38,7 @@ catalog = Client.open(
 )
 
 # Get the collections
-scenarios = ["ssp245"]#, "ssp585"]  # Change as needed
+scenarios = ["ssp585"]#, "ssp585"]  # Change as needed
 variable_id = "pr"  # Precipitation variable
 
 for scenario in scenarios:
@@ -70,7 +70,7 @@ for scenario in scenarios:
     #years_for_retrieval = ['2034', '2037', '2040', '2043', '2045', '2046', '2055', '2060', '2062', '2063',
                            #'2064'] #'2032', '2026', '2029',
 
-    years_for_retrieval = ['2062', '2063','2064']
+    years_for_retrieval = ['2033', '2036','2037', '2041', '2047', '2048', '2050', '2054', '2060']
     # Process each year
     output_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/"
     yearly_files = []

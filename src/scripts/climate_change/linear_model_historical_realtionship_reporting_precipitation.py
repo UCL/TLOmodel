@@ -571,13 +571,20 @@ plt.show()
 ############### ADD IN CMIP DATA ###########################
 def get_weather_data(ssp_scenario, model_type):
     weather_data_prediction_five_day_cumulative_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_model_daily_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_window_prediction_weather_by_facility.csv",
         dtype={'column_name': 'float64'}
     )
+    weather_data_prediction_five_day_cumulative_original = weather_data_prediction_five_day_cumulative_original.drop(
+        weather_data_prediction_five_day_cumulative_original.columns[0], axis=1
+    ) # first column are date/months
+    print(weather_data_prediction_five_day_cumulative_original)
     weather_data_prediction_monthly_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_model_monthly_prediction_weather_by_facility_KDBall_ANC_downscaled_CIL_{ssp_scenario}.csv",
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_monthly_prediction_weather_by_facility.csv",
         dtype={'column_name': 'float64'}
     )
+    weather_data_prediction_monthly_original = weather_data_prediction_monthly_original.drop(
+        weather_data_prediction_monthly_original.columns[0], axis=1
+    ) # first column are date/months
     weather_data_prediction_monthly_df = weather_data_prediction_monthly_original.drop(columns=zero_sum_columns)
     weather_data_prediction_five_day_cumulative_df = weather_data_prediction_five_day_cumulative_original.drop(
         columns=zero_sum_columns)
