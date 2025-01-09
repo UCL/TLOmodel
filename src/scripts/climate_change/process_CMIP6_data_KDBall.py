@@ -143,7 +143,7 @@ for scenario in scenarios:
             for j in range(len(lat_data)):
                 precip_data_for_grid = pr_data[:,j,i] # across all time points
                 precip_data_for_grid = precip_data_for_grid * multiplier # to get from per second to per day
-                grid_dictionary[grid] = precip_data_for_grid.data.values
+                grid_dictionary[grid] = precip_data_for_grid.data
                 grid += 1
         data_by_model_and_grid[model] = grid_dictionary
     data_by_model_and_grid = pd.DataFrame.from_dict(data_by_model_and_grid)
@@ -158,60 +158,60 @@ for scenario in scenarios:
     data_by_model_and_grid_same_length = data_by_model_and_grid_same_length.dropna(axis=0)
     data_by_model_and_grid_same_length.to_csv(Path(scenario_directory)/"data_by_model_and_grid_modal_resolution.csv", index = True)
 
-    # # Now loop over facilities to locate each one in a grid cell for each model
-    # facilities_with_location = []
-    # # see which facilities have reporting data and data on latitude and longitude
-    # median_precipitation_by_facility = {}
-    # percentiles_25_by_facility = {}
-    # percentiles_75_by_facility = {}
-    # cumulative_sum_window = {}
-    # for reporting_facility in reporting_data.columns:
-    #         grid_precipitation_for_facility = {}
-    #         match_name, lat_for_facility, long_for_facility = get_facility_lat_long(reporting_facility, facilities_with_lat_long)
-    #         if not np.isnan(long_for_facility) and not np.isnan(lat_for_facility):
-    #                 facility_location = np.array([lat_for_facility, long_for_facility])
-    #                 kd_trees_by_model = {}
-    #                 for model in grid_centroids.keys():
-    #                         if model in data_by_model_and_grid_same_length.columns:
-    #                             centroids = grid_centroids[model]
-    #                             kd_tree = KDTree(centroids)
-    #                             distance, closest_grid_index = kd_tree.query(facility_location)
-    #                             grid_precipitation_for_facility[model] = data_by_model_and_grid_same_length[model][closest_grid_index].data
-    #                 first_model = next(iter(grid_precipitation_for_facility))
-    #                 median_all_timepoints_for_facility = []
-    #                 p25_all_timepoints_for_facility = []
-    #                 p75_all_timepoints_for_facility = []
-    #
-    #                 for t in range(len(grid_precipitation_for_facility[first_model])): #all should be the same length
-    #                     per_time_point_by_model = []
-    #                     for precip_data in grid_precipitation_for_facility.values():
-    #                         if len(precip_data) == len(grid_precipitation_for_facility[first_model]): # ensure same time resolution
-    #                             per_time_point_by_model.append(precip_data[t])
-    #                     p25_all_timepoints_for_facility.append(np.percentile(per_time_point_by_model, 25))
-    #                     p75_all_timepoints_for_facility.append(np.percentile(per_time_point_by_model, 75))
-    #                     median_all_timepoints_for_facility.append(np.median(per_time_point_by_model))
-    #                     cumulative_sum_window[reporting_facility] = []
-    #                     begin_day = 0
-    #                     for month_idx, month_length in enumerate(month_lengths):
-    #                         if monthly_cumulative:
-    #                             window_size = month_length
-    #                         days_for_grid = median_all_timepoints_for_facility[begin_day:begin_day + month_length]
-    #                         cumulative_sums = [
-    #                             sum(days_for_grid[day:day + window_size])
-    #                             for day in range(month_length - window_size + 1)
-    #                         ]
-    #                         max_cumulative_sums = max(cumulative_sums)
-    #                         cumulative_sum_window[reporting_facility].append(max_cumulative_sums)
-    #                         begin_day += month_length
-    #                 median_precipitation_by_facility[reporting_facility] = median_all_timepoints_for_facility
-    #                 percentiles_25_by_facility[reporting_facility] = p25_all_timepoints_for_facility
-    #                 percentiles_75_by_facility[reporting_facility] = p75_all_timepoints_for_facility
-    #
-    # weather_df_median = pd.DataFrame.from_dict(median_precipitation_by_facility, orient='index').T
-    # weather_df_p25 = pd.DataFrame.from_dict(percentiles_25_by_facility, orient='index').T
-    # weather_df_p75 = pd.DataFrame.from_dict(percentiles_75_by_facility, orient='index').T
-    # df_cumulative_sum = pd.DataFrame.from_dict(cumulative_sum_window, orient='index').T
-    # df_cumulative_sum.astype(float)
+    # Now loop over facilities to locate each one in a grid cell for each model
+    facilities_with_location = []
+    # see which facilities have reporting data and data on latitude and longitude
+    median_precipitation_by_facility = {}
+    percentiles_25_by_facility = {}
+    percentiles_75_by_facility = {}
+    cumulative_sum_window = {}
+    for reporting_facility in reporting_data.columns:
+            grid_precipitation_for_facility = {}
+            match_name, lat_for_facility, long_for_facility = get_facility_lat_long(reporting_facility, facilities_with_lat_long)
+            if not np.isnan(long_for_facility) and not np.isnan(lat_for_facility):
+                    facility_location = np.array([lat_for_facility, long_for_facility])
+                    kd_trees_by_model = {}
+                    for model in grid_centroids.keys():
+                            if model in data_by_model_and_grid_same_length.columns:
+                                centroids = grid_centroids[model]
+                                kd_tree = KDTree(centroids)
+                                distance, closest_grid_index = kd_tree.query(facility_location)
+                                grid_precipitation_for_facility[model] = data_by_model_and_grid_same_length[model][closest_grid_index].data
+                    first_model = next(iter(grid_precipitation_for_facility))
+                    median_all_timepoints_for_facility = []
+                    p25_all_timepoints_for_facility = []
+                    p75_all_timepoints_for_facility = []
+
+                    for t in range(len(grid_precipitation_for_facility[first_model])): #all should be the same length
+                        per_time_point_by_model = []
+                        for precip_data in grid_precipitation_for_facility.values():
+                            if len(precip_data) == len(grid_precipitation_for_facility[first_model]): # ensure same time resolution
+                                per_time_point_by_model.append(precip_data[t])
+                        p25_all_timepoints_for_facility.append(np.percentile(per_time_point_by_model, 25))
+                        p75_all_timepoints_for_facility.append(np.percentile(per_time_point_by_model, 75))
+                        median_all_timepoints_for_facility.append(np.median(per_time_point_by_model))
+                        cumulative_sum_window[reporting_facility] = []
+                        begin_day = 0
+                        for month_idx, month_length in enumerate(month_lengths):
+                            if monthly_cumulative:
+                                window_size = month_length
+                            days_for_grid = median_all_timepoints_for_facility[begin_day:begin_day + month_length]
+                            cumulative_sums = [
+                                sum(days_for_grid[day:day + window_size])
+                                for day in range(month_length - window_size + 1)
+                            ]
+                            max_cumulative_sums = max(cumulative_sums)
+                            cumulative_sum_window[reporting_facility].append(max_cumulative_sums)
+                            begin_day += month_length
+                    median_precipitation_by_facility[reporting_facility] = median_all_timepoints_for_facility
+                    percentiles_25_by_facility[reporting_facility] = p25_all_timepoints_for_facility
+                    percentiles_75_by_facility[reporting_facility] = p75_all_timepoints_for_facility
+
+    weather_df_median = pd.DataFrame.from_dict(median_precipitation_by_facility, orient='index').T
+    weather_df_p25 = pd.DataFrame.from_dict(percentiles_25_by_facility, orient='index').T
+    weather_df_p75 = pd.DataFrame.from_dict(percentiles_75_by_facility, orient='index').T
+    df_cumulative_sum = pd.DataFrame.from_dict(cumulative_sum_window, orient='index').T
+    df_cumulative_sum.astype(float)
     # if ANC:
     #     weather_df_median.to_csv(Path(scenario_directory) / "median_daily_prediction_weather_by_facility_KDBall.csv", index=False)
     #     weather_df_p25.to_csv(Path(scenario_directory) / "p25_daily_prediction_weather_by_facility_KDBall.csv", index=False)
