@@ -18,6 +18,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 import squarify
 
 from tlo import Date, Simulation, logging, util
@@ -364,8 +365,9 @@ def extract_results(results_folder: Path,
 
 def compute_summary_statistics(
     results: pd.DataFrame,
-    central_measure: Literal["mean", "median"] = "median",
+    central_measure: Union[Literal["mean", "median"], None] = None,
     width_of_range: float = 0.95,
+    use_standard_error: bool = False,
     only_central: bool = False,
     collapse_columns: bool = False,
 ) -> pd.DataFrame:
@@ -375,13 +377,23 @@ def compute_summary_statistics(
      measure of the median and a 95% interval range.
 
     :param results: The dataframe of results to compute summary statistics of.
-    :param central_measure: The name of the central measure to use - either 'mean' or 'median'.
+    :param central_measure: The name of the central measure to use - either 'mean' or 'median' (defaults to 'median')
     :param width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
+    :param use_standard_error: Whether the range should represent the standard error; otherwise it is just a
+     description of the variation of runs. If selected, then the central measure is always the mean.
     :param collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise).
     :param only_central: Whether to only report the central value (dropping the range).
     :return: A dataframe with computed summary statistics.
-
     """
+
+    if use_standard_error:
+        if not central_measure == 'mean':
+            warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
+            central_measure = 'mean'
+    elif central_measure is None:
+        # If no argument is provided for 'central_measure' (and not using standard-error), default to using 'median'
+        central_measure = 'median'
+
     stats = dict()
     grouped_results = results.groupby(axis=1, by='draw', sort=False)
 
@@ -392,9 +404,19 @@ def compute_summary_statistics(
     else:
         raise ValueError(f"Unknown stat: {central_measure}")
 
-    lower_quantile = (1. - width_of_range) / 2.
-    stats["lower"] = grouped_results.quantile(lower_quantile)
-    stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+    if not use_standard_error:
+        lower_quantile = (1. - width_of_range) / 2.
+        stats["lower"] = grouped_results.quantile(lower_quantile)
+        stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+    else:
+        #  Use standard error concept whereby we're using the intervals to express a 95% CI on the value of the mean.
+        #  This will make width of uncertainty become narrower with more runs.
+        std_deviation = grouped_results.std()
+        num_runs_per_draw = grouped_results.size().T
+        std_error = std_deviation.div(np.sqrt(num_runs_per_draw))
+        z_value = st.norm.ppf(1 - (1. - width_of_range) / 2.)
+        stats["lower"] = stats['central'] - z_value * std_error
+        stats["upper"] = stats['central'] + z_value * std_error
 
     summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
