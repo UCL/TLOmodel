@@ -17,16 +17,11 @@ tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
 
  """
 
-# import warnings
-# from pathlib import Path
-# from typing import Dict
-# from tlo import Date, logging
-# from tlo.methods import (
 import warnings
 from pathlib import Path
 from typing import Dict
+
 from tlo import Date, logging
-from tlo.scenario import BaseScenario
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -39,6 +34,7 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
+from tlo.scenario import BaseScenario
 
 
 
