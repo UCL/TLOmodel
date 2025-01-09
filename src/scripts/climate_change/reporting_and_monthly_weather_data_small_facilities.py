@@ -158,7 +158,7 @@ included_facilities_with_lat_long = facilities_with_lat_long[
     facilities_with_lat_long["Fname"].isin(facilities_with_location)
 ]
 
-additional_rows = ["Zonename", "Resid", "A105", "A109__Altitude", "Ftype", 'A109__Latitude', 'A109__Longitude']
+additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype", 'A109__Latitude', 'A109__Longitude']
 expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
 
 expanded_facility_info.columns = ["Fname"] + additional_rows
