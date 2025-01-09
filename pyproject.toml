@@ -57,7 +57,7 @@ dev = [
     # Profiling
     "ansi2html",
     "psutil",
-    "pyinstrument>=4.7",
+    "pyinstrument>=4.3",
     # Building requirements files
     "pip-tools",
 ]
@@ -127,3 +127,4 @@ where = ["src"]
 
 [tool.setuptools_scm]
 version_file  = "src/tlo/_version.py"
+git_describe_command = ["git", "describe", "--dirty", "--tags", "--long", "--match", 'v[0-9]*']

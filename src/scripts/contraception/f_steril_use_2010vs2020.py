@@ -1,7 +1,7 @@
 """
 A helper script to see the numbers of women of reproductive age having female sterilisation per 5-years age categories +
 total, and the number of all women in the population in 2010 and 2020, to help to calibrate the intervention multipliers
-(saved in ResourceFile_Contraception.xlsx in the sheets Interventions_Pop & Interventions_PPFP).
+(saved in ResourceFile_Contraception folder in the Interventions_Pop & Interventions_PPFP CSV files).
 """
 from pathlib import Path
 
