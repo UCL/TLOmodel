@@ -266,6 +266,8 @@ expanded_facility_info = expanded_facility_info.T.reindex(columns=expanded_facil
 
 zone_info_each_month = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range, historical = True)
 zone_encoded = pd.get_dummies(zone_info_each_month, drop_first=True)
+dist_info_each_month = repeat_info(expanded_facility_info["Dist"], num_facilities, year_range, historical = True)
+dist_encoded = pd.get_dummies(dist_info_each_month, drop_first=True)
 resid_info_each_month = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range, historical = True)
 resid_encoded = pd.get_dummies(resid_info_each_month, drop_first=True)
 owner_info_each_month = repeat_info(expanded_facility_info['A105'], num_facilities, year_range, historical = True)
@@ -298,6 +300,7 @@ X = np.column_stack([
     month_flattened,
     resid_encoded,
     zone_encoded,
+    dist_encoded,
     owner_encoded,
     ftype_encoded,
     facility_encoded,
@@ -425,26 +428,27 @@ plt.tight_layout()
 
 
 X_weather = np.column_stack([
-        weather_data,
-        np.array(year_flattened),
-        np.array(month_flattened),
-        resid_encoded,
-        zone_encoded,
-        owner_encoded,
-        ftype_encoded,
-        lag_1_month,
-        lag_2_month,
-        lag_3_month,
-        lag_4_month,
-        lag_1_5_day,
-        lag_2_5_day,
-        lag_3_5_day,
-        lag_4_5_day,
-        facility_encoded,
-        np.array(altitude),
-        np.array(minimum_distance),
-        #np.array(above_below_X)[mask_ANC_data],
-    ])
+    weather_data,
+    np.array(year_flattened),
+    np.array(month_flattened),
+    resid_encoded,
+    zone_encoded,
+    dist_encoded,
+    owner_encoded,
+    ftype_encoded,
+    lag_1_month,
+    lag_2_month,
+    lag_3_month,
+    lag_4_month,
+    lag_1_5_day,
+    lag_2_5_day,
+    lag_3_5_day,
+    lag_4_5_day,
+    facility_encoded,
+    np.array(altitude),
+    np.array(minimum_distance),
+    #np.array(above_below_X)[mask_ANC_data],
+])
     # Continuous columns that need to be standardized (weather_data, lag variables, altitude, minimum_distance)
 # X_continuous = np.column_stack([
 #         weather_data,
@@ -577,7 +581,6 @@ def get_weather_data(ssp_scenario, model_type):
     weather_data_prediction_five_day_cumulative_original = weather_data_prediction_five_day_cumulative_original.drop(
         weather_data_prediction_five_day_cumulative_original.columns[0], axis=1
     ) # first column are date/months
-    print(weather_data_prediction_five_day_cumulative_original)
     weather_data_prediction_monthly_original = pd.read_csv(
         f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_monthly_prediction_weather_by_facility.csv",
         dtype={'column_name': 'float64'}
@@ -590,10 +593,10 @@ def get_weather_data(ssp_scenario, model_type):
         columns=zero_sum_columns)
 
     return weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df
-model_types = ['lowest', 'median' 'highest']
+model_types = ['lowest', 'median', 'highest']
 # Configuration and constants
 min_year_for_analysis = 2025
-absolute_min_year = 2025
+absolute_min_year = 2024
 max_year_for_analysis = 2071
 data_path = "/Users/rem76/Desktop/Climate_change_health/Data/"
 
@@ -603,6 +606,7 @@ ssp_scenarios = ["ssp245", "ssp585"]
 # Load and preprocess weather data
 for ssp_scenario in ssp_scenarios:
     for model_type in model_types:
+        print(ssp_scenario, model_type)
         if use_all_weather:
                 weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df = get_weather_data(ssp_scenario,
                                                                                                               model_type)
@@ -639,8 +643,6 @@ for ssp_scenario in ssp_scenarios:
                 weather_data_prediction_monthly_flattened = weather_data_prediction_monthly.values.flatten()
                 weather_data_prediction_five_day_cumulative_flattened = weather_data_prediction_five_day_cumulative.values.flatten()
                 weather_data_prediction_flatten = np.vstack((weather_data_prediction_monthly_flattened, weather_data_prediction_five_day_cumulative_flattened)).T
-                print(weather_data_prediction_flatten.dtype)
-
                 num_facilities = len(weather_data_prediction_monthly.columns)
         else:
             if five_day:
@@ -668,9 +670,9 @@ for ssp_scenario in ssp_scenarios:
         # Load and preprocess facility information
         zone_info_prediction = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range_prediction, historical = False)
         zone_encoded_prediction = pd.get_dummies(zone_info_prediction, drop_first=True)
-
+        dist_info_prediction = repeat_info(expanded_facility_info["Dist"], num_facilities, year_range_prediction, historical=False)
+        dist_encoded_prediction = pd.get_dummies(dist_info_prediction, drop_first=True)
         resid_info_prediction = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range_prediction, historical = False)
-
         resid_encoded_prediction = pd.get_dummies(resid_info_prediction, drop_first=True)
         owner_info_prediction = repeat_info(expanded_facility_info['A105'], num_facilities, year_range_prediction, historical = False)
         owner_encoded_prediction = pd.get_dummies(owner_info_prediction, drop_first=True)
@@ -696,6 +698,7 @@ for ssp_scenario in ssp_scenarios:
             np.array(month_flattened_prediction),
             resid_encoded_prediction,
             zone_encoded_prediction,
+            dist_encoded_prediction,
             owner_encoded_prediction,
             ftype_encoded_prediction,
             lag_1_month_prediction,
@@ -783,6 +786,7 @@ for ssp_scenario in ssp_scenarios:
                 np.array(month_flattened_prediction),
                 resid_encoded_prediction,
                 zone_encoded_prediction,
+                dist_encoded_prediction,
                 owner_encoded_prediction,
                 ftype_encoded_prediction,
                 facility_encoded_prediction,
@@ -799,7 +803,6 @@ for ssp_scenario in ssp_scenarios:
                 predictions = predictions_weather - y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]
                 data_weather_predictions['y_pred_no_weather'] = y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]
 
-        print(predictions)
         data_weather_predictions['difference_in_expectation'] = predictions
         data_weather_predictions['weather'] = X_basis_weather[X_basis_weather[:, 0] > mask_threshold, 0]
         data_weather_predictions_grouped = data_weather_predictions.groupby('Year_Month').mean().reset_index()
@@ -826,22 +829,14 @@ for ssp_scenario in ssp_scenarios:
 
         plt.tight_layout()
         plt.show()
-        print(X_basis_weather[:, 0].min())
-        print(X_basis_weather[:, 0].max())
-
-        ## Save predictions
-        print(len(year_flattened_prediction))
-        print(year_flattened_prediction)
-        print(len(year_flattened_prediction[X_basis_weather[:, 0] > mask_threshold]))
-        print(year_flattened_prediction)
         # Format output: Add all relevant X variables
-        print(year_flattened_prediction[X_basis_weather[:, 0] > mask_threshold])
         full_data_weather_predictions = pd.DataFrame({
             'Year': year_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
             'Month': np.array(month_flattened_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'Facility_ID': facility_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
             'Altitude': np.array(altitude_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'Zone': np.array(zone_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+            'District':np.array(dist_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'Resid': np.array(resid_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'Owner': np.array(owner_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'Facility_Type': np.array(ftype_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
