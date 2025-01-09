@@ -38,7 +38,7 @@ catalog = Client.open(
 )
 
 # Get the collections
-scenarios = ["ssp245"]  # Change as needed
+scenarios = ["ssp245"]#, "ssp585"]  # Change as needed
 variable_id = "pr"  # Precipitation variable
 
 for scenario in scenarios:
@@ -67,12 +67,14 @@ for scenario in scenarios:
     # Define the spatial and temporal bounds
     lon_bounds = slice(32.67161823, 35.91841716)
     lat_bounds = slice(-17.12627881, -9.36366167)
-    time_range = pd.date_range("2065-01-01", "2071-01-01", freq="Y")
+    #years_for_retrieval = ['2034', '2037', '2040', '2043', '2045', '2046', '2055', '2060', '2062', '2063',
+                           #'2064'] #'2032', '2026', '2029',
 
+    years_for_retrieval = ['2062', '2063','2064']
     # Process each year
     output_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/"
     yearly_files = []
-    for year in time_range.year:
+    for year in years_for_retrieval:
         yearly_subset = all_datasets.pr.sel(
             lon=lon_bounds,
             lat=lat_bounds,
