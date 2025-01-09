@@ -369,8 +369,9 @@ def test_recovery_severe_acute_malnutrition_without_complications(tmpdir):
     # get wasting module
     wmodule = sim.modules['Wasting']
 
-    # set death due to untreated SAM at 100%, hence no natural recovery from severe wasting
-    wmodule.parameters['death_rate_untreated_SAM_by_agegp'] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    # set death due to untreated SAM at 100% for all, hence no natural recovery from severe wasting
+    wmodule.parameters['base_death_rate_untreated_SAM'] = 1.0
+    wmodule.parameters['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -434,6 +435,16 @@ def test_recovery_severe_acute_malnutrition_without_complications(tmpdir):
     assert person['un_WHZ_category'] == 'WHZ<-3'
     assert person['un_clinical_acute_malnutrition'] == 'SAM'
 
+    # Check death is scheduled
+    assert isinstance(sim.find_events_for_person(person_id)[1][1], Wasting_SevereAcuteMalnutritionDeath_Event)
+    assert not pd.isnull(person['un_sam_death_date'])
+    # get date of death and death event
+    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                                isinstance(event_tuple[1], Wasting_SevereAcuteMalnutritionDeath_Event)][0]
+    date_of_scheduled_death = death_event_tuple[0]
+    death_event = death_event_tuple[1]
+    assert date_of_scheduled_death > sim.date
+
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
 
@@ -459,16 +470,8 @@ def test_recovery_severe_acute_malnutrition_without_complications(tmpdir):
               isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)][0]
     sam_ev.run(squeeze_factor=0.0)
 
-    # Check death is scheduled, but was canceled with tx
-    person = df.loc[person_id]
-    assert isinstance(sim.find_events_for_person(person_id)[1][1], Wasting_SevereAcuteMalnutritionDeath_Event)
-    assert pd.isnull(person['un_sam_death_date'])
-    # get date of death and death event
-    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                                isinstance(event_tuple[1], Wasting_SevereAcuteMalnutritionDeath_Event)][0]
-    date_of_scheduled_death = death_event_tuple[0]
-    death_event = death_event_tuple[1]
-    assert date_of_scheduled_death > sim.date
+    # Check death was canceled with tx
+    assert pd.isnull(df.loc[person_id]['un_sam_death_date'])
 
     # Check recovery to MAM due to tx is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[2][1], Wasting_UpdateToMAM_Event)
@@ -505,6 +508,13 @@ def test_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     popsize = 1000
     sim = get_sim(tmpdir)
 
+    # get wasting module
+    wmodule = sim.modules['Wasting']
+
+    # set death due to untreated SAM at 100% for all, hence no natural recovery from severe wasting
+    wmodule.parameters['base_death_rate_untreated_SAM'] = 1.0
+    wmodule.parameters['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
+
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
@@ -514,35 +524,32 @@ def test_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
 
-    # get wasting module
-    wmodule = sim.modules['Wasting']
-
-    # set death due to untreated SAM at 100%, hence no natural recovery from severe wasting
-    wmodule.parameters['death_rate_untreated_SAM_by_agegp'] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-
-    # Manually set this individual properties to have
-    # severe acute malnutrition with complications
+    # Manually set this individual properties to have severe acute malnutrition
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-
     # ensure the individual has complications due to SAM
     wmodule.parameters['prob_complications_in_SAM'] = 1.0
-
     # assign diagnosis
     wmodule.clinical_acute_malnutrition_state(person_id, df)
 
     # by having severe wasting, this individual should be diagnosed as SAM
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
-
+    # should have complications
+    assert df.at[person_id, 'un_sam_with_complications']
     # symptoms should be applied
     assert person_id in set(sim.modules['SymptomManager'].who_has('weight_loss'))
 
-    # should have complications
-    assert df.at[person_id, 'un_sam_with_complications']
+    # Check death is scheduled
+    assert isinstance(sim.find_events_for_person(person_id)[0][1], Wasting_SevereAcuteMalnutritionDeath_Event)
+    assert not pd.isnull(df.loc[person_id]['un_sam_death_date'])
+    # get date of death and death event
+    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                                isinstance(event_tuple[1], Wasting_SevereAcuteMalnutritionDeath_Event)][0]
+    date_of_scheduled_death = death_event_tuple[0]
+    death_event = death_event_tuple[1]
+    assert date_of_scheduled_death > sim.date
 
-    # make full recovery rate to 100% and death rate to zero so that
-    # this individual should recover
+    # make full recovery rate to 100% so that this individual should fully recover with tx
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel.multiplicative()
-    wmodule.parameters['prob_death_after_SAMcare'] = 0.0
 
     # run care seeking event and ensure HSI for complicated SAM is scheduled
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
@@ -572,14 +579,7 @@ def test_recovery_severe_acute_malnutrition_with_complications(tmpdir):
 
     # Check death is scheduled, but was canceled due to tx
     person = df.loc[person_id]
-    print(f"{sim.find_events_for_person(person_id)=}")
-    assert isinstance(sim.find_events_for_person(person_id)[0][1], Wasting_SevereAcuteMalnutritionDeath_Event)
     assert pd.isnull(person['un_sam_death_date'])
-    # get date of death and death event
-    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                                isinstance(event_tuple[1], Wasting_SevereAcuteMalnutritionDeath_Event)][0]
-    date_of_scheduled_death = death_event_tuple[0]
-    death_event = death_event_tuple[1]
 
     # Check full recovery due to tx is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[1][1], Wasting_ClinicalAcuteMalnutritionRecovery_Event)
@@ -601,11 +601,12 @@ def test_recovery_severe_acute_malnutrition_with_complications(tmpdir):
         sim.date = date_of_scheduled_death
         death_event.apply(person_id)
 
-    # Check properties of this individual. Should now be well
+    # Check properties of this individual. Should now be well and alive
     person = df.loc[person_id]
     assert person['un_WHZ_category'] == 'WHZ>=-2'
     assert (person['un_am_MUAC_category'] == '>=125mm')
     assert pd.isnull(person['un_sam_death_date'])
+    assert person['is_alive']
 
     # check they have no symptoms:
     assert 0 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Wasting']))
@@ -775,8 +776,9 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     # get wasting module
     wmodule = sim.modules['Wasting']
 
-    # set death due to untreated SAM at 0%, hence always scheduled natural recovery from severe wasting
-    wmodule.parameters['death_rate_untreated_SAM_by_agegp'] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    # set death due to untreated SAM at 0% for all, hence always scheduled natural recovery from severe wasting
+    wmodule.parameters['base_death_rate_untreated_SAM'] = 0.0
+    wmodule.parameters['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
