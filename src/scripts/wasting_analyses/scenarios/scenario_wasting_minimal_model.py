@@ -42,7 +42,7 @@ class WastingAnalysis(BaseScenario):
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
-            number_of_draws=1,
+            number_of_draws=4,
             runs_per_draw=1,
         )
 
@@ -80,7 +80,12 @@ class WastingAnalysis(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         # Using default parameters in all cases
-        return {}
+        base_death_rate_untreated_SAM__draws = [0.05, 0.1, 0.15, 0.2]
+        return {
+            'Wasting': {
+                'base_death_rate_untreated_SAM': base_death_rate_untreated_SAM__draws[draw_number]
+            }
+        }
 
 
 if __name__ == '__main__':
