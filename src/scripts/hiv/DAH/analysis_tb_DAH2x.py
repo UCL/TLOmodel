@@ -1,18 +1,19 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
-#python src/scripts/hiv/projections_jan2023/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+#python src/scripts/hiv/DAH/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
 
 import argparse
-from pathlib import Path
-from tlo import Date
 import datetime
+from collections import defaultdict
+from pathlib import Path
 from typing import Tuple
+
 import matplotlib.pyplot as plt
 #from matplotlib.ticker import FuncFormatter
 #import squarify
 import numpy as np
 import pandas as pd
-from collections import defaultdict
 
+from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
@@ -20,7 +21,7 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
     load_pickled_dataframes,
     summarize,
-    unflatten_flattened_multi_index_in_logging
+    unflatten_flattened_multi_index_in_logging,
 )
 
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

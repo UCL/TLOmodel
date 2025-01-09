@@ -13,7 +13,7 @@ or locally using:
  tlo scenario-run src/scripts/hi/DAH/tb_DAH_scenarios2x.py --draw 1 0
 
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_scenarios2x.py
+tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
 
  """
 
@@ -21,19 +21,19 @@ import warnings
 from pathlib import Path
 from typing import Dict
 from tlo import Date, logging
-from tlo.scenario import BaseScenario
 from tlo.methods import (
     demography,
-    tb,
-    symptommanager,
-    hiv,
-    healthburden,
-    simplified_births,
-    healthsystem,
-    epi,
     enhanced_lifestyle,
+    epi,
+    healthburden,
     healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    simplified_births,
+    symptommanager,
+    tb,
 )
+from tlo.scenario import BaseScenario
 
 # Ignore warnings to avoid cluttering output from simulation - generally you do not
 # need (and generally shouldn't) do this as warnings can contain useful information but
