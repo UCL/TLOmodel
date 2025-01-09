@@ -230,6 +230,21 @@ def func_of_avg_increase_rate(cadre, scenario='s_2', r=0.042):
 
     return overall_scale_up ** (1/10) - 1.0
 
+
+# prepare 2024 cost info for Other cadre and Total
+extra_rows = pd.DataFrame(columns=staff_cost.columns, index=['Other', 'Total'])
+staff_cost = pd.concat([staff_cost, extra_rows], axis=0)
+staff_cost.loc['Other', 'annual_cost'] = staff_cost.loc[staff_cost.index.isin(other_group), 'annual_cost'].sum()
+staff_cost.loc['Total', 'annual_cost'] = staff_cost.loc[staff_cost.index.isin(cadre_all), 'annual_cost'].sum()
+staff_cost.loc['Other', 'Staff_Count'] = staff_cost.loc[staff_cost.index.isin(other_group), 'Staff_Count'].sum()
+staff_cost.loc['Total', 'Staff_Count'] = staff_cost.loc[staff_cost.index.isin(cadre_all), 'Staff_Count'].sum()
+staff_cost.loc['Other', 'cost_frac'] = (staff_cost.loc['Other', 'annual_cost']
+                                        / staff_cost.loc[staff_cost.index.isin(cadre_all), 'annual_cost'].sum())
+staff_cost.loc['Total', 'cost_frac'] = (staff_cost.loc['Total', 'annual_cost']
+                                        / staff_cost.loc[staff_cost.index.isin(cadre_all), 'annual_cost'].sum())
+staff_cost.annual_cost = staff_cost.annual_cost.astype(str)
+staff_cost.cost_frac = staff_cost.cost_frac.astype(str)
+
 # Checked that for s_2, the integrated scale up factors of C/N/P cadres are comparable with shortage estimates from \
 # She et al 2024: https://human-resources-health.biomedcentral.com/articles/10.1186/s12960-024-00949-2
 # C: 2.21, N: 1.44, P: 4.14 vs C: 2.83, N: 1.57, P:6.37
