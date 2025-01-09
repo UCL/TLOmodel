@@ -4,11 +4,7 @@
 import argparse
 from pathlib import Path
 from tlo import Date
-from collections import Counter, defaultdict
-import calendar
 import datetime
-import os
-import textwrap
 from typing import Tuple
 import matplotlib.pyplot as plt
 #from matplotlib.ticker import FuncFormatter
@@ -16,10 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from collections import defaultdict
-import ast
-import math
-import itertools
-from itertools import cycle
+
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
@@ -27,8 +20,6 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
     load_pickled_dataframes,
     summarize,
-    create_pickles_locally,
-    parse_log_file,
     unflatten_flattened_multi_index_in_logging
 )
 

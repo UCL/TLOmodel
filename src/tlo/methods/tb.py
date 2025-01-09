@@ -2865,7 +2865,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        logger.debug(key="message", data=f"Selecting persons for community chest x-ray screening")
+        logger.debug(key="message", data="Selecting persons for community chest x-ray screening")
 
         prob_screening = p['probability_community_chest_xray']
 

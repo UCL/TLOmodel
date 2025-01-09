@@ -20,7 +20,6 @@ tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_scenario
 import warnings
 from pathlib import Path
 from typing import Dict
-import random
 from tlo import Date, logging
 from tlo.scenario import BaseScenario
 from tlo.methods import (
