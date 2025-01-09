@@ -106,11 +106,27 @@ class WastingAnalyses:
         all_zeros = w_inc_df['WHZ>=-2'].apply(lambda x: all(value == 0 for value in x.values()))
         assert all(all_zeros)
         w_inc_df = w_inc_df[["WHZ<-3", "-3<=WHZ<-2"]]
+
+        pop_sizes_df = self.__w_logs_dict['pop sizes']
+        pop_sizes_df = pop_sizes_df.set_index(pop_sizes_df.date.dt.year)
+        pop_sizes_df = pop_sizes_df.drop(columns='date')
+        po_sizes_to_keep = [col for col in pop_sizes_df.columns if
+                           col.startswith('total__') and col not in ['total__under5']]
+        age_gps_total_pop_sizes_df = pop_sizes_df[po_sizes_to_keep].copy()
+        age_gps_total_pop_sizes_df['0y']  = \
+            age_gps_total_pop_sizes_df['total__0_5mo'] + age_gps_total_pop_sizes_df['total__6_11mo']
+        age_gps_total_pop_sizes_df = age_gps_total_pop_sizes_df.drop(columns=['total__0_5mo', 'total__6_11mo'])
+        age_gps_total_pop_sizes_df = age_gps_total_pop_sizes_df.rename(columns={
+            'total__12_23mo': '1y',
+            'total__24_35mo': '2y',
+            'total__36_47mo': '3y',
+            'total__48_59mo': '4y',
+            'total__5y+': '5+y'
+        })
+
         # get age_years, doesn't matter what wasting category you choose,
         # they all have same age groups
-        age_years = list(w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys(
-
-        ))
+        age_years = list(w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys())
         # age_years.remove('5+y')
 
         _row_counter = 0
@@ -118,20 +134,20 @@ class WastingAnalyses:
         # plot setup
         fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True, figsize=(10, 6))
         axes[1, 2].axis('off')  # 5+y has no data (no new cases in 5+y), its space is used to display the label
-        for _age in age_years:
+        for age in age_years:
             plotting = pd.DataFrame()
             for state in w_inc_df.columns:
                 plotting[state] = \
-                    w_inc_df.apply(lambda row: row[state][_age], axis=1)
+                    w_inc_df.apply(lambda row: row[state][age], axis=1)
             # remove sev cases from mod cases (all sev cases went through mod state)
             plotting["-3<=WHZ<-2"] = plotting["-3<=WHZ<-2"] - plotting["WHZ<-3"]
-            # rescale nmbs from simulated pop_size to pop size of Malawi
-            plotting = plotting * self.__scaling_factor
+            # calculate props within the age group
+            plotting = plotting.div(age_gps_total_pop_sizes_df[age], axis=0)
             plotting = plotting.rename(columns=self.__wasting_types_desc)
 
             ax = plotting.plot(kind='bar', stacked=True,
                                ax=axes[_row_counter, _col_counter],
-                               title=f"incidence of wasting in {_age} old")#,
+                               title=f"incidence of wasting in {age} old")#,
                                #ylim=[0, 1])
             show_legend = (_row_counter == 1 and _col_counter == 2)
             # show_x_axis_label = (_row_counter == 0 and _col_counter == 2)
@@ -143,7 +159,7 @@ class WastingAnalyses:
             # if show_x_axis_label:
             #     ax.set_xlabel('Year')  # TODO: this is not working
             ax.set_xlabel('year')
-            ax.set_ylabel('number of incidence cases')
+            ax.set_ylabel('proportion (within age group)')
             # move to another row
             if _col_counter == 2:
                 _row_counter += 1
