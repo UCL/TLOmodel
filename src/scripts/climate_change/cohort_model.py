@@ -131,18 +131,18 @@ for scenario in scenarios:
             for x in long_data for y in lat_data
         ]
         grid = gpd.GeoDataFrame({'geometry': polygons}, crs=malawi.crs)
-        grid_clipped_ADM2 = gpd.overlay(grid, malawi_admin2, how='intersection')
+        #grid_clipped_ADM2 = gpd.overlay(grid, malawi_admin2, how='intersection')
         predictions_from_cmip_sum['Percentage_Difference'] = (predictions_from_cmip_sum['Difference_in_Expectation'] /
                                                               predictions_from_cmip_sum[
                                                                   'Predicted_No_Weather_Model']) * 100
         percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
-        grid_clipped_ADM2['Percentage_Difference'] = grid_clipped_ADM2['ADM2_EN'].map(percentage_diff_by_district)
-        grid_clipped_ADM2.loc[grid_clipped_ADM2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+        malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
+        malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
 
         # Plot map
         fig, ax = plt.subplots(figsize=(12, 12))
-        malawi_admin2.plot(ax=ax, edgecolor='white', color='white')
-        grid_clipped_ADM2.dropna(subset=['Percentage_Difference']).plot(
+        #malawi_admin2.plot(ax=ax, edgecolor='white', color='white')
+        malawi_admin2.dropna(subset=['Percentage_Difference']).plot(
             ax=ax,
             column='Percentage_Difference',
             cmap='Blues_r',
@@ -151,8 +151,8 @@ for scenario in scenarios:
             legend=False
         )
         sm = plt.cm.ScalarMappable(cmap='Blues_r',
-                                   norm=mcolors.Normalize(vmin=grid_clipped_ADM2['Percentage_Difference'].min(),
-                                                          vmax=grid_clipped_ADM2['Percentage_Difference'].max()))
+                                   norm=mcolors.Normalize(vmin=malawi_admin2['Percentage_Difference'].min(),
+                                                          vmax=malawi_admin2['Percentage_Difference'].max()))
         sm.set_array([])
         cbar = plt.colorbar(sm, ax=ax, orientation="vertical", shrink=0.7)
         cbar.set_label("Percentage Difference (%)", fontsize=12)
@@ -186,4 +186,82 @@ for scenario in scenarios:
 
 
 
+## now all grids
+fig, axes = plt.subplots(2, 3, figsize=(18, 12), constrained_layout=True)
 
+global_min = float('inf')
+global_max = float('-inf')
+
+for scenario in scenarios:
+    for model_type in model_types:
+        predictions_from_cmip = pd.read_csv(
+            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+        )
+        predictions_from_cmip_sum = predictions_from_cmip.groupby('District').sum().reset_index()
+        predictions_from_cmip_sum['Percentage_Difference'] = (
+            predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
+        ) * 100
+
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        )
+        percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
+        malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
+        malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+
+        local_min = malawi_admin2['Percentage_Difference'].min()
+        local_max = malawi_admin2['Percentage_Difference'].max()
+        global_min = min(global_min, local_min)
+        global_max = max(global_max, local_max)
+
+for i, scenario in enumerate(scenarios):
+    for j, model_type in enumerate(model_types):
+        predictions_from_cmip = pd.read_csv(
+            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+        )
+        predictions_from_cmip_sum = predictions_from_cmip.groupby('District').sum().reset_index()
+        predictions_from_cmip_sum['Percentage_Difference'] = (
+            predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
+        ) * 100
+
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        )
+        percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
+        malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
+        malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+
+        ax = axes[i, j]
+        malawi_admin2.dropna(subset=['Percentage_Difference']).plot(
+            ax=ax,
+            column='Percentage_Difference',
+            cmap='Blues_r',
+            edgecolor='black',
+            alpha=1,
+            legend=False,
+            vmin=global_min,
+            vmax=global_max
+        )
+
+        ax.set_title(f"{scenario}: {model_type}", fontsize=14)
+
+        if i != 1:
+            ax.set_xlabel("")
+        if j != 0:
+            ax.set_ylabel("")
+        else:
+            ax.set_ylabel("Latitude", fontsize=10)
+
+        if i == 1:
+            ax.set_xlabel("Longitude", fontsize=10)
+
+sm = plt.cm.ScalarMappable(
+    cmap='Blues_r',
+    norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
+)
+sm.set_array([])
+fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
+
+plt.suptitle("Percentage Difference Maps by Scenario and Model Type", fontsize=16, y=1.02)
+plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
+plt.show()
