@@ -590,7 +590,7 @@ def get_weather_data(ssp_scenario, model_type):
         columns=zero_sum_columns)
 
     return weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df
-model_types = ['lowest', 'highest']#, 'median', 'highest']
+model_types = ['lowest', 'median' 'highest']
 # Configuration and constants
 min_year_for_analysis = 2025
 absolute_min_year = 2025
