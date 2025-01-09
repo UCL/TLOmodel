@@ -160,6 +160,8 @@ included_facilities_with_lat_long = facilities_with_lat_long[
 
 additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype", 'A109__Latitude', 'A109__Longitude']
 expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
+expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Blanytyre", "Blantyre")
+expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Nkhatabay", "Nkhata Bay")
 
 expanded_facility_info.columns = ["Fname"] + additional_rows
 expanded_facility_info.set_index("Fname", inplace=True)
