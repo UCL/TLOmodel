@@ -52,9 +52,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
       PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal period.
       """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020) and the linear models
@@ -619,8 +618,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                              'the postnatal period'),
     }
 
-    def read_parameters(self, data_folder):
-        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
+    def read_parameters(self, resourcefilepath=None):
+        parameter_dataframe = read_csv_files(Path(resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
                                                                           'Attendance',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)

@@ -84,13 +84,12 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
             Types.DATE, 'Date an infected individual was cured')
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath=None):
         """Read in parameters and do the registration of this module and its symptoms"""
 
         p = self.parameters

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import TYPE_CHECKING, List
 
 import pandas as pd
@@ -98,10 +99,10 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         self.consumables = None  # (will store item_codes for consumables used in HSI)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath = None):
         """Read parameter values from file
         """
-        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_Measles', files=None)
+        workbook = read_csv_files(Path(resourcefilepath)/'ResourceFile_Measles', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         self.parameters["symptom_prob"] = workbook["symptoms"]

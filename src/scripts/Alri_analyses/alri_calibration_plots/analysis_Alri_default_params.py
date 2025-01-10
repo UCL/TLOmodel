@@ -51,18 +51,19 @@ log_config = {
 }
 
 # Establish the simulation object
-sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
+sim = Simulation(start_date=start_date, log_config=log_config,
+                 show_progress_bar=True, resourcefilepath=resourcefilepath)
 
 # run the simulation
 sim.register(
-    demography.Demography(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-    alri.Alri(resourcefilepath=resourcefilepath),
+    demography.Demography(),
+    enhanced_lifestyle.Lifestyle(),
+    symptommanager.SymptomManager(),
+    healthseekingbehaviour.HealthSeekingBehaviour(),
+    healthburden.HealthBurden(),
+    simplified_births.SimplifiedBirths(),
+    healthsystem.HealthSystem(disable=True),
+    alri.Alri(),
     alri.AlriPropertiesOfOtherModules()
 )
 
