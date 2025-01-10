@@ -21,7 +21,6 @@ min_year_for_analysis = 2012
 absolute_min_year = 2011
 mask_threshold = -np.inf # accounts for scaling
 use_percentile_mask_threshold = False
-use_residuals = False
 from sklearn.preprocessing import StandardScaler
 
 poisson=False
@@ -387,13 +386,9 @@ axs[0].set_title('A: Monthly ANC Visits vs. Precipitation')
 axs[0].legend(loc='upper left')
 
 # Panel B: Residuals
-if use_residuals:
-    axs[1].scatter(data_ANC_predictions['Year_Month'], data_ANC_predictions['residuals'], color='#9AC4F8', alpha=0.7, label='Residuals')
-    axs[1].scatter(data_ANC_predictions_grouped['Year_Month'], np.exp(data_ANC_predictions_grouped['residuals']),
-                       color='red', alpha=0.7, label='Mean Residuals')
-else:
-    axs[1].scatter(data_ANC_predictions['Year_Month'], (data_ANC_predictions['y_filtered'] - data_ANC_predictions['y_pred']), color='#9AC4F8', alpha=0.7, label='Residuals')
-    axs[1].scatter(data_ANC_predictions_grouped['Year_Month'], data_ANC_predictions_grouped['residuals'],
+
+axs[1].scatter(data_ANC_predictions['Year_Month'], (data_ANC_predictions['y_filtered'] - data_ANC_predictions['y_pred']), color='#9AC4F8', alpha=0.7, label='Residuals')
+axs[1].scatter(data_ANC_predictions_grouped['Year_Month'], data_ANC_predictions_grouped['residuals'],
                        color='red', alpha=0.7, label='Mean Residuals')
 
 axs[1].set_xticks(xticks)
