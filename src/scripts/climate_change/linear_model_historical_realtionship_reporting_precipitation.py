@@ -5,6 +5,7 @@ import pandas as pd
 import statsmodels.api as sm
 from statsmodels.genmod.families import NegativeBinomial, Poisson
 from statsmodels.genmod.generalized_linear_model import GLM
+from sklearn.preprocessing import StandardScaler
 
 ANC = True
 daily_max = False
@@ -21,15 +22,9 @@ min_year_for_analysis = 2012
 absolute_min_year = 2011
 mask_threshold = -np.inf # accounts for scaling
 use_percentile_mask_threshold = False
-from sklearn.preprocessing import StandardScaler
 
-poisson=False
-if use_residuals:
-    poisson = False
-if poisson:
-    log_y = False
-else:
-    log_y = True
+poisson = False
+log_y = True
 
 covid_months = range((2020 - min_year_for_analysis)* 12 + 4, (2020 - min_year_for_analysis)* 12 + 4 + 20) # Bingling's paper: disruption between April 2020 and Dec 2021, a period of 20 months
 cyclone_freddy_months_phalombe = range((2023 - min_year_for_analysis)* 12 + 4, (2020 - min_year_for_analysis)* 12 + 4 + 14) # From news report and DHIS2, see disruption from April 2023 - June 2024, 14 months
@@ -169,19 +164,25 @@ if use_all_weather:
     lag_2_month = weather_data_monthly_df.shift(2).values
     lag_3_month = weather_data_monthly_df.shift(3).values
     lag_4_month = weather_data_monthly_df.shift(4).values
+    lag_9_month = weather_data_monthly_df.shift(9).values
+
     lag_1_month = lag_1_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
     lag_2_month = lag_2_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
     lag_3_month = lag_3_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
     lag_4_month = lag_4_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+    lag_9_month = lag_9_month[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
 
     lag_1_5_day = weather_data_five_day_cumulative_df.shift(1).values
     lag_2_5_day = weather_data_five_day_cumulative_df.shift(2).values
     lag_3_5_day = weather_data_five_day_cumulative_df.shift(3).values
     lag_4_5_day = weather_data_five_day_cumulative_df.shift(4).values
+    lag_9_5_day = weather_data_five_day_cumulative_df.shift(9).values
+
     lag_1_5_day = lag_1_5_day[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
     lag_2_5_day = lag_2_5_day[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
     lag_3_5_day = lag_3_5_day[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
     lag_4_5_day = lag_4_5_day[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+    lag_9_5_day = lag_9_5_day[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
 
     # need for binary
     lag_12_month = weather_data_monthly_df.shift(12).values
@@ -294,18 +295,6 @@ minimum_distance = np.nan_to_num(minimum_distance, nan=np.nan, posinf=np.nan, ne
 ########################## STEP 1: GENERATE PREDICTIONS OF ANC DATA ##########################
 ##############################################################################################
 
-X = np.column_stack([
-    year_flattened,
-    month_flattened,
-    resid_encoded,
-    zone_encoded,
-    dist_encoded,
-    owner_encoded,
-    ftype_encoded,
-    facility_encoded,
-    altitude,
-    np.array(minimum_distance)
-])
 #    Continuous columns that need to be standardized (weather_data, lag variables, altitude, minimum_distance)
 X_continuous = np.column_stack([
     year_flattened,
@@ -323,8 +312,8 @@ X_categorical = np.column_stack([
 ])
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
+X_continuous_scaled = X_continuous
 X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
-#X_weather_standardized = np.column_stack([X_continuous, X_categorical])
 
 coefficient_names = ["year", "month"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
                      list(owner_encoded.columns) + list(ftype_encoded.columns) + \
@@ -420,10 +409,12 @@ X_weather = np.column_stack([
     lag_2_month,
     lag_3_month,
     lag_4_month,
+    lag_9_month,
     lag_1_5_day,
     lag_2_5_day,
     lag_3_5_day,
     lag_4_5_day,
+    lag_9_5_day,
     facility_encoded,
     np.array(altitude),
     np.array(minimum_distance),
@@ -457,8 +448,9 @@ X_categorical = np.column_stack([
 
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
+X_continuous_scaled = X_continuous
+
 X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
-#X_weather_standardized = np.column_stack([X_continuous, X_categorical])
 
 results_of_weather_model, y_pred_weather, mask_all_data = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
                                                                  X_mask_mm=mask_threshold)
@@ -473,12 +465,12 @@ coefficient_names_weather = pd.Series(coefficient_names_weather)
 coefficients_weather = results_of_weather_model.params
 coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficients'])
 #rescale coefficients
-continuous_coefficients = coefficients_weather[:len(X_weather[0])]
-categorical_coefficients = coefficients_weather[len(X_weather[0]):]
-#means = scaler.mean_
-#scales = scaler.scale_
-#rescaled_continuous_coefficients = continuous_coefficients * scales
-#rescaled_coefficients_weather = np.concatenate([rescaled_continuous_coefficients, categorical_coefficients])
+continuous_coefficients = coefficients_weather[:len(X_continuous_scaled[0])]
+categorical_coefficients = coefficients_weather[len(X_continuous_scaled[0]):]
+means = scaler.mean_
+scales = scaler.scale_
+rescaled_continuous_coefficients = continuous_coefficients * scales
+rescaled_coefficients_weather = np.concatenate([rescaled_continuous_coefficients, categorical_coefficients])
 rescaled_coefficients_weather = np.concatenate([continuous_coefficients, categorical_coefficients])
 
 rescaled_coefficients_df = pd.DataFrame(rescaled_coefficients_weather, columns=['rescaled coefficients'])
@@ -491,25 +483,21 @@ results_weather_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/resul
 print("All predictors", results_of_weather_model.summary())
 #
 X_filtered = X_weather[mask_all_data]
-# # Effect size
-# if use_residuals:
-#     y_mean = np.mean(y_weather[mask_all_data])
-#     SS_total = np.sum((y_weather[mask_all_data] - y_mean) ** 2)
-# else:
-#     y_mean = np.mean(y[mask_all_data])
-#     SS_total = np.sum((y[mask_all_data] - y_mean) ** 2)
-#
-# predictor_variances = np.var(X_filtered, axis=0, ddof=1)
-# coefficients = results_of_weather_model.params
-# SS_effect = coefficients**2 * predictor_variances
-# eta_squared = SS_effect / SS_total
-# effect_size_summary = pd.DataFrame({
-#     'Coefficient': coefficients,
-#     'SS_effect': SS_effect,
-#     'Eta-squared': eta_squared
-# }).sort_values(by='Eta-squared', ascending=False)
-#
-# print(effect_size_summary)
+# Effect size
+y_mean = np.mean(y[mask_all_data])
+SS_total = np.sum((y[mask_all_data] - y_mean) ** 2)
+
+predictor_variances = np.var(X_filtered, axis=0, ddof=1)
+coefficients = results_of_weather_model.params
+SS_effect = coefficients**2 * predictor_variances
+eta_squared = SS_effect / SS_total
+effect_size_summary = pd.DataFrame({
+    'Coefficient': coefficients,
+    'SS_effect': SS_effect,
+    'Eta-squared': eta_squared
+}).sort_values(by='Eta-squared', ascending=False)
+
+print(effect_size_summary)
 
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 6))
@@ -585,21 +573,26 @@ for ssp_scenario in ssp_scenarios:
         lag_2_month_prediction = weather_data_prediction_monthly_df.shift(2).values
         lag_3_month_prediction = weather_data_prediction_monthly_df.shift(3).values
         lag_4_month_prediction = weather_data_prediction_monthly_df.shift(4).values
+        lag_9_month_prediction = weather_data_prediction_monthly_df.shift(9).values
 
         lag_1_month_prediction = lag_1_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
         lag_2_month_prediction = lag_2_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
         lag_3_month_prediction = lag_3_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
         lag_4_month_prediction = lag_4_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+        lag_9_month_prediction = lag_9_month_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
 
         lag_1_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(1).values
         lag_2_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(2).values
         lag_3_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(3).values
         lag_4_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(4).values
+        lag_9_5_day_prediction = weather_data_prediction_five_day_cumulative_df.shift(9).values
 
         lag_1_5_day_prediction = lag_1_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
         lag_2_5_day_prediction = lag_2_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
         lag_3_5_day_prediction = lag_3_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
         lag_4_5_day_prediction = lag_4_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+        lag_9_5_day_prediction = lag_9_5_day_prediction[(min_year_for_analysis - absolute_min_year) * 12:].flatten()
+
         weather_data_prediction_five_day_cumulative = weather_data_prediction_five_day_cumulative_df # keep these seperate for binary features
 
                 # need for binary comparison
@@ -658,10 +651,12 @@ for ssp_scenario in ssp_scenarios:
             lag_2_month_prediction,
             lag_3_month_prediction,
             lag_4_month_prediction,
+            lag_9_month_prediction,
             lag_1_5_day_prediction,
             lag_2_5_day_prediction,
             lag_3_5_day_prediction,
             lag_4_5_day_prediction,
+            lag_9_5_day_prediction,
             altitude_prediction,
             minimum_distance_prediction
         ])
@@ -677,6 +672,7 @@ for ssp_scenario in ssp_scenarios:
 
         scaler_weather = StandardScaler()
         X_continuous_weather_scaled = scaler_weather.fit_transform(X_continuous_weather)
+        X_continuous_weather_scaled = X_continuous_weather
         X_basis_weather = np.column_stack([X_continuous_weather_scaled, X_categorical_weather])
 
         X_basis_weather_filtered = X_basis_weather[X_basis_weather[:, 0] > mask_threshold]
@@ -708,6 +704,7 @@ for ssp_scenario in ssp_scenarios:
 
         scaler_ANC = StandardScaler()
         X_continuous_ANC_scaled = scaler_ANC.fit_transform(X_continuous_ANC)
+        X_continuous_ANC_scaled = X_continuous_ANC
 
         X_bases_ANC_standardized = np.column_stack([X_continuous_ANC_scaled, X_categorical_ANC])
 
