@@ -300,6 +300,9 @@ minimum_distance = np.nan_to_num(minimum_distance, nan=np.nan, posinf=np.nan, ne
 
 ########################## STEP 1: GENERATE PREDICTIONS OF ANC DATA ##########################
 ##############################################################################################
+from sklearn.impute import SimpleImputer
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 #    Continuous columns that need to be standardized (weather_data, lag variables, altitude, minimum_distance)
 X_continuous = np.column_stack([
@@ -320,13 +323,17 @@ scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
 X_continuous_scaled = X_continuous
 X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
-X_ANC_standardized = pd.DataFrame(X_ANC_standardized)
+pca = PCA(n_components=30)  # Specify the number of components you want
+imputer = SimpleImputer(strategy='mean')
+X_ANC_standardized_imputed = imputer.fit_transform(X_ANC_standardized)
+X_continuous_reduced = pca.fit_transform(X_ANC_standardized_imputed)
+X_ANC_standardized = np.column_stack([X_continuous_reduced, X_categorical])
 
 coefficient_names = ["year", "month"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
                      list(owner_encoded.columns) + list(ftype_encoded.columns) + \
                      list(facility_encoded.columns) + ["altitude", "minimum_distance"]
 coefficient_names = pd.Series(coefficient_names)
-results, y_pred, mask_ANC_data = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold)
+results, y_pred, mask_ANC_data = build_model(X_continuous_reduced , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold)
 coefficients = results.params
 coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
 continuous_coefficients = coefficients[:len(X_continuous_scaled[0])]
