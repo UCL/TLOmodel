@@ -317,13 +317,13 @@ X_categorical = np.column_stack([
     dist_encoded,
     owner_encoded,
     ftype_encoded,
-    #facility_encoded,
+    facility_encoded,
 ])
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
 X_continuous_scaled = X_continuous
 X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
-pca = PCA(n_components=30)  # Specify the number of components you want
+pca = PCA(n_components=44)  # Specify the number of components you want
 imputer = SimpleImputer(strategy='mean')
 X_ANC_standardized_imputed = imputer.fit_transform(X_ANC_standardized)
 X_continuous_reduced = pca.fit_transform(X_ANC_standardized_imputed)
