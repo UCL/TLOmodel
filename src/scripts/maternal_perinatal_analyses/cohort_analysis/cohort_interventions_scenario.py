@@ -52,9 +52,9 @@ class BaselineScenario(BaseScenario):
 
         # else:
 
-        interventions_for_analysis = ['mgso4','mgso4',
-                                      'ectopic_pregnancy_treatment', 'ectopic_pregnancy_treatment',
-                                      'pph_treatment_mrrp', 'pph_treatment_mrrp']
+        interventions_for_analysis = ['caesarean_section','caesarean_section',
+                                      'pph_treatment_surg', 'pph_treatment_surg',
+                                      'iron_folic_acid', 'iron_folic_acid']
 
         avail_for_draw = [0.0, 1.0,
                           0.0, 1.0,

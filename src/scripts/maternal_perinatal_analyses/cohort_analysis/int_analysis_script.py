@@ -137,7 +137,7 @@ def get_ps_data_frames(key, results_folder):
 
 results = {k:get_ps_data_frames(k, results_folder) for k in
            ['mat_comp_incidence', 'nb_comp_incidence', 'deaths_and_stillbirths','service_coverage',
-            'yearly_mnh_counter_dict']}
+            'yearly_mnh_counter_dict', 'intervention_coverage']}
 
 direct_deaths = extract_results(
             results_folder,
@@ -286,7 +286,10 @@ def get_tornado_plot(data, outcome):
     data.pop('baseline', None)
 
     for key in mat_deaths_2.keys():
-        base_key = key.split('_')[0]  # Extract the base name
+        base_key = key.rsplit('_', 1)[0] if key.endswith('_max') or key.endswith('_min') else key
+        print(base_key)
+        # base_key = key.split('_')[0]  # Extract the base name
+
         if base_key not in grouped_data:
             grouped_data[base_key] = {'min': None, 'max': None}
         if 'min' in key:
@@ -331,7 +334,7 @@ def get_tornado_plot(data, outcome):
     plt.xlabel(f'Difference in {outcome} from Status Quo')
     plt.title(f'Tornado Plot showing current and potenial impact of interventions on {outcome}')
     plt.legend()
-    plt.show()
+    plt.show(bbox_inches='tight')
 
 get_tornado_plot(mat_deaths_2, 'MMR')
 get_tornado_plot(dalys_diffs, 'DALYs')
