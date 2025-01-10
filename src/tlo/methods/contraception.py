@@ -1349,11 +1349,11 @@ class SimplifiedPregnancyAndLabour(Module):
     def __init__(self, *args):
         super().__init__(name='Labour')
 
-    def read_parameters(self, *args):
-        parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].resourcefilepath /
-                                            'contraception' /
-                                            'ResourceFile_Contraception',
-                                            files='simplified_labour_parameters')
+    def read_parameters(self, resourcefilepath=None):
+        parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].Path(resourcefilepath) /
+                                             'contraception' /
+                                             'ResourceFile_Contraception',
+                                             files='simplified_labour_parameters')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
