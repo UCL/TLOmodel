@@ -6,6 +6,7 @@ import statsmodels.api as sm
 from statsmodels.genmod.families import NegativeBinomial, Poisson
 from statsmodels.genmod.generalized_linear_model import GLM
 from sklearn.preprocessing import StandardScaler
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 ANC = True
 daily_max = False
@@ -127,6 +128,11 @@ def stepwise_selection(X, y, log_y, poisson, p_value_threshold=0.05):
 
     return included
 
+def calculate_vif(X):
+    vif_data = pd.DataFrame()
+    vif_data["feature"] = X.columns
+    vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+    return vif_data
 
 def repeat_info(info, num_facilities, year_range, historical):
     # Repeat facilities in alternating order for each month and year
@@ -308,12 +314,13 @@ X_categorical = np.column_stack([
     dist_encoded,
     owner_encoded,
     ftype_encoded,
-    facility_encoded,
+    #facility_encoded,
 ])
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
 X_continuous_scaled = X_continuous
 X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
+X_ANC_standardized = pd.DataFrame(X_ANC_standardized)
 
 coefficient_names = ["year", "month"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
                      list(owner_encoded.columns) + list(ftype_encoded.columns) + \
@@ -415,7 +422,7 @@ X_weather = np.column_stack([
     lag_3_5_day,
     lag_4_5_day,
     lag_9_5_day,
-    facility_encoded,
+    #facility_encoded,
     np.array(altitude),
     np.array(minimum_distance),
     #np.array(above_below_X)[mask_ANC_data],
@@ -429,20 +436,23 @@ X_continuous = np.column_stack([
         lag_2_month,
         lag_3_month,
         lag_4_month,
+        lag_9_month,
         lag_1_5_day,
         lag_2_5_day,
         lag_3_5_day,
         lag_4_5_day,
+        lag_9_5_day,
         np.array(altitude),
         np.array(minimum_distance),]
 )
+
 X_categorical = np.column_stack([
         resid_encoded,
         zone_encoded,
         dist_encoded,
         owner_encoded,
         ftype_encoded,
-        facility_encoded,
+        #facility_encoded,
         #np.array(above_below_X)[mask_ANC_data],
     ])
 
@@ -483,22 +493,6 @@ results_weather_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/resul
 print("All predictors", results_of_weather_model.summary())
 #
 X_filtered = X_weather[mask_all_data]
-# Effect size
-y_mean = np.mean(y[mask_all_data])
-SS_total = np.sum((y[mask_all_data] - y_mean) ** 2)
-
-predictor_variances = np.var(X_filtered, axis=0, ddof=1)
-coefficients = results_of_weather_model.params
-SS_effect = coefficients**2 * predictor_variances
-eta_squared = SS_effect / SS_total
-effect_size_summary = pd.DataFrame({
-    'Coefficient': coefficients,
-    'SS_effect': SS_effect,
-    'Eta-squared': eta_squared
-}).sort_values(by='Eta-squared', ascending=False)
-
-print(effect_size_summary)
-
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 6))
 
@@ -667,7 +661,7 @@ for ssp_scenario in ssp_scenarios:
             dist_encoded_prediction,
             owner_encoded_prediction,
             ftype_encoded_prediction,
-            facility_encoded_prediction
+            #facility_encoded_prediction
         ])
 
         scaler_weather = StandardScaler()
@@ -699,7 +693,7 @@ for ssp_scenario in ssp_scenarios:
                 dist_encoded_prediction,
                 owner_encoded_prediction,
                 ftype_encoded_prediction,
-                facility_encoded_prediction
+                #facility_encoded_prediction
             ])
 
         scaler_ANC = StandardScaler()
