@@ -333,7 +333,7 @@ coefficient_names = ["year", "month"] + list(resid_encoded.columns) + list(zone_
                      list(owner_encoded.columns) + list(ftype_encoded.columns) + \
                      list(facility_encoded.columns) + ["altitude", "minimum_distance"]
 coefficient_names = pd.Series(coefficient_names)
-results, y_pred, mask_ANC_data = build_model(X_continuous_reduced , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold)
+results, y_pred, mask_ANC_data = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold)
 coefficients = results.params
 coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
 continuous_coefficients = coefficients[:len(X_continuous_scaled[0])]
