@@ -326,8 +326,7 @@ X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 pca = PCA(n_components=44)  # Specify the number of components you want
 imputer = SimpleImputer(strategy='mean')
 X_ANC_standardized_imputed = imputer.fit_transform(X_ANC_standardized)
-X_continuous_reduced = pca.fit_transform(X_ANC_standardized_imputed)
-X_ANC_standardized = np.column_stack([X_continuous_reduced, X_categorical])
+X_ANC_standardized = pca.fit_transform(X_ANC_standardized_imputed)
 
 coefficient_names = ["year", "month"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
                      list(owner_encoded.columns) + list(ftype_encoded.columns) + \
@@ -466,8 +465,11 @@ X_categorical = np.column_stack([
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
 X_continuous_scaled = X_continuous
-
-X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
+pca = PCA(n_components=44)  # Specify the number of components you want
+imputer = SimpleImputer(strategy='mean')
+X_ANC_standardized_imputed = imputer.fit_transform(X_ANC_standardized)
+X_continuous_reduced = pca.fit_transform(X_ANC_standardized_imputed)
+X_weather_standardized = np.column_stack([X_continuous_reduced, X_categorical])
 
 results_of_weather_model, y_pred_weather, mask_all_data = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
                                                                  X_mask_mm=mask_threshold)
