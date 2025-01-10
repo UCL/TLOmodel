@@ -299,10 +299,8 @@ altitude = list(altitude)
 minimum_distance = np.nan_to_num(minimum_distance, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
 
 ########################## STEP 1: GENERATE PREDICTIONS OF ANC DATA ##########################
+
 ##############################################################################################
-from sklearn.impute import SimpleImputer
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 
 #    Continuous columns that need to be standardized (weather_data, lag variables, altitude, minimum_distance)
 X_continuous = np.column_stack([
@@ -317,7 +315,7 @@ X_categorical = np.column_stack([
     dist_encoded,
     owner_encoded,
     ftype_encoded,
-    facility_encoded,
+    #facility_encoded,
 ])
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
