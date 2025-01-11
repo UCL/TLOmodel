@@ -30,9 +30,14 @@ class WastingAnalyses:
     This class looks at plotting all important outputs from the wasting module
     """
 
-    def __init__(self, in_sim_results_folder_path_draw_x_run_0, in_datestamp):
-        self.outcomes_path_name = in_sim_results_folder_path_draw_x_run_0
+    def __init__(self, in_sim_results_folder_path, in_datestamp, in_draw_nmb, in_run_nmb,in_png=False):
+        self.outcomes_folder_path = in_sim_results_folder_path
         self.datestamp = in_datestamp
+        self.draw_nmb = in_draw_nmb
+        self.run_nmb = in_run_nmb
+        self.png = in_png, """bool indicating whether we want to save all figures not only as pdf, but also as png"""
+
+        sim_results_folder_path_draw_x_run_0 = in_sim_results_folder_path + f'/{draw_nmb}/{run_nmb}/'
         sim_results_file_name_prefix = scenario_filename
         sim_results_file_name_extension = '.log.gz'
         gz_results_file_path = \
@@ -80,9 +85,12 @@ class WastingAnalyses:
         }
 
     def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
-        fig.savefig(self.outcomes_path_name + "/" + fig_output_name + '.png', format='png')
-        fig.savefig(self.outcomes_path_name + "/" + fig_output_name + '.pdf', format='pdf')
-        self.fig_files.append(fig_output_name + '.pdf')
+        full_path_and_file_name = self.outcomes_folder_path + f'/{self.draw_nmb}/{self.run_nmb}/' + fig_output_name + \
+                    f'_{self.draw_nmb}_{self.run_nmb}'
+        if self.png: #TODO: doesn't seem to be working
+            fig.savefig(full_path_and_file_name + '.png', format='png')
+        fig.savefig(full_path_and_file_name + '.pdf', format='pdf')
+        self.fig_files.append(full_path_and_file_name + '.pdf')
 
     def plot_wasting_incidence(self):
         """ plot the incidence of wasting over time """
@@ -510,7 +518,8 @@ class WastingAnalyses:
 
     def plot_all_figs_in_one_pdf(self):
 
-        output_file_path = Path(self.outcomes_path_name + '/wasting_all_figures__' + self.datestamp + '.pdf')
+        output_file_path = Path(self.outcomes_folder_path + '/wasting_all_figures__' + self.datestamp +
+                                f'_{self.draw_nmb}_{self.run_nmb}' + '.pdf')
         # Remove the existing output file if it exists to ensure a clean start
         if os.path.exists(output_file_path):
             os.remove(output_file_path)
@@ -524,7 +533,7 @@ class WastingAnalyses:
 
         # Iterate through the figure files and add each to the writer
         for fig_file in self.fig_files:
-            pdf_reader = PdfReader(self.outcomes_path_name + "/" + fig_file)
+            pdf_reader = PdfReader(fig_file)
             for page_num in range(len(pdf_reader.pages)):
                 page = pdf_reader.pages[page_num]
                 pdf_writer.add_page(page)
@@ -550,20 +559,18 @@ if __name__ == "__main__":
 
     # Path to the results folder
     sim_results_folder_path =  sim_results_parent_folder_name + '/' + sim_results_folder_name
-    print(f"{sim_results_folder_path=}")
     folders = [name for name in os.listdir(sim_results_folder_path) if \
                os.path.isdir(os.path.join(sim_results_folder_path, name))]
 
     # Analyse each draw
+    # for now, we always have just one run, run 0
+    run_nmb = 0
     for draw_nmb in range(len(folders)):
         print(f"Analysing {draw_nmb=} ...")
         time_start = time.time()
-        # Path to the draw folder
-        sim_results_folder_path_draw_x_run_0 = \
-            sim_results_parent_folder_name + '/' + sim_results_folder_name + f'/{draw_nmb}/0/'
 
         # initialise the wasting class
-        wasting_analyses = WastingAnalyses(sim_results_folder_path_draw_x_run_0, datestamp)
+        wasting_analyses = WastingAnalyses(sim_results_folder_path, datestamp, draw_nmb, run_nmb)
 
         # plot wasting incidence
         wasting_analyses.plot_wasting_incidence()
