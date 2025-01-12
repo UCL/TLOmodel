@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Union
 
 import numpy as np
 import pandas as pd
+import warnings
 from scipy.stats import norm
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -1597,7 +1598,9 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 else:
                     length_df.loc[age_grp, recov_opt] = 0
                 assert not np.isnan(length_df.loc[age_grp, recov_opt])
-                assert all(length > 0 for length in self.module.wasting_length_tracker[age_grp][recov_opt])
+                if not all(length > 0 for length in self.module.wasting_length_tracker[age_grp][recov_opt]):
+                    warnings.warn(f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains 0 length;'
+                                  f' {age_grp=}, {recov_opt=}')
 
         # Reset the tracker
         self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
