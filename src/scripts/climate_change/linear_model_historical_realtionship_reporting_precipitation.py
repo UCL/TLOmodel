@@ -371,9 +371,8 @@ X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 #correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/correlation_matrix_of_predictors.csv')
 
 # Display the correlation matrix
-coefficient_names = ["year", "month"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
-                     list(owner_encoded.columns) + list(ftype_encoded.columns) + \
-                     list(facility_encoded.columns) + ["altitude", "minimum_distance"]
+coefficient_names = ["year", "month", "altitude", "minimum_distance"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
+                     list(owner_encoded.columns)
 coefficient_names = pd.Series(coefficient_names)
 results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
 coefficients = results.params
@@ -468,7 +467,7 @@ X_continuous = np.column_stack([
         lag_4_5_day,
         lag_9_5_day,
         np.array(altitude),
-        np.array(minimum_distance),]
+        np.array(minimum_distance)]
 )
 
 X_categorical = np.column_stack([
@@ -490,12 +489,12 @@ X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 results_of_weather_model, y_pred_weather, mask_all_data, selected_features = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
                                                                  X_mask_mm=mask_threshold, feature_selection =  feature_selection)
 
-coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "year", "month"] + \
+coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "year", "month",
+                             "lag_1_month", "lag_2_month", "lag_3_month", "lag_4_month", "lag_9_month",
+                             "lag_1_5_day", "lag_2_5_day", "lag_3_5_day", "lag_4_5_day", "lag_9_month",
+                             "altitude", "minimum_distance"] + \
                             list(resid_encoded.columns) + list(zone_encoded.columns) + \
-                            list(owner_encoded.columns) + list(ftype_encoded.columns) + \
-                            ["lag_1_month", "lag_2_month", "lag_3_month", "lag_4_month"] + \
-                            ["lag_1_5_day", "lag_2_5_day", "lag_3_5_day", "lag_4_5_day"] + \
-                            list(facility_encoded.columns) + ["altitude", "minimum_distance"]
+                            list(owner_encoded.columns)
 coefficient_names_weather = pd.Series(coefficient_names_weather)
 coefficients_weather = results_of_weather_model.params
 coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficients'])
