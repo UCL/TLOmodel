@@ -170,7 +170,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)
 
         # Schedule MDA events
-        if self.mda_execute:
+        # TODO: check with Tara shes happy with this (could come in as its own PR)
+        if self.mda_execute and self.sim.date.year == 2010:
             self._schedule_mda_events()
 
     def on_birth(self, mother_id, child_id):
