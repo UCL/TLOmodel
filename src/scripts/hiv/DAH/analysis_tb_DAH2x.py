@@ -1,18 +1,16 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 #python src/scripts/hiv/DAH/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+#from matplotlib.ticker import FuncFormatter
+#import squarify
 
 import argparse
 import datetime
 from collections import defaultdict
 from pathlib import Path
 from typing import Tuple
-
 import matplotlib.pyplot as plt
-#from matplotlib.ticker import FuncFormatter
-#import squarify
 import numpy as np
 import pandas as pd
-
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,

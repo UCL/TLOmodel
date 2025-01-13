@@ -2815,37 +2815,37 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                     )
 
 
-# class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
-#     """
-#     this is a hospital stay for terminally-ill patients with TB
-#     it does not affect disability weight or probability of death
-#     no consumables are logged but health system capacity (HR) is allocated
-#     there are no consequences if hospital bed is not available as person has scheduled death
-#     already within 2 weeks
-#     """
-#
-#     def __init__(self, module, person_id, beddays=8):
-#         super().__init__(module, person_id=person_id)
-#         assert isinstance(module, Tb)
-#
-#         self.TREATMENT_ID = "Tb_PalliativeCare"
-#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-#         self.ACCEPTED_FACILITY_LEVEL = "2"
-#
-#         self.beddays = beddays
-#         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.beddays})
-#
-#     def apply(self, person_id, squeeze_factor):
-#         df = self.sim.population.props
-#         hs = self.sim.modules["HealthSystem"]
-#
-#         if not df.at[person_id, "is_alive"]:
-#             return hs.get_blank_appt_footprint()
-#
-#         logger.debug(
-#             key="message",
-#             data=f"HSI_Tb_EndOfLifeCare: inpatient admission for {person_id}",
-#         )
+class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is a hospital stay for terminally-ill patients with TB
+    it does not affect disability weight or probability of death
+    no consumables are logged but health system capacity (HR) is allocated
+    there are no consequences if hospital bed is not available as person has scheduled death
+    already within 2 weeks
+    """
+
+    def __init__(self, module, person_id, beddays=8):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Tb)
+
+        self.TREATMENT_ID = "Tb_PalliativeCare"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = "2"
+
+        self.beddays = beddays
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": self.beddays})
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, "is_alive"]:
+            return hs.get_blank_appt_footprint()
+
+        logger.debug(
+            key="message",
+            data=f"HSI_Tb_EndOfLifeCare: inpatient admission for {person_id}",
+        )
 
 class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
     """
