@@ -1035,7 +1035,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--results-path",
         type=Path,
-        help="Directory containing results from running src/scripts/hiv/projections_jan2023/tb_DAH_impact01.py",
+        help="Directory containing results from running src/scripts/hiv/DAH/tb_DAH_scenarios2x.py",
         default=None,
         required=False
     )
