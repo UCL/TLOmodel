@@ -8,9 +8,11 @@ import datetime
 from collections import defaultdict
 from pathlib import Path
 from typing import Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
