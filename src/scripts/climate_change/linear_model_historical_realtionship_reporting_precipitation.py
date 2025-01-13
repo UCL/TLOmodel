@@ -7,6 +7,7 @@ from statsmodels.genmod.families import NegativeBinomial, Poisson
 from statsmodels.genmod.generalized_linear_model import GLM
 from sklearn.preprocessing import StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.feature_selection import SelectKBest, f_regression
 
 ANC = True
 daily_max = False
@@ -17,7 +18,7 @@ if daily_total:
 else:
     five_day = False
     cumulative = False
-
+feature_selection = False
 use_all_weather = True
 min_year_for_analysis = 2012
 absolute_min_year = 2011
@@ -73,16 +74,37 @@ if ANC:
         weather_data_historical = pd.read_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
             index_col=0)
-def build_model(X, y, poisson=False, log_y=False, X_mask_mm=0):
+
+
+def build_model(X, y, poisson=False, log_y=False, X_mask_mm=0, feature_selection=False, k_best=None):
     epsilon = 1
 
+    # Log-transform y with clipping for positivity
     if log_y:
-        y = np.log(np.clip(y, epsilon, None))  # Log-transform y with clipping for positivity
-    mask = (~np.isnan(X).any(axis=1) & ~np.isnan(y) & (
-            X[:, 0] >= X_mask_mm) & (y <= 1e4))
-    model = GLM(y[mask], X[mask], family=NegativeBinomial(), method='nm' ) if poisson else sm.OLS(y[mask], X[mask])
+        y = np.log(np.clip(y, epsilon, None))
+
+        # Apply mask to filter valid data
+    mask = (~np.isnan(X).any(axis=1) & ~np.isnan(y) &
+            (X[:, 0] >= X_mask_mm) & (y <= 1e4))
+    X_filtered, y_filtered = X[mask], y[mask]
+
+    # Feature selection step (optional)
+    if feature_selection:
+        if poisson:
+            raise ValueError("Feature selection using f_regression is only compatible with OLS regression.")
+        selector = SelectKBest(score_func=f_regression, k=k_best or 'all')
+        X_filtered = selector.fit_transform(X_filtered, y_filtered)
+        selected_features = selector.get_support()
+    else:
+        selected_features = np.ones(X.shape[1], dtype=bool)  # Keep all features if no selection
+
+    # Build the model
+    model = GLM(y_filtered, X_filtered, family=NegativeBinomial(), method='nm') if poisson else sm.OLS(y_filtered,
+                                                                                                       X_filtered)
     model_fit = model.fit()
-    return model_fit, model_fit.predict(X[mask]), mask
+
+    return model_fit, model_fit.predict(X_filtered), mask, selected_features
+
 
 def create_binary_feature(threshold, weather_data_df, recent_months):
     binary_feature_list = []
@@ -312,21 +334,48 @@ X_continuous = np.column_stack([
 X_categorical = np.column_stack([
     resid_encoded,
     zone_encoded,
-    dist_encoded,
+    #dist_encoded,
     owner_encoded,
-    ftype_encoded,
+    #ftype_encoded,
     #facility_encoded,
 ])
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
 X_continuous_scaled = X_continuous
 X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
+# Create column names
+# continuous_columns = ['Year', 'Month', 'Altitude', 'Minimum_Distance']
+# categorical_columns = [
+#     f'Resid_{i}' for i in range(resid_encoded.shape[1])
+# ] + [
+#     f'Zone_{i}' for i in range(zone_encoded.shape[1])
+# ] + [
+#     f'Dist_{i}' for i in range(dist_encoded.shape[1])
+# ] + [
+#     f'Owner_{i}' for i in range(owner_encoded.shape[1])
+# ] + [
+#     f'Ftype_{i}' for i in range(ftype_encoded.shape[1])
+# ] + [
+#     f'Facility_{i}' for i in range(facility_encoded.shape[1])
+# ]
+#
+# # Combine into a DataFrame
+# columns = continuous_columns + categorical_columns
+# df_combined = pd.DataFrame(X_ANC_standardized, columns=columns)
+#
+# # Standardize the continuous variables
+# df_combined[continuous_columns] = (df_combined[continuous_columns] - df_combined[continuous_columns].mean()) / df_combined[continuous_columns].std()
+#
+# # Compute the correlation matrix
+# correlation_matrix = df_combined.corr()
+#correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/correlation_matrix_of_predictors.csv')
 
+# Display the correlation matrix
 coefficient_names = ["year", "month"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
                      list(owner_encoded.columns) + list(ftype_encoded.columns) + \
                      list(facility_encoded.columns) + ["altitude", "minimum_distance"]
 coefficient_names = pd.Series(coefficient_names)
-results, y_pred, mask_ANC_data = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold)
+results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
 coefficients = results.params
 coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
 continuous_coefficients = coefficients[:len(X_continuous_scaled[0])]
@@ -403,30 +452,6 @@ plt.tight_layout()
 ##############################################################################################
 
 
-X_weather = np.column_stack([
-    weather_data,
-    np.array(year_flattened),
-    np.array(month_flattened),
-    resid_encoded,
-    zone_encoded,
-    dist_encoded,
-    owner_encoded,
-    ftype_encoded,
-    lag_1_month,
-    lag_2_month,
-    lag_3_month,
-    lag_4_month,
-    lag_9_month,
-    lag_1_5_day,
-    lag_2_5_day,
-    lag_3_5_day,
-    lag_4_5_day,
-    lag_9_5_day,
-    #facility_encoded,
-    np.array(altitude),
-    np.array(minimum_distance),
-    #np.array(above_below_X)[mask_ANC_data],
-])
 #    Continuous columns that need to be standardized (weather_data, lag variables, altitude, minimum_distance)
 X_continuous = np.column_stack([
         weather_data,
@@ -449,9 +474,9 @@ X_continuous = np.column_stack([
 X_categorical = np.column_stack([
         resid_encoded,
         zone_encoded,
-        dist_encoded,
+        #dist_encoded,
         owner_encoded,
-        ftype_encoded,
+        #ftype_encoded,
         #facility_encoded,
         #np.array(above_below_X)[mask_ANC_data],
     ])
@@ -462,8 +487,8 @@ X_continuous_scaled = X_continuous
 
 X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 
-results_of_weather_model, y_pred_weather, mask_all_data = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
-                                                                 X_mask_mm=mask_threshold)
+results_of_weather_model, y_pred_weather, mask_all_data, selected_features = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
+                                                                 X_mask_mm=mask_threshold, feature_selection =  feature_selection)
 
 coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "year", "month"] + \
                             list(resid_encoded.columns) + list(zone_encoded.columns) + \
@@ -492,7 +517,7 @@ results_weather_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/resul
 
 print("All predictors", results_of_weather_model.summary())
 #
-X_filtered = X_weather[mask_all_data]
+X_filtered = X_weather_standardized[mask_all_data]
 
 fig, axs = plt.subplots(1, 2, figsize=(10, 6))
 
@@ -690,9 +715,9 @@ for ssp_scenario in ssp_scenarios:
         X_categorical_ANC = np.column_stack([
                 resid_encoded_prediction,
                 zone_encoded_prediction,
-                dist_encoded_prediction,
+                #dist_encoded_prediction,
                 owner_encoded_prediction,
-                ftype_encoded_prediction,
+                #ftype_encoded_prediction,
                 #facility_encoded_prediction
             ])
 
