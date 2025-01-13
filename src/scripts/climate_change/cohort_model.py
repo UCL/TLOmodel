@@ -90,7 +90,7 @@ year_range = range(min_year, max_year)
 #         plt.plot(year_range, predictions_from_cmip_sum.iloc[0:36, -1] * 100)
 #         plt.xlabel("Percentage Change in ANC cases due to weather")
 #         plt.axhline(y=0, color='black', linestyle='--')
-#
+#         plt.ylim(-12000,0)
 #         # Check for negative values (missed cases?)
 #         negative_sum = np.sum(multiplied_values[multiplied_values < 0])
 #         print("Sum of values < 0:", negative_sum)
@@ -171,21 +171,21 @@ year_range = range(min_year, max_year)
 #             'Multiplied_Values': multiplied_values
 #         })
 #         multiplied_values_df.to_csv(results_folder_to_save/f'multiplied_values_{scenario}_{model_type}.csv', index=False)
+
 #
-# #
-# # # Get unique districts from both sources
-# # adm2_districts = set(grid_clipped_ADM2['ADM2_EN'].unique())
-# # prediction_districts = set(predictions_from_cmip_sum['District'].unique())
-# #
-# # # Districts in ADM2 but not in predictions
-# # missing_in_predictions = adm2_districts - prediction_districts
-# # print("Districts in ADM2 but not in predictions:", missing_in_predictions)
-# #
-# # # Districts in predictions but not in ADM2
-# # missing_in_adm2 = prediction_districts - adm2_districts
-# # print("Districts in predictions but not in ADM2:", missing_in_adm2)
-# #
+# # Get unique districts from both sources
+# adm2_districts = set(grid_clipped_ADM2['ADM2_EN'].unique())
+# prediction_districts = set(predictions_from_cmip_sum['District'].unique())
 #
+# # Districts in ADM2 but not in predictions
+# missing_in_predictions = adm2_districts - prediction_districts
+# print("Districts in ADM2 but not in predictions:", missing_in_predictions)
+#
+# # Districts in predictions but not in ADM2
+# missing_in_adm2 = prediction_districts - adm2_districts
+# print("Districts in predictions but not in ADM2:", missing_in_adm2)
+#
+
 #
 #
 # ## now all grids
@@ -266,121 +266,149 @@ year_range = range(min_year, max_year)
 # plt.suptitle("Percentage Difference Maps by Scenario and Model Type", fontsize=16, y=1.02)
 # plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
 # plt.show()
-#
-# percentage_diff_by_year_district = {}
-#
-# for scenario in scenarios:
-#     for model_type in model_types:
-#         predictions_from_cmip = pd.read_csv(
-#             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
-#         )
-#
-#         predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'District']).sum().reset_index()
-#         predictions_from_cmip_sum.loc[predictions_from_cmip_sum['Difference_in_Expectation'] > 0, 'Difference_in_Expectation'] = 0
-#
-#         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
-#             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
-#         )
-#
-#         # Collect percentage differences by year and district
-#         for year, year_data in predictions_from_cmip_sum.groupby('Year'):
-#             if year not in percentage_diff_by_year_district:
-#                 percentage_diff_by_year_district[year] = {}
-#             for _, row in year_data.iterrows():
-#                 district = row['District']
-#                 percentage_diff = row['Difference_in_Expectation']
-#
-#                 if district not in percentage_diff_by_year_district[year]:
-#                     percentage_diff_by_year_district[year][district] = 0
-#                 percentage_diff_by_year_district[year][district] += percentage_diff
-# data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_district, orient='index').fillna(0)
-#
-# fig, ax = plt.subplots(figsize=(12, 8))
-# data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20')
-# ax.set_xlabel('Year', fontsize=12)
-# ax.set_ylabel('Percentage Difference (%)', fontsize=12)
-# ax.legend(title='District', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
-# plt.tight_layout()
-# plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference.png')
-# plt.show()
-#
-# all_districts = set()
-#
-# for i, scenario in enumerate(scenarios):
-#     for j, model_type in enumerate(model_types):
-#         predictions_from_cmip = pd.read_csv(
-#             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
-#         )
-#
-#         predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'District']).sum().reset_index()
-#         predictions_from_cmip_sum.loc[predictions_from_cmip_sum['Difference_in_Expectation'] > 0, 'Difference_in_Expectation'] = 0
-#
-#         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
-#             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
-#         )
-#
-#         # Create Period column to group years into 5-year intervals
-#         predictions_from_cmip_sum['Period'] = ((predictions_from_cmip_sum['Year'] - 1) // 5) * 5 + 1
-#
-#         # Collect percentage differences by 5-year period and district
-#         for period, period_data in predictions_from_cmip_sum.groupby('Period'):
-#             for _, row in period_data.iterrows():
-#                 district = row['District']
-#                 percentage_diff = row['Difference_in_Expectation']
-#
-#                 if period not in percentage_diff_by_year_district:
-#                     percentage_diff_by_year_district[period] = {}
-#                 if district not in percentage_diff_by_year_district[period]:
-#                     percentage_diff_by_year_district[period][district] = 0
-#                 percentage_diff_by_year_district[period][district] += percentage_diff
-#                 all_districts.add(district)
-#
-#         data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_district, orient='index').fillna(0)
-#
-#         # Plotting the data in the respective subplot
-#         ax = axes[i, j]
-#         data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20', legend=False)
-#         ax.set_title(f"{scenario}: {model_type}", fontsize=10)
-#         if i == len(scenarios) - 1:
-#             ax.set_xlabel('Period (5 years)', fontsize=10)
-#         if j == 0:
-#             ax.set_ylabel('Defecit of ANC services', fontsize=10)
-#
-# # # Create a single legend outside the grid
-# # handles, labels = ax.get_legend_handles_labels()
-# # fig.legend(
-# #     handles,
-# #     labels,
-# #     title="District",
-# #     bbox_to_anchor=(1.02, 0.5),
-# #     loc='center left',
-# #     fontsize=10
-# # )
-#
-# plt.tight_layout(rect=[0, 0, 0.85, 1])  # Leave space for the legend
-# plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend.png')
-# plt.show()
+# Create a figure with a grid layout (2 rows, 3 columns)
+fig, axes = plt.subplots(2, 3, figsize=(18, 12), constrained_layout=True)
 
-significant_results_year = []
+# Initialize variables to track global min/max for color normalization
+global_min = float('inf')
+global_max = float('-inf')
 
-# Assuming 'district' is a column in your data
+# Loop over scenarios and model types to process the data
 for scenario in scenarios:
     for model_type in model_types:
         predictions_from_cmip = pd.read_csv(
             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
         )
-        predictions_from_cmip_sum = predictions_from_cmip.groupby(['District', 'Year']).sum().reset_index()
-        for district in predictions_from_cmip_sum['District'].unique():
-                district_values = predictions_from_cmip_sum[predictions_from_cmip_sum['District'] == district]
-                no_weather_model = district_values['Predicted_No_Weather_Model'].values
-                weather_model = district_values['Predicted_Weather_Model'].values
 
-                # Calculate the difference
-                difference = no_weather_model - weather_model
+        predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'District']).sum().reset_index()
+        predictions_from_cmip_sum.loc[predictions_from_cmip_sum['Difference_in_Expectation'] > 0, 'Difference_in_Expectation'] = 0
 
-                # Perform a one-sample t-test assuming 0 as the null hypothesis mean
-                t_stat, p_value = ttest_1samp(difference, popmean=0)
-                # Print results if p-value is below 0.05 (statistically significant)
-                if p_value < 0.05:
-                    print(f"Scenario: {scenario}, Model Type: {model_type}, District: {district}, "
-                          f"t-stat: {t_stat:.2f}, p-value: {p_value:.4f}")
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        )
+
+        # Collect percentage differences by year and district
+        percentage_diff_by_year_district = {}
+
+        for year, year_data in predictions_from_cmip_sum.groupby('Year'):
+            if year not in percentage_diff_by_year_district:
+                percentage_diff_by_year_district[year] = {}
+            for _, row in year_data.iterrows():
+                district = row['District']
+                percentage_diff = row['Difference_in_Expectation']
+
+                if district not in percentage_diff_by_year_district[year]:
+                    percentage_diff_by_year_district[year][district] = 0
+                percentage_diff_by_year_district[year][district] += percentage_diff
+
+        # Prepare data for plotting
+        data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_district, orient='index').fillna(0)
+
+        # Plot on corresponding subplot
+        ax = axes[scenarios.index(scenario), model_types.index(model_type)]
+        data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20', legend = False)
+
+        ax.set_title(f"{scenario}: {model_type}", fontsize=14)
+        ax.set_xlabel('Year', fontsize=12)
+        ax.set_ylabel('Percentage Difference (%)', fontsize=12)
+
+        # Update global min/max for color scaling
+        local_min = data_for_plot.min().min()
+        local_max = data_for_plot.max().max()
+        global_min = min(global_min, local_min)
+        global_max = max(global_max, local_max)
+
+fig = plt.gcf()
+handles, labels = ax.get_legend_handles_labels()
+fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1.05, 0.5), fontsize=12, title="Districts")
+
+# Adjust the overall layout
+plt.suptitle("Percentage Difference by Year and District", fontsize=16, y=1.02)
+plt.savefig(results_folder_to_save / 'percentage_difference_by_year_district_grid.png')
+plt.show()
+
+
+all_districts = set()
+significant_results_year = []
+#
+# # Assuming 'district' is a column in your data
+# for scenario in scenarios:
+#     for model_type in model_types:
+#         predictions_from_cmip = pd.read_csv(
+#             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+#         )
+#         predictions_from_cmip_sum = predictions_from_cmip.groupby(['District', 'Year']).sum().reset_index()
+#         for district in predictions_from_cmip_sum['District'].unique():
+#                 district_values = predictions_from_cmip_sum[predictions_from_cmip_sum['District'] == district]
+#                 no_weather_model = district_values['Predicted_No_Weather_Model'].values
+#                 weather_model = district_values['Predicted_Weather_Model'].values
+#
+#                 # Calculate the difference
+#                 difference = no_weather_model - weather_model
+#
+#                 # Perform a one-sample t-test assuming 0 as the null hypothesis mean
+#                 t_stat, p_value = ttest_1samp(difference, popmean=0)
+#                 # Print results if p-value is below 0.05 (statistically significant)
+#                 if p_value < 0.05:
+#                     print(f"Scenario: {scenario}, Model Type: {model_type}, District: {district}, "
+#                           f"t-stat: {t_stat:.2f}, p-value: {p_value:.4f}")
+# ## now all grids
+
+# Define the dictionary outside the loop to accumulate data across all iterations
+percentage_diff_by_year_district = {}
+
+# Create the figure and axes grid
+fig, axes = plt.subplots(2, 3, figsize=(18, 12), constrained_layout=True)
+
+all_districts = set()
+
+for i, scenario in enumerate(scenarios):
+    for j, model_type in enumerate(model_types):
+        # Load the data
+        predictions_from_cmip = pd.read_csv(
+            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+        )
+
+        # Summing data by Year and District
+        predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'District']).sum().reset_index()
+
+        # Adjust the 'Difference_in_Expectation' values
+        predictions_from_cmip_sum.loc[predictions_from_cmip_sum['Difference_in_Expectation'] > 0, 'Difference_in_Expectation'] = 0
+
+        # Rename districts
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        )
+
+        # Create Period column to group years into 5-year intervals
+        predictions_from_cmip_sum['Period'] = ((predictions_from_cmip_sum['Year'] - 1) // 5) * 5 + 5
+
+        # Collect percentage differences by 5-year period and district
+        for period, period_data in predictions_from_cmip_sum.groupby('Period'):
+            for _, row in period_data.iterrows():
+                district = row['District']
+                percentage_diff = row['Difference_in_Expectation']
+
+                # Initialize dictionary structure if not already present
+                if period not in percentage_diff_by_year_district:
+                    percentage_diff_by_year_district[period] = {}
+                if district not in percentage_diff_by_year_district[period]:
+                    percentage_diff_by_year_district[period][district] = 0
+                percentage_diff_by_year_district[period][district] += percentage_diff
+                all_districts.add(district)
+
+        # Create a DataFrame for plotting
+        data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_district, orient='index').fillna(0)
+        # Plotting the data in the respective subplot
+        ax = axes[i, j]
+        data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20', legend=False)
+        ax.set_title(f"{scenario}: {model_type}", fontsize=10)
+        if i == len(scenarios) - 1:
+            ax.set_xlabel('Period (5 years)', fontsize=10)
+        if j == 0:
+            ax.set_ylabel('Deficit of ANC services', fontsize=10)
+        if (i == 0) & (j == 2):
+            ax.legend(title="Districts", fontsize=8, title_fontsize=10, bbox_to_anchor=(1.09, 1))
+plt.tight_layout()
+plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend.png')
+plt.show()
