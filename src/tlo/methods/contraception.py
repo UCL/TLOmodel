@@ -8,7 +8,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.hsi_event import HSI_Event
-from tlo.util import random_date, sample_outcome, transition_states
+from tlo.util import random_date, read_csv_files, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -164,7 +164,8 @@ class Contraception(Module):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        workbook = read_csv_files(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception',
+                                  files=None)
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
@@ -1146,12 +1147,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
-
-    @property
-    def EXPECTED_APPT_FOOTPRINT(self):
-        """Return the expected appt footprint based on contraception method and whether the HSI has been rescheduled."""
-        person_id = self.target
         current_method = self.sim.population.props.loc[person_id].co_contraception
+        self.EXPECTED_APPT_FOOTPRINT = self._get_appt_footprint(current_method)
+
+
+    def _get_appt_footprint(self, current_method: str):
+        """Return the appointment footprint based on contraception method and whether the HSI has been rescheduled."""
         if self._number_of_times_run > 0:  # if it is to re-schedule due to unavailable consumables
             return self.make_appt_footprint({})
         # if to switch to a method
@@ -1165,9 +1166,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         elif self.new_contraceptive in ['male_condom', 'other_modern', 'pill']:
             return self.make_appt_footprint({'PharmDispensing': 1})
         else:
+            warnings.warn(
+                "Assumed empty footprint for Contraception Routine appt because couldn't find actual case.",
+                stacklevel=3,
+            )
             return self.make_appt_footprint({})
-            warnings.warn(UserWarning("Assumed empty footprint for Contraception Routine appt because couldn't find"
-                                      "actual case."))
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
@@ -1266,6 +1269,8 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         ):
             self.reschedule()
 
+        return self._get_appt_footprint(current_method)
+
     def post_apply_hook(self):
         self._number_of_times_run += 1
 
@@ -1346,10 +1351,10 @@ class SimplifiedPregnancyAndLabour(Module):
         super().__init__(name='Labour')
 
     def read_parameters(self, *args):
-        parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+        parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].resourcefilepath /
                                             'contraception' /
-                                            'ResourceFile_Contraception.xlsx',
-                                            sheet_name='simplified_labour_parameters')
+                                            'ResourceFile_Contraception',
+                                            files='simplified_labour_parameters')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
