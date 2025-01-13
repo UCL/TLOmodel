@@ -683,9 +683,9 @@ for ssp_scenario in ssp_scenarios:
         X_categorical_weather = np.column_stack([
             resid_encoded_prediction,
             zone_encoded_prediction,
-            dist_encoded_prediction,
+            #dist_encoded_prediction,
             owner_encoded_prediction,
-            ftype_encoded_prediction,
+            #ftype_encoded_prediction,
             #facility_encoded_prediction
         ])
 
