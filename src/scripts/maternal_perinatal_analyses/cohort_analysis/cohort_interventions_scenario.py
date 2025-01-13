@@ -12,11 +12,11 @@ from tlo.scenario import BaseScenario
 class BaselineScenario(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 120589
+        self.seed = 562661
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 6
+        self.number_of_draws = 9
         self.runs_per_draw = 60
 
     def log_configuration(self):
@@ -46,26 +46,27 @@ class BaselineScenario(BaseScenario):
                  mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
-        # if draw_number == 0:
-        #     return {'PregnancySupervisor': {
-        #             'analysis_year': 2024}}
+        if draw_number == 0:
+            return {'PregnancySupervisor': {
+                    'analysis_year': 2024}}
 
-        # else:
+        else:
+            interventions_for_analysis = ['pph_treatment_surg', 'pph_treatment_surg',
+                                          'post_abortion_care_core', 'post_abortion_care_core',
+                                          'birth_kit', 'birth_kit',
+                                          'caesarean_section', 'caesarean_section']
 
-        interventions_for_analysis = ['caesarean_section','caesarean_section',
-                                      'pph_treatment_surg', 'pph_treatment_surg',
-                                      'iron_folic_acid', 'iron_folic_acid']
-
-        avail_for_draw = [0.0, 1.0,
-                          0.0, 1.0,
-                          0.0, 1.0,
-                          ]
+            avail_for_draw = [0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              ]
 
         return {'PregnancySupervisor': {
                 'analysis_year': 2024,
                 'interventions_analysis': True,
-                'interventions_under_analysis':[interventions_for_analysis[draw_number]],
-                'intervention_analysis_availability': avail_for_draw[draw_number]}}
+                'interventions_under_analysis':[interventions_for_analysis[draw_number-1]],
+                'intervention_analysis_availability': avail_for_draw[draw_number-1]}}
 
 
 if __name__ == '__main__':
