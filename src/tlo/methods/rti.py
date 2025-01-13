@@ -23,15 +23,17 @@ from tlo.methods.symptommanager import Symptom
 
 from sdv.single_table import CTGANSynthesizer
 from sdv.single_table import GaussianCopulaSynthesizer
+from sdv.single_table import TVAESynthesizer
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
 # Decide whether to use emulator or not
-use_emulator = False
+use_emulator = True
 
-emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator.pkl'
+#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator.pkl'
+emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -71,9 +73,13 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     # Initialize the counter with all items set to 0
     HS_Use_by_RTI = Counter({col: 0 for col in HS_Use_Type})
     
-    RTI_emulator = GaussianCopulaSynthesizer.load(
+    RTI_emulator = TVAESynthesizer.load(
         filepath=emulator_path
     )
+    
+    #GaussianCopulaSynthesizer.load(
+    #    filepath=emulator_path
+    #)
 
     INJURY_INDICES = range(1, 9)
 
@@ -1568,13 +1574,13 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         haven't then it asks whether they should die away from their injuries
         """
         # Begin modelling road traffic injuries
-        #sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(RTIPollingEvent(self), sim.date + DateOffset(months=0))
         
-        #if use_emulator is False:
+        if use_emulator is False:
             # Begin checking whether the persons injuries are healed
-        #    sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
+            sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
             # Begin checking whether those with untreated injuries die
-        #    sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
+            sim.schedule_event(RTI_Check_Death_No_Med(self), sim.date + DateOffset(months=0))
         
         # Begin logging the RTI events
        # sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
