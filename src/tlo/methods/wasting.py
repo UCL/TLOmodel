@@ -1598,9 +1598,18 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 else:
                     length_df.loc[age_grp, recov_opt] = 0
                 assert not np.isnan(length_df.loc[age_grp, recov_opt])
-                if not all(length > 0 for length in self.module.wasting_length_tracker[age_grp][recov_opt]):
-                    warnings.warn(f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains 0 length;'
-                                  f' {age_grp=}, {recov_opt=}')
+                if recov_opt == 'mod_nat_recov':
+                    if not all(length >= 81 for length in self.module.wasting_length_tracker[age_grp][recov_opt]):
+                        warnings.warn(f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} '
+                                      f'contains length < 3 weeks; {age_grp=}, {recov_opt=}')
+                elif recov_opt in ['mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov', 'sev_SAM_tx_full_recov',
+                                   'mod_SAM_tx_recov_to_MAM', 'sev_SAM_tx_recov_to_MAM']:
+                    if not all(length >= 21 for length in self.module.wasting_length_tracker[age_grp][recov_opt]):
+                        warnings.warn(f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} '
+                                      f'contains length < 3 weeks; {age_grp=}, {recov_opt=}')
+                else:
+                    assert recov_opt in ['mod_not_yet_recovered', 'sev_not_yet_recovered']
+
 
         # Reset the tracker
         self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
