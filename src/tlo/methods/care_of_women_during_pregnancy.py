@@ -238,11 +238,15 @@ class CareOfWomenDuringPregnancy(Module):
              }
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
+        # self.item_codes_preg_consumables['post_abortion_care_core'] = \
+        #     {ic('Misoprostol, tablet, 200 mcg'): 600}
+
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
-            {ic('Misoprostol, tablet, 200 mcg'): 600}
+            {ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 1}
 
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
-            {ic('Complete blood count'): 1,
+            {ic('Misoprostol, tablet, 200 mcg'): 600,
+             ic('Complete blood count'): 1,
              ic('Blood collecting tube, 5 ml'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
              ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
@@ -254,11 +258,12 @@ class CareOfWomenDuringPregnancy(Module):
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_sepsis_core'] = \
             {ic('Benzathine benzylpenicillin, powder for injection, 2.4 million IU'): 8,
-             ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 6,
+             # ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 6,
              }
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
-            {ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
+            {ic('Gentamycin, injection, 40 mg/ml in 2 ml vial'): 6,
+             ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
@@ -268,13 +273,14 @@ class CareOfWomenDuringPregnancy(Module):
         # ------------------------------------------- POST ABORTION CARE - SHOCK ------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_shock'] = \
             {ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
+             # ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              }
 
         self.item_codes_preg_consumables['post_abortion_care_shock_optional'] = \
             {ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              }
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
         self.item_codes_preg_consumables['urine_dipstick'] = {ic('Urine analysis'): 1}
@@ -2522,7 +2528,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'AntenatalCare_PostAbortion'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'  # any hospital?
+        self.ACCEPTED_FACILITY_LEVEL = '2'  # any hospital?
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 3})  # todo: check with TC
 
     def apply(self, person_id, squeeze_factor):
@@ -2583,7 +2589,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
 
         self.TREATMENT_ID = 'AntenatalCare_PostEctopicPregnancy'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})  # todo: check with TC
 
     def apply(self, person_id, squeeze_factor):

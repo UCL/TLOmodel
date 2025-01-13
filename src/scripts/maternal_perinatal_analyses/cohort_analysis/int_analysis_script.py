@@ -107,7 +107,8 @@ results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 interventions =['sepsis_treatment', 'amtsl', 'blood_transfusion',
                 'pph_treatment_uterotonics', 'iv_antihypertensives', 'birth_kit',  'post_abortion_care_core', 'mgso4',
-                'ectopic_pregnancy_treatment', 'pph_treatment_mrrp', 'caesarean_section', 'pph_treatment_surg', 'iron_folic_acid', ]
+                'ectopic_pregnancy_treatment', 'pph_treatment_mrrp', 'caesarean_section', 'pph_treatment_surg',
+                'iron_folic_acid']
 
 int_analysis = ['baseline']
 
