@@ -3,6 +3,7 @@
 #from matplotlib.ticker import FuncFormatter
 #import squarify
 
+import datetime
 from collections import defaultdict
 from pathlib import Path
 from typing import Tuple
@@ -21,7 +22,6 @@ from tlo.analysis.utils import (
     summarize,
     unflatten_flattened_multi_index_in_logging,
 )
-
 
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
