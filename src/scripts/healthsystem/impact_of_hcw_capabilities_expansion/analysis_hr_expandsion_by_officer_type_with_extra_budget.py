@@ -52,6 +52,26 @@ substitute_labels = {
     's_33': 'P = N&M = D = O',
 }
 
+# grouping causes of DALYs and types of treatments
+# cause_group = {
+#     'HIV':,
+#     'TB':,
+#     'malaria':,
+#     'RMNCH':,
+#     'NCDs':'',
+#     'Other':'',
+# }
+# treatment_group = {
+#     'HIV':,
+#     'TB':,
+#     'malaria':,
+#      'RMNCH':,
+#      'NCDs': ,
+#      'Other': ,
+# }
+# cause_group_color = {
+#
+# }
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None,
           the_target_period: Tuple[Date, Date] = None):
