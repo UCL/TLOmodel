@@ -5,7 +5,7 @@ Road traffic injury module.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -1106,11 +1106,11 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'RTI': Cause(gbd_causes='Road injuries', label='Transport Injuries')
     }
 
-    def read_parameters(self, resourcefilepath = None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
 
-        dfd = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
+        dfd = pd.read_excel(resourcefilepath / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries

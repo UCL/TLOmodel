@@ -8,6 +8,9 @@ from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 
+from pathlib import Path
+from typing import Optional
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -90,14 +93,13 @@ class Skeleton(Module):
     # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
     SYMPTOMS = {}
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.store = {'Proportion_infected': []}
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from file, if required.
         To access files use: Path(self.resourcefilepath) / file_name
         """

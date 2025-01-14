@@ -25,7 +25,7 @@ from tlo.methods import (
 # %%
 
 
-resourcefilepath = './resources'
+resourcefilepath = Path('./resources')
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 

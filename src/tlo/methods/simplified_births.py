@@ -5,6 +5,7 @@
 
 import json
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
@@ -101,7 +102,7 @@ class SimplifiedBirths(Module):
             'nb_breastfeeding_status': 'none',
         }
 
-    def read_parameters(self, resourcefilepath = None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
         self.parameters['age_specific_fertility_rates'] = \

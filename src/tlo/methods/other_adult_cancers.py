@@ -7,7 +7,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -211,12 +211,12 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(resourcefilepath) / "ResourceFile_Other_Adult_Cancers.xlsx",
+            pd.read_excel(resourcefilepath / "ResourceFile_Other_Adult_Cancers.xlsx",
                           sheet_name="parameter_values")
         )
 

@@ -221,10 +221,10 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                                                      'or had a last pregnancy less than one year ago')
     }
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Depression.xlsx',
+            pd.read_excel(resourcefilepath / 'ResourceFile_Depression.xlsx',
                           sheet_name='parameter_values')
         )
         p = self.parameters

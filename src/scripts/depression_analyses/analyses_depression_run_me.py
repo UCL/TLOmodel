@@ -18,6 +18,7 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
+from pathlib import Path
 
 
 def run():
@@ -38,12 +39,12 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 7, 1)
-    pop_size = 1000
+    end_date = Date(2014, 7, 1)
+    pop_size = 10000
 
 
     # Path to the resource files used by the disease and intervention methods
-    resourcefilepath = "./resources"
+    resourcefilepath = Path("./resources")
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.

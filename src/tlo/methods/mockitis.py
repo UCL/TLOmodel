@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
+from pathlib import Path
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -89,7 +90,7 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
 
         super().__init__(name)
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read in parameters and do the registration of this module and its symptoms"""
 
         p = self.parameters

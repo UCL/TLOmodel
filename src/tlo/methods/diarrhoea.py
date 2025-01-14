@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -513,14 +513,14 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         self.consumables_used_in_hsi = dict()
         self.do_checks = do_checks
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         """ Setup parameters values used by the module"""
         p = self.parameters
 
         # Read parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(
-                Path(resourcefilepath) / 'ResourceFile_Diarrhoea.xlsx', sheet_name='Parameter_values')
+                resourcefilepath / 'ResourceFile_Diarrhoea.xlsx', sheet_name='Parameter_values')
         )
 
         # Check that every value has been read-in successfully
@@ -1606,7 +1606,7 @@ class DiarrhoeaPropertiesOfOtherModules(Module):
     def __init__(self, name=None):
         super().__init__(name)
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         pass
 
     def initialise_population(self, population):

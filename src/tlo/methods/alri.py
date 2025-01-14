@@ -24,7 +24,7 @@ from __future__ import annotations
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -822,13 +822,13 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         # Pointer to store the logging event used by this module
         self.logging_event = None
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * Setup parameters values used by the module
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
+            pd.read_excel(resourcefilepath / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
         )
 
         self.check_params_read_in_ok()
@@ -2951,7 +2951,7 @@ class AlriPropertiesOfOtherModules(Module):
                                                    categories=['MAM', 'SAM', 'well']),
     }
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):

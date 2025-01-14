@@ -15,7 +15,7 @@ from __future__ import annotations
 import math
 from itertools import combinations
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -255,7 +255,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         self.lms_event_death = dict()
         self.lms_event_symptoms = dict()
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
         ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
@@ -272,7 +272,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         ResourceFile_cmd_events_hsi.xlsx  = HSI parameters for events
 
         """
-        cmd_path = Path(resourcefilepath) / "cmd"
+        cmd_path = resourcefilepath / "cmd"
         cond_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_onset.xlsx", sheet_name=None)
         cond_removal = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_removal.xlsx", sheet_name=None)
         cond_death = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_death.xlsx", sheet_name=None)

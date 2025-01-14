@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -141,7 +141,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antiepileptic'
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from file, if required.
 
         Here we just assign parameter values explicitly.
@@ -150,7 +150,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
           Typically modules would read a particular file within here.
         """
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy.xlsx',
+        dfd = pd.read_excel(resourcefilepath / 'epilepsy' / 'ResourceFile_Epilepsy.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 

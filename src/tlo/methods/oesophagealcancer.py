@@ -9,7 +9,7 @@ Limitations to note:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 
@@ -212,11 +212,11 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         ),
     }
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, register it with healthsystem and register symptoms"""
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
+            pd.read_excel(resourcefilepath / "ResourceFile_Oesophageal_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 

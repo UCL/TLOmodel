@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from typing import Optional
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
@@ -159,11 +160,11 @@ class Contraception(Module):
         self._women_ids_sterilized_below30 = set()  # The ids of women who had female sterilization initiated when they
         #                                             were less than 30 years old.
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = read_csv_files(Path(resourcefilepath) / 'contraception' / 'ResourceFile_Contraception',
+        workbook = read_csv_files(resourcefilepath / 'contraception' / 'ResourceFile_Contraception',
                                   files=None)
 
         # Import selected sheets from the workbook as the parameters
@@ -188,12 +189,12 @@ class Contraception(Module):
 
         # Declare values for other parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            Path(resourcefilepath) / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
+            resourcefilepath / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
         ))
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(Path(resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
         pop_2010 = self.sim.modules["Demography"].parameters["pop_2010"]
@@ -1349,8 +1350,8 @@ class SimplifiedPregnancyAndLabour(Module):
     def __init__(self, *args):
         super().__init__(name='Labour')
 
-    def read_parameters(self, resourcefilepath=None):
-        parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].Path(resourcefilepath) /
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
+        parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].resourcefilepath /
                                              'contraception' /
                                              'ResourceFile_Contraception',
                                              files='simplified_labour_parameters')

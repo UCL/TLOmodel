@@ -118,11 +118,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 s.loc[(s.index >= low_limit) & (s.index <= high_limit)] = name
         self.age_group_mapper = s.to_dict()
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameters and register symptoms."""
 
         # Load parameters
-        workbook = read_csv_files(Path(resourcefilepath) / 'ResourceFile_Schisto', files=None)
+        workbook = read_csv_files(resourcefilepath / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
         for _spec in self.species.values():
             self.parameters.update(_spec.load_parameters_from_workbook(workbook))

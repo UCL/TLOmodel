@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -95,7 +95,7 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
 
         super().__init__(name)
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from file, if required.
         For now, we are going to hard code them explicity.
         Register the module with the health system and register the symptoms

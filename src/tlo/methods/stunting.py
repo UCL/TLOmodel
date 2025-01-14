@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -146,10 +146,9 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
         self.models = None  # (Will store the models used in the module)
         self.cons_item_codes = None  # (Will store consumable item codes)
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         self.load_parameters_from_dataframe(
-            pd.read_excel(
-                Path(resourcefilepath) / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
+            pd.read_excel(resourcefilepath / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
         )
 
     def initialise_population(self, population):

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from typing import Optional
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin
@@ -308,9 +309,9 @@ class NewbornOutcomes(Module):
         'nb_pnc_check': Property(Types.INT, 'Number of postnatal checks received in the postnatal period'),
     }
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        parameter_dataframe = read_csv_files(Path(resourcefilepath) / 'ResourceFile_NewbornOutcomes',
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_NewbornOutcomes',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 

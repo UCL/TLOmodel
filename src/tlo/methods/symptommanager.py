@@ -223,12 +223,12 @@ class SymptomManager(Module):
         """get the column name that corresponds to the symptom_name"""
         return f'sy_{symptom_name}'
 
-    def read_parameters(self, resourcefilepath = None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
-            pd.read_csv(Path(resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+            pd.read_csv(resourcefilepath / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
         self.load_parameters_from_dataframe(
-            pd.read_csv(Path(resourcefilepath) / 'ResourceFile_SymptomManager.csv'))
+            pd.read_csv(resourcefilepath / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """

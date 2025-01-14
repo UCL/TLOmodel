@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from typing import Optional
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -70,9 +71,9 @@ class Epi(Module):
         self.all_doses = dict()
         self.cons_item_codes = dict()  # (will store dict giving item_codes for each vaccine)
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
-        workbook = read_csv_files(Path(resourcefilepath) / 'ResourceFile_EPI_WHO_estimates', files=None)
+        workbook = read_csv_files(resourcefilepath / 'ResourceFile_EPI_WHO_estimates', files=None)
 
         self.load_parameters_from_dataframe(workbook["parameters"])
 

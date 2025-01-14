@@ -8,7 +8,7 @@ The write-up of these estimates is: Health-seeking behaviour estimates for adult
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -120,10 +120,10 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
             assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
         self.arg_force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
-    def read_parameters(self, resourcefilepath = None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read in ResourceFile"""
         # Load parameters from resource file:
-        wb = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
+        wb = pd.read_csv(resourcefilepath / 'ResourceFile_HealthSeekingBehaviour.csv')
         wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'] = \
             wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'].apply(pd.eval)
         # <-- Needed to prevent the contents being stored as strings

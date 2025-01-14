@@ -8,6 +8,7 @@ for a given set of parameters using outputs from the demography (deaths), HIV an
 import math
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
@@ -45,7 +46,7 @@ class Deviance(Module):
     # No properties to declare
     PROPERTIES = {}
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Make a dict of all data to be used in calculating calibration score"""
 
         # # HIV read in resource files for data
@@ -89,7 +90,7 @@ class Deviance(Module):
 
         # TB
         # TB WHO data: 2010-
-        xls_tb = read_csv_files(Path(resourcefilepath) / "ResourceFile_TB", files=None)
+        xls_tb = read_csv_files(resourcefilepath / "ResourceFile_TB", files=None)
 
         # TB active incidence per 100k 2010-2017
         data_tb_who = xls_tb["WHO_activeTB2023"]

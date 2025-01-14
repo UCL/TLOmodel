@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from typing import Optional
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -175,8 +176,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                    'caesarean_now', 'caesarean_future', 'avd_now']),
     }
 
-    def read_parameters(self, resourcefilepath=None):
-        parameter_dataframe = read_csv_files(Path(resourcefilepath) / 'ResourceFile_AntenatalCare',
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_AntenatalCare',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 

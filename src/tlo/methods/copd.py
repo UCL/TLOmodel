@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pandas as pd
 
@@ -141,9 +141,9 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         self.models = None  # Will hold pointer to helper class containing models
         self.item_codes = None  # Will hold dict containing the item_codes for consumables needed in the HSI Events.
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         """ Read all parameters and define symptoms (if any)"""
-        self.load_parameters_from_dataframe(pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Copd.csv'))
+        self.load_parameters_from_dataframe(pd.read_csv(resourcefilepath / 'ResourceFile_Copd.csv'))
         self.define_symptoms()
 
     def pre_initialise_population(self):

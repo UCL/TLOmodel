@@ -5,6 +5,7 @@
 """
 from functools import reduce
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
@@ -389,7 +390,7 @@ class Tb(Module):
         )
     }
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         """
         * 1) Reads the ResourceFiles
         * 2) Declares the DALY weights
@@ -397,7 +398,7 @@ class Tb(Module):
         """
 
         # 1) Read the ResourceFiles
-        workbook = read_csv_files(Path(resourcefilepath)/"ResourceFile_TB", files=None)
+        workbook = read_csv_files(resourcefilepath/"ResourceFile_TB", files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
@@ -3180,7 +3181,7 @@ class DummyTbModule(Module):
         super().__init__(name)
         self.active_tb_prev = active_tb_prev
 
-    def read_parameters(self, resourcefilepath=None):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):

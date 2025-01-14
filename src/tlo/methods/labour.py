@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import pandas as pd
@@ -618,8 +618,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                              'the postnatal period'),
     }
 
-    def read_parameters(self, resourcefilepath=None):
-        parameter_dataframe = read_csv_files(Path(resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_LabourSkilledBirth'
                                                                           'Attendance',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
