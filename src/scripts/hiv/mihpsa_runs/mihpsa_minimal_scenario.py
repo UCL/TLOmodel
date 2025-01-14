@@ -52,9 +52,9 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2051, 1, 1)
         self.pop_size = 100_000
-        self.scenarios = [1, 2, 3, 4, 5, 6, 7]
+        self.scenarios = [1, 2, 3, 4, 5, 6, 7, 8]
         self.number_of_draws = len(self.scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 3
 
     def log_configuration(self):
         return {
@@ -65,6 +65,7 @@ class TestScenario(BaseScenario):
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
             }
         }
 

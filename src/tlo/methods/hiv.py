@@ -1196,6 +1196,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
+            # reduce prob VL suppression by 1/1.39 if no VL monitoring
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * 1 / \
+                                                                     updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
 
         # oral prep 15-24 yr old girls
         if p['select_mihpsa_scenario'] == 2:
@@ -1205,12 +1210,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * 1 / \
+                                                                     updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
             p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
                 "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
-            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
+                "probability_of_being_retained_on_prep_every_3_months"]
 
         # oral prep FSW
         if p['select_mihpsa_scenario'] == 3:
@@ -1219,12 +1228,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
-
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * 1 / \
+                                                                     updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
             p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
                 "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
-            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
+                "probability_of_being_retained_on_prep_every_3_months"]
 
         # CAB-LA prep 15-24 yr old girls
         if p['select_mihpsa_scenario'] == 4:
@@ -1234,11 +1247,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * 1 / \
+                                                                     updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
             p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
-            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
+                "probability_of_being_retained_on_prep_every_3_months"]
 
         # CAB-LA prep FSW
         if p['select_mihpsa_scenario'] == 5:
@@ -1247,11 +1264,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
-
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * 1 / \
+                                                                     updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
             p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
-            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params["probability_of_being_retained_on_prep_every_3_months"]
+            p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
+                "probability_of_being_retained_on_prep_every_3_months"]
 
         # HIV self-testing
         if p['select_mihpsa_scenario'] == 6:
@@ -1261,18 +1282,37 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * 1 / \
+                                                                     updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"]["annual_testing_rate_adults"] * \
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * \
                                                                    updated_params["rr_hiv_self_testing"]
 
         # VMMC
         if p['select_mihpsa_scenario'] == 7:
             # - switch other interventions off
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * 1 / \
+                                                                     updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
             # don't need to do anything here, default value allows VMMC
+
+        # Viral load monitoring
+        if p['select_mihpsa_scenario'] == 8:
+            # - switch other interventions off
+            p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
+            p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+            # - switch on candidate intervention
+            # don't need to do anything here, default value allows VL monitoring with prob viral suppression at default
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
@@ -3020,7 +3060,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
+        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p[
+            'interval_for_viral_load_measurement_months']:
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Log the VL test: line-list of summary information about each test
