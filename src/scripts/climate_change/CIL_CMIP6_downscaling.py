@@ -149,7 +149,7 @@ base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/D
 nc_file_directory = os.path.join(base_dir, 'nc_files')
 # NB these are daily
 scenarios = ["ssp245", "ssp585"]
-
+scenarios = ["spp585"]
 data_by_model_and_grid = {}
 for scenario in scenarios:
     print(scenario)
@@ -162,9 +162,9 @@ for scenario in scenarios:
     file_pattern = os.path.join(file_path_downscaled, "CIL_subset_ssp245_*.nc")
     data_all_models = xr.open_mfdataset(file_pattern, combine='nested', concat_dim="time")
     data_all_models.compute()
-
-    data_all_models.to_netcdf(output_file)
-    #data_all_models = xr.open_dataset(file_path_downscaled)
+    #output_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/"
+    #output_path = os.path.join(output_dir, output_file)
+    #data_all_models.to_netcdf(output_path)
 
     ## Get models of interest - min, med, max
     # Assuming 'pr' is the variable representing precipitation in the dataset
@@ -186,7 +186,6 @@ for scenario in scenarios:
     max_model = max_model_object.values.item()
 
     models_of_interest = [min_model, median_model, max_model]
-    #models_of_interest = [median_model]
 
     print("Models of interest", models_of_interest)
     # see which facilities have reporting data and data on latitude and longitude
