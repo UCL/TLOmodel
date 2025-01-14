@@ -22,6 +22,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.util import read_csv_files
 
 # %%
 outputpath = Path("./outputs")
@@ -141,14 +142,14 @@ start_date = 2010
 end_date = 2026
 
 # import GBD data for Malawi's ALRI burden estimates
-GBD_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
-    sheet_name="GBD_Malawi_estimates",
+GBD_data = read_csv_files(
+    Path(resourcefilepath) / "ResourceFile_Alri",
+    files="GBD_Malawi_estimates",
     )
 # import McAllister estimates for Malawi's ALRI incidence
-McAllister_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
-    sheet_name="McAllister_2019",
+McAllister_data = read_csv_files(
+    Path(resourcefilepath) / "ResourceFile_Alri",
+    files="McAllister_2019",
     )
 
 plt.style.use("ggplot")
