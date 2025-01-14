@@ -18,8 +18,8 @@ from matplotlib import pyplot as plt
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
     Minute_Salary_by_Cadre_Level,
-    extra_budget_fracs,
     avg_increase_rate_exp,
+    extra_budget_fracs,
 )
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.scenario_of_expanding_current_hcw_by_officer_type_with_extra_budget import (
     HRHExpansionByCadreWithExtraBudget,
