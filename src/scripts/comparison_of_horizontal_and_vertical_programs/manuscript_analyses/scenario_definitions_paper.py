@@ -91,7 +91,7 @@ class ScenarioDefinitions:
     def hrh_using_historical_scaling(self) -> Dict:
         return {
             'HealthSystem': {
-                'yearly_HR_scaling_mode': 'historical_scaling',
+                'yearly_HR_scaling_mode': 'historical_scaling_maintained',
                 # This uses historical trends in HRH scale-up to 2023, then uses 2023 values fixed to 2030
             }
         }

@@ -229,7 +229,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     }
 
     def read_parameters(self, data_folder):
-        # workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
         workbook = read_csv_files(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria', files=None)
         self.load_parameters_from_dataframe(workbook['parameters'])
 
