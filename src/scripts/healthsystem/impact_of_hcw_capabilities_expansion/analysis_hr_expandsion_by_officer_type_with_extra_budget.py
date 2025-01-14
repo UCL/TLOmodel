@@ -1026,7 +1026,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         use_increased = use.subtract(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
 
-        use_increase_percent = use.subtract(use.loc['s_0', :], axis=1).divide(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
+        # use_increase_percent = use.subtract(use.loc['s_0', :], axis=1).divide(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
 
         return use, use_increased
 
@@ -1493,7 +1493,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot mean and predicted DALYs from regression analysis
     # name_of_plot = f'DALYs-averted simulated vs predicted from linear regression on extra budget allocation'
-    name_of_plot = f'DALYs-averted simulated vs predicted from linear regression on HRH increase rate (exp)'
+    name_of_plot = 'DALYs-averted simulated vs predicted from linear regression on HRH increase rate (exp)'
     fig, ax = plt.subplots(figsize=(9, 6))
     data_to_plot = regression_data[['mean', 'predicted']] * 100
     data_to_plot['strategy'] = data_to_plot.index
