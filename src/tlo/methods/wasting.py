@@ -901,6 +901,8 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
             not (df.at[person_id, 'un_am_discharge_date'] > df.at[person_id, 'un_am_tx_start_date']) and
             not pd.isnull(df.at[person_id, 'un_sam_death_date'])
         ):
+            if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
+                warnings.warn(f"{person_id=},\n{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
             assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
             # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
