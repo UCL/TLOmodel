@@ -67,8 +67,8 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.YEAR_OF_HRH_EXPANSION = 2025
         # The start year to expand HRH by cadre given the extra budget, which is after the historical HRH scaling
 
-        self.scenarios = extra_budget_fracs.drop(columns='s_0')
-        # Run 'gap' scenario that's based on "historical scaling" + baseline of baseline settings
+        self.scenarios = extra_budget_fracs['s_*'].to_frame()
+        # Run 'optimal' scenario for main analysis
 
         # Baseline settings for change
         self.cons_availability = ['all', 'default']
@@ -76,11 +76,11 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.hs_function = [[False, False], [False, True]]
 
         self.baselines = {
-            # 'baseline': self._baseline_of_baseline(),  # test historical scaling changes first
+            'baseline': self._baseline_of_baseline(),  # test historical scaling changes first
             # 'default_cons': self._baseline_default_cons(),
             # 'more_budget': self._baseline_more_budget(),  # turn off when run baseline scenarios with no expansion
             # 'less_budget': self._baseline_less_budget(),  # turn off when run baseline scenarios with no expansion
-            'max_hs_function': self._baseline_max_hs_function(),
+            # 'max_hs_function': self._baseline_max_hs_function(),
         }
 
         return {
