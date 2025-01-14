@@ -21,7 +21,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
@@ -71,19 +71,6 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     }
 
     PARAMETERS = {
-        'interv': Parameter(Types.REAL, 'data frame of intervention coverage by year'),
-        'clin_inc': Parameter(
-            Types.REAL,
-            'data frame of clinical incidence by age, district, intervention coverage',
-        ),
-        'inf_inc': Parameter(
-            Types.REAL,
-            'data frame of infection incidence by age, district, intervention coverage',
-        ),
-        'sev_inc': Parameter(
-            Types.REAL,
-            'data frame of severe case incidence by age, district, intervention coverage',
-        ),
         'itn_district': Parameter(
             Types.REAL, 'data frame of ITN usage rates by district'
         ),
@@ -242,13 +229,13 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
     }
 
     def read_parameters(self, data_folder):
-        workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+        # workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+        workbook = read_csv_files(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria', files=None)
         self.load_parameters_from_dataframe(workbook['parameters'])
 
         p = self.parameters
 
         # baseline characteristics
-        p['interv'] = workbook['interventions']
         p['itn_district'] = workbook['MAP_ITNrates']
         p['irs_district'] = workbook['MAP_IRSrates']
 
@@ -256,9 +243,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         p['rdt_testing_rates'] = workbook['WHO_TestData2023']
         p['highrisk_districts'] = workbook['highrisk_districts']
 
-        p['inf_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
-        p['clin_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
-        p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
+        inf_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
+        clin_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
+        sev_inc_sheet = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # load parameters for scale-up projections
         p['scaleup_parameters'] = workbook["scaleup_parameters"]
@@ -297,13 +284,13 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         # ===============================================================================
         # put the all incidence data into single table with month/admin/llin/irs index
         # ===============================================================================
-        inf_inc = p['inf_inc'].set_index(['month', 'admin', 'llin', 'irs', 'age'])
+        inf_inc = inf_inc_sheet.set_index(['month', 'admin', 'llin', 'irs', 'age'])
         inf_inc = inf_inc.loc[:, ['monthly_prob_inf']]
 
-        clin_inc = p['clin_inc'].set_index(['month', 'admin', 'llin', 'irs', 'age'])
+        clin_inc = clin_inc_sheet.set_index(['month', 'admin', 'llin', 'irs', 'age'])
         clin_inc = clin_inc.loc[:, ['monthly_prob_clin']]
 
-        sev_inc = p['sev_inc'].set_index(['month', 'admin', 'llin', 'irs', 'age'])
+        sev_inc = sev_inc_sheet.set_index(['month', 'admin', 'llin', 'irs', 'age'])
         sev_inc = sev_inc.loc[:, ['monthly_prob_sev']]
 
         all_inc = pd.concat([inf_inc, clin_inc, sev_inc], axis=1)
@@ -600,7 +587,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(years=1))
         # todo reinstate if needed
-        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(years=1))
+        # sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Optional: Schedule the scale-up of programs
         if self.parameters["type_of_scaleup"] != 'none':
@@ -644,7 +631,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         self.item_codes_for_consumables_required['paracetamol'] = get_item_code('Paracetamol 500mg_1000_CMST')
 
         # malaria treatment complicated - same consumables for adults and children
-        self.item_codes_for_consumables_required['malaria_complicated'] = get_item_code('Injectable artesunate')
+        self.item_codes_for_consumables_required['malaria_complicated_artesunate'] = get_item_code('Injectable artesunate')
 
         self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = [
             get_item_code('Malaria test kit (RDT)'),
@@ -656,7 +643,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         # malaria IPTp for pregnant women
         self.item_codes_for_consumables_required['malaria_iptp'] = get_item_code(
-            'Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg'
+            'Fansidar (sulphadoxine / pyrimethamine tab)'
         )
 
     def update_parameters_for_program_scaleup(self):
@@ -885,6 +872,7 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
                     schedule_hsi_event(
                         event, priority=0, topen=self.sim.date
                     )
+
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1248,25 +1236,30 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         whether drugs were available"""
 
         # non-complicated malaria
-        # paracetamol liquid 5ml, 3x per day, 3 days
         if age_of_person < 5:
             # Formulation for young children
+            # 5–14kg: 1 tablet(120mg Lumefantrine / 20mg Artemether) every 12 hours for 3 days
+            # paracetamol syrup in 1ml doses, 10ml 4x per day, 3 days
             drugs_available = self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children']: 6},
-                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 45,
-                self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 120,
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         elif 5 <= age_of_person <= 15:
             # Formulation for older children
+            # 35–44 kg: 4 tablets every 12 hours for 3 days
+            # paracetamol syrup in 1ml doses, 15ml 4x per day, 3 days
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 12},
-                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 45,
+                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 24},
+                optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 180,
                                      self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
 
         else:
             # Formulation for adults
+            # 4 tablets every 12 hours for 3 day
+            # paracetamol in 1 mg doses, 4g per day for 3 days
             drugs_available = self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult']: 24},
                 optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol']: 12_000,
@@ -1307,8 +1300,11 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                          data=f'HSI_Malaria_Treatment_Complicated: requesting complicated malaria treatment for '
                               f' {person_id}')
 
+            # dosage in 60mg artesunate ampoules
+            # First dose: 2.4 mg/kg × 25 kg = 60 mg (administered IV or IM).
+            # Repeat 60 mg after 12 hours and then again at 24 hours.
             if self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required['malaria_complicated'],
+                item_codes={self.module.item_codes_for_consumables_required['malaria_complicated_artesunate']: 3},
                 optional_item_codes=self.module.item_codes_for_consumables_required[
                     'malaria_complicated_optional_items']
             ):
@@ -1337,6 +1333,12 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                 )
                 # todo reinstate if needed
                 # logger.info(key='rdt_log', data=person_details_for_test)
+
+                # schedule ACT to follow inpatient care, this is delivered through outpatient facility
+                continue_to_treat = HSI_Malaria_Treatment(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    continue_to_treat, priority=1, topen=self.sim.date, tclose=None
+                )
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -1372,6 +1374,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                      data=f'HSI_MalariaIPTp: requesting IPTp for person {person_id}')
 
         # request the treatment
+        # dosage is one tablet
         if self.get_consumables(self.module.item_codes_for_consumables_required['malaria_iptp']):
             logger.debug(key='message',
                          data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
@@ -1748,8 +1751,7 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        # todo make monthly if needed
-        self.repeat = 12
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):

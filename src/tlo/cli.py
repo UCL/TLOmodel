@@ -4,24 +4,27 @@ import datetime
 import json
 import math
 import os
+import pickle
 import tempfile
 from collections import defaultdict
 from pathlib import Path
+from shutil import copytree
 from typing import Dict
 
 import click
 import dateutil.parser
 import pandas as pd
 from azure import batch
-from azure.batch import batch_auth
 from azure.batch import models as batch_models
 from azure.batch.models import BatchErrorException
+from azure.common.credentials import ServicePrincipalCredentials
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from azure.storage.fileshare import ShareClient, ShareDirectoryClient, ShareFileClient
 from git import Repo
 
+from tlo.analysis.utils import parse_log_file
 from tlo.scenario import SampleRunner, ScenarioLoader
 
 JOB_LABEL_PADDING = len("State transition time")
@@ -38,6 +41,7 @@ def cli(ctx, config_file, verbose):
     * submit scenarios to batch system
     * query batch system about job and tasks
     * download output results for completed job
+    * combine runs from multiple batch jobs with same draws
     """
     ctx.ensure_object(dict)
     ctx.obj["config_file"] = config_file
@@ -88,6 +92,21 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None, scenari
     else:
         runner.run()
 
+@cli.command()
+@click.argument("LOG_DIRECTORY", type=click.Path(exists=True))
+def parse_log(log_directory):
+    assert os.path.isdir(log_directory), f"{log_directory} must be a directory"
+
+    path = Path(log_directory)
+
+    log_files = list(path.glob("*.log"))
+    assert len(log_files) == 1, f"directory {log_directory} must contain exactly one file with extension .log"
+
+    outputs = parse_log_file(log_files[0])
+    for key, output in outputs.items():
+        if key.startswith("tlo."):
+            with open(path / f"{key}.pickle", "wb") as f:
+                pickle.dump(output, f)
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
@@ -132,9 +151,7 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
 
     create_file_share(
@@ -239,6 +256,7 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
     pip install -r requirements/base.txt
     env | grep "^AZ_" | while read line; do echo "$line"; done
     {py_opt} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    tlo --config-file tlo.example.conf parse-log {working_dir}/{{draw_number}}/{{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
@@ -247,8 +265,16 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
 
     try:
         # Create the job that will run the tasks.
-        create_job(batch_client, vm_size, pool_node_count, job_id,
-                   container_conf, [mount_configuration], keep_pool_alive)
+        create_job(
+            batch_client,
+            vm_size,
+            pool_node_count,
+            job_id,
+            container_conf,
+            [mount_configuration],
+            keep_pool_alive,
+            config["BATCH"]["SUBNET_ID"],
+        )
 
         # Add the tasks to the job.
         add_tasks(batch_client, user_identity, job_id, image_name,
@@ -297,9 +323,7 @@ def batch_terminate(ctx, job_id):
         return
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
 
     # check the job is running
@@ -331,10 +355,9 @@ def batch_job(ctx, job_id, raw, show_tasks):
     print(">Querying batch system\r", end="")
     config = load_config(ctx.obj['config_file'])
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
+
     tasks = None
 
     try:
@@ -402,9 +425,7 @@ def batch_list(ctx, status, n, find, username):
         username = config["DEFAULT"]["USERNAME"]
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["CLIENT_ID"], config["BATCH"]["SECRET"], config["AZURE"]["TENANT_ID"], config["BATCH"]["URL"]
     )
 
     # create client to connect to file share
@@ -581,9 +602,12 @@ def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
     return {"STORAGE": storage_config, "BATCH": batch_config, "REGISTRY": registry_config}
 
 
-def get_batch_client(name, key, url):
+def get_batch_client(client_id, secret, tenant_id, url):
     """Create a Batch service client"""
-    credentials = batch_auth.SharedKeyCredentials(name, key)
+    resource = "https://batch.core.windows.net/"
+
+    credentials = ServicePrincipalCredentials(client_id=client_id, secret=secret, tenant=tenant_id, resource=resource)
+
     batch_client = batch.BatchServiceClient(credentials, batch_url=url)
     return batch_client
 
@@ -697,10 +721,19 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
         print("ResourceNotFoundError:", ex.message)
 
 
-def create_job(batch_service_client, vm_size, pool_node_count, job_id,
-               container_conf, mount_configuration, keep_pool_alive):
+def create_job(
+    batch_service_client,
+    vm_size,
+    pool_node_count,
+    job_id,
+    container_conf,
+    mount_configuration,
+    keep_pool_alive,
+    subnet_id,
+):
     """Creates a job with the specified ID, associated with the specified pool.
 
+    :param subnet_id:
     :param batch_service_client: A Batch service client.
     :type batch_service_client: `azure.batch.BatchServiceClient`
     :param str vm_size: Type of virtual machine to use as pool.
@@ -740,6 +773,11 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     $NodeDeallocationOption = taskcompletion;
     """
 
+    network_configuration = batch_models.NetworkConfiguration(
+        subnet_id=subnet_id,
+        public_ip_address_configuration=batch_models.PublicIPAddressConfiguration(provision="noPublicIPAddresses"),
+    )
+
     pool = batch_models.PoolSpecification(
         virtual_machine_configuration=virtual_machine_configuration,
         vm_size=vm_size,
@@ -747,6 +785,8 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
         task_slots_per_node=1,
         enable_auto_scale=True,
         auto_scale_formula=auto_scale_formula,
+        network_configuration=network_configuration,
+        target_node_communication_mode="simplified",
     )
 
     auto_pool_specification = batch_models.AutoPoolSpecification(
@@ -806,5 +846,69 @@ def add_tasks(batch_service_client, user_identity, job_id,
     batch_service_client.task.add_collection(job_id, tasks)
 
 
-if __name__ == '__main__':
+@cli.command()
+@click.argument(
+    "output_results_directory",
+    type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
+)
+@click.argument(
+    "additional_result_directories",
+    nargs=-1,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+def combine_runs(output_results_directory: Path, additional_result_directories: tuple[Path]) -> None:
+    """Combine runs from multiple batch jobs locally.
+
+    Merges runs from each draw in one or more additional results directories in
+    to corresponding draws in output results directory.
+
+    All results directories must contain same draw numbers and the draw numbers
+    must be consecutive integers starting from 0. All run numbers in the output
+    result directory draw directories must be consecutive integers starting
+    from 0.
+    """
+    if len(additional_result_directories) == 0:
+        msg = "One or more additional results directories to merge must be specified"
+        raise click.UsageError(msg)
+    results_directories = (output_results_directory,) + additional_result_directories
+    draws_per_directory = [
+        sorted(
+            int(draw_directory.name)
+            for draw_directory in results_directory.iterdir()
+            if draw_directory.is_dir()
+        )
+        for results_directory in results_directories
+    ]
+    for draws in draws_per_directory:
+        if not draws == list(range(len(draws_per_directory[0]))):
+            msg = (
+                "All results directories must contain same draws, "
+                "consecutively numbered from 0."
+            )
+            raise click.UsageError(msg)
+    draws = draws_per_directory[0]
+    runs_per_draw = [
+        sorted(
+            int(run_directory.name)
+            for run_directory in (output_results_directory / str(draw)).iterdir()
+            if run_directory.is_dir()
+        )
+        for draw in draws
+    ]
+    for runs in runs_per_draw:
+        if not runs == list(range(len(runs))):
+            msg = "All runs in output directory must be consecutively numbered from 0."
+            raise click.UsageError(msg)
+    for results_directory in additional_result_directories:
+        for draw in draws:
+            run_counter = len(runs_per_draw[draw])
+            for source_path in sorted((results_directory / str(draw)).iterdir()):
+                if not source_path.is_dir():
+                    continue
+                destination_path = output_results_directory / str(draw) / str(run_counter)
+                run_counter = run_counter + 1
+                copytree(source_path, destination_path)
+
+
+if __name__ == "__main__":
     cli(obj={})
