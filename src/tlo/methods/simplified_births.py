@@ -111,7 +111,7 @@ class SimplifiedBirths(Module):
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
-        rf = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx')
+        rf = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes/parameter_values.csv')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter
