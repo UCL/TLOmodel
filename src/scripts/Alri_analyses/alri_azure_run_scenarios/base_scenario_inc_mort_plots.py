@@ -17,6 +17,7 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
+from tlo.util import read_csv_files
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -124,14 +125,14 @@ end_date = 2032
 draw = 0
 
 # import GBD data for Malawi's ALRI burden estimates
-GBD_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
-    sheet_name="GBD_Malawi_estimates",
+GBD_data = read_csv_files(
+    Path(resourcefilepath) / "ResourceFile_Alri",
+    files="GBD_Malawi_estimates",
 )
 # import McAllister estimates for Malawi's ALRI incidence
-McAllister_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
-    sheet_name="McAllister_2019",
+McAllister_data = read_csv_files(
+    Path(resourcefilepath) / "ResourceFile_Alri",
+    files="McAllister_2019",
 )
 
 plt.style.use("ggplot")
