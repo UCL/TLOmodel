@@ -1,14 +1,82 @@
 {
   "scenario_script_path": "src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py",
-  "scenario_seed": 41060,
+  "scenario_seed": 11306,
   "arguments": [],
   "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "parameters": null
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 1,
+          "scaleup_start_year": 2024
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 2,
+          "scaleup_start_year": 2024
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 3,
+          "scaleup_start_year": 2024
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 4,
+          "scaleup_start_year": 2024
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 5,
+          "scaleup_start_year": 2024
+        }
+      }
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 6,
+          "scaleup_start_year": 2024
+        }
+      }
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 7,
+          "scaleup_start_year": 2024
+        }
+      }
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 8,
+          "scaleup_start_year": 2024
+        }
+      }
     }
   ],
-  "commit": "f1834262b12843d8c0177fbdb6d9faff316f7eb9",
-  "github": "https://github.com/UCL/TLOmodel/tree/f1834262b12843d8c0177fbdb6d9faff316f7eb9"
+  "commit": "4bfdc5ceabcc907cc849936d4354ab5fb3ab1e23",
+  "github": "https://github.com/UCL/TLOmodel/tree/4bfdc5ceabcc907cc849936d4354ab5fb3ab1e23"
 }
