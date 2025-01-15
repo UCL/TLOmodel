@@ -1,0 +1,1239 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parameter values (.csv) &mdash; TLOmodel 0.1.dev2508+gcb0f26f.d20250115 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2de883cf"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Pathogen specific (.csv)" href="Pathogen_specific.csv.html" />
+    <link rel="prev" title="McAllister 2019 (.csv)" href="McAllister_2019.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_Alri</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Calculations.csv.html">Calculations (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="GBD_Malawi_estimates.csv.html">GBD Malawi estimates (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Lazzerini%20CFR.csv.html">Lazzerini CFR (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="McAllister_2019.csv.html">McAllister 2019 (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Parameter values (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pathogen_specific.csv.html">Pathogen specific (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI/index.html">ResourceFile_RTI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_Alri</a></li>
+      <li class="breadcrumb-item active">Parameter values (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_Alri/Parameter_values.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="parameter-values-csv">
+<h1>Parameter values (.csv)<a class="headerlink" href="#parameter-values-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Alri/Parameter_values.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>source</p></th>
+<th class="head"><p>notes</p></th>
+<th class="head"><p>Unnamed: 4</p></th>
+<th class="head"><p>Unnamed: 5</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>base_inc_rate_ALRI_by_RSV</p></td>
+<td><p>[0.165623001012122,0.0368943809605977,0.011883807410198]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>base_inc_rate_ALRI_by_Rhinovirus</p></td>
+<td><p>[0.0243368081563306,0.0564272209432261,0.0181754025659935]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>base_inc_rate_ALRI_by_HMPV</p></td>
+<td><p>[0.0316242920447732,0.01106932885584,0.00356546901880363]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>base_inc_rate_ALRI_by_Parainfluenza</p></td>
+<td><p>[0.0400689053941642,0.0125990679490263,0.00405820325903094]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>base_inc_rate_ALRI_by_Strep_pneumoniae_PCV13</p></td>
+<td><p>[0.00839805492638728,0.0086009815601405,0.00277040583791159]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>base_inc_rate_ALRI_by_Strep_pneumoniae_non_PCV13</p></td>
+<td><p>[0.00971808948465436,0.0056295094957977,0.00181328443302487]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>base_inc_rate_ALRI_by_Hib</p></td>
+<td><p>[0.00456369209787862,0.00223809928508262,0.000720899502209533]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>base_inc_rate_ALRI_by_H.influenzae_non_type_b</p></td>
+<td><p>[0.0178046628079453,0.00771804577106646,0.00248600917371134]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>base_inc_rate_ALRI_by_Staph_aureus</p></td>
+<td><p>[0.0230583713892271,0.00164959730828988,0.000531340984878809]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>base_inc_rate_ALRI_by_Enterobacteriaceae</p></td>
+<td><p>[0.00577447898013911,0.00776959582619209,0.002502613624339]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>base_inc_rate_ALRI_by_other_Strepto_Enterococci</p></td>
+<td><p>[0.00739221008020393,0.000441075977443103,0.000142072094251877]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>base_inc_rate_ALRI_by_Influenza</p></td>
+<td><p>[0.0156895896609387,0.00577122651203705,0.00185893197294524]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>base_inc_rate_ALRI_by_P.jirovecii</p></td>
+<td><p>[0.00532021183938121,0.00406616141018573,0.00130972462037058]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>base_inc_rate_ALRI_by_other_viral_pathogens</p></td>
+<td><p>[0.0289052989892286,0.0340001707821008,0.0109515723253317]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>base_inc_rate_ALRI_by_other_bacterial_pathogens</p></td>
+<td><p>[0.0340967151177136,0.0275272316777052,0.00886661630515269]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>base_inc_rate_ALRI_by_other_pathogens_NoS</p></td>
+<td><p>[0.012096954443426,0.0244908799021158,0.00788859692140824]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>proportion_pneumonia_in_RSV_ALRI</p></td>
+<td><p>[0.469523118748083,0.493147834326293]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>proportion_pneumonia_in_Rhinovirus_ALRI</p></td>
+<td><p>[0.233411098940226,0.300943850285401]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>proportion_pneumonia_in_HMPV_ALRI</p></td>
+<td><p>[0.514096212711081,0.607661832402657]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>proportion_pneumonia_in_Parainfluenza_ALRI</p></td>
+<td><p>[0.381306534835401,0.586394378700289]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>proportion_pneumonia_in_Strep_pneumoniae_PCV13_ALRI</p></td>
+<td><p>[0.419837201436785,1]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>proportion_pneumonia_in_Strep_pneumoniae_non_PCV13_ALRI</p></td>
+<td><p>[0.584526531211357,0.47010416567094]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>proportion_pneumonia_in_Hib_ALRI</p></td>
+<td><p>[0.643816417750475,0.591228432603006]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>proportion_pneumonia_in_H.influenzae_non_type_b_ALRI</p></td>
+<td><p>[0.484067635967411,0.685783925920651]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>proportion_pneumonia_in_Staph_aureus_ALRI</p></td>
+<td><p>[0.314311461687961,0.668460076932899]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>proportion_pneumonia_in_Enterobacteriaceae_ALRI</p></td>
+<td><p>[0.542743088827561,0.397386416381317]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>proportion_pneumonia_in_other_Strepto_Enterococci_ALRI</p></td>
+<td><p>[0.794939501527616,1]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>proportion_pneumonia_in_Influenza_ALRI</p></td>
+<td><p>[0.274661773216931,0.477667070122735]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>proportion_pneumonia_in_P.jirovecii_ALRI</p></td>
+<td><p>[0.773174448993322,0.650848699225084]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>proportion_pneumonia_in_other_viral_pathogens_ALRI</p></td>
+<td><p>[0.264286065267648,0.301616616612727]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>proportion_pneumonia_in_other_bacterial_pathogens_ALRI</p></td>
+<td><p>[0.321708555070697,0.424616377668989]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>proportion_pneumonia_in_other_pathogens_NoS_ALRI</p></td>
+<td><p>[0.323847892119005,0.256639724815326]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>rr_ALRI_HIV/AIDS</p></td>
+<td><p>6.51</p></td>
+<td><p>Jackson et al. 2013</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>rr_ALRI_incomplete_measles_immunisation</p></td>
+<td><p>1.8</p></td>
+<td><p>Jackson et al. 2013</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>rr_ALRI_low_birth_weight</p></td>
+<td><p>3.6</p></td>
+<td><p>Jackson et al. 2013</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>rr_ALRI_non_exclusive_breastfeeding</p></td>
+<td><p>2.7</p></td>
+<td><p>Jackson et al. 2013</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>rr_ALRI_indoor_air_pollution</p></td>
+<td><p>1.57</p></td>
+<td><p>Jackson et al. 2013</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>rr_Strep_pneum_VT_ALRI_with_PCV13_age&lt;2y</p></td>
+<td><p>0.18</p></td>
+<td><p>Mackenzie et al. 2016 Lancet</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>rr_Strep_pneum_VT_ALRI_with_PCV13_age2to5y</p></td>
+<td><p>0.32</p></td>
+<td><p>Mackenzie et al. 2016 Lancet</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>rr_all_strains_Strep_pneum_ALRI_with_PCV13</p></td>
+<td><p>0.45</p></td>
+<td><p>Mackenzie et al. 2016 Lancet</p></td>
+<td><p>for calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>effectiveness_Hib_vaccine_on_Hib_strains</p></td>
+<td><p>0.86</p></td>
+<td><p>Obonyo and Lau 2006</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>rr_Hib_ALRI_with_Hib_vaccine</p></td>
+<td><p>0.14</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>prob_viral_pneumonia_bacterial_coinfection</p></td>
+<td><p>0.3</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>proportion_bacterial_coinfection_pathogen</p></td>
+<td><p>[0.107,0.072,0.038,0.141,0.134,0.117,0.052,0.338]</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>overall_progression_to_severe_ALRI</p></td>
+<td><p>0.12</p></td>
+<td><p>Walker et al. 2013</p></td>
+<td><p>for calibration</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>prob_pulmonary_complications_in_pneumonia</p></td>
+<td><p>0.215</p></td>
+<td><p>Resti et al. 2010</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>prob_pleural_effusion_in_pulmonary_complicated_pneumonia</p></td>
+<td><p>0.938</p></td>
+<td><p>Resti et al. 2010</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>prob_empyema_in_pulmonary_complicated_pneumonia</p></td>
+<td><p>0.315</p></td>
+<td><p>Resti et al. 2010</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>prob_lung_abscess_in_pulmonary_complicated_pneumonia</p></td>
+<td><p>0.049</p></td>
+<td><p>Resti et al. 2010, assumed from necrotising pneumonia</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>prob_pneumothorax_in_pulmonary_complicated_pneumonia</p></td>
+<td><p>0.049</p></td>
+<td><p>Resti et al. 2010, assumed from atelectasia</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>prob_hypoxaemia_in_pneumonia</p></td>
+<td><p>0.479</p></td>
+<td><p>Fancourt et al 2017</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>prob_hypoxaemia_in_other_alri</p></td>
+<td><p>0.273</p></td>
+<td><p>Fancourt et al 2017</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>prob_bacteraemia_in_pneumonia</p></td>
+<td><p>0.039</p></td>
+<td><p>Sebavonge et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>prob_progression_to_sepsis_with_bacteraemia</p></td>
+<td><p>0.3</p></td>
+<td><p>Fritz et al. 2019</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>prob_cough_in_pneumonia</p></td>
+<td><p>1</p></td>
+<td><p>Rees et al 2020</p></td>
+<td><p>0.77</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>prob_difficult_breathing_in_pneumonia</p></td>
+<td><p>1</p></td>
+<td><p>Rees et al 2020</p></td>
+<td><p>0.7</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>prob_fever_in_pneumonia</p></td>
+<td><p>0.82</p></td>
+<td><p>Rees et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>prob_chest_indrawing_in_pneumonia</p></td>
+<td><p>0.74</p></td>
+<td><p>Rees et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>prob_tachypnoea_in_pneumonia</p></td>
+<td><p>0.834</p></td>
+<td><p>Fancourt et al 2017</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>prob_danger_signs_in_pneumonia</p></td>
+<td><p>0.28</p></td>
+<td><p>Rees et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>prob_cyanosis_in_pneumonia</p></td>
+<td><p>0.06</p></td>
+<td><p>Rees et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>prob_cough_in_other_alri</p></td>
+<td><p>1</p></td>
+<td><p>assumed</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>prob_difficult_breathing_in_other_alri</p></td>
+<td><p>1</p></td>
+<td><p>assumed</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>prob_fever_in_other_alri</p></td>
+<td><p>0.76</p></td>
+<td></td>
+<td><p>calculated using OR=1.41 temp&gt;38C from Fancourt and the prob_fever_in_pneumonia</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>prob_chest_indrawing_in_other_alri</p></td>
+<td><p>0.33</p></td>
+<td></td>
+<td><p>assumed (based on Eric’ Bangladesh trial - outpatient pneumonia)</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>prob_tachypnoea_in_other_alri</p></td>
+<td><p>0.758</p></td>
+<td><p>Fancourt et al 2017</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>prob_danger_signs_in_other_alri</p></td>
+<td><p>0.3</p></td>
+<td><p>Rees et al 2020</p></td>
+<td><p>1-specificity</p></td>
+<td><p>or 0.03 assumed (based on Eric’ Bangladesh trial - outpatient pneumonia)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>prob_cyanosis_in_other_alri</p></td>
+<td><p>0.04</p></td>
+<td><p>Rees et al 2020</p></td>
+<td><p>1-specificity</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>prob_danger_signs_in_sepsis</p></td>
+<td><p>1</p></td>
+<td><p>assumed</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>prob_danger_signs_in_SpO2&lt;90%</p></td>
+<td><p>0.313</p></td>
+<td><p>McCollum et al. 2016</p></td>
+<td><p>HC only</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>prob_danger_signs_in_SpO2_90-92%</p></td>
+<td><p>0.133</p></td>
+<td><p>McCollum et al. 2016</p></td>
+<td><p>HC only</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>prob_chest_indrawing_in_SpO2&lt;90%</p></td>
+<td><p>0.701</p></td>
+<td><p>McCollum et al. 2016</p></td>
+<td><p>HC &amp; CHW combined</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>prob_chest_indrawing_in_SpO2_90-92%</p></td>
+<td><p>0.445</p></td>
+<td><p>McCollum et al. 2016</p></td>
+<td><p>HC &amp; CHW combined</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>proportion_hypoxaemia_with_SpO2&lt;90%</p></td>
+<td><p>0.3576</p></td>
+<td><p>McCollum et al. 2016</p></td>
+<td><p>prevalence of SpO2 &lt;90% over total prevalence of hypoxaemia</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>prob_cyanosis_in_SpO2&lt;90%</p></td>
+<td><p>0.078</p></td>
+<td><p>Bassat et al 2016</p></td>
+<td><p>cyanosis in Hypoxaemic children &lt; 90% in Mozambique study. Non-hypoxaemic children had 1.5%</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>max_alri_duration_in_days_without_treatment</p></td>
+<td><p>14</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>days_between_treatment_and_cure</p></td>
+<td><p>28</p></td>
+<td></td>
+<td><p>7 inpatient days + 3 weeks oral antibiotics course</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>tf_3day_amoxicillin_for_fast_breathing_with_SpO2&gt;=90%</p></td>
+<td><p>0.101</p></td>
+<td><p>Ginsburg et al. 2019</p></td>
+<td><p>treatment failure or relapse by day 14</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>tf_5day_amoxicillin_for_chest_indrawing_with_SpO2&gt;=90%</p></td>
+<td><p>0.108</p></td>
+<td><p>Ginsburg et al. 2020</p></td>
+<td><p>treatment failure or relapse by day 14</p></td>
+<td><p>5-day course of oral amoxicillin treatment failure of non-hypoxaemic (&gt;=90%) chest-indrawing pneumonia — 4.3% — check with ref. EMPIC Study Group (Malawi smaller sample size)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>tf_3day_amoxicillin_for_chest_indrawing_with_SpO2&gt;=90%</p></td>
+<td><p>0.125</p></td>
+<td><p>Ginsburg et al. 2020</p></td>
+<td><p>treatment failure or relapse by day 15</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants</p></td>
+<td><p>0.054</p></td>
+<td></td>
+<td><p>EMPIC study 2021, 6.3% TF by standard 1st dose antibiotic and referral</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2&gt;=90%</p></td>
+<td><p>0.6</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>tf_oral_amoxicillin_only_for_non_severe_pneumonia_with_SpO2&lt;90%</p></td>
+<td><p>0.2826</p></td>
+<td></td>
+<td><p>calculated using 0.17 and pOR=0.52</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>tf_oral_amoxicillin_only_for_severe_pneumonia_with_SpO2&lt;90%</p></td>
+<td><p>0.8</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0</p></td>
+<td><p>0.7</p></td>
+<td><p>HHFA 2018</p></td>
+<td></td>
+<td><p>0.746</p></td>
+<td><p>Boyce et al 2019</p></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0</p></td>
+<td><p>0.7</p></td>
+<td><p>HHFA 2018</p></td>
+<td></td>
+<td><p>0.708</p></td>
+<td><p>Boyce et al 2019</p></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>sensitivity_of_classification_of_non_severe_pneumonia_facility_level1</p></td>
+<td><p>0.7</p></td>
+<td><p>HHFA 2018</p></td>
+<td></td>
+<td><p>0.3</p></td>
+<td><p>Bjornstad et al 2014</p></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>sensitivity_of_classification_of_severe_pneumonia_facility_level1</p></td>
+<td><p>0.7</p></td>
+<td><p>HHFA 2018</p></td>
+<td></td>
+<td><p>0.0592</p></td>
+<td><p>Bjornstad et al 2014</p></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>sensitivity_of_classification_of_non_severe_pneumonia_facility_level2</p></td>
+<td><p>0.7</p></td>
+<td><p>HHFA 2018</p></td>
+<td></td>
+<td><p>0.23</p></td>
+<td><p>Uwemedimo et al. 2018</p></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>sensitivity_of_classification_of_severe_pneumonia_facility_level2</p></td>
+<td><p>0.7</p></td>
+<td><p>HHFA 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia</p></td>
+<td><p>0.7</p></td>
+<td><p>dummy</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>prob_IMCI_severe_pneumonia_treated_as_non_severe_pneumonia</p></td>
+<td><p>0.7</p></td>
+<td><p>dummy</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>scaler_on_risk_of_death</p></td>
+<td><p>0.75</p></td>
+<td><p>For Calibration</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>base_odds_death_ALRI_age&lt;2mo</p></td>
+<td><p>0.041965</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>or_death_ALRI_age&lt;2mo_very_severe_pneumonia</p></td>
+<td><p>3.994783</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>or_death_ALRI_age&lt;2mo_P.jirovecii</p></td>
+<td><p>5.460986</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>or_death_ALRI_age&lt;2mo_by_month_increase_in_age</p></td>
+<td><p>0.6033254</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>base_odds_death_ALRI_age2_59mo</p></td>
+<td><p>0.0244725</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td><p>calculated</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>or_death_ALRI_age2_59mo_very_severe_pneumonia</p></td>
+<td><p>8.382832</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>or_death_ALRI_age2_59mo_P.jirovecii</p></td>
+<td><p>13.74696</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>or_death_ALRI_age2_59mo_SAM</p></td>
+<td><p>7.216448</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>or_death_ALRI_age2_59mo_by_month_increase_in_age</p></td>
+<td><p>0.9661072</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td><p>or_death_ALRI_age2_59mo_female</p></td>
+<td><p>1.327285</p></td>
+<td><p>Lazzerini et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>or_death_ALRI_SpO2&lt;90%</p></td>
+<td><p>5.04</p></td>
+<td><p>Hooli et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>or_death_ALRI_SpO2_90_92%</p></td>
+<td><p>1.54</p></td>
+<td><p>Hooli et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>or_death_ALRI_sepsis</p></td>
+<td><p>151.9</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>or_death_ALRI_pneumothorax</p></td>
+<td><p>77.4</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>tf_1st_line_antibiotic_for_severe_pneumonia</p></td>
+<td><p>0.11</p></td>
+<td><p>Lassi et al 2013</p></td>
+<td><p>0.171 overall value in source</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>rr_tf_1st_line_antibiotics_if_cyanosis</p></td>
+<td><p>1.55</p></td>
+<td><p>Muro et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>rr_tf_1st_line_antibiotics_if_SpO2&lt;90%</p></td>
+<td><p>1.28</p></td>
+<td><p>Muro et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>rr_tf_1st_line_antibiotics_if_abnormal_CXR</p></td>
+<td><p>1.71</p></td>
+<td><p>Muro et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>rr_tf_1st_line_antibiotics_if_HIV/AIDS</p></td>
+<td><p>1.8</p></td>
+<td><p>Muro et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td><p>rr_tf_1st_line_antibiotics_if_MAM</p></td>
+<td><p>1.48</p></td>
+<td><p>Muro et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>rr_tf_1st_line_antibiotics_if_SAM</p></td>
+<td><p>2.02</p></td>
+<td><p>Muro et al 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>or_mortality_improved_oxygen_systems</p></td>
+<td><p>0.52</p></td>
+<td><p>Lam et al 2021</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>124</p></td>
+<td><p>pulse_oximeter_and_oxygen_is_available</p></td>
+<td><p>Default</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>125</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>126</p></td>
+<td><p>or_care_seeking_perceived_severe_illness</p></td>
+<td><p>2.4</p></td>
+<td><p>Lungu et al 2020</p></td>
+<td><p>perceived severe illness, OR used for seeking care for chest-indrawing</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>127</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>128</p></td>
+<td><p>tf_2nd_line_antibiotic_for_severe_pneumonia</p></td>
+<td><p>0.235</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>129</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>130</p></td>
+<td><p>prob_for_followup_if_treatment_failure</p></td>
+<td><p>0.3</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="McAllister_2019.csv.html" class="btn btn-neutral float-left" title="McAllister 2019 (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Pathogen_specific.csv.html" class="btn btn-neutral float-right" title="Pathogen specific (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

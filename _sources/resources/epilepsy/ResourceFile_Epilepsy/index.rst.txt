@@ -1,0 +1,10 @@
+ResourceFile_Epilepsy
+=====================
+
+.. toctree::
+    :maxdepth: 1
+
+    Structure, parameters, refs.csv
+    additional info.csv
+    parameter_values.csv
+

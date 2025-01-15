@@ -1,0 +1,1159 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parameter values (.csv) &mdash; TLOmodel 0.1.dev2508+gcb0f26f.d20250115 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2de883cf"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="ResourceFile_EPI_WHO_estimates" href="../ResourceFile_EPI_WHO_estimates/index.html" />
+    <link rel="prev" title="ResourceFile_Diarrhoea" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri/index.html">ResourceFile_Alri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_Diarrhoea</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Parameter values (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI/index.html">ResourceFile_RTI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_Diarrhoea</a></li>
+      <li class="breadcrumb-item active">Parameter values (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_Diarrhoea/Parameter_values.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="parameter-values-csv">
+<h1>Parameter values (.csv)<a class="headerlink" href="#parameter-values-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Diarrhoea/Parameter_values.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>Notes/References</p></th>
+<th class="head"><p>Unnamed: 3</p></th>
+<th class="head"><p>Target values for 12 monthly incidence rate</p></th>
+<th class="head"><p>Unnamed: 5</p></th>
+<th class="head"><p>Unnamed: 6</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>base_inc_rate_diarrhoea_by_rotavirus</p></td>
+<td><p>[0.175245863,0.097007598,0.009324]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.175245863</p></td>
+<td><p>0.097007598</p></td>
+<td><p>0.009324</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>base_inc_rate_diarrhoea_by_shigella</p></td>
+<td><p>[0.117936461999999,0.078794104,0.093018]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.117936461999999</p></td>
+<td><p>0.078794104</p></td>
+<td><p>0.093018</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>base_inc_rate_diarrhoea_by_adenovirus</p></td>
+<td><p>[0.0586618,0.058661803,0.006438]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.0586618</p></td>
+<td><p>0.058661803</p></td>
+<td><p>0.006438</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>base_inc_rate_diarrhoea_by_cryptosporidium</p></td>
+<td><p>[0.030886699,0.0117923629999999,0.004662]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.030886699</p></td>
+<td><p>0.0117923629999999</p></td>
+<td><p>0.004662</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>base_inc_rate_diarrhoea_by_campylobacter</p></td>
+<td><p>[0.098663257,0.027915478,0.004884]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.098663257</p></td>
+<td><p>0.027915478</p></td>
+<td><p>0.004884</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>base_inc_rate_diarrhoea_by_ETEC</p></td>
+<td><p>[0.27925146,0.170477152,0.019758]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.27925146</p></td>
+<td><p>0.170477152</p></td>
+<td><p>0.019758</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>base_inc_rate_diarrhoea_by_sapovirus</p></td>
+<td><p>[0.100972179,0.132603114,0.00555]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.100972179</p></td>
+<td><p>0.132603114</p></td>
+<td><p>0.00555</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>base_inc_rate_diarrhoea_by_norovirus</p></td>
+<td><p>[0.204864004,0.066146727,0.000888]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.204864004</p></td>
+<td><p>0.066146727</p></td>
+<td><p>0.000888</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>base_inc_rate_diarrhoea_by_astrovirus</p></td>
+<td><p>[0.054208352,0.035974076,0.001332]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.054208352</p></td>
+<td><p>0.035974076</p></td>
+<td><p>0.001332</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>base_inc_rate_diarrhoea_by_tEPEC</p></td>
+<td><p>[0.0608224569999999,0.022716889,0.001998]</p></td>
+<td><p>Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019</p></td>
+<td></td>
+<td><p>0.0608224569999999</p></td>
+<td><p>0.022716889</p></td>
+<td><p>0.001998</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>rr_diarrhoea_HHhandwashing</p></td>
+<td><p>0.7</p></td>
+<td><p>Wolf et al. 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>rr_diarrhoea_improved_sanitation</p></td>
+<td><p>0.75</p></td>
+<td><p>Wolf et al. 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>rr_diarrhoea_clean_water</p></td>
+<td><p>0.67</p></td>
+<td><p>Wolf et al. 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>rr_diarrhoea_exclusive_vs_partial_breastfeeding_&lt;6mo</p></td>
+<td><p>1.68</p></td>
+<td><p>Lamberti et al. 2011</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>rr_diarrhoea_exclusive_vs_no_breastfeeding_&lt;6mo</p></td>
+<td><p>2.65</p></td>
+<td><p>Lamberti et al. 2011</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>rr_diarrhoea_any_vs_no_breastfeeding_6_11mo</p></td>
+<td><p>1.32</p></td>
+<td><p>Lamberti et al. 2011</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>rr_diarrhoea_untreated_HIV</p></td>
+<td><p>5.4</p></td>
+<td><p>Groome and Madhi 2011</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>rr_diarrhoea_SAM</p></td>
+<td><p>1.2</p></td>
+<td><p>Black et al. 2013</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>proportion_AWD_in_rotavirus</p></td>
+<td><p>0.97668</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>proportion_AWD_in_shigella</p></td>
+<td><p>0.861942</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>proportion_AWD_in_adenovirus</p></td>
+<td><p>0.950061</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>proportion_AWD_in_cryptosporidium</p></td>
+<td><p>0.970984</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>proportion_AWD_in_campylobacter</p></td>
+<td><p>0.896768</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>proportion_AWD_in_ETEC</p></td>
+<td><p>0.950465</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>proportion_AWD_in_sapovirus</p></td>
+<td><p>0.966385</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>proportion_AWD_in_norovirus</p></td>
+<td><p>0.961643</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>proportion_AWD_in_astrovirus</p></td>
+<td><p>0.974147</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>proportion_AWD_in_tEPEC</p></td>
+<td><p>0.961485</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>prob_dehydration_by_rotavirus</p></td>
+<td><p>0.153093</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>prob_dehydration_by_shigella</p></td>
+<td><p>0.102962</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>prob_dehydration_by_adenovirus</p></td>
+<td><p>0.079524</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>prob_dehydration_by_cryptosporidium</p></td>
+<td><p>0.121458</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>prob_dehydration_by_campylobacter</p></td>
+<td><p>0.072808</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>prob_dehydration_by_ETEC</p></td>
+<td><p>0.075925</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>prob_dehydration_by_sapovirus</p></td>
+<td><p>0.10364</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>prob_dehydration_by_norovirus</p></td>
+<td><p>0.090728</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>prob_dehydration_by_astrovirus</p></td>
+<td><p>0.122776</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>prob_dehydration_by_tEPEC</p></td>
+<td><p>0.113362</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>probability_of_severe_dehydration_if_some_dehydration</p></td>
+<td><p>0.167</p></td>
+<td><p>Levine et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>prob_prolonged_diarr_rotavirus</p></td>
+<td><p>0.117706</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>prob_prolonged_diarr_shigella</p></td>
+<td><p>0.165342</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>prob_prolonged_diarr_adenovirus</p></td>
+<td><p>0.116406</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>prob_prolonged_diarr_cryptosporidium</p></td>
+<td><p>0.169134</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>prob_prolonged_diarr_campylobacter</p></td>
+<td><p>0.152206</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>prob_prolonged_diarr_ETEC</p></td>
+<td><p>0.114177</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>prob_prolonged_diarr_sapovirus</p></td>
+<td><p>0.133209</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>prob_prolonged_diarr_norovirus</p></td>
+<td><p>0.118223</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>prob_prolonged_diarr_astrovirus</p></td>
+<td><p>0.13511</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>prob_prolonged_diarr_tEPEC</p></td>
+<td><p>0.190845</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>prob_prolonged_to_persistent_diarr</p></td>
+<td><p>0.2866</p></td>
+<td><p>Moore et al. 2010</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>rr_bec_persistent_age&gt;6mo</p></td>
+<td><p>0.26</p></td>
+<td><p>Ochoa et al. 2009</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>rr_bec_persistent_HIV</p></td>
+<td><p>1.7</p></td>
+<td><p>* dummy</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>rr_bec_persistent_SAM</p></td>
+<td><p>1.7</p></td>
+<td><p>* dummy</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>rr_bec_persistent_stunted</p></td>
+<td><p>33.3</p></td>
+<td><p>Schilling et al 2017</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>min_dur_acute</p></td>
+<td><p>1</p></td>
+<td><p>* definitional</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>min_dur_prolonged</p></td>
+<td><p>5</p></td>
+<td><p>* definitional</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>min_dur_persistent</p></td>
+<td><p>13</p></td>
+<td><p>* definitional</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>max_dur_persistent</p></td>
+<td><p>30</p></td>
+<td><p>* definitional</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>prob_fever_by_rotavirus</p></td>
+<td><p>0.384925</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>prob_fever_by_shigella</p></td>
+<td><p>0.319876</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>prob_fever_by_adenovirus</p></td>
+<td><p>0.271513</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>prob_fever_by_cryptosporidium</p></td>
+<td><p>0.322385</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>prob_fever_by_campylobacter</p></td>
+<td><p>0.312807</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>prob_fever_by_ETEC</p></td>
+<td><p>0.258931</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>prob_fever_by_sapovirus</p></td>
+<td><p>0.292276</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>prob_fever_by_norovirus</p></td>
+<td><p>0.251071</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>prob_fever_by_astrovirus</p></td>
+<td><p>0.195905</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>prob_fever_by_tEPEC</p></td>
+<td><p>0.384547</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>prob_vomiting_by_rotavirus</p></td>
+<td><p>0.471793</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>prob_vomiting_by_shigella</p></td>
+<td><p>0.209852</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>prob_vomiting_by_adenovirus</p></td>
+<td><p>0.308677</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>prob_vomiting_by_cryptosporidium</p></td>
+<td><p>0.243581</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>prob_vomiting_by_campylobacter</p></td>
+<td><p>0.218669</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>prob_vomiting_by_ETEC</p></td>
+<td><p>0.283139</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>prob_vomiting_by_sapovirus</p></td>
+<td><p>0.303154</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>prob_vomiting_by_norovirus</p></td>
+<td><p>0.299343</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>prob_vomiting_by_astrovirus</p></td>
+<td><p>0.276018</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>prob_vomiting_by_tEPEC</p></td>
+<td><p>0.285661</p></td>
+<td><p>Platts-Mills et al 2018</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>adjustment_factor_on_cfr</p></td>
+<td><p>3.75</p></td>
+<td><p>Can be used in fitting.</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>case_fatality_rate_AWD</p></td>
+<td><p>0.0015</p></td>
+<td><p>To be calibrated. Guideline values: Bhandari et al 1992 (0.0056); GBD 2016 paper (0.0015)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>rr_diarr_death_bloody</p></td>
+<td><p>7.6</p></td>
+<td><p>Relative CFR for bloody versus non-bloody diarrhoea, per Bhandari et al., 1992</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>rr_diarr_death_age24to59mo</p></td>
+<td><p>0.38</p></td>
+<td><p>Walker et al. 2013</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>rr_diarr_death_if_duration_longer_than_13_days</p></td>
+<td><p>0.0035</p></td>
+<td><p>* dummy</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td><p>rr_diarr_death_severe_dehydration</p></td>
+<td><p>3.45</p></td>
+<td><p>Levine et al. 2020</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>rr_diarr_death_untreated_HIV</p></td>
+<td><p>5.05</p></td>
+<td><p>Acacio et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>rr_diarr_death_SAM</p></td>
+<td><p>4.13</p></td>
+<td><p>Acacio et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>rr_diarr_death_alri</p></td>
+<td><p>3.51</p></td>
+<td><p>Acacio et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>rr_diarr_death_cryptosporidium</p></td>
+<td><p>2.14</p></td>
+<td><p>Acacio et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>rr_diarr_death_shigella</p></td>
+<td><p>2.8</p></td>
+<td><p>Tickell et al. 2017</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>sensitivity_severe_dehydration_visual_inspection</p></td>
+<td><p>0.77</p></td>
+<td><p>Levine et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>specificity_severe_dehydration_visual_inspection</p></td>
+<td><p>0.67</p></td>
+<td><p>Levine et al. 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>prob_hospitalization_on_danger_signs</p></td>
+<td><p>0.7</p></td>
+<td><p>* dummy</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>prob_WHOPlanC_cures_dehydration_if_severe_dehydration</p></td>
+<td><p>0.9</p></td>
+<td><p>* dummy</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>prob_ORS_cures_dehydration_if_severe_dehydration</p></td>
+<td><p>0.721</p></td>
+<td><p>Pulungsih et al 1992</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>prob_ORS_cures_dehydration_if_non_severe_dehydration</p></td>
+<td><p>0.93</p></td>
+<td><p>Munos et al. 2010</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>prob_antibiotic_cures_dysentery</p></td>
+<td><p>0.99</p></td>
+<td><p>Traa et al. 2010</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>number_of_days_reduced_duration_with_zinc</p></td>
+<td><p>1</p></td>
+<td><p>Lazzerini and Wanzira et al 2016</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>days_between_treatment_and_cure</p></td>
+<td><p>5</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo</p></td>
+<td><p>0.63</p></td>
+<td><p>Soares-Weiser et al. 2019</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo</p></td>
+<td><p>0.35</p></td>
+<td><p>Soares-Weiser et al. 2019</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="ResourceFile_Diarrhoea" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../ResourceFile_EPI_WHO_estimates/index.html" class="btn btn-neutral float-right" title="ResourceFile_EPI_WHO_estimates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/epilepsy/ResourceFile_Epilepsy/parameter_values.csv>`
+
+====  =============================================================================  ================================
+  ..  parameter\_name                                                                value
+====  =============================================================================  ================================
+   0  init\_epil\_seiz\_status                                                       [0.9740, 0.0175, 0.0070, 0.0015]
+   1  init\_prop\_antiepileptic\_seiz\_stat\_1                                       0.15
+   2  init\_prop\_antiepileptic\_seiz\_stat\_2                                       0.15
+   3  init\_prop\_antiepileptic\_seiz\_stat\_3                                       0.2
+   4  base\_3m\_prob\_epilepsy                                                       0.000178
+   5  rr\_epilepsy\_age\_ge20                                                        0.3
+   6  prop\_inc\_epilepsy\_seiz\_freq                                                0.1
+   7  rr\_effectiveness\_antiepileptics                                              3
+   8  base\_prob\_3m\_seiz\_stat\_freq\_infreq                                       0.05
+   9  base\_prob\_3m\_seiz\_stat\_infreq\_freq                                       0.05
+  10  base\_prob\_3m\_seiz\_stat\_none\_freq                                         0.05
+  11  base\_prob\_3m\_seiz\_stat\_none\_infreq                                       0.05
+  12  base\_prob\_3m\_seiz\_stat\_infreq\_none                                       0.05
+  13  base\_prob\_3m\_stop\_antiepileptic                                            0.1
+  14  rr\_stop\_antiepileptic\_seiz\_infreq\_or\_freq                                0.5
+  15  base\_prob\_3m\_epi\_death                                                     0.000568
+  16  prob\_start\_anti\_epilep\_when\_seizures\_detected\_in\_generic\_first\_appt  0.4
+  17  max\_num\_of\_failed\_attempts\_before\_defaulting                             2
+  18
+====  =============================================================================  ================================

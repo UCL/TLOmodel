@@ -1,0 +1,140 @@
+Parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Alri/Parameter_values.csv>`
+
+====  =================================================================================  ===============================================================  =====================================================  ===========================================================================================  ==================================================================================================================================================================================  =====================
+  ..  parameter\_name                                                                    value                                                            source                                                 notes                                                                                        Unnamed: 4                                                                                                                                                                          Unnamed: 5
+====  =================================================================================  ===============================================================  =====================================================  ===========================================================================================  ==================================================================================================================================================================================  =====================
+   0  base\_inc\_rate\_ALRI\_by\_RSV                                                     [0.165623001012122,0.0368943809605977,0.011883807410198]
+   1  base\_inc\_rate\_ALRI\_by\_Rhinovirus                                              [0.0243368081563306,0.0564272209432261,0.0181754025659935]
+   2  base\_inc\_rate\_ALRI\_by\_HMPV                                                    [0.0316242920447732,0.01106932885584,0.00356546901880363]
+   3  base\_inc\_rate\_ALRI\_by\_Parainfluenza                                           [0.0400689053941642,0.0125990679490263,0.00405820325903094]
+   4  base\_inc\_rate\_ALRI\_by\_Strep\_pneumoniae\_PCV13                                [0.00839805492638728,0.0086009815601405,0.00277040583791159]
+   5  base\_inc\_rate\_ALRI\_by\_Strep\_pneumoniae\_non\_PCV13                           [0.00971808948465436,0.0056295094957977,0.00181328443302487]
+   6  base\_inc\_rate\_ALRI\_by\_Hib                                                     [0.00456369209787862,0.00223809928508262,0.000720899502209533]
+   7  base\_inc\_rate\_ALRI\_by\_H.influenzae\_non\_type\_b                              [0.0178046628079453,0.00771804577106646,0.00248600917371134]
+   8  base\_inc\_rate\_ALRI\_by\_Staph\_aureus                                           [0.0230583713892271,0.00164959730828988,0.000531340984878809]
+   9  base\_inc\_rate\_ALRI\_by\_Enterobacteriaceae                                      [0.00577447898013911,0.00776959582619209,0.002502613624339]
+  10  base\_inc\_rate\_ALRI\_by\_other\_Strepto\_Enterococci                             [0.00739221008020393,0.000441075977443103,0.000142072094251877]
+  11  base\_inc\_rate\_ALRI\_by\_Influenza                                               [0.0156895896609387,0.00577122651203705,0.00185893197294524]
+  12  base\_inc\_rate\_ALRI\_by\_P.jirovecii                                             [0.00532021183938121,0.00406616141018573,0.00130972462037058]
+  13  base\_inc\_rate\_ALRI\_by\_other\_viral\_pathogens                                 [0.0289052989892286,0.0340001707821008,0.0109515723253317]
+  14  base\_inc\_rate\_ALRI\_by\_other\_bacterial\_pathogens                             [0.0340967151177136,0.0275272316777052,0.00886661630515269]
+  15  base\_inc\_rate\_ALRI\_by\_other\_pathogens\_NoS                                   [0.012096954443426,0.0244908799021158,0.00788859692140824]
+  16  proportion\_pneumonia\_in\_RSV\_ALRI                                               [0.469523118748083,0.493147834326293]
+  17  proportion\_pneumonia\_in\_Rhinovirus\_ALRI                                        [0.233411098940226,0.300943850285401]
+  18  proportion\_pneumonia\_in\_HMPV\_ALRI                                              [0.514096212711081,0.607661832402657]
+  19  proportion\_pneumonia\_in\_Parainfluenza\_ALRI                                     [0.381306534835401,0.586394378700289]
+  20  proportion\_pneumonia\_in\_Strep\_pneumoniae\_PCV13\_ALRI                          [0.419837201436785,1]
+  21  proportion\_pneumonia\_in\_Strep\_pneumoniae\_non\_PCV13\_ALRI                     [0.584526531211357,0.47010416567094]
+  22  proportion\_pneumonia\_in\_Hib\_ALRI                                               [0.643816417750475,0.591228432603006]
+  23  proportion\_pneumonia\_in\_H.influenzae\_non\_type\_b\_ALRI                        [0.484067635967411,0.685783925920651]
+  24  proportion\_pneumonia\_in\_Staph\_aureus\_ALRI                                     [0.314311461687961,0.668460076932899]
+  25  proportion\_pneumonia\_in\_Enterobacteriaceae\_ALRI                                [0.542743088827561,0.397386416381317]
+  26  proportion\_pneumonia\_in\_other\_Strepto\_Enterococci\_ALRI                       [0.794939501527616,1]
+  27  proportion\_pneumonia\_in\_Influenza\_ALRI                                         [0.274661773216931,0.477667070122735]
+  28  proportion\_pneumonia\_in\_P.jirovecii\_ALRI                                       [0.773174448993322,0.650848699225084]
+  29  proportion\_pneumonia\_in\_other\_viral\_pathogens\_ALRI                           [0.264286065267648,0.301616616612727]
+  30  proportion\_pneumonia\_in\_other\_bacterial\_pathogens\_ALRI                       [0.321708555070697,0.424616377668989]
+  31  proportion\_pneumonia\_in\_other\_pathogens\_NoS\_ALRI                             [0.323847892119005,0.256639724815326]
+  32
+  33  rr\_ALRI\_HIV/AIDS                                                                 6.51                                                             Jackson et al. 2013
+  34  rr\_ALRI\_incomplete\_measles\_immunisation                                        1.8                                                              Jackson et al. 2013
+  35  rr\_ALRI\_low\_birth\_weight                                                       3.6                                                              Jackson et al. 2013
+  36  rr\_ALRI\_non\_exclusive\_breastfeeding                                            2.7                                                              Jackson et al. 2013
+  37  rr\_ALRI\_indoor\_air\_pollution                                                   1.57                                                             Jackson et al. 2013
+  38
+  39  rr\_Strep\_pneum\_VT\_ALRI\_with\_PCV13\_age<2y                                    0.18                                                             Mackenzie et al. 2016 Lancet
+  40  rr\_Strep\_pneum\_VT\_ALRI\_with\_PCV13\_age2to5y                                  0.32                                                             Mackenzie et al. 2016 Lancet
+  41  rr\_all\_strains\_Strep\_pneum\_ALRI\_with\_PCV13                                  0.45                                                             Mackenzie et al. 2016 Lancet                           for calibration
+  42  effectiveness\_Hib\_vaccine\_on\_Hib\_strains                                      0.86                                                             Obonyo and Lau 2006
+  43  rr\_Hib\_ALRI\_with\_Hib\_vaccine                                                  0.14
+  44  prob\_viral\_pneumonia\_bacterial\_coinfection                                     0.3
+  45  proportion\_bacterial\_coinfection\_pathogen                                       [0.107,0.072,0.038,0.141,0.134,0.117,0.052,0.338]
+  46  overall\_progression\_to\_severe\_ALRI                                             0.12                                                             Walker et al. 2013                                     for calibration
+  47  prob\_pulmonary\_complications\_in\_pneumonia                                      0.215                                                            Resti et al. 2010
+  48  prob\_pleural\_effusion\_in\_pulmonary\_complicated\_pneumonia                     0.938                                                            Resti et al. 2010
+  49  prob\_empyema\_in\_pulmonary\_complicated\_pneumonia                               0.315                                                            Resti et al. 2010
+  50  prob\_lung\_abscess\_in\_pulmonary\_complicated\_pneumonia                         0.049                                                            Resti et al. 2010, assumed from necrotising pneumonia
+  51  prob\_pneumothorax\_in\_pulmonary\_complicated\_pneumonia                          0.049                                                            Resti et al. 2010, assumed from atelectasia
+  52  prob\_hypoxaemia\_in\_pneumonia                                                    0.479                                                            Fancourt et al 2017
+  53  prob\_hypoxaemia\_in\_other\_alri                                                  0.273                                                            Fancourt et al 2017
+  54  prob\_bacteraemia\_in\_pneumonia                                                   0.039                                                            Sebavonge et al. 2016
+  55  prob\_progression\_to\_sepsis\_with\_bacteraemia                                   0.3                                                              Fritz et al. 2019
+  56  prob\_cough\_in\_pneumonia                                                         1                                                                Rees et al 2020                                        0.77
+  57  prob\_difficult\_breathing\_in\_pneumonia                                          1                                                                Rees et al 2020                                        0.7
+  58  prob\_fever\_in\_pneumonia                                                         0.82                                                             Rees et al 2020
+  59  prob\_chest\_indrawing\_in\_pneumonia                                              0.74                                                             Rees et al 2020
+  60  prob\_tachypnoea\_in\_pneumonia                                                    0.834                                                            Fancourt et al 2017
+  61  prob\_danger\_signs\_in\_pneumonia                                                 0.28                                                             Rees et al 2020
+  62  prob\_cyanosis\_in\_pneumonia                                                      0.06                                                             Rees et al 2020
+  63  prob\_cough\_in\_other\_alri                                                       1                                                                assumed
+  64  prob\_difficult\_breathing\_in\_other\_alri                                        1                                                                assumed
+  65  prob\_fever\_in\_other\_alri                                                       0.76                                                                                                                    calculated using OR=1.41 temp>38C from Fancourt and the prob\_fever\_in\_pneumonia
+  66  prob\_chest\_indrawing\_in\_other\_alri                                            0.33                                                                                                                    assumed (based on Eric' Bangladesh trial - outpatient pneumonia)
+  67  prob\_tachypnoea\_in\_other\_alri                                                  0.758                                                            Fancourt et al 2017
+  68  prob\_danger\_signs\_in\_other\_alri                                               0.3                                                              Rees et al 2020                                        1-specificity                                                                                or 0.03 assumed (based on Eric' Bangladesh trial - outpatient pneumonia)
+  69  prob\_cyanosis\_in\_other\_alri                                                    0.04                                                             Rees et al 2020                                        1-specificity
+  70  prob\_danger\_signs\_in\_sepsis                                                    1                                                                assumed
+  71  prob\_danger\_signs\_in\_SpO2<90%                                                  0.313                                                            McCollum et al. 2016                                   HC only
+  72  prob\_danger\_signs\_in\_SpO2\_90-92%                                              0.133                                                            McCollum et al. 2016                                   HC only
+  73  prob\_chest\_indrawing\_in\_SpO2<90%                                               0.701                                                            McCollum et al. 2016                                   HC & CHW combined
+  74  prob\_chest\_indrawing\_in\_SpO2\_90-92%                                           0.445                                                            McCollum et al. 2016                                   HC & CHW combined
+  75  proportion\_hypoxaemia\_with\_SpO2<90%                                             0.3576                                                           McCollum et al. 2016                                   prevalence of SpO2 <90% over total prevalence of hypoxaemia
+  76  prob\_cyanosis\_in\_SpO2<90%                                                       0.078                                                            Bassat et al 2016                                      cyanosis in Hypoxaemic children < 90% in Mozambique study. Non-hypoxaemic children had 1.5%
+  77
+  78  max\_alri\_duration\_in\_days\_without\_treatment                                  14
+  79  days\_between\_treatment\_and\_cure                                                28                                                                                                                      7 inpatient days + 3 weeks oral antibiotics course
+  80
+  81  tf\_3day\_amoxicillin\_for\_fast\_breathing\_with\_SpO2>=90%                       0.101                                                            Ginsburg et al. 2019                                   treatment failure or relapse by day 14
+  82  tf\_5day\_amoxicillin\_for\_chest\_indrawing\_with\_SpO2>=90%                      0.108                                                            Ginsburg et al. 2020                                   treatment failure or relapse by day 14                                                       5-day course of oral amoxicillin treatment failure of non-hypoxaemic (>=90%) chest-indrawing pneumonia --- 4.3% --- check with ref. EMPIC Study Group (Malawi smaller sample size)
+  83  tf\_3day\_amoxicillin\_for\_chest\_indrawing\_with\_SpO2>=90%                      0.125                                                            Ginsburg et al. 2020                                   treatment failure or relapse by day 15
+  84  tf\_7day\_amoxicillin\_for\_fast\_breathing\_pneumonia\_in\_young\_infants         0.054                                                                                                                   EMPIC study 2021, 6.3% TF by standard 1st dose antibiotic and referral
+  85  tf\_oral\_amoxicillin\_only\_for\_severe\_pneumonia\_with\_SpO2>=90%               0.6
+  86  tf\_oral\_amoxicillin\_only\_for\_non\_severe\_pneumonia\_with\_SpO2<90%           0.2826                                                                                                                  calculated using 0.17 and pOR=0.52
+  87  tf\_oral\_amoxicillin\_only\_for\_severe\_pneumonia\_with\_SpO2<90%                0.8
+  88
+  89  sensitivity\_of\_classification\_of\_fast\_breathing\_pneumonia\_facility\_level0  0.7                                                              HHFA 2018                                                                                                                                           0.746                                                                                                                                                                               Boyce et al 2019
+  90  sensitivity\_of\_classification\_of\_danger\_signs\_pneumonia\_facility\_level0    0.7                                                              HHFA 2018                                                                                                                                           0.708                                                                                                                                                                               Boyce et al 2019
+  91  sensitivity\_of\_classification\_of\_non\_severe\_pneumonia\_facility\_level1      0.7                                                              HHFA 2018                                                                                                                                           0.3                                                                                                                                                                                 Bjornstad et al 2014
+  92  sensitivity\_of\_classification\_of\_severe\_pneumonia\_facility\_level1           0.7                                                              HHFA 2018                                                                                                                                           0.0592                                                                                                                                                                              Bjornstad et al 2014
+  93  sensitivity\_of\_classification\_of\_non\_severe\_pneumonia\_facility\_level2      0.7                                                              HHFA 2018                                                                                                                                           0.23                                                                                                                                                                                Uwemedimo et al. 2018
+  94  sensitivity\_of\_classification\_of\_severe\_pneumonia\_facility\_level2           0.7                                                              HHFA 2018
+  95  prob\_iCCM\_severe\_pneumonia\_treated\_as\_fast\_breathing\_pneumonia             0.7                                                              dummy
+  96  prob\_IMCI\_severe\_pneumonia\_treated\_as\_non\_severe\_pneumonia                 0.7                                                              dummy
+  97
+  98  scaler\_on\_risk\_of\_death                                                        0.75                                                             For Calibration
+  99  base\_odds\_death\_ALRI\_age<2mo                                                   0.041965                                                         Lazzerini et al 2016
+ 100  or\_death\_ALRI\_age<2mo\_very\_severe\_pneumonia                                  3.994783                                                         Lazzerini et al 2016
+ 101  or\_death\_ALRI\_age<2mo\_P.jirovecii                                              5.460986                                                         Lazzerini et al 2016
+ 102  or\_death\_ALRI\_age<2mo\_by\_month\_increase\_in\_age                             0.6033254                                                        Lazzerini et al 2016
+ 103
+ 104  base\_odds\_death\_ALRI\_age2\_59mo                                                0.0244725                                                        Lazzerini et al 2016                                   calculated
+ 105  or\_death\_ALRI\_age2\_59mo\_very\_severe\_pneumonia                               8.382832                                                         Lazzerini et al 2016
+ 106  or\_death\_ALRI\_age2\_59mo\_P.jirovecii                                           13.74696                                                         Lazzerini et al 2016
+ 107  or\_death\_ALRI\_age2\_59mo\_SAM                                                   7.216448                                                         Lazzerini et al 2016
+ 108  or\_death\_ALRI\_age2\_59mo\_by\_month\_increase\_in\_age                          0.9661072                                                        Lazzerini et al 2016
+ 109  or\_death\_ALRI\_age2\_59mo\_female                                                1.327285                                                         Lazzerini et al 2016
+ 110  or\_death\_ALRI\_SpO2<90%                                                          5.04                                                             Hooli et al. 2016
+ 111  or\_death\_ALRI\_SpO2\_90\_92%                                                     1.54                                                             Hooli et al. 2016
+ 112  or\_death\_ALRI\_sepsis                                                            151.9
+ 113  or\_death\_ALRI\_pneumothorax                                                      77.4
+ 114
+ 115  tf\_1st\_line\_antibiotic\_for\_severe\_pneumonia                                  0.11                                                             Lassi et al 2013                                       0.171 overall value in source
+ 116  rr\_tf\_1st\_line\_antibiotics\_if\_cyanosis                                       1.55                                                             Muro et al 2020
+ 117  rr\_tf\_1st\_line\_antibiotics\_if\_SpO2<90%                                       1.28                                                             Muro et al 2020
+ 118  rr\_tf\_1st\_line\_antibiotics\_if\_abnormal\_CXR                                  1.71                                                             Muro et al 2020
+ 119  rr\_tf\_1st\_line\_antibiotics\_if\_HIV/AIDS                                       1.8                                                              Muro et al 2020
+ 120  rr\_tf\_1st\_line\_antibiotics\_if\_MAM                                            1.48                                                             Muro et al 2020
+ 121  rr\_tf\_1st\_line\_antibiotics\_if\_SAM                                            2.02                                                             Muro et al 2020
+ 122  or\_mortality\_improved\_oxygen\_systems                                           0.52                                                             Lam et al 2021
+ 123
+ 124  pulse\_oximeter\_and\_oxygen\_is\_available                                        Default
+ 125
+ 126  or\_care\_seeking\_perceived\_severe\_illness                                      2.4                                                              Lungu et al 2020                                       perceived severe illness, OR used for seeking care for chest-indrawing
+ 127
+ 128  tf\_2nd\_line\_antibiotic\_for\_severe\_pneumonia                                  0.235
+ 129
+ 130  prob\_for\_followup\_if\_treatment\_failure                                        0.3
+====  =================================================================================  ===============================================================  =====================================================  ===========================================================================================  ==================================================================================================================================================================================  =====================

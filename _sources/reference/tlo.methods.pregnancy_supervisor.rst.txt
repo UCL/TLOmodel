@@ -436,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Lifestyle', 'HealthSystem', 'CareOfWomenDuringPregnancy', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'Contraception', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x3160d9e90>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x3155f3690>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x3155f3590>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x3155f1050>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x3155f3950>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x3155f33d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x3155f1d90>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x3155f2990>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x31b2d9410>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x31af77790>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x31b7268d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x31b727fd0>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x31b724250>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x31b7261d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x31b725d90>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x31b726b50>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x3155f3d10>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x31b726610>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Malaria', 'Hiv', 'CardioMetabolicDisorders', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Malaria', 'Hiv', 'CardioMetabolicDisorders'}
 
      __annotations__ : {}
 

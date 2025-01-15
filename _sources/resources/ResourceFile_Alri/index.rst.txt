@@ -1,0 +1,13 @@
+ResourceFile_Alri
+=================
+
+.. toctree::
+    :maxdepth: 1
+
+    Calculations.csv
+    GBD_Malawi_estimates.csv
+    Lazzerini CFR.csv
+    McAllister_2019.csv
+    Parameter_values.csv
+    Pathogen_specific.csv
+

@@ -1,0 +1,75 @@
+Structure, parameters, refs (.csv)
+==================================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/epilepsy/ResourceFile_Epilepsy/Structure, parameters, refs.csv>`
+
+====  ============  ====================================================================================================================================================================================  ============================  ========================================================================================================================================  ===============================================================================================================================================================================================================================================
+  ..  Unnamed: 0    Unnamed: 1                                                                                                                                                                            Unnamed: 2                    Unnamed: 3                                                                                                                                Unnamed: 4
+====  ============  ====================================================================================================================================================================================  ============================  ========================================================================================================================================  ===============================================================================================================================================================================================================================================
+   0
+   1
+   2
+   3
+   4
+   5
+   6
+   7
+   8
+   9
+  10
+  11
+  12
+  13
+  14
+  15
+  16
+  17
+  18
+  19
+  20
+  21
+  22
+  23
+  24
+  25
+  26
+  27
+  28                Description of Events and Parameters
+  29
+  30                Property/event                                                                                                                                                                                                      Description                                                                                                                               Notes and Major Assumptions
+  31                ep\_seiz\_stat                                                                                                                                                                                                      epilepsy seizure status (0 = never epilepsy, 1 = previous seizures none now, 2 = infrequent seizures, 3 = frequent seizures)
+  32                ep\_antiep                                                                                                                                                                                                          on anti-epileptic
+  33                ep\_epi\_death                                                                                                                                                                                                      death caused directly by epilepsy
+  34
+  35
+  36
+  37                Parameter                                                                                                                                                                             Proposed value                Description                                                                                                                               Notes and Major Assumptions
+  38                init\_epil\_seiz\_status                                                                                                                                                              0.9875, 0.004, 0.008, 0.0005  proportions in each seizure status category at baseline                                                                                   Estimates of prevalence of epilepsy vary by setting but are in this region for sub Saharan Africa (Ba-Diop et al 2014)
+  39                init\_prop\_antiepileptic                                                                                                                                                             0, 0.25, 0.3, 0.30            initial proportions on antiepileptic by seizure status                                                                                    Ba-Diop et al 2014 provide estimates of treatment gap in SSA - based on text description, treatment gap is likely to often be larger in practice
+  40                base\_3m\_prob\_epilepsy                                                                                                                                                              0.0003                        base probability of epilepsy per 3 month period if age < 20                                                                               informed by Ngugi 2012
+  41                rr\_epilepsy\_age\_ge20                                                                                                                                                               0.3                           rate ratio for incidence of epilepsy for age > 20 vs < 20                                                                                 age 20 is not a clearly established threshold, but rate declines with age (Ngugi 2012, Ba-Diop 2014)
+  42                prop\_inc\_epilepsy\_seiz\_freq                                                                                                                                                       0.1                           proportion of incident epilepsy cases with frequent (vs infrequent) seizures (frequent  defined as  >= 3 per month, Ngugi et al)          Ngugi et al 2012
+  43                base\_prob\_3m\_seiz\_stat\_freq\_infreq                                                                                                                                              0.005                         base probability per 3 months of seizure status frequent if current infrequent                                                            no direct estimate identified but rate assumed low\*
+  44                rr\_effectiveness\_antiepileptics                                                                                                                                                     5                             relative rate of seizure status transitions if on antiepileptic (for negativetransitions, effect is 1/ rr\_effectiveness\_antiepileptics  effect of treatment - assumed to act with the same relative effect on all transitions between seizure status - difficult to ascertain effect of treatment per se rather than each specific drug (assume 0.2) - informed by Shorvon et al 2018\*
+  45                base\_prob\_3m\_seiz\_stat\_freq\_infreq                                                                                                                                              0.005                         base probability per 3 months of seizure status infrequent if current frequent                                                            no direct estimate identified but rate assumed low\*
+  46                base\_prob\_3m\_seiz\_stat\_infreq\_freq                                                                                                                                              0.05                          base probability per 3 months of seizure status infrequent if current frequent                                                            few data identified on natural transitions without treatment - informed partially  by rate in placebo arms of trials (Shorvon et al)\*
+  47                base\_prob\_3m\_seiz\_stat\_none\_freq                                                                                                                                                0.05                          base probability per 3 months of seizure status nonenow if current frequent                                                               few data identified on natural transitions without treatment - informed partially  by rate in placebo arms of trials (Shorvon et al)\*
+  48                base\_prob\_3m\_seiz\_stat\_infreq\_none                                                                                                                                              0.005                         base probability per 3 months of seizure status infrequent if nonenow                                                                     no direct estimate identified but rate assumed low\*
+  49                base\_prob\_3m\_seiz\_stat\_none\_infreq                                                                                                                                              0.05                          base probability per 3 months of seizure status nonenow if current infrequent                                                             few data identified on natural transitions without treatment =- assume 0.05 per 3 months but expect to modify in future once further data identifed\*
+  50                base\_prob\_3m\_antiepileptic                                                                                                                                                         0.02                          base probability per 3 months of starting antiepileptic, if frequent seizures                                                             depends on access - will depend on health care system component - using place-holder value for now (relevant data in US Faught et al 2018, suggest ~ 0.1 / per 3 months)\*
+  51                rr\_antiepileptic\_seiz\_infreq\_or\_freq                                                                                                                                             0.8                           relative rate of starting antiepileptic if infrequent seizures                                                                            depends on drug access and eligibility policy - assume initially that rate is 0.3 times\*
+  52                base\_prob\_3m\_stop\_antiepileptic                                                                                                                                                   0.1                           base probability per 3 months of stopping antiepileptic, if nonenow seizures                                                              will vary by setting and clinical guidance - use place holder of 0.05 for now\*
+  53                rr\_stop\_antiepileptic\_seiz\_infreq\_or\_freq                                                                                                                                       0.5                           relative rate of stopping antiepileptics if having infrequent or frequent seizures
+  54                base\_prob\_3m\_epi\_death                                                                                                                                                            0.001                         base probability per 3 months of epilepsy death                                                                                           informed by Ngugi et al 2012 but data not directly comparable\*
+  55
+  56                                                                                                                                                                                                                                                                                                                                                                              \* all these parameter values are together consistent with the initial values for prevalence and treatment use described (init\_epil\_seiz\_status and init\_prop\_antiepileptic
+  57
+  58
+  59                Additional relevant references                                                                                                                                                                                      Cited papers are in Dropbox Resources
+  60                Berg and others 2009
+  61                Kwan and Brodie 2000
+  62                Schiller and Najjar 2008
+  63                Semah and others 1998
+  64                Jette, Reid, and Wiebe 2014
+  65                Chisholm, D., and WHO-CHOICE. 2005. “Cost-Effectiveness of First-Line Antiepileptic Drug Treatments in the Developing World: A Population-Level Analysis.” Epilepsia 46 (5): 751–59.
+====  ============  ====================================================================================================================================================================================  ============================  ========================================================================================================================================  ===============================================================================================================================================================================================================================================

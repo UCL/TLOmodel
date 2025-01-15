@@ -1,0 +1,117 @@
+Parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Diarrhoea/Parameter_values.csv>`
+
+====  ===============================================================  =========================================  =========================================================================================  ============  =============================================  ==================  ============
+  ..  parameter\_name                                                  value                                      Notes/References                                                                           Unnamed: 3    Target values for 12 monthly incidence rate    Unnamed: 5          Unnamed: 6
+====  ===============================================================  =========================================  =========================================================================================  ============  =============================================  ==================  ============
+   0  base\_inc\_rate\_diarrhoea\_by\_rotavirus                        [0.175245863,0.097007598,0.009324]         Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.175245863                                    0.097007598         0.009324
+   1  base\_inc\_rate\_diarrhoea\_by\_shigella                         [0.117936461999999,0.078794104,0.093018]   Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.117936461999999                              0.078794104         0.093018
+   2  base\_inc\_rate\_diarrhoea\_by\_adenovirus                       [0.0586618,0.058661803,0.006438]           Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.0586618                                      0.058661803         0.006438
+   3  base\_inc\_rate\_diarrhoea\_by\_cryptosporidium                  [0.030886699,0.0117923629999999,0.004662]  Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.030886699                                    0.0117923629999999  0.004662
+   4  base\_inc\_rate\_diarrhoea\_by\_campylobacter                    [0.098663257,0.027915478,0.004884]         Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.098663257                                    0.027915478         0.004884
+   5  base\_inc\_rate\_diarrhoea\_by\_ETEC                             [0.27925146,0.170477152,0.019758]          Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.27925146                                     0.170477152         0.019758
+   6  base\_inc\_rate\_diarrhoea\_by\_sapovirus                        [0.100972179,0.132603114,0.00555]          Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.100972179                                    0.132603114         0.00555
+   7  base\_inc\_rate\_diarrhoea\_by\_norovirus                        [0.204864004,0.066146727,0.000888]         Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.204864004                                    0.066146727         0.000888
+   8  base\_inc\_rate\_diarrhoea\_by\_astrovirus                       [0.054208352,0.035974076,0.001332]         Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.054208352                                    0.035974076         0.001332
+   9  base\_inc\_rate\_diarrhoea\_by\_tEPEC                            [0.0608224569999999,0.022716889,0.001998]  Platts-Mills et al 2018, Liu et al, 2016, Nasin, et al. 2019                                             0.0608224569999999                             0.022716889         0.001998
+  10  rr\_diarrhoea\_HHhandwashing                                     0.7                                        Wolf et al. 2018
+  11  rr\_diarrhoea\_improved\_sanitation                              0.75                                       Wolf et al. 2018
+  12  rr\_diarrhoea\_clean\_water                                      0.67                                       Wolf et al. 2018
+  13  rr\_diarrhoea\_exclusive\_vs\_partial\_breastfeeding\_<6mo       1.68                                       Lamberti et al. 2011
+  14  rr\_diarrhoea\_exclusive\_vs\_no\_breastfeeding\_<6mo            2.65                                       Lamberti et al. 2011
+  15  rr\_diarrhoea\_any\_vs\_no\_breastfeeding\_6\_11mo               1.32                                       Lamberti et al. 2011
+  16  rr\_diarrhoea\_untreated\_HIV                                    5.4                                        Groome and Madhi 2011
+  17  rr\_diarrhoea\_SAM                                               1.2                                        Black et al. 2013
+  18
+  19  proportion\_AWD\_in\_rotavirus                                   0.97668                                    Platts-Mills et al 2018
+  20  proportion\_AWD\_in\_shigella                                    0.861942                                   Platts-Mills et al 2018
+  21  proportion\_AWD\_in\_adenovirus                                  0.950061                                   Platts-Mills et al 2018
+  22  proportion\_AWD\_in\_cryptosporidium                             0.970984                                   Platts-Mills et al 2018
+  23  proportion\_AWD\_in\_campylobacter                               0.896768                                   Platts-Mills et al 2018
+  24  proportion\_AWD\_in\_ETEC                                        0.950465                                   Platts-Mills et al 2018
+  25  proportion\_AWD\_in\_sapovirus                                   0.966385                                   Platts-Mills et al 2018
+  26  proportion\_AWD\_in\_norovirus                                   0.961643                                   Platts-Mills et al 2018
+  27  proportion\_AWD\_in\_astrovirus                                  0.974147                                   Platts-Mills et al 2018
+  28  proportion\_AWD\_in\_tEPEC                                       0.961485                                   Platts-Mills et al 2018
+  29
+  30  prob\_dehydration\_by\_rotavirus                                 0.153093                                   Platts-Mills et al 2018
+  31  prob\_dehydration\_by\_shigella                                  0.102962                                   Platts-Mills et al 2018
+  32  prob\_dehydration\_by\_adenovirus                                0.079524                                   Platts-Mills et al 2018
+  33  prob\_dehydration\_by\_cryptosporidium                           0.121458                                   Platts-Mills et al 2018
+  34  prob\_dehydration\_by\_campylobacter                             0.072808                                   Platts-Mills et al 2018
+  35  prob\_dehydration\_by\_ETEC                                      0.075925                                   Platts-Mills et al 2018
+  36  prob\_dehydration\_by\_sapovirus                                 0.10364                                    Platts-Mills et al 2018
+  37  prob\_dehydration\_by\_norovirus                                 0.090728                                   Platts-Mills et al 2018
+  38  prob\_dehydration\_by\_astrovirus                                0.122776                                   Platts-Mills et al 2018
+  39  prob\_dehydration\_by\_tEPEC                                     0.113362                                   Platts-Mills et al 2018
+  40  probability\_of\_severe\_dehydration\_if\_some\_dehydration      0.167                                      Levine et al. 2016
+  41
+  42  prob\_prolonged\_diarr\_rotavirus                                0.117706                                   Platts-Mills et al 2018
+  43  prob\_prolonged\_diarr\_shigella                                 0.165342                                   Platts-Mills et al 2018
+  44  prob\_prolonged\_diarr\_adenovirus                               0.116406                                   Platts-Mills et al 2018
+  45  prob\_prolonged\_diarr\_cryptosporidium                          0.169134                                   Platts-Mills et al 2018
+  46  prob\_prolonged\_diarr\_campylobacter                            0.152206                                   Platts-Mills et al 2018
+  47  prob\_prolonged\_diarr\_ETEC                                     0.114177                                   Platts-Mills et al 2018
+  48  prob\_prolonged\_diarr\_sapovirus                                0.133209                                   Platts-Mills et al 2018
+  49  prob\_prolonged\_diarr\_norovirus                                0.118223                                   Platts-Mills et al 2018
+  50  prob\_prolonged\_diarr\_astrovirus                               0.13511                                    Platts-Mills et al 2018
+  51  prob\_prolonged\_diarr\_tEPEC                                    0.190845                                   Platts-Mills et al 2018
+  52  prob\_prolonged\_to\_persistent\_diarr                           0.2866                                     Moore et al. 2010
+  53  rr\_bec\_persistent\_age>6mo                                     0.26                                       Ochoa et al. 2009
+  54  rr\_bec\_persistent\_HIV                                         1.7                                        \* dummy
+  55  rr\_bec\_persistent\_SAM                                         1.7                                        \* dummy
+  56  rr\_bec\_persistent\_stunted                                     33.3                                       Schilling et al 2017
+  57  min\_dur\_acute                                                  1                                          \* definitional
+  58  min\_dur\_prolonged                                              5                                          \* definitional
+  59  min\_dur\_persistent                                             13                                         \* definitional
+  60  max\_dur\_persistent                                             30                                         \* definitional
+  61
+  62  prob\_fever\_by\_rotavirus                                       0.384925                                   Platts-Mills et al 2018
+  63  prob\_fever\_by\_shigella                                        0.319876                                   Platts-Mills et al 2018
+  64  prob\_fever\_by\_adenovirus                                      0.271513                                   Platts-Mills et al 2018
+  65  prob\_fever\_by\_cryptosporidium                                 0.322385                                   Platts-Mills et al 2018
+  66  prob\_fever\_by\_campylobacter                                   0.312807                                   Platts-Mills et al 2018
+  67  prob\_fever\_by\_ETEC                                            0.258931                                   Platts-Mills et al 2018
+  68  prob\_fever\_by\_sapovirus                                       0.292276                                   Platts-Mills et al 2018
+  69  prob\_fever\_by\_norovirus                                       0.251071                                   Platts-Mills et al 2018
+  70  prob\_fever\_by\_astrovirus                                      0.195905                                   Platts-Mills et al 2018
+  71  prob\_fever\_by\_tEPEC                                           0.384547                                   Platts-Mills et al 2018
+  72  prob\_vomiting\_by\_rotavirus                                    0.471793                                   Platts-Mills et al 2018
+  73  prob\_vomiting\_by\_shigella                                     0.209852                                   Platts-Mills et al 2018
+  74  prob\_vomiting\_by\_adenovirus                                   0.308677                                   Platts-Mills et al 2018
+  75  prob\_vomiting\_by\_cryptosporidium                              0.243581                                   Platts-Mills et al 2018
+  76  prob\_vomiting\_by\_campylobacter                                0.218669                                   Platts-Mills et al 2018
+  77  prob\_vomiting\_by\_ETEC                                         0.283139                                   Platts-Mills et al 2018
+  78  prob\_vomiting\_by\_sapovirus                                    0.303154                                   Platts-Mills et al 2018
+  79  prob\_vomiting\_by\_norovirus                                    0.299343                                   Platts-Mills et al 2018
+  80  prob\_vomiting\_by\_astrovirus                                   0.276018                                   Platts-Mills et al 2018
+  81  prob\_vomiting\_by\_tEPEC                                        0.285661                                   Platts-Mills et al 2018
+  82
+  83  adjustment\_factor\_on\_cfr                                      3.75                                       Can be used in fitting.
+  84  case\_fatality\_rate\_AWD                                        0.0015                                     To be calibrated. Guideline values: Bhandari et al 1992 (0.0056); GBD 2016 paper (0.0015)
+  85  rr\_diarr\_death\_bloody                                         7.6                                        Relative CFR for bloody versus non-bloody diarrhoea, per Bhandari et al., 1992
+  86  rr\_diarr\_death\_age24to59mo                                    0.38                                       Walker et al. 2013
+  87  rr\_diarr\_death\_if\_duration\_longer\_than\_13\_days           0.0035                                     \* dummy
+  88  rr\_diarr\_death\_severe\_dehydration                            3.45                                       Levine et al. 2020
+  89  rr\_diarr\_death\_untreated\_HIV                                 5.05                                       Acacio et al. 2016
+  90  rr\_diarr\_death\_SAM                                            4.13                                       Acacio et al. 2016
+  91  rr\_diarr\_death\_alri                                           3.51                                       Acacio et al. 2016
+  92  rr\_diarr\_death\_cryptosporidium                                2.14                                       Acacio et al. 2016
+  93  rr\_diarr\_death\_shigella                                       2.8                                        Tickell et al. 2017
+  94
+  95  sensitivity\_severe\_dehydration\_visual\_inspection             0.77                                       Levine et al. 2016
+  96  specificity\_severe\_dehydration\_visual\_inspection             0.67                                       Levine et al. 2016
+  97  prob\_hospitalization\_on\_danger\_signs                         0.7                                        \* dummy
+  98
+  99  prob\_WHOPlanC\_cures\_dehydration\_if\_severe\_dehydration      0.9                                        \* dummy
+ 100  prob\_ORS\_cures\_dehydration\_if\_severe\_dehydration           0.721                                      Pulungsih et al 1992
+ 101  prob\_ORS\_cures\_dehydration\_if\_non\_severe\_dehydration      0.93                                       Munos et al. 2010
+ 102  prob\_antibiotic\_cures\_dysentery                               0.99                                       Traa et al. 2010
+ 103  number\_of\_days\_reduced\_duration\_with\_zinc                  1                                          Lazzerini and Wanzira et al 2016
+ 104  days\_between\_treatment\_and\_cure                              5
+ 105
+ 106  rr\_severe\_dehydration\_due\_to\_rotavirus\_with\_R1\_under1yo  0.63                                       Soares-Weiser et al. 2019
+ 107  rr\_severe\_dehydration\_due\_to\_rotavirus\_with\_R1\_over1yo   0.35                                       Soares-Weiser et al. 2019
+====  ===============================================================  =========================================  =========================================================================================  ============  =============================================  ==================  ============
