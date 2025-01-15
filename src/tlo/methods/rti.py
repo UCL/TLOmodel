@@ -18,6 +18,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -1110,7 +1111,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
 
-        dfd = pd.read_excel(resourcefilepath / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
+        dfd = read_csv_files(resourcefilepath / 'ResourceFile_RTI', files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries

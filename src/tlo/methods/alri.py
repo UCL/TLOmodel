@@ -37,7 +37,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date, sample_outcome
+from tlo.util import random_date, read_csv_files, sample_outcome
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -828,7 +828,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            pd.read_excel(resourcefilepath / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Alri', files='Parameter_values')
         )
 
         self.check_params_read_in_ok()
