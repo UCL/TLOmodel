@@ -2,7 +2,7 @@
 A new approach to Health Benefits Package design: an application of the Thanzi La Onse model in Malawi
 ======================================================================================================
 
-*Margherita Molaro et al.*
+*Margherita Molaro et al.* `(PLOS Computational Biology article) <https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1012462>`_
 
 .. image:: header.jpg
   :width: 100%

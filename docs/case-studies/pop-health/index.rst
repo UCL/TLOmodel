@@ -2,7 +2,7 @@
 The potential impact of declining development assistance for healthcare on population health: projections for Malawi
 ====================================================================================================================
 
-*Margherita Molaro et al.*
+*Margherita Molaro et al.* `(medRxiv pre-print) <https://www.medrxiv.org/content/10.1101/2024.10.11.24315287v1>`_
 
 .. image:: header.jpg
   :width: 100%
