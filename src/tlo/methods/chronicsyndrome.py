@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
