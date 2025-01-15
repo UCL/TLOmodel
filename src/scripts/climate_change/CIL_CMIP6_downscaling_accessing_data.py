@@ -38,7 +38,7 @@ catalog = Client.open(
 )
 
 # Get the collections
-scenarios = ["ssp585"]#, "ssp585"]  # Change as needed
+scenarios = ["ssp126", "ssp245", "ssp585"]  # Change as needed
 variable_id = "pr"  # Precipitation variable
 
 for scenario in scenarios:
@@ -52,11 +52,16 @@ for scenario in scenarios:
     # Read and process each dataset
     datasets_by_model = []
     for item in tqdm(ensemble):
+        print(item)
+        if (item == 'Item id=cil-gdpcir-CAS-FGOALS-g3-ssp126-r1i1p1f1-day') & (scenario == 'ssp126'):
+            continue
+        if variable_id not in item.assets:
+            print(f"Variable {variable_id} not found in item {item}. Skipping.")
+            continue
         asset = item.assets[variable_id]
         datasets_by_model.append(
             xr.open_dataset(asset.href, **asset.extra_fields["xarray:open_kwargs"])
         )
-
     # Combine datasets by model
     all_datasets = xr.concat(
         datasets_by_model,
@@ -67,10 +72,9 @@ for scenario in scenarios:
     # Define the spatial and temporal bounds
     lon_bounds = slice(32.67161823, 35.91841716)
     lat_bounds = slice(-17.12627881, -9.36366167)
-    #years_for_retrieval = ['2034', '2037', '2040', '2043', '2045', '2046', '2055', '2060', '2062', '2063',
-                           #'2064'] #'2032', '2026', '2029',
 
-    years_for_retrieval = ['2033', '2036','2037', '2041', '2047', '2048', '2050', '2054', '2060']
+
+    years_for_retrieval = range(2024, 2061)
     # Process each year
     output_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/"
     yearly_files = []
