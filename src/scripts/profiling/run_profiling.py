@@ -306,7 +306,6 @@ def run_profiling(
             timeline=False,
             color=True,
             flat=True,
-            flat_time="total",
             processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*", "filter_threshold": 1e-3}
         )
         converter = Ansi2HTMLConverter(title=output_name)
