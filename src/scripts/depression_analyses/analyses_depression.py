@@ -25,7 +25,6 @@ from tlo.methods import (
 )
 from tlo.methods.depression import compute_key_outputs_for_last_3_years
 
-
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 

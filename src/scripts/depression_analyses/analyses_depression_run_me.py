@@ -21,6 +21,7 @@ from tlo.methods import (
     tb,
 )
 
+
 def run():
     # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
     # will seed the random number generators for each module when they are registered.
