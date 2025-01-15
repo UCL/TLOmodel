@@ -1361,9 +1361,6 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
          }
     """
 
-    if resourcefilepath is None:
-        resourcefilepath = get_root_path() / 'resources'
-
     def read_value(_value):
         """Returns the value, or a dataframe if the value point to a different sheet in the workbook, or a series if the
         value points to sheet in the workbook with only two columns (which become the index and the values)."""

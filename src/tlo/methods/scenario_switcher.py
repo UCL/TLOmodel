@@ -53,7 +53,7 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
 
     PROPERTIES = {}
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self):
         """Read-in parameters and process them into the internal storage structures required."""
 
         # Parameters are hard-coded for this module to not make any changes. (The expectation is that some of these
