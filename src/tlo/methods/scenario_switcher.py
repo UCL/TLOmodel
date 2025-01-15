@@ -6,6 +6,7 @@ from tlo import Date, Module, Parameter, Types
 from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
 from tlo.events import Event, PopulationScopeEventMixin
 
+
 class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     """This is the `ImprovedHealthSystemAndCareSeekingScenarioSwitcher` module.
     It provides switches that can be used by the `Scenario` class to control the overall performance of the HealthSystem
