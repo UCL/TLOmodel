@@ -662,16 +662,16 @@ class Contraception(Module):
         _cons_codes['other_modern'] =\
             {get_item_code("Female Condom_Each_CMST"): 30}
         _cons_codes['IUD'] =\
-            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 2,
+            {get_item_code("Disposables gloves, powder free, 100 pieces per box"): 2,
              get_item_code("IUD, Copper T-380A"): 1}
         _cons_codes['injections'] = \
             {get_item_code("Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly"): 1,
-             get_item_code("Glove disposable powdered latex medium_100_CMST"): 1,
+             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
              get_item_code("Water for injection, 10ml_Each_CMST"): 1,
              get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 5,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
         _cons_codes['implant'] =\
-            {get_item_code("Glove disposable powdered latex medium_100_CMST"): 3,
+            {get_item_code("Disposables gloves, powder free, 100 pieces per box"): 3,
              get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 2,
              get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 1*5,  # unit: 1 ml
              get_item_code("Syringe, needle + swab"): 2,
@@ -692,7 +692,7 @@ class Contraception(Module):
              get_item_code("Needle, suture, assorted sizes, round body"): 3,
              get_item_code("Suture, catgut, chromic, 0, 150 cm"): 3,
              get_item_code("Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll"): 125,  # unit: 1 cm long (2.5 cm wide)
-             get_item_code("Glove surgeon's size 7 sterile_2_CMST"): 2,
+             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 2,
              get_item_code("Paracetamol, tablet, 500 mg"): 8*500,  # unit: 1 mg
              get_item_code("Povidone iodine, solution, 10 %, 5 ml per injection"): 2*5,  # unit: 1 ml
              get_item_code("Cotton wool, 500g_1_CMST"): 100}  # unit: 1 g
