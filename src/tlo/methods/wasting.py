@@ -535,6 +535,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 person_id=person_id, disease_module=self
             )
 
+        if ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM') and
+            (df.at[person_id, 'un_sam_with_complications'])):
+            warnings.warn(f'{person_id=} has MAM with complications.')
         assert not ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM')
                     and (df.at[person_id, 'un_sam_with_complications']))
 
@@ -902,7 +905,7 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
             not pd.isnull(df.at[person_id, 'un_sam_death_date'])
         ):
             if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
-                warnings.warn(f"{person_id=},\n{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
+                warnings.warn(f"{person_id=} dying due to SAM while \n{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
             assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
             # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
@@ -1578,6 +1581,10 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for age_grp in self.module.wasting_incident_case_tracker.keys():
             for state in self.module.wasting_states:
                 inc_df.loc[age_grp, state] = len(self.module.wasting_incident_case_tracker[age_grp][state])
+                if not all(date >= self.date_last_run for
+                           date in self.module.wasting_incident_case_tracker[age_grp][state]):
+                    warnings.warn(f"Some incident cases trying to be logged on {self.sim.date=} from the day of last"
+                                  f"log {self.date_last_run=} or before.")
                 assert all(date >= self.date_last_run for
                            date in self.module.wasting_incident_case_tracker[age_grp][state])
 
@@ -1599,6 +1606,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                          len(self.module.wasting_length_tracker[age_grp][recov_opt]))
                 else:
                     length_df.loc[age_grp, recov_opt] = 0
+                if np.isnan(length_df.loc[age_grp, recov_opt]):
+                    warnings.warn(f'There is an empty length for {age_grp=}, {recov_opt=}.')
                 assert not np.isnan(length_df.loc[age_grp, recov_opt])
                 if recov_opt == 'mod_nat_recov':
                     if not all(length >= 81 for length in self.module.wasting_length_tracker[age_grp][recov_opt]):
@@ -1610,6 +1619,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         warnings.warn(f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} '
                                       f'contains length < 3 weeks; {age_grp=}, {recov_opt=}')
                 else:
+                    if recov_opt not in ['mod_not_yet_recovered', 'sev_not_yet_recovered']:
+                        warnings.warn(f'\nInvalid {recov_opt=}.')
                     assert recov_opt in ['mod_not_yet_recovered', 'sev_not_yet_recovered']
 
 
@@ -1643,23 +1654,45 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (self.sim.date - mod_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
             sev_wasted_whole_ys_agegrp['wasting_length'] = \
                 (self.sim.date - sev_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
+            print_lengths = False
             if len(mod_wasted_whole_ys_agegrp) > 0:
-                assert not np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).all()
+                if np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any():
+                    print_lengths = True
+                    warnings.warn("There is at least one NaN length.")
+                if not all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length']):
+                    print_lengths = True
+                    warnings.warn("There is at least one zero length.")
+                if print_lengths:
+                    warnings.warn(f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
+                assert not np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any()
                 assert all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length'])
                 length_df.loc[age_grp, 'mod_not_yet_recovered'] = (
                     sum(mod_wasted_whole_ys_agegrp['wasting_length']) / len(mod_wasted_whole_ys_agegrp['wasting_length'])
                 )
             else:
                 length_df.loc[age_grp, 'mod_not_yet_recovered'] = 0
+            if np.isnan(length_df.loc[age_grp, 'mod_not_yet_recovered']):
+                warnings.warn(f"The avg {length_df.loc[age_grp, 'mod_not_yet_recovered']=} for {age_grp=} is empty.")
             assert not np.isnan(length_df.loc[age_grp, 'mod_not_yet_recovered'])
+
             if len(sev_wasted_whole_ys_agegrp) > 0:
-                assert not np.isnan(sev_wasted_whole_ys_agegrp['wasting_length']).all()
+                if np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any():
+                    print_lengths = True
+                    warnings.warn("There is at least one NaN length.")
+                if not all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length']):
+                    print_lengths = True
+                    warnings.warn("There is at least one zero length.")
+                if print_lengths:
+                    warnings.warn(f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
+                assert not np.isnan(sev_wasted_whole_ys_agegrp['wasting_length']).any()
                 assert all(length > 0 for length in sev_wasted_whole_ys_agegrp['wasting_length'])
                 length_df.loc[age_grp, 'sev_not_yet_recovered'] = (
                     sum(sev_wasted_whole_ys_agegrp['wasting_length']) / len(sev_wasted_whole_ys_agegrp['wasting_length'])
                 )
             else:
                 length_df.loc[age_grp, 'sev_not_yet_recovered'] = 0
+            if np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered']):
+                warnings.warn(f"The avg {length_df.loc[age_grp, 'sev_not_yet_recovered']=} for {age_grp=} is empty.")
             assert not np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered'])
 
         logger.info(key='wasting_length_avg', data=length_df.to_dict())
@@ -1701,6 +1734,9 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             pop_sizes_dict[f'total__{low_bound_mos}_{high_bound_mos}mo'] = total_per_agegrp_nmb
         # log prevalence & pop size for children above 5y
         above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
+        if (len(under5s) + len(above5s)) != len(df.loc[df.is_alive]):
+            warnings.warn("The numbers of persons under and above 5 don't sum to all alive person, when logging on"
+                          f"{self.sim.date=}.")
         assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive])
         mod_wasted_above5_nmb = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum()
         sev_wasted_above5_nmb = (above5s.un_WHZ_category == 'WHZ<-3').sum()
@@ -1769,6 +1805,9 @@ class Wasting_InitLoggingEvent(Event, PopulationScopeEventMixin):
             pop_sizes_dict[f'total__{low_bound_mos}_{high_bound_mos}mo'] = total_per_agegrp_nmb
         # log prevalence & pop size for children above 5y
         above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
+        if (len(under5s) + len(above5s)) != len(df.loc[df.is_alive]):
+            warnings.warn("The numbers of persons under and above 5 don't sum to all alive person, when logging at"
+                          "sim initiation.")
         assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive])
         mod_wasted_above5_nmb = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum()
         sev_wasted_above5_nmb = (above5s.un_WHZ_category == 'WHZ<-3').sum()
