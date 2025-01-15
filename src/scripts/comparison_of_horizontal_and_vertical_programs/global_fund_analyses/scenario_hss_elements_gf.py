@@ -104,11 +104,11 @@ class HSSElements(BaseScenario):
                     scenario_definitions.increase_capacity_at_primary_care(),
                 ),
 
-            "Increase Capacity of CHW":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.increase_capacity_of_dcsa(),
-                ),
+            # "Increase Capacity of CHW":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.increase_capacity_of_dcsa(),
+            #     ),
 
             # - - - Supply Chains - - -
             "Consumables Increased to 75th Percentile":
@@ -129,24 +129,24 @@ class HSSElements(BaseScenario):
                     scenario_definitions.cons_at_EPI_availability(),
                 ),
 
-            "Perfect Consumables Availability":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.all_consumables_available(),
-                ),
+            # "Perfect Consumables Availability":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.all_consumables_available(),
+            #     ),
 
             # - - - PACKAGES OF HEALTH SYSTEM STRENGTHENING - - -
-            "HSS PACKAGE: Perfect":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.full_hss_package(),
-                ),
+            # "HSS PACKAGE: Perfect":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.full_hss_package(),
+            #     ),
 
-            "HSS PACKAGE: Realistic expansion, no change in HSB":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.hss_package_default_HSB(),
-                ),
+            # "HSS PACKAGE: Realistic expansion, no change in HSB":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.hss_package_default_HSB(),
+            #     ),
 
             "HSS PACKAGE: Realistic expansion":
                 mix_scenarios(

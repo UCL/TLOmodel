@@ -1,11 +1,10 @@
 """Produce plots to show the impact each the healthcare system (overall health impact) when running under different
 scenarios (scenario_impact_of_healthsystem.py)
 
-test run for developing plots:
-outputs/hss_elements-2024-08-21T125348Z
 
-full run:
-hss_elements-2024-08-27T122317Z
+with reduced consumables logging
+/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-11-12T172311Z
+
 
 """
 
@@ -28,11 +27,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
-
-    TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
+    # todo update TARGET_PERIOD
+    TARGET_PERIOD = (Date(2027, 1, 1), Date(2029, 12, 31))
 
     # Definitions of general helper functions
-    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
+    make_graph_file_name = lambda stub: output_folder / f"GF_{stub.replace('*', '_star_')}.png"  # noqa: E731
 
     _, age_grp_lookup = make_age_grp_lookup()
 
@@ -105,17 +104,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
         # Define colormap (used only with option `put_labels_in_legend=True`)
-        # cmap = plt.get_cmap("tab20")
-        # cmap = sns.color_palette('Spectral', as_cmap=True)
-        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        # colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
         if set_colors:
             colors = [color_map.get(series, 'grey') for series in _df.index]
         else:
             cmap = sns.color_palette('Spectral', as_cmap=True)
             rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
             colors = list(map(cmap, rescale(np.array(list(xticks.keys()))))) if put_labels_in_legend else None
-
 
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(
@@ -130,9 +124,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
         if annotations:
-            # for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            #     ax.text(xpos, ypos * 1.15, '\n'.join(text.split(' ', 1)),
-            #             horizontalalignment='center', rotation='horizontal', fontsize='x-small')
             for xpos, (ypos, text) in zip(xticks.keys(), zip(_df['upper'].values.flatten(), annotations)):
                 # Set annotation position with fixed offset
                 annotation_y = ypos + offset
@@ -189,11 +180,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Ensure that the x-axis is the row index (years)
         xticks = {i: k for i, k in enumerate(median_df.index)}
 
-        # Define colormap
-        # cmap = sns.color_palette('Spectral', as_cmap=True)
-        # rescale = lambda y: (y - np.min(y)) / (np.max(y) - np.min(y))  # noqa: E731
-        # colors = list(map(cmap, rescale(np.arange(len(median_df.columns))))) if put_labels_in_legend else None
-
         if set_colors:
             colors = [color_map.get(series, 'grey') for series in median_df.columns]
         else:
@@ -209,8 +195,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             line, = ax.plot(
                 xticks.keys(),
                 median_df[column],
-                color=colors[i] if colors is not None else 'black',  # Line color
-                marker='o',  # Marker at each point
+                color=colors[i] if colors is not None else 'black',
+                marker='o',
                 label=f'{column}'
             )
             lines.append(line)
@@ -220,8 +206,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 xticks.keys(),
                 lower_df[column],
                 upper_df[column],
-                color=colors[i] if colors is not None else 'gray',  # Shaded area color
-                alpha=0.3,  # Transparency of the shaded area
+                color=colors[i] if colors is not None else 'gray',
+                alpha=0.3,
                 label=f'{column} - CI'
             )
 
@@ -243,12 +229,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
 
         return fig, ax
-
-    # # Function to create a consistent color map for all series
-    # def get_color_map(series_names):
-    #     # Generate a consistent set of colors for the full list of series
-    #     cmap = sns.color_palette('Spectral', len(series_names))
-    #     return {series: color for series, color in zip(series_names, cmap)}
 
     # %% Define parameter names
     param_names = get_parameter_names_from_scenario_file()
@@ -273,15 +253,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).pipe(set_param_names_as_column_index_level_0)
 
 
-
     # %% Charts of total numbers of deaths / DALYS
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
-    num_dalys_summarized.to_csv(results_folder / 'num_dalys_summarized.csv')
-    num_deaths_summarized.to_csv(results_folder / 'num_deaths_summarized.csv')
+    num_dalys_summarized.to_csv(results_folder / f'GF_num_dalys_summarized_{target_period()}.csv')
+    num_deaths_summarized.to_csv(results_folder / f'GF_num_deaths_summarized_{target_period()}.csv')
 
     # Make a separate plot for the scale-up of each program/programs
-    # todo select draws
     plots = {
         'HRH scenarios': [
             'Baseline',
@@ -289,7 +267,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'HRH Scale-up Following Historical Growth',
             'HRH Accelerated Scale-up (6%)',
             'Increase Capacity at Primary Care Levels',
-            'Increase Capacity of CHW'
         ],
         'Supply chain scenarios': [
             'Baseline',
@@ -304,31 +281,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'HRH Scale-up Following Historical Growth',
             'HRH Accelerated Scale-up (6%)',
             'Increase Capacity at Primary Care Levels',
-            'Increase Capacity of CHW',
             'Consumables Increased to 75th Percentile',
             'Consumables Available at HIV levels',
             'Consumables Available at EPI levels',
             'HSS PACKAGE: Realistic expansion'
         ]
     }
-    # cmap_HRH = sns.color_palette('Spectral', len(plots['HRH scenarios']))
-    # color_map_HRH = {series: color for series, color in zip(plots['HRH scenarios'], cmap_HRH)}
-    #
-    # cmap_SC = sns.color_palette('Spectral', len(plots['Supply chain scenarios']))
-    # color_map_SC = {series: color for series, color in zip(plots['Supply chain scenarios'], cmap_SC)}
-    # todo new color map
+
     color_map = {
         'Baseline': '#a50026',
         'HRH Moderate Scale-up (1%)': '#d73027',
         'HRH Scale-up Following Historical Growth': '#f46d43',
         'HRH Accelerated Scale-up (6%)': '#fdae61',
         'Increase Capacity at Primary Care Levels': '#fee08b',
-        'Increase Capacity of CHW': '#ffffbf',
         'Consumables Increased to 75th Percentile': '#d9ef8b',
         'Consumables Available at HIV levels': '#a6d96a',
         'Consumables Available at EPI levels': '#66bd63',
-        'Perfect Consumables Availability': '#1a9850',
-        'HSS PACKAGE: Perfect': '#5e4fa2',
         'HSS PACKAGE: Realistic expansion': '#3288bd'
     }
 
@@ -387,7 +355,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    num_deaths_averted.to_csv(results_folder / 'num_deaths_averted.csv')
+    num_deaths_averted.to_csv(results_folder / f'GF_num_deaths_averted_{target_period()}csv')
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
@@ -398,7 +366,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    pc_deaths_averted.to_csv(results_folder / 'pc_deaths_averted.csv')
+    pc_deaths_averted.to_csv(results_folder / f'GF_pc_deaths_averted_{target_period()}.csv')
 
     num_dalys_averted = summarize(
         -1.0 *
@@ -408,7 +376,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='Baseline')
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    num_dalys_averted.to_csv(results_folder / 'num_dalys_averted.csv')
+    num_dalys_averted.to_csv(results_folder / f'GF_num_dalys_averted_{target_period()}.csv')
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
@@ -419,7 +387,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 scaled=True)
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['Baseline'])
-    pc_dalys_averted.to_csv(results_folder / 'pc_dalys_averted.csv')
+    pc_dalys_averted.to_csv(results_folder / f'GF_pc_dalys_averted_{target_period()}.csv')
 
     # DEATHS AVERTED
     name_of_plot = f'Deaths Averted vs Baseline, {target_period()}'
@@ -432,7 +400,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         offset=10_000
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 550_000)
+    ax.set_ylim(0, 200_000)
     ax.set_ylabel('Deaths Averted')
     # fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -454,7 +422,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         offset=10_000, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
-        ax.set_ylim(0, 400_000)
+        ax.set_ylim(0, 200_000)
         ax.set_ylabel('Deaths Averted')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -472,7 +440,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         offset=0.5,
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 50)
+    ax.set_ylim(0, 15)
     ax.set_ylabel('DALYS Averted \n(Millions)')
     # fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -494,7 +462,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             offset=0.25, set_colors=color_map,
         )
         ax.set_title(name_of_plot)
-        ax.set_ylim(0, 40)
+        ax.set_ylim(0, 15)
         ax.set_ylabel('Additional DALYS Averted \n (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
@@ -560,7 +528,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True,
     ), only_median=True
     )
-    summarise_total_num_dalys_by_label_results.to_csv(results_folder / 'summarise_total_num_dalys_by_label_results.csv')
+    summarise_total_num_dalys_by_label_results.to_csv(results_folder / f'GF_num_dalys_by_label_{target_period()}.csv')
 
     total_num_dalys_by_label_results_averted_vs_baseline = summarize(
         -1.0 * find_difference_relative_to_comparison_series_dataframe(
@@ -569,8 +537,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_median=True
     )
-    total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / 'total_num_dalys_by_label_results_averted_vs_baseline.csv')
-
+    total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / f'GF_num_dalys_by_label_averted_vs_baseline_{target_period()}.csv')
 
     # DALYS averted by cause, HRH and supply chain scenarios separately
     for plot_name, scenario_names in plots.items():
@@ -591,7 +558,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # alpha=0.75,
             color=colours
         )
-        ax.set_ylim([0, 30])
+        ax.set_ylim([0, 15])
         ax.set_title(name_of_plot)
         ax.set_ylabel(f'DALYs Averted vs Baseline, (Millions)')
         wrapped_labs = ["\n".join(textwrap.wrap(_lab.get_text(), 13)) for _lab in ax.get_xticklabels()]
