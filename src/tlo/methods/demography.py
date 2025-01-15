@@ -9,7 +9,7 @@ import math
 from collections import defaultdict
 from pathlib import Path
 from types import MappingProxyType
-from typing import Union, Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd

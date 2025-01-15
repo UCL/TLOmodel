@@ -1,8 +1,7 @@
 """Placeholder for childhood wasting module."""
-
 from tlo import Module, Property, Types, logging
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

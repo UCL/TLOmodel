@@ -1,8 +1,8 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
-from typing import Optional
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent

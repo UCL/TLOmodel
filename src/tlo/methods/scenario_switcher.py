@@ -1,12 +1,10 @@
 import warnings
+from pathlib import Path
+from typing import Optional
 
 from tlo import Date, Module, Parameter, Types
 from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
 from tlo.events import Event, PopulationScopeEventMixin
-
-from pathlib import Path
-from typing import Optional
-
 
 class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
     """This is the `ImprovedHealthSystemAndCareSeekingScenarioSwitcher` module.

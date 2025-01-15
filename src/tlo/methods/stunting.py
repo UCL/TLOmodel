@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import TYPE_CHECKING, Union, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 import pandas as pd

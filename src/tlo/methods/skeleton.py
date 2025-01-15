@@ -2,14 +2,14 @@
 A skeleton template for disease methods.
 
 """
+from pathlib import Path
+from typing import Optional
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
-
-from pathlib import Path
-from typing import Optional
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS

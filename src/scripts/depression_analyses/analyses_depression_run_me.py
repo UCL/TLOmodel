@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -18,8 +20,6 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-from pathlib import Path
-
 
 def run():
     # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
