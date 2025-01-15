@@ -153,7 +153,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         """
         # Update parameters from the resource dataframe
         dfd = read_csv_files(Path(self.resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy',
-                             files='parameter_values')
+                            files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
@@ -647,7 +647,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                     'phenytoin': 27_393}  # 300mg per day - 3 months
 
             self.get_consumables({self.module.item_codes[best_available_medicine]:
-                                      dose[best_available_medicine]})
+                                  dose[best_available_medicine]})
 
             # Update this person's properties to show that they are currently on medication
             df.at[person_id, 'ep_antiep'] = True
@@ -714,10 +714,10 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
             # The medicine is available, so request it
             dose = {'phenobarbitone_3_mnths': 9131, 'phenobarbitone_12_mnths': 36_525,  # 100mg per day - 3/12 months
                     'carbamazepine_3_mnths': 91_311, 'carbamazepine_12_mnths': 365_250,  # 1000mg per day - 3/12 months
-                    'phenytoin_3_mnths': 27_393, 'phenytoin_12_mnths': 109_575}  # 300mg per day - 3/12 months
+                    'phenytoin_3_mnths': 27_393,  'phenytoin_12_mnths': 109_575}  # 300mg per day - 3/12 months
 
             self.get_consumables({self.module.item_codes[best_available_medicine]:
-                                      dose[f'{best_available_medicine}_{fu_mnths}_mnths']})
+                                  dose[f'{best_available_medicine}_{fu_mnths}_mnths']})
 
             # Reset counter of "failed attempts" and put the appointment for the next occurrence to the usual
             self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
