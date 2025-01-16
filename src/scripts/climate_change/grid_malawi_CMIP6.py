@@ -66,7 +66,7 @@ plt.ylabel("Latitude")
 
 ### SSP25 model grid
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/"
-scenarios = ["ssp2_4_5"]
+scenarios = ["ssp126", "ssp245", "ssp585"]
 
 file_list = glob.glob(os.path.join(base_dir, "*.nc"))
 colors = cm.get_cmap("tab20", 20)
@@ -134,7 +134,7 @@ facilities_gdf.plot(ax=ax, color=facilities_gdf['color'], markersize=10)
 sm = plt.cm.ScalarMappable(cmap=cmap_facilities, norm=norm)
 sm.set_array([])
 cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
-cbar.set_label('Average Precipitation')
+cbar.set_label('Mean Monthly Precipitation (mm)')
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
 
