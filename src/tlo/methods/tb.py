@@ -683,7 +683,7 @@ class Tb(Module):
         self.item_codes_for_consumables_required['slides'] = hs.get_item_code_from_item_name(
             "Microscope slides, lime-soda-glass, pack of 50")
         self.item_codes_for_consumables_required['gloves'] = hs.get_item_code_from_item_name(
-            "Gloves, exam, latex, disposable, pair")
+            "Disposables gloves, powder free, 100 pieces per box")
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_sputum_test_smear_positive=DxTest(
