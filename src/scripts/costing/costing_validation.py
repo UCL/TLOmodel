@@ -295,6 +295,14 @@ def do_cost_calibration_plot(_df, _costs_included, _xtick_fontsize = 10):
     plt.ylabel('Costs (USD), millions')
     plt.title(f'Model Cost vs Annual Expenditure 2019 and Max(Annual Budget 2020-22)\n {cost_subcategory}')
 
+    # Set a white background and black border
+    plt.grid(False)
+    ax = plt.gca()  # Get current axes
+    ax.set_facecolor('white')  # Set the background color to white
+    for spine in ax.spines.values():  # Iterate over all borders (spines)
+        spine.set_edgecolor('black')  # Set the border color to black
+        spine.set_linewidth(1.5)  # Adjust the border width if desired
+
     # Customize x-axis labels for readability
     max_label_length = 15  # Define a maximum label length for wrapping
     wrapped_labels = [textwrap.fill(str(label), max_label_length) for label in df_mean.index]
