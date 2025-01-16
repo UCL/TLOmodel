@@ -57,7 +57,7 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # %% FUNCTIONS ##################################################################
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
+TARGET_PERIOD = (Date(2025, 1, 1), Date(2040, 12, 31))
 
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
