@@ -78,19 +78,19 @@ class HTMWithAndWithoutHSS(BaseScenario):
 
             # - - - Human Resources for Health - - -
 
-            "HRH Moderate Scale-up (1%)":
+            "HRH Scale-up (1%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.moderate_hrh_expansion(),
                 ),
 
-            "HRH Scale-up Following Historical Growth":
+            "HRH Scale-up (4%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hrh_using_historical_scaling(),
                 ),
 
-            "HRH Accelerated Scale-up (6%)":
+            "HRH Scale-up (6%)":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.accelerated_hrh_expansion(),
@@ -172,7 +172,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HIV SCALE-UP CONS 75th PERCENTILE- - -
-            "HIV Program Scale-up With Consumables Increased to 75th Percentile":
+            "HIV Program Scale-up With Consumables at 75th Percentile":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
@@ -180,7 +180,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HIV SCALE-UP CONS HIV LEVEL- - -
-            "HIV Program Scale-up With Consumables Increased to HIV levels":
+            "HIV Program Scale-up With Consumables at HIV levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
@@ -188,7 +188,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HIV SCALE-UP CONS EPI LEVEL- - -
-            "HIV Program Scale-up With Consumables Increased to EPI levels":
+            "HIV Program Scale-up With Consumables at EPI levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
@@ -196,7 +196,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HIV SCALE-UP *WITH* HSS PACKAGE- - -
-            "HIV Programs Scale-up WITH HSS Expansion Package":
+            "HIV Programs Scale-up With HSS Expansion Package":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
@@ -245,7 +245,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - TB SCALE-UP CONS 75th PERCENTILE- - -
-            "TB Program Scale-up With Consumables Increased to 75th Percentile":
+            "TB Program Scale-up With Consumables at 75th Percentile":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.tb_scaleup(),
@@ -253,7 +253,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - TB SCALE-UP CONS HIV LEVEL- - -
-            "TB Program Scale-up With Consumables Increased to HIV levels":
+            "TB Program Scale-up With Consumables at HIV levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.tb_scaleup(),
@@ -261,7 +261,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - TB SCALE-UP CONS EPI LEVEL- - -
-            "TB Program Scale-up With Consumables Increased to EPI levels":
+            "TB Program Scale-up With Consumables at EPI levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.tb_scaleup(),
@@ -269,7 +269,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - TB SCALE-UP *WITH* HSS PACKAGE- - -
-            "TB Programs Scale-up WITH HSS Expansion Package":
+            "TB Programs Scale-up With HSS Expansion Package":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.tb_scaleup(),
@@ -318,7 +318,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - Malaria SCALE-UP CONS 75th PERCENTILE- - -
-            "Malaria Program Scale-up With Consumables Increased to 75th Percentile":
+            "Malaria Program Scale-up With Consumables at 75th Percentile":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.malaria_scaleup(),
@@ -326,7 +326,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - Malaria SCALE-UP CONS HIV LEVEL- - -
-            "Malaria Program Scale-up With Consumables Increased to HIV levels":
+            "Malaria Program Scale-up With Consumables at HIV levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.malaria_scaleup(),
@@ -334,7 +334,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - Malaria SCALE-UP CONS EPI LEVEL- - -
-            "Malaria Program Scale-up With Consumables Increased to EPI levels":
+            "Malaria Program Scale-up With Consumables at EPI levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.malaria_scaleup(),
@@ -342,7 +342,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - Malaria SCALE-UP *WITH* HSS PACKAGE- - -
-            "Malaria Programs Scale-up WITH HSS Expansion Package":
+            "Malaria Programs Scale-up With HSS Expansion Package":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.malaria_scaleup(),
@@ -401,7 +401,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HTM SCALE-UP CONS 75th PERCENTILE- - -
-            "HTM Program Scale-up With Consumables Increased to 75th Percentile":
+            "HTM Program Scale-up With Consumables at 75th Percentile":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
@@ -411,7 +411,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HTM SCALE-UP CONS HIV LEVEL- - -
-            "HTM Program Scale-up With Consumables Increased to HIV levels":
+            "HTM Program Scale-up With Consumables at HIV levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
@@ -421,7 +421,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HTM SCALE-UP CONS EPI LEVEL- - -
-            "HTM Program Scale-up With Consumables Increased to EPI levels":
+            "HTM Program Scale-up With Consumables at EPI levels":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
@@ -431,7 +431,7 @@ class HTMWithAndWithoutHSS(BaseScenario):
                 ),
 
             # - - - HTM SCALE-UP *WITH* HSS PACKAGE- - -
-            "HTM Programs Scale-up WITH HSS Expansion Package":
+            "HTM Programs Scale-up With HSS Expansion Package":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.hiv_scaleup(),
