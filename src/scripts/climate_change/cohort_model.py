@@ -19,8 +19,8 @@ from tlo.analysis.utils import (
 
 min_year = 2025
 max_year = 2061
-scenarios = ['ssp245', 'ssp585']
-model_types = ['lowest', 'median', 'highest']
+scenarios = ['ssp126', 'ssp245', 'ssp585']
+model_types = ['lowest', 'mean', 'highest']
 year_range = range(min_year, max_year)
 ## Get birth results
 results_folder_to_save = Path('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions')
@@ -54,11 +54,12 @@ meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
 
 malawi = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
 malawi_admin2 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
-
+#
 # change names of some districts for consistency
 malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Blantyre City', 'Blantyre')
 malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Mzuzu City', 'Mzuzu')
 malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Lilongwe City', 'Lilongwe')
+malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Zomba City', 'Zomba')
 
 difference_lat = lat_data[1] - lat_data[0]
 difference_long = long_data[1] - long_data[0]
@@ -80,7 +81,7 @@ for scenario in scenarios:
         # Match birth results and predictions
         matching_rows = min(len(births_model_subset), len(predictions_from_cmip_sum))
         multiplied_values = births_model_subset.head(matching_rows).iloc[:, 1].values * predictions_from_cmip_sum[
-            'Percentage_Difference'].head(matching_rows).values
+            'Percentage_Difference'].head(matching_rows).values * 1.4 # 1.4 is conversion from births to pregnacnies
         births_model_subset['Multiplied_Values'] = multiplied_values
 
         # Plot the results
@@ -98,23 +99,23 @@ for scenario in scenarios:
             "Scenario": [scenario],
             "Model_Type": [model_type],
             "Negative_Sum": [negative_sum],
-            "Negative_Percentage": [negative_sum / births_model_subset['Model_mean'].sum() * 100]
+            "Negative_Percentage": [negative_sum / (births_model_subset['Model_mean'].sum() * 1.4) * 100]
         })
 
         results_list.append(result_df)
         # Plot by zone
         predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'Zone']).sum().reset_index()
-        plt.figure(figsize=(10, 6))
-        for zone in predictions_from_cmip_sum['Zone'].unique():
-            zone_data = predictions_from_cmip_sum[predictions_from_cmip_sum['Zone'] == zone]
-            zone_data['Percentage_Difference'] = (zone_data['Difference_in_Expectation'] / zone_data[
-                'Predicted_No_Weather_Model']) * 100
-            plt.plot(zone_data['Year'], zone_data['Percentage_Difference'], label=f'Zone {zone}')
-        plt.xlabel("Year")
-        plt.ylabel("Change ANC cases due to weather")
-        plt.axhline(y=0, color='black', linestyle='--')
-        plt.ylim(-1.5, 0)
-        plt.legend(title='Zones')
+        # plt.figure(figsize=(10, 6))
+        # for zone in predictions_from_cmip_sum['Zone'].unique():
+        #     zone_data = predictions_from_cmip_sum[predictions_from_cmip_sum['Zone'] == zone]
+        #     zone_data['Percentage_Difference'] = (zone_data['Difference_in_Expectation'] / zone_data[
+        #         'Predicted_No_Weather_Model']) * 100
+        #     plt.plot(zone_data['Year'], zone_data['Percentage_Difference'], label=f'Zone {zone}')
+        # plt.xlabel("Year")
+        # plt.ylabel("Change ANC cases due to weather")
+        # plt.axhline(y=0, color='black', linestyle='--')
+        # plt.ylim(-1.5, 0)
+        # plt.legend(title='Zones')
 
         # Plot by district
         predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'District']).sum().reset_index()
@@ -123,12 +124,12 @@ for scenario in scenarios:
             district_data = predictions_from_cmip_sum[predictions_from_cmip_sum['District'] == district]
             district_data['Percentage_Difference'] = (district_data['Difference_in_Expectation'] / district_data[
                 'Predicted_No_Weather_Model']) * 100
-            plt.plot(district_data['Year'], district_data['Percentage_Difference'], label=f'{district}')
-        plt.xlabel("Year")
-        plt.ylabel("Change ANC cases due to weather")
-        plt.axhline(y=0, color='black', linestyle='--')
-        plt.ylim(-2.5, 0)
-        plt.legend(title='Districts')
+        #     plt.plot(district_data['Year'], district_data['Percentage_Difference'], label=f'{district}')
+        # plt.xlabel("Year")
+        # plt.ylabel("Change ANC cases due to weather")
+        # plt.axhline(y=0, color='black', linestyle='--')
+        # plt.ylim(-2.5, 0)
+        # plt.legend(title='Districts')
 
         # Generate district map visualization
         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
@@ -161,14 +162,14 @@ for scenario in scenarios:
         sm = plt.cm.ScalarMappable(cmap='Blues_r',
                                    norm=mcolors.Normalize(vmin=malawi_admin2['Percentage_Difference'].min(),
                                                           vmax=malawi_admin2['Percentage_Difference'].max()))
-        sm.set_array([])
-        cbar = plt.colorbar(sm, ax=ax, orientation="vertical", shrink=0.7)
-        cbar.set_label("Percentage Difference (%)", fontsize=12)
-        plt.xlabel("Longitude", fontsize=14)
-        plt.ylabel("Latitude", fontsize=14)
-        plt.title(f"{scenario}: {model_type}", fontsize=16)
-        plt.tight_layout()
-        plt.savefig(results_folder_to_save / f'{scenario}_{model_type}_map_Malawi_cumulative_difference.png')
+        # sm.set_array([])
+        # cbar = plt.colorbar(sm, ax=ax, orientation="vertical", shrink=0.7)
+        # cbar.set_label("Percentage Difference (%)", fontsize=12)
+        # plt.xlabel("Longitude", fontsize=14)
+        # plt.ylabel("Latitude", fontsize=14)
+        # plt.title(f"{scenario}: {model_type}", fontsize=16)
+        # plt.tight_layout()
+        # plt.savefig(results_folder_to_save / f'{scenario}_{model_type}_map_Malawi_cumulative_difference.png')
         # Save multiplied values by model and scenario
         multiplied_values_df = pd.DataFrame({
             'Year': year_range[:matching_rows],
@@ -197,7 +198,7 @@ print("Districts in predictions but not in ADM2:", missing_in_adm2)
 
 
 ## now all grids
-fig, axes = plt.subplots(2, 3, figsize=(18, 12), constrained_layout=True)
+fig, axes = plt.subplots(3, 3, figsize=(18, 18),)
 
 global_min = float('inf')
 global_max = float('-inf')
@@ -238,7 +239,6 @@ for i, scenario in enumerate(scenarios):
             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
         )
         percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
-        print(percentage_diff_by_district)
         malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
 
@@ -273,7 +273,7 @@ sm = plt.cm.ScalarMappable(
 sm.set_array([])
 fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
 plt.suptitle("Percentage Difference Maps by Scenario and Model Type", fontsize=16, y=1.02)
-# plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
+plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
 plt.show()
 
 
@@ -312,10 +312,11 @@ total_population = population_data_grouped.sum()
 population_proportion = population_data_grouped / total_population
 
 # Create the figure and axes grid
-fig, axes = plt.subplots(2, 3, figsize=(18, 12), constrained_layout=True)
-print(births_model_subset)
+fig, axes = plt.subplots(3, 3, figsize=(18, 18))
 y_min = float('inf')
 y_max = float('-inf')
+x_min = float('inf')
+x_max = float('-inf')
 year_groupings = range(2025, 2060, 5)
 for i, scenario in enumerate(scenarios):
     for j, model_type in enumerate(model_types):
@@ -346,11 +347,9 @@ for i, scenario in enumerate(scenarios):
             for _, row in subset.iterrows():
                 district = row['District']
                 percentage_diff = row['Percentage_Difference']
-                #print(percentage_diff)
                 row_index = births_model_subset.index.get_loc(year)
 
                 number_of_births = population_proportion[district] * births_model_subset.iloc[row_index]["Model_mean"]
-                #print(percentage_diff * number_of_births)
                 if year not in percentage_diff_by_year_district:
                     percentage_diff_by_year_district[year] = {}
                 if district not in percentage_diff_by_year_district[year]:
@@ -360,20 +359,23 @@ for i, scenario in enumerate(scenarios):
         data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_district, orient='index').fillna(0)
         y_min = min(y_min, data_for_plot.min().min())
         y_max = max(y_max, data_for_plot.max().max())
+        x_min = min(x_min, data_for_plot.index.min())
+        x_max = max(x_max, data_for_plot.index.max())
 
         ax = axes[i, j]
         data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20', legend=False)
         ax.set_title(f"{scenario}: {model_type}", fontsize=10)
         if i == len(scenarios) - 1:
-            ax.set_xlabel('Period (5 years)', fontsize=10)
+            ax.set_xlabel('Year', fontsize=12)
         if j == 0:
-            ax.set_ylabel('Deficit of ANC services', fontsize=10)
+            ax.set_ylabel('Deficit of ANC services', fontsize=12)
         if (i == 0) & (j == 2):
-            ax.legend(title="Districts", fontsize=8, title_fontsize=10, bbox_to_anchor=(1.09, 1))
+            ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
 
 for ax in axes.flatten():
-    ax.set_ylim(y_min*7, y_max)
-
+    ax.set_ylim(y_min*9, y_max)
+handles, labels = ax.get_legend_handles_labels()
+fig.legend(handles, labels,  bbox_to_anchor=(1, -10), loc = "center right", fontsize=10, title="Districts")
 plt.tight_layout()
 plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births.png')
 plt.show()
