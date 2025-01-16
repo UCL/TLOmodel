@@ -323,25 +323,32 @@ class Schisto(Module):
 
         # HSI and treatment params:
         param_list = workbook['Parameters'].set_index("Parameter")['Value']
-        for _param_name in ('delay_till_hsi_a_repeated',
-                            'delay_till_hsi_b_repeated',
-                            'rr_WASH',
-                            'calibration_scenario',
-                            'urine_filtration_sensitivity_lowWB',
-                            'urine_filtration_sensitivity_moderateWB',
-                            'urine_filtration_sensitivity_highWB',
-                            'kato_katz_sensitivity_moderateWB',
-                            'kato_katz_sensitivity_highWB',
-                            'scaleup_WASH',
-                            'scaleup_WASH_start_year',
-                            'mda_coverage',
-                            'mda_target_group',
-                            'mda_frequency_months',
-                            'scaling_factor_baseline_risk',
-                            'baseline_risk',
-                            ):
-            # parameters[_param_name] = float(param_list[_param_name])
-            parameters[_param_name] = param_list[_param_name]
+
+        for _param_name in (
+            'delay_till_hsi_a_repeated',
+            'delay_till_hsi_b_repeated',
+            'rr_WASH',
+            'calibration_scenario',
+            'urine_filtration_sensitivity_lowWB',
+            'urine_filtration_sensitivity_moderateWB',
+            'urine_filtration_sensitivity_highWB',
+            'kato_katz_sensitivity_moderateWB',
+            'kato_katz_sensitivity_highWB',
+            'scaleup_WASH',  # Needs to be included
+            'scaleup_WASH_start_year',
+            'mda_coverage',
+            'mda_target_group',  # Needs to be included
+            'mda_frequency_months',
+            'scaling_factor_baseline_risk',
+            'baseline_risk',
+        ):
+            value = param_list[_param_name]
+
+            # Convert to float if possible, otherwise store as is
+            try:
+                parameters[_param_name] = float(value)
+            except ValueError:
+                parameters[_param_name] = value
 
         # MDA coverage - historic
         # todo this is updated now with the EPSEN data
@@ -700,6 +707,8 @@ class SchistoSpecies:
                                       'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
+            'R0': Parameter(Types.DATA_FRAME,
+                                              'R0 of spcies'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
@@ -754,12 +763,13 @@ class SchistoSpecies:
                             'PZQ_efficacy',
                             'baseline_prevalence',
                             ):
-            parameters[_param_name] = param_list[f'{_param_name}_{self.name}']
+            parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
+            # parameters[_param_name] = float(param_list[_param_name])
 
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         # schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
         # todo this is the updated (calibrated) data
-        schisto_initial_reservoir = workbook[f'InitialData_{self.name}'].set_index("District")
+        schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
         parameters['R0'] = schisto_initial_reservoir['R0']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
