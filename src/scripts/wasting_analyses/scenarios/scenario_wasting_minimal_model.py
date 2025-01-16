@@ -104,8 +104,7 @@ class WastingAnalysis(BaseScenario):
     #                                                s in base_inc_rate_wasting_props_by_agegp],
     #             'progression_severe_wasting_monthly_by_agegp': [s * pars_combinations[draw_number][2] for \
     #                                                s in progression_severe_wasting_monthly_props_by_agegp],
-    #             'prob_death_after_SAMcare': ((pars_combinations[draw_number][0] *
-    #                                          prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam[3]) /
+    #             'prob_death_after_SAMcare': ((pars_combinations[draw_number][0] * pars_combinations[draw_number][3]) /
     #                                          (1-0.738))
     #         }
     #     }
