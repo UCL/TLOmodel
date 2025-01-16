@@ -1,87 +1,109 @@
+import glob
+import os
+import re
+
 import geopandas as gpd
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import colors as mcolors
 from netCDF4 import Dataset
+from shapely.geometry import Polygon
 
 # Load the dataset and the variable
-file_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/724bab97773bb7ba4e1635356ad0d12.nc"
-dataset = Dataset(file_path, mode='r')
-pr_data = dataset.variables['tp'][:]
-time_data = dataset.variables['date'][:]
-lat_data = dataset.variables['latitude'][:]
-long_data = dataset.variables['longitude'][:]
+file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
+dataset = Dataset(file_path_historical_data, mode='r')
+print(dataset.variables.keys())
+pr_data = dataset.variables['tp'][:]  # ['pr'][:] pr for projections, tp for historical
+lat_data = dataset.variables['latitude'][:]  # ['lat'][:]
+long_data = dataset.variables['longitude'][:]  # ['lon'][:]
+meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
 
-## Initial plot
-for i in range(len(lat_data)):
-    for j in range(len(long_data)):
-        pr_data_time_series_grid_1 = pr_data[:, i, j]
-        pr_data_time_series_grid_1 *= 1000 # to get to days
-        plt.plot(pr_data_time_series_grid_1)
+# Load Malawi shapefile
+malawi = gpd.read_file(
+    "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
+malawi_admin1 = gpd.read_file(
+    "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm1_nso_20181016.shp")
+malawi_admin2 = gpd.read_file(
+    "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
 
-plt.title('Average Precipitation Over Time - Grid ')
-plt.ylabel('Precip (mm)')
-plt.xlabel('Time')
+difference_lat = lat_data[1] - lat_data[0]  # as is a grid, the difference is the same for all sequential coordinates
+difference_long = long_data[1] - long_data[0]
+
+polygons = []
+for x in long_data:
+    for y in lat_data:
+        bottom_left = (x, y)
+        bottom_right = (x + difference_long, y)
+        top_right = (x + difference_long, y + difference_lat)
+        top_left = (x, y + difference_lat)
+        polygon = Polygon([bottom_left, bottom_right, top_right, top_left])
+        polygons.append(polygon)
+
+grid = gpd.GeoDataFrame({'geometry': polygons}, crs=malawi.crs)
+grid_clipped = gpd.overlay(grid, malawi, how='intersection')  # for graphing
+grid_clipped_ADM1 = gpd.overlay(grid, malawi_admin1, how='intersection')  # for graphing
+grid_clipped_ADM2 = gpd.overlay(grid, malawi_admin2, how='intersection')  # for graphing
+
+# Setup color map for plotting grid lines
+colors = cm.get_cmap("tab20", 20)
+
+# Corrected part for processing model files
+nc_file_directory = "/path/to/your/nc_files"  # Define this correctly
+fig, ax = plt.subplots(figsize=(10, 10))  # Ensure you create the axis before plotting
+for idx, file in enumerate(glob.glob(os.path.join(nc_file_directory, "*.nc"))):
+    data_per_model = Dataset(file, mode='r')
+    pr_data_model = data_per_model.variables['pr'][:]  # in kg m-2 s-1 = mm s-1 x 86400 to get to day
+    lat_data_model = data_per_model.variables['lat'][:]
+    long_data_model = data_per_model.variables['lon'][:]
+
+    # Plot grid lines for this model file
+    for lon in long_data_model:
+        ax.axvline(x=lon, color=colors(idx), linestyle='--', linewidth=0.5)
+    for lat in lat_data_model:
+        ax.axhline(y=lat, color=colors(idx), linestyle='--', linewidth=0.5)
+
+# Add in facility information
+expanded_facility_info = pd.read_csv(
+    "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+    index_col=0
+)
+
+long_format = expanded_facility_info.T.reset_index()
+long_format.columns = [
+    'Facility', 'Zonename', 'Resid', 'Dist', 'A105', 'A109__Altitude', 'Ftype',
+    'A109__Latitude', 'A109__Longitude', 'minimum_distance', 'average_precipitation'
+]
+
+long_format = long_format.dropna(subset=['A109__Latitude'])
+
+facilities_gdf = gpd.GeoDataFrame(
+    long_format,
+    geometry=gpd.points_from_xy(long_format['A109__Longitude'], long_format['A109__Latitude']),
+    crs="EPSG:4326"
+)
+
+facilities_gdf['average_precipitation'] = pd.to_numeric(facilities_gdf['average_precipitation'], errors='coerce')
+
+norm = mcolors.Normalize(vmin=facilities_gdf['average_precipitation'].min(),
+                         vmax=facilities_gdf['average_precipitation'].max())
+cmap_facilities = plt.cm.YlOrBr
+facilities_gdf['color'] = facilities_gdf['average_precipitation'].apply(lambda x: cmap_facilities(norm(x)))
+
+# Plotting facilities on the map
+malawi_admin2.plot(ax=ax, edgecolor='black', color='white')
+grid_clipped_ADM2.plot(ax=ax, edgecolor='#1C6E8C', alpha=0.4)
+grid_clipped_ADM1.plot(column='ADM1_EN', ax=ax, cmap=colors, edgecolor='#1C6E8C', alpha=0.7)
+
+facilities_gdf.plot(ax=ax, color=facilities_gdf['color'], markersize=10)
+
+sm = plt.cm.ScalarMappable(cmap=cmap_facilities, norm=norm)
+sm.set_array([])
+cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
+cbar.set_label('Mean Monthly Precipitation (mm)')
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
+plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/historical_weather.png')
+
 plt.show()
-
-
-weather_data_historical = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv", index_col=0)
-
-for i in range(len(weather_data_historical.columns)):
-    plt.plot(weather_data_historical.iloc[:, i], label = weather_data_historical.columns[i])
-
-plt.title('Average Precipitation Over Time - Facility ')
-plt.ylabel('Precip (mm)')
-plt.xlabel('Time')
-plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-#plt.show()
-
-#
-#
-# monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv", index_col=0)
-#
-# for i in range(len(monthly_reporting_by_facility.columns)):
-#     plt.plot(monthly_reporting_by_facility.iloc[:, i], label = monthly_reporting_by_facility.columns[i])
-#
-# plt.title('Average Reprting Over Time - Facility ')
-# plt.ylabel('Reporting (%)')
-# plt.xlabel('Time')
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-# #plt.show()
-#
-#
-# for i in range(len(monthly_reporting_by_facility.columns)):
-#     for j in range(len(monthly_reporting_by_facility.iloc[:, i])):
-#         if weather_data_historical.iloc[j, i] > 1000:
-#             plt.scatter(weather_data_historical.iloc[j, i], monthly_reporting_by_facility.iloc[j, i])
-#
-# plt.title('Average Reprting Over Time - Facility ')
-# plt.ylabel('Reporting(%)')
-# plt.xlabel('Precip (mm)')
-# plt.xlim(1000,4000)
-# plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-# #plt.show()
-
-
-#
-# ########### Plot daily maximum data - why is it so high? ##########
-#
-# file_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_maximum/2011/d7caf4e3506d13b9726aa4f77589c384.nc"
-# dataset = Dataset(file_path, mode='r')
-# pr_data = dataset.variables['tp'][:] # m per day, so multiply by 1000 to get mm per day
-# time_data = dataset.variables['valid_time'][:]
-# lat_data = dataset.variables['latitude'][:]
-# long_data = dataset.variables['longitude'][:]
-#
-# ## Initial plot
-# for i in range(len(lat_data)):
-#     for j in range(len(long_data)):
-#         pr_data_time_series_grid = pr_data[:, i, j]
-#         pr_data_time_series_grid *= 1000 # to get to mm
-#         plt.plot(pr_data_time_series_grid)
-#
-# plt.title('Daily Maximum Precipitation Over Time - Grid ')
-# plt.ylabel('Precip (mm)')
-# plt.xlabel('Time')
-# plt.show()
-#
