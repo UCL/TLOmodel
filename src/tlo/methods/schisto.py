@@ -15,7 +15,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 from tlo.methods.dxmanager import DxTest
 
 if TYPE_CHECKING:
@@ -102,9 +102,6 @@ class Schisto(Module):
                                       'one of [PSAC_SAC, SAC, ALL]'),
         'mda_frequency_months': Parameter(Types.INT,
                                           'Number of months between MDA activities'),
-        'reset_calibration': Parameter(Types.BOOL,
-                                       'if True, will reset the prevalence and mean worm burden in 2022 to'
-                                       'match 2022 reported data'),
         'scaling_factor_baseline_risk': Parameter(Types.REAL,
                                                   'scaling factor controls how the background risk of '
                                                   'infection is adjusted based on the deviation of current prevalence '
@@ -159,7 +156,10 @@ class Schisto(Module):
         self.districts = self.sim.modules['Demography'].districts  # <- all districts
 
         # Load parameters
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
+        # workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
+        # self.parameters = self._load_parameters_from_workbook(workbook)
+
+        workbook = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
 
         # load species-specific parameters
@@ -240,14 +240,6 @@ class Schisto(Module):
         if self.parameters['scaleup_WASH']:
             sim.schedule_event(SchistoWashScaleUp(self),
                                Date(self.parameters['scaleup_WASH_start_year'], 1, 1))
-
-
-
-
-        # # schedule calibration reset
-        # if self.parameters['reset_calibration']:
-        #     sim.schedule_event(SchistoResetCalibration(self),
-        #                                                Date(2022, 1, 1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -345,7 +337,6 @@ class Schisto(Module):
                             'mda_coverage',
                             'mda_target_group',
                             'mda_frequency_months',
-                            'reset_calibration',
                             'scaling_factor_baseline_risk',
                             'baseline_risk',
                             ):
@@ -1712,8 +1703,8 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """This is a regular event (every month) that causes the logging for each species."""
-        self.repeat = 1
+        """This is a regular event (every year) that causes the logging for each species."""
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, Schisto)
 
