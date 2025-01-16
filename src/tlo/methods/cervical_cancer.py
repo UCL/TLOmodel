@@ -944,7 +944,7 @@ def screen_population(year, p, eligible_population, df, rng, sim, module):
             topen=sim.date,
             tclose=None
         )
-def perform_cin_procedure(year, p, person_id, hs, module, sim):
+def perform_cin_procedure(hsi_event, year, p, person_id, hs, module, sim):
     """Function to decide treatment for individuals with CIN based on year. If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
     :param year: the year of the screening
     :param p: parameters
@@ -961,6 +961,8 @@ def perform_cin_procedure(year, p, person_id, hs, module, sim):
 
     selected_method = 'Thermoablation' if year >= p['transition_testing_year'] else 'Cryotherapy'
     method_info = treatment_methods[selected_method]
+
+    hsi_event.add_equipment({'LLETZ Machines'})
 
     # Schedule HSI event
     hs.schedule_hsi_event(
@@ -996,7 +998,8 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
 
         # Check consumables are available
         cons_avail = self.get_consumables(
-            item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'])
+            item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'],
+            optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via_optional'])
 
         if cons_avail:
             self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
@@ -1017,7 +1020,8 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
                             ):
-                    perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
+                    perform_cin_procedure(self, year, p, person_id, self.sim.modules['HealthSystem'], self.module,
+                                          self.sim)
 
                 # Biopsy if suspected Stage 1 to Stage 4
                 elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
@@ -1096,7 +1100,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
             if person['hv_diagnosed']:
                 if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options+hpv_stage_options)
                                 ):
-                    perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
+                    perform_cin_procedure(self, year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
 
 class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1265,7 +1269,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
 
             # If biopsy confirms that individual does not have cervical cancer but CIN is detected, then individual is sent for CIN treatment
             if (dx_result == False) and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
-                perform_cin_procedure(year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
+                perform_cin_procedure(self, year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
 
             # If biopsy confirms that individual has cervical cancer, register diagnosis and either refer to treatment or palliative care
             elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
