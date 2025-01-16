@@ -714,6 +714,66 @@ plt.savefig(figurespath /f'consumable_availability_heatmap_alllevels.png', dpi=3
 plt.show()
 plt.close()
 
+# Create heatmap of average availability by Facility_Level and program for actual and 75th percentile (Costing paper)
+# Actual
+aggregated_df = df_for_plots.groupby(['Facility_Level', 'item_category'])['Actual'].mean().reset_index()
+heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='Actual')
+
+# Calculate the aggregate row and column
+aggregate_col= heatmap_data.mean(axis=1)
+overall_aggregate = aggregate_col.mean()
+aggregate_row =  heatmap_data.mean(axis=0)
+
+# Add aggregate row and column
+heatmap_data['Average'] = aggregate_col
+aggregate_row['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_row
+
+# Generate the heatmap
+sns.set(font_scale=1.2)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.xlabel('Scenarios')
+plt.ylabel(f'Facility Level')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /f'heatmap_program_and_level_actual.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+# 75th percentile
+aggregated_df = df_for_plots.groupby(['Facility_Level', 'item_category'])['75th percentile\n  facility'].mean().reset_index()
+heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='75th percentile\n  facility')
+
+# Calculate the aggregate row and column
+aggregate_col= heatmap_data.mean(axis=1)
+overall_aggregate = aggregate_col.mean()
+aggregate_row =  heatmap_data.mean(axis=0)
+
+# Add aggregate row and column
+heatmap_data['Average'] = aggregate_col
+aggregate_row['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_row
+
+# Generate the heatmap
+sns.set(font_scale=1.2)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.xlabel('Scenarios')
+plt.ylabel(f'Facility Level')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /f'heatmap_program_and_level_75perc.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+
 # Create a heatmap of average availability by item_category and scenario
 # Base scenario list
 base_scenarios = [['Actual']]
