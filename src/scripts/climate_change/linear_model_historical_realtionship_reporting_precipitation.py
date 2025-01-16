@@ -570,7 +570,7 @@ def get_weather_data(ssp_scenario, model_type):
         columns=zero_sum_columns)
 
     return weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df
-model_types = ['lowest', 'median', 'highest']
+model_types = ['lowest', 'mean', 'highest']
 # Configuration and constants
 min_year_for_analysis = 2025
 absolute_min_year = 2024
@@ -578,7 +578,7 @@ max_year_for_analysis = 2071
 data_path = "/Users/rem76/Desktop/Climate_change_health/Data/"
 
 # Define SSP scenario
-ssp_scenarios = ["ssp245", "ssp585"]
+ssp_scenarios = ["ssp126","ssp245", "ssp585"]
 
 # Load and preprocess weather data
 for ssp_scenario in ssp_scenarios:
@@ -586,7 +586,6 @@ for ssp_scenario in ssp_scenarios:
         print(ssp_scenario, model_type)
         weather_data_prediction_five_day_cumulative_df, weather_data_prediction_monthly_df = get_weather_data(ssp_scenario,
                                                                                                               model_type)
-
         lag_1_month_prediction = weather_data_prediction_monthly_df.shift(1).values
         lag_2_month_prediction = weather_data_prediction_monthly_df.shift(2).values
         lag_3_month_prediction = weather_data_prediction_monthly_df.shift(3).values
