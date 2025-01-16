@@ -33,17 +33,19 @@ from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.util import DEFAULT_MOTHER_ID, create_age_range_lookup, get_person_id_to_inherit_from
 
 # Standard logger
-logger = logging.getLogger(__name__)
-print(f"Logger name being used: {__name__}.detail")  # Debugging the logger name
+logger = logging.getLogger("tlo.methods.Demography_Nuhdss")
+#logger = logging.getLogger(__name__)
+#print(f"Logger name being used: {__name__}.detail")  # Debugging the logger name
 logger.setLevel(logging.INFO)
 
 # Detailed logger
-logger_detail = logging.getLogger(f"{__name__}.detail")
+logger_detail = logging.getLogger("tlo.methods.Demography_Nuhdss.detail")
 logger_detail.setLevel(logging.INFO)
 
 # Population scale factor logger
 logger_scale_factor = logging.getLogger('tlo.methods.population')
 logger_scale_factor.setLevel(logging.INFO)
+
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
 MAX_AGE_FOR_RANGE = 100
@@ -97,7 +99,7 @@ class Demography(Module):
     # and longer description.
     PARAMETERS = {
         'max_age_initial': Parameter(Types.INT, 'The oldest age (in whole years) in the initial population'),
-        'pop_2015': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
+        'pop_2015': Parameter(Types.DATA_FRAME, 'Population in 2015 for initialising population'),
         'slum_num_to_slum_name': Parameter(Types.DICT, 'Mapping from slum_num to slum name'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
         
@@ -140,11 +142,14 @@ class Demography(Module):
         self.load_parameters_from_dataframe(pd.read_csv(
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
         )
-
-        # Initial population size:
+         # Initial population size:
         self.parameters['pop_2015'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_nuhdss_2015.csv'
+            Path(self.resourcefilepath) / 'demography' / 'pop_2015.csv'
         )
+        # # Initial population size:
+        # self.parameters['pop_2015'] = pd.read_csv(
+        #     Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_nuhdss_2015.csv'
+        # )
 
         # Lookup dicts to map from slum_num_of_residence (in the df) and slum name 
         self.slums = self.parameters['pop_2015']['slum'].drop_duplicates().to_list()

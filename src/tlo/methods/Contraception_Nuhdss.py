@@ -179,19 +179,18 @@ class Contraception(Module):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception_nuhdss.xlsx', sheet_name=None)
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
             'Method_Use_In_2015',
-            'Pregnancy_NotUsing_In_2010',  #
-            'Pregnancy_NotUsing_HIVeffect', #
+            'Pregnancy_NotUsing_In_2015',  
             'Failure_ByMethod',
             'Initiation_ByAge', #
             'Initiation_ByMethod',
             'Interventions_Pop',
             'Interventions_PPFP',
-            'Initiation_AfterBirth',
+            'Initiation_AfterBirth',#
             'Discontinuation_ByMethod',
             'Discontinuation_ByAge', #
             'Prob_Switch_From',
@@ -203,7 +202,7 @@ class Contraception(Module):
 
         # Declare values for other parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
+            Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_ContraceptionParams_nuhdss.csv'
         ))
 
         # Import the Age-specific fertility rate data from WPP
@@ -1005,7 +1004,6 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # put everyone older than `age_high` onto not_using:
         df.loc[
             (df.sex == 'F') &
-            df.is_alive &
             (df.age_years > self.age_high) &
             (df.co_contraception != 'not_using'),
             'co_contraception'] = 'not_using'

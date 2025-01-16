@@ -40,7 +40,7 @@ EvaJ/contraception_2023-02_inclPR807/AnalysisAllCalib_Contraception with the ana
 """
 
 from tlo import Date, logging
-from tlo.methods import contraception, demography, healthsystem, hiv
+from tlo.methods import contraception, demography, healthsystem, hiv, Demography_Nuhdss
 from tlo.scenario import BaseScenario
 
 
@@ -50,7 +50,7 @@ class RunAnalysisCo(BaseScenario):
             seed=0,
             start_date=Date(2010, 1, 1),
             end_date=Date(2099, 12, 31),
-            initial_population_size=250_000,  # selected size for the Tim C at al. 2023 paper: 250K
+            initial_population_size=1000,  # selected size for the Tim C at al. 2023 paper: 250K
             number_of_draws=1,  # <- one scenario
             runs_per_draw=1,  # <- repeated this many times
         )
@@ -69,19 +69,20 @@ class RunAnalysisCo(BaseScenario):
     def modules(self):
         return [
             # Core Modules
-            demography.Demography(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      cons_availability="all"),
+            #demography.Demography(resourcefilepath=self.resources),
+            Demography_Nuhdss.Demography(resourcefilepath=self.resources),
+            # healthsystem.HealthSystem(resourcefilepath=self.resources,
+            #                           cons_availability="all"),
 
             # - Contraception and replacement for Labour etc.
-            contraception.Contraception(resourcefilepath=self.resources,
-                                        use_healthsystem=True  # default: True <-- using HealthSystem
-                                        # if True initiation and switches to contraception require an HSI
-                                        ),
-            contraception.SimplifiedPregnancyAndLabour(),
+            # contraception.Contraception(resourcefilepath=self.resources,
+            #                             use_healthsystem=False  # default: True <-- using HealthSystem
+            #                             # if True initiation and switches to contraception require an HSI
+            #                             ),
+            # contraception.SimplifiedPregnancyAndLabour(),
 
-            # - Supporting Module required by Contraception
-            hiv.DummyHivModule(),
+            # # - Supporting Module required by Contraception
+            # hiv.DummyHivModule(),
         ]
 
     def draw_parameters(self, draw_number, rng):
