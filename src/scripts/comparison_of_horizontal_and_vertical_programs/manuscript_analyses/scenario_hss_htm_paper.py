@@ -25,17 +25,16 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
 
-# todo reset scenario_definitions change date also
 class HTMWithAndWithoutHSS(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 1, 1)  # todo 2036
-        self.pop_size = 100  # todo 100_000
+        self.end_date = Date(2036, 1, 1)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1  # todo 5
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
