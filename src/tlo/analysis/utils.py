@@ -471,6 +471,9 @@ def summarize(
     if isinstance(output, pd.DataFrame):
         output = output.rename(columns={'central': 'mean'},
                                level=0 if output.columns.nlevels == 1 else 1)
+    else:
+        output.name = 'mean'  # rename the series to mean
+
     return output
 
 
