@@ -4,6 +4,8 @@ check scenarios are generated correctly:
 tlo scenario-run --draw-only
  src/scripts/comparison_of_horizontal_and_vertical_programs/manuscript_analyses/scenario_hss_htm_paper.py
 
+to create locally available log files, have to do this command run-by-run
+tlo parse-log outputs/htm_and_hss_runs-2025-01-16T095335Z/0/0
 
 Run on the batch system using:
 
