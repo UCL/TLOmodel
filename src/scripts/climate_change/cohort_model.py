@@ -68,6 +68,8 @@ difference_long = long_data[1] - long_data[0]
 
 results_list = []
 
+results_list = []
+
 #Loop through scenarios and model types
 for scenario in scenarios:
     for model_type in model_types:
@@ -75,9 +77,9 @@ for scenario in scenarios:
             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
         )
         predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
+        predictions_from_cmip = predictions_from_cmip[predictions_from_cmip['Year'] <= 2061]
+        # total disruptions
         predictions_from_cmip_sum = predictions_from_cmip.groupby('Year').sum().reset_index()
-        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
-
         predictions_from_cmip_sum['Percentage_Difference'] = (
                 predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum[
                 'Predicted_No_Weather_Model'])
@@ -85,38 +87,38 @@ for scenario in scenarios:
         matching_rows = min(len(births_model_subset), len(predictions_from_cmip_sum))
         multiplied_values = births_model_subset.head(matching_rows).iloc[:, 1].values * predictions_from_cmip_sum[
             'Percentage_Difference'].head(matching_rows).values * 1.4 # 1.4 is conversion from births to pregnacnies
-        births_model_subset['Multiplied_Values'] = multiplied_values
+
         # Check for negative values (missed cases?)
         negative_sum = np.sum(multiplied_values[multiplied_values < 0])
-       #print(negative_sum)
-        total_negative_difference = predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0, 'Difference_in_Expectation'].sum()
-        total_percentage_negative_difference = total_negative_difference/ predictions_from_cmip['Predicted_No_Weather_Model'].sum()
-        total_expected_difference =  total_percentage_negative_difference * (births_model_subset['Model_mean'].sum() * 1.4)
-        #print(total_expected_difference)
 
+        # now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
+        precipitation_threshold = predictions_from_cmip['Precipitation'].quantile(0.9)
+        filtered_predictions = predictions_from_cmip_sum[predictions_from_cmip_sum['Precipitation'] >= precipitation_threshold]
+        filtered_predictions['Percentage_Difference'] = (
+                filtered_predictions['Difference_in_Expectation'] / filtered_predictions[
+                'Predicted_No_Weather_Model'])
+
+        multiplied_values_extreme_precip = births_model_subset.head(matching_rows).iloc[:, 1].values * filtered_predictions[
+            'Percentage_Difference'].head(matching_rows).values * 1.4
         result_df = pd.DataFrame({
             "Scenario": [scenario],
             "Model_Type": [model_type],
             "Negative_Sum": [negative_sum],
-            "Negative_Percentage": [negative_sum / (births_model_subset['Model_mean'].sum() * 1.4) * 100]
+            "Negative_Percentage": [negative_sum / (births_model_subset['Model_mean'].sum() * 1.4) * 100],
+            "Extreme_Precip": [multiplied_values_extreme_precip],
+            "Extreme_Precip_Percentage": [multiplied_values_extreme_precip  / (births_model_subset['Model_mean'].sum() * 1.4) * 100]
         })
 
         results_list.append(result_df)
-        # Generate district map visualization
-        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
-            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"})
-
-        predictions_from_cmip_sum['Percentage_Difference'] = (predictions_from_cmip_sum['Difference_in_Expectation'] /
-                                                              predictions_from_cmip_sum[
-                                                                  'Predicted_No_Weather_Model']) * 100
-        percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
 
         # Save multiplied values by model and scenario
         multiplied_values_df = pd.DataFrame({
             'Year': year_range[:matching_rows],
             'Scenario': scenario,
             'Model_Type': model_type,
-            'Multiplied_Values': multiplied_values
+            'Multiplied_Values': multiplied_values,
+            'Multiplied_Values_extreme_precip': multiplied_values_extreme_precip
+
         })
         multiplied_values_df.to_csv(results_folder_to_save/f'multiplied_values_{scenario}_{model_type}.csv', index=False)
 
@@ -327,7 +329,7 @@ for ax in axes.flatten():
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(handles, labels,  bbox_to_anchor=(1, -10), loc = "center right", fontsize=10, title="Districts")
 plt.tight_layout()
-#plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births.png')
+plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births.png')
 #plt.show()
 #
 #
@@ -413,68 +415,9 @@ for ax in axes.flatten():
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(handles, labels, bbox_to_anchor=(1, -10), loc="center right", fontsize=10, title="Districts")
 plt.tight_layout()
-#plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births.png')
+plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births_extreme_precip.png')
 plt.show()
 
-# percentage due to extreme events
 print(percentage_diff_by_year_district_top_10_scenario)
-print()
 
-
-
-results_list = []
-
-#Loop through scenarios and model types
-for scenario in scenarios:
-    for model_type in model_types:
-        predictions_from_cmip = pd.read_csv(
-            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
-        )
-        predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
-        predictions_from_cmip_sum = predictions_from_cmip.groupby('Year').sum().reset_index()
-        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
-
-        predictions_from_cmip_sum['Percentage_Difference'] = (
-                predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum[
-                'Predicted_No_Weather_Model'])
-        # Match birth results and predictions
-        matching_rows = min(len(births_model_subset), len(predictions_from_cmip_sum))
-        multiplied_values = births_model_subset.head(matching_rows).iloc[:, 1].values * predictions_from_cmip_sum[
-            'Percentage_Difference'].head(matching_rows).values * 1.4 # 1.4 is conversion from births to pregnacnies
-        births_model_subset['Multiplied_Values'] = multiplied_values
-        # Check for negative values (missed cases?)
-        negative_sum = np.sum(multiplied_values[multiplied_values < 0])
-        # below is check on calculation
-        # total_negative_difference = predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0, 'Difference_in_Expectation'].sum()
-        # total_percentage_negative_difference = total_negative_difference/ predictions_from_cmip['Predicted_No_Weather_Model'].sum()
-        # total_expected_difference =  total_percentage_negative_difference * (births_model_subset['Model_mean'].sum() * 1.4)
-
-        result_df = pd.DataFrame({
-            "Scenario": [scenario],
-            "Model_Type": [model_type],
-            "Negative_Sum": [negative_sum],
-            "Negative_Percentage": [negative_sum / (births_model_subset['Model_mean'].sum() * 1.4) * 100]
-        })
-
-        results_list.append(result_df)
-        # Generate district map visualization
-        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
-            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"})
-
-        predictions_from_cmip_sum['Percentage_Difference'] = (predictions_from_cmip_sum['Difference_in_Expectation'] /
-                                                              predictions_from_cmip_sum[
-                                                                  'Predicted_No_Weather_Model']) * 100
-        percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
-
-        # Save multiplied values by model and scenario
-        multiplied_values_df = pd.DataFrame({
-            'Year': year_range[:matching_rows],
-            'Scenario': scenario,
-            'Model_Type': model_type,
-            'Multiplied_Values': multiplied_values
-        })
-        multiplied_values_df.to_csv(results_folder_to_save/f'multiplied_values_{scenario}_{model_type}.csv', index=False)
-
-final_results = pd.concat(results_list, ignore_index=True)
-final_results.to_csv('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/negative_sums_and_percentages.csv', index=False)
 
