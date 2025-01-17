@@ -16,7 +16,7 @@ class BaselineScenario(BaseScenario):
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 9
+        self.number_of_draws = 5
         self.runs_per_draw = 60
 
     def log_configuration(self):
@@ -51,14 +51,10 @@ class BaselineScenario(BaseScenario):
                     'analysis_year': 2024}}
 
         else:
-            interventions_for_analysis = ['pph_treatment_surg', 'pph_treatment_surg',
-                                          'post_abortion_care_core', 'post_abortion_care_core',
-                                          'birth_kit', 'birth_kit',
-                                          'caesarean_section', 'caesarean_section']
+            interventions_for_analysis = ['post_abortion_care_core', 'post_abortion_care_core',
+                                          'iv_antihypertensives', 'iv_antihypertensives']
 
             avail_for_draw = [0.0, 1.0,
-                              0.0, 1.0,
-                              0.0, 1.0,
                               0.0, 1.0,
                               ]
 
