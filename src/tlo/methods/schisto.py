@@ -230,6 +230,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
         sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
+        # over-ride availability of PZQ for MDA
+        self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            {1735: 1.0})
+
         # Schedule MDA events
         if self.mda_execute:
             # update future mda strategy from default values
@@ -471,7 +475,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Look-up the item code for Praziquantel"""
 
         if MDA:
-            return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
+            # todo donated PZQ not currently in consumables availability sheet
+            # return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
+            return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
         else:
             return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
