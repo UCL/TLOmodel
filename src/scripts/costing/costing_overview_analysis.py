@@ -169,11 +169,11 @@ colourmap_for_consumables = {'First-line ART regimen: adult':'#1f77b4',
                              'Infant resuscitator, clear plastic + mask + bag_each_CMST': '#bcbd22',
                              'Dietary supplements (country-specific)': '#17becf',
                              'Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg': '#2b8cbe',
-                             'Blood, one unit': '#ffdd44',
                              'Pneumococcal vaccine': '#fdae61',
                              'Pentavalent vaccine (DPT, Hep B, Hib)': '#d73027',
-                             'Ceftriaxone 1g, PFR_1_CMST': '#66c2a5',
-                             'male circumcision kit, consumables (10 procedures)_1_IDA': '#756bb1'}
+                             'male circumcision kit, consumables (10 procedures)_1_IDA': '#756bb1',
+                             'Jadelle (implant), box of 2_CMST': '#ffdd44',
+                             'Urine analysis': '#66c2a5'}
 
 for _cat in cost_categories:
     for _d in draws:
