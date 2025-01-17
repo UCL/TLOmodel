@@ -274,6 +274,7 @@ def plot_susceptibility(dfs_susc: dict):
         plt.ylabel('Proportion susceptible')
         plt.legend(title="Districts", bbox_to_anchor=(0.5, -0.2), loc="upper center", ncol=4)
         plt.grid(True)
+        plt.ylim(0, 1.0)
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()
