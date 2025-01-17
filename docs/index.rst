@@ -56,6 +56,8 @@ Contents
    resources/index
    parameters
    learning
+   case-studies/index
+   videos
    publications
    contributors
    contributing

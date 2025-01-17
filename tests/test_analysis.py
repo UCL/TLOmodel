@@ -658,6 +658,52 @@ def test_compute_summary_statistics():
         summarize(results_one_draw, collapse_columns=True)
     )
 
+
+def test_compute_summary_statistics_use_standard_error():
+    """Check computation of standard error statistics."""
+
+    results_multiple_draws = pd.DataFrame(
+        columns=pd.MultiIndex.from_tuples(
+            [
+                ("DrawA", "DrawA_Run1"),
+                ("DrawA", "DrawA_Run2"),
+                ("DrawB", "DrawB_Run1"),
+                ("DrawB", "DrawB_Run2"),
+                ("DrawC", "DrawC_Run1"),
+                ("DrawC", "DrawC_Run2"),
+            ],
+            names=("draw", "run"),
+        ),
+        index=["TimePoint0", "TimePoint1", "TimePoint2", "TimePoint3"],
+        data=np.array([[0, 21, 1000, 2430, 111, 30],   # <-- randomly chosen numbers
+                       [9, 22, 10440, 1960, 2222, 40],
+                       [4, 23, 10200, 1989, 3333, 50],
+                       [555, 24, 1000, 2022, 4444, 60]
+                       ]),
+    )
+
+    # Compute summary using standard error
+    summary = compute_summary_statistics(results_multiple_draws, use_standard_error=True)
+
+    # Compute expectation for what the standard should be for Draw A
+    mean = results_multiple_draws['DrawA'].mean(axis=1)
+    se = results_multiple_draws['DrawA'].std(axis=1) / np.sqrt(2)
+    expectation_for_draw_a = pd.DataFrame(
+            columns=pd.Index(["lower", "central", "upper"], name="stat"),
+            index=["TimePoint0", "TimePoint1", "TimePoint2", "TimePoint3"],
+            data=np.array(
+                [
+                    mean - 1.96 * se,
+                    mean,
+                    mean + 1.96 * se,
+                ]
+            ).T,
+        )
+
+    # Check actual computation matches expectation
+    pd.testing.assert_frame_equal(expectation_for_draw_a, summary['DrawA'], rtol=1e-3)
+
+
 def test_control_loggers_from_same_module_independently(seed, tmpdir):
     """Check that detailed/summary loggers in the same module can configured independently."""
 
