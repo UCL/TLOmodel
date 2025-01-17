@@ -124,114 +124,123 @@ final_results = pd.concat(results_list, ignore_index=True)
 final_results.to_csv('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/negative_sums_and_percentages.csv', index=False)
 
 
+
+
+## now all grids
+fig, axes = plt.subplots(3, 3, figsize=(18, 18),)
+
+global_min = float('inf')
+global_max = float('-inf')
+
+for scenario in scenarios:
+    for model_type in model_types:
+        predictions_from_cmip = pd.read_csv(
+            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+        )
+        predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
+        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
+
+        predictions_from_cmip_sum = predictions_from_cmip.groupby('District').sum().reset_index()
+        predictions_from_cmip_sum['Percentage_Difference'] = (
+            predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
+        ) * 100
+
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        )
+        percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
+        malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
+        malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+
+        local_min = malawi_admin2['Percentage_Difference'].min()
+        local_max = malawi_admin2['Percentage_Difference'].max()
+        global_min = min(global_min, local_min)
+        global_max = max(global_max, local_max)
+
+for i, scenario in enumerate(scenarios):
+    for j, model_type in enumerate(model_types):
+        predictions_from_cmip = pd.read_csv(
+            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+        )
+        predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
+        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
+
+        predictions_from_cmip_sum = predictions_from_cmip.groupby('District').sum().reset_index()
+        predictions_from_cmip_sum['Percentage_Difference'] = (
+            predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
+        ) * 100
+
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        )
+        percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
+        malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
+        malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+
+        ax = axes[i, j]
+        malawi_admin2.dropna(subset=['Percentage_Difference']).plot(
+            ax=ax,
+            column='Percentage_Difference',
+            cmap='Blues_r',
+            edgecolor='black',
+            alpha=1,
+            legend=False,
+            vmin=global_min,
+            vmax=global_max
+        )
+
+        ax.set_title(f"{scenario}: {model_type}", fontsize=14)
+
+        if i != 1:
+            ax.set_xlabel("")
+        if j != 0:
+            ax.set_ylabel("")
+        else:
+            ax.set_ylabel("Latitude", fontsize=10)
+
+        if i == 1:
+            ax.set_xlabel("Longitude", fontsize=10)
+
+sm = plt.cm.ScalarMappable(
+    cmap='Blues_r',
+    norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
+)
+sm.set_array([])
+fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
+plt.suptitle("Percentage Difference Maps by Scenario and Model Type", fontsize=16, y=1.02)
+plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
+plt.show()
+
+
+
+significant_results_year = []
 #
-#
-# ## now all grids
-# fig, axes = plt.subplots(3, 3, figsize=(18, 18),)
-#
-# global_min = float('inf')
-# global_max = float('-inf')
-#
-# for scenario in scenarios:
-#     for model_type in model_types:
-#         predictions_from_cmip = pd.read_csv(
-#             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
-#         )
-#         predictions_from_cmip_sum = predictions_from_cmip.groupby('District').sum().reset_index()
-#         predictions_from_cmip_sum['Percentage_Difference'] = (
-#             predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
-#         ) * 100
-#
-#         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
-#             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
-#         )
-#         percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
-#         malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
-#         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
-#
-#         local_min = malawi_admin2['Percentage_Difference'].min()
-#         local_max = malawi_admin2['Percentage_Difference'].max()
-#         global_min = min(global_min, local_min)
-#         global_max = max(global_max, local_max)
-#
-# for i, scenario in enumerate(scenarios):
-#     for j, model_type in enumerate(model_types):
-#         predictions_from_cmip = pd.read_csv(
-#             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
-#         )
-#         predictions_from_cmip_sum = predictions_from_cmip.groupby('District').sum().reset_index()
-#         predictions_from_cmip_sum['Percentage_Difference'] = (
-#             predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
-#         ) * 100
-#
-#         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
-#             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
-#         )
-#         percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
-#         malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
-#         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
-#
-#         ax = axes[i, j]
-#         malawi_admin2.dropna(subset=['Percentage_Difference']).plot(
-#             ax=ax,
-#             column='Percentage_Difference',
-#             cmap='Blues_r',
-#             edgecolor='black',
-#             alpha=1,
-#             legend=False,
-#             vmin=global_min,
-#             vmax=global_max
-#         )
-#
-#         ax.set_title(f"{scenario}: {model_type}", fontsize=14)
-#
-#         if i != 1:
-#             ax.set_xlabel("")
-#         if j != 0:
-#             ax.set_ylabel("")
-#         else:
-#             ax.set_ylabel("Latitude", fontsize=10)
-#
-#         if i == 1:
-#             ax.set_xlabel("Longitude", fontsize=10)
-#
-# sm = plt.cm.ScalarMappable(
-#     cmap='Blues_r',
-#     norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
-# )
-# sm.set_array([])
-# fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
-# plt.suptitle("Percentage Difference Maps by Scenario and Model Type", fontsize=16, y=1.02)
-# plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
-# plt.show()
-#
-#
-#
-# significant_results_year = []
-# #
-# # Assuming 'district' is a column in your data
-# for scenario in scenarios:
-#     for model_type in model_types:
-#         predictions_from_cmip = pd.read_csv(
-#             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
-#         )
-#         predictions_from_cmip_sum = predictions_from_cmip.groupby(['District', 'Year']).sum().reset_index()
-#         for district in predictions_from_cmip_sum['District'].unique():
-#                 district_values = predictions_from_cmip_sum[predictions_from_cmip_sum['District'] == district]
-#                 no_weather_model = district_values['Predicted_No_Weather_Model'].values
-#                 weather_model = district_values['Predicted_Weather_Model'].values
-#
-#                 # Calculate the difference
-#                 difference = no_weather_model - weather_model
-#
-#                 # Perform a one-sample t-test assuming 0 as the null hypothesis mean
-#                 t_stat, p_value = ttest_1samp(difference, popmean=0)
-#                 # Print results if p-value is below 0.05 (statistically significant)
-#                 if p_value < 0.05:
-#                     print(f"Scenario: {scenario}, Model Type: {model_type}, District: {district}, "
-#                           f"t-stat: {t_stat:.2f}, p-value: {p_value:.4f}")
-# ## now all grids
-#
+# Assuming 'district' is a column in your data
+for scenario in scenarios:
+    for model_type in model_types:
+        predictions_from_cmip = pd.read_csv(
+            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+        )
+        predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
+        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
+
+        predictions_from_cmip_sum = predictions_from_cmip.groupby(['District', 'Year']).sum().reset_index()
+        for district in predictions_from_cmip_sum['District'].unique():
+                district_values = predictions_from_cmip_sum[predictions_from_cmip_sum['District'] == district]
+                no_weather_model = district_values['Predicted_No_Weather_Model'].values
+                weather_model = district_values['Predicted_Weather_Model'].values
+
+                # Calculate the difference
+                difference = no_weather_model - weather_model
+
+                # Perform a one-sample t-test assuming 0 as the null hypothesis mean
+                t_stat, p_value = ttest_1samp(difference, popmean=0)
+                # Print results if p-value is below 0.05 (statistically significant)
+                if p_value < 0.05:
+                    print(f"Scenario: {scenario}, Model Type: {model_type}, District: {district}, "
+                          f"t-stat: {t_stat:.2f}, p-value: {p_value:.4f}")
+## now all grids
+
 # #### Now do number of births based on the TLO model and 2018 census
 population_file = "/Users/rem76/PycharmProjects/TLOmodel/resources/demography/ResourceFile_PopulationSize_2018Census.csv"
 population_data = pd.read_csv(population_file)
@@ -263,6 +272,8 @@ for i, scenario in enumerate(scenarios):
         predictions_from_cmip = pd.read_csv(
             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
         )
+        predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
+        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
 
         predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'District']).sum().reset_index()
         predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2060]
@@ -346,6 +357,7 @@ for i, scenario in enumerate(scenarios):
         predictions_from_cmip_sum = pd.read_csv(
             f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
         )
+        predictions_from_cmip_sum =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
 
         predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2060]
         predictions_from_cmip_sum['Percentage_Difference'] = (
@@ -409,4 +421,60 @@ print(percentage_diff_by_year_district_top_10_scenario)
 print()
 
 
+
+results_list = []
+
+#Loop through scenarios and model types
+for scenario in scenarios:
+    for model_type in model_types:
+        predictions_from_cmip = pd.read_csv(
+            f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_{scenario}_{model_type}.csv'
+        )
+        predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
+        predictions_from_cmip_sum = predictions_from_cmip.groupby('Year').sum().reset_index()
+        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
+
+        predictions_from_cmip_sum['Percentage_Difference'] = (
+                predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum[
+                'Predicted_No_Weather_Model'])
+        # Match birth results and predictions
+        matching_rows = min(len(births_model_subset), len(predictions_from_cmip_sum))
+        multiplied_values = births_model_subset.head(matching_rows).iloc[:, 1].values * predictions_from_cmip_sum[
+            'Percentage_Difference'].head(matching_rows).values * 1.4 # 1.4 is conversion from births to pregnacnies
+        births_model_subset['Multiplied_Values'] = multiplied_values
+        # Check for negative values (missed cases?)
+        negative_sum = np.sum(multiplied_values[multiplied_values < 0])
+        # below is check on calculation
+        # total_negative_difference = predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0, 'Difference_in_Expectation'].sum()
+        # total_percentage_negative_difference = total_negative_difference/ predictions_from_cmip['Predicted_No_Weather_Model'].sum()
+        # total_expected_difference =  total_percentage_negative_difference * (births_model_subset['Model_mean'].sum() * 1.4)
+
+        result_df = pd.DataFrame({
+            "Scenario": [scenario],
+            "Model_Type": [model_type],
+            "Negative_Sum": [negative_sum],
+            "Negative_Percentage": [negative_sum / (births_model_subset['Model_mean'].sum() * 1.4) * 100]
+        })
+
+        results_list.append(result_df)
+        # Generate district map visualization
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"})
+
+        predictions_from_cmip_sum['Percentage_Difference'] = (predictions_from_cmip_sum['Difference_in_Expectation'] /
+                                                              predictions_from_cmip_sum[
+                                                                  'Predicted_No_Weather_Model']) * 100
+        percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
+
+        # Save multiplied values by model and scenario
+        multiplied_values_df = pd.DataFrame({
+            'Year': year_range[:matching_rows],
+            'Scenario': scenario,
+            'Model_Type': model_type,
+            'Multiplied_Values': multiplied_values
+        })
+        multiplied_values_df.to_csv(results_folder_to_save/f'multiplied_values_{scenario}_{model_type}.csv', index=False)
+
+final_results = pd.concat(results_list, ignore_index=True)
+final_results.to_csv('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/negative_sums_and_percentages.csv', index=False)
 
