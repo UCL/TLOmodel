@@ -142,14 +142,14 @@ class Demography(Module):
         self.load_parameters_from_dataframe(pd.read_csv(
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Demography_parameters.csv')
         )
-         # Initial population size:
-        self.parameters['pop_2015'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'pop_2015.csv'
-        )
-        # # Initial population size:
+        #  # Initial population size:
         # self.parameters['pop_2015'] = pd.read_csv(
-        #     Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_nuhdss_2015.csv'
+        #     Path(self.resourcefilepath) / 'demography' / 'pop_2015.csv'
         # )
+        # Initial population size:
+        self.parameters['pop_2015'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_nuhdss_2015.csv'
+        )
 
         # Lookup dicts to map from slum_num_of_residence (in the df) and slum name 
         self.slums = self.parameters['pop_2015']['slum'].drop_duplicates().to_list()
