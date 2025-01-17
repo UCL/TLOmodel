@@ -428,8 +428,7 @@ class Schisto(Module):
         # ])
         # Iterate through DataFrame rows and register each symptom
         for _, row in symptoms.iterrows():
-            if row['HSB_mapped_symptom'] not in generic_symptoms:
-                print(row['HSB_mapped_symptom'])
+            if row['Symptom'] not in generic_symptoms:
                 symptom_kwargs = {
                     'name': row['Symptom'],
                     'odds_ratio_health_seeking_in_children': row.get('odds_ratio_health_seeking_in_children', None),
@@ -1530,6 +1529,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
 
         df = self.sim.population.props
         params = self.module.parameters
+        print("TESTING")
 
         # select and perform the appropriate diagnostic test
         test = self.module.select_test(person_id)
@@ -1638,6 +1638,7 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person."""
         dosage = self.module._calculate_praziquantel_dosage(person_id)
+        print("TREATING")
 
         if self.get_consumables(item_codes={self.module.item_code_for_praziquantel: dosage}):
             self.module.do_effect_of_treatment(person_id=person_id)
