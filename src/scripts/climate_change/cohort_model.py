@@ -100,13 +100,14 @@ for scenario in scenarios:
 
         multiplied_values_extreme_precip = births_model_subset.head(matching_rows).iloc[:, 1].values * filtered_predictions[
             'Percentage_Difference'].head(matching_rows).values * 1.4
+        negative_sum_extreme_precip = np.sum(multiplied_values_extreme_precip[multiplied_values_extreme_precip < 0])
         result_df = pd.DataFrame({
             "Scenario": [scenario],
             "Model_Type": [model_type],
             "Negative_Sum": [negative_sum],
             "Negative_Percentage": [negative_sum / (births_model_subset['Model_mean'].sum() * 1.4) * 100],
-            "Extreme_Precip": [multiplied_values_extreme_precip],
-            "Extreme_Precip_Percentage": [multiplied_values_extreme_precip  / (births_model_subset['Model_mean'].sum() * 1.4) * 100]
+            "Extreme_Precip": [negative_sum_extreme_precip],
+            "Extreme_Precip_Percentage": [negative_sum_extreme_precip  / (births_model_subset['Model_mean'].sum() * 1.4) * 100]
         })
 
         results_list.append(result_df)
@@ -321,11 +322,11 @@ for i, scenario in enumerate(scenarios):
             ax.set_xlabel('Year', fontsize=12)
         if j == 0:
             ax.set_ylabel('Deficit of ANC services', fontsize=12)
-        if (i == 0) & (j == 2):
-            ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
+        #if (i == 0) & (j == 2):
+        #    ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
         percentage_diff_by_year_district_all[scenario][model_type] = percentage_diff_by_year_district
 for ax in axes.flatten():
-    ax.set_ylim(y_min*9, y_max)
+    ax.set_ylim(y_min*11, y_max)
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(handles, labels,  bbox_to_anchor=(1, -10), loc = "center right", fontsize=10, title="Districts")
 plt.tight_layout()
