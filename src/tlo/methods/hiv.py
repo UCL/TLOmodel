@@ -25,13 +25,12 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, tb
@@ -40,7 +39,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -339,6 +338,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
+        "increase_in_prob_circ_2019": Parameter(
+            Types.REAL,
+            "increase in probability that a male will be circumcised, if HIV-negative, following testing"
+            "from 2019 onwards",
+        ),
         "prob_circ_for_child_before_2020": Parameter(
             Types.REAL,
             "Probability that a male aging <15 yrs will be circumcised before year 2020",
@@ -397,6 +401,23 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "length in days of inpatient stay for end-of-life HIV patients: list has two elements [low-bound-inclusive,"
             " high-bound-exclusive]",
         ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "type_of_scaleup": Parameter(
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
+        ),
+        "scaleup_start_year": Parameter(
+            Types.INT,
+            "the year when the scale-up starts (it will occur on 1st January of that year)"
+        ),
+        "scaleup_parameters": Parameter(
+            Types.DATA_FRAME,
+            "the parameters and values changed in scenario analysis"
+        ),
+        "interval_for_viral_load_measurement_months": Parameter(
+            Types.REAL,
+            " the interval for viral load monitoring in months"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -410,10 +431,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_HIV.xlsx"),
-            sheet_name=None,
-        )
+        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
@@ -433,6 +451,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
+
+        # load parameters for scale-up projections
+        p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -456,10 +477,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         )
 
     def pre_initialise_population(self):
-        """
-        * Establish the Linear Models
-        *
-        """
+        """Do things required before the population is created
+        * Build the LinearModels"""
+        self._build_linear_models()
+
+    def _build_linear_models(self):
+        """Establish the Linear Models"""
+
         p = self.parameters
 
         # ---- LINEAR MODELS -----
@@ -578,6 +602,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_after_hiv_test"],
             Predictor("hv_inf").when(False, 1.0).otherwise(0.0),
             Predictor("sex").when("M", 1.0).otherwise(0.0),
+            Predictor("year",
+                      external=True,
+                      conditions_are_mutually_exclusive=True).when("<2019", 1)
+            .otherwise(p["increase_in_prob_circ_2019"])
         )
 
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
@@ -894,6 +922,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
 
+        # Optional: Schedule the scale-up of programs
+        if self.parameters["type_of_scaleup"] != 'none':
+            scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
+            assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
+            sim.schedule_event(HivScaleUpEvent(self), scaleup_start_date)
+
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
         # Those on ART currently (will not get any further events scheduled):
@@ -1075,6 +1109,49 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                     self.item_codes_for_consumables_required['gloves']]
             )
         )
+
+    def update_parameters_for_program_scaleup(self):
+        """ options for program scale-up are 'target' or 'max' """
+        p = self.parameters
+        scaled_params_workbook = p["scaleup_parameters"]
+
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        else:
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+
+        # scale-up HIV program
+        # reduce risk of HIV - applies to whole adult population
+        p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
+
+        # increase PrEP coverage for FSW after HIV test
+        p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
+
+        # prep poll for AGYW - target to the highest risk
+        # increase retention to 75% for FSW and AGYW
+        p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+
+        # perfect retention on ART
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
+
+        # increase probability of VMMC after hiv test
+        p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
+
+        # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
+        p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
+
+        # ANC testing - value for mothers and infants testing
+        p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
+        p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
+
+        # viral suppression rates
+        # adults already at 95% by 2020
+        # change all column values
+        p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+
+        # update exising linear models to use new scaled-up paramters
+        self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """
@@ -2214,6 +2291,20 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             )
 
 
+class HivScaleUpEvent(Event, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once on date: scaleup_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        self.module.update_parameters_for_program_scaleup()
+
+
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
@@ -2336,7 +2427,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person["sex"] == "M") & (~person["li_is_circ"]):
                         x = self.module.lm["lm_circ"].predict(
-                            df.loc[[person_id]], self.module.rng
+                            df.loc[[person_id]], self.module.rng,
+                            year=self.sim.date.year,
                         )
                         if x:
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2410,6 +2502,14 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         # Do not run if the person is not alive
         if not person["is_alive"]:
             return
+
+        # get confirmatory test
+        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+            dx_tests_to_run="hiv_rapid_test", hsi_event=self
+        )
+        if test_result is not None:
+            df.at[person_id, "hv_number_tests"] += 1
+            df.at[person_id, "hv_last_test_date"] = self.sim.date
 
         # if person not circumcised, perform the procedure
         if not person["li_is_circ"]:
@@ -2748,6 +2848,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # ART is first item in drugs_available dict
         if drugs_available.get('art', False):
+
+            # get confirmatory test
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="hiv_rapid_test", hsi_event=self
+            )
+            if test_result is not None:
+                df.at[person_id, "hv_number_tests"] += 1
+                df.at[person_id, "hv_last_test_date"] = self.sim.date
+
             # Assign person to be suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset)
@@ -2778,13 +2887,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        p = self.module.parameters
 
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
+            _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
@@ -3265,15 +3376,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             count = sum(subset)
             # proportion of subset living with HIV that are diagnosed:
             proportion_diagnosed = (
-                sum(subset & df.hv_diagnosed) / count if count > 0 else 0
+                sum(subset & df.hv_diagnosed) / count if count > 0 else 0.0
             )
             # proportions of subset living with HIV on treatment:
             art = sum(subset & (df.hv_art != "not"))
-            art_cov = art / count if count > 0 else 0
+            art_cov = art / count if count > 0 else 0.0
 
             # proportion of subset on treatment that have good VL suppression
             art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
-            art_cov_vs = art_vs / art if art > 0 else 0
+            art_cov_vs = art_vs / art if art > 0 else 0.0
             return proportion_diagnosed, art_cov, art_cov_vs
 
         alive_infected = df.is_alive & df.hv_inf

@@ -35,6 +35,7 @@ from tlo.methods.hiv import (
     HSI_Hiv_StartOrContinueTreatment,
     HSI_Hiv_TestAndRefer,
 )
+from tlo.util import read_csv_files
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -224,7 +225,7 @@ def test_generation_of_natural_history_process_no_art(seed):
 
     # run the AIDS onset event for this person:
     aids_event.apply(person_id)
-    assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id)
+    assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # find the AIDS death event for this person
     date_aids_death_event, aids_death_event = \
@@ -274,7 +275,7 @@ def test_generation_of_natural_history_process_with_art_before_aids(seed):
     assert [] == [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)]
 
     # check no AIDS symptoms for this person
-    assert "aids_symptoms" not in sim.modules['SymptomManager'].has_what(person_id)
+    assert "aids_symptoms" not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
 
 def test_generation_of_natural_history_process_with_art_after_aids(seed):
@@ -312,7 +313,7 @@ def test_generation_of_natural_history_process_with_art_after_aids(seed):
     date_aids_death_event, aids_death_event = \
         [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
     assert date_aids_death_event > sim.date
-    assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id)
+    assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # Put the person on ART with VL suppression prior to the AIDS death (but following AIDS onset)
     df.at[person_id, 'hv_art'] = "on_VL_suppressed"
@@ -516,7 +517,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
     aids_event.apply(person_id)
 
     # Confirm that they have aids symptoms and an AIDS death schedule
-    assert 'aids_symptoms' in sim.modules['SymptomManager'].has_what(person_id)
+    assert 'aids_symptoms' in sim.modules['SymptomManager'].has_what(person_id=person_id)
     assert 1 == len(
         [ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsTbDeathEvent)])
 
@@ -1210,8 +1211,7 @@ def test_baseline_hiv_prevalence(seed):
 
     # get data on 2010 prevalence
     # HIV resourcefile
-    xls = pd.ExcelFile(resourcefilepath / "ResourceFile_HIV.xlsx")
-    prev_data = pd.read_excel(xls, sheet_name="DHS_prevalence")
+    prev_data = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files="DHS_prevalence")
 
     adult_prev_1549_data = prev_data.loc[
         (prev_data.Year == 2010, "HIV prevalence among general population 15-49")].values[0] / 100

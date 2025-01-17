@@ -10,7 +10,7 @@ from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_hel
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
-from tlo.util import BitsetHandler
+from tlo.util import BitsetHandler, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -311,8 +311,8 @@ class NewbornOutcomes(Module):
 
     def read_parameters(self, data_folder):
 
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx',
-                                            sheet_name='parameter_values')
+        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
@@ -1363,7 +1363,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
-                                                 'delivery_setting': nci[person_id]['delivery_setting'],
+                                                 'delivery_setting': str(nci[person_id]['delivery_setting']),
                                                  'visit_number': df.at[person_id, 'nb_pnc_check'],
                                                  'timing': nci[person_id]['will_receive_pnc']})
 

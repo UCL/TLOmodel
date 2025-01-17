@@ -14,6 +14,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -151,8 +152,8 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
           Typically modules would read a particular file within here.
         """
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy.xlsx',
-                            sheet_name='parameter_values')
+        dfd = read_csv_files(Path(self.resourcefilepath) / 'epilepsy' / 'ResourceFile_Epilepsy',
+                            files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
@@ -578,16 +579,16 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_seiz_stat_1_3 = sum(status_groups.iloc[1:].is_alive)
         n_seiz_stat_2_3 = sum(status_groups.iloc[2:].is_alive)
 
-        n_antiep = (df.is_alive & df.ep_antiep).sum()
+        n_antiep = int((df.is_alive & df.ep_antiep).sum())
 
-        n_epi_death = df.ep_epi_death.sum()
+        n_epi_death = int(df.ep_epi_death.sum())
 
         status_groups['prop_seiz_stats'] = status_groups.is_alive / sum(status_groups.is_alive)
 
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['ep_antiep'] / status_groups.is_alive
         status_groups['prop_seiz_stat_on_anti_ep'] = status_groups['prop_seiz_stat_on_anti_ep'].fillna(0)
         epi_death_rate = \
-            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0
+            (n_epi_death * 4 * 1000) / n_seiz_stat_2_3 if n_seiz_stat_2_3 > 0 else 0.0
 
         cum_deaths = (~df.is_alive).sum()
 

@@ -12,6 +12,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.malaria import HSI_MalariaIPTp
 from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -176,8 +177,8 @@ class CareOfWomenDuringPregnancy(Module):
     }
 
     def read_parameters(self, data_folder):
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
-                                            sheet_name='parameter_values')
+        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
@@ -490,9 +491,9 @@ class CareOfWomenDuringPregnancy(Module):
 
             # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
             if 'ga_anc_one' in mni[mother_id]:
-                ga_anc_one = mni[mother_id]['ga_anc_one']
+                ga_anc_one = float(mni[mother_id]['ga_anc_one'])
             else:
-                ga_anc_one = 0
+                ga_anc_one = 0.0
 
             total_anc_visit_count = {'person_id': mother_id,
                                      'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],

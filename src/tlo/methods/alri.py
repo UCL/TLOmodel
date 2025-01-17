@@ -37,7 +37,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date, sample_outcome
+from tlo.util import random_date, read_csv_files, sample_outcome
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -829,7 +829,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         * Define symptoms
         """
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Alri.xlsx', sheet_name='Parameter_values')
+            read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Alri', files='Parameter_values')
         )
 
         self.check_params_read_in_ok()
@@ -1253,7 +1253,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
 
         # Gather underlying properties that will affect success of treatment
         SpO2_level = person.ri_SpO2_level
-        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         imci_symptom_based_classification = self.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=person.age_exact_years < (2.0 / 12.0),
             symptoms=symptoms,
@@ -2726,7 +2726,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 return
 
             # Do nothing if the persons does not have indicating symptoms
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
             if not {'cough', 'difficult_breathing'}.intersection(symptoms):
                 return self.make_appt_footprint({})
 
@@ -3009,7 +3009,7 @@ class AlriIncidentCase_Lethal_DangerSigns_Pneumonia(AlriIncidentCase):
 
         assert 'danger_signs_pneumonia' == self.module.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=df.at[person_id, 'age_exact_years'] < (2.0 / 12.0),
-            symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+            symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         )
 
 
@@ -3040,7 +3040,7 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
 
         assert 'fast_breathing_pneumonia' == \
                self.module.get_imci_classification_based_on_symptoms(
-                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id)
+                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
                )
 
 

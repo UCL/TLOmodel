@@ -24,6 +24,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -149,8 +150,8 @@ class Stunting(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, data_folder):
         self.load_parameters_from_dataframe(
-            pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Stunting.xlsx', sheet_name='Parameter_values')
+            read_csv_files(
+                Path(self.resourcefilepath) / 'ResourceFile_Stunting', files='Parameter_values')
         )
 
     def initialise_population(self, population):
@@ -524,7 +525,9 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Log the current distribution of stunting classification by age"""
         df = population.props
 
-        d_to_log = df.loc[df.is_alive & (df.age_years < 5)].groupby(
+        subset = df.loc[df.is_alive & (df.age_years < 5)].copy()
+        subset["age_years"] = pd.Categorical(subset["age_years"], categories=range(5))
+        d_to_log = subset.groupby(
             by=['age_years', 'un_HAZ_category']).size().sort_index().to_dict()
 
         def convert_keys_to_string(d):

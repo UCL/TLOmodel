@@ -23,6 +23,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -208,8 +209,8 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Bladder_Cancer.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Bladder_Cancer",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
@@ -268,7 +269,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         if bc_status_any_stage.sum():
             sum_probs = sum(p['init_prop_bladder_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_bladder_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['init_prop_bladder_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[bc_status_any_stage, "bc_status"] = self.rng.choice(
                     [val for val in df.bc_status.cat.categories if val != 'none'],
@@ -366,7 +367,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             df.is_alive &
             (df.bc_status == 'metastatic') &
             ~pd.isnull(df.bc_date_diagnosis)
-        ]
+            ]
 
         select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
         select_for_care = in_metastatic_diagnosed[select_for_care]
@@ -432,7 +433,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_t2p_bladder_cancer_undergone_curative_treatment']),
             Predictor('bc_status').when('tis_t1', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['metastatic'] = LinearModel(
@@ -441,7 +442,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_metastatic_undergone_curative_treatment']),
             Predictor('bc_status').when('t2p', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of bc_status
@@ -495,7 +496,7 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
                 sensitivity=self.parameters['sensitivity_of_cystoscopy_for_bladder_cancer_pelvic_pain'],
                 target_categories=["tis_t1", "t2p", "metastatic"]
             )
-         )
+        )
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
@@ -584,13 +585,13 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons.loc[
             (df.bc_status == "metastatic") &
             (pd.isnull(df.bc_date_palliative_care))
-        ] = self.daly_wts['metastatic']
+            ] = self.daly_wts['metastatic']
 
         # Assign daly_wt to those in metastatic cancer, who have had palliative care
         disability_series_for_alive_persons.loc[
             (df.bc_status == "metastatic") &
             (~pd.isnull(df.bc_date_palliative_care))
-        ] = self.daly_wts['metastatic_palliative_care']
+            ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
 
@@ -702,6 +703,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
     treatment or palliative care.
     It is for people with the symptom blood_urine.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -718,7 +720,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom blood_urine
-        assert 'blood_urine' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'blood_urine' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "bc_date_diagnosis"]):
@@ -791,7 +793,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom pelvic_pain
-        assert 'pelvic_pain' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'pelvic_pain' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "bc_date_diagnosis"]):
@@ -852,6 +854,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     diagnosis of bladder Cancer using cystoscopy. It initiates the treatment of bladder Cancer.
     It is only for persons with a cancer that is not in metastatic and who have been diagnosed.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1024,6 +1027,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
 class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
+
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """

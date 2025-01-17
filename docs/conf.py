@@ -25,7 +25,8 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
-    'rawfiles'
+    'rawfiles',
+    'sphinxcontrib.youtube',
 ]
 
 if os.getenv('SPELLCHECK'):
@@ -103,6 +104,9 @@ autodoc_default_options = {
     # List below what you don't want to see documented:
     'exclude-members': '__dict__, name, rng, sim'  # , read_parameters',
 }
+
+# Include both class level and __init__ docstring content in class documentation
+autoclass_content = 'both'
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',

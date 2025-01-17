@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import os
 from typing import TYPE_CHECKING, List
 
 import pandas as pd
@@ -13,7 +12,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -102,11 +101,7 @@ class Measles(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, data_folder):
         """Read parameter values from file
         """
-
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_Measles.xlsx"),
-            sheet_name=None,
-        )
+        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_Measles', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         self.parameters["symptom_prob"] = workbook["symptoms"]
@@ -442,7 +437,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")
 
         df = self.sim.population.props
-        symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
 
         # for non-complicated measles
         item_codes = [self.module.consumables['vit_A']]
@@ -548,7 +543,7 @@ class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
             if tmp:
                 proportion_with_symptom = number_with_symptom / tmp
             else:
-                proportion_with_symptom = 0
+                proportion_with_symptom = 0.0
             symptom_output[symptom] = proportion_with_symptom
 
         logger.info(key="measles_symptoms",
@@ -586,7 +581,7 @@ class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
         if total_infected:
             prop_infected_by_age = infected_age_counts / total_infected
         else:
-            prop_infected_by_age = infected_age_counts  # just output the series of zeros by age group
+            prop_infected_by_age = infected_age_counts.astype("float")  # just output the series of zeros by age group
 
         logger.info(key='measles_incidence_age_range', data=prop_infected_by_age.to_dict(),
                     description="measles incidence by age group")

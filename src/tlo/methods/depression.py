@@ -18,6 +18,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
@@ -225,8 +226,8 @@ class Depression(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, data_folder):
         "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
-                          sheet_name='parameter_values')
+            read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Depression',
+                          files='parameter_values')
         )
         p = self.parameters
 
@@ -593,7 +594,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         and there may need to be screening for depression.
         """
         if self._check_for_suspected_depression(
-            self.sim.modules["SymptomManager"].has_what(person_id),
+            self.sim.modules["SymptomManager"].has_what(person_id=person_id),
             hsi_event.TREATMENT_ID,
             self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
         ):
@@ -869,10 +870,10 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_talk_ther = (df.de_ever_talk_ther & df.is_alive & df.de_depr).sum()
 
         def zero_out_nan(x):
-            return x if not np.isnan(x) else 0
+            return x if not np.isnan(x) else 0.0
 
         def safe_divide(x, y):
-            return x / y if y > 0.0 else 0.0
+            return float(x / y) if y > 0.0 else 0.0
 
         dict_for_output = {
             'prop_ge15_depr': zero_out_nan(safe_divide(n_ge15_depr, n_ge15)),

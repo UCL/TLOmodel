@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import logging
+from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 
 logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 
@@ -220,16 +221,16 @@ class Equipment:
 
         mfl = self.master_facilities_list
 
-        def set_of_keys_or_empty_set(x: Union[set, dict]):
-            if isinstance(x, set):
-                return x
-            elif isinstance(x, dict):
-                return set(x.keys())
+        def sorted_keys_or_empty_list(x: Union[dict, None]) -> list:
+            if isinstance(x, dict):
+                return sorted(x.keys())
             else:
-                return set()
+                return []
 
         set_of_equipment_ever_used_at_each_facility_id = pd.Series({
-            fac_id: set_of_keys_or_empty_set(self._record_of_equipment_used_by_facility_id.get(fac_id, set()))
+            fac_id: sorted_keys_or_empty_list(
+                self._record_of_equipment_used_by_facility_id.get(fac_id)
+            )
             for fac_id in mfl['Facility_ID']
         }, name='EquipmentEverUsed').astype(str)
 
@@ -239,14 +240,13 @@ class Equipment:
             right_index=True,
             how='left',
         ).drop(columns=['Facility_ID', 'Facility_Name'])
-
         # Log multi-row data-frame
-        for _, row in output.iterrows():
+        for row_index in output.index:
             logger_summary.info(
                 key='EquipmentEverUsed_ByFacilityID',
                 description='For each facility_id (the set of facilities of the same level in a district), the set of'
                             'equipment items that are ever used.',
-                data=row.to_dict(),
+                data=get_dataframe_row_as_dict_for_logging(output, row_index)
             )
 
     def from_pkg_names(self, pkg_names: Union[str, Iterable[str]]) -> Set[int]:
