@@ -422,3 +422,51 @@ plt.show()
 print(percentage_diff_by_year_district_top_10_scenario)
 
 
+####### Historical disruptions ##########
+
+
+historical_predictions = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_ANC_model_historical_predictions.csv')
+historical_predictions = historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
+
+historical_predictions_sum = historical_predictions.groupby('District').sum().reset_index()
+historical_predictions_sum['Percentage_Difference'] = (
+    historical_predictions_sum['Difference_in_Expectation'] / historical_predictions_sum['Predicted_No_Weather_Model']
+) * 100
+
+historical_predictions_sum['District'] = historical_predictions_sum['District'].replace(
+    {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+)
+
+percentage_diff_by_district_historical = historical_predictions_sum.groupby('District')['Percentage_Difference'].mean()
+malawi_admin2['Percentage_Difference_historical'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district_historical)
+malawi_admin2.loc[malawi_admin2['Percentage_Difference_historical'] > 0, 'Percentage_Difference_historical'] = 0
+
+global_min = malawi_admin2['Percentage_Difference_historical'].min()
+global_max = malawi_admin2['Percentage_Difference_historical'].max()
+print(global_min)
+fig, ax = plt.subplots(figsize=(10, 10))
+
+malawi_admin2.dropna(subset=['Percentage_Difference_historical']).plot(
+    ax=ax,
+    column='Percentage_Difference_historical',
+    cmap='Blues_r',
+    edgecolor='black',
+    alpha=1,
+    legend=False,
+    vmin=global_min,
+    vmax=0
+)
+
+ax.set_ylabel("Latitude", fontsize=10)
+ax.set_xlabel("Longitude", fontsize=10)
+
+sm = plt.cm.ScalarMappable(
+    cmap='Blues_r',
+    norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
+)
+sm.set_array([])
+fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
+
+plt.title("", fontsize=16)
+plt.savefig(results_folder_to_save / 'percentage_difference_map_historical.png')
+plt.show()
