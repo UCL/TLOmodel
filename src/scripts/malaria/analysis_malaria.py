@@ -34,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 300
+end_date = Date(2014, 1, 1)
+popsize = 1000
 
 
 # set up the log config
@@ -84,6 +84,15 @@ sim.register(
     )
 )
 
+# update parameters
+sim.modules["Hiv"].parameters["do_scaleup"] = True
+sim.modules["Tb"].parameters["do_scaleup"] = True
+sim.modules["Malaria"].parameters["do_scaleup"] = True
+sim.modules["Hiv"].parameters["scaleup_start"] = 2
+sim.modules["Tb"].parameters["scaleup_start"] = 2
+sim.modules["Malaria"].parameters["scaleup_start"] = 2
+
+
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -97,5 +106,5 @@ with open(outputpath / "malaria_run.pickle", "wb") as f:
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # load the results
-with open(outputpath / "default_run.pickle", "rb") as f:
+with open(outputpath / "malaria_run.pickle", "rb") as f:
     output = pickle.load(f)
