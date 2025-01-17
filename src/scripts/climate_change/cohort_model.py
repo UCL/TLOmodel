@@ -22,6 +22,9 @@ max_year = 2061
 scenarios = ['ssp126', 'ssp245', 'ssp585']
 model_types = ['lowest', 'mean', 'highest']
 year_range = range(min_year, max_year)
+# global min for all heatmaps for same scale
+global_min = -5
+global_max = 0
 ## Get birth results
 results_folder_to_save = Path('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions')
 results_folder_for_births = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
@@ -132,8 +135,6 @@ final_results.to_csv('/Users/rem76/Desktop/Climate_change_health/Results/ANC_dis
 ## now all grids
 fig, axes = plt.subplots(3, 3, figsize=(18, 18),)
 
-global_min = float('inf')
-global_max = float('-inf')
 
 for scenario in scenarios:
     for model_type in model_types:
@@ -155,10 +156,6 @@ for scenario in scenarios:
         malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
 
-        local_min = malawi_admin2['Percentage_Difference'].min()
-        local_max = malawi_admin2['Percentage_Difference'].max()
-        global_min = min(global_min, local_min)
-        global_max = max(global_max, local_max)
 
 for i, scenario in enumerate(scenarios):
     for j, model_type in enumerate(model_types):
@@ -441,8 +438,7 @@ percentage_diff_by_district_historical = historical_predictions_sum.groupby('Dis
 malawi_admin2['Percentage_Difference_historical'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district_historical)
 malawi_admin2.loc[malawi_admin2['Percentage_Difference_historical'] > 0, 'Percentage_Difference_historical'] = 0
 
-global_min = malawi_admin2['Percentage_Difference_historical'].min()
-global_max = malawi_admin2['Percentage_Difference_historical'].max()
+
 print(global_min)
 fig, ax = plt.subplots(figsize=(10, 10))
 
