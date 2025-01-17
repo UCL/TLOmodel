@@ -73,7 +73,7 @@ class SchistoScenarios(BaseScenario):
                              "HealthSystem": {"disable": False,
                                               "service_availability": ["*"],
                                               "mode_appt_constraints": 1,
-                                              "cons_availability": "all",
+                                              "cons_availability": "default",
                                               "beds_availability": "all",
                                               "ignore_priority": False,
                                               "use_funded_or_actual_staffing": "actual"},                             "Schisto": {"single_district": False},
