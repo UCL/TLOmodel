@@ -168,7 +168,8 @@ class Schisto(Module):
 
         # Register symptoms
         symptoms_df = workbook['Symptoms']
-        self._register_symptoms(symptoms_df.set_index('Symptom')['HSB_mapped_symptom'].to_dict())
+        # self._register_symptoms(symptoms_df.set_index('Symptom')['HSB_mapped_symptom'].to_dict())
+        self._register_symptoms(symptoms_df)
 
         # create container for logging person-days infected
         index = pd.MultiIndex.from_product(
@@ -428,6 +429,7 @@ class Schisto(Module):
         # Iterate through DataFrame rows and register each symptom
         for _, row in symptoms.iterrows():
             if row['HSB_mapped_symptom'] not in generic_symptoms:
+                print(row['HSB_mapped_symptom'])
                 symptom_kwargs = {
                     'name': row['Symptom'],
                     'odds_ratio_health_seeking_in_children': row.get('odds_ratio_health_seeking_in_children', None),
