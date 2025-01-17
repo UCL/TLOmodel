@@ -418,11 +418,27 @@ class Schisto(Module):
     def _register_symptoms(self, symptoms: dict) -> None:
         """Register the symptoms with the `SymptomManager`.
         :params symptoms: The symptoms that are used by this module in a dictionary of the form, {<symptom>:
-        <generic_symptom_similar>}. Each symptom is associated with the average healthcare seeking behaviour."""
+        <generic_symptom_similar>}. Each symptom is associated with the average healthcare seeking behaviour
+        unless otherwise specified."""
         generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
-        self.sim.modules['SymptomManager'].register_symptom(*[
-            Symptom(name=_symp) for _symp in symptoms if _symp not in generic_symptoms
-        ])
+
+        # self.sim.modules['SymptomManager'].register_symptom(*[
+        #     Symptom(name=_symp) for _symp in symptoms if _symp not in generic_symptoms
+        # ])
+        # Iterate through DataFrame rows and register each symptom
+        for _, row in symptoms.iterrows():
+            if row['HSB_mapped_symptom'] not in generic_symptoms:
+                symptom_kwargs = {
+                    'name': row['Symptom'],
+                    'odds_ratio_health_seeking_in_children': row.get('odds_ratio_health_seeking_in_children', None),
+                    'odds_ratio_health_seeking_in_adults': row.get('odds_ratio_health_seeking_in_adults', None),
+                    'prob_seeks_emergency_appt_in_children': row.get('prob_seeks_emergency_appt_in_children', None),
+                    'prob_seeks_emergency_appt_in_adults': row.get('prob_seeks_emergency_appt_in_adults', None),
+                }
+                # Remove None values to avoid passing unnecessary arguments
+                symptom_kwargs = {k: v for k, v in symptom_kwargs.items() if v is not None}
+
+                self.sim.modules['SymptomManager'].register_symptom(Symptom(**symptom_kwargs))
 
     def _get_disability_weight(self) -> dict:
         """Return dict containing the disability weight (value) of each symptom (key)."""
@@ -771,7 +787,6 @@ class SchistoSpecies:
         # todo this is the updated (calibrated) data
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
-        # parameters['R0'] = schisto_initial_reservoir['R0']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
 
@@ -1202,7 +1217,7 @@ class SchistoSpecies:
 
 class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     """A recurring event that causes infection of people with this species.
-     * Determines who becomes infected (using worm burden and reservoir of infectious material.
+     * Determines who becomes infected using worm burden and reservoir of infectious material.
      * Schedules `SchistoMatureWorms` for when the worms mature to adult worms."""
 
     def __init__(self, module: Module, species: SchistoSpecies):
@@ -1730,7 +1745,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         for _spec in self.module.species.values():
             _spec.log_infection_status()
-            _spec.log_mean_worm_burden()
+            # _spec.log_mean_worm_burden()  # todo revert this if needed
 
         # PZQ treatment episodes
         df = population.props
