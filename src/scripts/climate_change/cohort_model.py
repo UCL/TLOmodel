@@ -93,7 +93,7 @@ for scenario in scenarios:
 
         # now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
         precipitation_threshold = predictions_from_cmip['Precipitation'].quantile(0.9)
-        filtered_predictions = predictions_from_cmip_sum[predictions_from_cmip_sum['Precipitation'] >= precipitation_threshold]
+        filtered_predictions = predictions_from_cmip[predictions_from_cmip['Precipitation'] >= precipitation_threshold]
         filtered_predictions['Percentage_Difference'] = (
                 filtered_predictions['Difference_in_Expectation'] / filtered_predictions[
                 'Predicted_No_Weather_Model'])
