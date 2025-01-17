@@ -50,30 +50,6 @@ print(model_filename_weather_model)
 # # data is from 2011 - 2024 - for facility
 if ANC:
     monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
-    if daily_max:
-        if five_day:
-            if cumulative:
-                weather_data_historical = pd.read_csv(
-                    "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
-                    index_col=0)
-            else:
-                weather_data_historical = pd.read_csv(
-                    "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_average.csv",
-                    index_col=0)
-        else:
-            weather_data_historical = pd.read_csv(
-                "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facility_five_day_cumulative.csv",
-                index_col=0)
-    elif daily_total:
-        if five_day:
-            if cumulative:
-                weather_data_historical = pd.read_csv(
-                        "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
-                        index_col=0)
-    else:
-        weather_data_historical = pd.read_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
-            index_col=0)
 
 
 def build_model(X, y, poisson=False, log_y=False, X_mask_mm=0, feature_selection=False, k_best=None):
@@ -183,6 +159,8 @@ monthly_reporting_by_facility = monthly_reporting_by_facility.drop(columns=zero_
 
 if use_all_weather:
     weather_data_monthly_df = weather_data_monthly_original.drop(columns=zero_sum_columns, errors='ignore')
+    nan_indices = np.isnan(weather_data_monthly_df)
+
     weather_data_five_day_cumulative_df = weather_data_five_day_cumulative_original.drop(columns=zero_sum_columns, errors='ignore')
 
     weather_data_monthly_df = weather_data_monthly_df.drop(weather_data_monthly_df.index[-2:])
@@ -220,26 +198,16 @@ if use_all_weather:
     weather_data_monthly = weather_data_monthly_df # need to keep these seperate for the binary values later
     weather_data_five_day_cumulative = weather_data_five_day_cumulative_df
 
-    weather_data_monthly.loc[covid_months, :] = np.nan
-    weather_data_five_day_cumulative.loc[covid_months, :] = np.nan
+    #weather_data_monthly.loc[covid_months, :] = np.nan
+    #weather_data_five_day_cumulative.loc[covid_months, :] = np.nan
     # code if years need to be dropped
-
     weather_data_monthly = weather_data_monthly.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
     weather_data_five_day_cumulative = weather_data_five_day_cumulative.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
-
     weather_data_monthly_flattened = weather_data_monthly.values.flatten()
     weather_data_five_day_cumulative_flattened = weather_data_five_day_cumulative.values.flatten()
     weather_data = np.vstack((weather_data_monthly_flattened,weather_data_five_day_cumulative_flattened)).T
-else:
-    if five_day:# Drop September 2024
-        weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-1:])
-    else: # drop october for monthly data
-        weather_data_historical = weather_data_historical.drop(weather_data_historical.index[-2:])
-    weather_data_historical = weather_data_historical.drop(columns=zero_sum_columns, errors='ignore')
-    weather_data_historical.loc[covid_months, :] = np.nan
-    weather_data = weather_data_historical.values.flatten()
 
-# Mask COVID-19 months for reporting
+# # Mask COVID-19 months for reporting
 monthly_reporting_by_facility.iloc[covid_months, :] = np.nan
 # Mask for missing data with Cyclone Freddy
 monthly_reporting_by_facility.loc[cyclone_freddy_months_phalombe, 'Phalombe Health Centre'] = 0
@@ -304,12 +272,6 @@ ftype_info_each_month = repeat_info(expanded_facility_info['Ftype'], num_facilit
 ftype_encoded = pd.get_dummies(ftype_info_each_month, drop_first=True)
 altitude = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities, year_range, historical = True)]
 minimum_distance = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'], num_facilities, year_range, historical = True)]
-# Lagged weather
-if not use_all_weather:
-    lag_1_month = weather_data_historical.shift(1).values.flatten()
-    lag_2_month = weather_data_historical.shift(2).values.flatten()
-    lag_3_month = weather_data_historical.shift(3).values.flatten()
-    lag_4_month = weather_data_historical.shift(4).values.flatten()
 
 altitude = np.array(altitude)
 altitude = np.where(altitude < 0, np.nan, altitude)
@@ -331,6 +293,7 @@ X_continuous = np.column_stack([
     altitude,
     np.array(minimum_distance)
 ])
+
 X_categorical = np.column_stack([
     resid_encoded,
     zone_encoded,
@@ -368,7 +331,7 @@ X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 #
 # # Compute the correlation matrix
 # correlation_matrix = df_combined.corr()
-#correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/correlation_matrix_of_predictors.csv')
+# correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/correlation_matrix_of_predictors.csv')
 
 # Display the correlation matrix
 coefficient_names = ["year", "month", "altitude", "minimum_distance"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
@@ -547,6 +510,28 @@ axs[0].legend(loc='upper left', borderaxespad=0.)
 
 
 plt.show()
+
+## save historical predictions
+full_data_weather_predictions_historical = pd.DataFrame({
+    'Year': np.array(year_flattened)[mask_all_data],
+    'Month': np.array(month_flattened)[mask_all_data],
+    'Facility_ID': np.array(facility_flattened)[mask_all_data],
+    'Altitude': np.array(altitude)[mask_all_data],
+    'Zone': np.array(zone_info_each_month)[mask_all_data],
+    'District': np.array(dist_info_each_month)[mask_all_data],
+    'Resid': np.array(resid_info_each_month)[mask_all_data],
+    'Owner': np.array(owner_info_each_month)[mask_all_data],
+    'Facility_Type': np.array(ftype_info_each_month)[mask_all_data],
+    'Precipitation': X_weather_standardized[mask_all_data,0],
+    'Lag_1_Precipitation': np.array(lag_1_month)[mask_all_data],
+    'Lag_2_Precipitation': np.array(lag_2_month)[mask_all_data],
+    'Lag_3_Precipitation': np.array(lag_3_month)[mask_all_data],
+    'Lag_4_Precipitation': np.array(lag_4_month)[mask_all_data],
+    'Predicted_Weather_Model': np.exp(matched_y_pred_weather),
+    'Predicted_No_Weather_Model': np.exp(matched_y_pred),
+    'Difference_in_Expectation': np.exp(matched_y_pred_weather) - np.exp(matched_y_pred),
+})
+full_data_weather_predictions_historical.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_ANC_model_historical_predictions.csv')
 
 
 ############### ADD IN CMIP DATA ###########################
