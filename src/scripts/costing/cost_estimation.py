@@ -927,7 +927,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
             max_y = ax.get_ylim()[1]
             labels = [round(v.get_height(),1) if v.get_height() > max_y/20 else '' for v in c]
             # remove the labels parameter if it's not needed for customized labels
-            ax.bar_label(c, labels=labels, label_type='center')
+            ax.bar_label(c, labels=labels, label_type='center', fontsize='small')
 
         # Add error bars
         x_pos = np.arange(len(pivot_mean.index))
@@ -945,7 +945,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
             max_y = ax.get_ylim()[1]
             labels = [round(v.get_height(),1) if v.get_height() > max_y/20 else '' for v in c]
             # remove the labels parameter if it's not needed for customized labels
-            ax.bar_label(c, labels=labels, label_type='center')
+            ax.bar_label(c, labels=labels, label_type='center', fontsize='small')
 
         # Add error bars
         x_pos = np.arange(len(pivot_mean.index))
@@ -955,13 +955,13 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
-        labels = [_scenario_dict.get(label, label) for label in pivot_df.index]
+        labels = [_scenario_dict.get(label, label) for label in pivot_mean.index]
     else:
         labels = pivot_mean.index.astype(str)
 
     # Wrap x-tick labels for readability
     wrapped_labels = [textwrap.fill(str(label), 20) for label in labels]
-    ax.set_xticklabels(wrapped_labels, rotation=45, ha='right')
+    ax.set_xticklabels(wrapped_labels, rotation=45, ha='right', fontsize='small')
 
     # Period included for plot title and name
     if _year == 'all':
