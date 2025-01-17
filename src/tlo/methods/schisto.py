@@ -218,7 +218,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         if 'HealthBurden' in self.sim.modules:
             self.disability_weights = self._get_disability_weight()
 
-        # Look-up item code for Praziquantel
+        # Look-up item codes for Praziquantel
         if 'HealthSystem' in self.sim.modules:
             self.item_code_for_praziquantel = self._get_item_code_for_praziquantel(MDA=False)
             self.item_code_for_praziquantel_MDA = self._get_item_code_for_praziquantel(MDA=True)
@@ -231,8 +231,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
         # over-ride availability of PZQ for MDA
+        # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+        #     {1735: 1.0})  # this is the donated PZQ not currently in consumables availability worksheet
         self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            {1735: 1.0})
+            {286: 1.0})
 
         # Schedule MDA events
         if self.mda_execute:
@@ -650,7 +652,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer ta HSI for testing.
-        print("generic appt")
         set_of_symptoms_indicative_of_schisto = {'anemia',
                                                  'haematuria',
                                                  'bladder_pathology',
@@ -670,7 +671,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     def select_test(self, person_id):
 
         # choose test
-        print("CHOOSING TEST")
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if any(symptom in ['haematuria', 'bladder_pathology',] for symptom in persons_symptoms):
             test = 'urine_filtration_test'
@@ -1175,11 +1175,11 @@ class SchistoSpecies:
         ], observed=False).size()
         data.index.rename('infection_status', level=0, inplace=True)
 
-        logger.info(
-            key=f'infection_status_{self.name}',
-            data=flatten_multi_index_series_into_dict_for_logging(data),
-            description='Counts of infection status with this species by age-group and district.'
-        )
+        # logger.info(
+        #     key=f'infection_status_{self.name}',
+        #     data=flatten_multi_index_series_into_dict_for_logging(data),
+        #     description='Counts of infection status with this species by age-group and district.'
+        # )
 
         #  Group by district and calculate counts
         grouped_data = df.loc[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
@@ -1190,11 +1190,12 @@ class SchistoSpecies:
         # Calculate the proportion of susceptible individuals in each district
         susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
 
-        logger.info(
-            key=f'susceptibility_{self.name}',
-            data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
-            description='Proportion of people susceptible to this species in district.'
-        )
+        # todo reinstate if needed
+        # logger.info(
+        #     key=f'susceptibility_{self.name}',
+        #     data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
+        #     description='Proportion of people susceptible to this species in district.'
+        # )
 
     def log_mean_worm_burden(self) -> None:
         """Log the mean worm burden across the population for this species, by age-group and district."""
@@ -1540,7 +1541,6 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
 
         df = self.sim.population.props
         params = self.module.parameters
-        print("TESTING")
 
         # select and perform the appropriate diagnostic test
         test = self.module.select_test(person_id)
@@ -1649,7 +1649,6 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person."""
         dosage = self.module._calculate_praziquantel_dosage(person_id)
-        print("TREATING")
 
         if self.get_consumables(item_codes={self.module.item_code_for_praziquantel: dosage}):
             self.module.do_effect_of_treatment(person_id=person_id)
