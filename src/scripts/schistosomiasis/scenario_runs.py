@@ -70,7 +70,13 @@ class SchistoScenarios(BaseScenario):
         return fullmodel(resourcefilepath=self.resources,
                          use_simplified_births=True,
                          module_kwargs={
-                             "Schisto": {"single_district": False},
+                             "HealthSystem": {"disable": False,
+                                              "service_availability": ["*"],
+                                              "mode_appt_constraints": 1,
+                                              "cons_availability": "all",
+                                              "beds_availability": "all",
+                                              "ignore_priority": False,
+                                              "use_funded_or_actual_staffing": "actual"},                             "Schisto": {"single_district": False},
                              "Demography": {"equal_allocation_by_district": True},
                              "Alri": {"log_indivdual": None},
                          }

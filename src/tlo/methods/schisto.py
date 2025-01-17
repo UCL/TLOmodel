@@ -33,7 +33,7 @@ logger.setLevel(logging.INFO)
 _AGE_GROUPS = {'Infant': (0, 1), 'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
-class Schisto(Module):
+class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
      environment. There is a delay between the acquisition of worms and the maturation to 'adults' worms; and a long
@@ -298,22 +298,25 @@ class Schisto(Module):
 
         df = self.sim.population.props
 
+        # Ensure person_id is treated as an iterable (e.g., list) even if it's a single integer
+        if isinstance(person_id, int):
+            person_id = [person_id]
+
         # Clear any symptoms caused by this module (i.e., Schisto of any species)
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self)
 
-        # Record in the property the date of last treatment
+        # Record the date of last treatment
         df.loc[person_id, 'ss_last_PZQ_date'] = self.sim.date
 
-        # Set properties to be not-infected (any species), and zero-out all worm burden information.
+        # Update properties after PZQ treatment
         for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
             pzq_efficacy = self.parameters[f'{spec_prefix}_PZQ_efficacy']
 
-            # df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = 0
             df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
                                                                                                  person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] * (
                                                                                                  1 - pzq_efficacy)
-            # todo if worm burden >1, still infected
-            mask = df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] == 0
+            # if worm burden >=1, still infected
+            mask = df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] < 1
             df.loc[mask.index[mask], f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
 
     def _load_parameters_from_workbook(self, workbook) -> dict:
@@ -637,9 +640,11 @@ class Schisto(Module):
         person_id: int,
         symptoms: List[str],
         schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
     ) -> None:
         # Do when person presents to the GenericFirstAppt.
         # If the person has certain set of symptoms, refer ta HSI for testing.
+        print("generic appt")
         set_of_symptoms_indicative_of_schisto = {'anemia',
                                                  'haematuria',
                                                  'bladder_pathology',
@@ -647,7 +652,8 @@ class Schisto(Module):
                                                  'ascites',
                                                  'diarrhoea',
                                                  'vomiting',
-                                                 'hepatomegaly'}
+                                                 'hepatomegaly',
+                                                 'dysuria'}
 
         if any(symptom in set_of_symptoms_indicative_of_schisto for symptom in symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
@@ -657,9 +663,8 @@ class Schisto(Module):
 
     def select_test(self, person_id):
 
-        p = self.parameters
-
         # choose test
+        print("CHOOSING TEST")
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if any(symptom in ['haematuria', 'bladder_pathology',] for symptom in persons_symptoms):
             test = 'urine_filtration_test'
@@ -1519,7 +1524,7 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Schisto)
 
-        self.TREATMENT_ID = 'Schisto_Testing'
+        self.TREATMENT_ID = 'Schisto_Test'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'LabParasit': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self._num_occurrences = 0
