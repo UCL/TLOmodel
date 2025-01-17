@@ -689,7 +689,8 @@ class SchistoSpecies:
         params = {
             # 'delay_a': Parameter(Types.REAL, 'End of the latent period in days, start'),
             # 'delay_b': Parameter(Types.REAL, 'End of the latent period in days, end'),
-            # 'symptoms': Parameter(Types.LIST, 'Symptoms of the schistosomiasis infection, dependent on the module'),
+            'symptoms': Parameter(Types.DICT, 'Symptoms of the schistosomiasis infection, dependent on the module'),
+            'R0': Parameter(Types.REAL, 'R0 of species'),
             'beta_PSAC': Parameter(Types.REAL, 'Contact/exposure rate of PSAC'),
             'beta_SAC': Parameter(Types.REAL, 'Contact/exposure rate of SAC'),
             'beta_Adults': Parameter(Types.REAL, 'Contact/exposure rate of Adults'),
@@ -707,9 +708,7 @@ class SchistoSpecies:
                                       'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
-            'R0': Parameter(Types.DATA_FRAME,
-                                              'R0 of spcies'),
-            'prop_susceptible': Parameter(Types.DATA_FRAME,
+             'prop_susceptible': Parameter(Types.DATA_FRAME,
                                           'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
         }
@@ -752,7 +751,8 @@ class SchistoSpecies:
 
         # Natural history params
         param_list = workbook['Parameters'].set_index("Parameter")['Value']
-        for _param_name in ('beta_PSAC',
+        for _param_name in ('R0',
+                            'beta_PSAC',
                             'beta_SAC',
                             'beta_Adults',
                             'worm_lifespan',
@@ -771,7 +771,7 @@ class SchistoSpecies:
         # todo this is the updated (calibrated) data
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
-        parameters['R0'] = schisto_initial_reservoir['R0']
+        # parameters['R0'] = schisto_initial_reservoir['R0']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
         parameters['prop_susceptible'] = schisto_initial_reservoir['prop_susceptible']
 
@@ -1278,10 +1278,16 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         draw_worms = pd.Series(
             rng.poisson(
-                (df.loc[where, 'district_of_residence'].map(worms_total) * rates).fillna(0.0)
+                (
+                    df.loc[where, 'district_of_residence']
+                    .map(worms_total)
+                    .astype(float)  # Ensure compatibility for multiplication
+                    * rates
+                ).fillna(0.0)
             ),
             index=df.index[where]
         )
+
         # density dependent establishment of new worms
         # establishment of new worms dependent on number of worms currently in host * worm fecundity
         # limits numbers of worms harboured by each individual
