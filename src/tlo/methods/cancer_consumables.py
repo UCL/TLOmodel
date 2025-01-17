@@ -25,18 +25,12 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
     cons_dict['screening_biopsy_core'] = \
         {get_item_code("Biopsy needle"): 1}
 
-    # cons_dict['cervical_cancer_screening_via_optional'] = \
-    #     {get_item_code("Gloves"): 2}
-
-    # cons_dict['cervical_cancer_screening_via'] = \
-    #     {get_item_code("Clean delivery kit"): 1}
-
     cons_dict['treatment_surgery_core'] = \
-        {get_item_code("Halothane (fluothane)_250ml_CMST"): 100}
+        {get_item_code("Halothane (fluothane)_250ml_CMST"): 100,
+         get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1}
 
     cons_dict['treatment_surgery_optional'] = \
-        {get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1,
-         get_item_code("Sodium chloride, injectable solution, 0,9 %, 500 ml"): 2000,
+        {get_item_code("Sodium chloride, injectable solution, 0,9 %, 500 ml"): 2000,
          get_item_code("Paracetamol, tablet, 500 mg"): 8000,
          get_item_code("Pethidine, 50 mg/ml, 2 ml ampoule"): 6,
          get_item_code("Suture pack"): 1,
@@ -74,30 +68,6 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
 
         cons_dict['screening_cystoscopy_core'] = \
             {get_item_code("Cystoscope"): 1}
-
-    elif 'CervicalCancer' == self.name:
-        cons_dict['cervical_cancer_screening_via'] = \
-            {get_item_code("Acetic acid, 5% dilute, 5 ml"): 1}
-
-        cons_dict['cervical_cancer_screening_via_optional'] = \
-            {get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
-
-        cons_dict['cervical_cancer_screening_xpert'] = \
-        {get_item_code("Specimen container"): 1,
-            get_item_code("Xpert"): 1,
-             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
-
-        cons_dict['cervical_cancer_thermoablation'] = {
-             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
-
-        cons_dict['cervical_cancer_cryotherapy'] = \
-            {get_item_code("Cryotherapy unit with cryotips, use for one patient"): 1,
-             get_item_code("Compressed gas, 25 kg cylinder"): 1,
-             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
-             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
 
     elif 'OesophagealCancer' == self.name:
 

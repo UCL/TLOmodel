@@ -688,7 +688,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom breast_lump_discernible
-        assert 'breast_lump_discernible' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'breast_lump_discernible' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):

@@ -54,6 +54,7 @@ Contents
    azure_batch
    reference/index
    resources/index
+   parameters
    learning
    case-studies/index
    videos

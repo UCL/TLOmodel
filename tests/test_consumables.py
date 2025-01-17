@@ -66,7 +66,7 @@ def test_using_recognised_item_codes(seed):
     )
 
     assert {0: False, 1: True} == rtn
-    assert not cons._not_recognised_item_codes  # No item_codes recorded as not recognised.
+    assert len(cons._not_recognised_item_codes) == 0  # No item_codes recorded as not recognised.
 
 
 def test_unrecognised_item_code_is_recorded(seed):
@@ -93,7 +93,7 @@ def test_unrecognised_item_code_is_recorded(seed):
     )
 
     assert isinstance(rtn[99], bool)
-    assert cons._not_recognised_item_codes  # Some item_codes recorded as not recognised.
+    assert len(cons._not_recognised_item_codes) > 0  # Some item_codes recorded as not recognised.
 
     # Check warning is issued at end of simulation
     with pytest.warns(UserWarning) as recorded_warnings:
@@ -364,7 +364,7 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     return sim
 
 
-def get_dummy_hsi_event_instance(module, facility_id=None):
+def get_dummy_hsi_event_instance(module, facility_id=None, to_log=False):
     """Make an HSI Event that runs for person_id=0 in a particular facility_id and requests consumables,
     and for which its parent is the identified module."""
 
@@ -383,7 +383,7 @@ def get_dummy_hsi_event_instance(module, facility_id=None):
             """Requests all recognised consumables."""
             self.get_consumables(
                 item_codes=list(self.sim.modules['HealthSystem'].consumables.item_codes),
-                to_log=True,
+                to_log=to_log,
                 return_individual_results=False
             )
 
@@ -489,7 +489,7 @@ def test_outputs_to_log(tmpdir):
 
         # Schedule the HSI event for person_id=0
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0),
+            hsi_event=get_dummy_hsi_event_instance(module=sim.modules['DummyModule'], facility_id=0, to_log=True),
             topen=sim.start_date,
             tclose=None,
             priority=0
@@ -543,12 +543,12 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data(recw
                     facility_id=_facility_id
                 )
                 for _item_code in item_codes:
-                    hsi_event.get_consumables(item_codes=_item_code)
+                    hsi_event.get_consumables(item_codes=_item_code, to_log=False)
 
     sim.modules['HealthSystem'].on_simulation_end()
 
-    # Check that no warnings raised or item_codes recorded as being not recogised.
-    assert not sim.modules['HealthSystem'].consumables._not_recognised_item_codes
+    # Check that no warnings raised or item_codes recorded as being not recognised.
+    assert len(sim.modules['HealthSystem'].consumables._not_recognised_item_codes) == 0
     assert not any_warnings_about_item_code(recwarn)
 
 

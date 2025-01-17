@@ -10,6 +10,7 @@ import scipy.stats
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
+from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
@@ -1056,7 +1057,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
 
         # log delivery setting
         logger.info(key='delivery_setting_and_mode', data={'mother': mother_id,
-                                                           'facility_type': mni[mother_id]['delivery_setting'],
+                                                           'facility_type': str(mni[mother_id]['delivery_setting']),
                                                            'mode': mni[mother_id]['mode_of_delivery']})
 
         # Store only live births to a mother parity
@@ -2611,7 +2612,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
             self.module.set_intrapartum_complications(individual_id, complication=complication)
 
         if df.at[individual_id, 'la_obstructed_labour']:
-            logger.info(key='maternal_complication', data={'mother': individual_id,
+            logger.info(key='maternal_complication', data={'person': individual_id,
                                                            'type': 'obstructed_labour',
                                                            'timing': 'intrapartum'})
 
@@ -2976,7 +2977,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             self.module.progression_of_hypertensive_disorders(person_id, property_prefix='ps')
 
             if df.at[person_id, 'la_obstructed_labour']:
-                logger.info(key='maternal_complication', data={'mother': person_id,
+                logger.info(key='maternal_complication', data={'person': person_id,
                                                                'type': 'obstructed_labour',
                                                                'timing': 'intrapartum'})
 
@@ -3117,7 +3118,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         # log the PNC visit
         logger.info(key='postnatal_check', data={'person_id': person_id,
-                                                 'delivery_setting': mni[person_id]['delivery_setting'],
+                                                 'delivery_setting': str(mni[person_id]['delivery_setting']),
                                                  'visit_number': df.at[person_id, 'la_pn_checks_maternal'],
                                                  'timing': mni[person_id]['will_receive_pnc']})
 
@@ -3253,8 +3254,10 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # If intervention is delivered - add used equipment
                 self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
-                person = df.loc[person_id]
-                logger.info(key='caesarean_delivery', data=person.to_dict())
+                logger.info(
+                    key='caesarean_delivery',
+                    data=get_dataframe_row_as_dict_for_logging(df, person_id),
+                )
                 logger.info(key='cs_indications', data={'id': person_id,
                                                         'indication': mni[person_id]['cs_indication']})
 

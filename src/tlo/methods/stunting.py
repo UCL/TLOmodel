@@ -525,7 +525,9 @@ class StuntingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Log the current distribution of stunting classification by age"""
         df = population.props
 
-        d_to_log = df.loc[df.is_alive & (df.age_years < 5)].groupby(
+        subset = df.loc[df.is_alive & (df.age_years < 5)].copy()
+        subset["age_years"] = pd.Categorical(subset["age_years"], categories=range(5))
+        d_to_log = subset.groupby(
             by=['age_years', 'un_HAZ_category']).size().sort_index().to_dict()
 
         def convert_keys_to_string(d):

@@ -1,5 +1,5 @@
 <div style="text-align: center" align="center">
-<img src="docs/thanzi-la-onse.png" alt="Thanzi La Onze" />
+<img src="docs/thanzi-la-onse.png" alt="Thanzi la Onse" />
 <br />
 <h1>Thanzi la Onse model</h1>
 </div>
@@ -24,7 +24,7 @@ The __Thanzi la Onse model (TLOmodel)__ is a part of the [Thanzi la Onse][thanzi
 TLOmodel is developed in a collaboration between:
 
 - [Kamuzu University of Health Sciences][kuhes-link]
-- [MRC Centre for Global Infectioous Disease Analysis][mrc-gida-link], [Imperial College London][imperial-link]
+- [MRC Centre for Global Infectious Disease Analysis][mrc-gida-link], [Imperial College London][imperial-link]
 - [Institute for Global Health][igh-link], [University College London][ucl-link]
 - [Centre for Advanced Research Computing][arc-link], [University College London][ucl-link]
 - [Centre for Health Economics][che-link], [University of York][york-link]
