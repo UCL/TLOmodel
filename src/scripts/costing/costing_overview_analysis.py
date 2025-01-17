@@ -61,10 +61,11 @@ params = extract_params(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2035, 12, 31))  # This is the period that is costed
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
-list_of_years_for_plot = list(range(2019, 2036))
+list_of_years_for_plot = list(range(2023, 2031))
+number_of_years_costed = relevant_period_for_costing[1] - 2023 + 1
 
 # Scenarios
 cost_scenarios = {0: "Actual", 3: "Expanded HRH", 5: "Improved consumable availability",
@@ -78,31 +79,38 @@ discount_rate = 0.03
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate, summarize = True)
-input_costs = input_costs[(input_costs.year > 2018) & (input_costs.year < 2036)]
+input_costs = input_costs[(input_costs.year > 2022) & (input_costs.year < 2031)]
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
 
 input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = 0, summarize = True)
-input_costs_undiscounted = input_costs_undiscounted[(input_costs_undiscounted.year > 2018) & (input_costs_undiscounted.year < 2036)]
+input_costs_undiscounted = input_costs_undiscounted[(input_costs_undiscounted.year > 2022) & (input_costs_undiscounted.year < 2031)]
 
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
 
 # Get overall estimates for main text
 # -----------------------------------------------------------------------------------------------------------------------
 cost_by_draw = input_costs.groupby(['draw', 'stat'])['cost'].sum()
-print(f"The total estimated cost of healthcare delivery in Malawi between 2019 and 2035 was estimated to be "
+print(f"The total estimated cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
       f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion[\${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
       f"\${cost_by_draw[5,'mean']/1e9:,.2f} billion[\${cost_by_draw[5,'lower']/1e9:,.2f}b - \${cost_by_draw[5,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
       f"followed by \${cost_by_draw[3,'mean']/1e9:,.2f} billion[\${cost_by_draw[3,'lower']/1e9:,.2f}b - \${cost_by_draw[3,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
       f"\${cost_by_draw[8,'mean']/1e9:,.2f} billion[\${cost_by_draw[8,'lower']/1e9:,.2f}b - \${cost_by_draw[8,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
 
-print(f"The total cost of healthcare delivery in Malawi (from a health system perspective) between 2019 and 2035 was estimated at "
+undiscounted_cost_by_draw = input_costs_undiscounted.groupby(['draw', 'stat'])['cost'].sum()
+print(f"The average annual estimated cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
+      f"\${undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}b], under the actual scenario, and increased to "
+      f"\${undiscounted_cost_by_draw[5,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[5,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[5,'upper']/1e6/number_of_years_costed:,.2f}b] under the improved consumable availability scenario, "
+      f"followed by \${undiscounted_cost_by_draw[3,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[3,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[3,'upper']/1e6/number_of_years_costed:,.2f}b] under the expanded HRH scenario and finally "
+      f"\${undiscounted_cost_by_draw[8,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[8,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[8,'upper']/1e6/number_of_years_costed:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
+
+print(f"The total cost of healthcare delivery in Malawi (from a health system perspective) between 2023 and 2030 was estimated at "
       f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion[\${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b] under current constraints. "
       f"Alternative scenarios reflecting improvements in supply chain efficiency and workforce capacity increased costs by "
       f"{(cost_by_draw[5,'mean']/cost_by_draw[0,'mean'] - 1):.2%} to "
       f"{(cost_by_draw[8,'mean']/cost_by_draw[0,'mean'] - 1):.2%}. "
-      f"Importantly, our 2019 cost estimates closely aligned with reported actual expenditures, supporting the reliability of our approach.")
+      f"Importantly, our 2018 cost estimates closely aligned with reported actual expenditures, supporting the reliability of our approach.")
 
 consumable_cost_by_draw = input_costs[(input_costs.cost_category == 'medical consumables') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
 print(f"Notably, we find that the improved consumable availability scenario results in a {(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1):.2%} "
