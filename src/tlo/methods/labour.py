@@ -769,6 +769,9 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         self.item_codes_lab_consumables['iv_antihypertensives'] = \
             {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}
 
+        self.item_codes_lab_consumables['iv_antihypertensives_other'] = \
+            {ic('Nifedipine 10mg_100_CMST'): 1}
+
         # --------------------------------------- ORAL ANTIHYPERTENSIVES ---------------------------------------------
         self.item_codes_lab_consumables['oral_antihypertensives'] = \
             {ic('Methyldopa 250mg_1000_CMST'): 1}
@@ -1734,6 +1737,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
             iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self, int_name='iv_antihypertensives', hsi_event=hsi_event,
                 cons=self.item_codes_lab_consumables['iv_antihypertensives'],
+                alt_cons=self.item_codes_lab_consumables['iv_antihypertensives_other'],
                 opt_cons=self.item_codes_lab_consumables['iv_drug_equipment'])
 
             if iv_anti_htns_delivered:
@@ -3081,7 +3085,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
-        deliv_location = 'hc' if self.ACCEPTED_FACILITY_LEVEL == '1a' else 'hp'
 
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour
@@ -3093,7 +3096,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             cs_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self.module, int_name='caesarean_section', hsi_event=self,
-                q_param=[params['prob_hcw_avail_surg'], params[f'mean_hcw_competence_{deliv_location}']],
+                q_param=[params['prob_hcw_avail_surg'], params[f'mean_hcw_competence_hp']],
                 cons=self.module.item_codes_lab_consumables['caesarean_delivery_core'],
                 opt_cons=self.module.item_codes_lab_consumables['caesarean_delivery_optional'])
 

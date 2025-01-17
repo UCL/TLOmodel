@@ -238,21 +238,22 @@ class CareOfWomenDuringPregnancy(Module):
              }
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
-        # self.item_codes_preg_consumables['post_abortion_care_core'] = \
-        #     {ic('Misoprostol, tablet, 200 mcg'): 600}
-
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
             {ic('Oxytocin, injection, 10 IU in 1 ml ampoule'): 1}
 
+        self.item_codes_preg_consumables['post_abortion_care_core_other'] = \
+             {ic('Misoprostol, tablet, 200 mcg'): 600}
+
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
-            {ic('Misoprostol, tablet, 200 mcg'): 600,
-             ic('Complete blood count'): 1,
+            {ic('Complete blood count'): 1,
              ic('Blood collecting tube, 5 ml'): 1,
              ic('Paracetamol, tablet, 500 mg'): 8000,
              ic('Gauze, absorbent 90cm x 40m_each_CMST'): 30,
              ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
              ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
              ic('Disposables gloves, powder free, 100 pieces per box'): 1,
+             ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
+             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              }
 
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
@@ -270,18 +271,6 @@ class CareOfWomenDuringPregnancy(Module):
              ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
              }
 
-        # ------------------------------------------- POST ABORTION CARE - SHOCK ------------------------------------
-        self.item_codes_preg_consumables['post_abortion_care_shock'] = \
-            {ic('Sodium chloride, injectable solution, 0,9 %, 500 ml'): 2000,
-             # ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
-             }
-
-        self.item_codes_preg_consumables['post_abortion_care_shock_optional'] = \
-            {ic('Cannula iv  (winged with injection pot) 18_each_CMST'): 1,
-             ic('Giving set iv administration + needle 15 drops/ml_each_CMST'): 1,
-             ic('Disposables gloves, powder free, 100 pieces per box'): 1,
-             ic('Oxygen, 1000 liters, primarily with oxygen cylinders'): 23_040,
-             }
         # ---------------------------------- URINE DIPSTICK ----------------------------------------------------------
         self.item_codes_preg_consumables['urine_dipstick'] = {ic('Urine analysis'): 1}
 
@@ -333,6 +322,9 @@ class CareOfWomenDuringPregnancy(Module):
         # -------------------------------------  INTRAVENOUS ANTIHYPERTENSIVES ---------------------------------------
         self.item_codes_preg_consumables['iv_antihypertensives'] = \
             {ic('Hydralazine, powder for injection, 20 mg ampoule'): 1}
+
+        self.item_codes_preg_consumables['iv_antihypertensives_other'] = \
+            {ic('Nifedipine 10mg_100_CMST'): 1}
 
         # ---------------------------------------- MAGNESIUM SULPHATE ------------------------------------------------
         self.item_codes_preg_consumables['magnesium_sulfate'] = \
@@ -1268,6 +1260,7 @@ class CareOfWomenDuringPregnancy(Module):
         iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
             self, int_name='iv_antihypertensives', hsi_event=hsi_event,
             cons=self.item_codes_preg_consumables['iv_antihypertensives'],
+            alt_con=self.item_codes_preg_consumables['iv_antihypertensives_other'],
             opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'],
             equipment={'Drip stand', 'Infusion pump'})
 
@@ -2542,6 +2535,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             return
 
         pac_cons = self.module.item_codes_preg_consumables['post_abortion_care_core']
+        pac_cons_other = self.module.item_codes_preg_consumables['post_abortion_care_core_other']
         pac_opt_cons = self.module.item_codes_preg_consumables['post_abortion_care_optional']
 
         if abortion_complications.has_any([person_id], 'sepsis', first=True):
@@ -2552,14 +2546,12 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             pac_cons.update(self.module.item_codes_preg_consumables['blood_transfusion'])
             pac_opt_cons.update(self.module.item_codes_preg_consumables['iv_drug_equipment'])
 
-        if abortion_complications.has_any([person_id], 'injury', first=True):
-            pac_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_shock'])
-            pac_opt_cons.update(self.module.item_codes_preg_consumables['post_abortion_care_shock_optional'])
 
         pac_delivered = pregnancy_helper_functions.check_int_deliverable(
             self.module, int_name='post_abortion_care_core', hsi_event=self,
             q_param=[l_params['prob_hcw_avail_retained_prod'], l_params['mean_hcw_competence_hp']],
             cons=pac_cons,
+            alt_con=pac_cons_other,
             opt_cons=pac_opt_cons,
             equipment={'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
 
