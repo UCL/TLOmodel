@@ -43,9 +43,9 @@ class SchistoScenarios(BaseScenario):
         self.start_date = Date(2010, 1, 1)
 
         # todo reset
-        self.end_date = Date(2040, 12, 31)  # 15 years of projections
+        self.end_date = Date(2040, 12, 31)  # 2040 = 15 years of projections
         self.pop_size = 160_000  # todo if equal_allocation_by_district, 64,000=2k per district
-        self.runs_per_draw = 3
+        self.runs_per_draw = 5
 
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)

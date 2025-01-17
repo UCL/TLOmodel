@@ -10,7 +10,7 @@ class ScenarioDefinitions:
     @property
     def YEAR_OF_CHANGE_FOR_WASH(self) -> int:
         """Year in which WASH-related changes are made."""
-        return 2025
+        return 2024.0
 
     def baseline(self) -> Dict:
         """ Return the Dict with values for the parameter changes that define the baseline scenario.
@@ -22,7 +22,7 @@ class ScenarioDefinitions:
             {
                 "Schisto": {
                     "mda_coverage": 0.0,  # default is 0.7
-                    "scaleup_WASH": 0,  # although this is BOOL, python changes type when reading in from Excel
+                    "scaleup_WASH": 0.0,  # although this is BOOL, python changes type when reading in from Excel
                 }
             },
         )
@@ -30,7 +30,7 @@ class ScenarioDefinitions:
     def scaleup_WASH(self) -> Dict:
         return {
             'Schisto': {
-                'scaleup_WASH': 1,
+                'scaleup_WASH': 1.0,
                 "scaleup_WASH_start_year": self.YEAR_OF_CHANGE_FOR_WASH,
             }
         }

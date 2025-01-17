@@ -90,7 +90,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                                       'Sensitivity of KK in detecting moderate WB'),
         'kato_katz_sensitivity_highWB': Parameter(Types.REAL,
                                                   'Sensitivity of KK in detecting high WB'),
-        'scaleup_WASH': Parameter(Types.BOOL,
+        'scaleup_WASH': Parameter(Types.INT,
                                   'Boolean whether to scale-up WASH during simulation'),
         'scaleup_WASH_start_year': Parameter(Types.INT,
                                              'Start date to scale-up WASH, years after sim start date'),
@@ -246,7 +246,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # schedule WASH scale-up
         if self.parameters['scaleup_WASH']:
             sim.schedule_event(SchistoWashScaleUp(self),
-                               Date(self.parameters['scaleup_WASH_start_year'], 1, 1))
+                               Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -260,7 +260,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # WASH in action, update property li_unimproved_sanitation=False for all new births
         if self.parameters['scaleup_WASH'] and (
-            self.sim.date >= Date(self.parameters['scaleup_WASH_start_year'], 1, 1)):
+            self.sim.date >= Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1)):
             df.at[child_id, 'li_unimproved_sanitation'] = False
             df.at[child_id, 'li_no_clean_drinking_water'] = False
             df.at[child_id, 'li_no_access_handwashing'] = False
@@ -878,7 +878,7 @@ class SchistoSpecies:
 
         # WASH in action
         if global_params['scaleup_WASH'] and (
-            self.schisto_module.sim.date >= Date(global_params['scaleup_WASH_start_year'], 1, 1)):
+            self.schisto_module.sim.date >= Date(int(global_params['scaleup_WASH_start_year']), 1, 1)):
 
             # if the child has sanitation, apply risk mitigated by rr_WASH
             if not df.at[child_id, 'li_unimproved_sanitation']:

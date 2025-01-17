@@ -92,8 +92,8 @@ def run_simulation(popsize,
                  )
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
-    sim.modules["Schisto"].parameters["scaleup_WASH"] = False
-    sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2025
+    sim.modules["Schisto"].parameters["scaleup_WASH"] = 1.0  # True
+    sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
     sim.modules["Schisto"].parameters['mda_coverage'] = 0
     sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
     sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
