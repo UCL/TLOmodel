@@ -20,6 +20,7 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
+    parse_log_file,
     summarize,
     unflatten_flattened_multi_index_in_logging,
 )

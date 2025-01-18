@@ -21,7 +21,8 @@ import warnings
 from pathlib import Path
 from typing import Dict
 
-from tlo import Date, logging
+from tlo import Date,Simulation, logging
+import random
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -42,7 +43,7 @@ class ImpactOfTbDaH04(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 2134
-        # self.seed = random.randint(0, 50000),
+        #self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 12, 31)
         self.pop_size = 1000
@@ -66,7 +67,6 @@ class ImpactOfTbDaH04(BaseScenario):
                 'tlo.methods.enhanced_lifestyle': logging.INFO
             }
         }
-
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
