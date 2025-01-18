@@ -36,9 +36,6 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-# Ignore warnings to avoid cluttering output from simulation - generally you do not
-# need (and generally shouldn't) do this as warnings can contain useful information but
-# we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 class ImpactOfTbDaH04(BaseScenario):
@@ -56,7 +53,8 @@ class ImpactOfTbDaH04(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'tb_DAH_scenarios2x',
-            'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
+           # 'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
+            'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
