@@ -330,6 +330,113 @@ do_cost_calibration_plot(calibration_data, list_of_operating_costs_for_calibrati
 do_cost_calibration_plot(calibration_data,all_calibration_costs, _xtick_fontsize = 7)
 calibration_data.to_csv(figurespath / 'calibration/calibration.csv')
 
+# Extract calibration data table for manuscript appendix
+calibration_data_extract = calibration_data[calibration_data.index.get_level_values(1) == 'mean']
+calibration_data_extract = calibration_data_extract.droplevel(level=1).reset_index()
+# Create a higher level cost category in the calibration data
+calibration_categories_dict = {'Other Drugs, medical supplies, and commodities': 'medical consumables',
+'Program Management & Administration': 'Not represented in TLO model',
+'Non-EHP consumables': 'Not represented in TLO model',
+'Voluntary Male Medical Circumcision': 'medical consumables',
+'Indoor Residual Spray': 'medical consumables',
+'Bednets': 'medical consumables',
+'Antimalarials': 'medical consumables',
+'Undernutrition commodities': 'medical consumables',
+'Cervical Cancer': 'medical consumables',
+'Condoms and Lubricants': 'medical consumables',
+'Other family planning commodities': 'medical consumables',
+'TB Tests (including RDTs)': 'medical consumables',
+'TB Treatment': 'medical consumables',
+'Vaccines': 'medical consumables',
+'Malaria RDTs': 'medical consumables',
+'HIV Screening/Diagnostic Tests': 'medical consumables',
+'Antiretrovirals': 'medical consumables',
+'Health Worker Salaries': 'human resources for health',
+'Health Worker Training - In-Service': 'human resources for health',
+'Health Worker Training - Pre-Service': 'human resources for health',
+'Mentorships & Supportive Supervision': 'human resources for health',
+'Facility utility bills': 'facility operating cost',
+'Infrastructure - New Builds': 'Not represented in TLO model',
+'Infrastructure - Rehabilitation': 'facility operating cost',
+'Infrastructure - Upgrades': 'Not represented in TLO model',
+'Medical Equipment - Maintenance': 'medical equipment',
+'Medical Equipment - Purchase': 'medical equipment',
+'Vehicles - Fuel and Maintenance': 'facility operating cost',
+'Vehicles - Purchase': 'Not represented in TLO model',
+'Vehicles - Fuel and Maintenance (Beyond Government and CHAM)': 'Not represented in TLO model',
+'Supply Chain': 'medical consumables',
+'Supply Chain - non-EHP consumables': 'Not represented in TLO model',
+'Unclassified': 'Not represented in TLO model'}
+calibration_data_extract['cost_category'] = calibration_data_extract['calibration_category'].map(calibration_categories_dict)
+
+# Add a column show deviation from actual expenditure
+calibration_data_extract['Deviation of estimated cost from actual expenditure (%)'] = (
+    (calibration_data_extract['model_cost'] - calibration_data_extract['actual_expenditure_2019'])
+    /calibration_data_extract['actual_expenditure_2019'])
+
+# Format the deviation as a percentage with 2 decimal points
+calibration_data_extract['Deviation of estimated cost from actual expenditure (%)'] = (
+    calibration_data_extract['Deviation of estimated cost from actual expenditure (%)']
+    .map(lambda x: f"{x * 100:.2f}%")
+)
+calibration_data_extract.loc[calibration_data_extract['Deviation of estimated cost from actual expenditure (%)'] == 'nan%', 'Deviation of estimated cost from actual expenditure (%)'] = 'NA'
+# Replace if calibration is fine
+calibration_condition_met = ((calibration_data_extract['model_cost'] > calibration_data_extract[['actual_expenditure_2019', 'max_annual_budget_2020-22']].min(axis=1)) &
+    (calibration_data_extract['model_cost'] < calibration_data_extract[['actual_expenditure_2019', 'max_annual_budget_2020-22']].max(axis=1)))
+
+calibration_data_extract.loc[calibration_condition_met,
+    'Deviation of estimated cost from actual expenditure (%)'
+] = 'Within target range'
+
+calibration_data_extract.loc[calibration_data_extract['model_cost'].isna(), 'model_cost'] = 'NA'
+
+calibration_data_extract = calibration_data_extract.sort_values(by=['cost_category', 'calibration_category'])
+calibration_data_extract = calibration_data_extract[['cost_category', 'calibration_category', 'actual_expenditure_2019', 'max_annual_budget_2020-22', 'model_cost', 'Deviation of estimated cost from actual expenditure (%)']]
+calibration_data_extract = calibration_data_extract.rename(columns = {'cost_category': 'Cost Category',
+                                                            'calibration_category': 'Relevant RM group',
+                                                            'actual_expenditure_2019': 'Recorded Expenditure (FY 2018/19)',
+                                                            'max_annual_budget_2020-22': 'Maximum Recorded Annual Budget (FY 2019/20 - 2021/22)',
+                                                            'model_cost': 'Estimated cost (TLO Model, 2018)'
+    })
+def convert_df_to_latex(_df, _longtable = False, numeric_columns = []):
+    _df['Relevant RM group'] = _df['Relevant RM group'].str.replace('&', r'\&', regex=False)
+    # Format numbers to the XX,XX,XXX.XX format for all numeric columns
+    _df[numeric_columns] = _df[numeric_columns].applymap(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) else x)
+
+    # Convert to LaTeX format with horizontal lines after every row
+    latex_table = _df.to_latex(
+        longtable=_longtable,  # Use the longtable environment for large tables
+        column_format='|R{3.5cm}|R{3.5cm}|R{2.1cm}|R{2.1cm}|R{2.1cm}|R{2.1cm}|',
+        caption=f"Comparison of Model Estimates with Resource Mapping data",
+        label=f"tab:calibration_breakdown",
+        position="h",
+        index=False,
+        escape=False,  # Prevent escaping special characters like \n
+        header=True
+    )
+
+    # Add \hline after the header and after every row for horizontal lines
+    latex_table = latex_table.replace("\\\\", "\\\\ \\hline")  # Add \hline after each row
+    latex_table = latex_table.replace("%", "\%")  # Add \hline after each row
+    latex_table = latex_table.replace("Program Management & Administration", "Program Management \& Administration")  # Add \hline after each row
+    latex_table = latex_table.replace("Mentorships & Supportive Supervision", "Mentorships \& Supportive Supervision")  # Add \hline after each row
+
+    # latex_table = latex_table.replace("_", " ")  # Add \hline after each row
+
+    # Specify the file path to save
+    latex_file_path = calibration_outputs_folder / f'calibration_breakdown.tex'
+
+    # Write to a file
+    with open(latex_file_path, 'w') as latex_file:
+        latex_file.write(latex_table)
+
+    # Print latex for reference
+    print(latex_table)
+
+convert_df_to_latex(calibration_data_extract, _longtable = True, numeric_columns = ['Recorded Expenditure (FY 2018/19)',
+                                                                                     'Maximum Recorded Annual Budget (FY 2019/20 - 2021/22)',
+                                                                                     'Estimated cost (TLO Model, 2018)'])
+
 # Stacked bar charts to represent all cost sub-groups
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical consumables',
                                         _disaggregate_by_subgroup = True,
