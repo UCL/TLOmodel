@@ -16,7 +16,7 @@ class BaselineScenario(BaseScenario):
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 5
+        self.number_of_draws = 1
         self.runs_per_draw = 60
 
     def log_configuration(self):
@@ -46,23 +46,21 @@ class BaselineScenario(BaseScenario):
                  mnh_cohort_module.MaternalNewbornHealthCohort(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
-        if draw_number == 0:
-            return {'PregnancySupervisor': {
-                    'analysis_year': 2024}}
 
-        else:
-            interventions_for_analysis = ['post_abortion_care_core', 'post_abortion_care_core',
-                                          'iv_antihypertensives', 'iv_antihypertensives']
-
-            avail_for_draw = [0.0, 1.0,
-                              0.0, 1.0,
-                              ]
-
+        # if draw_number == 0:
+        #     return {'PregnancySupervisor': {
+        #             'analysis_year': 2024}}
+        #
+        # else:
+        #     interventions_for_analysis = ['post_abortion_care_core', 'post_abortion_care_core',
+        #                                   'iv_antihypertensives', 'iv_antihypertensives']
+        #
+        #     avail_for_draw = [0.0, 1.0,
+        #                       0.0, 1.0,
+        #                       ]
+        #
         return {'PregnancySupervisor': {
-                'analysis_year': 2024,
-                'interventions_analysis': True,
-                'interventions_under_analysis':[interventions_for_analysis[draw_number-1]],
-                'intervention_analysis_availability': avail_for_draw[draw_number-1]}}
+                'analysis_year': 2024}}
 
 
 if __name__ == '__main__':

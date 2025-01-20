@@ -102,10 +102,10 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'cohort_scenario_201657'
+scenario = 'cohort_scenario_261873'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
-interventions =['pph_treatment_surg', 'post_abortion_care_core',  'birth_kit',  'caesarean_section']
+interventions =['post_abortion_care_core',  'iv_antihypertensives']
 
 int_analysis = ['baseline']
 
