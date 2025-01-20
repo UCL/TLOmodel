@@ -1,0 +1,116 @@
+References (.csv)
+=================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Lifestyle_Enhanced/References.csv>`
+
+====  ============  ===========================================================================================================================================================================================================================================================================================================================================
+  ..  Unnamed: 0    Unnamed: 1
+====  ============  ===========================================================================================================================================================================================================================================================================================================================================
+   0
+   1                “Life(style)” characteristics
+   2
+   3
+   4                urban - rural
+   5
+   6                baseline in 2018:
+   7
+   8                17% urban
+   9                83% rural
+  10
+  11                assume this is time fixed and is allocated at birth to new births, with same status as mother
+  12
+  13                source: DHS 2015
+  14
+  15                Comment: Malawi is urbanising I think, so perhaps increase urban and reduce rural by 1% per year? We could use the 2018 census data – should be available end of this year / early next year to see what it is in 2018 and compare with 2008 census and 2010 and 2015 DHS to see trend i.e. whether 1% increase per year seems about right.
+  16                Response: according to world bank the recent proportion urban is increasing by just 0.25% per year.  I’m happy for us tp include this.  https://data.worldbank.org/indicator/SP.RUR.TOTL.ZS?locations=MW
+  17
+  18                wealth level
+  19                (since recorded in DHS I suggest we use this instead of socio-economic status)
+  20
+  21                (wealth level is initially based on wealth quintile from 2015 DHS but distribution will not remain uniform if fertility and death rate differ by wealth level)
+  22
+  23                baseline in 2018 (assuming not changed since 2015 DHS):
+  24
+  25                if urban = 1 then
+  26                75% wealth\_level = 1
+  27                16% wealth\_level = 2
+  28                5% wealth\_level = 3
+  29                2% wealth\_level = 4
+  30                2% wealth\_level = 5
+  31
+  32                if urban = 0 then
+  33                11% wealth\_level = 1
+  34                21% wealth\_level = 2
+  35                23% wealth\_level = 3
+  36                23% wealth\_level = 4
+  37                23% wealth\_level = 5
+  38
+  39                source: DHS 2015
+  40
+  41                assume this is time fixed and allocated at birth with same status as mother.
+  42
+  43
+  44                tobacco use
+  45                (much tobacco use is not in fact cigarettes)
+  46
+  47                baseline in 2018:
+  48
+  49                if age < 20 and male then percent using tobacco = 1% x wealth\_level
+  50                (i.e. 5 times higher in lowest level)
+  51                if 20 <= age < 40 and male then percent using tobacco = 4% x wealth\_level
+  52                if 40 <= age  and male then percent using tobacco = 6% x wealth\_level
+  53                if female then percent using tobacco = 0.2% x wealth\_level
+  54
+  55                source: DHS 2015
+  56
+  57                assume time varying with value allocted age 18 (1% x wealth level) but rate of initiating smoking for those assigned as non-smokers and rate of stopping for those assigned as tobacco users to initially be set at zero.
+  58
+  59
+  60                excess alcohol
+  61
+  62                baseline in 2018:
+  63
+  64                if age > 18 and male 15% drink excess\_alcohol
+  65                if age >  18 and female 1% drink excess\_alcohol
+  66
+  67                source: WHO 2014 report http://www.who.int/substance\_abuse/publications/global\_alcohol\_report/msb\_gsr\_2014\_2.pdf?ua=1
+  68
+  69                no impact of urban / rural or wealth level
+  70                (if we can contact authors we may be able to see if wealth level has an independent influence)
+  71
+  72                Msyamboza et al; 2012; WHO STEPS
+  73
+  74                assume time varying with value allocted age 18 (15% for men, 1% for women) but rate of initiating alcohol for those assigned as non-excess-drinkers and rate of stopping for those assigned as excess alcohol drinkers to initially be set at zero.
+  75
+  76
+  77                low exercise
+  78                (I suggest we create this variable for people aged 18 and over only)
+  79
+  80                baseline in 2018:
+  81
+  82                if urban and male 32% have low exercise
+  83                if urban and female 18% have low exercise
+  84                if rural and male  11% have low exercise
+  85                if rural and female 7% have low exercise
+  86
+  87                Msyamboza et al; 2011; WHO STEPS
+  88
+  89                (if we can contact authors we may be able to see if wealth level has an independent influence)
+  90
+  91                assume time varying with value allocted age 18 (25% for men, 9% for women) but rate of becoming low exercise for those assigned as having exercise and rate of starting exercise for those assigned as low exercise to initially be set at zero.
+  92
+  93
+  94                BMI
+  95
+  96                Informed by Price et al 2018  Prevalence of obesity, hypertension, and diabetes, and
+                    cascade of care in sub-Saharan Africa: a cross-sectional,
+                    population-based study in rural and urban Malawi  Lancet Diabetes Endocrinol
+  97
+  98
+  99                marital status
+ 100                DHS 2015/2016  chapter 4
+ 101
+ 102
+ 103                education
+ 104                DHS 2015/2016   chapter 2 p 14-17
+====  ============  ===========================================================================================================================================================================================================================================================================================================================================

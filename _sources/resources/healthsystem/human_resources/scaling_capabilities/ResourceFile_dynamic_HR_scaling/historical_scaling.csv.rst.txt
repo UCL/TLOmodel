@@ -1,0 +1,22 @@
+historical scaling (.csv)
+=========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/scaling_capabilities/ResourceFile_dynamic_HR_scaling/historical_scaling.csv>`
+
+====  ======  ==============================  ========================
+  ..    year    dynamic\_HR\_scaling\_factor  scale\_HR\_by\_popsize
+====  ======  ==============================  ========================
+   0    2010                         1        False
+   1    2019                         1        False
+   2    2020                         1.02775  False
+   3    2021                         1.0765   False
+   4    2022                         1.0765   False
+   5    2023                         1.0765   False
+   6    2024                         1.0765   False
+   7    2025                         1        False
+   8    2026                         1        False
+   9    2027                         1        False
+  10    2028                         1        False
+  11    2029                         1        False
+  12    2030                         1        False
+====  ======  ==============================  ========================

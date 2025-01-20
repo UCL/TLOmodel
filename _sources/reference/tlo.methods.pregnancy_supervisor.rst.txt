@@ -436,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'Contraception', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'HealthSystem'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Contraception', 'Labour', 'HealthSystem', 'CareOfWomenDuringPregnancy'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x31b2d9410>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x31af77790>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x31b7268d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x31b727fd0>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x31b724250>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x31b7261d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x31b725d90>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x31b726b50>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x30cf3a5d0>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x30ce74c90>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x30ce74f50>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x30ce765d0>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x30ce75a50>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x30ce74290>, 'eclampsia': <tlo.methods.causes.Cause object at 0x30ce74890>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x30ce77810>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x31b726610>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x30ce77950>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Malaria', 'Hiv', 'CardioMetabolicDisorders'}
+     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Hiv', 'HealthBurden', 'Malaria'}
 
      __annotations__ : {}
 

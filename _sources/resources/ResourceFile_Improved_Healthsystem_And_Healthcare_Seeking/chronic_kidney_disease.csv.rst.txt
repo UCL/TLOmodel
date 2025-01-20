@@ -1,0 +1,16 @@
+chronic kidney disease (.csv)
+=============================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/chronic_kidney_disease.csv>`
+
+====  ====================================================  =======
+  ..  parameter\_name                                         value
+====  ====================================================  =======
+   0  test\_item\_code                                        47
+   1  pr\_assessed\_in\_generic\_appt\_level1                  1
+   2  medication\_item\_code                                2064
+   3  pr\_assessed\_other\_symptoms                            1
+   4  pr\_treatment\_works                                     0
+   5  pr\_diagnosed                                            0.02
+   6  pr\_seeking\_further\_appt\_if\_drug\_not\_available     1
+====  ====================================================  =======

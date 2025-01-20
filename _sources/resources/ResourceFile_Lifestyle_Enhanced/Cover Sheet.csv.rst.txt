@@ -1,0 +1,33 @@
+Cover Sheet (.csv)
+==================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Lifestyle_Enhanced/Cover Sheet.csv>`
+
+====  ============  =====================================  ==========================================================================================================================================
+  ..  Unnamed: 0    Unnamed: 1                             Unnamed: 2
+====  ============  =====================================  ==========================================================================================================================================
+   0
+   1                Name:                                  Lifestyle
+   2
+   3                Link to Python Code on GitHub:         https://github.com/UCL/TLOmodel/blob/feature/tamuri-andrew-lifestyle/src/tlo/methods/lifestyle.py
+   4                Link to Issue Discussion on GitHub:
+   5
+   6                Type of Module:                        AddlModules
+   7
+   8                Author:                                Andrew
+   9
+  10                Major Amendments Revision History:     1st complete version: 12 Dec 2018    updated with new properties 24 March 2019   updated 21 August 2019
+  11
+  12                Other Aspects of the Model Addressed:  These individual characteristics are used by all modules
+  13                Diseases:                              various diseases will be affected
+  14                Interventions:                         This (and below) cannot be specified here at this point as it depends on structure of other methods
+  15                Lifestyle Elements:
+  16                P-variables:                           li\_urban, li\_wealth, li\_low\_ex, li\_bmi, li\_tob, li\_ex\_alc, li\_in\_ed, li\_ed\_lev, li\_mar\_stat, li\_high\_salt, li\_high\_sugar
+  17                H-variables:
+  18                E-variables:                           li\_unimproved\_sanitation, li\_no\_clean\_drinking\_water, li\_no\_access\_handwashing, li\_wood\_burn\_stove
+  19
+  20                Proccessed
+  21                Completed by author:                   2019-08-21 00:00:00
+  22                Coded in main framework:
+  23                Reviwed by Team:
+====  ============  =====================================  ==========================================================================================================================================

@@ -1,0 +1,97 @@
+Test (.csv)
+===========
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/priority_policies/ResourceFile_PriorityRanking_ALLPOLICIES/Test.csv>`
+
+====  =====================================================================  ==========  ==================  ==================  =====================  ======================
+  ..  Treatment                                                                Priority    FT\_if\_5orUnder    FT\_if\_pregnant    FT\_if\_tbdiagnosed    FT\_if\_Hivdiagnosed
+====  =====================================================================  ==========  ==================  ==================  =====================  ======================
+   0  FirstAttendance\_Emergency                                                      0                  -1                  -1                     -1                      -1
+   1  FirstAttendance\_SpuriousEmergencyCare                                          0                  -1                  -1                     -1                      -1
+   2  Alri\_Pneumonia\_Treatment\_Outpatient                                          0                  -1                  -1                     -1                      -1
+   3  Alri\_Pneumonia\_Treatment\_Inpatient                                           0                  -1                  -1                     -1                      -1
+   4  Alri\_Pneumonia\_Treatment\_Inpatient\_Followup                                 0                  -1                  -1                     -1                      -1
+   5  BladderCancer\_Investigation                                                    0                  -1                  -1                     -1                      -1
+   6  BladderCancer\_PalliativeCare                                                   0                  -1                  -1                     -1                      -1
+   7  BladderCancer\_Treatment                                                        0                  -1                  -1                     -1                      -1
+   8  BreastCancer\_Investigation                                                     0                  -1                  -1                     -1                      -1
+   9  BreastCancer\_PalliativeCare                                                    0                  -1                  -1                     -1                      -1
+  10  BreastCancer\_Treatment                                                         0                  -1                  -1                     -1                      -1
+  11  CardioMetabolicDisorders\_Investigation                                         0                  -1                  -1                     -1                      -1
+  12  CardioMetabolicDisorders\_Prevention\_CommunityTestingForHypertension           0                  -1                  -1                     -1                      -1
+  13  CardioMetabolicDisorders\_Prevention\_WeightLoss                                0                  -1                  -1                     -1                      -1
+  14  CardioMetabolicDisorders\_Treatment                                             0                  -1                  -1                     -1                      -1
+  15  AntenatalCare\_FollowUp                                                         0                  -1                  -1                     -1                      -1
+  16  AntenatalCare\_Inpatient                                                        0                  -1                  -1                     -1                      -1
+  17  AntenatalCare\_Outpatient                                                       0                  -1                  -1                     -1                      -1
+  18  AntenatalCare\_PostAbortion                                                     0                  -1                  -1                     -1                      -1
+  19  AntenatalCare\_PostEctopicPregnancy                                             0                  -1                  -1                     -1                      -1
+  20  Contraception\_Routine                                                          0                  -1                  -1                     -1                      -1
+  21  Copd\_Treatment                                                                 0                  -1                  -1                     -1                      -1
+  22  Depression\_TalkingTherapy                                                      0                  -1                  -1                     -1                      -1
+  23  Depression\_Treatment                                                           0                  -1                  -1                     -1                      -1
+  24  Diarrhoea\_Treatment\_Inpatient                                                 0                  -1                  -1                     -1                      -1
+  25  Diarrhoea\_Treatment\_Outpatient                                                0                  -1                  -1                     -1                      -1
+  26  Epi\_Adolescent\_Hpv                                                            0                  -1                  -1                     -1                      -1
+  27  Epi\_Childhood\_Bcg                                                             0                  -1                  -1                     -1                      -1
+  28  Epi\_Childhood\_DtpHibHep                                                       0                  -1                  -1                     -1                      -1
+  29  Epi\_Childhood\_MeaslesRubella                                                  0                  -1                  -1                     -1                      -1
+  30  Epi\_Childhood\_Opv                                                             0                  -1                  -1                     -1                      -1
+  31  Epi\_Childhood\_Pneumo                                                          0                  -1                  -1                     -1                      -1
+  32  Epi\_Childhood\_Rota                                                            0                  -1                  -1                     -1                      -1
+  33  Epi\_Pregnancy\_Td                                                              0                  -1                  -1                     -1                      -1
+  34  Epilepsy\_Treatment\_Followup                                                   0                  -1                  -1                     -1                      -1
+  35  Epilepsy\_Treatment\_Start                                                      0                  -1                  -1                     -1                      -1
+  36  FirstAttendance\_NonEmergency                                                   0                  -1                  -1                     -1                      -1
+  37  Hiv\_Prevention\_Circumcision                                                   0                  -1                  -1                     -1                      -1
+  38  Hiv\_Prevention\_Infant                                                         0                  -1                  -1                     -1                      -1
+  39  Hiv\_Prevention\_Prep                                                           0                  -1                  -1                     -1                      -1
+  40  Hiv\_Test                                                                       0                  -1                  -1                     -1                      -1
+  41  Hiv\_Treatment                                                                  0                  -1                  -1                     -1                      -1
+  42  Hiv\_PalliativeCare                                                             0                  -1                  -1                     -1                      -1
+  43  DeliveryCare\_Basic                                                             0                  -1                  -1                     -1                      -1
+  44  DeliveryCare\_Comprehensive                                                     0                  -1                  -1                     -1                      -1
+  45  PostnatalCare\_Maternal                                                         0                  -1                  -1                     -1                      -1
+  46  PostnatalCare\_Maternal\_Inpatient                                              0                  -1                  -1                     -1                      -1
+  47  PostnatalCare\_Comprehensive                                                    0                  -1                  -1                     -1                      -1
+  48  Malaria\_Prevention\_Iptp                                                       0                  -1                  -1                     -1                      -1
+  49  Malaria\_Test                                                                   0                  -1                  -1                     -1                      -1
+  50  Malaria\_Treatment                                                              0                  -1                  -1                     -1                      -1
+  51  Malaria\_Treatment\_Complicated                                                 0                  -1                  -1                     -1                      -1
+  52  Measles\_Treatment                                                              0                  -1                  -1                     -1                      -1
+  53  PostnatalCare\_Neonatal                                                         0                  -1                  -1                     -1                      -1
+  54  PostnatalCare\_Neonatal\_Inpatient                                              0                  -1                  -1                     -1                      -1
+  55  OesophagealCancer\_Investigation                                                0                  -1                  -1                     -1                      -1
+  56  OesophagealCancer\_PalliativeCare                                               0                  -1                  -1                     -1                      -1
+  57  OesophagealCancer\_Treatment                                                    0                  -1                  -1                     -1                      -1
+  58  OtherAdultCancer\_Investigation                                                 0                  -1                  -1                     -1                      -1
+  59  OtherAdultCancer\_PalliativeCare                                                0                  -1                  -1                     -1                      -1
+  60  OtherAdultCancer\_Treatment                                                     0                  -1                  -1                     -1                      -1
+  61  PostnatalCare\_TreatmentForObstetricFistula                                     0                  -1                  -1                     -1                      -1
+  62  ProstateCancer\_Investigation                                                   0                  -1                  -1                     -1                      -1
+  63  ProstateCancer\_PalliativeCare                                                  0                  -1                  -1                     -1                      -1
+  64  ProstateCancer\_Treatment                                                       0                  -1                  -1                     -1                      -1
+  65  Rti\_AcutePainManagement                                                        0                  -1                  -1                     -1                      -1
+  66  Rti\_BurnManagement                                                             0                  -1                  -1                     -1                      -1
+  67  Rti\_FractureCast                                                               0                  -1                  -1                     -1                      -1
+  68  Rti\_Imaging                                                                    0                  -1                  -1                     -1                      -1
+  69  Rti\_MajorSurgeries                                                             0                  -1                  -1                     -1                      -1
+  70  Rti\_MedicalIntervention                                                        0                  -1                  -1                     -1                      -1
+  71  Rti\_MinorSurgeries                                                             0                  -1                  -1                     -1                      -1
+  72  Rti\_OpenFractureTreatment                                                      0                  -1                  -1                     -1                      -1
+  73  Rti\_ShockTreatment                                                             0                  -1                  -1                     -1                      -1
+  74  Rti\_Suture                                                                     0                  -1                  -1                     -1                      -1
+  75  Rti\_TetanusVaccine                                                             0                  -1                  -1                     -1                      -1
+  76  Schisto\_MDA                                                                    0                  -1                  -1                     -1                      -1
+  77  Schisto\_Treatment                                                              0                  -1                  -1                     -1                      -1
+  78  Undernutrition\_Feeding                                                         0                  -1                  -1                     -1                      -1
+  79  Tb\_Prevention\_Ipt                                                             0                  -1                  -1                     -1                      -1
+  80  Tb\_Test\_Clinical                                                              0                  -1                  -1                     -1                      -1
+  81  Tb\_Test\_Culture                                                               0                  -1                  -1                     -1                      -1
+  82  Tb\_Test\_FollowUp                                                              0                  -1                  -1                     -1                      -1
+  83  Tb\_Test\_Screening                                                             0                  -1                  -1                     -1                      -1
+  84  Tb\_Test\_Xray                                                                  0                  -1                  -1                     -1                      -1
+  85  Tb\_Treatment                                                                   0                  -1                  -1                     -1                      -1
+  86  Tb\_PalliativeCare                                                              0                  -1                  -1                     -1                      -1
+  87  lowest\_priority\_considered                                                    3                  -1                  -1                     -1                      -1
+====  =====================================================================  ==========  ==================  ==================  =====================  ======================

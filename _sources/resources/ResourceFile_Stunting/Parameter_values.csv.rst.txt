@@ -1,0 +1,46 @@
+Parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Stunting/Parameter_values.csv>`
+
+====  =============================================================================  =========================  =================================================================================================================================  ============
+  ..  parameter\_name                                                                value                      notes                                                                                                                              References
+====  =============================================================================  =========================  =================================================================================================================================  ============
+   0  prev\_HAZ\_distribution\_age\_0\_5mo                                           [-0.8482365, 1.416337]
+   1  prev\_HAZ\_distribution\_age\_6\_11mo                                          [-0.9940219, 1.504431]
+   2  prev\_HAZ\_distribution\_age\_12\_23mo                                         [-1.522101, 1.431207]
+   3  prev\_HAZ\_distribution\_age\_24\_35mo                                         [-1.669291, 1.343577]
+   4  prev\_HAZ\_distribution\_age\_36\_47mo                                         [-1.797365, 1.212469]
+   5  prev\_HAZ\_distribution\_age\_48\_59mo                                         [-1.620094, 1.11541]
+   6
+   7  or\_stunting\_male                                                             1.38
+   8  or\_stunting\_preterm\_and\_AGA                                                2.13
+   9  or\_stunting\_SGA\_and\_term                                                   2.36
+  10  or\_stunting\_SGA\_and\_preterm                                                5.95
+  11  or\_stunting\_hhwealth\_Q5                                                     1.69                       ref group Q1 (richest)
+  12  or\_stunting\_hhwealth\_Q4                                                     1.48
+  13  or\_stunting\_hhwealth\_Q3                                                     1.4
+  14  or\_stunting\_hhwealth\_Q2                                                     1.29
+  15
+  16  base\_inc\_rate\_stunting\_by\_agegp                                           [0.8,0.8,0.8,0.8,0.8,0.8]  1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
+  17  rr\_stunting\_preterm\_and\_AGA                                                1.62
+  18  rr\_stunting\_SGA\_and\_term                                                   1.65
+  19  rr\_stunting\_SGA\_and\_preterm                                                2.98
+  20  rr\_stunting\_prior\_wasting                                                   1.93
+  21  rr\_stunting\_untreated\_HIV                                                   1.5
+  22  rr\_stunting\_wealth\_level                                                    0.2
+  23  rr\_stunting\_no\_exclusive\_breastfeeding                                     1.4
+  24  rr\_stunting\_no\_continued\_breastfeeding                                     1.3
+  25  rr\_stunting\_per\_diarrhoeal\_episode                                         1.04
+  26
+  27  r\_progression\_severe\_stunting\_by\_agegp                                    [0.8,0.8,0.8,0.8,0.8,0.8]  1-5, 6-11, 12-23, 24-35, 36-47, 48-59mo
+  28  rr\_progress\_severe\_stunting\_if\_prior\_wasting                             1.93
+  29  rr\_progress\_severe\_stunting\_untreated\_HIV                                 1.3
+  30
+  31  mean\_years\_to\_1stdev\_natural\_improvement\_in\_stunting                    1.840675229013975          Probability of remaining stunted for next 3 months = 0.873
+  32
+  33  effectiveness\_of\_complementary\_feeding\_education\_in\_stunting\_reduction  0.25                       mean difference
+  34  effectiveness\_of\_food\_supplementation\_in\_stunting\_reduction              0.41                       mean difference
+  35
+  36  prob\_stunting\_diagnosed\_at\_generic\_appt                                   0.01                       This value is decided by comparing model and real usage on U5Malnutrition. Implementing this value, the model/data ratio is 1.52.
+====  =============================================================================  =========================  =================================================================================================================================  ============

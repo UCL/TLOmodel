@@ -1,0 +1,18 @@
+custom (.csv)
+=============
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/scaling_capabilities/ResourceFile_HR_scaling_by_level_and_officer_type/custom.csv>`
+
+====  =======================  ============  =============  =============  ============  ============  ============  ============
+  ..  Officer\_Category          L0\_factor    L1a\_factor    L1b\_factor    L2\_factor    L3\_factor    L4\_factor    L5\_factor
+====  =======================  ============  =============  =============  ============  ============  ============  ============
+   0  Clinical                          0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   1  DCSA                              0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   2  Dental                            0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   3  Laboratory                        0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   4  Mental                            0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   5  Nursing\_and\_Midwifery           0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   6  Nutrition                         0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   7  Pharmacy                          0.5            0.5            0.5           0.5           0.5           0.5           0.5
+   8  Radiography                       0.5            0.5            0.5           0.5           0.5           0.5           0.5
+====  =======================  ============  =============  =============  ============  ============  ============  ============

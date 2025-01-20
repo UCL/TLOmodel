@@ -1,0 +1,16 @@
+diabetes (.csv)
+===============
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/diabetes.csv>`
+
+====  ====================================================  ========
+  ..  parameter\_name                                          value
+====  ====================================================  ========
+   0  test\_item\_code                                      216
+   1  sensitivity\_of\_assessment                             1
+   2  medication\_item\_code                                233
+   3  pr\_assessed\_other\_symptoms                           1
+   4  pr\_treatment\_works                                    0.42
+   5  pr\_diagnosed                                           0.3846
+   6  pr\_seeking\_further\_appt\_if\_drug\_not\_available    1
+====  ====================================================  ========

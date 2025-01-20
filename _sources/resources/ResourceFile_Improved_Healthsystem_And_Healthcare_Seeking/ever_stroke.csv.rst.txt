@@ -1,0 +1,14 @@
+ever stroke (.csv)
+==================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/ever_stroke.csv>`
+
+====  =================================  =======
+  ..  parameter\_name                      value
+====  =================================  =======
+   0  sensitivity\_of\_assessment           1
+   1  medication\_item\_code              226
+   2  pr\_assessed\_other\_symptoms         1
+   3  emergency\_medication\_item\_code   234
+   4  pr\_treatment\_works                  0.59
+====  =================================  =======

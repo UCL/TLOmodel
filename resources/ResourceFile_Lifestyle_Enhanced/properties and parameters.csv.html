@@ -1,0 +1,932 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>properties and parameters (.csv) &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=34bb78ad" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="urban rural by district (.csv)" href="urban_rural_by_district.csv.html" />
+    <link rel="prev" title="parameter values (.csv)" href="parameter_values.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri/index.html">ResourceFile_Alri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare/index.html">ResourceFile_AntenatalCare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer/index.html">ResourceFile_Bladder_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer/index.html">ResourceFile_Breast_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression/index.html">ResourceFile_Depression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea/index.html">ResourceFile_Diarrhoea</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates/index.html">ResourceFile_EPI_WHO_estimates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV/index.html">ResourceFile_HIV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.html">ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance/index.html">ResourceFile_LabourSkilledBirthAttendance</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">ResourceFile_Lifestyle_Enhanced</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Cover%20Sheet.csv.html">Cover Sheet (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="References.csv.html">References (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="parameter_values.csv.html">parameter values (.csv)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">properties and parameters (.csv)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="urban_rural_by_district.csv.html">urban rural by district (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles/index.html">ResourceFile_Measles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes/index.html">ResourceFile_NewbornOutcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer/index.html">ResourceFile_Oesophageal_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers/index.html">ResourceFile_Other_Adult_Cancers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor/index.html">ResourceFile_PostnatalSupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor/index.html">ResourceFile_PregnancySupervisor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer/index.html">ResourceFile_Prostate_Cancer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI/index.html">ResourceFile_RTI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto/index.html">ResourceFile_Schisto</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting/index.html">ResourceFile_Stunting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB/index.html">ResourceFile_TB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contraception/index.html">contraception</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../costing/index.html">costing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../malaria/index.html">malaria</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mapping/index.html">mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../parameters.html">Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learning.html">Learning Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../case-studies/index.html">Case studies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../videos.html">HEPU Videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">ResourceFile_Lifestyle_Enhanced</a></li>
+      <li class="breadcrumb-item active">properties and parameters (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/ResourceFile_Lifestyle_Enhanced/properties and parameters.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="properties-and-parameters-csv">
+<h1>properties and parameters (.csv)<a class="headerlink" href="#properties-and-parameters-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Lifestyle_Enhanced/properties and parameters.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Unnamed: 0</p></th>
+<th class="head"><p>Unnamed: 1</p></th>
+<th class="head"><p>Unnamed: 2</p></th>
+<th class="head"><p>Unnamed: 3</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>DescriptionofEventsandParameters</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>Property/event</p></td>
+<td><p>Description</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>li_urban</p></td>
+<td><p>currently urban</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>li_wealth</p></td>
+<td><p>wealth level (1-5, 1 is highest wealth)</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>li_bmi</p></td>
+<td><p>bmi category (1: &lt; 18, 2: 18-25, 3: 25-29.9, 4: 30-34.9, 5: 35+,  0 before age 15)</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>li_tob</p></td>
+<td><p>currently using tobacco</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>li_date_not_tob</p></td>
+<td><p>date quit tobacco use</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>li_in_ed</p></td>
+<td><p>currently in education</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>li_ed_lev</p></td>
+<td><p>education level attained (so far)</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>li_low_ex</p></td>
+<td><p>current low exercise</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>li_ex_alc</p></td>
+<td><p>current excess alcohol</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>li_mar_stat</p></td>
+<td><p>marital status</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>li_unimproved_sanitation</p></td>
+<td><p>unimproved sanitation</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>li_no_clean_drinking_water</p></td>
+<td><p>no clean drinking water</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>li_wood_burn_stove</p></td>
+<td><p>wood (straw / crop-burning stove - indoor air pollution)</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>li_no_access_handwashing</p></td>
+<td><p>no access to handwashing</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>Parameter</p></td>
+<td><p>Description</p></td>
+<td><p>Notes and Major Assumptions (see individual figures to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>init_p_wood_burn_stove</p></td>
+<td><p>initial probability of wood_burn_stove given urban</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>init_rp_wood_burn_stove_rural</p></td>
+<td><p>initial relative prevalence of wood_burn_stove if rural</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>init_p_unimproved_sanitation</p></td>
+<td><p>initial probability of unimproved_sanitation given urban</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>init_rp_unimproved_sanitation_rural</p></td>
+<td><p>initial relative prevalence of unimproved_sanitation if rural</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>init_p_no_clean_drinking_water</p></td>
+<td><p>initial probability of no_clean_drinking_water given urban</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>init_rp_no_clean_drinking_water_rural</p></td>
+<td><p>initial relative prevalence of no clean drinking_water if rural</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>init_p_no_access_handwashing</p></td>
+<td><p>initial probability of no_access_handwashing given wealth 1</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>init_rp_no_access_handwashing_per_lower_wealth</p></td>
+<td><p>initial relative prevalence of no_access_handwashing per lower wealth level</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>init_p_urban</p></td>
+<td><p>proportion urban at baseline</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>init_p_wealth_urban</p></td>
+<td><p>List of probabilities of category given urban</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>init_p_low_ex_m_urban</p></td>
+<td><p>initial prevalence of low exercise - male, urban</p></td>
+<td><p>Msyamboza et al; 2011; WHO STEPS</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>init_p_low_ex_m_rural</p></td>
+<td><p>initial prevalence of low exercise - male, rural</p></td>
+<td><p>Msyamboza et al; 2011; WHO STEPS</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>init_p_low_ex_f_urban</p></td>
+<td><p>initial prevalence of low exercise - female, urban</p></td>
+<td><p>Msyamboza et al; 2011; WHO STEPS</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>init_p_tob_m_age1519</p></td>
+<td><p>initial prevalence of tobacco use, male age1519</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>init_p_tob_m_age2039</p></td>
+<td><p>initial prevalence of tobacco use, male aged2039</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>init_p_tob_m_age40+</p></td>
+<td><p>initial prevalence of tobacco use, male age 40+</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>init_p_tob_f_age1519</p></td>
+<td><p>initial prevalence of tobacco use, female age1519</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>init_p_tob_f_age2039</p></td>
+<td><p>initial prevalence of tobacco use, female aged2039</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>init_p_tob_f_age40+</p></td>
+<td><p>initial prevalence of tobacco use, female aged40+</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>init_p_ex_alc_m</p></td>
+<td><p>initial prevalence of excess alcohol in men</p></td>
+<td><p>WHO 2014 report <a class="reference external" href="http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1">http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1</a></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>init_p_ex_alc_f</p></td>
+<td><p>intial prevalence of excess alcohol in women</p></td>
+<td><p>WHO 2014 report <a class="reference external" href="http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1">http://www.who.int/substance_abuse/publications/global_alcohol_report/msb_gsr_2014_2.pdf?ua=1</a></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>init_p_low_ex_f_rural</p></td>
+<td><p>initial prevalence of low exercise - female, rural</p></td>
+<td><p>Msyamboza et al; 2011; WHO STEPS</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>init_p_wealth_rural</p></td>
+<td><p>List of probabilities of category given rural</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>init_dist_mar_stat_age1520</p></td>
+<td><p>proportions never, current, div_wid age 15-20 baseline</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>init_dist_mar_stat_age2030</p></td>
+<td><p>proportions never, current, div_wid age 20-30 baseline</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>init_dist_mar_stat_age3040</p></td>
+<td><p>proportions never, current, div_wid age 30-40 baseline</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>init_dist_mar_stat_age4050</p></td>
+<td><p>proportions never, current, div_wid age 40-50 baseline</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>init_dist_mar_stat_age5060</p></td>
+<td><p>proportions never, current, div_wid age 50-60 baseline</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>init_dist_mar_stat_agege60</p></td>
+<td><p>proportions never, current, div_wid age ge 60 baseline</p></td>
+<td><p>dhs 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>init_age2030_w5_some_ed</p></td>
+<td><p>proportions of low wealth 20-30 year olds with some education at baseline</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>init_rp_some_ed_age0513</p></td>
+<td><p>relative prevalence of some education at baseline age 5-13</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>init_rp_some_ed_age1320</p></td>
+<td><p>relative prevalence of some education at baseline age 13-20</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>init_rp_some_ed_age2030</p></td>
+<td><p>relative prevalence of some education at baseline age 20-30</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>init_rp_some_ed_age3040</p></td>
+<td><p>relative prevalence of some education at baseline age 30-40</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>init_rp_some_ed_age4050</p></td>
+<td><p>relative prevalence of some education at baseline age 40-50</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>init_rp_some_ed_age5060</p></td>
+<td><p>relative prevalence of some education at baseline age 50-60</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>init_rp_some_ed_agege60</p></td>
+<td><p>relative prevalence of some education at baseline age age 60+</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td><p>‘init_rp_some_ed_agege60’: Parameter(Types.REAL, ‘relative prevalence of some education at baseline age age 60+’),</p></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>init_rp_some_ed_per_higher_wealth</p></td>
+<td><p>relative prevalence of some education at baseline per higher wealth level</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>init_prop_age2030_w5_some_ed_sec</p></td>
+<td><p>proportion of low wealth aged 20-30 with some education who have secondary education at baseline</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>init_rp_some_ed_sec_age1320</p></td>
+<td><p>relative prevalence of secondary education age 15-20</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>init_rp_some_ed_sec_age3040</p></td>
+<td><p>relative prevalence of secondary education age 30-40</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>init_rp_some_ed_sec_age4050</p></td>
+<td><p>relative prevalence of secondary education age 40-50</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>init_rp_some_ed_sec_age5060</p></td>
+<td><p>relative prevalence of secondary education age 50-60</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>init_rp_some_ed_sec_agege60</p></td>
+<td><p>relative prevalence of secondary education age 60+</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>init_rp_some_ed_sec_per_higher_wealth</p></td>
+<td><p>relative prevalence of secondary education per higher wealth level</p></td>
+<td><p>inferred from DHS 2015 data (see diagram to right)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1</p></td>
+<td><p>initial probabilities of bmi categories for urban men age 15-29 not using tobacco, not high sugar and wealth level 1</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>init_or_higher_bmi_f</p></td>
+<td><p>odds ratio for higher initial bmi category if female</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>init_or_higher_bmi_rural</p></td>
+<td><p>odds ratio for higher initial bmi category if rural</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>init_or_higher_bmi_high_sugar</p></td>
+<td><p>odds ratio for higher initial bmi category if high sugar</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>init_or_higher_bmi_age3049</p></td>
+<td><p>odds ratio for higher initial bmi category if age 30-49</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>init_or_higher_bmi_agege50</p></td>
+<td><p>odds ratio for higher initial bmi category if age 50+</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>init_or_higher_bmi_tob</p></td>
+<td><p>odds ratio for higher initial bmi category if using tobacco</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>init_or_higher_bmi_per_higher_wealth_level</p></td>
+<td><p>odds ratio for higher initial bmi category per higher wealth level</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>init_p_high_sugar</p></td>
+<td><p>initial probability of high sugar intake</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>init_p_high_salt_urban</p></td>
+<td><p>initial probability of high salt intake if urban</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>init_or_high_salt_rural</p></td>
+<td><p>rate ratio for high salt intake if rural</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>r_urban</p></td>
+<td><p>probability per 3 months of change from rural to urban</p></td>
+<td><p>rate low  given small change between 2010 and 2015 DHS</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>r_rural</p></td>
+<td><p>probability per 3 months of change from urban to rural</p></td>
+<td><p>assumed negligible, given trends in successive DHS</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>r_low_ex</p></td>
+<td><p>probability per 3 months of change from not low exercise to low exercise</p></td>
+<td><p>rate combined with relative rates below leads to prevalence by gender and urban/rural consistent with prevalence at baseline</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>r_not_low_ex</p></td>
+<td><p>probability per 3 months of change from low exercise to not low exercise</p></td>
+<td><p>currently assumed negligible - will be raised by interventions to increase exercise</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>rr_low_ex_f</p></td>
+<td><p>risk ratio for becoming low exercise if female rather than male</p></td>
+<td><p>relative rate combined with rates above leads to prevalence by gender and urban/rural consistent with prevalence at baseline</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>rr_low_ex_urban</p></td>
+<td><p>risk ratio for becoming low exercise if urban rather than rural</p></td>
+<td><p>relative rate combined with rates above leads to prevalence by gender and urban/rural consistent with prevalence at baseline</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>r_tob</p></td>
+<td><p>probability per 3 months of change from not using tobacco to using tobacco if male age 15-19 wealth level 1</p></td>
+<td><p>rates chosen to be consistent with baseline prevalence by age and gender, based on DHS</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>r_not_tob</p></td>
+<td><p>probability per 3 months of change from tobacco using to not tobacco using</p></td>
+<td><p>assumed no quiting but interventions against tobacco will alter this</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>rr_tob_age2039</p></td>
+<td><p>risk ratio for tobacco using if age 20-39 compared with 15-19</p></td>
+<td><p>effects inferred from DHS 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>rr_tob_agege40</p></td>
+<td><p>risk ratio for tobacco using if age &gt;= 40 compared with 15-19</p></td>
+<td><p>effects inferred from DHS 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>rr_tob_f</p></td>
+<td><p>risk ratio for tobacco using if female</p></td>
+<td><p>effects inferred from DHS 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td><p>rr_tob_wealth</p></td>
+<td><p>risk ratio for tobacco using per 1 higher wealth level  (higher wealth level = lower wealth)</p></td>
+<td><p>effects inferred from DHS 2015</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>r_ex_alc</p></td>
+<td><p>probability per 3 months of change from not excess alcohol to excess alcohol</p></td>
+<td><p>rate informed by that requried to lead to prevalemce in WHO 2014 report</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>r_not_ex_alc</p></td>
+<td><p>probability per 3 months of change from excess alcohol to  not excess alcohol</p></td>
+<td><p>assume no transition to no excess alcohol - interventions might change this</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>rr_ex_alc_f</p></td>
+<td><p>risk ratio for becoming excess alcohol if female rather than male</p></td>
+<td><p>rate informed by that requried to lead to prevalemce in WHO 2014 report</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>r_mar</p></td>
+<td><p>probability per 3 months of marriage when age 15-30</p></td>
+<td><p>rates consistent with prevalence of marriage, widowed/divorced</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>r_div_wid</p></td>
+<td><p>probability per 3 months of becoming divorced or widowed amongst those married</p></td>
+<td><p>rates consistent with prevalence of marriage, widowed/divorced</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>r_stop_ed</p></td>
+<td><p>probabilities per 3 months of stopping education once in secondary education if wealth level 5</p></td>
+<td><p>these rates chosen to calibrate approximately to patterns in DHS 2015 (see diagram)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>rr_stop_ed_lower_wealth</p></td>
+<td><p>relative rate of stopping education per 1 lower wealth quintile</p></td>
+<td><p>these rates chosen to calibrate approximately to patterns in DHS 2015 (see diagram)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>p_ed_primary</p></td>
+<td><p>probability at age 5 that start primary education if wealth level 5</p></td>
+<td><p>these rates chosen to calibrate approximately to patterns in DHS 2015 (see diagram)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>rp_ed_primary_higher_wealth</p></td>
+<td><p>relative probability of starting school per 1 higher wealth level</p></td>
+<td><p>these rates chosen to calibrate approximately to patterns in DHS 2015 (see diagram)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>p_ed_secondary</p></td>
+<td><p>probability at age 13 that start secondary education at 13 if in primary education and wealth level 5</p></td>
+<td><p>these rates chosen to calibrate approximately to patterns in DHS 2015 (see diagram)</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>rp_ed_secondary_higher_wealth</p></td>
+<td><p>relative probability of starting secondary school per 1 higher wealth level</p></td>
+<td><p>these rates chosen to calibrate approximately to patterns in DHS 2015 (see diagram)</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>r_improved_sanitation</p></td>
+<td><p>probability per 3 months of change from unimproved_sanitation true to false</p></td>
+<td><p>low rates plcae-holder until evidence of any substantive transition emerges</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>r_clean_drinking_water</p></td>
+<td><p>probability per 3 months of change from drinking_water true to false</p></td>
+<td><p>low rates plcae-holder until evidence of any substantive transition emerges</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>r_non_wood_burn_stove</p></td>
+<td><p>probability per 3 months of change from wood_burn_stove true to false</p></td>
+<td><p>low rates plcae-holder until evidence of any substantive transition emerges</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>r_access_handwashing</p></td>
+<td><p>probability per 3 months of change from no_access_handwashing true to false</p></td>
+<td><p>low rates plcae-holder until evidence of any substantive transition emerges</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>r_higher_bmi</p></td>
+<td><p>rate of higher bmi category if in category 1-4 and rural male age 15-29 not tobacco wealth 1 not high sugar</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>rr_higher_bmi_urban</p></td>
+<td><p>rate ratio for higher bmi if urban</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>rr_higher_bmi_f</p></td>
+<td><p>rate ratio for higher bmi if female</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>rr_higher_bmi_age3049</p></td>
+<td><p>rate ratio for higher bmi if age 30-49</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>rr_higher_bmi_agege50</p></td>
+<td><p>rate ratio for higher bmi if age 50+</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td><p>rr_higher_bmi_tob</p></td>
+<td><p>rate ratio for higher bmi if tobacco smoker</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>rr_higher_bmi_per_higher_wealth</p></td>
+<td><p>rate ratio for higher bmi per higher wealth</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>rr_higher_bmi_high_sugar</p></td>
+<td><p>rate ratio for higher bmi if high sugar intake</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>r_lower_bmi</p></td>
+<td><p>rate of lower bmi if not tobacco</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>rr_lower_bmi_tob</p></td>
+<td><p>rate ratio for lower bmi if use tobacco</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td><p>rr_lower_bmi_pop_advice_weight</p></td>
+<td><p>rate ratio for lower bmi if exposed to population intervention on weight loss</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>r_high_salt_urban</p></td>
+<td><p>rate of becoming high salt intake if urban</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>rr_high_salt_rural</p></td>
+<td><p>rate ratio of high salt intake if rural</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>r_not_high_salt</p></td>
+<td><p>rate of becoming not high salt intake</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>rr_not_high_salt_pop_advice_salt</p></td>
+<td><p>rate ratio of not high salt intake if exposed to population intervention on salt reduction</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>r_high_sugar</p></td>
+<td><p>rate of becoming high sugar intake</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td><p>r_not_high_sugar</p></td>
+<td><p>rate of becoming not high sugar intake</p></td>
+<td><p>informed by Price et al 2018</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>rr_not_high_sugar_pop_advice_sugar</p></td>
+<td><p>rate ratio for not high sugar intake if exposed to population advice on sugar reduction</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>rr_not_low_ex_pop_advice_exercise</p></td>
+<td><p>TODO: value for this</p></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td><p>rr_not_ex_alc_pop_advice_alcohol</p></td>
+<td><p>TODO: value for this</p></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="parameter_values.csv.html" class="btn btn-neutral float-left" title="parameter values (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="urban_rural_by_district.csv.html" class="btn btn-neutral float-right" title="urban rural by district (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

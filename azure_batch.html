@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Using Azure Batch &mdash; TLOmodel 0.1.dev2508+gcb0f26f.d20250115 documentation</title>
+  <title>Using Azure Batch &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="_static/favicon.png"/>
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=2de883cf"></script>
+      <script src="_static/documentation_options.js?v=4935aaa2"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -181,6 +181,14 @@ Azure Batch.</p>
 <p><em>Submit scenario to Azure Batch</em>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="n">submit</span> <span class="n">src</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tlo_q1_demo</span><span class="o">.</span><span class="n">py</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Behaviour of assert statements</strong></p>
+<p>Scenario runs submitted with <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-submit</span></code> will by default run with any assert statements disabled.
+Typically, these are used for checking correctness of code in tests and local runs but as they add some overhead,
+we can get a useful speed-up by disabling them on longer jobs.
+To run jobs with assertions enabled pass the <code class="docutils literal notranslate"><span class="pre">--asserts-on</span></code> flag` to <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-submit</span></code>.</p>
 </div>
 <p><em>List jobs currently on Azure Batch where id contains “tamuri”</em>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="nb">list</span> <span class="o">-</span><span class="n">f</span> <span class="n">tlo_q1</span>

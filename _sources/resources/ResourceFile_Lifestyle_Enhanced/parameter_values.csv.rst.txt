@@ -1,0 +1,119 @@
+parameter values (.csv)
+=======================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Lifestyle_Enhanced/parameter_values.csv>`
+
+====  =======================================================================  ==============================  ===========================================================  ============  ============  ============
+  ..  parameter\_name                                                          value                           Unnamed: 2                                                   Unnamed: 3    Unnamed: 4    Unnamed: 5
+====  =======================================================================  ==============================  ===========================================================  ============  ============  ============
+   0  init\_p\_urban                                                           0.17
+   1  init\_p\_wealth\_urban                                                   [0.75, 0.16, 0.05, 0.02, 0.02]
+   2  init\_p\_wealth\_rural                                                   [0.11, 0.21, 0.22, 0.23, 0.23]
+   3  init\_p\_bmi\_urban\_m\_not\_high\_sugar\_age1529\_not\_tob\_wealth1     [0.06, 0.8, 0.12, 0.01, 0.01]
+   4  init\_or\_higher\_bmi\_f                                                 3
+   5  init\_or\_higher\_bmi\_rural                                             0.6
+   6  init\_or\_higher\_bmi\_high\_sugar                                       1.1
+   7  init\_or\_higher\_bmi\_age3049                                           1.8
+   8  init\_or\_higher\_bmi\_agege50                                           2.7
+   9  init\_or\_higher\_bmi\_tob                                               0.7
+  10  init\_or\_higher\_bmi\_per\_higher\_wealth\_level                        0.85
+  11  init\_p\_high\_sugar                                                     0.4
+  12  init\_p\_high\_salt\_urban                                               0.2
+  13  init\_or\_high\_salt\_rural                                              1.5
+  14  init\_p\_ex\_alc\_m                                                      0.15
+  15  init\_p\_ex\_alc\_f                                                      0.01
+  16  init\_p\_low\_ex\_urban\_m                                               0.32
+  17  init\_or\_low\_ex\_rural                                                 0.4
+  18  init\_or\_low\_ex\_f                                                     0.6
+  19  init\_p\_tob\_age1519\_m\_wealth1                                        0.01
+  20  init\_or\_tob\_f                                                         0.2
+  21  init\_or\_tob\_age2039\_m                                                4
+  22  init\_or\_tob\_agege40\_m                                                6
+  23  init\_or\_tob\_wealth2                                                   2
+  24  init\_or\_tob\_wealth3                                                   3
+  25  init\_or\_tob\_wealth4                                                   4
+  26  init\_or\_tob\_wealth5                                                   5
+  27  init\_dist\_mar\_stat\_age1520                                           [0.7, 0.3, 0]
+  28  init\_dist\_mar\_stat\_age2030                                           [0.15, 0.8, 0.05]
+  29  init\_dist\_mar\_stat\_age3040                                           [0.05, 0.7, 0.25]
+  30  init\_dist\_mar\_stat\_age4050                                           [0.03, 0.5, 0.47]
+  31  init\_dist\_mar\_stat\_age5060                                           [0.03, 0.3, 0.67]
+  32  init\_dist\_mar\_stat\_agege60                                           [0.03, 0.2, 0.77]
+  33  init\_age2030\_w5\_some\_ed                                              0.97
+  34  init\_prop\_primary\_edu                                                 0.5
+  35  init\_rp\_some\_ed\_age0513                                              1.01
+  36  init\_rp\_some\_ed\_age1320                                              1
+  37  init\_rp\_some\_ed\_age2030                                              1
+  38  init\_rp\_some\_ed\_age3040                                              1
+  39  init\_rp\_some\_ed\_age4050                                              0.9
+  40  init\_rp\_some\_ed\_age5060                                              0.9
+  41  init\_rp\_some\_ed\_agege60                                              0.9
+  42  init\_rp\_some\_ed\_per\_higher\_wealth                                  1.005
+  43  init\_prop\_age2030\_w5\_some\_ed\_sec                                   0.1
+  44  init\_rp\_some\_ed\_sec\_age1320                                         1
+  45  init\_rp\_some\_ed\_sec\_age3040                                         0.8
+  46  init\_rp\_some\_ed\_sec\_age4050                                         0.6
+  47  init\_rp\_some\_ed\_sec\_age5060                                         0.4
+  48  init\_rp\_some\_ed\_sec\_agege60                                         0.2
+  49  init\_rp\_some\_ed\_sec\_per\_higher\_wealth                             1.48
+  50  init\_p\_unimproved\_sanitation\_urban                                   0.04
+  51  init\_or\_unimproved\_sanitation\_rural                                  4.5
+  52  init\_p\_no\_clean\_drinking\_water\_urban                               0.017
+  53  init\_or\_no\_clean\_drinking\_water\_rural                              8.6
+  54  init\_p\_wood\_burn\_stove\_urban                                        0.257
+  55  init\_or\_wood\_burn\_stove\_rural                                       40
+  56  init\_p\_no\_access\_handwashing\_wealth1                                0.478
+  57  init\_or\_no\_access\_handwashing\_per\_lower\_wealth                    1.06
+  58  r\_urban                                                                 0.0005
+  59  r\_rural                                                                 1e-05
+  60  r\_higher\_bmi                                                           0.0005
+  61  rr\_higher\_bmi\_urban                                                   1.5
+  62  rr\_higher\_bmi\_f                                                       3
+  63  rr\_higher\_bmi\_age3049                                                 1.8
+  64  rr\_higher\_bmi\_agege50                                                 2.7
+  65  rr\_higher\_bmi\_tob                                                     0.7
+  66  rr\_higher\_bmi\_per\_higher\_wealth                                     0.85
+  67  rr\_higher\_bmi\_high\_sugar                                             1.2
+  68  r\_lower\_bmi                                                            0.001
+  69  rr\_lower\_bmi\_tob                                                      1.4
+  70  rr\_lower\_bmi\_pop\_advice\_weight                                      1.1
+  71  r\_high\_salt\_urban                                                     0.003
+  72  rr\_high\_salt\_rural                                                    1.5
+  73  r\_not\_high\_salt                                                       0.0001
+  74  rr\_not\_high\_salt\_pop\_advice\_salt                                   1.1
+  75  r\_high\_sugar                                                           0.0001
+  76  r\_not\_high\_sugar                                                      0.0001
+  77  rr\_not\_high\_sugar\_pop\_advice\_sugar                                 1.1
+  78  r\_low\_ex                                                               0.001
+  79  r\_not\_low\_ex                                                          0.0001
+  80  rr\_not\_low\_ex\_pop\_advice\_exercise                                  1.1
+  81  rr\_low\_ex\_f                                                           0.6
+  82  rr\_low\_ex\_urban                                                       2
+  83  r\_tob                                                                   0.0004
+  84  r\_not\_tob                                                              0.0001
+  85  rr\_tob\_f                                                               0.1
+  86  rr\_tob\_age2039                                                         1.2
+  87  rr\_tob\_agege40                                                         1.5
+  88  rr\_tob\_wealth                                                          1.3
+  89  rr\_not\_tob\_pop\_advice\_tobacco                                       1.1
+  90  r\_ex\_alc                                                               0.003
+  91  r\_not\_ex\_alc                                                          0.0001
+  92  rr\_ex\_alc\_f                                                           0.07
+  93  rr\_not\_ex\_alc\_pop\_advice\_alcohol                                   1.1
+  94  r\_mar                                                                   0.03
+  95  r\_div\_wid                                                              0.01
+  96  r\_stop\_ed                                                              0.007
+  97  rr\_stop\_ed\_lower\_wealth                                              1.5
+  98  p\_ed\_primary                                                           0.9
+  99  rp\_ed\_primary\_higher\_wealth                                          1.1
+ 100  p\_ed\_secondary                                                         0.8
+ 101  rp\_ed\_secondary\_higher\_wealth                                        1.05
+ 102  r\_improved\_sanitation                                                  0.001
+ 103  r\_clean\_drinking\_water                                                0.001
+ 104  r\_non\_wood\_burn\_stove                                                0.001
+ 105  r\_access\_handwashing                                                   0.001
+ 106  proportion\_of\_men\_that\_are\_assumed\_to\_be\_circumcised\_at\_birth  0.2128                          average of circumcision prevalence in adult ages
+ 107  proportion\_of\_men\_circumcised\_at\_initiation                         0.2128                          average of circumcision prevalence in adult ages
+ 108  proportion\_female\_sex\_workers                                         0.0069                          brought over from HIV module done originally by Tara Mangal
+ 109  fsw\_transition                                                          0.18181818181818182             brought over from HIV module done originally by Tara Mangal
+====  =======================================================================  ==============================  ===========================================================  ============  ============  ============

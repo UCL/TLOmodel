@@ -1,0 +1,41 @@
+MDA prognosed Coverage (.csv)
+=============================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/MDA_prognosed_Coverage.csv>`
+
+====  ====================  ======  ======  ========
+  ..  District/Frequency      PSAC     SAC    Adults
+====  ====================  ======  ======  ========
+   0  Blantyre/12           0.9999  0.9999    0.9999
+   1  Chiradzulu/12         0.9999  0.9999    0.9999
+   2  Mulanje/12            0.9999  0.9999    0.9999
+   3  Nkhotakota/12         0.9999  0.9999    0.9999
+   4  Nsanje/12             0.9999  0.9999    0.9999
+   5  Phalombe/12           0.9999  0.9999    0.9999
+   6  Balaka/0              0.9999  0.9999    0.9999
+   7  Blantyre City/0       0.9999  0.9999    0.9999
+   8  Chikwawa/0            0.9999  0.9999    0.9999
+   9  Chitipa/0             0.9999  0.9999    0.9999
+  10  Dedza/0               0.9999  0.9999    0.9999
+  11  Dowa/0                0.9999  0.9999    0.9999
+  12  Karonga/0             0.9999  0.9999    0.9999
+  13  Kasungu/0             0.9999  0.9999    0.9999
+  14  Likoma/0              0.9999  0.9999    0.9999
+  15  Lilongwe/0            0.9999  0.9999    0.9999
+  16  Lilongwe City/0       0.9999  0.9999    0.9999
+  17  Machinga/0            0.9999  0.9999    0.9999
+  18  Mangochi/0            0.9999  0.9999    0.9999
+  19  Mchinji/0             0.9999  0.9999    0.9999
+  20  Mwanza/0              0.9999  0.9999    0.9999
+  21  Mzimba/0              0.9999  0.9999    0.9999
+  22  Mzuzu City/0          0.9999  0.9999    0.9999
+  23  Neno/0                0.9999  0.9999    0.9999
+  24  Nkhata Bay/0          0.9999  0.9999    0.9999
+  25  Ntcheu/0              0.9999  0.9999    0.9999
+  26  Ntchisi/0             0.9999  0.9999    0.9999
+  27  Rumphi/0              0.9999  0.9999    0.9999
+  28  Salima/0              0.9999  0.9999    0.9999
+  29  Thyolo/0              0.9999  0.9999    0.9999
+  30  Zomba/0               0.9999  0.9999    0.9999
+  31  Zomba City/0          0.9999  0.9999    0.9999
+====  ====================  ======  ======  ========

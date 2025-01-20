@@ -1,0 +1,15 @@
+hypertension (.csv)
+===================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/hypertension.csv>`
+
+====  ====================================================  ========
+  ..  parameter\_name                                          value
+====  ====================================================  ========
+   0  sensitivity\_of\_assessment                             1
+   1  medication\_item\_code                                221
+   2  pr\_assessed\_other\_symptoms                           1
+   3  pr\_treatment\_works                                    0
+   4  pr\_diagnosed                                           0.3797
+   5  pr\_seeking\_further\_appt\_if\_drug\_not\_available    1
+====  ====================================================  ========

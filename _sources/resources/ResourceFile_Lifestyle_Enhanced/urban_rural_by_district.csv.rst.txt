@@ -1,0 +1,42 @@
+urban rural by district (.csv)
+==============================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Lifestyle_Enhanced/urban_rural_by_district.csv>`
+
+====  =============  =======  =======  =============  =============
+  ..  district         rural    urban    prop\_rural    prop\_urban
+====  =============  =======  =======  =============  =============
+   0  Chitipa          81.54    18.46         0.8154         0.1846
+   1  Karonga          73.56    26.44         0.7356         0.2644
+   2  Nkhata Bay       82.84    17.16         0.8284         0.1716
+   3  Rumphi           78.12    21.88         0.7812         0.2188
+   4  Mzimba           96.14     3.86         0.9614         0.0386
+   5  Likoma           84.97    15.03         0.8497         0.1503
+   6  Mzuzu           100        0            1              0
+   7  Mzuzu City        0      100            0              1
+   8  Kasungu          79.71    20.29         0.7971         0.2029
+   9  Nkhotakota       80.28    13.72         0.8028         0.1372
+  10  Ntchisi          86.28    13.72         0.8628         0.1372
+  11  Dowa             86.21    13.79         0.8621         0.1379
+  12  Salima           80.76    19.24         0.8076         0.1924
+  13  Lilongwe        100        0            1              0
+  14  Lilongwe City     0      100            0              1
+  15  Mchinji          85.14    14.86         0.8514         0.1486
+  16  Dedza            86.17    13.83         0.8617         0.1383
+  17  Ntcheu           88.82    11.18         0.8882         0.1118
+  18  Mangochi         83.58    16.42         0.8358         0.1642
+  19  Machinga         85.01    14.99         0.8501         0.1499
+  20  Zomba           100        0            1              0
+  21  Zomba City        0      100            0              1
+  22  Chiradzulu       93.65     6.35         0.9365         0.0635
+  23  Blantyre        100        0            1              0
+  24  Blantyre City     0      100            0              1
+  25  Mwanza           74.64    25.36         0.7464         0.2536
+  26  Thyolo           88.89    11.11         0.8889         0.1111
+  27  Mulanje          88.51    11.49         0.8851         0.1149
+  28  Phalombe         91.03     8.97         0.9103         0.0897
+  29  Chikwawa         88.29    11.71         0.8829         0.1171
+  30  Nsanje           79.47    20.53         0.7947         0.2053
+  31  Balaka           81.64    18.36         0.8164         0.1836
+  32  Neno             89.85    10.15         0.8985         0.1015
+====  =============  =======  =======  =============  =============

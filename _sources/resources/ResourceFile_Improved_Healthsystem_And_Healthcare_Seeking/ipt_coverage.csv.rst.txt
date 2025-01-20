@@ -1,0 +1,50 @@
+ipt coverage (.csv)
+===================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/ipt_coverage.csv>`
+
+====  ======  =================  =================  ======================  =========
+  ..    year    coverage\_plhiv  source               coverage\_paediatric  source2
+====  ======  =================  =================  ======================  =========
+   0    2010             0.9999  not\_implemented                      100
+   1    2011             0.9999  not\_implemented                      100
+   2    2012             0.9999  not\_implemented                      100
+   3    2013             0.9999  not\_implemented                      100
+   4    2014             0.9999  not\_implemented                      100  NTP2019
+   5    2015             0.9999  not\_implemented                      100  NTP2019
+   6    2016             0.9999  not\_implemented                      100  NTP2019
+   7    2017             0.9999  not\_implemented                      100  NTP2019
+   8    2018             0.9999  MoH\_quart\_repQ1                     100  NTP2019
+   9    2019             0.9999  MoH\_quart\_repQ2                     100
+  10    2020             0.9999  MoH\_quart\_repQ3                     100
+  11    2021             0.9999  no\_data                              100
+  12    2022             0.9999  no\_data                              100
+  13    2023             0.9999  no\_data                              100
+  14    2024             0.9999  no\_data                              100
+  15    2025             0.9999  no\_data                              100
+  16    2026             0.9999  no\_data                              100
+  17    2027             0.9999  no\_data                              100
+  18    2028             0.9999  no\_data                              100
+  19    2029             0.9999  no\_data                              100
+  20    2030             0.9999  no\_data                              100
+  21    2031             0.9999  no\_data                              100
+  22    2032             0.9999  no\_data                              100
+  23    2033             0.9999  no\_data                              100
+  24    2034             0.9999  no\_data                              100
+  25    2035             0.9999  no\_data                              100
+  26    2036             0.9999  no\_data                              100
+  27    2037             0.9999  no\_data                              100
+  28    2038             0.9999  no\_data                              100
+  29    2039             0.9999  no\_data                              100
+  30    2040             0.9999  no\_data                              100
+  31    2041             0.9999  no\_data                              100
+  32    2042             0.9999  no\_data                              100
+  33    2043             0.9999  no\_data                              100
+  34    2044             0.9999  no\_data                              100
+  35    2045             0.9999  no\_data                              100
+  36    2046             0.9999  no\_data                              100
+  37    2047             0.9999  no\_data                              100
+  38    2048             0.9999  no\_data                              100
+  39    2049             0.9999  no\_data                              100
+  40    2050             0.9999  no\_data                              100
+====  ======  =================  =================  ======================  =========

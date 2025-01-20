@@ -8,17 +8,25 @@ Resource  files used in ``TLOmodel`` simulations
 
     ResourceFile_Alri/index.rst
     ResourceFile_AntenatalCare/index.rst
+    ResourceFile_Bladder_Cancer/index.rst
+    ResourceFile_Breast_Cancer/index.rst
     ResourceFile_Depression/index.rst
     ResourceFile_Diarrhoea/index.rst
     ResourceFile_EPI_WHO_estimates/index.rst
     ResourceFile_HIV/index.rst
+    ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking/index.rst
     ResourceFile_LabourSkilledBirthAttendance/index.rst
+    ResourceFile_Lifestyle_Enhanced/index.rst
     ResourceFile_Measles/index.rst
     ResourceFile_NewbornOutcomes/index.rst
+    ResourceFile_Oesophageal_Cancer/index.rst
+    ResourceFile_Other_Adult_Cancers/index.rst
     ResourceFile_PostnatalSupervisor/index.rst
     ResourceFile_PregnancySupervisor/index.rst
+    ResourceFile_Prostate_Cancer/index.rst
     ResourceFile_RTI/index.rst
     ResourceFile_Schisto/index.rst
+    ResourceFile_Stunting/index.rst
     ResourceFile_TB/index.rst
     cmd/index.rst
     contraception/index.rst
@@ -30,8 +38,6 @@ Resource  files used in ``TLOmodel`` simulations
     malaria/index.rst
     mapping/index.rst
     ResourceFile_AbortionAndMiscarriage.xlsx
-    ResourceFile_Bladder_Cancer.xlsx
-    ResourceFile_Breast_Cancer.xlsx
     ResourceFile_Childhood_Pneumonia.xlsx
     ResourceFile_Copd.csv
     ResourceFile_DALY_Weights.csv
@@ -39,11 +45,5 @@ Resource  files used in ``TLOmodel`` simulations
     ResourceFile_GenericSymptoms_and_HealthSeeking.csv
     ResourceFile_HealthSeekingBehaviour.csv
     ResourceFile_HypertensiveDisordersOfPregnancy.xlsx
-    ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx
-    ResourceFile_Lifestyle_Enhanced.xlsx
-    ResourceFile_Oesophageal_Cancer.xlsx
-    ResourceFile_Other_Adult_Cancers.xlsx
-    ResourceFile_Prostate_Cancer.xlsx
-    ResourceFile_Stunting.xlsx
     ResourceFile_SymptomManager.csv
 

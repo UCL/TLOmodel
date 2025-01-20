@@ -1,0 +1,17 @@
+ResourceFile_PriorityRanking_ALLPOLICIES
+========================================
+
+.. toctree::
+    :maxdepth: 1
+
+    CVD.csv
+    ClinicallyVulnerable.csv
+    Default.csv
+    EHP_III.csv
+    LCOA_EHP.csv
+    Naive.csv
+    RMNCH.csv
+    Test Mode 1.csv
+    Test.csv
+    VerticalProgrammes.csv
+

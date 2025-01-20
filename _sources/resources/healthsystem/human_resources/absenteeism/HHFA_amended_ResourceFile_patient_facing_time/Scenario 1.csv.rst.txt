@@ -1,0 +1,36 @@
+Scenario 1 (.csv)
+=================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/absenteeism/HHFA_amended_ResourceFile_patient_facing_time/Scenario 1.csv>`
+
+====  =====================  =====================================
+  ..  Officer\_Type\_Code    Total\_Av\_Working\_Days
+====  =====================  =====================================
+   0  M01                    155.625
+   1  M02                    192.189331054688
+   2  M03                    209.180160522461
+   3  N01                    183.785705566406
+   4  N02                    190.835372924805
+   5  P01                    203.727264404297
+   6  P02                    203.727264404297
+   7  P03                    203.727264404297
+   8  L01                    203.727264404297
+   9  L02                    203.727264404297
+  10  L03                    203.727264404297
+  11  E01                    211.918838500977
+  12  D01                    249
+  13  D02                    249
+  14  D03                    249
+  15  T01
+  16  C01                    249
+  17  R01                    142.285720825195
+  18  R02                    142.285720825195
+  19  R03                    142.285720825195
+  20  R04                    142.285720825195
+  21
+  22
+  23
+  24
+  25                         Imputed based on officer category
+  26                         Officer cateogory not needed in model
+====  =====================  =====================================

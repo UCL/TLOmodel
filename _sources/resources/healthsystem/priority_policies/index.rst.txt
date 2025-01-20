@@ -4,5 +4,5 @@ priority_policies
 .. toctree::
     :maxdepth: 1
 
-    ResourceFile_PriorityRanking_ALLPOLICIES.xlsx
+    ResourceFile_PriorityRanking_ALLPOLICIES/index.rst
 

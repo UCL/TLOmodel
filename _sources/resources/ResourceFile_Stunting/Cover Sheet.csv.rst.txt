@@ -1,0 +1,33 @@
+Cover Sheet (.csv)
+==================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Stunting/Cover Sheet.csv>`
+
+====  ============  =====================================  =====================================
+  ..  Unnamed: 0    Unnamed: 1                             Unnamed: 2
+====  ============  =====================================  =====================================
+   0
+   1                Name:                                  Childhood Acute Manutrition (wasting)
+   2
+   3                Link to Python Code on GitHub:
+   4                Link to Issue Discussion on GitHub:
+   5
+   6                Type of Module:                        Disease
+   7
+   8                Author:                                Ines
+   9
+  10                Major Amendments Revision History:
+  11
+  12                Other Aspects of the Model Addressed:
+  13                Diseases:                              wasting (low weight-for-height)
+  14                Interventions:
+  15                Lifestyle Elements:
+  16                P-variables:
+  17                H-variables:
+  18                E-variables:
+  19
+  20                Proccessed
+  21                Completed by author:
+  22                Coded in main framework:
+  23                Reviwed by Team:
+====  ============  =====================================  =====================================

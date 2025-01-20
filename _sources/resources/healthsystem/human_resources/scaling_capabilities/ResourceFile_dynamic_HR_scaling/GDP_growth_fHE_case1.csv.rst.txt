@@ -1,0 +1,11 @@
+GDP growth fHE case1 (.csv)
+===========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/scaling_capabilities/ResourceFile_dynamic_HR_scaling/GDP_growth_fHE_case1.csv>`
+
+====  ======  ==============================  ========================
+  ..    year    dynamic\_HR\_scaling\_factor  scale\_HR\_by\_popsize
+====  ======  ==============================  ========================
+   0    2010                         1        False
+   1    2019                         1.01074  False
+====  ======  ==============================  ========================
