@@ -117,6 +117,11 @@ print(f"Notably, we find that the improved consumable availability scenario resu
       f"increase in cost of medical consumables. However, when combined with expanded HRH, the increase in consumables dispensed is "
       f"{(consumable_cost_by_draw[8]/consumable_cost_by_draw[0] - 1):.2%} more than the actual scenario because the health system is able to deliver more appointments.")
 
+cost_of_hiv_testing =  input_costs[(input_costs.cost_subgroup == 'Test, HIV EIA Elisa') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
+print(f"For instance, the cost of HIV testing consumables increases by {(cost_of_hiv_testing[3]/cost_of_hiv_testing[0] - 1):.2%} under the expanded HRH scenario and by "
+      f"{(cost_of_hiv_testing[8]/cost_of_hiv_testing[0] - 1):.2%} under the combined expanded HRH and improved consumable availability scenario, "
+      f"while showing almost no change under the scenario with improved consumable availability alone")
+
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
 # Figure 1: Estimated costs by cost category
