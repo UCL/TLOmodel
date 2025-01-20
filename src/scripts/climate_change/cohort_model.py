@@ -29,6 +29,9 @@ global_max = 0
 results_folder_to_save = Path('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions')
 results_folder_for_births = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
 resourcefilepath = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
+historical_predictions = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_ANC_model_historical_predictions.csv')
+precipitation_threshold = historical_predictions['Precipitation'].quantile(0.9)
+print(precipitation_threshold)
 agegrps, agegrplookup = make_age_grp_lookup()
 calperiods, calperiodlookup = make_calendar_period_lookup()
 births_results = extract_results(
@@ -95,7 +98,6 @@ for scenario in scenarios:
         negative_sum = np.sum(multiplied_values[multiplied_values < 0])
 
         # now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
-        precipitation_threshold = predictions_from_cmip['Precipitation'].quantile(0.9)
         filtered_predictions = predictions_from_cmip[predictions_from_cmip['Precipitation'] >= precipitation_threshold]
         filtered_predictions['Percentage_Difference'] = (
                 filtered_predictions['Difference_in_Expectation'] / filtered_predictions[
@@ -176,7 +178,6 @@ for i, scenario in enumerate(scenarios):
         percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
         malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
-
         ax = axes[i, j]
         malawi_admin2.dropna(subset=['Percentage_Difference']).plot(
             ax=ax,
@@ -367,7 +368,6 @@ for i, scenario in enumerate(scenarios):
         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace({"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"})
         predictions_from_cmip_annual_sum = predictions_from_cmip_sum.groupby(['Year','District']).sum().reset_index()
 
-        precipitation_threshold = predictions_from_cmip_sum['Precipitation'].quantile(0.9)
         filtered_predictions = predictions_from_cmip_sum[predictions_from_cmip_sum['Precipitation'] >= precipitation_threshold]
         for year in year_groupings:
             subset_filtered = filtered_predictions[
@@ -416,7 +416,6 @@ plt.tight_layout()
 plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births_extreme_precip.png')
 plt.show()
 
-print(percentage_diff_by_year_district_top_10_scenario)
 
 
 ####### Historical disruptions ##########
@@ -439,7 +438,6 @@ malawi_admin2['Percentage_Difference_historical'] = malawi_admin2['ADM2_EN'].map
 malawi_admin2.loc[malawi_admin2['Percentage_Difference_historical'] > 0, 'Percentage_Difference_historical'] = 0
 
 
-print(global_min)
 fig, ax = plt.subplots(figsize=(10, 10))
 
 malawi_admin2.dropna(subset=['Percentage_Difference_historical']).plot(
