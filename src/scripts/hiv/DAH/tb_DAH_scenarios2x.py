@@ -14,8 +14,8 @@ or locally using:
 
  check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
-Example for parsing logfiles: (tlo) PS C:\Users\user\PycharmProjects\TLOmodel> tlo parse-log outputs/tb_DAH_scenarios2x-2025-01-18T213939Z/4/1
- """
+
+"""
 
 import warnings
 from pathlib import Path
@@ -45,7 +45,7 @@ class ImpactOfTbDaH04(BaseScenario):
         self.seed = 2134
         #self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 12, 31)
+        self.end_date = Date(2015, 12, 31)
         self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
