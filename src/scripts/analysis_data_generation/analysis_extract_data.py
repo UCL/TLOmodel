@@ -16,6 +16,9 @@ from datetime import datetime
 from collections import Counter
 import ast
 
+# Time simulated to collect data
+start_date = Date(2010, 1, 1)
+end_date = start_date + pd.DateOffset(months=13)
 
 # Range of years considered
 min_year = 2010
@@ -24,6 +27,13 @@ max_year = 2040
 
 def all_columns(_df):
     return pd.Series(_df.all())
+
+def check_if_beyond_time_range_considered(progression_properties):
+    matching_keys = [key for key in progression_properties.keys() if "rt_date_to_remove_daly" in key]
+    if matching_keys:
+        for key in matching_keys:
+            if progression_properties[key] > end_date:
+                print("Beyond time range considered, need at least ",progression_properties[key])
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
@@ -44,19 +54,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     initial_properties_of_interest = ['rt_MAIS_military_score','rt_ISS_score','rt_disability','rt_polytrauma','rt_injury_1','rt_injury_2','rt_injury_3','rt_injury_4','rt_injury_5','rt_injury_6', 'rt_imm_death','sy_injury','sy_severe_trauma','sex','li_urban', 'li_wealth', 'li_mar_stat', 'li_in_ed', 'li_ed_lev']
 
     # Will be added through computation: age at time of RTI
-        
     # Will be added through computation: total duration of event
     
     initial_rt_event_properties = set()
-    
+
     num_individuals = 1000
     num_runs = 50
     record = []
-    
+    # Include results folder in output file name
+    name_tag = str(results_folder).replace("outputs/", "")
+
+
     
     for p in range(0,num_individuals):
     
-        print("At person = ", p)
+        print("At person = ", p, " out of ", num_individuals)
 
         individual_event_chains = extract_results(
                 results_folder,
@@ -66,51 +78,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 do_scaling=False
             )
             
-        #print(individual_event_chains)
-
-            
         for r in range(0,num_runs):
-        
-
-
             initial_properties = {}
-            progression_properties = {}
             key_first_event = {}
             key_last_event = {}
             first_event = {}
             last_event = {}
             properties = {}
             average_disability = 0
+            total_dt_included = 0
+            dt_in_prev_disability = 0
             prev_disability_incurred = 0
-
-            #ind_Counter = Counter()
             ind_Counter = {'0': Counter(), '1a': Counter(), '1b' : Counter(), '2' : Counter()}
             # Count total appts
 
             list_for_individual = []
             for item,row in individual_event_chains.iterrows():
                 value = individual_event_chains.loc[item,(0, r)]
-               # print("The value is", value, "at run ", r)
                 if value !='' and isinstance(value, str):
                     evaluated = eval(value, eval_env)
                     list_for_individual.append(evaluated)
-               # elif not isinstance(value,str):
-               #     print(value)
                     
+            # These are the properties of the individual before the start of the chain of events
             initial_properties = list_for_individual[0]
-           # print(initial_properties)
             
             # Initialise first event by gathering parameters of interest from initial_properties
             first_event = {key: initial_properties[key] for key in initial_properties_of_interest if key in initial_properties}
             
+            # The changing or adding of properties from the first_event will be stored in progression_properties
             progression_properties = {}
+            
             for i in list_for_individual:
+                # Skip the initial_properties, or in other words only consider these if they are 'proper' events
                 if 'event' in i:
-                    #print("")
                     #print(i)
                     if 'RTIPolling' in i['event']:
-                        #print("I'm in polling event")
-                        #print(i)
                         
                         # Keep track of which properties are changed during polling events
                         for key,value in i.items():
@@ -130,67 +132,80 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         progression_properties = initial_properties.copy()
                         progression_properties.update(i)
                         
-                        # dalys incurred
+                        # Initialise chain of Dalys incurred
                         if 'rt_disability' in i:
                             prev_disability_incurred = i['rt_disability']
                             prev_date = i['event_date']
-                            #print('At polling event, ', prev_disability_incurred, prev_date)
 
                     else:
                         # Progress properties of individual, even if this event is a death
                         progression_properties.update(i)
                         
-                        # If disability has changed as a result of this, recalculate
-                        if 'rt_disability' in i and i['rt_disability'] != prev_disability_incurred:
+                        # If disability has changed as a result of this, recalculate and add previous to rolling average
+                        if 'rt_disability' in i:
+    
                             dt_in_prev_disability = (i['event_date'] - prev_date).days
+                            #print("Detected change in disability", i['rt_disability'], "after dt=", dt_in_prev_disability)
+                            #print("Adding the following to the average", prev_disability_incurred, " x ", dt_in_prev_disability )
                             average_disability += prev_disability_incurred*dt_in_prev_disability
+                            total_dt_included += dt_in_prev_disability
                             # Update variables
                             prev_disability_incurred = i['rt_disability']
                             prev_date = i['event_date']
 
-
-                    
-                    #print(progression_properties)
-                    # Update footprint
+                    # Update running footprint
                     if 'appt_footprint' in i and i['appt_footprint'] != 'Counter()':
                         footprint = i['appt_footprint']
                         if 'Counter' in footprint:
                             footprint = footprint[len("Counter("):-1]
                         apply = eval(footprint, eval_env)
                         ind_Counter[i['level']].update(Counter(apply))
-                        
+                    
+                    # If the individual has died, ensure chain of event is interrupted here and update rolling average of DALYs
                     if 'is_alive' in i and i['is_alive'] is False:
-                        #print("Death", i)
-                        #print("-------Total footprint", ind_Counter)
+                        if ((i['event_date'] - polling_event['rt_date_inj']).days) > total_dt_included:
+                            dt_in_prev_disability = (i['event_date'] - prev_date).days
+                            average_disability += prev_disability_incurred*dt_in_prev_disability
+                            total_dt_included += dt_in_prev_disability
                         break
-                        
-
+               
+            # check_if_beyond_time_range_considered(progression_properties)
+            
             # Compute final properties of individual
             key_last_event['is_alive_after_RTI'] = progression_properties['is_alive']
             key_last_event['duration_days'] = (progression_properties['event_date'] - polling_event['rt_date_inj']).days
-            if not key_first_event['rt_imm_death'] and key_last_event['duration_days']> 0.0:
+
+            # If individual didn't die and the key_last_event didn't result in a final change in DALYs, ensure that the last change is recorded here
+            if not key_first_event['rt_imm_death'] and (total_dt_included < key_last_event['duration_days']):
+                #print("Number of events", len(list_for_individual))
+                #for i in list_for_individual:
+                #    if 'event' in i:
+                #        print(i)
+                dt_in_prev_disability = (progression_properties['event_date'] - prev_date).days
+                average_disability += prev_disability_incurred*dt_in_prev_disability
+                total_dt_included += dt_in_prev_disability
+
+            # Now calculate the average disability incurred, and store any permanent disability and total footprint
+            if not key_first_event['rt_imm_death'] and key_last_event['duration_days']> 0:
                 key_last_event['rt_disability_average'] = average_disability/key_last_event['duration_days']
             else:
                 key_last_event['rt_disability_average'] = 0.0
+            
             key_last_event['rt_disability_permanent'] = progression_properties['rt_disability']
             key_last_event.update({'total_footprint': ind_Counter})
 
-            #print("Average disability", key_last_event['rt_disability_average'])
+            if key_last_event['duration_days']!=total_dt_included:
+                print("The duration of event and total_dt_included don't match", key_last_event['duration_days'], total_dt_included)
+                exit(-1)
             
             properties = key_first_event | key_last_event
-            
-            if not key_first_event['rt_imm_death'] and ((properties['rt_disability_average']-properties['rt_disability'])/properties['rt_disability'] > 1e-4):
-                print("Error in computed average for individual ", p, r )
                 
             record.append(properties)
-            #for key, value in properties.items():
-                #if 'rt_' in key or 'alive' in key or 'event_date' in key or 'footprint' in key:
-                #print(f"{key}: {value}")
-           # print("Initial event properties", initial_rt_event_properties)
-         
-    df = pd.DataFrame(record)
-    df.to_csv("raw_data.csv", index=False)
+            
 
+    df = pd.DataFrame(record)
+    df.to_csv("new_raw_data_" + name_tag + ".csv", index=False)
+    
     print(df)
     print(initial_rt_event_properties)
     exit(-1)

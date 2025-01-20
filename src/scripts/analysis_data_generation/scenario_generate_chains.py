@@ -18,7 +18,7 @@ from typing import Dict
 import pandas as pd
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios, get_filtered_treatment_ids
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
 from tlo.scenario import BaseScenario
@@ -92,7 +92,35 @@ class GenerateDataChains(BaseScenario):
        #     fullmodel(resourcefilepath=self.resources)
        #     + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
        # )
+    """
+    def draw_parameters(self, draw_number, rng):
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {
+                'HealthSystem': {
+                    'Service_Availability': list(self._scenarios.values())[draw_number],
+                },
+            }
+        )
 
+    def _get_scenarios(self) -> Dict[str, list[str]]:
+        Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
+        The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model.
+
+        # Generate list of TREATMENT_IDs and filter to the resolution needed
+        treatments = get_filtered_treatment_ids(depth=2)
+        treatments_RTI = [item for item in treatments if 'Rti' in item]
+        
+        # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
+        # treatment is omitted
+        service_availability = dict({"Everything": ["*", "Nothing": []})
+        #service_availability.update(
+        #    {f"No {t.replace('_*', '*')}": [x for x in treatments if x != t] for t in treatments_RTI}
+        #)
+        
+        return service_availability
+
+    """
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
             return list(self._scenarios.values())[draw_number]
@@ -107,20 +135,27 @@ class GenerateDataChains(BaseScenario):
     # case 6: gfHE =  0.030, factor = 1.07326
 
     def _get_scenarios(self) -> Dict[str, Dict]:
-        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
-        """
+        #Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         
-        self.YEAR_OF_CHANGE = 2019
+        treatments = get_filtered_treatment_ids(depth=2)
+        treatments_RTI = [item for item in treatments if 'Rti' in item]
+        
+        # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
+        # treatment is omitted
+        service_availability = dict({"Everything": ["*"], "Nothing": []})
+        service_availability.update(
+            {f"No {t.replace('_*', '*')}": [x for x in treatments if x != t] for t in treatments_RTI}
+        )
+        print(service_availability.keys())
 
         return {
-   
             # =========== STATUS QUO ============
             "Baseline":
                 mix_scenarios(
                     self._baseline(),
                     {
                      "HealthSystem": {
-                        "yearly_HR_scaling_mode": "no_scaling",
+                            "Service_Availability": service_availability["No Rti_BurnManagement*"],
                       },
                     }
                 ),
@@ -128,20 +163,13 @@ class GenerateDataChains(BaseScenario):
         }
         
     def _baseline(self) -> Dict:
-        """Return the Dict with values for the parameter changes that define the baseline scenario. """
+        #Return the Dict with values for the parameter changes that define the baseline scenario.
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {
                 "HealthSystem": {
                     "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
-                    "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
-                    "year_mode_switch": self.YEAR_OF_CHANGE,
-                    "scale_to_effective_capabilities": True,
-                    "policy_name": "Naive",
-                    "tclose_overwrite": 1,
-                    "tclose_days_offset_overwrite": 7,
-                    "use_funded_or_actual_staffing": "actual",
-                    "cons_availability": "default",
+                    "cons_availability": "all",
                 }
             },
         )
