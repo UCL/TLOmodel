@@ -128,7 +128,7 @@ class Contraception(Module):
     # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
     #  method').
     contraceptives_initiated_with_additional_items = {
-        'pill', 'IUD', 'injections', 'implant', 
+        'pill', 'IUD', 'injections', 'implant',
     }
     # These are methods for which additional items ('co_initiation') are used to initiate the method after not using any
     # contraceptive or after using a method which is not in this category.
@@ -184,7 +184,7 @@ class Contraception(Module):
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
             'Method_Use_In_2015',
-            'Pregnancy_NotUsing_In_2015',  
+            'Pregnancy_NotUsing_In_2015',
             'Failure_ByMethod',
             'Initiation_ByAge', #
             'Initiation_ByMethod',
@@ -303,7 +303,7 @@ class Contraception(Module):
                         description='The date when parameters are updated to enable the FP interventions.'
                         )
 
-    
+
 
     def on_birth(self, mother_id, child_id):
         """
@@ -333,7 +333,7 @@ class Contraception(Module):
         else:
             # Log or handle the case where the pregnancy did not result in a live birth
             logger.info(f"Child {child_id} not initialized due to pregnancy outcome: {pregnancy_outcome}")
-    
+
     # def end_pregnancy(self, person_id):
     #     """End the pregnancy. Reset pregnancy status and may initiate a contraceptive method.
     #     This is called by `on_birth` in this module and by Labour/Pregnancy modules for births that do result in live
@@ -346,7 +346,7 @@ class Contraception(Module):
     #     self.sim.population.props.at[person_id, 'is_pregnant'] = False
     #     person_age = self.sim.population.props.at[person_id, 'age_years']
     #     self.select_contraceptive_following_birth(person_id, person_age)
-    
+
     def end_pregnancy(self, person_id):
         """
         *End the pregnancy. Reset pregnancy status and log the pregnancy outcome.
@@ -481,9 +481,9 @@ class Contraception(Module):
 
                 return p_init
 
-        
+
             return apply_age_year_effects(p_init_by_method)
-        
+
         def contraception_switch():
             """Get the probability per month of a woman switching to a contraceptive method, given that she is currently
             using a different one."""
@@ -672,7 +672,7 @@ class Contraception(Module):
             ).all()
 
             return p_pregnancy_no_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
-        
+
         def pregnancy_with_contraception():
             """Get the probability per month of a woman becoming pregnant if she is using a contraceptive method."""
             p_pregnancy_by_method_per_month = self.parameters['Failure_ByMethod'].loc[0]
@@ -691,7 +691,7 @@ class Contraception(Module):
             assert (p_pregnancy_with_contraception_per_month.index == range(15, 50)).all()
             assert set(p_pregnancy_with_contraception_per_month.columns) == set(
                 self.all_contraception_states - {"not_using"})
-            
+
 
             return p_pregnancy_with_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
 
@@ -748,7 +748,7 @@ class Contraception(Module):
             contraception_initiation_with_interv(processed_params['p_start_per_month'])
         processed_params['p_start_after_birth'] = \
             contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth'])
-        
+
 
         return processed_params
 
@@ -1135,7 +1135,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         # pregnant.)
         possible_to_fail = (
             df.sex == "F"
-            
+
             & ~df.is_pregnant
             & df.age_years.between(self.age_low, self.age_high)
             & ~df.co_contraception.isin(['not_using', 'female_sterilization'])
@@ -1167,7 +1167,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Get the subset of women who are not using a contraceptive and who may become pregnant
         subset = (
-            
+
             (df.sex == 'F')
             & ~df.is_pregnant
             & df.age_years.between(self.age_low, self.age_high)
@@ -1187,7 +1187,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             idx_pregnant = prob_pregnancy.index[prob_pregnancy > rng.rand(len(prob_pregnancy))]
 
             # Effect these women to be pregnant
-            self.set_new_pregnancy(women_id=idx_pregnant)  
+            self.set_new_pregnancy(women_id=idx_pregnant)
         # if subset.sum():
         #     # Get the probability of pregnancy for each individual
         #     prob_pregnancy = df.loc[subset, ['age_years', 'hv_inf']].apply(

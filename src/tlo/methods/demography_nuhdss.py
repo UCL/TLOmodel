@@ -7,8 +7,6 @@ The core demography module and its associated events.
 
 
 
-import math
-from collections import defaultdict
 from pathlib import Path
 from types import MappingProxyType
 from typing import Union
@@ -18,7 +16,6 @@ import pandas as pd
 
 
 from tlo import (
-    DAYS_IN_MONTH,
     DAYS_IN_YEAR,
     Date,
     DateOffset,
@@ -28,18 +25,15 @@ from tlo import (
     Types,
     logging,
 )
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.logging.helpers import get_dataframe_row_as_dict_for_logging
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import DEFAULT_MOTHER_ID, create_age_range_lookup, get_person_id_to_inherit_from
 
 # Standard logger
-logger = logging.getLogger("tlo.methods.Demography_Nuhdss")
-#logger = logging.getLogger(__name__)
-#print(f"Logger name being used: {__name__}.detail")  # Debugging the logger name
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Detailed logger
-logger_detail = logging.getLogger("tlo.methods.Demography_Nuhdss.detail")
+logger_detail = logging.getLogger(f"{__name__}.detail")
 logger_detail.setLevel(logging.INFO)
 
 # Population scale factor logger
@@ -79,7 +73,7 @@ class Demography(Module):
         self.initial_model_to_data_popsize_ratio = None  # will store scaling factor
         self.popsize_by_year = dict()  # will store total population size each year
         self.slums = None     # will store all the slums in a list
-        
+
 
     OPTIONAL_INIT_DEPENDENCIES = {'ImprovedHealthSystemAndCareSeekingScenarioSwitcher'}
      #<-- this forces that module to be the first registered module, if it's registered.
@@ -102,20 +96,20 @@ class Demography(Module):
         'pop_2015': Parameter(Types.DATA_FRAME, 'Population in 2015 for initialising population'),
         'slum_num_to_slum_name': Parameter(Types.DICT, 'Mapping from slum_num to slum name'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        
+
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        #'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
+        'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
 
         'slum_num_of_residence': Property(
-            Types.CATEGORICAL, 
+            Types.CATEGORICAL,
             'The slum number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
@@ -151,15 +145,15 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_nuhdss_2015.csv'
         )
 
-        # Lookup dicts to map from slum_num_of_residence (in the df) and slum name 
+        # Lookup dicts to map from slum_num_of_residence (in the df) and slum name
         self.slums = self.parameters['pop_2015']['slum'].drop_duplicates().to_list()
         self.parameters['slum_num_to_slum_name'] = \
             self.parameters['pop_2015'][['slum_Num', 'slum']].drop_duplicates()\
                                                                      .set_index('slum_Num')['slum']\
                                                                      .to_dict()
-                                                                     
 
-    
+
+
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
             Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_Frac_Births_Male.csv'
@@ -172,7 +166,7 @@ class Demography(Module):
         # Define categorical properties for 'slum_of_residence'
         # Nb. This couldn't be done before categories for each of these has been determined following read-in of data
         # and initialising of other modules.
-       
+
         self.PROPERTIES['slum_num_of_residence'] = Property(
             Types.CATEGORICAL,
             'The slum (name) of residence (mapped from slum_num_of_residence).',
@@ -183,11 +177,11 @@ class Demography(Module):
             'The slum (name) of residence (mapped from slum_num_of_residence).',
             categories=self.parameters['pop_2015']['slum'].unique().tolist()
         )
-    
+
     def initialise_population(self, population):
         """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
-        
+
 
         # Compute the initial population scaling factor
         self.initial_model_to_data_popsize_ratio = \
@@ -219,20 +213,20 @@ class Demography(Module):
             self.sim.date - DateOffset(years=int(demog_char_to_assign['Age'][i]),
                                        days=int(demog_char_to_assign['days_since_last_birthday'][i]))
             for i in demog_char_to_assign.index]
-        
-       
+
+
         # Assign the characteristics
         #df.is_alive,
-        #df.is_alive.values[:] = True
-        df['date_of_birth'] = demog_char_to_assign['date_of_birth']
-        df['sex'] = demog_char_to_assign['Sex']
-        df[ 'mother_id'] = DEFAULT_MOTHER_ID  # Motherless, and their characterists are not inherited
-        df['slum_num_of_residence'] = demog_char_to_assign['slum_Num'].values[:]
-        df[ 'slum_of_residence'] = demog_char_to_assign['slum'].values[:]
-        df[ 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
-        df['age_years'] = df['age_exact_years'].astype('int64')
-        df['age_range'] = df['age_years'].map(self.AGE_RANGE_LOOKUP)
-        df[ 'age_days'] = (
+        df.is_alive.values[:] = True
+        df.loc[df.is_alive, 'date_of_birth'] = demog_char_to_assign['date_of_birth']
+        df.loc[df.is_alive,'sex'] = demog_char_to_assign['Sex']
+        df.loc[df.is_alive, 'mother_id'] = DEFAULT_MOTHER_ID  # Motherless, and their characterists are not inherited
+        df.loc[df.is_alive, 'slum_num_of_residence'] = demog_char_to_assign['slum_Num'].values[:]
+        df.loc[df.is_alive, 'slum_of_residence'] = demog_char_to_assign['slum'].values[:]
+        df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
+        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
+        df.loc[df.is_alive, 'age_days'] = (
             self.sim.date - demog_char_to_assign['date_of_birth']
         ).dt.days
 
@@ -265,12 +259,12 @@ class Demography(Module):
                 description='The data-to-model scaling factor (based on the initial population size, used to '
                             'multiply-up results so that they correspond to the real population size.'
             )
-       
-      
+
+
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
             raise Exception('Year is after 2100: Demographic data do not extend that far.')
-        
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
@@ -287,7 +281,7 @@ class Demography(Module):
         _id_inherit_from = get_person_id_to_inherit_from(child_id, mother_id, df, rng)
         _slum_num_of_residence = df.at[_id_inherit_from, 'slum_num_of_residence']
         _slum_of_residence = df.at[_id_inherit_from, 'slum_of_residence']
-    
+
         child = {
             #'is_alive': True,
             'date_of_birth': self.sim.date,
@@ -411,14 +405,13 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        dates_of_birth = df['date_of_birth']
-        df['age_exact_years'] = age_at_date(
+        dates_of_birth = df.loc[df.is_alive, 'date_of_birth']
+        df.loc[df.is_alive, 'age_exact_years'] = age_at_date(
             self.module.sim.date, dates_of_birth
         )
-        df['age_years'] = df['age_exact_years'].astype('int64')
-        df['age_range'] = df['age_years'].map(self.age_range_lookup)
-        df['age_days'] = (self.module.sim.date - dates_of_birth).dt.days
-
+        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
+        df.loc[df.is_alive, 'age_days'] = (self.module.sim.date - dates_of_birth).dt.days
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -436,9 +429,10 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # 1) Update internal storage of the total population size each year.
-        self.module.popsize_by_year[self.sim.date.year] = len(df)
+        self.module.popsize_by_year[self.sim.date.year] = df.is_alive.sum()
+
         # 2) Compute Statistics for the log
-        sex_count = df.groupby('sex').size()
+        sex_count = df[df.is_alive].groupby('sex').size()
 
         logger.info(
             key='population',
@@ -449,12 +443,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # (nb. if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately.)
-        #m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
-        #f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
-
-        # Get the counts separately
-        m_age_counts = df[df.sex == 'M'].groupby('age_range').size()
-        f_age_counts = df[df.sex == 'F'].groupby('age_range').size()
+        m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
+        f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
         logger.info(key='age_range_m', data=m_age_counts.to_dict())
 
@@ -463,7 +453,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Output by single year of age for under-fives
         # (need to guarantee output always is for each of the years - even if size() is 0)
         num_children = pd.Series(index=range(5), data=0).add(
-            df[df.age_years < 5].groupby('age_years').size(),
+            df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
             fill_value=0
         ).astype(int)
 
