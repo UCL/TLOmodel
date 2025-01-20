@@ -40,7 +40,7 @@ EvaJ/contraception_2023-02_inclPR807/AnalysisAllCalib_Contraception with the ana
 """
 
 from tlo import Date, logging
-from tlo.methods import contraception, demography, healthsystem, hiv, Demography_Nuhdss
+from tlo.methods import contraception, demography, healthsystem, hiv, demography_nuhdss
 from tlo.scenario import BaseScenario
 
 
