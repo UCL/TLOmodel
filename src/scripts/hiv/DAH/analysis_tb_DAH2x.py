@@ -1,5 +1,7 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
+
 #python src/scripts/hiv/DAH/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+# to parse files use: tlo parse-log outputs/filename/x/y where and the x and y rep number of draws and runs
 #from matplotlib.ticker import FuncFormatter
 #import squarify
 
@@ -12,6 +14,7 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -29,10 +32,13 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 #creating folders to store results
-resourcefilepath = Path("./resources")
-outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
+resourcefilepath = Path(".\resources")
+outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
-results_folder = get_scenario_outputs('', outputfilepath) [-1]
+
+#outputfilepath = Path("./outputs")
+
+results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-18T213939Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -61,6 +67,8 @@ def set_param_names_as_column_index_level_0(_df):
 # %% Define parameter names
 param_names = get_parameter_names_from_scenario_file()
 print(param_names)
+
+#extracting DALYs
 def get_tb_dalys(df_):
     # Ensure 'year' is sorted
     years = df_['year'].value_counts().keys()

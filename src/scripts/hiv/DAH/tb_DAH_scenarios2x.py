@@ -14,14 +14,14 @@ or locally using:
 
  check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
-
+Example for parsing logfiles: (tlo) PS C:\Users\user\PycharmProjects\TLOmodel> tlo parse-log outputs/tb_DAH_scenarios2x-2025-01-18T213939Z/4/1
  """
 
 import warnings
 from pathlib import Path
 from typing import Dict
 
-from tlo import Date,Simulation, logging
+from tlo import Date, logging
 import random
 from tlo.methods import (
     demography,
@@ -55,7 +55,7 @@ class ImpactOfTbDaH04(BaseScenario):
         return {
             'filename': 'tb_DAH_scenarios2x',
            # 'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
-            'directory': Path('./outputs'),
+            'directory': Path(r'./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
