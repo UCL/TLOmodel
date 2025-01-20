@@ -535,11 +535,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 person_id=person_id, disease_module=self
             )
 
-        if ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM') and
-            (df.at[person_id, 'un_sam_with_complications'])):
-            warnings.warn(f'{person_id=} has MAM with complications.')
         assert not ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM')
-                    and (df.at[person_id, 'un_sam_with_complications']))
+                    and (df.at[person_id, 'un_sam_with_complications'])), f'{person_id=} has MAM with complications.'
 
     def date_of_outcome_for_untreated_wasting(self, whz_category):
         """
@@ -560,7 +557,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             return date_of_outcome
 
         # severe wasting (recovery to moderate wasting) -----
-        if whz_category == 'WHZ<-3':
+        elif whz_category == 'WHZ<-3':
             # determine the duration of severe wasting episode
             duration_sev_wasting = int(max(p['min_days_duration_of_wasting'], p['duration_of_untreated_sev_wasting']))
             # Allocate a date of outcome (death, progression, or recovery)
@@ -710,7 +707,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
         # Reset tx discharge date
         df.at[person_id, 'un_am_discharge_date'] = pd.NaT
-        # Cancel natural death with due to tx
+        # Cancel natural death due to SAM with tx
         df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
         if intervention == 'SFP':
@@ -898,11 +895,12 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
         if not df.at[person_id, 'is_alive']:
             return
 
-        # # Check if this person should still die from SAM:
+        # # Check if this person should still die from SAM and it should happen now not in future:
         if (
             pd.isnull(df.at[person_id, 'un_am_recovery_date']) and
             not (df.at[person_id, 'un_am_discharge_date'] > df.at[person_id, 'un_am_tx_start_date']) and
-            not pd.isnull(df.at[person_id, 'un_sam_death_date'])
+            not pd.isnull(df.at[person_id, 'un_sam_death_date']) and
+            df.at[person_id, 'un_sam_death_date'] <= self.sim.date
         ):
             if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
                 warnings.warn(f"{person_id=} dying due to SAM while \n{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
@@ -974,10 +972,11 @@ class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEven
         if not df.at[person_id, 'is_alive']:
             return
 
+        # if not well (i.e. NOT already fully recovered with SAM tx, and send here from follow-up MAM tx)
         if df.at[person_id, 'un_WHZ_category'] != 'WHZ>=-2':
             if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
                 recov_opt = f"mod_{df.at[person_id, 'un_clinical_acute_malnutrition']}_tx_full_recov"
-            elif df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
+            else: # df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
                 recov_opt = f"sev_{df.at[person_id, 'un_clinical_acute_malnutrition']}_tx_full_recov"
             age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
             self.module.wasting_length_tracker[age_group][recov_opt].append(
@@ -1014,6 +1013,7 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
         rng = self.module.rng
         p = self.module.parameters
 
+        # if died or recovered in between, should not update to MAM
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM'):
             return
 
@@ -1034,12 +1034,21 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
             if mam_classification == 'mam_by_muac_only':
                 if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
                     recov_opt = "mod_SAM_tx_recov_to_MAM"
-                elif df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
+                else: # df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
                     recov_opt = "sev_SAM_tx_recov_to_MAM"
                 age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
-                self.module.wasting_length_tracker[age_group][recov_opt].append(
-                    (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
-                )
+                wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
+
+                def get_tx_length(in_person_id):
+                    if df.at[in_person_id, 'un_sam_with_complications']:
+                        tx_length = p['tx_length_weeks_InpatientSAM']
+                    else:  # SAM without complications
+                        tx_length = p['tx_length_weeks_OutpatientSAM']
+                    return tx_length
+
+                assert wasted_days >= get_tx_length(person_id), \
+                    f" The {person_id=} is wasted less than tx_length= {get_tx_length(person_id)} weeks when {recov_opt=}."
+                self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
                 df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
 
@@ -1572,6 +1581,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
+        p = self.module.parameters
 
         # ----- INCIDENCE LOG ----------------
         # Convert the list of timestamps into a number of timestamps
@@ -1581,12 +1591,10 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for age_grp in self.module.wasting_incident_case_tracker.keys():
             for state in self.module.wasting_states:
                 inc_df.loc[age_grp, state] = len(self.module.wasting_incident_case_tracker[age_grp][state])
-                if not all(date >= self.date_last_run for
-                           date in self.module.wasting_incident_case_tracker[age_grp][state]):
-                    warnings.warn(f"Some incident cases trying to be logged on {self.sim.date=} from the day of last"
-                                  f"log {self.date_last_run=} or before.")
                 assert all(date >= self.date_last_run for
-                           date in self.module.wasting_incident_case_tracker[age_grp][state])
+                           date in self.module.wasting_incident_case_tracker[age_grp][state]), \
+                    f"Some incident cases trying to be logged on {self.sim.date=} from the day of last log "\
+                    f"{self.date_last_run=} or before."
 
         logger.info(key='wasting_incidence_count', data=inc_df.to_dict())
 
@@ -1606,22 +1614,25 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                          len(self.module.wasting_length_tracker[age_grp][recov_opt]))
                 else:
                     length_df.loc[age_grp, recov_opt] = 0
-                if np.isnan(length_df.loc[age_grp, recov_opt]):
-                    warnings.warn(f'There is an empty length for {age_grp=}, {recov_opt=}.')
-                assert not np.isnan(length_df.loc[age_grp, recov_opt])
+                assert not np.isnan(length_df.loc[age_grp, recov_opt]),\
+                    f'There is an empty length for {age_grp=}, {recov_opt=}.'
                 if recov_opt == 'mod_nat_recov':
-                    if not all(length >= 81 for length in self.module.wasting_length_tracker[age_grp][recov_opt]):
-                        warnings.warn(f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} '
-                                      f'contains length < 3 weeks; {age_grp=}, {recov_opt=}')
+                    assert all(length >= p['duration_of_untreated_mod_wasting'] for length in
+                           self.module.wasting_length_tracker[age_grp][recov_opt]),\
+                        f"{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < "\
+                        f"{p['duration_of_untreated_mod_wasting']=}; {age_grp=}, {recov_opt=}"
                 elif recov_opt in ['mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov', 'sev_SAM_tx_full_recov',
                                    'mod_SAM_tx_recov_to_MAM', 'sev_SAM_tx_recov_to_MAM']:
-                    if not all(length >= 21 for length in self.module.wasting_length_tracker[age_grp][recov_opt]):
-                        warnings.warn(f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} '
-                                      f'contains length < 3 weeks; {age_grp=}, {recov_opt=}')
-                else:
-                    if recov_opt not in ['mod_not_yet_recovered', 'sev_not_yet_recovered']:
-                        warnings.warn(f'\nInvalid {recov_opt=}.')
-                    assert recov_opt in ['mod_not_yet_recovered', 'sev_not_yet_recovered']
+                    min_tx_length = min(p['tx_length_weeks_SuppFeedingMAM'], p['tx_length_weeks_OutpatientSAM'],
+                                             p['tx_length_weeks_InpatientSAM'])
+                    assert all(length >= min_tx_length for length in
+                               self.module.wasting_length_tracker[age_grp][recov_opt]),\
+                        f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < '\
+                        f'{min_tx_length} weeks; {age_grp=}, {recov_opt=}'
+
+                assert recov_opt in ['mod_nat_recov', 'mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov',
+                                     'sev_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM', 'sev_SAM_tx_recov_to_MAM',
+                                     'mod_not_yet_recovered', 'sev_not_yet_recovered'], f'\nInvalid {recov_opt=}.'
 
 
         # Reset the tracker
