@@ -1735,7 +1735,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
         if (df.at[person_id, 'ps_htn_disorders'] != 'none') or (df.at[person_id, 'pn_htn_disorders'] != 'none'):
 
             iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                self, int_name='iv_antihypertensives', hsi_event=hsi_event,
+                self, int_name='antihypertensives', hsi_event=hsi_event,
                 cons=self.item_codes_lab_consumables['iv_antihypertensives'],
                 alt_con=self.item_codes_lab_consumables['iv_antihypertensives_other'],
                 opt_cons=self.item_codes_lab_consumables['iv_drug_equipment'])
@@ -1752,7 +1752,7 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                 cons = {_i: dose for _i in self.item_codes_lab_consumables['oral_antihypertensives']}
 
                 oral_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-                    self, int_name='oral_antihypertensives', hsi_event=hsi_event, cons=cons)
+                    self, int_name='antihypertensives', hsi_event=hsi_event, cons=cons)
 
                 if oral_anti_htns_delivered:
                     df.at[person_id, 'la_gest_htn_on_treatment'] = True

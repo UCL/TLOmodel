@@ -1241,7 +1241,7 @@ class CareOfWomenDuringPregnancy(Module):
                         self.item_codes_preg_consumables['oral_antihypertensives'].items()}
 
         oral_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='oral_antihypertensives', hsi_event=hsi_event, cons=updated_cons)
+            self, int_name='antihypertensives', hsi_event=hsi_event, cons=updated_cons)
 
         if oral_anti_htns_delivered:
             df.at[individual_id, 'ac_gest_htn_on_treatment'] = True
@@ -1258,7 +1258,7 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
 
         iv_anti_htns_delivered = pregnancy_helper_functions.check_int_deliverable(
-            self, int_name='iv_antihypertensives', hsi_event=hsi_event,
+            self, int_name='antihypertensives', hsi_event=hsi_event,
             cons=self.item_codes_preg_consumables['iv_antihypertensives'],
             alt_con=self.item_codes_preg_consumables['iv_antihypertensives_other'],
             opt_cons=self.item_codes_preg_consumables['iv_drug_equipment'],
