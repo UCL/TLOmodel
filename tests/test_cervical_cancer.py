@@ -9,14 +9,14 @@ from tlo.methods import (
     cervical_cancer,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     simplified_births,
     symptommanager,
-    epi,
     tb,
-    hiv
 )
 
 # %% Setup:

@@ -12,24 +12,24 @@ consider in future making hpv acquisition risk depend on current prevalence of h
 """
 
 from __future__ import annotations
-from pathlib import Path
 
+import csv
+from pathlib import Path
 from typing import TYPE_CHECKING, List
 
-import pandas as pd
 import numpy as np
-import csv
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import Metadata
+from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods import Metadata
-from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
