@@ -92,25 +92,26 @@ input_costs_undiscounted = input_costs_undiscounted[(input_costs_undiscounted.ye
 # Get overall estimates for main text
 # -----------------------------------------------------------------------------------------------------------------------
 cost_by_draw = input_costs.groupby(['draw', 'stat'])['cost'].sum()
-print(f"The total estimated cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
-      f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion[\${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
-      f"\${cost_by_draw[5,'mean']/1e9:,.2f} billion[\${cost_by_draw[5,'lower']/1e9:,.2f}b - \${cost_by_draw[5,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
-      f"followed by \${cost_by_draw[3,'mean']/1e9:,.2f} billion[\${cost_by_draw[3,'lower']/1e9:,.2f}b - \${cost_by_draw[3,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
-      f"\${cost_by_draw[8,'mean']/1e9:,.2f} billion[\${cost_by_draw[8,'lower']/1e9:,.2f}b - \${cost_by_draw[8,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
+print(f"The total cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
+      f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
+      f"\${cost_by_draw[5,'mean']/1e9:,.2f} billion [\${cost_by_draw[5,'lower']/1e9:,.2f}b - \${cost_by_draw[5,'upper']/1e9:,.2f}b] under the improved consumable availability scenario, "
+      f"followed by \${cost_by_draw[3,'mean']/1e9:,.2f} billion [\${cost_by_draw[3,'lower']/1e9:,.2f}b - \${cost_by_draw[3,'upper']/1e9:,.2f}b] under the expanded HRH scenario and finally "
+      f"\${cost_by_draw[8,'mean']/1e9:,.2f} billion [\${cost_by_draw[8,'lower']/1e9:,.2f}b - \${cost_by_draw[8,'upper']/1e9:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
 
 undiscounted_cost_by_draw = input_costs_undiscounted.groupby(['draw', 'stat'])['cost'].sum()
-print(f"The average annual estimated cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
-      f"\${undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}b], under the actual scenario, and increased to "
-      f"\${undiscounted_cost_by_draw[5,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[5,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[5,'upper']/1e6/number_of_years_costed:,.2f}b] under the improved consumable availability scenario, "
-      f"followed by \${undiscounted_cost_by_draw[3,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[3,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[3,'upper']/1e6/number_of_years_costed:,.2f}b] under the expanded HRH scenario and finally "
-      f"\${undiscounted_cost_by_draw[8,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[8,'lower']/1e6/number_of_years_costed:,.2f}b - \${undiscounted_cost_by_draw[8,'upper']/1e6/number_of_years_costed:,.2f}b] under the expanded HRH + improved consumable availability scenario.")
+print(f"The average annual cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
+      f"\${undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m], under the actual scenario, and increased to "
+      f"\${undiscounted_cost_by_draw[5,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[5,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[5,'upper']/1e6/number_of_years_costed:,.2f}m] under the improved consumable availability scenario, "
+      f"followed by \${undiscounted_cost_by_draw[3,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[3,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[3,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
+      f"\${undiscounted_cost_by_draw[8,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[8,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[8,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
 
-print(f"The total cost of healthcare delivery in Malawi (from a health system perspective) between 2023 and 2030 was estimated at "
-      f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion[\${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b] under current constraints. "
-      f"Alternative scenarios reflecting improvements in supply chain efficiency and workforce capacity increased costs by "
+print(f"Based on this method, the total cost of healthcare delivery in Malawi between 2023 and 2030 was estimated at "
+      f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion[\${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b]"
+      f"(average annual cost of \${undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million[\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] "
+      f"under current health system capacity. "
+      f"Alternative scenarios reflecting improvements in consuambles supply chain performance and workforce size increased costs by "
       f"{(cost_by_draw[5,'mean']/cost_by_draw[0,'mean'] - 1):.2%} to "
-      f"{(cost_by_draw[8,'mean']/cost_by_draw[0,'mean'] - 1):.2%}. "
-      f"Importantly, our 2018 cost estimates closely aligned with reported actual expenditures, supporting the reliability of our approach.")
+      f"{(cost_by_draw[8,'mean']/cost_by_draw[0,'mean'] - 1):.2%}. ")
 
 consumable_cost_by_draw = input_costs[(input_costs.cost_category == 'medical consumables') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
 print(f"Notably, we find that the improved consumable availability scenario results in a {(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1):.2%} "
