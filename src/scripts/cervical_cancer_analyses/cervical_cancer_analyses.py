@@ -12,13 +12,10 @@ import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import json
-import math
 from tlo import Simulation, logging, Date
 
-from tlo.analysis.utils import make_age_grp_types, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     cervical_cancer,
     demography,
@@ -32,7 +29,6 @@ from tlo.methods import (
     tb,
     hiv
 )
-import hashlib
 
 # Where outputs will go
 output_csv_file = Path("outputs/output7_data.csv")
@@ -87,7 +83,7 @@ def run_sim(service_availability):
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
                  )
 
-    logfile = sim._configure_logging(filename="LogFile")
+    sim._configure_logging(filename="LogFile")
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
