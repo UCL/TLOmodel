@@ -167,8 +167,7 @@ def get_population_of_interest_30_to_50(sim):
 # %% Checks:
 def check_dtypes(sim):
     # check types of columns
-    df = sim.population.props
-    orig = sim.population.new_row
+    pass
 # this assert was failing but I have checked all properties and they maintain the expected type
 #   assert (df.dtypes == orig.dtypes).all()
 
@@ -183,7 +182,7 @@ def check_configuration_of_population(sim):
     assert not df.loc[df.age_years < 15].ce_cc_ever.any()
 
     # check that diagnosis and treatment is never applied to someone who has never had cancer:
-    assert pd.isnull(df.loc[df.ce_cc_ever == False, 'ce_date_palliative_care']).all()
+    assert pd.isnull(df.loc[df.ce_cc_ever is False, 'ce_date_palliative_care']).all()
 
     # check that treatment is never done for those with stage 4
     assert 0 == (df.ce_stage_at_which_treatment_given == 'stage4').sum()
@@ -324,7 +323,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     # make initial population
     sim.make_initial_population(n=popsize)
 
-    population_of_interest = get_population_of_interest(sim)
+    # population_of_interest = get_population_of_interest(sim)
 #   sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
     check_configuration_of_population(sim)
 
@@ -337,7 +336,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert len(df.loc[df.is_alive & (df.ce_hpv_cc_status != 'none')]) > 0
 
     # check that some people have died of cervical cancer
-    yll = sim.modules['HealthBurden'].years_life_lost
+    # yll = sim.modules['HealthBurden'].years_life_lost
 #   todo: find out why this assert fails - I don't think it is a problem in cervical_cancer.py
 #   assert yll['CervicalCancer'].sum() > 0
 
@@ -432,13 +431,13 @@ def test_screening_age_conditions(seed):
 
     # If have HIV, screening 25+
     hv_screened = df.loc[
-        (df["hv_diagnosed"] == True) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+        (df["hv_diagnosed"] is True) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
     ]
     assert (hv_screened.dropna() >= 25).all(), "Some individuals diagnosed with HIV were screened below age 25."
 
     # If have HIV, screening 30+
     hv_non_screened = df.loc[
-        (df["hv_diagnosed"] == False) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+        (df["hv_diagnosed"] is False) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
     ]
     assert (hv_non_screened.dropna() >= 30).all(), "Some individuals without HIV were screened below age 30."
 
