@@ -735,8 +735,8 @@ plt.figure(figsize=(10, 8))
 sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
 # Customize the plot
-plt.xlabel('Scenarios')
-plt.ylabel(f'Facility Level')
+plt.xlabel('Facility Level')
+plt.ylabel(f'Program')
 plt.xticks(rotation=90)
 plt.yticks(rotation=0)
 
@@ -764,8 +764,8 @@ plt.figure(figsize=(10, 8))
 sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
 # Customize the plot
-plt.xlabel('Scenarios')
-plt.ylabel(f'Facility Level')
+plt.xlabel('Facility Level')
+plt.ylabel(f'Program')
 plt.xticks(rotation=90)
 plt.yticks(rotation=0)
 
