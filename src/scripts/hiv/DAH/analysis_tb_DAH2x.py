@@ -23,6 +23,7 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
+
     parse_log_file,
     summarize,
     unflatten_flattened_multi_index_in_logging,
@@ -35,10 +36,9 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 #resourcefilepath = Path(".\resources")
 outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
-
 #outputfilepath = Path("./outputs")
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-18T213939Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-20T151122Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -101,11 +101,34 @@ for draw in range(number_draws):
     # Assign draw and stat columns as MultiIndex
     pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
 
-    # Append to the main DataFrame
-    pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
+
+# Append to the main DataFrame
+pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
 pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
 # Print the DataFrame to Excel
 pyears_all.to_excel (outputfilepath / "pyears_all.xlsx")
+
+import pandas as pd
+
+# Check if the key 'cause' exists in the log data
+if "cause" in log["tlo.methods.demography"]:
+    tb_deaths = log["tlo.methods.demography"]["cause"]
+    # Ensure it's a pandas Series for filtering
+    if isinstance(tb_deaths , pd.Series):
+        filtered_data = tb_deaths [
+            tb_deaths.isin(["AIDS_non_TB", "AIDS_TB", "TB"])
+        ]
+        tb_deaths = filtered_data.reset_index()  # Reset index for cleaner Excel output
+        output_file_path = "filtered_deceased_persons.xlsx"
+        tb_deaths.to_excel(output_file_path, index=False)
+
+        print(f"Filtered data saved to {output_file_path}.")
+    else:
+        print("Error: 'cause' is not a pandas Series or is of unexpected type.")
+else:
+    print("Error: 'cause' key not found in log['tlo.methods.demography.detail'].")
+
+
 
 # Number of TB deaths and mortality rate
 results_deaths = extract_results(
