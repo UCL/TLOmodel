@@ -22,6 +22,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -200,8 +201,8 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(resourcefilepath / "ResourceFile_Prostate_Cancer.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(resourcefilepath / "ResourceFile_Prostate_Cancer",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
@@ -255,7 +256,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         if pc_status_.sum():
             sum_probs = sum(p['init_prop_prostate_ca_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_prostate_ca_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['init_prop_prostate_ca_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[pc_status_, "pc_status"] = self.rng.choice(
                     [val for val in df.pc_status.cat.categories if val != 'none'],
@@ -304,7 +305,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             .when("none", 0.0)
             .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
             .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
-            .when("metastatic",  p['init_prop_urinary_symptoms_by_stage'][2])
+            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
         )
         has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -416,7 +417,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_local_ln_prostate_ca_undergone_curative_treatment']),
             Predictor('pc_status').when('prostate_confined', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['metastatic'] = LinearModel(
@@ -425,7 +426,7 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_metastatic_prostate_ca_undergone_curative_treatment']),
             Predictor('pc_status').when('local_ln', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of pc_status
@@ -729,9 +730,9 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         # todo: stratify by pc_status
         # Use a psa test to assess whether the person has prostate cancer:
         dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run='psa_for_prostate_cancer',
-                hsi_event=self
-            )
+            dx_tests_to_run='psa_for_prostate_cancer',
+            hsi_event=self
+        )
 
         # Check consumable availability
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
@@ -786,13 +787,13 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         if dx_result and cons_avail:
             # send for biopsy
             hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
+                hsi_event=HSI_ProstateCancer_Investigation_Following_psa_positive(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
             )
 
 
@@ -822,7 +823,7 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
 
         cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_biopsy_core'],
                                               optional_item_codes=self.module.item_codes_prostate_can[
-                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
+                                                  'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_available:
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy
@@ -1092,11 +1093,11 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: the .between function I think includes the two dates so events on these dates counted twice
         # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_prostate_confined = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'prostate_confined')).sum()
+            df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'prostate_confined')).sum()
         n_newly_diagnosed_local_ln = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'local_ln')).sum()
+            df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'local_ln')).sum()
         n_newly_diagnosed_metastatic = (
-                df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'metastatic')).sum()
+            df.pc_date_diagnosis.between(date_lastlog, date_now) & (df.pc_status == 'metastatic')).sum()
 
         n_diagnosed = (df.is_alive & ~pd.isnull(df.pc_date_diagnosis)).sum()
 

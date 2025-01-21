@@ -23,7 +23,11 @@ import squarify
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
-from tlo.util import create_age_range_lookup
+from tlo.util import (
+    create_age_range_lookup,
+    parse_csv_values_for_columns_with_mixed_datatypes,
+    read_csv_files,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -467,6 +471,9 @@ def summarize(
     if isinstance(output, pd.DataFrame):
         output = output.rename(columns={'central': 'mean'},
                                level=0 if output.columns.nlevels == 1 else 1)
+    else:
+        output.name = 'mean'  # rename the series to mean
+
     return output
 
 
@@ -1392,7 +1399,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
                 squeeze_single_col_df_to_series(
                     drop_extra_columns(
                         construct_multiindex_if_implied(
-                            pd.read_excel(workbook, sheet_name=sheet_name))))
+                            workbook[sheet_name])))
 
         elif isinstance(_value, str) and _value.startswith("["):
             # this looks like its intended to be a list
@@ -1400,11 +1407,11 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
         else:
             return _value
 
-    workbook = pd.ExcelFile(
-        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
+    workbook = read_csv_files(
+        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking', files=None)
 
     # Load the ResourceFile for the list of parameters that may change
-    mainsheet = pd.read_excel(workbook, sheet_name="main").set_index(['Module', 'Parameter'])
+    mainsheet = workbook['main'].set_index(['Module', 'Parameter'])
 
     # Select which columns for parameter changes to extract
     cols = []
@@ -1417,6 +1424,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     # Collect parameters that will be changed (collecting the first encountered non-NAN value)
     params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
                                       .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+    params_to_change = params_to_change.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     # Convert to dictionary
     params = defaultdict(lambda: defaultdict(dict))

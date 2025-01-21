@@ -36,6 +36,7 @@ from tlo.methods.hsi_event import (
     HSIEventQueueItem,
     HSIEventWrapper,
 )
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -578,16 +579,16 @@ class HealthSystem(Module):
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
-        self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
-                                                         'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
-                                                         sheet_name=None)
+        self.parameters['priority_rank'] = read_csv_files(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
+                                                         'ResourceFile_PriorityRanking_ALLPOLICIES',
+                                                         files=None)
 
-        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_HR_scaling_by_level_and_officer_type.xlsx",
-            sheet_name=None  # all sheets read in
+            "ResourceFile_HR_scaling_by_level_and_officer_type",
+            files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling to be considered in included in the tables loaded
         assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
@@ -595,23 +596,23 @@ class HealthSystem(Module):
             (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
              f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}")
 
-        self.parameters['HR_scaling_by_district_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_district_table']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_HR_scaling_by_district.xlsx",
-            sheet_name=None  # all sheets read in
+            "ResourceFile_HR_scaling_by_district",
+            files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling by district to be considered in included in the tables loaded
         assert self.parameters['HR_scaling_by_district_mode'] in self.parameters['HR_scaling_by_district_table'], \
             f"Value of `HR_scaling_by_district_mode` not recognised: {self.parameters['HR_scaling_by_district_mode']}"
 
-        self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
+        self.parameters['yearly_HR_scaling']: Dict = read_csv_files(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_dynamic_HR_scaling.xlsx",
-            sheet_name=None,  # all sheets read in
+            "ResourceFile_dynamic_HR_scaling",
+            files=None,  # all sheets read in
             dtype={
                 'year': int,
                 'dynamic_HR_scaling_factor': float,

@@ -90,6 +90,13 @@ Each of the subcommands of ``tlo`` has a ``--help`` flag for further information
 *Submit scenario to Azure Batch*::
 
     tlo batch-submit src/scripts/dev/tlo_q1_demo.py
+    
+.. note:: **Behaviour of assert statements**
+
+   Scenario runs submitted with ``tlo batch-submit`` will by default run with any assert statements disabled.
+   Typically, these are used for checking correctness of code in tests and local runs but as they add some overhead, 
+   we can get a useful speed-up by disabling them on longer jobs. 
+   To run jobs with assertions enabled pass the ``--asserts-on`` flag` to ``tlo batch-submit``.
 
 *List jobs currently on Azure Batch where id contains "tamuri"*::
 

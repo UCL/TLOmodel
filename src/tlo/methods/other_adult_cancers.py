@@ -22,6 +22,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -216,8 +217,8 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(resourcefilepath / "ResourceFile_Other_Adult_Cancers.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(resourcefilepath / "ResourceFile_Other_Adult_Cancers",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
@@ -261,7 +262,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         if sum(oac_status_):
             sum_probs = sum(p['in_prop_other_adult_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['in_prop_other_adult_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['in_prop_other_adult_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[oac_status_, "oac_status"] = self.rng.choice(
                     [val for val in df.oac_status.cat.categories if val != 'none'],
@@ -423,7 +424,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_local_ln_other_adult_ca_undergone_curative_treatment']),
             Predictor('oac_status').when('site_confined', 1.0)
-                                   .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['metastatic'] = LinearModel(
@@ -432,7 +433,7 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_metastatic_undergone_curative_treatment']),
             Predictor('oac_status').when('local_ln', 1.0)
-                                   .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of oac_status
@@ -468,12 +469,12 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         # 'early_other_adult_ca_symptom'.
         # todo: note dependent on underlying status not symptoms + add for other stages
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-             diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
+            diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
                 property='oac_status',
                 sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_'
                                             'adult_ca_site_confined'],
                 target_categories=["site_confined", "local_ln", "metastatic"]
-             )
+            )
         )
 
         # ----- DISABILITY-WEIGHT -----
@@ -554,9 +555,9 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons.loc[
             (
                 ~pd.isnull(df.oac_date_treatment) & (
-                    (df.oac_status == "site_confined") |
-                    (df.oac_status == "local_ln")
-                ) & (df.oac_status == df.oac_stage_at_which_treatment_given)
+                (df.oac_status == "site_confined") |
+                (df.oac_status == "local_ln")
+            ) & (df.oac_status == df.oac_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['site_confined_local_ln_treated']
 
@@ -651,7 +652,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                    InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
             )
         df.loc[selected_to_die, 'oac_date_death'] = self.sim.date
 
@@ -668,6 +669,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
     treatment or palliative care.
     It is for people with the symptom other_adult_ca_symptom.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -974,11 +976,11 @@ class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: the .between function I think includes the two dates so events on these dates counted twice
         # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_site_confined = (
-                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'site_confined1')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'site_confined1')).sum()
         n_newly_diagnosed_local_ln = (
-                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'local_ln')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'local_ln')).sum()
         n_newly_diagnosed_metastatic = (
-                df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'metastatic')).sum()
+            df.oac_date_diagnosis.between(date_lastlog, date_now) & (df.oac_status == 'metastatic')).sum()
 
         n_sy_early_other_adult_ca_symptom = (df.is_alive & (df.sy_early_other_adult_ca_symptom >= 1)).sum()
 

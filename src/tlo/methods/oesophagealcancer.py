@@ -24,6 +24,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -216,8 +217,8 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         """Setup parameters used by the module, register it with healthsystem and register symptoms"""
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(resourcefilepath / "ResourceFile_Oesophageal_Cancer.xlsx",
-                          sheet_name="parameter_values")
+            read_csv_files(resourcefilepath / "ResourceFile_Oesophageal_Cancer",
+                           files="parameter_values")
         )
 
         # Register Symptom that this module will use
@@ -394,7 +395,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_low_grade_dysplasia_none_ex_alc']),
             Predictor('oc_status').when('none', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['high_grade_dysplasia'] = LinearModel(
@@ -403,7 +404,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_high_grade_dysp_undergone_curative_treatment']),
             Predictor('oc_status').when('low_grade_dysplasia', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage1'] = LinearModel(
@@ -412,7 +413,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
             Predictor('oc_status').when('high_grade_dysplasia', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage2'] = LinearModel(
@@ -421,7 +422,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
             Predictor('oc_status').when('stage1', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage3'] = LinearModel(
@@ -430,7 +431,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
             Predictor('oc_status').when('stage2', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         lm['stage4'] = LinearModel(
@@ -439,7 +440,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
             Predictor('oc_status').when('stage3', 1.0)
-                                  .otherwise(0.0)
+            .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of oc_status
@@ -559,7 +560,7 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
                 (df.oc_status == "stage2") |
                 (df.oc_status == "stage3")
             ) & (df.oc_status == df.oc_stage_at_which_treatment_applied)
-            )
+             )
         ] = self.daly_wts['stage_1_3_treated']
 
         # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
