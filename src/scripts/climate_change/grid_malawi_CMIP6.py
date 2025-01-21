@@ -82,7 +82,6 @@ for scenario in scenarios:
         pr_data = data_per_model.variables['pr'][:]  # in kg m-2 s-1 = mm s-1 x 86400 to get to day
         lat_data = data_per_model.variables['lat'][:]
         long_data = data_per_model.variables['lon'][:]
-        print(colors(idx))
         for lon in long_data:
             ax.axvline(x=lon, color=colors(idx), linestyle='--', linewidth=0.5)
         for lat in lat_data:
@@ -93,7 +92,7 @@ for scenario in scenarios:
         ax.set_ylabel('Latitude')
 
 
-#plt.show()
+plt.show()
 
 # Add in facility information
 
@@ -104,7 +103,7 @@ expanded_facility_info = pd.read_csv(
 
 long_format = expanded_facility_info.T.reset_index()
 long_format.columns = [
-    'Facility', 'Zonename', 'Resid', 'A105', 'A109__Altitude', 'Ftype',
+    'Facility', 'Zonename', 'Dist', 'Resid', 'A105', 'A109__Altitude', 'Ftype',
     'A109__Latitude', 'A109__Longitude', 'minimum_distance', 'average_precipitation'
 ]
 
