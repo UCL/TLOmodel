@@ -900,6 +900,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 
     # Error bars
     lower_bounds = pivot_mean.sum(axis=1) - pivot_lower.sum(axis=1)
+    lower_bounds[lower_bounds<0] = 0
     upper_bounds = pivot_upper.sum(axis=1) - pivot_mean.sum(axis=1)
 
     if _cost_category == 'all':
@@ -986,6 +987,12 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
     # Save the plot with tight layout
     plt.tight_layout(pad=2.0)  # Ensure there is enough space for the legend
     plt.subplots_adjust(right=0.8) # Adjust to ensure legend doesn't overlap
+
+    # Add gridlines and border
+    plt.grid(visible=True, which='major', linestyle='--', linewidth=0.5, color='gray')
+    #plt.rcParams['figure.facecolor'] = 'white'
+    plt.rcParams['figure.edgecolor'] = 'gray'
+    plt.rcParams['figure.frameon'] = True
 
     plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
     plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}{_add_figname_suffix}.png', dpi=100,
@@ -1113,6 +1120,8 @@ def do_line_plot_of_cost(_df, _cost_category='all',
         period = f"{min(_year)} - {max(_year)}"
 
     # Set labels, legend, and title
+    # Add gridlines and border
+    plt.grid(visible=True, which='major', linestyle='--', linewidth=0.5, color='gray')
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
     plt.legend(handles[::-1], sorted_labels[::-1], bbox_to_anchor=(1.05, 1), loc='upper left')
