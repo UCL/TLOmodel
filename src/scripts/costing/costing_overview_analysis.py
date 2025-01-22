@@ -73,6 +73,7 @@ cost_scenarios = {0: "Actual", 3: "Expanded HRH", 5: "Improved consumable availa
 
 # Costing parameters
 discount_rate = 0.03
+discount_rate_lomas = -0.0079
 
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
@@ -86,6 +87,11 @@ input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, reso
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = 0, summarize = True)
 input_costs_undiscounted = input_costs_undiscounted[(input_costs_undiscounted.year > 2022) & (input_costs_undiscounted.year < 2031)]
+
+input_costs_variable_discounting = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
+                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _discount_rate = discount_rate_lomas, summarize = True)
+input_costs_variable_discounting = input_costs_variable_discounting[(input_costs_variable_discounting.year > 2022) & (input_costs_variable_discounting.year < 2031)]
 
 # _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
 
@@ -130,6 +136,24 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'all
                                         _year = list_of_years_for_plot,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 
+revised_consumable_subcategories = {'cost_of_separately_managed_medical_supplies_dispensed':'cost_of_consumables_dispensed', 'cost_of_excess_separately_managed_medical_supplies_stocked': 'cost_of_excess_consumables_stocked', 'supply_chain':'supply_chain'}
+input_costs_new = input_costs.copy()
+input_costs_new['cost_subcategory'] = input_costs_new['cost_subcategory'].map(revised_consumable_subcategories).fillna(input_costs_new['cost_subcategory'])
+
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_new, _cost_category = 'medical consumables', _disaggregate_by_subgroup = False,
+                                        _year = list_of_years_for_plot,
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _disaggregate_by_subgroup = False,
+                                        _year = list_of_years_for_plot,
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _disaggregate_by_subgroup = False,
+                                        _year = list_of_years_for_plot,
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'facility operating cost', _disaggregate_by_subgroup = False,
+                                        _year = list_of_years_for_plot,
+                                        _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
+
+
 # Figure 2: Estimated costs by year
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          _year=list_of_years_for_plot, _draws= [0],
@@ -160,6 +184,15 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs_undiscounted,
                                         _add_figname_suffix = '_UNDISCOUNTED')
 
 # Figure 5: Total cost by scenario applying changing discount rates
+# Figure 4: Total cost by scenario assuming 0% discount rate
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_variable_discounting,
+                                        _cost_category = 'all',
+                                        _year=list_of_years_for_plot,
+                                        _disaggregate_by_subgroup = False,
+                                        _outputfilepath = figurespath,
+                                        _scenario_dict = cost_scenarios,
+                                        _add_figname_suffix = '_VARIABLE_DISCOUNTING')
+
 
 cost_categories = ['human resources for health', 'medical consumables',
        'medical equipment', 'facility operating cost']
@@ -229,7 +262,7 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
     # Convert to LaTeX format with horizontal lines after every row
     latex_table = table_data.to_latex(
         longtable=_longtable,  # Use the longtable environment for large tables
-        column_format='|R{4cm}|R{5cm}|R{3.5cm}|R{3.5cm}|R{3.5cm}|R{3.5cm}|',
+        column_format='|R{3cm}|R{3cm}|R{2.2cm}|R{2.2cm}|R{2.2cm}|R{2.2cm}|',
         caption=f"Summarized Costs by Category and {_groupby_var_name}",
         label=f"tab:cost_by_{_groupby_var}",
         position="h",
