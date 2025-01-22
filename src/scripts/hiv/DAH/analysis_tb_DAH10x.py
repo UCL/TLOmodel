@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-#python src/scripts/hiv/DAH/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+#python src/scripts/hiv/DAH/analysis_tb_DAH10x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
 # to parse files use: tlo parse-log outputs/filename/x/y where and the x and y rep number of draws and runs
 #from matplotlib.ticker import FuncFormatter
 #import squarify
@@ -52,7 +52,7 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.DAH.tb_DAH_scenarios2x import ImpactOfTbDaH04
+    from scripts.hiv.DAH.tb_DAH_scenarios10x import ImpactOfTbDaH04
     e = ImpactOfTbDaH04()
     return tuple(e._scenarios.keys())
 
@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--results-path",
         type=Path,
-        help="Directory containing results from running src/scripts/hiv/DAH/tb_DAH_scenarios2x.py",
+        help="Directory containing results from running src/scripts/hiv/DAH/tb_DAH_scenarios10x.py",
         default=None,
         required=False
     )
