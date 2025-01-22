@@ -518,5 +518,34 @@ with pd.ExcelWriter(results_folder / 'full_deaths_by_age.xlsx') as writer:
 
 # -----------------------------------------------------------------------------------
 # DALYS AVERTED
+TARGET_PERIOD = (Date(2021, 1, 1), Date(2050, 12, 31))
 
 
+def get_num_dalys_by_year(_df):
+    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+    results from runs that crashed mid-way through the simulation.
+    """
+    years_needed = [i.year for i in TARGET_PERIOD]
+    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*years_needed)]
+        .drop(columns=['date', 'sex', 'age_range'])
+        .groupby(['year']).sum().stack()
+    )
+
+
+num_dalys_by_year = summarize(extract_results(
+    results_folder,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=get_num_dalys_by_year,
+    do_scaling=True
+),
+    only_mean=True)
+
+
+aids_dalys = num_dalys_by_year[num_dalys_by_year.index.get_level_values(1) == 'AIDS']
+
+# need to get number DALYs averted compared to minimal scenario
