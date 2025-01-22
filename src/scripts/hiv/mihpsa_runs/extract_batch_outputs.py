@@ -133,6 +133,7 @@ for stock in stock_variables:
         collapse_columns=False,
         only_mean=True
     )
+    result = result[result.index.year >= 2021]
 
     for draw in result.columns:
         if draw not in stocks_output:
@@ -140,13 +141,10 @@ for stock in stock_variables:
 
         stocks_output[draw][stock] = result[draw]
 
-with pd.ExcelWriter(results_folder/"stock_outputs_workbook.xlsx", engine='openpyxl') as writer:
+with pd.ExcelWriter(results_folder / "stock_outputs_workbook.xlsx", engine='openpyxl') as writer:
     # Iterate over the dictionary and write each DataFrame to a new sheet
     for draw, df in stocks_output.items():
-        print(df)
         df = df.T  # Switch rows and columns
-        print(df)
-
         # Writing each draw's DataFrame to a new sheet named after the draw
         df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
 
@@ -166,6 +164,7 @@ for flow in flow_variables:
         collapse_columns=False,
         only_mean=True
     )
+    result = result[result.index.year >= 2021]
 
     for draw in result.columns:
         if draw not in flows_output:
@@ -173,18 +172,15 @@ for flow in flow_variables:
 
         flows_output[draw][flow] = result[draw]
 
-# Output the stocks_output dict to an Excel workbook
-with pd.ExcelWriter(results_folder / 'stocks_output.xlsx') as writer:
-    for sheet_name, df in stocks_output.items():
-        df.to_excel(writer, sheet_name=str(sheet_name))
-
 with pd.ExcelWriter(results_folder / 'flows_output.xlsx') as writer:
     for sheet_name, df in flows_output.items():
+        df = df.T
         df.to_excel(writer, sheet_name=str(sheet_name))
 
-# EXTRACT DEATHS
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2050, 12, 31))
 
+# -----------------------------------------------------------------------------------
+
+# EXTRACT DEATHS
 
 def summarise_deaths(results_folder,
                                    label=None, age=None, sex=None):
@@ -199,11 +195,12 @@ def summarise_deaths(results_folder,
         key="death",
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "label"])["person_id"].count()
+                ["year", "label", "age", "sex"])["person_id"].count()
         ),
         do_scaling=True,
     )
     # removes multi-index
+    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2021]
     results_deaths = results_deaths.reset_index()
 
     # select only cause specified
@@ -226,10 +223,17 @@ def summarise_deaths(results_folder,
         tmp = tmp.loc[tmp.sex == 'F']
 
     # group deaths by year
-    tmp = pd.DataFrame(tmp.groupby(["year"]).sum())
+    # Identify only the draw/run columns (MultiIndex level names as numeric)
+    draw_run_columns = [col for col in tmp.columns if isinstance(col[0], int)]
+
+    # Group by year and sum only the draw/run columns
+    summed_results = tmp.groupby('year')[draw_run_columns].sum()
+
+    # Reset the index so 'year' becomes a regular column
+    summed_results = summed_results.reset_index()
 
     # get mean for each draw
-    mean_deaths = pd.concat({'mean': tmp.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+    mean_deaths = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
 
     return mean_deaths
 
@@ -243,495 +247,276 @@ aids_deaths_men = summarise_deaths(results_folder,
                                                  age='adult',
                                                  sex='M')
 
-
-
-
-
-
-
-
-
-#
-# def get_aids_deaths_children(_df):
-#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-#     df returned: series with rows for each draw, values are total counts.
-#     """
-#     # Filter for label "AIDS" and age less than 15 within the TARGET_PERIOD
-#     filtered_df = _df.loc[
-#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-#         (_df['label'] == 'AIDS') &
-#         (_df['age'] < 15)
-#         ]
-#
-#     # Group by the 'draw' column (assuming 'draw' is part of the DataFrame) and count the deaths
-#     return filtered_df.groupby('label').size()
-#
-#
-# aids_deaths_children = summarize(
-#     extract_results(
-#         results_folder,
-#         module='tlo.methods.demography',
-#         key='death',
-#         custom_generate_series=get_aids_deaths_children,
-#         do_scaling=True
-#     ),
-#     collapse_columns=False,
-#     only_mean=True
-# )
-#
-#
-# def get_aids_deaths_men(_df):
-#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-#     df returned: single count value, not grouped by COD.
-#     """
-#     # Filter for label "AIDS" and age less than 15
-#     filtered_df = _df.loc[
-#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-#         (_df['label'] == 'AIDS') &
-#         (_df['age'] >= 15) &
-#         (_df['sex'] == 'M')
-#         ]
-#
-#     # Return the count of relevant deaths
-#     return filtered_df.shape[0]  # This gives the total number of deaths
-#
-#
-# aids_deaths_men = summarize(
-#     extract_results(
-#         results_folder,
-#         module='tlo.methods.demography',
-#         key='death',
-#         custom_generate_series=get_aids_deaths_men,
-#         do_scaling=True
-#     ),
-#     collapse_columns=False,
-#     only_mean=True
-# )
-#
-#
-# def get_aids_deaths_women(_df):
-#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-#     df returned: single count value, not grouped by COD.
-#     """
-#     # Filter for label "AIDS" and age less than 15
-#     filtered_df = _df.loc[
-#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-#         (_df['label'] == 'AIDS') &
-#         (_df['age'] >= 15) &
-#         (_df['sex'] == 'F')
-#         ]
-#
-#     # Return the count of relevant deaths
-#     return filtered_df.shape[0]  # This gives the total number of deaths
-#
-#
-# aids_deaths_women = summarize(
-#     extract_results(
-#         results_folder,
-#         module='tlo.methods.demography',
-#         key='death',
-#         custom_generate_series=get_aids_deaths_women,
-#         do_scaling=True
-#     ),
-#     collapse_columns=False,
-#     only_mean=True
-# )
-#
-#
-# def get_all_deaths_children(_df):
-#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-#     df returned: single count value, not grouped by COD.
-#     """
-#     # Filter for label "AIDS" and age less than 15
-#     filtered_df = _df.loc[
-#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-#         (_df['age'] < 15)
-#         ]
-#
-#     # Return the count of relevant deaths
-#     return filtered_df.shape[0]  # This gives the total number of deaths
-#
-#
-# all_deaths_children = summarize(
-#     extract_results(
-#         results_folder,
-#         module='tlo.methods.demography',
-#         key='death',
-#         custom_generate_series=get_all_deaths_children,
-#         do_scaling=True
-#     ),
-#     collapse_columns=False,
-#     only_mean=True
-# )
-#
-#
-# def get_all_deaths_men(_df):
-#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-#     df returned: single count value, not grouped by COD.
-#     """
-#     # Filter for label "AIDS" and age less than 15
-#     filtered_df = _df.loc[
-#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-#         (_df['age'] >= 15) &
-#         (_df['sex'] == 'M')
-#         ]
-#
-#     # Return the count of relevant deaths
-#     return filtered_df.shape[0]  # This gives the total number of deaths
-#
-#
-# all_deaths_men = summarize(
-#     extract_results(
-#         results_folder,
-#         module='tlo.methods.demography',
-#         key='death',
-#         custom_generate_series=get_all_deaths_men,
-#         do_scaling=True
-#     ),
-#     collapse_columns=False,
-#     only_mean=True
-# )
-#
-#
-# def get_all_deaths_women(_df):
-#     """Return total number of deaths where label='AIDS' and age<15 within the TARGET_PERIOD.
-#     df returned: single count value, not grouped by COD.
-#     """
-#     # Filter for label "AIDS" and age less than 15
-#     filtered_df = _df.loc[
-#         (pd.to_datetime(_df.date).between(*TARGET_PERIOD)) &
-#         (_df['age'] >= 15) &
-#         (_df['sex'] == 'F')
-#         ]
-#
-#     # Return the count of relevant deaths
-#     return filtered_df.shape[0]  # This gives the total number of deaths
-#
-#
-# all_deaths_women = summarize(
-#     extract_results(
-#         results_folder,
-#         module='tlo.methods.demography',
-#         key='death',
-#         custom_generate_series=get_all_deaths_women,
-#         do_scaling=True
-#     ),
-#     collapse_columns=False,
-#     only_mean=True
-# )
-#
-# # Create an empty dictionary to store dataframes for each draw
-# draws_data = {}
-#
-# # Store each category of death count in a single DataFrame
-# draws_data["aids_deaths_children"] = aids_deaths_children
-# draws_data["aids_deaths_men"] = aids_deaths_men
-# draws_data["aids_deaths_women"] = aids_deaths_women
-# draws_data["all_deaths_children"] = all_deaths_children
-# draws_data["all_deaths_men"] = all_deaths_men
-# draws_data["all_deaths_women"] = all_deaths_women
-#
-# # Prepare a dictionary for each draw (assuming 'aids_deaths_children', 'aids_deaths_men', etc., have multi-draw output)
-# combined_results = {}
-#
-# # Combine the data for each draw by matching the index of each category
-# for draw_number in range(1, len(aids_deaths_children.columns) + 1):
-#     draw_data = {}
-#     for category, df in draws_data.items():
-#         # Select the column for the current draw number (e.g., 1, 2, 3, etc.)
-#         draw_data[category] = df[draw_number]
-#
-#     # Store the data for this draw in the combined_results dictionary
-#     combined_results[draw_number] = pd.DataFrame(draw_data)
-#
-# # Output the combined results into an Excel file with one sheet per draw
-# with pd.ExcelWriter('death_counts_by_draw.xlsx') as writer:
-#     for draw_number, df in combined_results.items():
-#         sheet_name = str(draw_number)  # Use the draw number as the sheet name
-#         df.to_excel(writer, sheet_name=sheet_name)
-
-# %% extract results
-# Load and format model results (with year as integer):
-
-# extract the dataframe for stock variables for each run
-# find mean
-# scale to full population size
-
-log0 = load_pickled_dataframes(results_folder, draw=0, run=0)
-log1 = load_pickled_dataframes(results_folder, draw=0, run=1)
-log2 = load_pickled_dataframes(results_folder, draw=0, run=2)
-
-stock0 = log0['tlo.methods.hiv']['stock_variables'].iloc[:, 1:]
-stock1 = log1['tlo.methods.hiv']['stock_variables'].iloc[:, 1:]
-stock2 = log2['tlo.methods.hiv']['stock_variables'].iloc[:, 1:]
-
-mean_values = ((stock0 + stock1 + stock2) / 3) * scaling_factor
-mean_values_rounded = mean_values.round().astype(int)
-mean_values_rounded.index = log0['tlo.methods.hiv']['stock_variables']['date']
-df = mean_values_rounded[stock_variables]  # reorder columns
-df.to_csv(outputspath / 'MIHPSA_Aug2024/mihpsa_stock_FULL.csv')
-
-flow0 = log0['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
-flow1 = log1['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
-flow2 = log2['tlo.methods.hiv']['flow_variables'].iloc[:, 1:]
-
-mean_values = ((flow0 + flow1 + flow2) / 3) * scaling_factor
-mean_values_rounded = mean_values.round().astype(int)
-mean_values_rounded.index = log0['tlo.methods.hiv']['stock_variables']['date']
-df = mean_values_rounded[flow_variables]  # reorder columns
-df.to_csv(outputspath / 'MIHPSA_Aug2024/mihpsa_flow_FULL.csv')
-
-
-# ------------------------------------------------------------------------------
-# %% extract deaths  and scale to population size
-
-
-def get_child_hiv_deaths(log, scaling_factor):
-    deaths = log['tlo.methods.demography']['death']
-    deaths['date'] = pd.to_datetime(deaths['date'])
-    deaths['year'] = deaths['date'].dt.year
-
-    # Create new column adult=true/false
-    deaths['adult'] = deaths['age'] > 14
-    deaths['adult'] = deaths['adult'].astype(bool)
-
-    # Filter for HIV deaths
-    deaths_hiv = deaths[deaths['label'] == 'AIDS']
-
-    # Get HIV deaths, child
-    result_hiv = deaths_hiv[deaths_hiv['adult'] == False].groupby('year').size().reset_index(name='count')
-    result_hiv["count"] = (result_hiv["count"] * scaling_factor).astype(int)
-
-    return result_hiv
-
-
-def mean_child_hiv_deaths(log0, log1, log2, scaling_factor):
-    # Process each log file
-    df1 = get_child_hiv_deaths(log0, scaling_factor)
-    df2 = get_child_hiv_deaths(log1, scaling_factor)
-    df3 = get_child_hiv_deaths(log2, scaling_factor)
-
-    # Merge dataframes on 'year' and compute the mean counts
-    merged_df = df1.merge(df2, on='year', suffixes=('_1', '_2')).merge(df3, on='year')
-    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
-
-    # Select relevant columns
-    mean_counts_df = merged_df[['year', 'mean_count']]
-
-    return mean_counts_df
-
-
-child_hiv_deaths = mean_child_hiv_deaths(log0, log1, log2, scaling_factor)
-child_hiv_deaths = child_hiv_deaths.round().astype(int)
-child_hiv_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_child_hiv_deaths.csv')
-
-
-def get_adult_hiv_deaths(log, scaling_factor):
-    deaths = log['tlo.methods.demography']['death']
-    deaths['date'] = pd.to_datetime(deaths['date'])
-    deaths['year'] = deaths['date'].dt.year
-
-    # Create new column adult=true/false
-    deaths['adult'] = deaths['age'] > 14
-    deaths['adult'] = deaths['adult'].astype(bool)
-
-    # Filter for HIV deaths
-    deaths_hiv = deaths[deaths['label'] == 'AIDS']
-
-    # Get HIV deaths, child
-    result_hiv = deaths_hiv[deaths_hiv['adult'] == True].groupby(['year', 'sex']).size().reset_index()
-    result_hiv[0] = (result_hiv[0] * scaling_factor).astype(int)
-
-    return result_hiv
-
-
-def mean_adult_hiv_deaths(log0, log1, log2, scaling_factor):
-    # Process each log file
-    df1 = get_adult_hiv_deaths(log0, scaling_factor)
-    df2 = get_adult_hiv_deaths(log1, scaling_factor)
-    df3 = get_adult_hiv_deaths(log2, scaling_factor)
-
-    # Merge dataframes on 'year' and compute the mean counts
-    merged_df = df1.merge(df2, on=['year', 'sex'], suffixes=('_1', '_2')).merge(df3, on=['year', 'sex'])
-    merged_df['mean_count'] = merged_df[['0_1', '0_2', 0]].mean(axis=1)
-
-    # Select relevant columns
-    mean_counts_df = merged_df[['year', 'sex', 'mean_count']]
-
-    return mean_counts_df
-
-
-adult_hiv_deaths = mean_adult_hiv_deaths(log0, log1, log2, scaling_factor)
-adult_hiv_deaths["mean_count"] = adult_hiv_deaths["mean_count"].round().astype(int)
-adult_hiv_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_adult_hiv_deaths.csv')
-
-
-# ALL DEATHS
-def get_child_all_deaths(log, scaling_factor):
-    deaths = log['tlo.methods.demography']['death']
-    deaths['date'] = pd.to_datetime(deaths['date'])
-    deaths['year'] = deaths['date'].dt.year
-
-    # Create new column adult=true/false
-    deaths['adult'] = deaths['age'] > 14
-    deaths['adult'] = deaths['adult'].astype(bool)
-
-    # Get HIV deaths, child
-    result = deaths[deaths['adult'] == False].groupby('year').size().reset_index(name='count')
-    result["count"] = (result["count"] * scaling_factor).astype(int)
-
-    return result
-
-
-def mean_child_all_deaths(log0, log1, log2, scaling_factor):
-    # Process each log file
-    df1 = get_child_all_deaths(log0, scaling_factor)
-    df2 = get_child_all_deaths(log1, scaling_factor)
-    df3 = get_child_all_deaths(log2, scaling_factor)
-
-    # Merge dataframes on 'year' and compute the mean counts
-    merged_df = df1.merge(df2, on='year', suffixes=('_1', '_2')).merge(df3, on='year')
-    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
-
-    # Select relevant columns
-    mean_counts_df = merged_df[['year', 'mean_count']]
-
-    return mean_counts_df
-
-
-child_all_deaths = mean_child_all_deaths(log0, log1, log2, scaling_factor)
-child_all_deaths = child_all_deaths.round().astype(int)
-child_all_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_child_all_deaths.csv')
-
-
-def get_adult_all_deaths(log, scaling_factor):
-    deaths = log['tlo.methods.demography']['death']
-    deaths['date'] = pd.to_datetime(deaths['date'])
-    deaths['year'] = deaths['date'].dt.year
-
-    # Create new column adult=true/false
-    deaths['adult'] = deaths['age'] > 14
-    deaths['adult'] = deaths['adult'].astype(bool)
-
-    # Get HIV deaths, child
-    result = deaths[deaths['adult'] == True].groupby(['year', 'sex']).size().reset_index()
-    result[0] = (result[0] * scaling_factor).astype(int)
-
-    return result
-
-
-def mean_adult_all_deaths(log0, log1, log2, scaling_factor):
-    # Process each log file
-    df1 = get_adult_all_deaths(log0, scaling_factor)
-    df2 = get_adult_all_deaths(log1, scaling_factor)
-    df3 = get_adult_all_deaths(log2, scaling_factor)
-
-    # Merge dataframes on 'year' and compute the mean counts
-    merged_df = df1.merge(df2, on=['year', 'sex'], suffixes=('_1', '_2')).merge(df3, on=['year', 'sex'])
-    merged_df['mean_count'] = merged_df[['0_1', '0_2', 0]].mean(axis=1)
-
-    # Select relevant columns
-    mean_counts_df = merged_df[['year', 'sex', 'mean_count']]
-
-    return mean_counts_df
-
-
-adult_all_deaths = mean_adult_all_deaths(log0, log1, log2, scaling_factor)
-adult_all_deaths["mean_count"] = adult_all_deaths["mean_count"].round().astype(int)
-adult_all_deaths.to_csv(outputspath / 'MIHPSA_Aug2024/mean_adult_all_deaths.csv')
+aids_deaths_women = summarise_deaths(results_folder,
+                                                 label='AIDS',
+                                                 age='adult',
+                                                 sex='F')
+
+all_deaths_children = summarise_deaths(results_folder,
+                                                      label=None,
+                                                      age='children')
+
+all_deaths_men = summarise_deaths(results_folder,
+                                                 label=None,
+                                                 age='adult',
+                                                 sex='M')
+
+all_deaths_women = summarise_deaths(results_folder,
+                                                 label=None,
+                                                 age='adult',
+                                                 sex='F')
+
+# List of dataframes to include in the workbook
+dataframes = {
+    "aids_deaths_children": aids_deaths_children,
+    "aids_deaths_men": aids_deaths_men,
+    "aids_deaths_women": aids_deaths_women,
+    "all_deaths_children": all_deaths_children,
+    "all_deaths_men": all_deaths_men,
+    "all_deaths_women": all_deaths_women,
+}
+
+# Create a new Excel writer object
+with pd.ExcelWriter(results_folder / "summarised_deaths.xlsx") as writer:
+    # Iterate over draws (0 to 7)
+    for draw in range(8):
+        # Prepare data for the current draw
+        sheet_data = []
+        for name, df in dataframes.items():
+            # Extract the "mean" column for the current draw
+            row_data = [name] + df[(draw, "mean")].tolist()
+            sheet_data.append(row_data)
+
+        # Convert the sheet data to a DataFrame
+        sheet_df = pd.DataFrame(sheet_data)
+
+        # Write the DataFrame to the corresponding sheet
+        sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=False)
 
 
 # -----------------------------------------------------------------------------------
-
-def get_hiv_deaths_by_age(log, scaling_factor):
-    deaths = log['tlo.methods.demography']['death']
-    deaths['date'] = pd.to_datetime(deaths['date'])
-    deaths['year'] = deaths['date'].dt.year
-
-    # Filter for HIV deaths
-    deaths_hiv = deaths[deaths['label'] == 'AIDS']
-
-    # Get HIV deaths, child
-    result = deaths_hiv.groupby(['year', 'age', 'sex']).size().reset_index(name='count')
-    result["count"] = (result["count"] * scaling_factor).astype(int)
-
-    return result
+# HIV TESTS
 
 
-def mean_hiv_deaths_all_ages(log0, log1, log2, scaling_factor):
-    # Process each log file
-    df1 = get_hiv_deaths_by_age(log0, scaling_factor)
-    df2 = get_hiv_deaths_by_age(log1, scaling_factor)
-    df3 = get_hiv_deaths_by_age(log2, scaling_factor)
+def summarise_tests(results_folder, positive=None):
+    """ returns mean deaths for each year of the simulation
+    values are aggregated across the runs of each draw
+    for the specified cause
+    """
 
-    # Generate a complete index for the required years and ages
-    years = range(2010, 2051)
-    ages = list(range(0, 81)) + ['80+']
-    sexes = df1['sex'].unique()
+    results_tests = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_test",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "hiv_diagnosed", "adult"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
 
-    complete_index = pd.MultiIndex.from_product([years, ages, sexes], names=['year', 'age', 'sex'])
+    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2021]
+    results_tests = results_tests.loc[results_tests.index.get_level_values('adult') == True]
 
-    # Reindex each dataframe to ensure all combinations are present
-    df1 = df1.set_index(['year', 'age', 'sex']).reindex(complete_index, fill_value=0).reset_index()
-    df2 = df2.set_index(['year', 'age', 'sex']).reindex(complete_index, fill_value=0).reset_index()
-    df3 = df3.set_index(['year', 'age', 'sex']).reindex(complete_index, fill_value=0).reset_index()
+    if positive == 'YES':
+        results_tests = results_tests.loc[results_tests.index.get_level_values('hiv_diagnosed') == True]
+    else:
+        results_tests = results_tests.loc[results_tests.index.get_level_values('hiv_diagnosed') == False]
 
-    # Merge dataframes on 'year' and compute the mean counts
-    merged_df = df1.merge(df2, on=['year', 'age', 'sex'], suffixes=('_1', '_2')).merge(df3, on=['year', 'age', 'sex'])
-    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
+    summed_results = results_tests.groupby('year').sum()
+    # Reset the index so 'year' becomes a regular column
+    summed_results = summed_results.reset_index()
 
-    # Select relevant columns
-    mean_counts_df = merged_df[['year', 'age', 'sex', 'mean_count']]
+    # get mean for each draw
+    mean_tests = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
 
-    return mean_counts_df
+    return mean_tests
 
 
-hiv_deaths_all_ages = mean_hiv_deaths_all_ages(log0, log1, log2, scaling_factor)
-hiv_deaths_all_ages["mean_count"] = hiv_deaths_all_ages["mean_count"].round().astype(int)
-hiv_deaths_all_ages2021 = hiv_deaths_all_ages.loc[hiv_deaths_all_ages.year >= 2023]
-hiv_deaths_all_ages2021.to_csv(outputspath / 'MIHPSA_Aug2024/hiv_deaths_all_ages.csv')
+positive_tests = summarise_tests(results_folder, positive='YES')
+negative_tests = summarise_tests(results_folder, positive='NO')
+
+# List of dataframes to include in the workbook
+dataframes = {
+    "negative_tests": negative_tests,
+    "positive_tests": positive_tests,
+}
+
+# Create a new Excel writer object
+with pd.ExcelWriter(results_folder / "summarised_tests.xlsx") as writer:
+    # Iterate over draws (0 to 7)
+    for draw in range(8):
+        # Prepare data for the current draw
+        sheet_data = []
+        for name, df in dataframes.items():
+            # Extract the "mean" column for the current draw
+            row_data = [name] + df[(draw, "mean")].tolist()
+            sheet_data.append(row_data)
+
+        # Convert the sheet data to a DataFrame
+        sheet_df = pd.DataFrame(sheet_data)
+
+        # Write the DataFrame to the corresponding sheet
+        sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=False)
+
+
 
 
 # -----------------------------------------------------------------------------------
-
-def process_hiv_tests(log, scaling_factor):
-    # Convert 'datetime' column to datetime type
-    log_tests = log['tlo.methods.hiv']['hiv_test']
-    log_tests['date'] = pd.to_datetime(log_tests['date'])
-
-    # Filter for age 15 years and up
-    log_tests_filtered = log_tests[log_tests['adult'] == True]
-
-    # Extract year from the datetime column
-    log_tests_filtered['year'] = log_tests_filtered['date'].dt.year
-
-    # Group by 'hiv_status' and 'year', then count the number of entries
-    result1 = log_tests_filtered.groupby(['hiv_status', 'year']).size().reset_index(name='count')
-
-    # Scale to full population
-    result1['count'] = (result1['count'] * scaling_factor).astype(int)
-
-    return result1
+# VL TESTS
 
 
-def mean_hiv_tests(log0, log1, log2, scaling_factor):
-    # Process each log file
-    df1 = process_hiv_tests(log0, scaling_factor)
-    df2 = process_hiv_tests(log1, scaling_factor)
-    df3 = process_hiv_tests(log2, scaling_factor)
+def summarise_vl_tests(results_folder, adult=None):
+    """ returns mean deaths for each year of the simulation
+    values are aggregated across the runs of each draw
+    for the specified cause
+    """
 
-    # Merge dataframes on 'hiv_status' and 'year'
-    merged_df = df1.merge(df2, on=['hiv_status', 'year'], suffixes=('_1', '_2')).merge(df3, on=['hiv_status', 'year'])
+    results_tests = extract_results(
+        results_folder,
+        module="tlo.methods.hiv",
+        key="hiv_VLtest",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "adult"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
 
-    # Compute the mean of the 'count' columns
-    merged_df['mean_count'] = merged_df[['count_1', 'count_2', 'count']].mean(axis=1)
+    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2021]
 
-    # Select relevant columns
-    mean_counts_df = merged_df[['hiv_status', 'year', 'mean_count']]
+    if adult == 'YES':
+        results_tests = results_tests.loc[results_tests.index.get_level_values('adult') == True]
+    else:
+        results_tests = results_tests.loc[results_tests.index.get_level_values('adult') == False]
 
-    return mean_counts_df
+    summed_results = results_tests.groupby('year').sum()
+    # Reset the index so 'year' becomes a regular column
+    summed_results = summed_results.reset_index()
+
+    # get mean for each draw
+    mean_tests = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+
+    return mean_tests
 
 
-mean_tests_df = mean_hiv_tests(log0, log1, log2, scaling_factor)
-mean_tests_df["mean_count"] = mean_tests_df["mean_count"].round().astype(int)
-mean_tests_df.to_csv(outputspath / 'MIHPSA_Aug2024/mean_tests_df.csv')
+adult_tests = summarise_vl_tests(results_folder, adult='YES')
+child_tests = summarise_vl_tests(results_folder, adult='NO')
+
+# List of dataframes to include in the workbook
+dataframes = {
+    "adult_tests": adult_tests,
+    "child_tests": child_tests,
+}
+
+# Create a new Excel writer object
+with pd.ExcelWriter(results_folder / "summarised_VLtests.xlsx") as writer:
+    # Iterate over draws (0 to 7)
+    for draw in range(8):
+        # Prepare data for the current draw
+        sheet_data = []
+        for name, df in dataframes.items():
+            # Extract the "mean" column for the current draw
+            row_data = [name] + df[(draw, "mean")].tolist()
+            sheet_data.append(row_data)
+
+        # Convert the sheet data to a DataFrame
+        sheet_df = pd.DataFrame(sheet_data)
+
+        # Write the DataFrame to the corresponding sheet
+        sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=False)
+
+
+
+
+
+# -----------------------------------------------------------------------------------
+# EXTRACT DEATHS for YLL CALCULATION
+
+# TARGET_PERIOD = (Date(2023, 1, 1), Date(2050, 12, 31))
+
+
+def output_deaths_by_age(results_folder):
+    """ returns mean deaths for each year of the simulation
+    values are aggregated across the runs of each draw
+    for the specified cause
+    """
+
+    results_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "label", "age", "sex"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2023]
+
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+
+    tmp = results_deaths.loc[(results_deaths.label == 'AIDS')]
+    tmp['age'] = tmp['age'].apply(lambda x: '80+' if x >= 80 else x)
+
+    # Identify only the draw/run columns (MultiIndex level names as numeric)
+    draw_run_columns = [col for col in tmp.columns if isinstance(col[0], int)]
+
+    # Group by year and sum only the draw/run columns
+    summed_results = tmp.groupby(['age', 'sex', 'year'])[draw_run_columns].sum()
+
+    mean_by_draw = summed_results.groupby(level='draw', axis=1).mean()
+
+    return mean_by_draw
+
+
+full_deaths = output_deaths_by_age(results_folder)
+
+
+def transform_full_deaths(full_deaths):
+    # Reset index to use 'age', 'sex', and 'year' as columns
+    full_deaths_reset = full_deaths.reset_index()
+
+    # Pivot the data to have years as columns
+    draw_columns = full_deaths_reset.columns[3:]  # Assuming columns 0-3 are 'age', 'sex', 'year'
+    pivoted_data = full_deaths_reset.pivot_table(index=['age', 'sex'], columns='year', values=draw_columns)
+
+    # Flatten the multi-index and reset it for proper format
+    pivoted_data_reset = pivoted_data.reset_index()
+
+    pivoted_data_reset = pivoted_data_reset.sort_values(by=['sex', 'age'], ascending=[False, True])
+
+    # Select 'age' and 'sex' columns from pivoted_data_reset
+    age_sex_data = pivoted_data_reset[['age', 'sex']]
+
+    # Drop the multi-index levels from columns, but retain the column names 'age' and 'sex'
+    age_sex_data.columns = age_sex_data.columns.get_level_values(0)
+
+    # Now age_sex_data has no multi-index, and columns 'age' and 'sex' are retained
+
+    draw_dfs = {}
+
+    # Loop over the draw values (0 to 7)
+    for draw in range(8):
+
+        # Select the columns for the relevant 'draw' (i.e., multi-index columns for the given draw)
+        draw_columns_for_current_draw = pivoted_data_reset.columns[
+            pivoted_data_reset.columns.get_level_values(0) == draw]
+
+        # Concatenate the 'age' and 'sex' columns with the selected columns for the current draw
+        draw_dfs[draw] = pd.concat([age_sex_data, pivoted_data_reset[draw_columns_for_current_draw]], axis=1)
+
+    return draw_dfs
+
+
+draw_dfs = transform_full_deaths(full_deaths)
+
+with pd.ExcelWriter(results_folder / 'full_deaths_by_age.xlsx') as writer:
+    for sheet_name, df in draw_dfs.items():
+        df.to_excel(writer, sheet_name=str(sheet_name))
+
+# -----------------------------------------------------------------------------------
+# DALYS AVERTED
+
+
