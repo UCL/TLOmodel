@@ -2255,6 +2255,11 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
+        # Log the TREATMENT_ID before processing=added this bit
+        logger.debug(
+            key="TREATMENT_ID",
+            data=f"Applying HSI_Tb_Culture for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}",
+        )
 
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -2272,6 +2277,10 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
         if test_result:
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+            logger.info(
+                key="TREATMENT_ID",
+                data=f"Scheduling treatment for person {person_id} after positive culture result with TREATMENT_ID: {self.TREATMENT_ID}",
+            )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(
@@ -3004,7 +3013,6 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Deaths
 # ---------------------------------------------------------------------------
-
 class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
     """
     The scheduled hospitalisation and subsequent death for a tb case

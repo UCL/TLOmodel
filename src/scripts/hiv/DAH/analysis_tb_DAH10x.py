@@ -38,7 +38,7 @@ outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
 #outputfilepath = Path("./outputs")
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-21T195742Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-22T060720Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
