@@ -1503,8 +1503,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-            self.sim.modules["Tb"].scaleup_parameters["first_line_test"] = 'xpert'
-            self.sim.modules["Tb"].scaleup_parameters["second_line_test"] = 'sputum'
+            self.sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
+            self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
             return
 
         # sets availability of xpert to nil
@@ -1512,32 +1512,32 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-            self.sim.modules["Tb"].scaleup_parameters["first_line_test"] = 'sputum'
-            self.sim.modules["Tb"].scaleup_parameters["second_line_test"] = 'sputum'
+            self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
+            self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
 
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-           self.sim.modules["Tb"].scaleup_parameters["first_line_test"] = 'xpert'
-           self.sim.modules["Tb"].scaleup_parameters["second_line_test"] = 'sputum'
+           self.sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
+           self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
 
         #increases probability of accessing chest xray by 100% always available
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 1.0})
            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-           self.sim.modules["Tb"].scaleup_parameters["first_line_test"] = 'xpert'
-           self.sim.modules["Tb"].scaleup_parameters["second_line_test"] = 'sputum'
+           self.sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
+           self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
 
         # Introduce community Xray
         if scenario == 4:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"]=0.2
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-            self.sim.modules["Tb"].scaleup_parameters["first_line_test"] = 'xpert'
-            self.sim.modules["Tb"].scaleup_parameters["second_line_test"] = 'sputum'
+            self.sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
+            self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
 
 class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
     """ This event runs each month and calls three functions:
