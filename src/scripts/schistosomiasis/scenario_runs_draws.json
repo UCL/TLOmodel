@@ -1,8 +1,8 @@
 {
   "scenario_script_path": "src/scripts/schistosomiasis/scenario_runs.py",
-  "scenario_seed": 8379,
+  "scenario_seed": 46588,
   "arguments": [],
-  "runs_per_draw": 5,
+  "runs_per_draw": 2,
   "draws": [
     {
       "draw_number": 0,
@@ -26,88 +26,8 @@
         }
       },
       "draw_name": "0"
-    },
-    {
-      "draw_number": 1,
-      "parameters": {
-        "Schisto": {
-          "scaleup_WASH": 1.0,
-          "scaleup_WASH_start_year": 2024.0
-        }
-      },
-      "draw_name": "1"
-    },
-    {
-      "draw_number": 2,
-      "parameters": {
-        "Schisto": {
-          "mda_coverage": 0.8,
-          "mda_frequency_months": 12
-        }
-      },
-      "draw_name": "2"
-    },
-    {
-      "draw_number": 3,
-      "parameters": {
-        "Schisto": {
-          "mda_coverage": 0.8,
-          "mda_frequency_months": 12,
-          "scaleup_WASH": 1.0,
-          "scaleup_WASH_start_year": 2024.0
-        }
-      },
-      "draw_name": "3"
-    },
-    {
-      "draw_number": 4,
-      "parameters": {
-        "Schisto": {
-          "mda_coverage": 0.8,
-          "mda_frequency_months": 12,
-          "mda_target_group": "PSAC_SAC"
-        }
-      },
-      "draw_name": "4"
-    },
-    {
-      "draw_number": 5,
-      "parameters": {
-        "Schisto": {
-          "mda_coverage": 0.8,
-          "mda_frequency_months": 12,
-          "mda_target_group": "PSAC_SAC",
-          "scaleup_WASH": 1.0,
-          "scaleup_WASH_start_year": 2024.0
-        }
-      },
-      "draw_name": "5"
-    },
-    {
-      "draw_number": 6,
-      "parameters": {
-        "Schisto": {
-          "mda_coverage": 0.8,
-          "mda_frequency_months": 12,
-          "mda_target_group": "ALL"
-        }
-      },
-      "draw_name": "6"
-    },
-    {
-      "draw_number": 7,
-      "parameters": {
-        "Schisto": {
-          "mda_coverage": 0.8,
-          "mda_frequency_months": 12,
-          "mda_target_group": "ALL",
-          "scaleup_WASH": 1.0,
-          "scaleup_WASH_start_year": 2024.0
-        }
-      },
-      "draw_name": "7"
     }
   ],
-  "commit": "9d26a215192665e31b2a53d4a800feda301ebd0a",
-  "github": "https://github.com/UCL/TLOmodel/tree/9d26a215192665e31b2a53d4a800feda301ebd0a"
+  "commit": "3de5aebc89c2c22a31471521cc045ebab4da9f0a",
+  "github": "https://github.com/UCL/TLOmodel/tree/3de5aebc89c2c22a31471521cc045ebab4da9f0a"
 }
