@@ -868,7 +868,34 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # Screen eligible population
-        screen_population(year, p, eligible_population, df, rng, self.sim, self.module)
+        screening_methods = {
+            'VIA': {
+                'prob_key': 'prob_via_screen',
+                'event_class': HSI_CervicalCancer_AceticAcidScreening,
+                'selected_column': 'ce_selected_for_via_this_month'
+            },
+            'Xpert': {
+                'prob_key': 'prob_xpert_screen',
+                'event_class': HSI_CervicalCancer_XpertHPVScreening,
+                'selected_column': 'ce_selected_for_xpert_this_month'
+            }
+        }
+        selected_method = 'VIA' if year < p['transition_screening_year'] else 'Xpert'
+        method_info = screening_methods[selected_method]
+
+        # Randomly select for screening
+        df.loc[eligible_population, method_info['selected_column']] = (
+            rng.random(size=len(df[eligible_population])) < p[method_info['prob_key']]
+        )
+
+        # Schedule HSI events
+        for idx in df.index[df[method_info['selected_column']]]:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=method_info['event_class'](module=self.module, person_id=idx),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
 
 
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
