@@ -1165,7 +1165,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
                     df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
             # If individual has ce_hpv_cc_status stage1+, CIN treatment cannot be successful and individual will be sent for biopsy if biopsy has not been performed previously
-            elif (df.at[person_id, "ce_hpv_cc_status"] in hpv_stage_options) & (~df.at[person_id, "ce_biopsy"] is True):
+            elif (df.at[person_id, "ce_hpv_cc_status"] in hpv_stage_options) & (~df.at[person_id, "ce_biopsy"].eq(True)):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_Biopsy(
                         module=self.module,
@@ -1217,7 +1217,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
                     df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
             # If individual has ce_hpv_cc_status stage1+, CIN treatment cannot be successful and individual will be sent for biopsy if biopsy has not been performed previously
-            elif (df.at[person_id, "ce_hpv_cc_status"] in hpv_stage_options) & (~df.at[person_id, "ce_biopsy"] is True):
+            elif (df.at[person_id, "ce_hpv_cc_status"] in hpv_stage_options) & (~df.at[person_id, "ce_biopsy"].eq(True)):
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_Biopsy(
                         module=self.module,
@@ -1262,7 +1262,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "ce_biopsy"] = True
 
             # If biopsy confirms that individual does not have cervical cancer but CIN is detected, then individual is sent for CIN treatment
-            if (dx_result is False) and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
+            if (not dx_result) and (df.at[person_id, 'ce_hpv_cc_status'] in (hpv_cin_options) ):
                 perform_cin_procedure(self, year, p, person_id, self.sim.modules['HealthSystem'], self.module, self.sim)
 
             # If biopsy confirms that individual has cervical cancer, register diagnosis and either refer to treatment or palliative care
@@ -1584,7 +1584,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
         out.update({
-            'total_dead': len(df[df.is_alive is False])})
+            'total_dead': len(df[df['is_alive'].eq(False)])})
         out.update({
             'total_overall': len(df)})
 
@@ -1634,12 +1634,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (
                     (df['age_years'] > p['screening_min_age_hv_neg']) &
                     (df['age_years'] < p['screening_max_age_hv_neg']) &
-                    (df['hv_diagnosed'] is False)
+                    (df['hv_diagnosed'].eq(False))
                 ) |
                 (
                     (df['age_years'] > p['screening_min_age_hv_pos']) &
                     (df['age_years'] < p['screening_max_age_hv_pos']) &
-                    (df['hv_diagnosed'] is False)
+                    (df['hv_diagnosed'].eq(False))
                 )
             )
         ).sum()
@@ -1833,16 +1833,16 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 # comment out this code below only when running tests
 
-        with open(out_csv, "a", newline="") as csv_file:
-            # Create a CSV writer
-            csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
-
-            # If the file is empty, write the header
-            if csv_file.tell() == 0:
-                csv_writer.writeheader()
-
-            # Write the data to the CSV file
-            csv_writer.writerow(out)
+        # with open(out_csv, "a", newline="") as csv_file:
+        #     # Create a CSV writer
+        #     csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
+        #
+        #     # If the file is empty, write the header
+        #     if csv_file.tell() == 0:
+        #         csv_writer.writeheader()
+        #
+        #     # Write the data to the CSV file
+        #     csv_writer.writerow(out)
 
 #       print(out)
 

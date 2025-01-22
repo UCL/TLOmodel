@@ -182,7 +182,7 @@ def check_configuration_of_population(sim):
     assert not df.loc[df.age_years < 15].ce_cc_ever.any()
 
     # check that diagnosis and treatment is never applied to someone who has never had cancer:
-    assert pd.isnull(df.loc[df.ce_cc_ever is False, 'ce_date_palliative_care']).all()
+    assert df.loc[df['ce_cc_ever'].eq(False), 'ce_date_palliative_care'].isna().all()
 
     # check that treatment is never done for those with stage 4
     assert 0 == (df.ce_stage_at_which_treatment_given == 'stage4').sum()
@@ -431,13 +431,13 @@ def test_screening_age_conditions(seed):
 
     # If have HIV, screening 25+
     hv_screened = df.loc[
-        (df["hv_diagnosed"] is True) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+        (df["hv_diagnosed"].eq(True)) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
     ]
     assert (hv_screened.dropna() >= 25).all(), "Some individuals diagnosed with HIV were screened below age 25."
 
     # If have HIV, screening 30+
     hv_non_screened = df.loc[
-        (df["hv_diagnosed"] is False) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+        (df["hv_diagnosed"].eq(False)) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
     ]
     assert (hv_non_screened.dropna() >= 30).all(), "Some individuals without HIV were screened below age 30."
 
