@@ -13,7 +13,6 @@ consider in future making hpv acquisition risk depend on current prevalence of h
 
 from __future__ import annotations
 
-import csv
 from pathlib import Path
 from typing import TYPE_CHECKING, List
 
@@ -1829,7 +1828,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # comment out this below when running tests
 
         # Specify the file path for the CSV file
-        out_csv = Path("./outputs/output7_data.csv")
+        # out_csv = Path("./outputs/output7_data.csv")
 
 # comment out this code below only when running tests
 
