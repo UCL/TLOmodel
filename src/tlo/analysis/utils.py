@@ -954,6 +954,8 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Stroke': 'burlywood',
 
     'Cancer (Bladder)': 'deeppink',
+    'Cancer (Cervical)': 'mediumturquoise',
+
     'Cancer (Breast)': 'darkmagenta',
     'Cancer (Oesophagus)': 'mediumvioletred',
     'Cancer (Other)': 'crimson',
