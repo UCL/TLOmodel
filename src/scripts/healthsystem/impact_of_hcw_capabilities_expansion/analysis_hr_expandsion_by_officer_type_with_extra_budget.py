@@ -41,7 +41,7 @@ substitute_labels = {
     's_0': 'no_extra_budget_allocation',
     's_1': 'all_cadres_current_allocation',
     's_2': 'all_cadres_gap_allocation',
-    's_3': 'all_cadres_equal_allocation',
+    's_3': 'C = P = N&M = D = O',
     's_4': 'Clinical (C)', 's_5': 'DCSA (D)', 's_6': 'Nursing_and_Midwifery (N&M)', 's_7': 'Pharmacy (P)',
     's_8': 'Other (O)',
     's_9': 'C = D', 's_10': 'C = N&M', 's_11': 'C = P', 's_12': 'C = O', 's_13': 'N&M = D',
@@ -50,28 +50,85 @@ substitute_labels = {
     's_24': 'C = P = O', 's_25': 'P = N&M = D', 's_26': 'N&M = D = O', 's_27': 'P = D = O', 's_28': 'P = N&M = O',
     's_29': 'C = P = N&M = D', 's_30': 'C = N&M = D = O', 's_31': 'C = P = D = O', 's_32': 'C = P = N&M = O',
     's_33': 'P = N&M = D = O',
+    's_*': 'all_cadres_optimal_allocation'
 }
 
 # grouping causes of DALYs and types of treatments
-# cause_group = {
-#     'HIV':,
-#     'TB':,
-#     'malaria':,
-#     'RMNCH':,
-#     'NCDs':'',
-#     'Other':'',
-# }
-# treatment_group = {
-#     'HIV':,
-#     'TB':,
-#     'malaria':,
-#      'RMNCH':,
-#      'NCDs': ,
-#      'Other': ,
-# }
-# cause_group_color = {
-#
-# }
+cause_group = {
+    'AIDS': 'AIDS',
+    'TB (non-AIDS)': 'TB (non-AIDS)',
+    'Malaria': 'Malaria',
+    'Childhood Diarrhoea': 'RMNCH',
+    'Congenital birth defects': 'RMNCH',
+    'Lower respiratory infections': 'RMNCH',
+    'Maternal Disorders': 'RMNCH',
+    'Measles': 'RMNCH',
+    'Neonatal Disorders': 'RMNCH',
+    'Schistosomiasis': 'RMNCH',
+    'COPD': 'NCDs',
+    'Cancer (Bladder)': 'NCDs',
+    'Cancer (Breast)': 'NCDs',
+    'Cancer (Oesophagus)': 'NCDs',
+    'Cancer (Other)': 'NCDs',
+    'Cancer (Prostate)': 'NCDs',
+    'Depression / Self-harm': 'NCDs',
+    'Diabetes': 'NCDs',
+    'Epilepsy': 'NCDs',
+    'Heart Disease': 'NCDs',
+    'Kidney Disease': 'NCDs',
+    'Lower Back Pain': 'NCDs',
+    'Stroke': 'NCDs',
+    'Transport Injuries': 'Transport Injuries',
+    'Other': 'Other',
+}
+cause_group_color = {
+    'AIDS': 'deepskyblue',
+    'TB (non-AIDS)': 'mediumslateblue',
+    'Malaria': 'khaki',
+    'RMNCH': 'mediumaquamarine',
+    'NCDs': 'violet',
+    'Transport Injuries': 'lightsalmon',
+    'Other': 'dimgrey',
+}
+
+treatment_group = {
+    'Alri*': 'RMNCH',
+    'AntenatalCare*': 'RMNCH',
+    'BladderCancer*': 'NCDs',
+    'BreastCancer*': 'NCDs',
+    'CardioMetabolicDisorders*': 'NCDs',
+    'Contraception*': 'RMNCH',
+    'Copd*': 'NCDs',
+    'DeliveryCare*': 'RMNCH',
+    'Depression*': 'NCDs',
+    'Diarrhoea*': 'RMNCH',
+    'Epi*': 'RMNCH',
+    'Epilepsy*': 'NCDs',
+    'FirstAttendance*': 'First Attendance',
+    'Hiv*': 'AIDS',
+    'Inpatient*': 'Inpatient',
+    'Malaria*':	'Malaria',
+    'Measles*':	'RMNCH',
+    'OesophagealCancer*': 'NCDs',
+    'OtherAdultCancer*': 'NCDs',
+    'PostnatalCare*': 'RMNCH',
+    'ProstateCancer*': 'NCDs',
+    'Rti*': 'Transport Injuries',
+    'Schisto*': 'RMNCH',
+    'Tb*': 'TB (non-AIDS)',
+    'Undernutrition*': 'RMNCH',
+}
+treatment_group_color = {
+    'AIDS': 'deepskyblue',
+    'TB (non-AIDS)': 'mediumslateblue',
+    'Malaria': 'khaki',
+    'RMNCH': 'mediumaquamarine',
+    'NCDs': 'violet',
+    'Transport Injuries': 'lightsalmon',
+    'First Attendance': 'darkgrey',
+    'Inpatient': 'lightgrey',
+}
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None,
           the_target_period: Tuple[Date, Date] = None):
@@ -130,6 +187,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _df = _df.groupby(level=0).sum()
         return _df
 
+    def get_num_treatments_group(_df):
+        """Return the number of treatments by short treatment id (total within the TARGET_PERIOD)"""
+        _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
+        _df.index = _df.index.map(lambda x: x.split('_')[0] + "*")
+        _df = _df.rename(index=treatment_group)
+        _df = _df.groupby(level=0).sum()
+        return _df
+
     def get_num_treatments_total(_df):
         """Return the number of treatments in total of all treatments (total within the TARGET_PERIOD)"""
         _df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD), 'TREATMENT_ID'].apply(pd.Series).sum()
@@ -181,6 +246,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 .sum(axis=0)
                 )
 
+    def get_num_dalys_by_cause_group(_df):
+        """Return total number of DALYS by cause group (Stacked) (total within the TARGET_PERIOD).
+        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+        results from runs that crashed mid-way through the simulation).
+        """
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        _df = _df.rename(columns=cause_group)  # rename cause as cause group
+        _df = _df.groupby(_df.columns, axis=1).sum()  # group up causes in each cause group
+        return (_df
+                .loc[_df.year.between(*years_needed)].drop(columns=['date', 'year', 'li_wealth'])
+                .sum(axis=0)
+                )
+
     def set_param_names_as_column_index_level_0(_df):
         """Set the columns index (level 0) as the param_names."""
         ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
@@ -216,40 +295,44 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def scenario_grouping_coloring(by='effect'):
         if by == 'effect':  # based on DALYs averted/whether to  expand Clinical + Pharmacy
             grouping = {
-                'C & P & D/N&M/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32'},
+                'C & P & D/N&M/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32',
+                                         's_*'},
                 'C & D/N&M/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
                 'P & D/N&M/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
-                'D/N&M/O/None': {'s_5', 's_6', 's_8', 's_13', 's_15', 's_17', 's_26', 's_0'}
+                'D/O/None': {'s_5', 's_8', 's_15', 's_0'},
+                'N&M & D/O/None': {'s_6', 's_13', 's_17', 's_26'},
             }
             grouping_color = {
-                'D/N&M/O/None': 'lightpink',
+                'D/O/None': 'silver',
+                'N&M & D/O/None': 'lightpink',
                 'P & D/N&M/O/None': 'violet',
                 'C & D/N&M/O/None': 'darkorchid',
                 'C & P & D/N&M/O/None': 'darkturquoise',
             }
-        elif by == 'expansion':  # based on how many cadres are expanded
+        elif by == 'allocation':  # based on how many cadres are expanded
             grouping = {
-                'no_expansion': {'s_0'},
-                'all_cadres_equal_expansion': {'s_3'},
-                'all_cadres_gap_expansion': {'s_2'},
-                'all_cadres_current_expansion': {'s_1'},
-                'one_cadre_expansion': {'s_4', 's_5', 's_6', 's_7', 's_8'},
-                'two_cadres_equal_expansion': {'s_9', 's_10', 's_11', 's_12', 's_13',
-                                               's_14', 's_15', 's_16', 's_17', 's_18'},
-                'three_cadres_equal_expansion': {'s_19', 's_20', 's_21', 's_22', 's_23',
-                                                 's_24', 's_25', 's_26', 's_27', 's_28'},
-                'four_cadres_equal_expansion': {'s_29', 's_30', 's_31', 's_32', 's_33'}
+                'no_allocation': {'s_0'},
+                'all_cadres_equal_allocation': {'s_3'},
+                'all_cadres_gap_allocation': {'s_2'},
+                'all_cadres_current_allocation': {'s_1'},
+                'all_cadres_optimal_allocation': {'s_*'},
+                'one_cadre_allocation': {'s_4', 's_5', 's_6', 's_7', 's_8'},
+                'two_cadres_equal_allocation': {'s_9', 's_10', 's_11', 's_12', 's_13',
+                                                's_14', 's_15', 's_16', 's_17', 's_18'},
+                'three_cadres_equal_allocation': {'s_19', 's_20', 's_21', 's_22', 's_23',
+                                                  's_24', 's_25', 's_26', 's_27', 's_28'},
+                'four_cadres_equal_allocation': {'s_29', 's_30', 's_31', 's_32', 's_33'}
 
             }
             grouping_color = {
-                'no_expansion': 'gray',
-                'one_cadre_expansion': 'lightpink',
-                'two_cadres_equal_expansion': 'violet',
-                'three_cadres_equal_expansion': 'darkorchid',
-                'four_cadres_equal_expansion': 'paleturquoise',
-                'all_cadres_equal_expansion': 'darkturquoise',
-                'all_cadres_current_expansion': 'deepskyblue',
-                'all_cadres_gap_expansion': 'royalblue',
+                'no_allocation': 'gray',
+                'one_cadre_allocation': 'lightpink',
+                'two_cadres_equal_allocation': 'violet',
+                'three_cadres_equal_allocation': 'darkorchid',
+                'four_cadres_equal_allocation': 'paleturquoise',
+                'all_cadres_equal_allocation': 'darkturquoise',
+                'all_cadres_current_allocation': 'deepskyblue',
+                'all_cadres_gap_allocation': 'royalblue',
             }
         return grouping, grouping_color
 
@@ -505,10 +588,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return time_increased_by_treatment
 
     # Get parameter/scenario names
-    param_names = tuple(extra_budget_fracs)
+    param_names = tuple(extra_budget_fracs.drop(columns='s_*'))
     # param_names = get_parameter_names_from_scenario_file()
-    # param_names = ('s_0', 's_1', 's_2', 's_3', 's_11', 's_22')
-    # param_names = ('s_1', 's_2', 's_3', 's_11', 's_22')
 
     # Define cadres in order
     cadres = ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy',
@@ -633,6 +714,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
+    num_dalys_by_cause_group = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=get_num_dalys_by_cause_group,
+        do_scaling=True,
+    ).pipe(set_param_names_as_column_index_level_0)
+
     num_appts = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -662,6 +751,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         module='tlo.methods.healthsystem.summary',
         key='HSI_Event_non_blank_appt_footprint',
         custom_generate_series=get_num_treatments,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_treatments_group = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='HSI_Event_non_blank_appt_footprint',
+        custom_generate_series=get_num_treatments_group,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
@@ -739,6 +836,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+    num_dalys_by_cause_group_summarized = summarize(num_dalys_by_cause_group, only_mean=True
+                                                    ).T.reindex(param_names).reindex(num_dalys_summarized.index)
 
     # num_dalys_yearly_summarized = (summarize(num_dalys_yearly)
     #                                .stack([0, 1])
@@ -763,6 +862,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         num_dalys_summarized.index
     )
     num_treatments_summarized = summarize(num_treatments, only_mean=True).T.reindex(param_names).reindex(
+        num_dalys_summarized.index
+    )
+    num_treatments_group_summarized = summarize(num_treatments_group, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
     # num_treatments_total_summarized = summarize(num_treatments_total).loc[0].unstack().reindex(param_names).reindex(
@@ -861,6 +963,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
 
+    num_dalys_by_cause_group_averted = summarize(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            num_dalys_by_cause_group,
+            comparison='s_0',
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+
     num_dalys_by_cause_averted_percent = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             num_dalys_by_cause,
@@ -927,6 +1037,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
 
+    num_treatments_group_increased = summarize(
+        find_difference_relative_to_comparison_dataframe(
+            num_treatments_group,
+            comparison='s_0',
+        ),
+        only_mean=True
+    ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+
     # num_treatments_increased_percent = summarize(
     #     find_difference_relative_to_comparison_dataframe(
     #         num_treatments,
@@ -985,7 +1103,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).all()
 
     assert (
+        (num_dalys_by_cause_group_averted.sum(axis=1).sort_index()
+         - num_dalys_averted['mean'].sort_index()
+         ) < 1e-6
+    ).all()
+
+    assert (
         (num_treatments_increased.sum(axis=1).sort_index()
+         - num_treatments_total_increased['mean'].sort_index()
+         ) < 1e-6
+    ).all()
+
+    assert (
+        (num_treatments_group_increased.sum(axis=1).sort_index()
          - num_treatments_total_increased['mean'].sort_index()
          ) < 1e-6
     ).all()
@@ -1264,7 +1394,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
     # get scenario color
     scenario_groups = scenario_grouping_coloring(by='effect')
-    # scenario_groups = scenario_grouping_coloring(by='expansion')
+    # scenario_groups = scenario_grouping_coloring(by='allocation')
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups[1].keys():
@@ -1476,9 +1606,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #                              * regression_data['Nursing_and_Midwifery'])
     cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
     regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
-    predictor = regression_data[regression_data.columns[1:]]
-    outcome = regression_data['mean']
-    predictor = sm.add_constant(predictor)
+    predictor = regression_data[regression_data.columns[1:]]  # .drop(index='s_*', axis=0)
+    outcome = regression_data['mean']  # .drop(index='s_*', axis=0)  # regression model without "optimal" data
+    predictor = sm.add_constant(predictor)  # add constant term
     est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
     print(est.summary())
 
@@ -1493,12 +1623,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot mean and predicted DALYs from regression analysis
     # name_of_plot = f'DALYs-averted simulated vs predicted from linear regression on extra budget allocation'
-    name_of_plot = 'DALYs-averted simulated vs predicted from linear regression on HRH increase rate (exp)'
+    name_of_plot = 'DALYs-averted simulated vs predicted from linear regression on HRH increase rate'
     fig, ax = plt.subplots(figsize=(9, 6))
     data_to_plot = regression_data[['mean', 'predicted']] * 100
     data_to_plot['strategy'] = data_to_plot.index
     data_to_plot.rename(columns={'mean': 'simulated'}, inplace=True)
-    data_to_plot.plot.scatter(x='strategy', y='simulated', color='blue', label= 'simulated', ax=ax)
+    data_to_plot.plot.scatter(x='strategy', y='simulated', color='blue', label='simulated', ax=ax)
     data_to_plot.plot.scatter(x='strategy', y='predicted', color='orange', label='predicted', ax=ax)
     ax.set_ylabel('DALYs averted %', fontsize='small')
     ax.set(xlabel=None)
@@ -2333,6 +2463,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    name_of_plot = f'Services increased by treatment area vs no extra budget allocation, {target_period()}'
+    data_to_plot = num_treatments_group_increased / 1e6
+    data_to_plot = data_to_plot[
+        ['RMNCH', 'AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']
+    ]
+    # yerr_services = np.array([
+    #     (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
+    #     (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
+    # ]) / 1e6
+    fig, ax = plt.subplots(figsize=(9, 6))
+    data_to_plot.plot(kind='bar', stacked=True, color=treatment_group_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
+    #             fmt=".", color="black", zorder=100)
+    ax.set_ylabel('Services increased in Millions', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation strategy', fontsize='medium')
+
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
+    plt.legend(title='Treatment area', title_fontsize='small',
+               fontsize='small', reverse=True)
+    plt.title(name_of_plot, fontsize='medium')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(
+        name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
+    )
+    fig.show()
+    plt.close(fig)
+
     name_of_plot = f'HCW time-used increased by treatment type \nvs no extra budget allocation, {target_period()}'
     data_to_plot = hcw_time_increased_by_treatment_type / 1e6
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -2407,6 +2569,41 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         reverse=True
     )
     plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'DALYs by cause area averted vs no extra budget allocation, {target_period()}'
+    data_to_plot = num_dalys_by_cause_group_averted / 1e6
+    data_to_plot = data_to_plot[['RMNCH', 'AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']]
+    # yerr_dalys = np.array([
+    #     (num_dalys_averted['mean'] - num_dalys_averted['lower']).values,
+    #     (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
+    # ]) / 1e6
+    fig, ax = plt.subplots(figsize=(9, 6))
+    data_to_plot.plot(kind='bar', stacked=True, color=cause_group_color, rot=0, ax=ax)
+    # ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
+    #             fmt=".", color="black", zorder=100)
+    ax.set_ylabel('DALYs averted in Millions', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation strategy', fontsize='medium')
+
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
+    fig.subplots_adjust(right=0.7)
+    ax.legend(
+        # bbox_transform=fig.transFigure,
+        title='Cause of death or injury',
+        title_fontsize='small',
+        fontsize='small',
+        ncol=1,
+        reverse=True
+    )
+    plt.title(name_of_plot, fontsize='medium')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
