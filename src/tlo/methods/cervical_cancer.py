@@ -986,8 +986,6 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        year = self.sim.date.year
-        p = self.sim.modules['CervicalCancer'].parameters
         hs = self.sim.modules["HealthSystem"]
 
         # Check consumables are available
@@ -1052,7 +1050,6 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin,
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         p = self.sim.modules['CervicalCancer'].parameters
-        year = self.sim.date.year
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
@@ -1243,7 +1240,6 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin, PerformCIN
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        year = self.sim.date.year
         p = self.sim.modules['CervicalCancer'].parameters
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_cervical_can['screening_biopsy_core'],
                                           optional_item_codes=
