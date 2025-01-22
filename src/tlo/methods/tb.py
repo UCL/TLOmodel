@@ -2255,14 +2255,16 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        # Log the TREATMENT_ID before processing=added this bit
-        logger.debug(
-            key="TREATMENT_ID",
-            data=f"Applying HSI_Tb_Culture for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}",
-        )
+        # # Log the TREATMENT_ID before processing=added this bit
+        # logger.debug(
+        #     key="TREATMENT_ID",
+        #     data=f"Applying HSI_Tb_Culture for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}",
+        # )
 
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_culture_test", hsi_event=self)
@@ -2290,7 +2292,7 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
-
+            return ACTUAL_APPT_FOOTPRINT
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2862,11 +2864,13 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return hs.get_blank_appt_footprint()
 
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         logger.debug(
             key="message",
             data=f"HSI_Tb_EndOfLifeCare: inpatient admission for {person_id}",
         )
-
+        return ACTUAL_APPT_FOOTPRINT
 class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
     """
     * Run a regular event which selects people to be screened in the community

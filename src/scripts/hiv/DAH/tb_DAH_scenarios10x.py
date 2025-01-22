@@ -6,12 +6,9 @@ It can be submitted on Azure Batch by running:
 tlo batch-submit src//scripts/hiv/DAH/tb_DAH_scenarios10x.py
 
 or locally using:
-
  tlo scenario-run src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
   execute a single run:
-
  tlo scenario-run src/scripts/hi/DAH/tb_DAH_scenarios10x.py --draw 1 0
-
  check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
 
@@ -45,7 +42,7 @@ class ImpactOfTbDaH04(BaseScenario):
         self.seed = 2134
         #self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 12, 31)
+        self.end_date = Date(2011, 12, 31)
         self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
