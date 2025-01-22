@@ -62,7 +62,8 @@ def get_sim(tmpdir):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=False,
-                                           cons_availability='all'),
+                                           cons_availability='all',
+                                           equip_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -398,7 +399,7 @@ def test_recovery_severe_acute_malnutrition_without_complications(tmpdir):
     # set progress to severe wasting at 100% as well, hence no natural recovery from moderate wasting
     wmodule.wasting_models.severe_wasting_progression_lm = LinearModel.multiplicative()
 
-    # set complete recovery from wasting to zero. We want those with SAM to recover to MAM with tx
+    # set complete recovery from SAM to zero. We want those with SAM to recover to MAM with tx
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
 
     # set prob of death after tx at 0% (hence recovery to MAM at 100%)
@@ -525,6 +526,7 @@ def test_recovery_severe_acute_malnutrition_with_complications(tmpdir):
 
     # Manually set this individual properties to have severe acute malnutrition
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+    df.loc[person_id, 'un_last_wasting_date_of_onset'] = sim.date
     # ensure the individual has complications due to SAM
     wmodule.parameters['prob_complications_in_SAM'] = 1.0
     # assign diagnosis
@@ -571,12 +573,12 @@ def test_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     ]
     assert 1 == len(hsi_event_scheduled)
 
-    # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM and check care was sought
+    # Run the created instance of HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM
     sam_ev = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
               isinstance(ev[1], HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)][0]
     sam_ev.run(squeeze_factor=0.0)
 
-    # Check death is scheduled, but was canceled due to tx
+    # Check scheduled death was canceled due to tx
     person = df.loc[person_id]
     assert pd.isnull(person['un_sam_death_date'])
 
@@ -707,8 +709,9 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     sim.event_queue.queue = []  # clear the queue
 
     wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
     # set prob of death after tx at 0% (hence recovery to MAM at 100%)
-    wmodule.parameters['prob_death_after_SAMcare'] = 0.0
+    p['prob_death_after_SAMcare'] = 0.0
 
     # increase wasting incidence rate to 100% and reduce rate of progress to severe wasting to zero. We don't want
     # individuals to progress to SAM as we are testing for MAM natural recovery
@@ -741,9 +744,22 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     recov_event = recov_event_tuple[1]
     assert date_of_scheduled_recov > sim.date
 
-    # Run a Cure Event
+    # Run a Cure Event after the length of the treatment
+    def get_tx_length(in_person_id):
+        if df.at[in_person_id, 'un_sam_with_complications']:
+            tx_length = p['tx_length_weeks_InpatientSAM']
+        elif df.at[in_person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
+            tx_length = p['tx_length_weeks_OutpatientSAM']
+        else:  # df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM':
+            tx_length = p['tx_length_weeks_SuppFeedingMAM']
+        return tx_length
+    sim.date = sim.date + DateOffset(weeks=get_tx_length(person_id))
+    assert sim.date < date_of_scheduled_recov
     cure_event = Wasting_ClinicalAcuteMalnutritionRecovery_Event(person_id=person_id, module=sim.modules['Wasting'])
     cure_event.apply(person_id=person_id)
+
+    # Check the natural recovery was cancelled with the cure:
+    assert date_of_scheduled_recov in df.at[person_id, 'un_nat_recov_to_cancel']
 
     # Check that the person is not wasted and is alive still:
     person = df.loc[person_id]

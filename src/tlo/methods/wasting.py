@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-import warnings
 from scipy.stats import norm
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -204,6 +203,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                          ' is currently on; set to not_applicable if well hence no treatment required',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
                                              'none', 'not_applicable']),
+        # Properties to help cancel events
+        'un_nat_recov_to_cancel': Property(Types.LIST, 'list of dates of scheduled natural recovery to be '
+                                                       'canceled for the person'),
+        'un_progression_to_cancel': Property(Types.LIST, 'list of dates of scheduled progression to severe '
+                                                         'wasting to be canceled for the person'),
+        'un_recov_with_tx_to_cancel': Property(Types.LIST, 'list of dates of scheduled recovery with tx '
+                                                         'to be canceled for the person'),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -281,6 +287,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # df.loc[df.is_alive, 'un_am_discharge_date'] = pd.NaT
         # df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_treatment_type'] = 'not_applicable'
+        df.loc[df.is_alive, 'un_nat_recov_to_cancel'] = \
+            df.loc[df.is_alive, 'un_nat_recov_to_cancel'].apply(lambda x: [])
+        df.loc[df.is_alive, 'un_progression_to_cancel'] = \
+            df.loc[df.is_alive, 'un_progression_to_cancel'].apply(lambda x: [])
+        df.loc[df.is_alive, 'un_recov_with_tx_to_cancel'] = \
+            df.loc[df.is_alive, 'un_recov_with_tx_to_cancel'].apply(lambda x: [])
+
 
         # initialise wasting linear models.
         self.wasting_models = WastingModels(self)
@@ -348,6 +361,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # df.loc[df.is_alive, 'un_am_discharge_date'] = pd.NaT
         # df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
+        df.at[child_id, 'un_nat_recov_to_cancel'] = []
+        df.at[child_id, 'un_progression_to_cancel'] = []
+        df.at[child_id, 'un_recov_with_tx_to_cancel'] = []
+
 
     def get_prob_severe_wasting_among_wasted(self, agegp: str) -> Union[float, int]:
         """
@@ -703,12 +720,19 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         df = self.sim.population.props
         p = self.parameters
+
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
         # Reset tx discharge date
         df.at[person_id, 'un_am_discharge_date'] = pd.NaT
         # Cancel natural death due to SAM with tx
         df.at[person_id, 'un_sam_death_date'] = pd.NaT
+        # Cancel progression to sev wasting if scheduled
+        progress_event_tuple = next((event_tuple for event_tuple in self.sim.find_events_for_person(person_id)
+                                  if isinstance(event_tuple[1], Wasting_ProgressionToSevere_Event)), None)
+        if progress_event_tuple:
+            progress_date = progress_event_tuple[0]
+            df.at[person_id, 'un_progression_to_cancel'].append(progress_date)
 
         if intervention == 'SFP':
             df.at[person_id, 'un_am_discharge_date'] = \
@@ -793,7 +817,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
         # Determine who will be onset with wasting among those who are not currently wasted -------------
         not_wasted_or_treated = df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_WHZ_category == 'WHZ>=-2') &
-                                       (df.un_am_tx_start_date != pd.NaT)]
+                                       (df.un_am_tx_start_date.isna())]
         incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(not_wasted_or_treated, rng=rng)
         mod_wasting_new_cases = not_wasted_or_treated.loc[incidence_of_wasting]
         mod_wasting_new_cases_idx = mod_wasting_new_cases.index
@@ -822,10 +846,9 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         )
 
         for person_id in mod_wasting_new_cases_idx[progression_severe_wasting]:
-            # schedule severe wasting WHZ < -3 onset after duration of moderate wasting
+            # schedule severe wasting WHZ < -3 onset after duration of untreated moderate wasting
             self.sim.schedule_event(
-                event=Wasting_ProgressionToSevere_Event(
-                    module=self.module, person_id=person_id), date=outcome_date
+                event=Wasting_ProgressionToSevere_Event(module=self.module, person_id=person_id), date=outcome_date
             )
 
         # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
@@ -858,26 +881,29 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
         ):
             return
 
-        else:
-            # # # INCIDENCE OF SEVERE WASTING # # # # # # # # # # # # # # # # # # # # #
-            # Continue with progression to severe if not treated/recovered
-            # update properties
-            # - WHZ
-            df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-            # - MUAC, oedema, clinical state of acute malnutrition, complications, death
-            self.module.clinical_signs_acute_malnutrition(person_id)
+        if self.sim.date in df.at[person_id, 'un_progression_to_cancel']:
+            df.at[person_id, 'un_progression_to_cancel'].remove(self.sim.date)
+            return
 
-            # -------------------------------------------------------------------------------------------
-            # Add this severe wasting incident case to the tracker
-            age_group = Wasting_IncidencePoll.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
-            self.module.wasting_incident_case_tracker[age_group]['WHZ<-3'].append(self.sim.date)
+        # # # INCIDENCE OF SEVERE WASTING # # # # # # # # # # # # # # # # # # # # #
+        # Continue with progression to severe if not treated/recovered
+        # update properties
+        # - WHZ
+        df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+        # - MUAC, oedema, clinical state of acute malnutrition, complications, death
+        self.module.clinical_signs_acute_malnutrition(person_id)
 
-            if pd.isnull(df.at[person_id, 'un_sam_death_date']):
-                # # # SEVERE WASTING NATURAL RECOVERY # # # # # # # # # # # # # # # #
-                # Schedule recovery from severe wasting for those not dying due to SAM
-                outcome_date = self.module.date_of_outcome_for_untreated_wasting(whz_category='WHZ<-3')
-                self.sim.schedule_event(event=Wasting_NaturalRecovery_Event(
-                    module=self.module, person_id=person_id), date=outcome_date)
+        # -------------------------------------------------------------------------------------------
+        # Add this severe wasting incident case to the tracker
+        age_group = Wasting_IncidencePoll.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
+        self.module.wasting_incident_case_tracker[age_group]['WHZ<-3'].append(self.sim.date)
+
+        if pd.isnull(df.at[person_id, 'un_sam_death_date']):
+            # # # SEVERE WASTING NATURAL RECOVERY # # # # # # # # # # # # # # # #
+            # Schedule recovery from severe wasting for those not dying due to SAM
+            outcome_date = self.module.date_of_outcome_for_untreated_wasting(whz_category='WHZ<-3')
+            self.sim.schedule_event(event=Wasting_NaturalRecovery_Event(
+                module=self.module, person_id=person_id), date=outcome_date)
 
 
 class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixin):
@@ -902,9 +928,8 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
             not pd.isnull(df.at[person_id, 'un_sam_death_date']) and
             df.at[person_id, 'un_sam_death_date'] <= self.sim.date
         ):
-            if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
-                warnings.warn(f"{person_id=} dying due to SAM while \n{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
-            assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+            assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM',\
+                f"{person_id=} dying due to SAM while \n{df.at[person_id, 'un_clinical_acute_malnutrition']=}"
             # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
@@ -927,6 +952,7 @@ class Wasting_NaturalRecovery_Event(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+        p = self.module.parameters
 
         if (
             (not df.at[person_id, 'is_alive']) or
@@ -935,14 +961,21 @@ class Wasting_NaturalRecovery_Event(Event, IndividualScopeEventMixin):
         ):
             return
 
+        if self.sim.date in df.at[person_id, 'un_nat_recov_to_cancel']:
+            df.at[person_id, 'un_nat_recov_to_cancel'].remove(self.sim.date)
+            return
+
         whz = df.at[person_id, 'un_WHZ_category']
         if whz == '-3<=WHZ<-2':
             # improve WHZ
             df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
             age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
-            self.module.wasting_length_tracker[age_group]['mod_nat_recov'].append(
-                (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
-            )
+            wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
+            assert wasted_days >= p['duration_of_untreated_mod_wasting'],\
+                (f" The {person_id=} is wasted for {wasted_days=} which is less than "
+                 f"{p['duration_of_untreated_mod_wasting']=} days when naturally recovers from mod. wasting at the "
+                 f"{age_group=}.")
+            self.module.wasting_length_tracker[age_group]['mod_nat_recov'].append(wasted_days)
 
         else:
             # whz == 'WHZ<-3'
@@ -956,6 +989,14 @@ class Wasting_NaturalRecovery_Event(Event, IndividualScopeEventMixin):
         if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
             df.at[person_id, 'un_am_recovery_date'] = self.sim.date
             df.at[person_id, 'un_sam_death_date'] = pd.NaT
+            recov_with_tx_event_tuple = \
+                next((event_tuple for event_tuple in self.sim.find_events_for_person(person_id)
+                      if isinstance(event_tuple[1], (Wasting_ClinicalAcuteMalnutritionRecovery_Event,
+                                                     Wasting_UpdateToMAM_Event)
+                                    )), None)
+            if recov_with_tx_event_tuple:
+                recov_with_tx_date = recov_with_tx_event_tuple[0]
+                df.at[person_id, 'un_recov_with_tx_to_cancel'].append(recov_with_tx_date)
 
 
 class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEventMixin):
@@ -968,6 +1009,7 @@ class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEven
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+        p = self.module.parameters
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -979,9 +1021,20 @@ class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEven
             else: # df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
                 recov_opt = f"sev_{df.at[person_id, 'un_clinical_acute_malnutrition']}_tx_full_recov"
             age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
-            self.module.wasting_length_tracker[age_group][recov_opt].append(
-                (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
-            )
+            wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
+
+            def get_tx_length(in_person_id):
+                if df.at[in_person_id, 'un_sam_with_complications']:
+                    tx_length = p['tx_length_weeks_InpatientSAM']
+                elif df.at[in_person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
+                    tx_length = p['tx_length_weeks_OutpatientSAM']
+                else: # df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM':
+                    tx_length = p['tx_length_weeks_SuppFeedingMAM']
+                return tx_length
+
+            assert wasted_days >= get_tx_length(person_id),\
+                f" The {person_id=} is wasted less than tx_length= {get_tx_length(person_id)} weeks when {recov_opt=}."
+            self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
 
         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
@@ -997,6 +1050,11 @@ class Wasting_ClinicalAcuteMalnutritionRecovery_Event(Event, IndividualScopeEven
         self.sim.modules["SymptomManager"].clear_symptoms(
             person_id=person_id, disease_module=self.module
         )
+        recov_event_tuple = next((event_tuple for event_tuple in self.sim.find_events_for_person(person_id)
+                                  if isinstance(event_tuple[1], Wasting_NaturalRecovery_Event)), None)
+        if recov_event_tuple:
+            nat_recov_date = recov_event_tuple[0]
+            df.at[person_id, 'un_nat_recov_to_cancel'].append(nat_recov_date)
 
 
 class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
@@ -1019,7 +1077,8 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
 
         # For cases with normal WHZ and other acute malnutrition signs:
         # oedema, or low MUAC - do not change the WHZ
-        if df.at[person_id, 'un_WHZ_category'] == 'WHZ>=-2':
+        whz = df.at[person_id, 'un_WHZ_category']
+        if whz == 'WHZ>=-2':
             # MAM by MUAC only
             df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
             # TODO: I think this changes the proportions below as some of the cases will be issued here
@@ -1032,9 +1091,9 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
                                                p['proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC']])
 
             if mam_classification == 'mam_by_muac_only':
-                if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
+                if whz == '-3<=WHZ<-2':
                     recov_opt = "mod_SAM_tx_recov_to_MAM"
-                else: # df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
+                else: # whz == 'WHZ<-3':
                     recov_opt = "sev_SAM_tx_recov_to_MAM"
                 age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
                 wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
@@ -1049,14 +1108,40 @@ class Wasting_UpdateToMAM_Event(Event, IndividualScopeEventMixin):
                 assert wasted_days >= get_tx_length(person_id), \
                     f" The {person_id=} is wasted less than tx_length= {get_tx_length(person_id)} weeks when {recov_opt=}."
                 self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
+
+                # wasting (WHZ) recovers to normal, therefore if natural recovery was scheduled
+                # (from moderate or severe wasting), it will be canceled
+                recov_event_tuple = next((event_tuple for event_tuple in self.sim.find_events_for_person(person_id)
+                                          if isinstance(event_tuple[1], Wasting_NaturalRecovery_Event)), None)
+                if recov_event_tuple:
+                    nat_recov_date = recov_event_tuple[0]
+                    df.at[person_id, 'un_nat_recov_to_cancel'].append(nat_recov_date)
                 df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
 
             if mam_classification == 'mam_by_muac_and_whz':
+                # wasting (WHZ) recovers to moderate, therefore if natural recovery from severe wasting was scheduled,
+                # it will be cancelled, but if natural recovery from moderate wasting was scheduled, it will not be
+                # cancelled
+                if whz == 'WHZ<-3':
+                    recov_event_tuple = next((event_tuple for event_tuple in self.sim.find_events_for_person(person_id)
+                                              if isinstance(event_tuple[1], Wasting_NaturalRecovery_Event)), None)
+                    if recov_event_tuple:
+                        nat_recov_date = recov_event_tuple[0]
+                        df.at[person_id, 'un_nat_recov_to_cancel'].append(nat_recov_date)
                 df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
 
             if mam_classification == 'mam_by_whz_only':
+                # wasting (WHZ) recovers to moderate, therefore if natural recovery from severe wasting was scheduled,
+                # it will be cancelled, but if natural recovery from moderate wasting was scheduled, it will not be
+                # cancelled
+                if whz == 'WHZ<-3':
+                    recov_event_tuple = next((event_tuple for event_tuple in self.sim.find_events_for_person(person_id)
+                                              if isinstance(event_tuple[1], Wasting_NaturalRecovery_Event)), None)
+                    if recov_event_tuple:
+                        nat_recov_date = recov_event_tuple[0]
+                        df.at[person_id, 'un_nat_recov_to_cancel'].append(nat_recov_date)
                 df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
 
@@ -1665,46 +1750,38 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (self.sim.date - mod_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
             sev_wasted_whole_ys_agegrp['wasting_length'] = \
                 (self.sim.date - sev_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
-            print_lengths = False
             if len(mod_wasted_whole_ys_agegrp) > 0:
-                if np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any():
-                    print_lengths = True
-                    warnings.warn("There is at least one NaN length.")
-                if not all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length']):
-                    print_lengths = True
-                    warnings.warn("There is at least one zero length.")
-                if print_lengths:
-                    warnings.warn(f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
-                assert not np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any()
-                assert all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length'])
+                assert not np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any(),\
+                    ("There is at least one NaN length.\n"
+                     f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
+                assert all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length']),\
+                    ("There is at least one zero length.\n"
+                     f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
                 length_df.loc[age_grp, 'mod_not_yet_recovered'] = (
-                    sum(mod_wasted_whole_ys_agegrp['wasting_length']) / len(mod_wasted_whole_ys_agegrp['wasting_length'])
+                    sum(mod_wasted_whole_ys_agegrp['wasting_length']) /
+                    len(mod_wasted_whole_ys_agegrp['wasting_length'])
                 )
             else:
                 length_df.loc[age_grp, 'mod_not_yet_recovered'] = 0
-            if np.isnan(length_df.loc[age_grp, 'mod_not_yet_recovered']):
-                warnings.warn(f"The avg {length_df.loc[age_grp, 'mod_not_yet_recovered']=} for {age_grp=} is empty.")
-            assert not np.isnan(length_df.loc[age_grp, 'mod_not_yet_recovered'])
+            assert not np.isnan(length_df.loc[age_grp, 'mod_not_yet_recovered']), \
+                f"The avg {length_df.loc[age_grp, 'mod_not_yet_recovered']=} for {age_grp=} is empty."
 
             if len(sev_wasted_whole_ys_agegrp) > 0:
-                if np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any():
-                    print_lengths = True
-                    warnings.warn("There is at least one NaN length.")
-                if not all(length > 0 for length in mod_wasted_whole_ys_agegrp['wasting_length']):
-                    print_lengths = True
-                    warnings.warn("There is at least one zero length.")
-                if print_lengths:
-                    warnings.warn(f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
-                assert not np.isnan(sev_wasted_whole_ys_agegrp['wasting_length']).any()
-                assert all(length > 0 for length in sev_wasted_whole_ys_agegrp['wasting_length'])
+                assert not np.isnan(sev_wasted_whole_ys_agegrp['wasting_length']).any(), \
+                    ("There is at least one NaN length.\n"
+                     f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
+
+                assert all(length > 0 for length in sev_wasted_whole_ys_agegrp['wasting_length']), \
+                    ("There is at least one zero length.\n"
+                     f"{mod_wasted_whole_ys_agegrp['wasting_length']=} for {age_grp=}")
                 length_df.loc[age_grp, 'sev_not_yet_recovered'] = (
-                    sum(sev_wasted_whole_ys_agegrp['wasting_length']) / len(sev_wasted_whole_ys_agegrp['wasting_length'])
+                    sum(sev_wasted_whole_ys_agegrp['wasting_length']) /
+                    len(sev_wasted_whole_ys_agegrp['wasting_length'])
                 )
             else:
                 length_df.loc[age_grp, 'sev_not_yet_recovered'] = 0
-            if np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered']):
-                warnings.warn(f"The avg {length_df.loc[age_grp, 'sev_not_yet_recovered']=} for {age_grp=} is empty.")
-            assert not np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered'])
+            assert not np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered']), \
+                f"The avg {length_df.loc[age_grp, 'sev_not_yet_recovered']=} for {age_grp=} is empty."
 
         logger.info(key='wasting_length_avg', data=length_df.to_dict())
 
@@ -1745,10 +1822,9 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             pop_sizes_dict[f'total__{low_bound_mos}_{high_bound_mos}mo'] = total_per_agegrp_nmb
         # log prevalence & pop size for children above 5y
         above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
-        if (len(under5s) + len(above5s)) != len(df.loc[df.is_alive]):
-            warnings.warn("The numbers of persons under and above 5 don't sum to all alive person, when logging on"
-                          f"{self.sim.date=}.")
-        assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive])
+        assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive]), \
+            ("The numbers of persons under and above 5 don't sum to all alive person, when logging on"
+             f"{self.sim.date=}.")
         mod_wasted_above5_nmb = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum()
         sev_wasted_above5_nmb = (above5s.un_WHZ_category == 'WHZ<-3').sum()
         wasting_prev_dict['mod__5y+'] = mod_wasted_above5_nmb / len(above5s)
@@ -1816,10 +1892,9 @@ class Wasting_InitLoggingEvent(Event, PopulationScopeEventMixin):
             pop_sizes_dict[f'total__{low_bound_mos}_{high_bound_mos}mo'] = total_per_agegrp_nmb
         # log prevalence & pop size for children above 5y
         above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
-        if (len(under5s) + len(above5s)) != len(df.loc[df.is_alive]):
-            warnings.warn("The numbers of persons under and above 5 don't sum to all alive person, when logging at"
-                          "sim initiation.")
-        assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive])
+        assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive]), \
+            ("The numbers of persons under and above 5 don't sum to all alive person, when logging at"
+             "sim initiation.")
         mod_wasted_above5_nmb = (above5s.un_WHZ_category == '-3<=WHZ<-2').sum()
         sev_wasted_above5_nmb = (above5s.un_WHZ_category == 'WHZ<-3').sum()
         wasting_prev_dict['mod__5y+'] = mod_wasted_above5_nmb / len(above5s)
