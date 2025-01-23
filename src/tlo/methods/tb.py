@@ -973,65 +973,66 @@ class Tb(Module):
         #sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
         #if self.parameters["type_of_scaleup"] != 'none':
-        if self.parameters["type_of_scaleup"] == 'target':
-            scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
-            assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
-            sim.schedule_event(TbScaleUpEvent(self), scaleup_start_date)
-            # schedule outreach xrays for tb screening from 2010
-            sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
+        # if self.parameters["type_of_scaleup"] == 'target':
+        #     scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
+        #     assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
+        #     sim.schedule_event(TbScaleUpEvent(self), scaleup_start_date)
+        #     # schedule outreach xrays for tb screening from 2010
+        #     sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
-        # 2) log at the end of the year
+         # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
-        # 2) Scenario change
+         # 2) Scenario change
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
-        # 3) Define the DxTests and get the consumables required
+    #     # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
 
-        # 4) (Optionally) Schedule the event to check the configuration of all properties
+    #     # 4) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
-            sim.schedule_event(
+             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
-            )
-
-    def update_parameters_for_program_scaleup(self):
-        """ options for program scale-up are 'target' or 'max' """
-        p = self.parameters
-        scaled_params_workbook = p["scaleup_parameters"]
-        for col in scaled_params_workbook.columns:
-            scaled_params_workbook[col] = scaled_params_workbook[col].apply(
-                parse_csv_values_for_columns_with_mixed_datatypes
-            )
-
-        if p['type_of_scaleup'] == 'target':
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
-        else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
-
-        # scale-up TB program
-        # use NTP treatment rates
-        p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
-
-        # increase tb treatment success rates
-        p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
-        p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
-        p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
-        p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
-
-        # change first-line testing for TB to xpert
-        p["first_line_test"] = scaled_params["first_line_test"]
-        p["second_line_test"] = scaled_params["second_line_test"]
-
-        # increase coverage of IPT
-        p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
-        p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
-
-        # update exising linear models to use new scaled-up paramters
-        self._build_linear_models()
+             )
+    #
+    # def update_parameters_for_program_scaleup(self):
+    #     """ options for program scale-up are 'target' or 'max' """
+    #     p = self.parameters
+    #     scaled_params_workbook = p["scaleup_parameters"]
+    #     for col in scaled_params_workbook.columns:
+    #         scaled_params_workbook[col] = scaled_params_workbook[col].apply(
+    #             parse_csv_values_for_columns_with_mixed_datatypes
+    #         )
+    #
+    #     if p['type_of_scaleup'] == 'target':
+    #         scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+    #     else:
+    #         scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+    #
+    #     # scale-up TB program
+    #     # use NTP treatment rates
+    #     p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
+    #
+    #     # increase tb treatment success rates
+    #     p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
+    #     p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
+    #     p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
+    #     p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
+    #
+    #     # change first-line testing for TB to xpert
+    #     p["first_line_test"] = scaled_params["first_line_test"]
+    #     p["second_line_test"] = scaled_params["second_line_test"]
+    #
+    #     # increase coverage of IPT
+    #     p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
+    #     p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
+    #
+    #     # update exising linear models to use new scaled-up paramters
+    #     self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
@@ -1324,6 +1325,7 @@ class Tb(Module):
             )
             ].index
 
+
         # ---------------------- treatment end: mdr-tb (24 months) ---------------------- #
         # end treatment for mdr-tb cases
         end_mdr_tx_idx = df.loc[
@@ -1539,14 +1541,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
             self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
 
-class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
-    """ This event runs each month and calls three functions:
-    * scheduling TB screening for the general population
-    * ending treatment if the end of treatment regimen has been reached
-    * determining who will relapse after a primary infection
-    """
-    def apply(self, population):
-        self.module.relapse_event(population)
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
@@ -1607,20 +1601,20 @@ class TbRegularEvents(RegularEvent, PopulationScopeEventMixin):
         self.module.relapse_event(population)
 
 
-class TbScaleUpEvent(Event, PopulationScopeEventMixin):
-    """ This event exists to change parameters or functions
-    depending on the scenario for projections which has been set
-    It only occurs once on date: scaleup_start_date,
-    called by initialise_simulation
-    """
-
-    def __init__(self, module):
-        super().__init__(module)
-
-    def apply(self, population):
-
-        self.module.update_parameters_for_program_scaleup()
-        # note also culture test used in target/max scale-up in place of clinical dx
+# class TbScaleUpEvent(Event, PopulationScopeEventMixin):
+#     """ This event exists to change parameters or functions
+#     depending on the scenario for projections which has been set
+#     It only occurs once on date: scaleup_start_date,
+#     called by initialise_simulation
+#     """
+#
+#     def __init__(self, module):
+#         super().__init__(module)
+#
+#     def apply(self, population):
+#
+#         self.module.update_parameters_for_program_scaleup()
+#         # note also culture test used in target/max scale-up in place of clinical dx
 
 
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1757,6 +1751,22 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                 priority=0,
             )
 
+
+# class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
+#     """ This event runs each month and calls three functions:
+#     * scheduling TB screening for the general population
+#     * ending treatment if the end of treatment regimen has been reached
+#     * determining who will relapse after a primary infection
+#     """
+#     def apply(self, population):
+#         self.module.relapse_event(population)
+#
+#     def apply(self, population):
+#             # schedule some background rates of tb testing (non-symptom-driven)
+#             self.module.send_for_screening_general(population)
+#
+#             self.module.end_treatment(population)
+#             self.module.relapse_event(population)
 
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
     """annual event which allows some individuals to self-cure
@@ -2109,6 +2119,12 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                             tclose=None,
                         )
 
+                # Return the footprint. If it should be suppressed, return a blank footprint.
+                if self.suppress_footprint:
+                    return self.make_appt_footprint({})
+                else:
+                    return ACTUAL_APPT_FOOTPRINT
+
         # ------------------------- Culture testing if program scale-up ------------------------- #
         # under program scale-up, if a person tests negative but still has symptoms
         # indicative of TB, they are referred for culture test which has perfect sensitivity
@@ -2172,6 +2188,8 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"] or person["tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         logger.debug(
             key="message", data=f"HSI_Tb_ClinicalDiagnosis: person {person_id}"
         )
@@ -2208,29 +2226,35 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+                # Return the footprint. If it should be suppressed, return a blank footprint.
+                if self.suppress_footprint:
+                    return self.make_appt_footprint({})
+                else:
+                    return ACTUAL_APPT_FOOTPRINT
+
         # ------------------------- Culture testing if program scale-up ------------------------- #
         # under program scale-up, if a person tests negative but still has all symptoms
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
-        person_has_tb_symptoms = all(symptom in persons_symptoms for symptom in self.module.symptom_list)
-
-        if not test_result and person_has_tb_symptoms:
-            if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
-
-                logger.debug(
-                    key="message",
-                    data=f"HSI_Tb_ClinicalDiagnosis: scheduling culture for person {person_id}",
-                )
-
-                culture_event = HSI_Tb_Culture(
-                    self.module, person_id=person_id
-                )
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    culture_event,
-                    priority=0,
-                    topen=now,
-                    tclose=None,
-                )
+        # person_has_tb_symptoms = all(symptom in persons_symptoms for symptom in self.module.symptom_list)
+        #
+        # if not test_result and person_has_tb_symptoms:
+        #     if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
+        #
+        #         logger.debug(
+        #             key="message",
+        #             data=f"HSI_Tb_ClinicalDiagnosis: scheduling culture for person {person_id}",
+        #         )
+        #
+        #         culture_event = HSI_Tb_Culture(
+        #             self.module, person_id=person_id
+        #         )
+        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #             culture_event,
+        #             priority=0,
+        #             topen=now,
+        #             tclose=None,
+        #         )
 
 
 class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
@@ -2269,11 +2293,12 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
             self.add_equipment({'Autoclave', 'Blood culture incubator', 'Vortex mixer',
                                 'Dispensing pumps for culture media preparation', 'Biosafety Cabinet (Class II)',
                                 'Centrifuge'})
-            # Log the TREATMENT_ID before processing
-            logger.info(
-                key="TREATMENT_ID",
-                data=f"Scheduling treatment for person {person_id} after positive culture result with TREATMENT_ID: {self.TREATMENT_ID}",
+
+            logger.debug(
+                key="message",
+                data=f"HSI_Tb_Culture: scheduling  culture for person {person_id}",
             )
+
 
         # if test returns positive result, refer for appropriate treatment
         if test_result:
@@ -2288,7 +2313,11 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
-            return ACTUAL_APPT_FOOTPRINT
+            # Return the footprint. If it should be suppressed, return a blank footprint.
+            if self.suppress_footprint:
+                return self.make_appt_footprint({})
+            else:
+                return ACTUAL_APPT_FOOTPRINT
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2310,9 +2339,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
-
         df = self.sim.population.props
-
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
@@ -2866,7 +2893,13 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
             key="message",
             data=f"HSI_Tb_EndOfLifeCare: inpatient admission for {person_id}",
         )
-        return ACTUAL_APPT_FOOTPRINT
+
+        # Return the footprint. If it should be suppressed, return a blank footprint.
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+            return ACTUAL_APPT_FOOTPRINT
+
 class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
     """
     * Run a regular event which selects people to be screened in the community
@@ -2913,6 +2946,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                         tclose=None,
                         priority=0,
                     )
+
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for community chest X-ray screening.
@@ -2934,8 +2968,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-        #print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
-
+        print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
         df = self.sim.population.props  # Shortcut to the dataframe
         person = df.loc[person_id]
