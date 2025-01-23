@@ -11,7 +11,6 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.util import random_date, sample_outcome, transition_states
 
 logger = logging.getLogger(__name__)
-print(f"Logger name being used: {__name__}.detail")  # Debugging the logger name
 logger.setLevel(logging.INFO)
 
 
