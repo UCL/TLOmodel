@@ -77,27 +77,37 @@ def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
 
     elif 'CervicalCancer' == self.name:
         cons_dict['cervical_cancer_screening_via'] = \
-            {get_item_code("Acetic acid, 5% dilute, 5 ml"): 1}
+            {get_item_code("Acetic acid, 5% dilute, 5 ml"): 5}
 
         cons_dict['cervical_cancer_screening_via_optional'] = \
             {get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
 
         cons_dict['cervical_cancer_screening_xpert'] = \
+        {get_item_code("Xpert"): 1}
+
+        cons_dict['cervical_cancer_screening_xpert_optional'] = \
         {get_item_code("Specimen container"): 1,
-            get_item_code("Xpert"): 1,
              get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
 
-        cons_dict['cervical_cancer_thermoablation'] = {
+        cons_dict['cervical_cancer_thermoablation_optional'] = {
              get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
 
         cons_dict['cervical_cancer_cryotherapy'] = \
             {get_item_code("Cryotherapy unit with cryotips, use for one patient"): 1,
-             get_item_code("Compressed gas, 25 kg cylinder"): 1,
-             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+             get_item_code("Compressed gas, 25 kg cylinder"): 1}
+
+        cons_dict['cervical_cancer_cryotherapy_optional'] = \
+            {get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
              get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
+
+        cons_dict['cervical_cancer_treatment_chemotherapy_cisplatin'] = \
+            {get_item_code("Cisplatin 50mg Injection"): 50}
+
+        cons_dict['cervical_cancer_treatment_chemotherapy_fluorouracil'] = \
+            {get_item_code("5-Fluorouracil 500mg injection"): 500}
 
     elif 'OesophagealCancer' == self.name:
 

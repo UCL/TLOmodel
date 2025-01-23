@@ -59,7 +59,7 @@ log_config = {
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
 malawi_country_pop = 17000000
-popsize = 170000
+popsize = 1700
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
