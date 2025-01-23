@@ -243,7 +243,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
 
-        self.person_of_interest_id = 5 # debugging
+        self.person_of_interest_id = 14238 # debugging
 
     def read_parameters(self, data_folder):
         """
