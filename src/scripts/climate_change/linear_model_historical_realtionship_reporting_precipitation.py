@@ -107,9 +107,8 @@ def stepwise_selection(X, y, log_y, poisson, p_value_threshold=0.05):
         new_aic = pd.Series(index=excluded, dtype=float)
         for new_column in excluded:
             subset_X = X[:, included + [new_column]]
-            results, _, _ = build_model(subset_X, y, poisson, log_y=log_y, X_mask_mm=mask_threshold)
-            if results.pvalues[-1] < p_value_threshold:
-                new_aic[new_column] = results.aic
+            results, y_pred, mask_ANC_data, _ = build_model(subset_X, y, poisson, log_y=log_y, X_mask_mm=mask_threshold)
+            new_aic[new_column] = results.aic
 
         # Add the predictor with the best AIC if it's better than the current model's AIC
         if not new_aic.empty and new_aic.min() < current_aic:
@@ -123,8 +122,8 @@ def stepwise_selection(X, y, log_y, poisson, p_value_threshold=0.05):
         # Exit if no changes were made in this iteration
         if not changed:
             break
-
-    return included
+    included.sort()
+    return included, results, y_pred, mask_ANC_data
 
 def calculate_vif(X):
     vif_data = pd.DataFrame()
@@ -337,7 +336,13 @@ X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 coefficient_names = ["year", "month", "altitude", "minimum_distance"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
                      list(owner_encoded.columns)
 coefficient_names = pd.Series(coefficient_names)
-results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
+#results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
+
+included, results, y_pred, mask_ANC_data = stepwise_selection(X_ANC_standardized , y, poisson = poisson, log_y=log_y,)
+coefficients = results.params
+print(coefficient_names[included])
+print(coefficient_names)
+
 coefficients = results.params
 coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
 continuous_coefficients = coefficients[:len(X_continuous_scaled[0])]
@@ -449,8 +454,9 @@ X_continuous_scaled = X_continuous
 
 X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 
-results_of_weather_model, y_pred_weather, mask_all_data, selected_features = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
-                                                                 X_mask_mm=mask_threshold, feature_selection =  feature_selection)
+# results_of_weather_model, y_pred_weather, mask_all_data, selected_features = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
+#                                                                  X_mask_mm=mask_threshold, feature_selection =  feature_selection)
+included_weather, results_of_weather_model, y_pred_weather, mask_all_data = stepwise_selection(X_weather_standardized , y, poisson = poisson, log_y=log_y,)
 
 coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "year", "month",
                              "lag_1_month", "lag_2_month", "lag_3_month", "lag_4_month", "lag_9_month",
@@ -459,18 +465,21 @@ coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "year",
                             list(resid_encoded.columns) + list(zone_encoded.columns) + \
                             list(owner_encoded.columns)
 coefficient_names_weather = pd.Series(coefficient_names_weather)
+print(coefficient_names_weather[included_weather])
+print(coefficient_names_weather)
+
 coefficients_weather = results_of_weather_model.params
 coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficients'])
 #rescale coefficients
-continuous_coefficients = coefficients_weather[:len(X_continuous_scaled[0])]
-categorical_coefficients = coefficients_weather[len(X_continuous_scaled[0]):]
-means = scaler.mean_
-scales = scaler.scale_
-rescaled_continuous_coefficients = continuous_coefficients * scales
-rescaled_coefficients_weather = np.concatenate([rescaled_continuous_coefficients, categorical_coefficients])
-rescaled_coefficients_weather = np.concatenate([continuous_coefficients, categorical_coefficients])
-
-rescaled_coefficients_df = pd.DataFrame(rescaled_coefficients_weather, columns=['rescaled coefficients'])
+# continuous_coefficients = coefficients_weather[:len(X_continuous_scaled[0])]
+# categorical_coefficients = coefficients_weather[len(X_continuous_scaled[0]):]
+# means = scaler.mean_
+# scales = scaler.scale_
+# rescaled_continuous_coefficients = continuous_coefficients * scales
+# rescaled_coefficients_weather = np.concatenate([rescaled_continuous_coefficients, categorical_coefficients])
+# rescaled_coefficients_weather = np.concatenate([continuous_coefficients, categorical_coefficients])
+#
+# rescaled_coefficients_df = pd.DataFrame(rescaled_coefficients_weather, columns=['rescaled coefficients'])
 
 p_values_weather = results_of_weather_model.pvalues
 p_values_weather_df = pd.DataFrame(p_values_weather, columns=['p_values'])
@@ -678,6 +687,7 @@ for ssp_scenario in ssp_scenarios:
         X_basis_weather = np.column_stack([X_continuous_weather_scaled, X_categorical_weather])
 
         X_basis_weather_filtered = X_basis_weather[X_basis_weather[:, 0] > mask_threshold]
+        X_basis_weather_filtered = X_basis_weather_filtered[included_weather] # account for model selection in previous steps
         # format output
         year_month_labels = np.array([f"{y}-{m}" for y, m in zip(X_basis_weather_filtered[:, 2], X_basis_weather[:, 3])])
         predictions_weather = results_of_weather_model.predict(X_basis_weather_filtered)
@@ -709,7 +719,7 @@ for ssp_scenario in ssp_scenarios:
         X_continuous_ANC_scaled = X_continuous_ANC
 
         X_bases_ANC_standardized = np.column_stack([X_continuous_ANC_scaled, X_categorical_ANC])
-
+        X_bases_ANC_standardized = X_bases_ANC_standardized[included] # account for model selection in previous steps
         y_pred_ANC = results.predict(X_bases_ANC_standardized)
         predictions = np.exp(predictions_weather) - np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
         data_weather_predictions['y_pred_no_weather'] = np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
