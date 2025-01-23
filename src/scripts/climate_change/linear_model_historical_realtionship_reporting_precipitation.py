@@ -123,6 +123,8 @@ def stepwise_selection(X, y, log_y, poisson, p_value_threshold=0.05):
         if not changed:
             break
     included.sort()
+    results, y_pred, mask_ANC_data, _ = build_model(X[:, included], y, poisson, log_y=log_y, X_mask_mm=mask_threshold)
+
     return included, results, y_pred, mask_ANC_data
 
 def calculate_vif(X):
@@ -333,17 +335,16 @@ X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 # correlation_matrix.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/correlation_matrix_of_predictors.csv')
 
 # Display the correlation matrix
-coefficient_names = ["year", "month", "altitude", "minimum_distance"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
-                     list(owner_encoded.columns)
-coefficient_names = pd.Series(coefficient_names)
+
 #results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
 
 included, results, y_pred, mask_ANC_data = stepwise_selection(X_ANC_standardized , y, poisson = poisson, log_y=log_y,)
 coefficients = results.params
-print(coefficient_names[included])
-print(coefficient_names)
 
-coefficients = results.params
+coefficient_names = ["year", "month", "altitude", "minimum_distance"] + list(resid_encoded.columns) + list(zone_encoded.columns) + \
+                     list(owner_encoded.columns)
+coefficient_names = pd.Series(coefficient_names)
+coefficient_names = coefficient_names[included]
 coefficients_df = pd.DataFrame(coefficients, columns=['coefficients'])
 continuous_coefficients = coefficients[:len(X_continuous_scaled[0])]
 categorical_coefficients = coefficients[len(X_continuous_scaled[0]):]
@@ -354,7 +355,6 @@ rescaled_coefficients = np.concatenate([rescaled_continuous_coefficients, catego
 rescaled_coefficients_df = pd.DataFrame(rescaled_coefficients, columns=['rescaled coefficients'])
 p_values = results.pvalues
 p_values_df = pd.DataFrame(p_values, columns=['p_values'])
-#results_df = pd.concat([coefficient_names, coefficients_df, p_values_df, rescaled_coefficients_df], axis=1)
 results_df = pd.concat([coefficient_names, coefficients_df, p_values_df], axis=1)
 
 results_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical.csv')
@@ -465,21 +465,10 @@ coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "year",
                             list(resid_encoded.columns) + list(zone_encoded.columns) + \
                             list(owner_encoded.columns)
 coefficient_names_weather = pd.Series(coefficient_names_weather)
-print(coefficient_names_weather[included_weather])
-print(coefficient_names_weather)
+coefficient_names_weather = coefficient_names_weather[included_weather]
 
 coefficients_weather = results_of_weather_model.params
 coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficients'])
-#rescale coefficients
-# continuous_coefficients = coefficients_weather[:len(X_continuous_scaled[0])]
-# categorical_coefficients = coefficients_weather[len(X_continuous_scaled[0]):]
-# means = scaler.mean_
-# scales = scaler.scale_
-# rescaled_continuous_coefficients = continuous_coefficients * scales
-# rescaled_coefficients_weather = np.concatenate([rescaled_continuous_coefficients, categorical_coefficients])
-# rescaled_coefficients_weather = np.concatenate([continuous_coefficients, categorical_coefficients])
-#
-# rescaled_coefficients_df = pd.DataFrame(rescaled_coefficients_weather, columns=['rescaled coefficients'])
 
 p_values_weather = results_of_weather_model.pvalues
 p_values_weather_df = pd.DataFrame(p_values_weather, columns=['p_values'])
@@ -687,7 +676,8 @@ for ssp_scenario in ssp_scenarios:
         X_basis_weather = np.column_stack([X_continuous_weather_scaled, X_categorical_weather])
 
         X_basis_weather_filtered = X_basis_weather[X_basis_weather[:, 0] > mask_threshold]
-        X_basis_weather_filtered = X_basis_weather_filtered[included_weather] # account for model selection in previous steps
+
+        X_basis_weather_filtered = X_basis_weather_filtered[:,included_weather] # account for model selection in previous steps
         # format output
         year_month_labels = np.array([f"{y}-{m}" for y, m in zip(X_basis_weather_filtered[:, 2], X_basis_weather[:, 3])])
         predictions_weather = results_of_weather_model.predict(X_basis_weather_filtered)
@@ -719,7 +709,7 @@ for ssp_scenario in ssp_scenarios:
         X_continuous_ANC_scaled = X_continuous_ANC
 
         X_bases_ANC_standardized = np.column_stack([X_continuous_ANC_scaled, X_categorical_ANC])
-        X_bases_ANC_standardized = X_bases_ANC_standardized[included] # account for model selection in previous steps
+        X_bases_ANC_standardized = X_bases_ANC_standardized[:,included] # account for model selection in previous steps
         y_pred_ANC = results.predict(X_bases_ANC_standardized)
         predictions = np.exp(predictions_weather) - np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
         data_weather_predictions['y_pred_no_weather'] = np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold])
