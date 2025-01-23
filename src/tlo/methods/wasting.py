@@ -688,11 +688,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             print(f"NON-EMERGENCY APPT on {self.sim.date=}")
 
         if (individual_properties["age_years"] >= 5) or \
-               (individual_properties["un_am_treatment_type"] in
-                ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
+            (individual_properties["un_am_treatment_type"] in
+             ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
             if do_prints:
-                print("individual not under 5, or currently treated, hence the appt not going through")
-                print(f'{individual_properties["age_years"]=}, {individual_properties["un_am_treatment_type"]=}')
+                print("not going through because")
+                if individual_properties["age_years"] >= 5:
+                    print(f'person not under 5, {individual_properties["age_years"]=}')
+                if individual_properties["un_am_treatment_type"] in \
+                    ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']:
+                    print(f',person currently treated, {individual_properties["un_am_treatment_type"]=}')
                 print("----------------------------------")
             return
 
