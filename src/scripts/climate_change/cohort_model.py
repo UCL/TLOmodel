@@ -415,7 +415,7 @@ for i, scenario in enumerate(scenarios):
         #    ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
         percentage_diff_by_year_district_all[scenario][model_type] = percentage_diff_by_year_district
 for ax in axes.flatten():
-    ax.set_ylim(y_min*15, y_max)
+    ax.set_ylim(y_min*18, y_max)
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(handles, labels,  bbox_to_anchor=(1, -10), loc = "center right", fontsize=10, title="Districts")
 plt.tight_layout()
