@@ -210,6 +210,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                                          'wasting to be canceled for the person'),
         'un_recov_with_tx_to_cancel': Property(Types.LIST, 'list of dates of scheduled recovery with tx '
                                                          'to be canceled for the person'),
+        # Property to avoid double non-emergency appt on the same date
+        'un_last_nonemergency_appt_date': Property(Types.DATE, 'last date of generic non-emergency first '
+                                                               'appointment'),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -295,6 +298,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             df.loc[df.is_alive, 'un_progression_to_cancel'].apply(lambda x: [])
         df.loc[df.is_alive, 'un_recov_with_tx_to_cancel'] = \
             df.loc[df.is_alive, 'un_recov_with_tx_to_cancel'].apply(lambda x: [])
+        # df.loc[df.is_alive, 'un_last_nonemergency_appt_date']= pd.NaT
 
 
         # initialise wasting linear models.
@@ -371,6 +375,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'un_nat_recov_to_cancel'] = []
         df.at[child_id, 'un_progression_to_cancel'] = []
         df.at[child_id, 'un_recov_with_tx_to_cancel'] = []
+        # df.at[child_id, 'un_last_nonemergency_appt_date']= pd.NaT
 
 
     def get_prob_severe_wasting_among_wasted(self, agegp: str) -> Union[float, int]:
@@ -682,6 +687,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         **kwargs,
     ) -> None:
 
+        df = self.sim.population.props
+        # p = self.parameters
+
         do_prints = False
         if person_id == self.person_of_interest_id:
             do_prints = True
@@ -689,7 +697,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         if (individual_properties["age_years"] >= 5) or \
             (individual_properties["un_am_treatment_type"] in
-             ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
+             ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']) or \
+            (self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']):
             if do_prints:
                 print("not going through because")
                 if individual_properties["age_years"] >= 5:
@@ -697,10 +706,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 if individual_properties["un_am_treatment_type"] in \
                     ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']:
                     print(f',person currently treated, {individual_properties["un_am_treatment_type"]=}')
+                if self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']:
+                    print('the non-emerg. appt did went through today already')
                 print("----------------------------------")
             return
 
-        # p = self.parameters
+        df.at[person_id, 'un_last_nonemergency_appt_date'] = self.sim.date
 
         # get the clinical states
         clinical_am = individual_properties['un_clinical_acute_malnutrition']
