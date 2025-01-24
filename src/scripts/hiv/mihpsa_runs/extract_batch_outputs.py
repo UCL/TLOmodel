@@ -549,3 +549,11 @@ num_dalys_by_year = summarize(extract_results(
 aids_dalys = num_dalys_by_year[num_dalys_by_year.index.get_level_values(1) == 'AIDS']
 
 # need to get number DALYs averted compared to minimal scenario
+dalys_averted = pd.DataFrame()
+
+# Calculate differences and add to new DataFrame
+for col in aids_dalys.columns[1:]:  # Start from the second column
+    dalys_averted[col] = aids_dalys[0] - aids_dalys[col]
+
+with pd.ExcelWriter(results_folder / 'dalys_averted.xlsx', engine='openpyxl') as writer:
+    dalys_averted.to_excel(writer, sheet_name='DALYs Averted')
