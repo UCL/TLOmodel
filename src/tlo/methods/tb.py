@@ -2125,34 +2125,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 else:
                     return ACTUAL_APPT_FOOTPRINT
 
-        # ------------------------- Culture testing if program scale-up ------------------------- #
-        # under program scale-up, if a person tests negative but still has symptoms
-        # indicative of TB, they are referred for culture test which has perfect sensitivity
-        # this has the effect to reduce false negatives
-        if not test_result and person_has_tb_symptoms:
-            if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
-                logger.debug(
-                    key="message",
-                    data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
-                )
-
-                culture_event = HSI_Tb_Culture(
-                    self.module, person_id=person_id
-                )
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    culture_event,
-                    priority=0,
-                    topen=now,
-                    tclose=None,
-                )
-
-        # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
-
-
 class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
     """
     This is a clinical diagnosis appt which is called when other tests have not been
@@ -2230,10 +2202,10 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                     priority=0,
                 )
                 # Return the footprint. If it should be suppressed, return a blank footprint.
-                if self.suppress_footprint:
-                    return self.make_appt_footprint({})
-                else:
-                    return ACTUAL_APPT_FOOTPRINT
+                # if self.suppress_footprint:
+                #     return self.make_appt_footprint({})
+                # else:
+                return ACTUAL_APPT_FOOTPRINT
 
         # ------------------------- Culture testing if program scale-up ------------------------- #
         # under program scale-up, if a person tests negative but still has all symptoms
@@ -2324,9 +2296,9 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
+        # if self.suppress_footprint:
+        #     return self.make_appt_footprint({})
+        # else:
             return ACTUAL_APPT_FOOTPRINT
 
 
@@ -2406,10 +2378,10 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+        # if self.suppress_footprint:
+        #     return self.make_appt_footprint({})
+        # else:
+        return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
@@ -2481,10 +2453,10 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
         # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+        # if self.suppress_footprint:
+        #     return self.make_appt_footprint({})
+        # else:
+        return ACTUAL_APPT_FOOTPRINT
 
 # # ---------------------------------------------------------------------------
 # #   Treatment
