@@ -442,7 +442,8 @@ historical_predictions_sum['District'] = historical_predictions_sum['District'].
 percentage_diff_by_district_historical = historical_predictions_sum.groupby('District')['Percentage_Difference'].mean()
 malawi_admin2['Percentage_Difference_historical'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district_historical)
 malawi_admin2.loc[malawi_admin2['Percentage_Difference_historical'] > 0, 'Percentage_Difference_historical'] = 0
-
+percentage_diff_by_district_historical_average = historical_predictions_sum['Percentage_Difference'].mean()
+print(percentage_diff_by_district_historical_average)
 
 fig, ax = plt.subplots(figsize=(10, 10))
 
