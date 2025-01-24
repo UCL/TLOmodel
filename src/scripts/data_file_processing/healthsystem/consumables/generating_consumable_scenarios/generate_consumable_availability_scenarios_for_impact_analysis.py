@@ -661,7 +661,7 @@ for level in fac_levels:
     heatmap_data = aggregated_df.set_index('item_category').drop(columns = 'Facility_Level')
 
     # Calculate the aggregate row and column
-    aggregate_col= aggregated_df[chosen_availability_columns].mean()
+    aggregate_col= df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), chosen_availability_columns].mean()
     #overall_aggregate = aggregate_col.mean()
 
     # Add aggregate row and column
@@ -690,7 +690,7 @@ aggregated_df = df_for_plots.groupby(['Facility_Level'])[chosen_availability_col
 heatmap_data = aggregated_df.set_index('Facility_Level')
 
 # Calculate the aggregate row and column
-aggregate_col= aggregated_df[chosen_availability_columns].mean()
+aggregate_col= df_for_plots[chosen_availability_columns].mean()
 #overall_aggregate = aggregate_col.mean()
 
 # Add aggregate row and column
@@ -720,9 +720,9 @@ aggregated_df = df_for_plots.groupby(['Facility_Level', 'item_category'])['Actua
 heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='Actual')
 
 # Calculate the aggregate row and column
-aggregate_col= heatmap_data.mean(axis=1)
-overall_aggregate = aggregate_col.mean()
-aggregate_row =  heatmap_data.mean(axis=0)
+aggregate_col= df_for_plots.groupby('item_category')['Actual'].mean()
+overall_aggregate = df_for_plots['Actual'].mean()
+aggregate_row =  df_for_plots.groupby('Facility_Level')['Actual'].mean()
 
 # Add aggregate row and column
 heatmap_data['Average'] = aggregate_col
@@ -749,9 +749,10 @@ aggregated_df = df_for_plots.groupby(['Facility_Level', 'item_category'])['75th 
 heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='75th percentile\n  facility')
 
 # Calculate the aggregate row and column
-aggregate_col= heatmap_data.mean(axis=1)
-overall_aggregate = aggregate_col.mean()
-aggregate_row =  heatmap_data.mean(axis=0)
+aggregate_col= df_for_plots.groupby('item_category')['75th percentile\n  facility'].mean()
+overall_aggregate = df_for_plots['75th percentile\n  facility'].mean()
+aggregate_row =  df_for_plots.groupby('Facility_Level')['75th percentile\n  facility'].mean()
+
 
 # Add aggregate row and column
 heatmap_data['Average'] = aggregate_col
@@ -798,7 +799,7 @@ for column_list in iteratively_chosen_availability_columns:
     heatmap_data = aggregated_df.set_index('item_category')
 
     # Calculate the aggregate row and column
-    aggregate_col= aggregated_df[column_list].mean()
+    aggregate_col= df_for_plots.loc[df_for_plots.Facility_Level.isin(chosen_levels), column_list].mean()
     #overall_aggregate = aggregate_col.mean()
 
     # Add aggregate row and column
