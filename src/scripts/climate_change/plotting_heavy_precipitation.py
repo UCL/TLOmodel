@@ -91,52 +91,63 @@ plt.tight_layout()
 plt.show()
 plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/histroical_future_precip_annual.png')
 
-## Plot 95% CI
-#
-# fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharex=True, sharey=True)
-# axes = axes.flatten()
-#
-# for i, scenario in enumerate(scenarios):
-#     scenario_directory = os.path.join(base_dir, scenario)
-#     file_path_downscaled = f"/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL/CIL_combined_{scenario}_2024_2070.nc"
-#     data_all_models = xr.open_dataset(file_path_downscaled)
-#     model_annual_precip = data_all_models.mean(dim=['lat', 'lon', 'model'], skipna=True)
-#     #model_annual_precip = pr_aggregated_mean['pr'].resample(time='YE').sum('time')
-#     std_pr_annual = data_all_models.std(dim=['lat', 'lon', "model"], skipna=True)
-#     #std_pr_annual = std_pr['pr'].resample(time='YE').sum('time')
-#     print(model_annual_precip)
-#     print(len(model_annual_precip))
-#     upper_bound = model_annual_precip['pr'] + std_pr_annual['pr']
-#     lower_bound = model_annual_precip['pr'] - std_pr_annual['pr']
-#     axes[i].plot(
-#         range(0, len(era5_precipitation_data)),
-#         era5_precipitation_data * 1000,
-#         color="#1C6E8C",
-#         linewidth=2,
-#         linestyle='--',
-#         marker='o',
-#         markersize=6,
-#         label='ERA5 Precipitation',
-#     )
-#
-#     axes[i].plot(
-#         range(len(era5_precipitation_data),len(era5_precipitation_data) +len(model_annual_precip)),
-#         model_annual_precip.to_dataarray(),
-#         label="Ensemble mean",
-#         color = 'black'
-#     )
-#     axes[i].fill_between(
-#     range(len(era5_precipitation_data), len(era5_precipitation_data) + len(model_annual_precip)),
-#     lower_bound,
-#     upper_bound,
-#     color="#9AC4F8",
-#     alpha=0.3,
-# )
-#     axes[i].set_title(scenario.upper())
-#     axes[i].set_xlabel('Year')
-#     #axes[i].legend(fontsize='small')
-#
-# fig.text(0.04, 0.5, 'Annual Precipitation (mm)', va='center', rotation='vertical')
-#
-# plt.tight_layout()
-# plt.show()
+## now do model ensembles
+
+model_types = ['lowest', 'mean', 'highest']
+# Configuration and constants
+min_year_for_analysis = 2025
+absolute_min_year = 2024
+max_year_for_analysis = 2071
+data_path = "/Users/rem76/Desktop/Climate_change_health/Data/"
+
+# Define SSP scenario
+ssp_scenarios = ["ssp126", "ssp245", "ssp585"]
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharex=True, sharey=True)
+axes = axes.flatten()
+historical_weather = pd.read_csv(
+    "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
+    index_col=0)
+print(historical_weather)
+historical_weather = historical_weather.mean(axis = 1)
+historical_weather = historical_weather.to_frame(name='mean_precipitation')
+historical_weather.reset_index()
+historical_weather_sum = historical_weather.groupby(historical_weather.index // 12).sum()
+print(historical_weather_sum)
+for i, ssp_scenario in enumerate(ssp_scenarios):
+    axes[i].plot(
+        range(len(historical_weather_sum)),
+        historical_weather_sum,
+        color="#312F2F",
+        linewidth=2,
+        linestyle='--',
+        label='ERA5'
+    )
+    for model in model_types:
+        weather_data_prediction_monthly_original = pd.read_csv(
+            f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model}_monthly_prediction_weather_by_facility.csv",
+            dtype={'column_name': 'float64'}, index_col=0
+        )
+
+        y_data = weather_data_prediction_monthly_original.mean(axis = 1)
+        y_data = y_data.to_frame(name='mean_precipitation')
+        y_data.reset_index(inplace=True)
+        y_data = y_data.groupby(
+            y_data.index // 12
+        ).sum()
+        axes[i].plot(
+            range(len(historical_weather_sum), len(historical_weather_sum) + len(y_data)),
+            y_data['mean_precipitation'],
+            label=f"{model}",
+        )
+
+        # Fix xticks and labels
+        axes[i].set_xticklabels(range(2024, 2071, 5))
+        axes[i].set_title(ssp_scenario.upper())
+        axes[i].set_xlabel('Year')
+        if i == 0:
+            axes[i].set_ylabel('Annual Precipitation (mm)')
+            axes[i].legend()
+
+plt.tight_layout()
+plt.show()
