@@ -50,7 +50,7 @@ class ImpactOfTbDaH04(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'tb_DAH_scenarios10x',
+            'filename': 'tb_DAH_scenarios2x',
             'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
             #'directory': Path(r'./outputs'),
             'custom_levels': {
