@@ -710,7 +710,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     print('the non-emerg. appt did went through today already')
                 print("----------------------------------")
             if self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']:
-                print(f"A non-emerg. appt tried to run again on the same date {self.sim.date=} for the {person_id=}.")
+                logger.debug(
+                    key="non-emergency",
+                    data=f"A non-emerg. appt runs again on the same date {self.sim.date=} for the {person_id=}. "
+                         "All DOs related to wasting are cancelled, but other module's DOs might be issued repeatedly."
+                )
             return
 
         df.at[person_id, 'un_last_nonemergency_appt_date'] = self.sim.date
