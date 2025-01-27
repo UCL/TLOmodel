@@ -715,7 +715,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 logger.debug(
                     key="non-emergency",
                     data=f"A non-emerg. appt runs again on the same date {self.sim.date=} for the {person_id=}. "
-                         "All DOs related to wasting are cancelled, but other module's DOs might be issued repeatedly."
+                         "All DOs related to wasting are cancelled."
                 )
             return
 
@@ -1771,9 +1771,9 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
             if do_prints:
-                print("consumables not available, SFP tx not scheduled, should be picked up with next growth monitoring"
-                      "if not naturally recovered in between or could be picked up with non-emergency appt if will "
-                      "progress to SAM in between")
+                print("consumables not available, SFP tx not scheduled, should be picked up with next\n"
+                      "growth monitoring if not naturally recovered in between or could be picked up\n"
+                      "with non-emergency appt")
 
         if do_prints:
             print("-----------------------------------------------")
@@ -1842,8 +1842,9 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
             if do_prints:
-                print("consumables not available, OTP tx not scheduled, should be picked up with next growth monitoring"
-                      " or non-emergency appt if not naturally recovered in between")
+                print("consumables not available, OTP tx not scheduled, should be picked up with next\n"
+                      "growth monitoring or non-emergency appt if not naturally recovered or died in\n"
+                      "between")
 
         if do_prints:
             print("----------------------OTP 2-------------------------")
@@ -1905,8 +1906,9 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
             if do_prints:
-                print("consumables not available, ITC tx not scheduled, should be picked up with next growth monitoring"
-                      " or non-emergency appt if not naturally recovered in between")
+                print("consumables not available, ITC tx not scheduled, should be picked up with next\n"
+                      "growth monitoring or non-emergency appt if not naturally recovered or died in\n"
+                      "between")
 
         if do_prints:
             print("-----------------------------------------------")
