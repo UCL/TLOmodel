@@ -695,16 +695,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         if person_id == self.person_of_interest_id:
             do_prints = True
             print(f"NON-EMERGENCY APPT on {self.sim.date=}")
+            print(f"{symptoms=}")
 
-        if (self.wasting_symptom not in symptoms) or \
-            (individual_properties["age_years"] >= 5) or \
+        if (individual_properties["age_years"] >= 5) or \
             (individual_properties["un_am_treatment_type"] in
              ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']) or \
             (self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']):
             if do_prints:
                 print("not going through because")
-                if self.wasting_symptom not in symptoms:
-                    print(f"wasting symptom(s) not among this person's {symptoms=}")
                 if individual_properties["age_years"] >= 5:
                     print(f"person not under 5, {individual_properties['age_years']=}")
                 if individual_properties['un_am_treatment_type'] in \
