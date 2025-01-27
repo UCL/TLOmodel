@@ -956,7 +956,7 @@ class PerformCINProcedureMixin:
         selected_method = 'Thermoablation' if year >= p['transition_testing_year'] else 'Cryotherapy'
         method_info = treatment_methods[selected_method]
 
-        self.add_equipment({'LLETZ Machines'})
+        self.add_equipment({'LLETZ Machines'} if selected_method == 'Thermoablation' else {'Cryotherapy Unit'})
 
         # Schedule HSI event
         hs.schedule_hsi_event(
