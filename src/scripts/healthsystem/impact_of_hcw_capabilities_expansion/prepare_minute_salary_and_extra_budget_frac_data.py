@@ -154,24 +154,24 @@ extra_budget_fracs = extra_budget_fracs.reindex(columns=col_order)
 # where DCSA = 2% and Other = 4% -> 3% are fixed according to "gap" strategies
 # and that these cadres either have limited impacts as estimated, deliver a very small proportion of services,
 # or can deliver relevant services without being constrained by other cadres.
-value_list = list(range(0, 100, 5))
-combinations = []
-for i in itertools.product(value_list, repeat=3):
-    if sum(i) == 95:
-        combinations.append(i)
-extra_budget_fracs_sample = pd.DataFrame(index=extra_budget_fracs.index, columns=range(len(combinations)+1))
-extra_budget_fracs_sample.iloc[:, 0] = 0
-extra_budget_fracs_sample.loc['DCSA', 1:] = 2
-for c in other_group:
-    extra_budget_fracs_sample.loc[c, 1:] = 3 * (
-        staff_cost.loc[c, 'cost_frac'] / staff_cost.loc[staff_cost.index.isin(other_group), 'cost_frac'].sum())
-for i in range(1, len(combinations)+1):
-    extra_budget_fracs_sample.loc[['Clinical', 'Nursing_and_Midwifery', 'Pharmacy'], i] = combinations[i-1]
-extra_budget_fracs_sample /= 100
-assert (abs(extra_budget_fracs_sample.iloc[:, 1:].sum(axis=0) - 1.0) < 1e-9).all()
-extra_budget_fracs_sample.rename(columns={0: 's_0'}, inplace=True)
-
-extra_budget_fracs = extra_budget_fracs_sample.copy()
+# value_list = list(np.arange(0, 100, 5))
+# combinations = []
+# for i in itertools.product(value_list, repeat=3):
+#     if sum(i) == 95:
+#         combinations.append(i)
+# extra_budget_fracs_sample = pd.DataFrame(index=extra_budget_fracs.index, columns=range(len(combinations)+1))
+# extra_budget_fracs_sample.iloc[:, 0] = 0
+# extra_budget_fracs_sample.loc['DCSA', 1:] = 2
+# for c in other_group:
+#     extra_budget_fracs_sample.loc[c, 1:] = 3 * (
+#         staff_cost.loc[c, 'cost_frac'] / staff_cost.loc[staff_cost.index.isin(other_group), 'cost_frac'].sum())
+# for i in range(1, len(combinations)+1):
+#     extra_budget_fracs_sample.loc[['Clinical', 'Nursing_and_Midwifery', 'Pharmacy'], i] = combinations[i-1]
+# extra_budget_fracs_sample /= 100
+# assert (abs(extra_budget_fracs_sample.iloc[:, 1:].sum(axis=0) - 1.0) < 1e-9).all()
+# extra_budget_fracs_sample.rename(columns={0: 's_0'}, inplace=True)
+#
+# extra_budget_fracs = extra_budget_fracs_sample.copy()
 
 
 # calculate hr scale up factor for years 2020-2030 (10 years in total) outside the healthsystem module
@@ -251,20 +251,24 @@ avg_increase_rate_exp = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
 
 # get the linear regression prediction
 # 1.003	0.4122	1.0178	0.269	0.2002	-0.0686
-const = -0.0686
-coefs = [1.003, 0.4122, 1.0178, 0.269, 0.2002]
-predict_dalys_averted_percent = avg_increase_rate_exp.loc[
-                                ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Dental'],
-                                :].mul(coefs, axis=0).sum() + const
-extra_budget_fracs_sample = extra_budget_fracs_sample.T
-extra_budget_fracs_sample.loc[:, 'DALYs averted %'] = predict_dalys_averted_percent.values * 100
-extra_budget_fracs_sample.drop(
-    index=extra_budget_fracs_sample[extra_budget_fracs_sample['DALYs averted %'] <= 8.50].index, inplace=True)
-extra_budget_fracs_sample['C + P'] = extra_budget_fracs_sample['Clinical'] + extra_budget_fracs_sample['Pharmacy']
-extra_budget_fracs_sample['C + NM'] = (extra_budget_fracs_sample['Clinical']
-                                       + extra_budget_fracs_sample['Nursing_and_Midwifery'])
-extra_budget_fracs_sample['NM + P'] = (extra_budget_fracs_sample['Nursing_and_Midwifery']
-                                       + extra_budget_fracs_sample['Pharmacy'])
+# const = -0.0686
+# coefs = [1.003, 0.4122, 1.0178, 0.269, 0.2002]
+# predict_dalys_averted_percent = avg_increase_rate_exp.loc[
+#                                 ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Dental'],
+#                                 :].mul(coefs, axis=0).sum() + const
+# extra_budget_fracs_sample = extra_budget_fracs_sample.T
+# extra_budget_fracs_sample.loc[:, 'DALYs averted %'] = predict_dalys_averted_percent.values * 100
+# extra_budget_fracs_sample.drop(
+#     index=extra_budget_fracs_sample[extra_budget_fracs_sample['DALYs averted %'] < 8.0].index, inplace=True)
+# extra_budget_fracs_sample['C + P'] = extra_budget_fracs_sample['Clinical'] + extra_budget_fracs_sample['Pharmacy']
+# extra_budget_fracs_sample['C + NM'] = (extra_budget_fracs_sample['Clinical']
+#                                        + extra_budget_fracs_sample['Nursing_and_Midwifery'])
+# extra_budget_fracs_sample['NM + P'] = (extra_budget_fracs_sample['Nursing_and_Midwifery']
+#                                        + extra_budget_fracs_sample['Pharmacy'])
+# min_row = pd.DataFrame(extra_budget_fracs_sample.min(axis=0)).T.rename(index={0: 'Min'})
+# max_row = pd.DataFrame(extra_budget_fracs_sample.max(axis=0)).T.rename(index={0: 'Max'})
+# extra_budget_fracs_sample = pd.concat([extra_budget_fracs_sample, min_row, max_row])
+# extra_budget_fracs_sample.drop(columns=other_group, inplace=True)
 
 
 def func_of_avg_increase_rate(cadre, scenario='s_2', r=0.042):
