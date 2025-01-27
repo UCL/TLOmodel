@@ -38,19 +38,19 @@ from tlo.analysis.utils import (
 
 # rename scenarios
 substitute_labels = {
-    's_0': 'no_extra_budget_allocation',
-    's_1': 'all_cadres_current_allocation',
-    's_2': 'all_cadres_gap_allocation',
-    's_3': 'C = P = N&M = D = O',
-    's_4': 'Clinical (C)', 's_5': 'DCSA (D)', 's_6': 'Nursing_and_Midwifery (N&M)', 's_7': 'Pharmacy (P)',
+    's_0': 'no_allocation',
+    's_1': 'current_allocation',
+    's_2': 'gap_allocation',
+    's_3': 'C = P = NM = D = O',
+    's_4': 'Clinical (C)', 's_5': 'DCSA (D)', 's_6': 'Nursing_and_Midwifery (NM)', 's_7': 'Pharmacy (P)',
     's_8': 'Other (O)',
-    's_9': 'C = D', 's_10': 'C = N&M', 's_11': 'C = P', 's_12': 'C = O', 's_13': 'N&M = D',
-    's_14': 'P = D', 's_15': 'D = O', 's_16': 'P = N&M', 's_17': 'N&M = O', 's_18': 'P = O',
-    's_19': 'C = N&M = D', 's_20': 'C = P = D', 's_21': 'C = D = O', 's_22': 'C = P = N&M', 's_23': 'C = N&M = O',
-    's_24': 'C = P = O', 's_25': 'P = N&M = D', 's_26': 'N&M = D = O', 's_27': 'P = D = O', 's_28': 'P = N&M = O',
-    's_29': 'C = P = N&M = D', 's_30': 'C = N&M = D = O', 's_31': 'C = P = D = O', 's_32': 'C = P = N&M = O',
-    's_33': 'P = N&M = D = O',
-    's_*': 'all_cadres_optimal_allocation'
+    's_9': 'C = D', 's_10': 'C = NM', 's_11': 'C = P', 's_12': 'C = O', 's_13': 'NM = D',
+    's_14': 'P = D', 's_15': 'D = O', 's_16': 'P = NM', 's_17': 'NM = O', 's_18': 'P = O',
+    's_19': 'C = NM = D', 's_20': 'C = P = D', 's_21': 'C = D = O', 's_22': 'C = P = NM', 's_23': 'C = NM = O',
+    's_24': 'C = P = O', 's_25': 'P = NM = D', 's_26': 'NM = D = O', 's_27': 'P = D = O', 's_28': 'P = NM = O',
+    's_29': 'C = P = NM = D', 's_30': 'C = NM = D = O', 's_31': 'C = P = D = O', 's_32': 'C = P = NM = O',
+    's_33': 'P = NM = D = O',
+    's_*': 'optimal_allocation'
 }
 
 # grouping causes of DALYs and types of treatments
@@ -295,45 +295,86 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def scenario_grouping_coloring(by='effect'):
         if by == 'effect':  # based on DALYs averted/whether to  expand Clinical + Pharmacy
             grouping = {
-                'C & P & D/N&M/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32',
+                'C & P & D/NM/O/None': {'s_1', 's_2', 's_3', 's_11', 's_20', 's_22', 's_24', 's_29', 's_31', 's_32',
                                          's_*'},
-                'C & D/N&M/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
-                'P & D/N&M/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
+                'C & D/NM/O/None': {'s_4', 's_9', 's_10', 's_12', 's_19', 's_21', 's_23', 's_30'},
+                'P & D/NM/O/None': {'s_7', 's_14', 's_16', 's_18', 's_25', 's_27', 's_28', 's_33'},
                 'D/O/None': {'s_5', 's_8', 's_15', 's_0'},
-                'N&M & D/O/None': {'s_6', 's_13', 's_17', 's_26'},
+                'NM & D/O/None': {'s_6', 's_13', 's_17', 's_26'},
             }
             grouping_color = {
                 'D/O/None': 'silver',
-                'N&M & D/O/None': 'lightpink',
-                'P & D/N&M/O/None': 'violet',
-                'C & D/N&M/O/None': 'darkorchid',
-                'C & P & D/N&M/O/None': 'darkturquoise',
+                'NM & D/O/None': 'lightpink',
+                'P & D/NM/O/None': 'violet',
+                'C & D/NM/O/None': 'darkorchid',
+                'C & P & D/NM/O/None': 'darkturquoise',
             }
-        elif by == 'allocation':  # based on how many cadres are expanded
+        elif by == 'allocation':
+            grouping = {
+                'D/O': {'s_5', 's_8', 's_15'},
+                'C & D/O/None': {'s_4', 's_9', 's_12', 's_21'},
+                'P & D/O/None': {'s_7', 's_14', 's_18', 's_27'},
+                'NM & D/O/None': {'s_6', 's_13', 's_17', 's_26'},
+                'C & P & D/O/None': {'s_11', 's_20', 's_24', 's_31'},
+                'C & NM & D/O/None': {'s_10', 's_19', 's_23', 's_30'},
+                'P & NM & D/O/None': {'s_16', 's_25', 's_28', 's_33'},
+                'C & P & NM & D/O/None': {'s_3', 's_22', 's_29', 's_32'},
+                'gap_allocation': {'s_2'},
+                'current_allocation': {'s_1'},
+                'optimal_allocation': {'s_*'},
+                'no_allocation': {'s_0'},
+            }
+            keys = ['gap_allocation', 'C & P & NM & D/O/None', 'C & P & D/O/None',
+                    'current_allocation', 'C & NM & D/O/None', 'C & D/O/None', 'P & NM & D/O/None',
+                    'P & D/O/None', 'NM & D/O/None', 'D/O', 'optimal_allocation', 'no_allocation',
+                    ]
+            cmap_list = list(map(plt.get_cmap("Set3"), range(len(keys))))
+            grouping_color = {keys[idx]: cmap_list[idx] for idx in range(len(keys))}
+            # grouping_color = {
+            #     'D/O': 'silver',
+            #     'C & D/O/None': 'lightskyblue',
+            #     'P & D/O/None': 'lightgreen',
+            #     'NM & D/O/None': 'lightpink',
+            #     'C & P & D/O/None': 'khaki',
+            #     'C & NM & D/O/None': 'violet',
+            #     'P & NM & D/O/None': 'burlywood',
+            #     'C & P & NM & D/O/None':  'darkturquoise',
+            #     'gap_allocation': 'yellowgreen',
+            #     'current_allocation': 'thistle',
+            #     'optimal_allocation': 'gold',
+            #     'no_allocation': 'lavender',
+            # }
+        elif by == 'allocation_alt':  # based on how many cadres are expanded
             grouping = {
                 'no_allocation': {'s_0'},
-                'all_cadres_equal_allocation': {'s_3'},
-                'all_cadres_gap_allocation': {'s_2'},
-                'all_cadres_current_allocation': {'s_1'},
-                'all_cadres_optimal_allocation': {'s_*'},
-                'one_cadre_allocation': {'s_4', 's_5', 's_6', 's_7', 's_8'},
-                'two_cadres_equal_allocation': {'s_9', 's_10', 's_11', 's_12', 's_13',
-                                                's_14', 's_15', 's_16', 's_17', 's_18'},
-                'three_cadres_equal_allocation': {'s_19', 's_20', 's_21', 's_22', 's_23',
-                                                  's_24', 's_25', 's_26', 's_27', 's_28'},
-                'four_cadres_equal_allocation': {'s_29', 's_30', 's_31', 's_32', 's_33'}
+                '5_cadres_equal_allocation': {'s_3'},
+                'gap_allocation': {'s_2'},
+                'current_allocation': {'s_1'},
+                'optimal_allocation': {'s_*'},
+                '1_cadre_allocation': {'s_4', 's_5', 's_6', 's_7', 's_8'},
+                '2_cadres_equal_allocation': {'s_9', 's_10', 's_11', 's_12', 's_13',
+                                              's_14', 's_15', 's_16', 's_17', 's_18'},
+                '3_cadres_equal_allocation': {'s_19', 's_20', 's_21', 's_22', 's_23',
+                                              's_24', 's_25', 's_26', 's_27', 's_28'},
+                '4_cadres_equal_allocation': {'s_29', 's_30', 's_31', 's_32', 's_33'}
 
             }
-            grouping_color = {
-                'no_allocation': 'gray',
-                'one_cadre_allocation': 'lightpink',
-                'two_cadres_equal_allocation': 'violet',
-                'three_cadres_equal_allocation': 'darkorchid',
-                'four_cadres_equal_allocation': 'paleturquoise',
-                'all_cadres_equal_allocation': 'darkturquoise',
-                'all_cadres_current_allocation': 'deepskyblue',
-                'all_cadres_gap_allocation': 'royalblue',
-            }
+            # grouping_color = {
+            #     'no_allocation': 'gray',
+            #     '1_cadre_allocation': 'lightpink',
+            #     '2_cadres_equal_allocation': 'violet',
+            #     '3_cadres_equal_allocation': 'darkorchid',
+            #     '4_cadres_equal_allocation': 'paleturquoise',
+            #     '5_cadres_equal_allocation': 'darkturquoise',
+            #     '5_cadres_current_allocation': 'deepskyblue',
+            #     '5_cadres_gap_allocation': 'royalblue',
+            #     '5_cadres_optimal_allocation': 'khaki',
+            # }
+            keys = ['gap_allocation', 'current_allocation',
+                    '5_cadres_equal_allocation', '4_cadres_equal_allocation', '3_cadres_equal_allocation',
+                    '2_cadres_equal_allocation', '1_cadre_allocation', 'optimal_allocation', 'no_allocation']
+            cmap_list = list(map(plt.get_cmap("Set3"), range(len(keys))))
+            grouping_color = {keys[idx]: cmap_list[idx] for idx in range(len(keys))}
         return grouping, grouping_color
 
     def do_bar_plot_with_ci(_df, _df_percent=None, annotation=False):
@@ -350,15 +391,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         colors = [scenario_color[s] for s in _df.index]
 
-        fig, ax = plt.subplots(figsize=(21, 7))
+        fig, ax = plt.subplots(figsize=(9, 6))
         ax.bar(
             xticks.keys(),
             _df['mean'].values,
             yerr=yerr,
             alpha=0.8,
-            ecolor='black',
+            ecolor='dimgrey',
             color=colors,
-            capsize=10,
+            capsize=6,
             label=xticks.values(),
             zorder=100,
         )
@@ -369,23 +410,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                        _df_percent['mean'].values,
                                                        _df_percent['lower'].values,
                                                        _df_percent['upper'].values):
-                text = f"{int(round(text1 * 100, 2))}%\n{[round(text2, 2),round(text3, 2)]}"
-                ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize='x-small')
+                text = f"{int(round(text1 * 100, 2))}%"  # \n{[round(text2, 2),round(text3, 2)]}"
+                ax.text(xpos, ypos + 0.2, text, horizontalalignment='center', fontsize='x-small')
 
         ax.set_xticks(list(xticks.keys()))
 
         xtick_label_detail = [substitute_labels[v] for v in xticks.values()]
-        ax.set_xticklabels(xtick_label_detail, rotation=90)
+        ax.set_xticklabels(xtick_label_detail, rotation=90, fontsize='medium')
 
-        legend_labels = list(scenario_groups[1].keys())
+        legend_labels = list(scenario_groups[1].keys())[:-2]
         legend_handles = [plt.Rectangle((0, 0), 1, 1,
                                         color=scenario_groups[1][label]) for label in legend_labels]
-        ax.legend(legend_handles, legend_labels, loc='center left', bbox_to_anchor=(1, 0.5),
+        ax.legend(legend_handles, legend_labels,  # loc='center left', bbox_to_anchor=(1, 0.5),
                   title='Scenario groups')
 
         ax.grid(axis="y")
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
+        ax.set_ylim((None, 12))
+        # ax.spines['top'].set_visible(False)
+        # ax.spines['right'].set_visible(False)
         fig.tight_layout()
 
         return fig, ax
@@ -1286,66 +1328,66 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # cost/time proportions within never ran appts, in total of all cadres
     p_cost = pd.DataFrame(index=num_services_summarized.index)
-    p_cost['C & P & N&M'] = never_ran_appts_info_that_need_CNP[1]
+    p_cost['C & P & NM'] = never_ran_appts_info_that_need_CNP[1]
     p_cost['C & P'] = never_ran_appts_info_that_need_CP[1]
-    p_cost['C & N&M'] = never_ran_appts_info_that_need_CN[1]
-    p_cost['P & N&M'] = never_ran_appts_info_that_need_NP[1]
+    p_cost['C & NM'] = never_ran_appts_info_that_need_CN[1]
+    p_cost['P & NM'] = never_ran_appts_info_that_need_NP[1]
     p_cost['Clinical (C)'] = never_ran_appts_info_that_need_C[1]
     p_cost['Pharmacy (P)'] = never_ran_appts_info_that_need_P[1]
-    p_cost['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[1]
+    p_cost['Nursing_and_Midwifery (NM)'] = never_ran_appts_info_that_need_N[1]
     p_cost['Other cases'] = 1 - p_cost[p_cost.columns[0:7]].sum(axis=1)
 
     p_time = pd.DataFrame(index=num_services_summarized.index)
-    p_time['C & P & N&M'] = never_ran_appts_info_that_need_CNP[4]
+    p_time['C & P & NM'] = never_ran_appts_info_that_need_CNP[4]
     p_time['C & P'] = never_ran_appts_info_that_need_CP[4]
-    p_time['C & N&M'] = never_ran_appts_info_that_need_CN[4]
-    p_time['P & N&M'] = never_ran_appts_info_that_need_NP[4]
+    p_time['C & NM'] = never_ran_appts_info_that_need_CN[4]
+    p_time['P & NM'] = never_ran_appts_info_that_need_NP[4]
     p_time['Clinical (C)'] = never_ran_appts_info_that_need_C[4]
     p_time['Pharmacy (P)'] = never_ran_appts_info_that_need_P[4]
-    p_time['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[4]
+    p_time['Nursing_and_Midwifery (NM)'] = never_ran_appts_info_that_need_N[4]
     p_time['Other cases'] = 1 - p_time[p_time.columns[0:7]].sum(axis=1)
 
     # absolute cost/time gap within never ran appts
     a_cost = pd.DataFrame(index=num_services_summarized.index)
-    a_cost['C & P & N&M'] = never_ran_appts_info_that_need_CNP[2].sum(axis=1)
+    a_cost['C & P & NM'] = never_ran_appts_info_that_need_CNP[2].sum(axis=1)
     a_cost['C & P'] = never_ran_appts_info_that_need_CP[2].sum(axis=1)
-    a_cost['C & N&M'] = never_ran_appts_info_that_need_CN[2].sum(axis=1)
-    a_cost['P & N&M'] = never_ran_appts_info_that_need_NP[2].sum(axis=1)
+    a_cost['C & NM'] = never_ran_appts_info_that_need_CN[2].sum(axis=1)
+    a_cost['P & NM'] = never_ran_appts_info_that_need_NP[2].sum(axis=1)
     a_cost['Clinical (C)'] = never_ran_appts_info_that_need_C[2].sum(axis=1)
     a_cost['Pharmacy (P)'] = never_ran_appts_info_that_need_P[2].sum(axis=1)
-    a_cost['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[2].sum(axis=1)
+    a_cost['Nursing_and_Midwifery (NM)'] = never_ran_appts_info_that_need_N[2].sum(axis=1)
     a_cost['Other cases'] = hcw_cost_gap.sum(axis=1) - a_cost.sum(axis=1)
 
     a_time = pd.DataFrame(index=num_services_summarized.index)
-    a_time['C & P & N&M'] = never_ran_appts_info_that_need_CNP[5].sum(axis=1)
+    a_time['C & P & NM'] = never_ran_appts_info_that_need_CNP[5].sum(axis=1)
     a_time['C & P'] = never_ran_appts_info_that_need_CP[5].sum(axis=1)
-    a_time['C & N&M'] = never_ran_appts_info_that_need_CN[5].sum(axis=1)
-    a_time['P & N&M'] = never_ran_appts_info_that_need_NP[5].sum(axis=1)
+    a_time['C & NM'] = never_ran_appts_info_that_need_CN[5].sum(axis=1)
+    a_time['P & NM'] = never_ran_appts_info_that_need_NP[5].sum(axis=1)
     a_time['Clinical (C)'] = never_ran_appts_info_that_need_C[5].sum(axis=1)
     a_time['Pharmacy (P)'] = never_ran_appts_info_that_need_P[5].sum(axis=1)
-    a_time['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[5].sum(axis=1)
+    a_time['Nursing_and_Midwifery (NM)'] = never_ran_appts_info_that_need_N[5].sum(axis=1)
     a_time['Other cases'] = hcw_time_gap.sum(axis=1) - a_time.sum(axis=1)
 
     # appts count proportions within never ran appts, in total of all cadres
     p_count = pd.DataFrame(index=num_services_summarized.index)
-    p_count['C & P & N&M'] = never_ran_appts_info_that_need_CNP[0]
+    p_count['C & P & NM'] = never_ran_appts_info_that_need_CNP[0]
     p_count['C & P'] = never_ran_appts_info_that_need_CP[0]
-    p_count['C & N&M'] = never_ran_appts_info_that_need_CN[0]
-    p_count['P & N&M'] = never_ran_appts_info_that_need_NP[0]
+    p_count['C & NM'] = never_ran_appts_info_that_need_CN[0]
+    p_count['P & NM'] = never_ran_appts_info_that_need_NP[0]
     p_count['Clinical (C)'] = never_ran_appts_info_that_need_C[0]
     p_count['Pharmacy (P)'] = never_ran_appts_info_that_need_P[0]
-    p_count['Nursing_and_Midwifery (N&M)'] = never_ran_appts_info_that_need_N[0]
+    p_count['Nursing_and_Midwifery (NM)'] = never_ran_appts_info_that_need_N[0]
     p_count['Other cases'] = 1 - p_count[p_count.columns[0:7]].sum(axis=1)
 
     # define color for the cadres combinations above
     cadre_comb_color = {
-        'C & P & N&M': 'royalblue',
+        'C & P & NM': 'royalblue',
         'C & P': 'turquoise',
-        'C & N&M': 'gold',
-        'P & N&M': 'yellowgreen',
+        'C & NM': 'gold',
+        'P & NM': 'yellowgreen',
         'Clinical (C)': 'mediumpurple',
         'Pharmacy (P)': 'limegreen',
-        'Nursing_and_Midwifery (N&M)': 'pink',
+        'Nursing_and_Midwifery (NM)': 'pink',
         'Other cases': 'gray',
     }
 
@@ -1393,18 +1435,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         'Other': 'gray'
     }
     # get scenario color
-    scenario_groups = scenario_grouping_coloring(by='effect')
-    # scenario_groups = scenario_grouping_coloring(by='allocation')
+    # scenario_groups = scenario_grouping_coloring(by='effect')
+    scenario_groups = scenario_grouping_coloring(by='allocation_alt')
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups[1].keys():
             if s in scenario_groups[0][k]:
                 scenario_color[s] = scenario_groups[1][k]
-
-    # representative_scenarios_color = {}
-    # cmap_list = list(map(plt.get_cmap("Set3"), range(len(param_names))))
-    # for i in range(len(param_names)):
-    #     representative_scenarios_color[num_dalys_summarized.index[i]] = cmap_list[i]
 
     # plot 4D data: relative increases of Clinical, Pharmacy, and Nursing_and_Midwifery as three coordinates,\
     # percentage of DALYs averted decides the color of that scatter point
@@ -1590,7 +1627,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    # do some linear regression to see the marginal effects of individual cadres and combined effects of C, N, P cadres
+    # do some linear regression to see the isolated effects of individual cadres and combined effects of C, N, P cadres
     outcome_data = num_dalys_averted_percent['mean']
     # outcome_data = num_services_increased_percent['mean']
     # outcome_data = num_treatments_total_increased_percent['mean']
@@ -1606,8 +1643,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #                              * regression_data['Nursing_and_Midwifery'])
     cadres_to_drop_due_to_multicollinearity = ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
     regression_data.drop(columns=cadres_to_drop_due_to_multicollinearity, inplace=True)
-    predictor = regression_data[regression_data.columns[1:]]  # .drop(index='s_*', axis=0)
-    outcome = regression_data['mean']  # .drop(index='s_*', axis=0)  # regression model without "optimal" data
+    predictor = regression_data[regression_data.columns[1:]]  # .drop(index=['s_*', 's_2', 's_1'], axis=0)
+    outcome = regression_data['mean']  # .drop(index=['s_*', 's_2', 's_1'], axis=0)  # regression model without "optimal" data
     predictor = sm.add_constant(predictor)  # add constant term
     est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
     print(est.summary())
@@ -1646,14 +1683,67 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
+    # do regression on DALYs averted % and Euclidean distance to "gap" solution
+    increase_rate_distance = increase_rate_avg_exp[
+        ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']
+    ].copy()
+    # increase_rate_distance = extra_budget_allocation[
+    #     ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']
+    # ].copy()
+    for idx in increase_rate_distance.index:
+        increase_rate_distance.loc[idx, 'Euclidean_distance'] = np.linalg.norm(
+            increase_rate_distance.loc[idx, ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']] -
+            increase_rate_distance.loc['s_2', ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Other']]
+        )
+    regression_data_1 = pd.merge(outcome_data,
+                                 increase_rate_distance['Euclidean_distance'],
+                                 left_index=True, right_index=True, how='inner')
+    predictor = regression_data_1['Euclidean_distance'].drop(index=['s_2'], axis=0)
+    outcome = regression_data_1['mean'].drop(index=['s_2'], axis=0)  # regression model without "optimal" data
+    # calculate pearson correlation
+    print(predictor.corr(outcome))
+    predictor = sm.add_constant(predictor)  # add constant term
+    est = sm.OLS(outcome.astype(float), predictor.astype(float)).fit()
+    print(est.summary())
+
+    # calculate the predicted DALYs based on the regression results
+    for i in regression_data_1.index:
+        regression_data_1.loc[i, 'predicted'] = (
+            regression_data_1.loc[i, 'Euclidean_distance'] * est.params['Euclidean_distance'] + est.params['const']
+        )
+
+    # plot mean and predicted DALYs from regression analysis
+    name_of_plot = 'DALYs-averted simulated vs predicted from linear regression on Euclidean distance'
+    fig, ax = plt.subplots(figsize=(9, 6))
+    data_to_plot = regression_data_1[['mean', 'predicted']] * 100
+    data_to_plot['strategy'] = data_to_plot.index
+    data_to_plot.rename(columns={'mean': 'simulated'}, inplace=True)
+    data_to_plot.plot.scatter(x='strategy', y='simulated', color='blue', label='simulated', ax=ax)
+    data_to_plot.plot.scatter(x='strategy', y='predicted', color='orange', label='predicted', ax=ax)
+    ax.set_ylabel('DALYs averted %', fontsize='small')
+    ax.set(xlabel=None)
+
+    xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
+    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+        xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+
+    plt.legend(loc='upper right')
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
     # todo: could do regression analysis of DALYs averted and Services increased
 
     # # do anova analysis to test the difference of scenario groups
     # def anova_oneway(df=num_dalys_averted_percent):
-    #     best = df.loc[list(scenario_groups['C + P + D/N&M/O/None']), 'mean']
-    #     middle_C = df.loc[list(scenario_groups['C + D/N&M/O/None']), 'mean']
-    #     middle_P = df.loc[list(scenario_groups['P + D/N&M/O/None']), 'mean']
-    #     worst = df.loc[df.index.isin(scenario_groups['D/N&M/O/None']), 'mean']
+    #     best = df.loc[list(scenario_groups['C + P + D/NM/O/None']), 'mean']
+    #     middle_C = df.loc[list(scenario_groups['C + D/NM/O/None']), 'mean']
+    #     middle_P = df.loc[list(scenario_groups['P + D/NM/O/None']), 'mean']
+    #     worst = df.loc[df.index.isin(scenario_groups['D/NM/O/None']), 'mean']
     #
     #     return ss.oneway.anova_oneway((best, middle_C, middle_P, worst),
     #                                   groups=None, use_var='unequal', welch_correction=True, trim_frac=0)
@@ -2226,9 +2316,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot relative numbers for scenarios
     name_of_plot = f'DALYs averted vs no extra budget allocation, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_averted / 1e6, num_dalys_averted_percent, annotation=True)
-    ax.set_title(name_of_plot)
-    ax.set_ylabel('Millions')
-    ax.set_xlabel('Extra budget allocation scenario')
+    ax.set_title(name_of_plot, fontsize='medium')
+    ax.set_ylabel('DALYs averted in Millions', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -2293,7 +2383,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # # name_of_plot = f'Time used increased by cadre and treatment: C + N&M + P vs no expansion, {target_period()}'
+    # # name_of_plot = f'Time used increased by cadre and treatment: C + NM + P vs no expansion, {target_period()}'
     # # data_to_plot = time_increased_by_cadre_treatment_CNP / 1e6
     # name_of_plot = f'Time used increased by cadre and treatment: C + P vs no expansion, {target_period()}'
     # data_to_plot = time_increased_by_cadre_treatment_CP / 1e6
@@ -2315,7 +2405,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    # name_of_plot = f'Time used increased by treatment and cadre: C + N&M + P vs no expansion, {target_period()}'
+    # name_of_plot = f'Time used increased by treatment and cadre: C + NM + P vs no expansion, {target_period()}'
     # # name_of_plot = f'Time used increased by treatment and cadre: C + P vs no expansion, {target_period()}'
     # data_to_plot = data_to_plot.T
     # data_to_plot = data_to_plot.add_suffix('*')
@@ -2477,12 +2567,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
     #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('Services increased in Millions', fontsize='medium')
-    ax.set_xlabel('Extra budget allocation strategy', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
-    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
-        xtick.set_color(color)  # color scenarios based on the group info
+    # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+    #     xtick.set_color(color)  # color scenarios based on the group info
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
     plt.legend(title='Treatment area', title_fontsize='small',
@@ -2523,9 +2613,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
-    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
-        xtick.set_color(color)  # color scenarios based on the group info
+    # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+    #     xtick.set_color(color)  # color scenarios based on the group info
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
@@ -2586,12 +2676,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
     #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('DALYs averted in Millions', fontsize='medium')
-    ax.set_xlabel('Extra budget allocation strategy', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
-    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
-        xtick.set_color(color)  # color scenarios based on the group info
+    # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+    #     xtick.set_color(color)  # color scenarios based on the group info
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
     fig.subplots_adjust(right=0.7)
