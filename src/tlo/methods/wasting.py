@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -682,6 +682,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
     def do_at_generic_first_appt(
         self,
         person_id: int,
+        symptoms: List[str],
         individual_properties: IndividualProperties,
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
@@ -695,19 +696,22 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             do_prints = True
             print(f"NON-EMERGENCY APPT on {self.sim.date=}")
 
-        if (individual_properties["age_years"] >= 5) or \
+        if (self.wasting_symptom not in symptoms) or \
+            (individual_properties["age_years"] >= 5) or \
             (individual_properties["un_am_treatment_type"] in
              ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']) or \
             (self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']):
             if do_prints:
                 print("not going through because")
+                if self.wasting_symptom not in symptoms:
+                    print(f"wasting symptom(s) not among this person's {symptoms=}")
                 if individual_properties["age_years"] >= 5:
-                    print(f'person not under 5, {individual_properties["age_years"]=}')
-                if individual_properties["un_am_treatment_type"] in \
+                    print(f"person not under 5, {individual_properties['age_years']=}")
+                if individual_properties['un_am_treatment_type'] in \
                     ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']:
-                    print(f',person currently treated, {individual_properties["un_am_treatment_type"]=}')
+                    print(f",person currently treated, {individual_properties['un_am_treatment_type']=}")
                 if self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']:
-                    print('the non-emerg. appt did went through today already')
+                    print("the non-emerg. appt did went through today already")
                 print("----------------------------------")
             if self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']:
                 logger.debug(
@@ -1105,7 +1109,7 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
                 print("----------------------------------")
             return
 
-        # # Check if this person should still die from SAM and it should happen now not in future:
+        # # Check if this person should still die from SAM and that it should happen now not in the future:
         if (
             pd.isnull(df.at[person_id, 'un_am_recovery_date']) and
             not (df.at[person_id, 'un_am_discharge_date'] > df.at[person_id, 'un_am_tx_start_date']) and
