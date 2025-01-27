@@ -30,7 +30,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date
+from tlo.util import random_date, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -258,32 +258,34 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
-        ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
-        ResourceFile_cmd_condition_removal.xlsx  = parameters for removal of conditions
-        ResourceFile_cmd_condition_death.xlsx  = parameters for death rate from conditions
-        ResourceFile_cmd_condition_prevalence.xlsx  = initial and target prevalence for conditions
-        ResourceFile_cmd_condition_symptoms.xlsx  = symptoms for conditions
-        ResourceFile_cmd_condition_hsi.xlsx  = HSI parameters for conditions
-        ResourceFile_cmd_condition_testing.xlsx  = community testing parameters for conditions (currently only
-        hypertension)
-        ResourceFile_cmd_events.xlsx  = parameters for occurrence of events
-        ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events
-        ResourceFile_cmd_events_symptoms.xlsx  = symptoms for events
-        ResourceFile_cmd_events_hsi.xlsx  = HSI parameters for events
+        Folders
+            ResourceFile_cmd_condition_onset = parameters for onset of conditions
+            ResourceFile_cmd_condition_removal  = parameters for removal of conditions
+            ResourceFile_cmd_condition_death  = parameters for death rate from conditions
+            ResourceFile_cmd_condition_prevalence  = initial and target prevalence for conditions
+            ResourceFile_cmd_condition_symptoms  = symptoms for conditions
+            ResourceFile_cmd_condition_hsi  = HSI parameters for conditions
+            ResourceFile_cmd_condition_testing  = community testing parameters for conditions (currently only
+            hypertension)
+            ResourceFile_cmd_events  = parameters for occurrence of events
+            ResourceFile_cmd_events_death  = parameters for death rate from events
+            ResourceFile_cmd_events_symptoms  = symptoms for events
+            ResourceFile_cmd_events_hsi  = HSI parameters for events
 
         """
-        cmd_path = resourcefilepath / "cmd"
-        cond_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_onset.xlsx", sheet_name=None)
-        cond_removal = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_removal.xlsx", sheet_name=None)
-        cond_death = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_death.xlsx", sheet_name=None)
-        cond_prevalence = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
-        cond_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_symptoms.xlsx", sheet_name=None)
-        cond_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_hsi.xlsx", sheet_name=None)
-        cond_testing = pd.read_excel(cmd_path / "ResourceFile_cmd_condition_testing.xlsx", sheet_name=None)
-        events_onset = pd.read_excel(cmd_path / "ResourceFile_cmd_events.xlsx", sheet_name=None)
-        events_death = pd.read_excel(cmd_path / "ResourceFile_cmd_events_death.xlsx", sheet_name=None)
-        events_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_events_symptoms.xlsx", sheet_name=None)
-        events_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_events_hsi.xlsx", sheet_name=None)
+
+        cmd_path = Path(self.resourcefilepath) / "cmd"
+        cond_onset = read_csv_files(cmd_path / "ResourceFile_cmd_condition_onset", files=None)
+        cond_removal = read_csv_files(cmd_path / "ResourceFile_cmd_condition_removal", files=None)
+        cond_death = read_csv_files(cmd_path / "ResourceFile_cmd_condition_death", files=None)
+        cond_prevalence = read_csv_files(cmd_path / "ResourceFile_cmd_condition_prevalence", files=None)
+        cond_symptoms = read_csv_files(cmd_path / "ResourceFile_cmd_condition_symptoms", files=None)
+        cond_hsi = read_csv_files(cmd_path / "ResourceFile_cmd_condition_hsi", files=None)
+        cond_testing = read_csv_files(cmd_path / "ResourceFile_cmd_condition_testing", files=None)
+        events_onset = read_csv_files(cmd_path / "ResourceFile_cmd_events", files=None)
+        events_death = read_csv_files(cmd_path / "ResourceFile_cmd_events_death", files=None)
+        events_symptoms = read_csv_files(cmd_path / "ResourceFile_cmd_events_symptoms", files=None)
+        events_hsi = read_csv_files(cmd_path / "ResourceFile_cmd_events_hsi", files=None)
 
         self.load_parameters_from_dataframe(pd.read_csv(cmd_path / "ResourceFile_cmd_parameters.csv"))
 

@@ -23,6 +23,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.util import read_csv_files
 
 # %%
 resourcefilepath = Path("./resources")
@@ -188,7 +189,7 @@ for condition in conditions:
     )
 
     # get prevalence + lower and upper values
-    prev_range = pd.read_excel(resourcefilepath / "cmd" / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
+    prev_range = read_csv_files(resourcefilepath / "cmd" / "ResourceFile_cmd_condition_prevalence", files=None)
     baseline_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['lower'].values),
                       (prev_range[f'{condition}']['upper'].values - prev_range[f'{condition}']['value'].values)]
     if 'gbd_value' in prev_range[f'{condition}']:
@@ -493,10 +494,10 @@ def make_incidence_plot(condition, type):
     condition_title = condition_title.title()
 
     if type == 'incidence':
-        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_condition_and_events_{type}.xlsx",
-                                  sheet_name=None)
+        inc_range = read_csv_files(resourcefilepath / "cmd" / f"ResourceFile_cmd_condition_and_events_{type}",
+                                  files=None)
     else:
-        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}.xlsx", sheet_name=None)
+        inc_range = read_csv_files(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}", files=None)
     asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['lower'].values),
                           (inc_range[f'{condition}']['upper'].values - inc_range[f'{condition}']['value'].values)]
 
