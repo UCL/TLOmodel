@@ -1,4 +1,6 @@
 import warnings
+from pathlib import Path
+from typing import Optional
 
 from tlo import Date, Module, Parameter, Types
 from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
@@ -51,7 +53,7 @@ class ImprovedHealthSystemAndCareSeekingScenarioSwitcher(Module):
 
     PROPERTIES = {}
 
-    def read_parameters(self, *args):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read-in parameters and process them into the internal storage structures required."""
 
         # Parameters are hard-coded for this module to not make any changes. (The expectation is that some of these
