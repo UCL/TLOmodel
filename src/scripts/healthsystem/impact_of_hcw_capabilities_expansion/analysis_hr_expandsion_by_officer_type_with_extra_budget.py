@@ -55,7 +55,7 @@ substitute_labels = {
 
 # grouping causes of DALYs and types of treatments
 cause_group = {
-    'AIDS': 'AIDS',
+    'AIDS': 'HIV/AIDS',
     'TB (non-AIDS)': 'TB (non-AIDS)',
     'Malaria': 'Malaria',
     'Childhood Diarrhoea': 'RMNCH',
@@ -82,7 +82,7 @@ cause_group = {
     'Other': 'Other',
 }
 cause_group_color = {
-    'AIDS': 'deepskyblue',
+    'HIV/AIDS': 'deepskyblue',
     'TB (non-AIDS)': 'mediumslateblue',
     'Malaria': 'khaki',
     'RMNCH': 'mediumaquamarine',
@@ -105,7 +105,7 @@ treatment_group = {
     'Epi*': 'RMNCH',
     'Epilepsy*': 'NCDs',
     'FirstAttendance*': 'First Attendance',
-    'Hiv*': 'AIDS',
+    'Hiv*': 'HIV/AIDS',
     'Inpatient*': 'Inpatient',
     'Malaria*':	'Malaria',
     'Measles*':	'RMNCH',
@@ -119,7 +119,7 @@ treatment_group = {
     'Undernutrition*': 'RMNCH',
 }
 treatment_group_color = {
-    'AIDS': 'deepskyblue',
+    'HIV/AIDS': 'deepskyblue',
     'TB (non-AIDS)': 'mediumslateblue',
     'Malaria': 'khaki',
     'RMNCH': 'mediumaquamarine',
@@ -875,6 +875,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # get absolute numbers for scenarios
     # sort the scenarios according to their DALYs values, in ascending order
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names).sort_values(by='mean')
+    num_dalys_summarized.to_csv(output_folder / 'num_dalys_summarized.csv')
     num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
@@ -985,6 +986,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 comparison='s_0')
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_dalys_averted.to_csv(output_folder / 'num_dalys_averted.csv')
 
     num_dalys_averted_percent = summarize(
         -1.0 *
@@ -996,6 +998,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_dalys_averted_percent.to_csv(output_folder / 'num_dalys_averted_percent.csv')
 
     num_dalys_by_cause_averted = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -1012,6 +1015,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_dalys_by_cause_group_averted.to_csv(output_folder / 'num_dalys_by_cause_area_averted.csv')
 
     num_dalys_by_cause_averted_percent = summarize(
         -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -1086,6 +1090,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_treatments_group_increased.to_csv(output_folder / 'num_treatments_area_increased.csv')
 
     # num_treatments_increased_percent = summarize(
     #     find_difference_relative_to_comparison_dataframe(
@@ -1204,6 +1209,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     hcw_time_used = hcw_time_or_cost_used(time_cost_df=appt_time)[0]
     hcw_time_increased_by_cadre = hcw_time_or_cost_used(time_cost_df=appt_time)[1]
+    hcw_time_increased_by_cadre.to_csv(output_folder / 'hcw_time_increased_by_cadre.csv')
 
     # get HCW time and cost needed to run the never run appts
     def hcw_time_or_cost_gap(time_cost_df=appt_time, count_df=num_never_ran_appts_by_level_summarized):
@@ -1251,6 +1257,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_cost_gap['Other'] = hcw_cost_gap[
         ['Dental', 'Laboratory', 'Mental', 'Radiography']
     ].sum(axis=1)
+    hcw_cost_gap.to_csv(output_folder / 'hcw_cost_gap.csv')
+    hcw_cost_gap_percent.to_csv(output_folder / 'hcw_cost_gap_percent.csv')
 
     # # store the proportions of no expansion scenario as the "best" scenario that is to be tested
     # hcw_cost_gap_percent_no_expansion = hcw_cost_gap_percent.loc[
@@ -2556,7 +2564,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Services increased by treatment area vs no extra budget allocation, {target_period()}'
     data_to_plot = num_treatments_group_increased / 1e6
     data_to_plot = data_to_plot[
-        ['RMNCH', 'AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']
+        ['RMNCH', 'HIV/AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']
     ]
     # yerr_services = np.array([
     #     (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
@@ -2666,7 +2674,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'DALYs by cause area averted vs no extra budget allocation, {target_period()}'
     data_to_plot = num_dalys_by_cause_group_averted / 1e6
-    data_to_plot = data_to_plot[['RMNCH', 'AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']]
+    data_to_plot = data_to_plot[['RMNCH', 'HIV/AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']]
     # yerr_dalys = np.array([
     #     (num_dalys_averted['mean'] - num_dalys_averted['lower']).values,
     #     (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
