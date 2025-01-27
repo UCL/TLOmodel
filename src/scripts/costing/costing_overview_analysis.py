@@ -51,12 +51,12 @@ if not os.path.exists(figurespath):
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('hss_elements-2024-11-12T172311Z.py', outputfilepath)[0]
-#results_folder = Path('./outputs/cost_scenarios-2024-11-26T205921Z')
+results_folder = get_scenario_outputs('htm_and_hss_runs-2025-01-16T135243Z.py', outputfilepath)[0] # January 2025 runs
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
 params = extract_params(results_folder)
+info = get_scenario_info(results_folder)
 
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
