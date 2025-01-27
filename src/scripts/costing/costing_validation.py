@@ -28,6 +28,7 @@ from tlo.analysis.utils import (
     parse_log_file,
     unflatten_flattened_multi_index_in_logging
 )
+from tlo.methods.healthsystem import get_item_code_from_item_name
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              do_stacked_bar_plot_of_cost_by_category)
 
@@ -74,7 +75,8 @@ calibration_data = calibration_data.set_index(['calibration_category', 'stat'])
 # Load result files
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
-results_folder = get_scenario_outputs('hss_elements-2024-11-12T172311Z.py', outputfilepath)[0]
+#results_folder = get_scenario_outputs('hss_elements-2024-11-12T172311Z.py', outputfilepath)[0] # November 2024 runs
+results_folder = get_scenario_outputs('htm_and_hss_runs-2025-01-16T135243Z.py', outputfilepath)[0] # January 2025 runs
 
 # Estimate costs for 2018
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _years = [2018], _draws = [0], summarize = True, cost_only_used_staff=False)
@@ -152,33 +154,85 @@ def get_calibration_relevant_subset_of_other_costs(_df, _subcategory, _calibrati
 #-----------------------------------------------------------------------------------------------------------------------
 calibration_data['model_cost'] = np.nan
 consumables_costs_by_item_code = assign_item_codes_to_consumables(input_costs)
+consumable_list = pd.read_csv(resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv')
+def get_item_code(item):
+    return get_item_code_from_item_name(consumable_list, item)
 
-irs = [161]
-bednets = [160]
-undernutrition = [213, 1220, 1221, 1223, 1227]
-cervical_cancer = [261, 1239]
-other_family_planning = [1, 3,7,12,13]
-vaccines = [150, 151, 153, 155, 157, 158, 1197]
-art = [2671, 2672, 2673]
-tb_treatment = [176, 177, 179, 178, 181, 2678]
-antimalarials = [162,164,170]
-malaria_rdts = [163]
-hiv_screening = [190,191,196]
-condoms = [2,25]
-tb_tests = [184,187, 175]
-circumcision = [197]
-other_drugs = set(consumables_costs_by_item_code['cost_subgroup'].unique()) - set(irs) - set(bednets) - set(undernutrition) - set(cervical_cancer) - set(other_family_planning) - set(vaccines) \
+# Malaria consumables
+irs = [get_item_code('Indoor residual spraying drugs/supplies to service a client')]
+bednets = [get_item_code('Insecticide-treated net')]
+antimalarials = [get_item_code('Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST'),
+                 get_item_code('Injectable artesunate'),
+                 get_item_code('Fansidar (sulphadoxine / pyrimethamine tab)')]
+malaria_rdts = [get_item_code('Malaria test kit (RDT)')]
+
+# HIV consumables
+hiv_screening = [get_item_code('Test, HIV EIA Elisa'), get_item_code('VL Test'), get_item_code('CD4 test')]
+
+art = [get_item_code("First-line ART regimen: adult"), get_item_code("Cotrimoxizole, 960mg pppy"), # adult
+        get_item_code("First line ART regimen: older child"), get_item_code("Cotrimoxazole 120mg_1000_CMST"), # Older children
+        get_item_code("First line ART regimen: young child"), # younger children (also get cotrimoxazole 120mg
+        get_item_code('Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg'),
+        get_item_code("Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg"), # Adult prep
+        get_item_code("Nevirapine, oral solution, 10 mg/ml")] # infant prep
+
+circumcision = [get_item_code('male circumcision kit, consumables (10 procedures)_1_IDA')]
+
+# Tuberculosis consumables
+tb_tests = [get_item_code("ZN Stain"), get_item_code("Sputum container"), get_item_code("Microscope slides, lime-soda-glass, pack of 50"),
+            get_item_code("Xpert"), get_item_code("Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST"),
+            get_item_code("X-ray"), get_item_code("MGIT960 Culture and DST"),
+            get_item_code("Solid culture and DST")]
+# consider removing X-ray
+tb_treatment = [get_item_code("Cat. I & III Patient Kit A"), # adult primary
+                get_item_code("Cat. I & III Patient Kit B"), # child primary
+                get_item_code("Cat. II Patient Kit A1"), # adult secondary
+                get_item_code("Cat. II Patient Kit A2"), # child secondary
+                get_item_code("Treatment: second-line drugs"), # MDR
+                get_item_code("Isoniazid/Pyridoxine, tablet 300 mg"), # IPT
+                get_item_code("Isoniazid/Rifapentine")] # 3 HP
+# Family planning consumables
+other_family_planning = [get_item_code("Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle"), # pill
+                        get_item_code("IUD, Copper T-380A"), # IUD
+                         get_item_code("Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly"), # injection
+                         get_item_code("Jadelle (implant), box of 2_CMST"), # implant
+                         get_item_code('Implanon (Etonogestrel 68 mg)'), # implant - not currently in use in the model
+                         get_item_code("Atropine sulphate  600 micrograms/ml, 1ml_each_CMST")] # female sterilization
+condoms = [get_item_code("Condom, male"),
+           get_item_code("Female Condom_Each_CMST")]
+# Undernutrition
+undernutrition = [get_item_code('Supplementary spread, sachet 92g/CAR-150'),
+                  get_item_code('Complementary feeding--education only drugs/supplies to service a client'),
+                  get_item_code('SAM theraputic foods'),
+                  get_item_code('SAM medicines'),
+                  get_item_code('Therapeutic spread, sachet 92g/CAR-150'),
+                  get_item_code('F-100 therapeutic diet, sach., 114g/CAR-90')]
+# Cervical cancer
+cervical_cancer = [get_item_code('Specimen container'),
+                   get_item_code('Biopsy needle'),
+                   get_item_code('Cyclophosphamide, 1 g')]
+# Vaccines
+vaccines = [get_item_code("Syringe, autodisposable, BCG, 0.1 ml, with needle"),
+            get_item_code("Polio vaccine"),
+            get_item_code("Pentavalent vaccine (DPT, Hep B, Hib)"),
+            get_item_code("Rotavirus vaccine"),
+            get_item_code("Measles vaccine"),
+            get_item_code("Pneumococcal vaccine"),
+            get_item_code("HPV vaccine"),
+            get_item_code("Tetanus toxoid, injection")] # not sure if this should be included
+
+other_drugs = set(consumables_costs_by_item_code['cost_subgroup'].unique()) - set(irs) - set(bednets) - set(undernutrition) - set(other_family_planning) - set(vaccines) \
               - set(art) - set(tb_treatment) - set(antimalarials) - set(malaria_rdts) - set(hiv_screening)\
-              - set(condoms) - set(tb_tests)
+              - set(condoms) - set(tb_tests) # - set(cervical_cancer)
 
 # Note that the main ARV  regimen in 2018 was tenofovir/lamivudine/efavirenz as opposed to Tenofovir/Lamivudine/Dolutegravir as used in the RF_Costing. The price of this
-# was $80 per year (80/(0.103*365)) times what's estimated by the model so let's update this
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = art, _calibration_category = 'Antiretrovirals')*  80/(0.103*365))
+# was $82 per year (80/(0.103*365)) times what's estimated by the model so let's update this
+calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = art, _calibration_category = 'Antiretrovirals')*  82/(0.103*365))
 # Other consumables costs do not need to be adjusted
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = irs, _calibration_category = 'Indoor Residual Spray'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = bednets, _calibration_category = 'Bednets'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = undernutrition, _calibration_category = 'Undernutrition commodities'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = cervical_cancer, _calibration_category = 'Cervical Cancer'))
+#calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = cervical_cancer, _calibration_category = 'Cervical Cancer'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = other_family_planning, _calibration_category = 'Other family planning commodities'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = vaccines, _calibration_category = 'Vaccines'))
 calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = tb_treatment, _calibration_category = 'TB Treatment'))
@@ -220,7 +274,7 @@ calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calib
 list_of_consumables_costs_for_calibration_only_hiv = ['Voluntary Male Medical Circumcision', 'HIV Screening/Diagnostic Tests', 'Antiretrovirals']
 list_of_consumables_costs_for_calibration_without_hiv =['Indoor Residual Spray', 'Bednets', 'Malaria RDTs', 'Antimalarials', 'TB Tests (including RDTs)', 'TB Treatment', 'Vaccines',
                                                         'Condoms and Lubricants', 'Other family planning commodities',
-                                                        'Undernutrition commodities', 'Cervical Cancer', 'Other Drugs, medical supplies, and commodities']
+                                                        'Undernutrition commodities', 'Other Drugs, medical supplies, and commodities']
 list_of_hr_costs_for_calibration = ['Health Worker Salaries', 'Health Worker Training - In-Service', 'Health Worker Training - Pre-Service', 'Mentorships & Supportive Supervision']
 list_of_equipment_costs_for_calibration = ['Medical Equipment - Purchase', 'Medical Equipment - Maintenance']
 list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastructure - Rehabilitation', 'Vehicles - Maintenance','Vehicles - Fuel and Maintenance']
@@ -229,7 +283,7 @@ list_of_operating_costs_for_calibration = ['Facility utility bills', 'Infrastruc
 costing_outputs_folder = Path('./outputs/costing')
 if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
-figurespath = costing_outputs_folder / "figures_post_cons_fix"
+figurespath = costing_outputs_folder / "figures_post_jan2025fix"
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 calibration_outputs_folder = Path(figurespath / 'calibration')
@@ -328,7 +382,6 @@ do_cost_calibration_plot(calibration_data, list_of_hr_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_equipment_costs_for_calibration)
 do_cost_calibration_plot(calibration_data, list_of_operating_costs_for_calibration)
 do_cost_calibration_plot(calibration_data,all_calibration_costs, _xtick_fontsize = 7)
-calibration_data.to_csv(figurespath / 'calibration/calibration.csv')
 
 # Extract calibration data table for manuscript appendix
 calibration_data_extract = calibration_data[calibration_data.index.get_level_values(1) == 'mean']
@@ -369,35 +422,43 @@ calibration_categories_dict = {'Other Drugs, medical supplies, and commodities':
 'Unclassified': 'Not represented in TLO model'}
 calibration_data_extract['cost_category'] = calibration_data_extract['calibration_category'].map(calibration_categories_dict)
 
-# Add a column show deviation from actual expenditure
-calibration_data_extract['Deviation of estimated cost from actual expenditure (%)'] = (
+calibration_data_extract['deviation_from_expenditure'] = abs(
     (calibration_data_extract['model_cost'] - calibration_data_extract['actual_expenditure_2019'])
     /calibration_data_extract['actual_expenditure_2019'])
+calibration_data_extract['deviation_from_budget'] = abs(
+    (calibration_data_extract['model_cost'] - calibration_data_extract['max_annual_budget_2020-22'])
+    /calibration_data_extract['max_annual_budget_2020-22'])
+calibration_data_extract['Absolute deviation of estimated cost from data (%)'] = (
+    calibration_data_extract[['deviation_from_expenditure', 'deviation_from_budget']]
+    .min(axis=1, skipna=True)  # Use axis=1 to compute the minimum row-wise.
+)
 
 # Format the deviation as a percentage with 2 decimal points
-calibration_data_extract['Deviation of estimated cost from actual expenditure (%)'] = (
-    calibration_data_extract['Deviation of estimated cost from actual expenditure (%)']
+calibration_data_extract['Absolute deviation of estimated cost from data (%)'] = (
+    calibration_data_extract['Absolute deviation of estimated cost from data (%)']
     .map(lambda x: f"{x * 100:.2f}%")
 )
-calibration_data_extract.loc[calibration_data_extract['Deviation of estimated cost from actual expenditure (%)'] == 'nan%', 'Deviation of estimated cost from actual expenditure (%)'] = 'NA'
+calibration_data_extract.loc[calibration_data_extract['Absolute deviation of estimated cost from data (%)'] == 'nan%', 'Absolute deviation of estimated cost from data (%)'] = 'NA'
 # Replace if calibration is fine
 calibration_condition_met = ((calibration_data_extract['model_cost'] > calibration_data_extract[['actual_expenditure_2019', 'max_annual_budget_2020-22']].min(axis=1)) &
     (calibration_data_extract['model_cost'] < calibration_data_extract[['actual_expenditure_2019', 'max_annual_budget_2020-22']].max(axis=1)))
 
 calibration_data_extract.loc[calibration_condition_met,
-    'Deviation of estimated cost from actual expenditure (%)'
+    'Absolute deviation of estimated cost from data (%)'
 ] = 'Within target range'
 
 calibration_data_extract.loc[calibration_data_extract['model_cost'].isna(), 'model_cost'] = 'NA'
 
 calibration_data_extract = calibration_data_extract.sort_values(by=['cost_category', 'calibration_category'])
-calibration_data_extract = calibration_data_extract[['cost_category', 'calibration_category', 'actual_expenditure_2019', 'max_annual_budget_2020-22', 'model_cost', 'Deviation of estimated cost from actual expenditure (%)']]
+calibration_data_extract = calibration_data_extract[['cost_category', 'calibration_category', 'actual_expenditure_2019', 'max_annual_budget_2020-22', 'model_cost', 'Absolute deviation of estimated cost from data (%)']]
 calibration_data_extract = calibration_data_extract.rename(columns = {'cost_category': 'Cost Category',
                                                             'calibration_category': 'Relevant RM group',
                                                             'actual_expenditure_2019': 'Recorded Expenditure (FY 2018/19)',
                                                             'max_annual_budget_2020-22': 'Maximum Recorded Annual Budget (FY 2019/20 - 2021/22)',
                                                             'model_cost': 'Estimated cost (TLO Model, 2018)'
     })
+
+calibration_data_extract.to_csv(figurespath / 'calibration/calibration.csv')
 def convert_df_to_latex(_df, _longtable = False, numeric_columns = []):
     _df['Relevant RM group'] = _df['Relevant RM group'].str.replace('&', r'\&', regex=False)
     # Format numbers to the XX,XX,XXX.XX format for all numeric columns
