@@ -2322,7 +2322,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
-        print(f'"STARTING TB CHEST XRAY SCREENING AT LEVEL1B"')
+        logger.info(f'"STARTING TB CHEST XRAY SCREENING AT LEVEL1B"')
         logger.debug(key="message", data=f"Performing Tb chest X-ray screening for {person_id}")
 
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
