@@ -50,9 +50,9 @@ class BaselineScenario(BaseScenario):
         #             'analysis_year': 2024}}
         #
         # else:
-        interventions_for_analysis = ['sepsis_treatment', 'sepsis_treatment',
-                                      'birth_kit', 'birth_kit',
-                                      'caesarean_section', 'caesarean_section']
+        interventions_for_analysis = ['iron_folic_acid', 'iron_folic_acid',
+                                      'post_abortion_care_core', 'post_abortion_care_core',
+                                      'ectopic_pregnancy_treatment', 'ectopic_pregnancy_treatment']
 
         avail_for_draw = [0.0, 1.0,
                           0.0, 1.0,
