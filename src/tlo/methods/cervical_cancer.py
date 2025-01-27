@@ -1349,11 +1349,18 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # If consumables are available and the treatment will go ahead - add the used equipment
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
-            # Log the use of adjuvant chemotherapy: currently ciplatin, chemo not dependent on drug availability
-            self.get_consumables(
-                item_codes= self.module.item_codes_cervical_can['cervical_cancer_treatment_chemotherapy_cisplatin'],
-                optional_item_codes = self.module.item_codes_cervical_can['iv_drug_cons']
+            # Log the use of adjuvant chemotherapy: try cisplatin first, if not available try fluorouracil
+            # Currently just documenting chemo consumbale, treatement not dependent on availability
+            chemo_cons_available = self.get_consumables(
+                item_codes=self.module.item_codes_cervical_can['cervical_cancer_treatment_chemotherapy_cisplatin'],
+                optional_item_codes=self.module.item_codes_cervical_can['iv_drug_cons']
             )
+            if not chemo_cons_available:
+                chemo_cons_available = self.get_consumables(
+                    item_codes=self.module.item_codes_cervical_can['cervical_cancer_treatment_chemotherapy_fluorouracil'],
+                    optional_item_codes=self.module.item_codes_cervical_can['iv_drug_cons']
+                )
+
 
             # Record date and stage of starting treatment
             df.at[person_id, "ce_date_treatment"] = self.sim.date
