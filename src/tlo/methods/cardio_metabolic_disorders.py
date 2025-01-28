@@ -274,7 +274,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
         """
 
-        cmd_path = Path(self.resourcefilepath) / "cmd"
+        cmd_path = resourcefilepath / "cmd"
         cond_onset = read_csv_files(cmd_path / "ResourceFile_cmd_condition_onset", files=None)
         cond_removal = read_csv_files(cmd_path / "ResourceFile_cmd_condition_removal", files=None)
         cond_death = read_csv_files(cmd_path / "ResourceFile_cmd_condition_death", files=None)
