@@ -415,7 +415,7 @@ input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_s
 
 # %%
 # Return on Invesment analysis
-# Calculate incremental cost
+# 1. Calculate incremental cost
 # -----------------------------------------------------------------------------------------------------------------------
 # Extract detailed input_costs
 input_costs.groupby(['draw', 'run', 'cost_category', 'year'])['cost'].sum().to_csv(figurespath / 'detailed_costs_2025-2035.csv')
@@ -440,10 +440,10 @@ def find_difference_relative_to_comparison(_ser: pd.Series,
 incremental_scenario_cost = (pd.DataFrame(
     find_difference_relative_to_comparison(
         total_input_cost,
-        comparison=0)  # sets the comparator to 0 which is the Actual scenario
+        comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
 ).T.iloc[0].unstack()).T
 
-# Monetary value of health impact
+# 2. Monetary value of health impact
 # -----------------------------------------------------------------------------------------------------------------------
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -495,24 +495,6 @@ projected_health_spending = estimate_projected_health_spending(resourcefilepath,
 projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0]['mean'][0]
 
 # Combined ROI plot of relevant scenarios
-'''
-# HTM scenarios X 5
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [1,8,9,10,11],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'all_HTM_VSL')
-
-# HTM scenarios X 3
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [1,8,9],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'HTM_full_HSS_VSL')
-
-'''
 htm_scenarios = {0:"Baseline", 8: "HSS Expansion Package",
                  9: "HIV Program Scale-up Without HSS Expansion", 17: "HIV Programs Scale-up With HSS Expansion Package",
                  18: "TB Program Scale-up Without HSS Expansion", 26: "TB Programs Scale-up With HSS Expansion Package",
@@ -520,40 +502,45 @@ htm_scenarios = {0:"Baseline", 8: "HSS Expansion Package",
                  36: "HTM Program Scale-up Without HSS Expansion",44: "HTM Programs Scale-up With HSS Expansion Package",
                  41: "HTM Program Scale-up With Consumables at 75th Percentile", 39: "HTM Program Scale-up With HRH Scale-up (6%)"}
 
-# Only HSS
+# HTM with HSS versus HSS alone
+draw_colors = {8: '#438FBA', 44:'#5E4FA2'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [36, 8],
+                   _draws = [8, 44],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'HTM_full_HSS_VSL',
+                   _value_of_life_suffix = 'HSS_VSL',
                    _plot_vertical_lines_at = [0, 1e9, 3e9],
                     _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                    _projected_health_spending = projected_health_spending_baseline)
+                    _projected_health_spending = projected_health_spending_baseline,
+                   _draw_colors = draw_colors)
 
-# HTM scenarios with HSS
-draw_colors = {8: '#438FBA', 44:'#5E4FA2'}
+# HTM scenarios with and without HSS
+draw_colors = {36: '#438FBA', 44:'#5E4FA2'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [36, 44],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'HTM_full_HSS_VSL',
+                   _value_of_life_suffix = 'HTM_VSL',
                    _plot_vertical_lines_at = [0, 1e9, 3e9],
                     _year_suffix= f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors)
 
-# HIV scenarios
+# HIV scenarios with and without HSS
+draw_colors = {9: '#438FBA', 17:'#5E4FA2'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [9,17],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
-                   _value_of_life_suffix = 'HIV_VSL')
+                   _value_of_life_suffix = 'HIV_VSL',
+                   _draw_colors = draw_colors)
 
-# TB scenarios
+# TB scenarios with and without HSS
+draw_colors = {18: '#438FBA', 26:'#5E4FA2'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [18,26],
@@ -561,16 +548,19 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _outputfilepath=roi_outputs_folder,
                    _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'TB_VSL',
+                   _draw_colors = draw_colors,
                    _y_axis_lim = 30)
 
-# Malaria scenarios
+# Malaria scenarios with and without HSS
+draw_colors = {27: '#438FBA', 35:'#5E4FA2'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [27,35],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
-                   _value_of_life_suffix = 'Malaria_VSL')
+                   _value_of_life_suffix = 'Malaria_VSL',
+                   _draw_colors = draw_colors)
 
 # 4. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------
@@ -638,3 +628,43 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+
+# Plost costs over time
+# First remove discounting
+def remove_discounting(_df, _discount_rate=0, _year = None):
+    if _year == None:
+        # Initial year and discount rate
+        initial_year = min(_df['year'].unique())
+    else:
+        initial_year = _year
+
+    # Calculate the discounted values
+    _df.loc[:, 'cost'] = _df['cost'] * ((1 + _discount_rate) ** (_df['year'] - initial_year))
+    return _df
+input_costs_for_plot_summarized_undiscounted = remove_discounting(input_costs_for_plot_summarized,
+                                                                  _discount_rate = discount_rate)
+
+
+# Baseline
+do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all',
+                         _year=list_of_relevant_years_for_costing, _draws= [0],
+                         disaggregate_by= 'cost_category',
+                         _outputfilepath = figurespath)
+
+# HSS alone
+do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all',
+                         _year=list_of_relevant_years_for_costing, _draws= [8],
+                         disaggregate_by= 'cost_category',
+                         _outputfilepath = figurespath)
+
+# HTM without HSS
+do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all',
+                         _year=list_of_relevant_years_for_costing, _draws= [36],
+                         disaggregate_by= 'cost_category',
+                         _outputfilepath = figurespath)
+
+# HTM with HSS
+do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all',
+                         _year=list_of_relevant_years_for_costing, _draws= [44],
+                         disaggregate_by= 'cost_category',
+                         _outputfilepath = figurespath)
