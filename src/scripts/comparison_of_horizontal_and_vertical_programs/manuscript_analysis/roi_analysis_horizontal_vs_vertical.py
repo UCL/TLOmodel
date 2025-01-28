@@ -396,7 +396,7 @@ def melt_and_label_malaria_scaleup_cost(_df, label):
     melted_df = pd.melt(_df, id_vars=['year']).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
     # Replace item_code with consumable_name_tlo
     melted_df['cost_subcategory'] = label
-    melted_df['cost_category'] = 'other'
+    melted_df['cost_category'] = 'malaria scale-up'
     melted_df['cost_subgroup'] = 'NA'
     melted_df['Facility_Level'] = 'all'
     melted_df = melted_df.rename(columns={'value': 'cost'})
@@ -627,7 +627,7 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'other',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'malaria scale-up',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
 
 # Plost costs over time
 # First remove discounting
