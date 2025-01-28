@@ -528,6 +528,18 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors)
 
+draw_colors = {36: '#438FBA', 44:'#5E4FA2'}
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [8, 36, 44],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'HSS_VSL',
+                   _plot_vertical_lines_at = [0, 1e9, 3e9],
+                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                    _projected_health_spending = projected_health_spending_baseline,
+                   _draw_colors = draw_colors)
+
 # HIV scenarios with and without HSS
 draw_colors = {9: '#438FBA', 17:'#5E4FA2'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
