@@ -1679,9 +1679,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set(xlabel=None)
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
-    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
-        xtick.set_color(color)  # color scenarios based on the group info
+    # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+    #     xtick.set_color(color)  # color scenarios based on the group info
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
     plt.legend(loc='upper right')
@@ -1732,9 +1732,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set(xlabel=None)
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
-    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
-        xtick.set_color(color)  # color scenarios based on the group info
+    # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+    #     xtick.set_color(color)  # color scenarios based on the group info
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
     plt.legend(loc='upper right')
