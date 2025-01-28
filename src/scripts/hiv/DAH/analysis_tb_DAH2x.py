@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-#python src/scripts/hiv/DAH/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+#python src/scripts/hiv/DAH/analysis_tb_DAH10x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
 # to parse files use: tlo parse-log outputs/filename/x/y where and the x and y rep number of draws and runs
 #from matplotlib.ticker import FuncFormatter
 #import squarify
@@ -38,7 +38,7 @@ outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
 #outputfilepath = Path("./outputs")
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-20T151122Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-28T121703Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -68,47 +68,47 @@ def set_param_names_as_column_index_level_0(_df):
 param_names = get_parameter_names_from_scenario_file()
 print(param_names)
 
-def get_person_years(draw, run):
-    log = load_pickled_dataframes(results_folder, draw, run)
-    py_ = log["tlo.methods.demography"]["person_years"]
-    years = pd.to_datetime(py_["date"]).dt.year
-    py = pd.Series(dtype="int64", index=years)
-    for year in years:
-        tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
-        ).transpose()
-        py[year] = tot_py.sum().values[0]
+# def get_person_years(draw, run):
+#     log = load_pickled_dataframes(results_folder, draw, run)
+#    # print(f"Available keys in log: {log.keys()}")
+#     py_ = log["tlo.methods.demography"]["person_years"]
+#     years = pd.to_datetime(py_["date"]).dt.year
+#     py = pd.Series(dtype="int64", index=years)
+#     for year in years:
+#         tot_py = (
+#             (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
+#             (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+#         ).transpose()
+#         py[year] = tot_py.sum().values[0]
+#
+#     py.index = pd.to_datetime(years, format="%Y")
+#
+#     return py
+#
+# # Create a DataFrame to store person years per draw and run
+# pyears_all = pd.DataFrame()
+# # Iterate over draws and runs
+# for draw in range(number_draws):
+#     pyears_summary_per_run = pd.DataFrame(data=None, columns=range(number_runs))
+#     for run in range(number_runs):
+#         pyears_summary_per_run[run] = get_person_years(draw, run)
+#
+#     # Calculate mean, lower, and upper percentiles
+#     pyears_summary = pd.DataFrame()
+#     pyears_summary["mean"] = pyears_summary_per_run.mean(axis=1)
+#     pyears_summary["lower"] = pyears_summary_per_run.quantile(0.025, axis=1).values
+#     pyears_summary["upper"] = pyears_summary_per_run.quantile(0.975, axis=1).values
+#
+#     # Assign draw and stat columns as MultiIndex
+#     pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
+#
+#
+# # Append to the main DataFrame
+# pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
+# pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
+# # Print the DataFrame to Excel
+# pyears_all.to_excel (outputfilepath / "pyears_all.xlsx")
 
-    py.index = pd.to_datetime(years, format="%Y")
-
-    return py
-
-# Create a DataFrame to store person years per draw and run
-pyears_all = pd.DataFrame()
-# Iterate over draws and runs
-for draw in range(number_draws):
-    pyears_summary_per_run = pd.DataFrame(data=None, columns=range(number_runs))
-    for run in range(number_runs):
-        pyears_summary_per_run[run] = get_person_years(draw, run)
-
-    # Calculate mean, lower, and upper percentiles
-    pyears_summary = pd.DataFrame()
-    pyears_summary["mean"] = pyears_summary_per_run.mean(axis=1)
-    pyears_summary["lower"] = pyears_summary_per_run.quantile(0.025, axis=1).values
-    pyears_summary["upper"] = pyears_summary_per_run.quantile(0.975, axis=1).values
-
-    # Assign draw and stat columns as MultiIndex
-    pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
-
-
-# Append to the main DataFrame
-pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
-pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
-# Print the DataFrame to Excel
-pyears_all.to_excel (outputfilepath / "pyears_all.xlsx")
-
-import pandas as pd
 
 # Check if the key 'cause' exists in the log data
 if "cause" in log["tlo.methods.demography"]:
@@ -442,8 +442,8 @@ def tb_mortality_rate(results_folder, pyears_all):
     return tb_mortality_rate
 
 # Call the function with appropriate arguments
-mortality_rates = tb_mortality_rate(results_folder, pyears_all)
-mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
+# mortality_rates = tb_mortality_rate(results_folder, pyears_all)
+# mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 
 # Print scaling factor to population level estimates
 print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
@@ -564,15 +564,15 @@ tb_inc.index = tb_inc.index.year
 tb_incidence.to_excel(outputfilepath / "active_tb.xlsx")
 #Tb incidence rate
 #Tb_inc_rate = (tb_incidence.divide(pyears_all.values, axis=0)) * 100000
-Tb_inc_rate = tb_incidence.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
+#Tb_inc_rate = tb_incidence.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
 #Tb_inc_rate = tb_incidence.index(drop=True).div(pyears_all.index(drop=True), axis='rows')
-Tb_inc_rate.to_excel(outputfilepath / "Tb_incidence_rate.xlsx")
+#Tb_inc_rate.to_excel(outputfilepath / "Tb_incidence_rate.xlsx")
 
 # Assuming mdr_tb_cases and tb_incidence are your DataFrames
 MDR_prop_TB_cases = mdr_tb_cases.div(tb_incidence)*100
 MDR_prop_TB_cases.to_excel(outputfilepath / "MDR_prop_TB_cases.xlsx")
 #pyears = pyears.reset_index(drop=True)
-pyears_summary = pyears_summary.reset_index(drop=True)
+#pyears_summary = pyears_summary.reset_index(drop=True)
 
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 mdr = log["tlo.methods.tb"]["tb_mdr"]
@@ -798,10 +798,10 @@ plt.show()
 #Plotting TB incidence across scenarios
 fig, ax = plt.subplots(figsize=(10, 6))
 # Extract unique scenarios from column index level 0
-scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
+#scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
 lines = []
 # Extract unique scenarios from column index level 0
-scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
+#scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
 
 fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -809,7 +809,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 lines = []
 
 for scenario in scenarios:
-    scenario_data = Tb_inc_rate[scenario]
+#    scenario_data = Tb_inc_rate[scenario]
     mean = scenario_data['mean']
 
     # Apply a moving average to smooth the line
@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--results-path",
         type=Path,
-        help="Directory containing results from running src/scripts/hiv/DAH/tb_DAH_scenarios2x.py",
+        help="Directory containing results from running src/scripts/hiv/DAH/tb_DAH_scenarios10x.py",
         default=None,
         required=False
     )

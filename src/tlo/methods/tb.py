@@ -2161,6 +2161,8 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"] or person["tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         logger.debug(
             key="message", data=f"HSI_Tb_ClinicalDiagnosis: person {person_id}"
         )
@@ -2197,6 +2199,11 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+            #Return the footprint. If it should be suppressed, return a blank footprint.
+                if self.suppress_footprint:
+                     return self.make_appt_footprint({})
+                else:
+                     return ACTUAL_APPT_FOOTPRINT
         # ------------------------- Culture testing if program scale-up ------------------------- #
         # under program scale-up, if a person tests negative but still has all symptoms
         # indicative of TB, they are referred for culture test which has perfect sensitivity
@@ -2248,6 +2255,8 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_culture_test", hsi_event=self)
 
@@ -2270,6 +2279,15 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+            logger.info(
+                key="TREATMENT_ID",
+                data=f"Scheduling culture test for person {person_id} after positive culture result with TREATMENT_ID: {self.TREATMENT_ID}",
+            )
+            # Return the footprint. If it should be suppressed, return a blank footprint.
+            if self.suppress_footprint:
+                return self.make_appt_footprint({})
+            else:
+                return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
@@ -2400,6 +2418,10 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
+            )
+            logger.info(
+                key="TREATMENT_ID",
+                data=f"Scheduling clincial diagnosis for person {person_id} after clincial assessment: {self.TREATMENT_ID}",
             )
 
         # if test returns positive result, refer for appropriate treatment
