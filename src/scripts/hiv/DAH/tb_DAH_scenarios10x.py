@@ -3,17 +3,14 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 
 It can be submitted on Azure Batch by running:
-tlo batch-submit src//scripts/hiv/DAH/tb_DAH_scenarios2x.py
+tlo batch-submit src//scripts/hiv/DAH/tb_DAH_scenarios10x.py
 
 or locally using:
-
- tlo scenario-run src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
+ tlo scenario-run src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
   execute a single run:
-
- tlo scenario-run src/scripts/hi/DAH/tb_DAH_scenarios2x.py --draw 1 0
-
+ tlo scenario-run src/scripts/hi/DAH/tb_DAH_scenarios10x.py --draw 1 0
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
+tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
 
 """
 
@@ -53,7 +50,7 @@ class ImpactOfTbDaH04(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'tb_DAH_scenarios2x',
+            'filename': 'tb_DAH_scenarios10x',
             'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
             #'directory': Path(r'./outputs'),
             'custom_levels': {
