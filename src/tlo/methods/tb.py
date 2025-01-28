@@ -2386,10 +2386,10 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
-        # if self.suppress_footprint:
-        #     return self.make_appt_footprint({})
-        # else:
-        return ACTUAL_APPT_FOOTPRINT
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+           return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
