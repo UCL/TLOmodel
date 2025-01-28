@@ -11,6 +11,7 @@ from typing import Dict, Tuple
 import pandas as pd
 
 from tlo.analysis.utils import (
+    compute_summary_statistics,
     extract_results,
     get_scenario_info,
     load_pickled_dataframes,
@@ -259,8 +260,13 @@ def get_life_expectancy_estimates(
         return output
 
     else:
-        return summarize(results=output, only_median=False, collapse_columns=False)
-
+        # return summarize(results=output, only_mean=False, collapse_columns=False)
+        return compute_summary_statistics(
+            results=output,
+            central_measure='mean',
+            only_central=False,
+            collapse_columns=False,
+        )
 
 def _calculate_probability_of_premature_death_for_single_run(
     age_before_which_death_is_defined_as_premature: int,
