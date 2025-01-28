@@ -89,7 +89,6 @@ for i, scenario in enumerate(scenarios):
         axes[i].legend()
 
 plt.tight_layout()
-plt.show()
 plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/histroical_future_precip_annual.png')
 
 ## now do model ensembles
@@ -150,4 +149,4 @@ for i, ssp_scenario in enumerate(ssp_scenarios):
             axes[i].legend()
 
 plt.tight_layout()
-plt.show()
+plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/histroical_future_precip_annual_selected_models.png')
