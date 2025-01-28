@@ -2915,6 +2915,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                         tclose=None,
                         priority=0,
                     )
+
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for community chest X-ray screening.
@@ -2936,8 +2937,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-        #print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
-
+        print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
         df = self.sim.population.props  # Shortcut to the dataframe
         person = df.loc[person_id]
