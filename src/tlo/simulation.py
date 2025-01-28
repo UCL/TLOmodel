@@ -127,7 +127,12 @@ class Simulation:
             data=f"Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}",
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
-        self.resourcefilepath = Path(resourcefilepath)
+
+        if resourcefilepath is not None:
+            self.resourcefilepath = Path(resourcefilepath)
+            assert self.resourcefilepath.exists(), f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
+        else:
+            self.resourcefilepath = None
 
         # Whether simulation has been initialised
         self._initialised = False
