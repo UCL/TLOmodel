@@ -80,7 +80,8 @@ for i, scenario in enumerate(scenarios):
     #     label="Median",
     #     color='black'
     # )
-    axes[i].set_xticklabels(range(2025,2071))
+    axes[i].set_xticks(range(0, len(era5_precipitation_data) + len(model_annual_precip), 10))
+    axes[i].set_xticklabels(range(2010, 2071, 10))
     axes[i].set_title(scenario.upper())
     axes[i].set_xlabel('Year')
     if i == 0:
@@ -108,12 +109,10 @@ axes = axes.flatten()
 historical_weather = pd.read_csv(
     "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
     index_col=0)
-print(historical_weather)
 historical_weather = historical_weather.mean(axis = 1)
 historical_weather = historical_weather.to_frame(name='mean_precipitation')
 historical_weather.reset_index()
 historical_weather_sum = historical_weather.groupby(historical_weather.index // 12).sum()
-print(historical_weather_sum)
 for i, ssp_scenario in enumerate(ssp_scenarios):
     axes[i].plot(
         range(len(historical_weather_sum)),
@@ -142,7 +141,8 @@ for i, ssp_scenario in enumerate(ssp_scenarios):
         )
 
         # Fix xticks and labels
-        axes[i].set_xticklabels(range(2024, 2071, 5))
+        axes[i].set_xticks(range(0,len(historical_weather_sum) + len(y_data), 10))
+        axes[i].set_xticklabels(range(2010, 2071, 10))
         axes[i].set_title(ssp_scenario.upper())
         axes[i].set_xlabel('Year')
         if i == 0:
