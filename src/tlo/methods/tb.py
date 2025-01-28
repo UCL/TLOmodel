@@ -2286,6 +2286,10 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
         if test_result:
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+            logger.info(
+                key="TREATMENT_ID",
+                data=f"Scheduling treatment for person {person_id} after positive culture result with TREATMENT_ID: {self.TREATMENT_ID}",
+            )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(
@@ -2367,6 +2371,10 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         if test_result:
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+            logger.info(
+                key="TREATMENT_ID",
+                data=f"Scheduling CXR level 1a for person {person_id}  with TREATMENT_ID: {self.TREATMENT_ID}",
+            )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(
@@ -2445,6 +2453,10 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         if test_result:
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+            logger.info(
+                key="TREATMENT_ID",
+                data=f"Scheduling CXR level 1b for person {person_id}  with TREATMENT_ID: {self.TREATMENT_ID}",
+            )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
