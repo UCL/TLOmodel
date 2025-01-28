@@ -9,6 +9,10 @@ python
 src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/get_life_expectancy_from _results.py
 results HSS
 
+results_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-01-16T135243Z")
+output_folder=Path("/Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/htm_and_hss_runs-2025-01-16T135243Z")
+
+
 """
 
 
@@ -88,9 +92,9 @@ def apply(results_folder: Path, output_folder: Path):
 
         # Define the columns to select
         column_labels = ['Baseline',
-                         'HSS PACKAGE: Realistic',
-                         'HTM Programs Scale-up WITHOUT HSS PACKAGE',
-                         'HTM Programs Scale-up WITH REALISTIC HSS PACKAGE']
+                         'HSS Expansion Package',
+                         'HTM Program Scale-up Without HSS Expansion',
+                         'HTM Programs Scale-up With HSS Expansion Package']
         filtered_df = df.loc[:, column_labels]
 
         # Define the draws (the unique values from level 'draw' of the column MultiIndex)
@@ -110,7 +114,7 @@ def apply(results_folder: Path, output_folder: Path):
         # Loop through the rows ('M' and 'F') and plot each with error bars
         for i, sex in enumerate(filtered_df.index):
             # Extract the mean, lower, and upper values for this gender
-            means = filtered_df.loc[sex, (slice(None), 'median')]
+            means = filtered_df.loc[sex, (slice(None), 'central')]
             lower = filtered_df.loc[sex, (slice(None), 'lower')]
             upper = filtered_df.loc[sex, (slice(None), 'upper')]
 
@@ -124,7 +128,7 @@ def apply(results_folder: Path, output_folder: Path):
         ax.set_xlabel('')
         ax.set_ylabel('Life expectancy estimate, years')
         ax.set_title('2035 Life Expectancy Estimates')
-        ax.set_ylim(50, 80)
+        ax.set_ylim(50, 70)
 
         # Set custom x-tick labels
         ax.set_xticks(x_positions)
@@ -135,7 +139,7 @@ def apply(results_folder: Path, output_folder: Path):
         ax.add_artist(sex_legend)  # Add the first legend manually
 
         # Add horizontal lines for clarity
-        for y in range(50, 81, 5):
+        for y in range(50, 71, 5):
             ax.axhline(y=y, color='lightgrey', linestyle='--', linewidth=0.8)
 
         # Add vertical grey lines between each category

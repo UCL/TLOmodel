@@ -263,7 +263,7 @@ def get_life_expectancy_estimates(
         # return summarize(results=output, only_mean=False, collapse_columns=False)
         return compute_summary_statistics(
             results=output,
-            central_measure='mean',
+            central_measure='median',
             only_central=False,
             collapse_columns=False,
         )
