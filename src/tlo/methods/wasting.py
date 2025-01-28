@@ -889,16 +889,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             today_rm = False
             if event_type == due_to:
                 if event_type == Wasting_RecoveryToMAM_Event:
-                    df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
-                    today_rm = True
+                    if self.sim.date in df.at[person_id, 'un_recov_to_mam_to_cancel']:
+                    # TODO: why smt it is there, smt it is not?
+                        df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
+                        today_rm = True
                 elif event_type == Wasting_FullRecovery_Event:
-                    df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
-                    today_rm = True
-                elif event_type == Wasting_ProgressionToSevere_Event:
-                    df.at[person_id, 'un_progression_to_cancel'].remove(self.sim.date)
-                    today_rm = True
-                if do_prints and today_rm:
-                    print(f"{self.sim.date=} is rm from the cancelled days")
+                    if self.sim.date in df.at[person_id, 'un_full_recov_to_cancel']:
+                        df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
+                        today_rm = True
+            if do_prints:
+                print(f"{event_type=}, {due_to=}, {dates=}, {self.sim.date=}")
+                if today_rm:
+                    print(f"{self.sim.date=} removed from to_cancel dates")
+                elif event_type != Wasting_ProgressionToSevere_Event:
+                    print(f"{self.sim.date=} not included in to_cancel dates, hence no need to remove it")
+
         else:
             if do_prints:
                 print(f"no {event_type} scheduled, hence no need to cancel any")
