@@ -1368,7 +1368,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
 
 
                 assert wasted_days >= get_min_length(recov_how, person_id, whz), \
-                    (f" The {person_id=} is wasted less than minimal expected length= "
+                    (f" The {person_id=} is wasted {wasted_days=} < minimal expected length= "
                      f"{get_min_length(recov_how, person_id, whz)} days when {recov_opt=}.")
                 self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
 
