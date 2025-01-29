@@ -523,7 +523,7 @@ fig, ax = plt.subplots(figsize=(7, 7))
 
 ax.scatter(data_weather_predictions_grouped['Year'],
            data_weather_predictions_grouped['difference'],
-           color='#823038', alpha=0.7, label='Difference in Predicted ANC Services (Without vs. With Precipitation)')
+           color='#823038', alpha=0.7,)
 
 ax.axhline(y=0, color='black', linestyle='--', linewidth=1)
 
@@ -531,10 +531,10 @@ y_max = max(abs(data_weather_predictions_grouped['difference'])) + 50
 ax.set_ylim(-y_max, y_max)
 
 ax.set_xlabel('Year')
-ax.set_ylabel('Mean monthly ANC services provided')
+ax.set_ylabel('Difference in Predicted ANC Services (Without vs. With Precipitation)')
 ax.set_xticks(data_weather_predictions_grouped['Year'])
 ax.set_xticklabels(data_weather_predictions_grouped['Year'], rotation=45, ha='right')
-ax.legend(loc='upper left')
+#ax.legend(loc='upper left')
 
 plt.show()
 
