@@ -811,7 +811,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 # remained MAM
                 if do_prints:
                     print("remained MAM with SFP")
-                    print("---------------------------------------------------")
+                    print("------------------MAM tx -> remained MAM end---------------------------------")
                 return
 
         elif intervention in ['OTP', 'ITC']:
@@ -858,7 +858,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         priority=0, topen=outcome_date)
 
         if do_prints:
-            print("---------------------------------------------------")
+            print("---------------------------tx end------------------------")
 
     def cancel_future_event(self, person_id, event_type, due_to, do_prints: bool) -> None:
         """
@@ -889,21 +889,33 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                           f" is cancelled {due_to=} event")
             today_rm = False
             if event_type == due_to:
-                if event_type == Wasting_RecoveryToMAM_Event:
+                if due_to == Wasting_RecoveryToMAM_Event:
                     if self.sim.date in df.at[person_id, 'un_recov_to_mam_to_cancel']:
                     # TODO: why smt it is there, smt it is not?
                         df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
                         today_rm = True
-                elif event_type == Wasting_FullRecovery_Event:
+                elif due_to == Wasting_FullRecovery_Event:
                     if self.sim.date in df.at[person_id, 'un_full_recov_to_cancel']:
                         df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
                         today_rm = True
-            if do_prints:
-                print(f"{event_type=}; {due_to=}; {dates=}; {self.sim.date=}")
-                if today_rm:
-                    print(f"{self.sim.date=} removed from to_cancel dates")
-                elif event_type != Wasting_ProgressionToSevere_Event:
-                    print(f"{self.sim.date=} not included in to_cancel dates, hence no need to remove it")
+                if do_prints:
+                    print(f"{event_type=}; {due_to=};\n"
+                          f" {dates=}; {self.sim.date=}")
+                    if today_rm:
+                        print(f"{self.sim.date=} removed from to_cancel dates")
+                    else:
+                        print(f"{self.sim.date=} not included in to_cancel dates, hence no need to remove it")
+            elif (event_type == Wasting_ProgressionToSevere_Event) and (due_to == 'tx'):
+                    if self.sim.date in df.at[person_id, 'un_progression_to_cancel']:
+                        df.at[person_id, 'un_progression_to_cancel'].remove(self.sim.date)
+                        today_rm = True
+                    if do_prints:
+                        print(f"{event_type=}; {due_to=};\n"
+                              f" {dates=}; {self.sim.date=}")
+                        if today_rm:
+                            print(f"{self.sim.date=} removed from to_cancel dates")
+                        else:
+                            print(f"{self.sim.date=} not included in to_cancel dates, hence no need to remove it")
 
         else:
             if do_prints:
@@ -1115,13 +1127,14 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
         # - MUAC, oedema, clinical state of acute malnutrition, complications, death
         self.module.clinical_signs_acute_malnutrition(person_id)
         if do_prints:
-            print(f"assigned am indicators:\n {df.at[self.module.person_of_interest_id, 'un_WHZ_category']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_am_nutritional_oedema']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_am_MUAC_category']=}")
+            print("assigned am indicators:\n"
+                  f" {df.at[self.module.person_of_interest_id, 'un_WHZ_category']=}, "
+                  f"{df.at[self.module.person_of_interest_id, 'un_am_nutritional_oedema']=},\n"
+                  f" {df.at[self.module.person_of_interest_id, 'un_am_MUAC_category']=}")
             print("determined am status and if SAM complications and death:\n"
-                  f"{df.at[self.module.person_of_interest_id, 'un_clinical_acute_malnutrition']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_sam_with_complications']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_sam_death_date']=}")
+                  f" {df.at[self.module.person_of_interest_id, 'un_clinical_acute_malnutrition']=}, "
+                  f"{df.at[self.module.person_of_interest_id, 'un_sam_with_complications']=},\n"
+                  f" {df.at[self.module.person_of_interest_id, 'un_sam_death_date']=}")
 
         # -------------------------------------------------------------------------------------------
         # Add this severe wasting incident case to the tracker
@@ -1775,7 +1788,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         if not df.at[person_id, 'is_alive']:
             if do_prints:
                 print("dead already, appt not going through")
-                print("--------------OTP 1-------------------")
+                print("--------------OTP end1-------------------")
             return
 
         # Do here whatever happens to an individual during this health
@@ -1807,7 +1820,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                       "between")
 
         if do_prints:
-            print("----------------------OTP 2-------------------------")
+            print("----------------------OTP end2-------------------------")
 
     def did_not_run(self):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
