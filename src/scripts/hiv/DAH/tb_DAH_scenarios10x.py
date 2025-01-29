@@ -17,9 +17,7 @@ tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
 import warnings
 from pathlib import Path
 from typing import Dict
-
 from tlo import Date, logging
-import random
 from tlo.methods import (
     demography,
     enhanced_lifestyle,

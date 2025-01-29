@@ -23,8 +23,6 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-
-    parse_log_file,
     summarize,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -38,7 +36,7 @@ outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
 #outputfilepath = Path("./outputs")
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-28T121703Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios10x-2025-01-29T065758Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -52,7 +50,7 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.DAH.tb_DAH_scenarios2x import ImpactOfTbDaH04
+    from scripts.hiv.DAH.tb_DAH_scenarios10x import ImpactOfTbDaH04
     e = ImpactOfTbDaH04()
     return tuple(e._scenarios.keys())
 
