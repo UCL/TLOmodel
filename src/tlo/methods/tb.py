@@ -2188,7 +2188,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                     key="message",
                     data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
                 )
-                ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+               # ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_StartTreatment(
@@ -2224,11 +2224,11 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                 )
 
-             # Return the footprint. If it should be suppressed, return a blank footprint.
-                if self.suppress_footprint:
-                    return self.make_appt_footprint({})
-                else:
-                    return ACTUAL_APPT_FOOTPRINT
+             # # Return the footprint. If it should be suppressed, return a blank footprint.
+             #    if self.suppress_footprint:
+             #        return self.make_appt_footprint({})
+             #    else:
+             #        return ACTUAL_APPT_FOOTPRINT
 
 class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2270,7 +2270,7 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
-            ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+            #ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(
@@ -2281,11 +2281,11 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-            # Return the footprint. If it should be suppressed, return a blank footprint.
-            if self.suppress_footprint:
-                return self.make_appt_footprint({})
-            else:
-                return ACTUAL_APPT_FOOTPRINT
+            # # Return the footprint. If it should be suppressed, return a blank footprint.
+            # if self.suppress_footprint:
+            #     return self.make_appt_footprint({})
+            # else:
+            #     return ACTUAL_APPT_FOOTPRINT
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2331,7 +2331,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         # return blank footprint as xray did not occur
         if test_result is None:
 
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+          #  ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
@@ -2356,11 +2356,11 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-        # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+        # # Return the footprint. If it should be suppressed, return a blank footprint.
+        # if self.suppress_footprint:
+        #     return self.make_appt_footprint({})
+        # else:
+        #     return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
@@ -2388,7 +2388,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+      #  ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
         smear_status = df.at[person_id, "tb_smear"]
 
@@ -2431,11 +2431,11 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-        # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+        # # Return the footprint. If it should be suppressed, return a blank footprint.
+        # if self.suppress_footprint:
+        #     return self.make_appt_footprint({})
+        # else:
+        #     return ACTUAL_APPT_FOOTPRINT
 
 
 # # ---------------------------------------------------------------------------
