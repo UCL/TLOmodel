@@ -482,7 +482,6 @@ X_filtered = X_weather_standardized[mask_all_data]
 fig, axs = plt.subplots(1, 2, figsize=(10, 6))
 
 
-
 indices_ANC_data = np.where(mask_ANC_data)[0]
 indices_all_data = np.where(mask_all_data)[0]
 common_indices = np.intersect1d(indices_ANC_data, indices_all_data)
@@ -508,7 +507,39 @@ axs[0].legend(loc='upper left', borderaxespad=0.)
 
 
 plt.show()
+## average of predictions
 
+data_weather_predictions = pd.DataFrame({
+    'Year': np.array(year_flattened)[mask_all_data],
+    'Year_Month': year_month_labels_filtered,
+    'y_pred_weather': np.exp(matched_y_pred_weather),
+    'y_pred_no_weather': np.exp(matched_y_pred),
+    'difference': np.exp(matched_y_pred) - np.exp(matched_y_pred_weather)
+})
+
+data_weather_predictions_grouped = data_weather_predictions.groupby('Year', as_index=False).sum()
+
+fig, ax = plt.subplots(figsize=(7, 7))
+
+ax.scatter(data_weather_predictions_grouped['Year'],
+           data_weather_predictions_grouped['difference'],
+           color='#823038', alpha=0.7, label='Difference ANC services predicted by non-weather and weather models')
+
+ax.axhline(y=0, color='black', linestyle='--', linewidth=1)
+
+y_max = max(abs(data_weather_predictions_grouped['difference'])) + 50
+ax.set_ylim(-y_max, y_max)
+
+ax.set_xlabel('Year')
+ax.set_ylabel('Mean monthly ANC services provided')
+ax.set_xticks(data_weather_predictions_grouped['Year'])
+ax.set_xticklabels(data_weather_predictions_grouped['Year'], rotation=45, ha='right')
+ax.legend(loc='upper left')
+
+plt.show()
+
+plt.tight_layout()
+plt.show()
 ## save historical predictions
 full_data_weather_predictions_historical = pd.DataFrame({
     'Year': np.array(year_flattened)[mask_all_data],
