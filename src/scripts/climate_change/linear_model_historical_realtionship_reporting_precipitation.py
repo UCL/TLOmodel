@@ -523,7 +523,7 @@ fig, ax = plt.subplots(figsize=(7, 7))
 
 ax.scatter(data_weather_predictions_grouped['Year'],
            data_weather_predictions_grouped['difference'],
-           color='#823038', alpha=0.7, label='Difference ANC services predicted by non-weather and weather models')
+           color='#823038', alpha=0.7, label='Difference in Predicted ANC Services (Without vs. With Precipitation)')
 
 ax.axhline(y=0, color='black', linestyle='--', linewidth=1)
 
