@@ -781,7 +781,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             print(f"{self.person_of_interest_id=} RECEIVING TX on {self.sim.date=}")
 
         # Progression to severe wasting is cancelled due to the tx
-        self.cancel_event(person_id, event_type=Wasting_ProgressionToSevere_Event, due_to='tx', do_prints=do_prints)
+        self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event,
+                                 due_to='tx', do_prints=do_prints)
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
         # Reset tx discharge date
@@ -859,7 +860,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         if do_prints:
             print("---------------------------------------------------")
 
-    def cancel_event(self, person_id, event_type, due_to, do_prints: bool) -> None:
+    def cancel_future_event(self, person_id, event_type, due_to, do_prints: bool) -> None:
         """
         This function will add dates of recovery and/or progression events that need to be canceled.
         :param person_id:
@@ -898,7 +899,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
                         today_rm = True
             if do_prints:
-                print(f"{event_type=}, {due_to=}, {dates=}, {self.sim.date=}")
+                print(f"{event_type=}; {due_to=}; {dates=}; {self.sim.date=}")
                 if today_rm:
                     print(f"{self.sim.date=} removed from to_cancel dates")
                 elif event_type != Wasting_ProgressionToSevere_Event:
@@ -1229,15 +1230,22 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
 
         if not df.at[person_id, 'is_alive']:
             if do_prints:
-                print("not going through, already dead")
+                print("not going through, because the person is already dead")
+                print("----------------------------------")
+            return
+
+        if self.sim.date in df.at[person_id, 'un_full_recov_to_cancel']:
+            df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
+            if do_prints:
+                print("not going through, because the recovery was cancelled")
                 print("----------------------------------")
             return
 
         # as person fully recovers from acute malnutrition, any other scheduled recovery events will be cancelled
-        self.module.cancel_event(person_id, event_type=Wasting_FullRecovery_Event, due_to=Wasting_FullRecovery_Event,
-                                 do_prints=do_prints)
-        self.module.cancel_event(person_id, event_type=Wasting_RecoveryToMAM_Event, due_to=Wasting_FullRecovery_Event,
-                                 do_prints=do_prints)
+        self.module.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event,
+                                        due_to=Wasting_FullRecovery_Event, do_prints=do_prints)
+        self.module.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event,
+                                        due_to=Wasting_FullRecovery_Event, do_prints=do_prints)
 
         # if not well (i.e. NOT already fully recovered with SAM tx, and send here from follow-up MAM tx)
         if df.at[person_id, 'un_WHZ_category'] != 'WHZ>=-2':
@@ -1326,9 +1334,16 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
                 print("----------------------------------")
             return
 
+        if self.sim.date in df.at[person_id, 'un_recov_to_mam_to_cancel']:
+            df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
+            if do_prints:
+                print("not going through, because the recovery was cancelled")
+                print("----------------------------------")
+            return
+
         # as person recovered from SAM to MAM, any other scheduled recovery to MAM events will be cancelled
-        self.module.cancel_event(person_id, event_type=Wasting_RecoveryToMAM_Event, due_to=Wasting_RecoveryToMAM_Event,
-                                 do_prints=do_prints)
+        self.module.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event,
+                                        due_to=Wasting_RecoveryToMAM_Event, do_prints=do_prints)
 
         # For cases with normal WHZ and other acute malnutrition signs:
         # oedema, or low MUAC - do not change the WHZ
