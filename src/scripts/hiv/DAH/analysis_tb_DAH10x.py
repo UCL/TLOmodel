@@ -36,7 +36,7 @@ outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
 #outputfilepath = Path("./outputs")
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios10x-2025-01-29T082948Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios10x-2025-01-29T090853Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -158,24 +158,24 @@ print("Scaling Factor Key:", scaling_factor_key)
 
 
 #Extracting DALYs
-def get_tb_dalys(df_):
-    # Get DALYs of TB
-    years = df_['year'].unique()  # Get unique years
-    dalys = pd.Series(dtype='float64', index=years)
-
-    for year in years:
-        # Group data by year and sum relevant columns
-        tot_dalys = df_.drop(columns='date').groupby('year').sum()
-
-        # Ensure the labels exist before summing
-        if any(label in tot_dalys.columns for label in ["AIDS_TB", "TB", "AIDS_non_TB"]):
-            # Sum the DALYs for the specified labels for the year
-            dalys[year] = tot_dalys.loc[year, ["AIDS_TB", "TB", "AIDS_non_TB"]].sum()
-        else:
-            dalys[year] = 0  # Set it to 0 if the labels are not found
-
-    dalys.sort_index(inplace=True)  # Sort the index inplace
-    return dalys
+# def get_tb_dalys(df_):
+#     # Get DALYs of TB
+#     years = df_['year'].unique()  # Get unique years
+#     dalys = pd.Series(dtype='float64', index=years)
+#
+#     for year in years:
+#         # Group data by year and sum relevant columns
+#         tot_dalys = df_.drop(columns='date').groupby('year').sum()
+#
+#         # Ensure the labels exist before summing
+#         if any(label in tot_dalys.columns for label in ["AIDS_TB", "TB", "AIDS_non_TB"]):
+#             # Sum the DALYs for the specified labels for the year
+#             dalys[year] = tot_dalys.loc[year, ["AIDS_TB", "TB", "AIDS_non_TB"]].sum()
+#         else:
+#             dalys[year] = 0  # Set it to 0 if the labels are not found
+#
+#     dalys.sort_index(inplace=True)  # Sort the index inplace
+#     return dalys
 
 
 def get_tb_dalys(df_):
