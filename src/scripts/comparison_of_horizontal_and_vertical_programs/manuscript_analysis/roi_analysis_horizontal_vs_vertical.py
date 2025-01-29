@@ -477,6 +477,27 @@ num_dalys_averted = (-1.0 *
                              num_dalys.loc[0],
                              comparison=0)  # sets the comparator to 0 which is the Actual scenario
                      ).T.iloc[0].unstack(level='run'))
+num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values('draw').isin(list(htm_scenarios.keys()))] # keep only relevant draws
+
+# Plot DALYs
+num_dalys_averted_summarised = summarize_cost_data(num_dalys_averted)
+name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (num_dalys_averted_summarised / 1e6),
+    annotations=[
+        f"{row['mean']/ 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
+        for _, row in num_dalys_averted_summarised.iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+    put_labels_in_legend=True,
+    offset=2,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('DALYs \n(Millions)')
+ax.set_ylim(bottom=0)
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
 
 # The monetary value of the health benefit is delta health times CET (negative values are set to 0)
 def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
@@ -485,7 +506,32 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 
 # TODO check that the above calculation is correct
 
-# 3. Return on Investment Plot
+# 3. Estimate and plot ICERs
+# ----------------------------------------------------
+icers = incremental_scenario_cost.div(num_dalys_averted)  # Element-wise division
+icers = icers.mask(num_dalys_averted < 0)
+icers_summarized = summarize_cost_data(icers)
+
+# Plot ICERs
+name_of_plot = f'Incremental cost-effectiveness ratios (ICERs), {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+fig, ax = do_standard_bar_plot_with_ci(
+    (icers_summarized),
+    annotations=[
+        f"{row['mean']:.2f} ({row['lower'] :.2f}- \n {row['upper'] :.2f})"
+        for _, row in icers_summarized.iterrows()
+    ],
+    xticklabels_horizontal_and_wrapped=False,
+    put_labels_in_legend=True,
+    offset=10,
+)
+ax.set_title(name_of_plot)
+ax.set_ylabel('ICERs \n($/DALY averted)')
+ax.set_ylim(bottom=0)
+fig.tight_layout()
+fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
+plt.close(fig)
+
+# 4. Return on Investment Plot
 # ----------------------------------------------------
 projected_health_spending = estimate_projected_health_spending(resourcefilepath,
                                   results_folder,
@@ -574,7 +620,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _value_of_life_suffix = 'Malaria_VSL',
                    _draw_colors = draw_colors)
 
-# 4. Plot Maximum ability-to-pay at CET
+# 5. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------
 max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
     lower=0.0)  # monetary value - change in costs
@@ -619,7 +665,7 @@ fig.tight_layout()
 fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
-# 4. Plot costs
+# 6. Plot costs
 # ----------------------------------------------------
 # First summarize all input costs
 input_costs_for_plot_summarized = input_costs.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category']).agg(
