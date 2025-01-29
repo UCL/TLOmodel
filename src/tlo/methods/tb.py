@@ -2903,6 +2903,56 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
+
+        assert isinstance(module, Tb)
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
+
+        self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '0'
+
+    def apply(self, person_id, squeeze_factor):
+
+        #print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
+
+        logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
+        df = self.sim.population.props  # Shortcut to the dataframe
+        person = df.loc[person_id]
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+        smear_status = person['tb_smear']
+
+        # Perform the X-ray and decide the result
+        test_result = False
+
+        # Select sensitivity/specificity of the test based on smear status
+        if smear_status:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_xray_smear_positive", hsi_event=self
+            )
+        else:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
+            )
+
+        # If the test returns a positive result, refer for appropriate treatment
+        if test_result:
+            df.at[person_id, "tb_diagnosed"] = True
+            df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+        # Return the footprint. If it should be suppressed, return a blank footprint.
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+            return ACTUAL_APPT_FOOTPRINT
+
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end
     This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' after 6 months
