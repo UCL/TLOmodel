@@ -3,25 +3,23 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 
 It can be submitted on Azure Batch by running:
-tlo batch-submit src//scripts/hiv/DAH/tb_DAH_scenarios2x.py
+tlo batch-submit src//scripts/hiv/DAH/tb_DAH_scenarios10x.py
 
 or locally using:
-
- tlo scenario-run src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
+ tlo scenario-run src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
   execute a single run:
-
- tlo scenario-run src/scripts/hi/DAH/tb_DAH_scenarios2x.py --draw 1 0
-
+ tlo scenario-run src/scripts/hi/DAH/tb_DAH_scenarios10x.py --draw 1 0
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios2x.py
+tlo scenario-run --draw-only src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
 
- """
+"""
 
 import warnings
 from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
+import random
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -36,27 +34,25 @@ from tlo.methods import (
 )
 from tlo.scenario import BaseScenario
 
-# Ignore warnings to avoid cluttering output from simulation - generally you do not
-# need (and generally shouldn't) do this as warnings can contain useful information but
-# we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 class ImpactOfTbDaH04(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 2134
-        # self.seed = random.randint(0, 50000),
+        #self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 12, 31)
-        self.pop_size = 5000
+        self.end_date = Date(2011, 12, 31)
+        self.pop_size = 600
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
-            'filename': 'tb_DAH_scenarios2x',
+            'filename': 'tb_DAH_scenarios10x',
             'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
+            #'directory': Path(r'./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -68,7 +64,6 @@ class ImpactOfTbDaH04(BaseScenario):
                 'tlo.methods.enhanced_lifestyle': logging.INFO
             }
         }
-
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),

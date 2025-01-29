@@ -1,5 +1,7 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
-#python src/scripts/hiv/DAH/analysis_tb_DAH2x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+
+#python src/scripts/hiv/DAH/analysis_tb_DAH10x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+# to parse files use: tlo parse-log outputs/filename/x/y where and the x and y rep number of draws and runs
 #from matplotlib.ticker import FuncFormatter
 #import squarify
 
@@ -13,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
@@ -20,6 +23,8 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
+
+    parse_log_file,
     summarize,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -28,14 +33,16 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 
 #creating folders to store results
-resourcefilepath = Path("./resources")
-outputfilepath = Path("./outputs/newton.chagoma@york.ac.uk")
+#resourcefilepath = Path(".\resources")
+outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
-results_folder = get_scenario_outputs('', outputfilepath) [-1]
+#outputfilepath = Path("./outputs")
+
+results_folder = get_scenario_outputs('tb_DAH_scenarios2x-2025-01-28T121703Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
-#info.to_excel(outputspath / "info.xlsx")
+#info.to_excel(Unresolved reference 'outputspath' / "info.xlsx")
 params = extract_params(results_folder)
 print("the parameter info as follows")
 params.to_excel(outputfilepath / "parameters.xlsx")
@@ -60,78 +67,68 @@ def set_param_names_as_column_index_level_0(_df):
 # %% Define parameter names
 param_names = get_parameter_names_from_scenario_file()
 print(param_names)
-def get_tb_dalys(df_):
-    # Ensure 'year' is sorted
-    years = df_['year'].value_counts().keys()
-    tot_dalys = pd.Series(dtype='float64', index=years)
-    for year in years:
-        year_df = df_[df_['year'] == year]
-        yearly_dalys = year_df.drop(columns='date').groupby(['year', 'tb_inf']).sum().apply(pd.Series)
-        tot_dalys[year] = yearly_dalys.sum().sum()
-       # print(f'see how this looks {tot_dalys}')
-    tot_dalys = tot_dalys.sort_index()
-    return tot_dalys
 
-# Extract DALYs from the model and scale
-tb_dalys = summarize(
-    (extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys",
-        custom_generate_series=get_tb_dalys,
-        do_scaling=True,
-    )
-     .pipe(set_param_names_as_column_index_level_0)
-     ))
-# Summarize the extracted DALYs
-tb_dalys = summarize(tb_dalys).sort_index()
-tb_dalys.to_excel(outputfilepath / "tb_infection_dalys5x.xlsx")
+# def get_person_years(draw, run):
+#     log = load_pickled_dataframes(results_folder, draw, run)
+#    # print(f"Available keys in log: {log.keys()}")
+#     py_ = log["tlo.methods.demography"]["person_years"]
+#     years = pd.to_datetime(py_["date"]).dt.year
+#     py = pd.Series(dtype="int64", index=years)
+#     for year in years:
+#         tot_py = (
+#             (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
+#             (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+#         ).transpose()
+#         py[year] = tot_py.sum().values[0]
+#
+#     py.index = pd.to_datetime(years, format="%Y")
+#
+#     return py
+#
+# # Create a DataFrame to store person years per draw and run
+# pyears_all = pd.DataFrame()
+# # Iterate over draws and runs
+# for draw in range(number_draws):
+#     pyears_summary_per_run = pd.DataFrame(data=None, columns=range(number_runs))
+#     for run in range(number_runs):
+#         pyears_summary_per_run[run] = get_person_years(draw, run)
+#
+#     # Calculate mean, lower, and upper percentiles
+#     pyears_summary = pd.DataFrame()
+#     pyears_summary["mean"] = pyears_summary_per_run.mean(axis=1)
+#     pyears_summary["lower"] = pyears_summary_per_run.quantile(0.025, axis=1).values
+#     pyears_summary["upper"] = pyears_summary_per_run.quantile(0.975, axis=1).values
+#
+#     # Assign draw and stat columns as MultiIndex
+#     pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
+#
+#
+# # Append to the main DataFrame
+# pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
+# pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
+# # Print the DataFrame to Excel
+# pyears_all.to_excel (outputfilepath / "pyears_all.xlsx")
 
-def get_tb_dalys(df_):
-    # Get DALYs of TB
-    years = df_['year'].value_counts().keys()
-    dalys = pd.Series(dtype='float64', index=years)
-    for year in years:
-       year_data = df_[df_['year'] == year]
-       dalys[year] = year_data.loc[:, ['AIDS', 'TB (non-AIDS)', 'Other']].sum().sum()
-    dalys.sort_index()
-    return dalys
 
-# Extract DALYs from the model and scale
-tb_dalys = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys",
-    custom_generate_series=get_tb_dalys,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
-dalys_summary = summarize(tb_dalys).sort_index()
-dalys_summary.to_excel(outputfilepath / "summarized_tb_dalys_all.xlsx")
+# Check if the key 'cause' exists in the log data
+if "cause" in log["tlo.methods.demography"]:
+    tb_deaths = log["tlo.methods.demography"]["cause"]
+    # Ensure it's a pandas Series for filtering
+    if isinstance(tb_deaths , pd.Series):
+        filtered_data = tb_deaths [
+            tb_deaths.isin(["AIDS_non_TB", "AIDS_TB", "TB"])
+        ]
+        tb_deaths = filtered_data.reset_index()  # Reset index for cleaner Excel output
+        output_file_path = "filtered_deceased_persons.xlsx"
+        tb_deaths.to_excel(output_file_path, index=False)
 
-def get_tb_dalys(df_):
-    # Get DALYs of TB
-    years = df_['year'].value_counts().keys()
-    dalys = pd.Series(dtype='float64', index=years)
-    for year in years:
-       # tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-       year_data = df_[df_['year'] == year]
-       # dalys[year] = tot_dalys.loc[(year, ['AIDS', 'TB (non-AIDS)', 'Other']), 'Other'].sum()
-       dalys[year] = year_data.loc[:, ['TB (non-AIDS)']].sum().sum()
-    dalys.sort_index()
-    return dalys
+        print(f"Filtered data saved to {output_file_path}.")
+    else:
+        print("Error: 'cause' is not a pandas Series or is of unexpected type.")
+else:
+    print("Error: 'cause' key not found in log['tlo.methods.demography.detail'].")
 
-# Extract DALYs from the model and scale
-# Extract DALYs from model and scale
-tb_dalys = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys",
-    custom_generate_series=get_tb_dalys,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
 
-dalys_summary = summarize(tb_dalys).sort_index()
-dalys_summary.to_excel(outputfilepath / "non_aids_tb_dalys_all.xlsx")
 
 # Number of TB deaths and mortality rate
 results_deaths = extract_results(
@@ -145,44 +142,85 @@ results_deaths = extract_results(
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-def get_person_years(draw, run):
-    log = load_pickled_dataframes(results_folder, draw, run)
-    py_ = log["tlo.methods.demography"]["person_years"]
-    years = pd.to_datetime(py_["date"]).dt.year
-    py = pd.Series(dtype="int64", index=years)
+# Removes multi-index
+results_deaths = results_deaths.reset_index()
+print("deaths as follows:")
+print(results_deaths)
+
+tb_deaths = results_deaths.loc[results_deaths["cause"].isin(["AIDS_non_TB", "AIDS_TB", "TB"])]
+print(tb_deaths)
+AIDS_TB = results_deaths.loc[results_deaths["cause"] == "AIDS_TB"]
+AIDS_non_TB = results_deaths.loc[results_deaths["cause"] == "AIDS_non_TB"]
+TB = results_deaths.loc[results_deaths["cause"] == "TB"]
+
+combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
+combined_tb_table.to_excel(outputfilepath / "combined_tb_tables.xlsx")
+scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
+print("Scaling Factor Key:", scaling_factor_key)
+
+
+#Extracting DALYs
+def get_tb_dalys(df_):
+    # Get DALYs of TB
+    years = df_['year'].unique()  # Get unique years
+    dalys = pd.Series(dtype='float64', index=years)
+
     for year in years:
-        tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
-        ).transpose()
-        py[year] = tot_py.sum().values[0]
+        # Group data by year and sum relevant columns
+        tot_dalys = df_.drop(columns='date').groupby('year').sum()
 
-    py.index = pd.to_datetime(years, format="%Y")
+        # Ensure the labels exist before summing
+        if any(label in tot_dalys.columns for label in ["AIDS_TB", "TB", "AIDS_non_TB"]):
+            # Sum the DALYs for the specified labels for the year
+            dalys[year] = tot_dalys.loc[year, ["AIDS_TB", "TB", "AIDS_non_TB"]].sum()
+        else:
+            dalys[year] = 0  # Set it to 0 if the labels are not found
 
-    return py
+    dalys.sort_index(inplace=True)  # Sort the index inplace
+    return dalys
 
-# Create a DataFrame to store person years per draw and run
-pyears_all = pd.DataFrame()
-# Iterate over draws and runs
-for draw in range(number_draws):
-    pyears_summary_per_run = pd.DataFrame(data=None, columns=range(number_runs))
-    for run in range(number_runs):
-        pyears_summary_per_run[run] = get_person_years(draw, run)
 
-    # Calculate mean, lower, and upper percentiles
-    pyears_summary = pd.DataFrame()
-    pyears_summary["mean"] = pyears_summary_per_run.mean(axis=1)
-    pyears_summary["lower"] = pyears_summary_per_run.quantile(0.025, axis=1).values
-    pyears_summary["upper"] = pyears_summary_per_run.quantile(0.975, axis=1).values
+def get_tb_dalys(df_):
+    """
+    Get DALYs of TB by labels containing 'TB'.
+    """
+    # Get unique years from the data
+    years = df_['year'].value_counts().keys()
+    dalys = pd.Series(dtype='float64', index=years)
+    for year in years:
+        # Group data by year and sum relevant columns
+        tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
+        tb_labels = [label for label in tot_dalys.columns if 'TB' in label]
+        print(f"Debug: TB-related labels for year {year}: {tb_labels}")
+        dalys[year] = tot_dalys.loc[year, tb_labels].sum()
+    dalys.sort_index(inplace=True)
+    return dalys
 
-    # Assign draw and stat columns as MultiIndex
-    pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
+# def get_tb_dalys(df_):
+#     # Get DALYs of TB
+#     years = df_['year'].value_counts().keys()
+#     dalys = pd.Series(dtype='float64', index=years)
+#     for year in years:
+#         tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
+#        #dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
+#         dalys[year] = tot_dalys.loc[(year, ["AIDS_TB", "TB", "AIDS_non_TB"])].sum()
+#         dalys.sort_index()
+#         return dalys
 
-    # Append to the main DataFrame
-pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
-pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
-# Print the DataFrame to Excel
-pyears_all.to_excel (outputfilepath / "pyears_all.xlsx")
+# Extract DALYs from model and scale
+tb_dalys = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys",
+    custom_generate_series=get_tb_dalys,
+    do_scaling=True
+).pipe(set_param_names_as_column_index_level_0)
+
+# Get mean/upper/lower statistics
+dalys_summary = summarize(tb_dalys).sort_index()
+print("DALYs for TB are as follows:")
+print(dalys_summary)
+dalys_summary.to_excel(outputfilepath / "summarised_tb_dalys.xlsx")
 
 def get_counts_of_items_requested(_df):
     """
@@ -404,8 +442,8 @@ def tb_mortality_rate(results_folder, pyears_all):
     return tb_mortality_rate
 
 # Call the function with appropriate arguments
-mortality_rates = tb_mortality_rate(results_folder, pyears_all)
-mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
+# mortality_rates = tb_mortality_rate(results_folder, pyears_all)
+# mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 
 # Print scaling factor to population level estimates
 print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
@@ -526,15 +564,15 @@ tb_inc.index = tb_inc.index.year
 tb_incidence.to_excel(outputfilepath / "active_tb.xlsx")
 #Tb incidence rate
 #Tb_inc_rate = (tb_incidence.divide(pyears_all.values, axis=0)) * 100000
-Tb_inc_rate = tb_incidence.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
+#Tb_inc_rate = tb_incidence.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
 #Tb_inc_rate = tb_incidence.index(drop=True).div(pyears_all.index(drop=True), axis='rows')
-Tb_inc_rate.to_excel(outputfilepath / "Tb_incidence_rate.xlsx")
+#Tb_inc_rate.to_excel(outputfilepath / "Tb_incidence_rate.xlsx")
 
 # Assuming mdr_tb_cases and tb_incidence are your DataFrames
 MDR_prop_TB_cases = mdr_tb_cases.div(tb_incidence)*100
 MDR_prop_TB_cases.to_excel(outputfilepath / "MDR_prop_TB_cases.xlsx")
 #pyears = pyears.reset_index(drop=True)
-pyears_summary = pyears_summary.reset_index(drop=True)
+#pyears_summary = pyears_summary.reset_index(drop=True)
 
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 mdr = log["tlo.methods.tb"]["tb_mdr"]
@@ -760,10 +798,10 @@ plt.show()
 #Plotting TB incidence across scenarios
 fig, ax = plt.subplots(figsize=(10, 6))
 # Extract unique scenarios from column index level 0
-scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
+#scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
 lines = []
 # Extract unique scenarios from column index level 0
-scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
+#scenarios = Tb_inc_rate.columns.get_level_values(0).unique()
 
 fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -771,7 +809,7 @@ fig, ax = plt.subplots(figsize=(10, 6))
 lines = []
 
 for scenario in scenarios:
-    scenario_data = Tb_inc_rate[scenario]
+#    scenario_data = Tb_inc_rate[scenario]
     mean = scenario_data['mean']
 
     # Apply a moving average to smooth the line
@@ -1035,7 +1073,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--results-path",
         type=Path,
-        help="Directory containing results from running src/scripts/hiv/DAH/tb_DAH_scenarios2x.py",
+        help="Directory containing results from running src/scripts/hiv/DAH/tb_DAH_scenarios10x.py",
         default=None,
         required=False
     )
