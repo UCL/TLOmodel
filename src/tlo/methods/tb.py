@@ -2298,7 +2298,6 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
-
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(
                     person_id=person_id, module=self.module, facility_level="1a"
