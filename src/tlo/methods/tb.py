@@ -2307,7 +2307,7 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
 
             # Return the footprint. If it should be suppressed, return a blank footprint.
             if self.suppress_footprint:
-                return
+                return self.make_appt_footprint({})
             else:
                 return ACTUAL_APPT_FOOTPRINT
 
