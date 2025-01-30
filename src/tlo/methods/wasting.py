@@ -2146,9 +2146,11 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 sev_wasted_whole_ys_agegrp = above5s[(
                     above5s.un_WHZ_category == 'WHZ<-3'
                 )]
-            mod_wasted_whole_ys_agegrp['wasting_length'] = \
+            mod_wasted_whole_ys_agegrp = mod_wasted_whole_ys_agegrp.copy()
+            mod_wasted_whole_ys_agegrp.loc[:, 'wasting_length'] = \
                 (self.sim.date - mod_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
-            sev_wasted_whole_ys_agegrp['wasting_length'] = \
+            sev_wasted_whole_ys_agegrp = sev_wasted_whole_ys_agegrp.copy()
+            sev_wasted_whole_ys_agegrp.loc[:, 'wasting_length'] = \
                 (self.sim.date - sev_wasted_whole_ys_agegrp['un_last_wasting_date_of_onset']).dt.days
             if len(mod_wasted_whole_ys_agegrp) > 0:
                 assert not np.isnan(mod_wasted_whole_ys_agegrp['wasting_length']).any(),\
