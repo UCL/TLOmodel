@@ -52,8 +52,7 @@ class WastingAnalysis(BaseScenario):
             'filename': 'wasting_analysis__minimal_model',
             'directory': './outputs/wasting_analysis',
             "custom_levels": {  # Customise the output of specific loggers
-                # "tlo.methods.demography": logging.INFO,
-                # TODO: the above BACK for final calibration of population (no needed for wasting itself)
+                "tlo.methods.demography": logging.INFO,
                 "tlo.methods.population": logging.INFO,
                 "tlo.methods.wasting": logging.DEBUG,
                 '*': logging.WARNING
