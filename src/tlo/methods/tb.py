@@ -2265,6 +2265,9 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
+
         self.TREATMENT_ID = "Tb_Test_Culture"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"LabTBMicro": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
