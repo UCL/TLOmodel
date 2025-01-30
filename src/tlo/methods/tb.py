@@ -2261,7 +2261,7 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
     already preceded by a sequence of tests
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
