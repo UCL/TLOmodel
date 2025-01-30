@@ -250,9 +250,11 @@ increase_rate_2034 = pd.DataFrame(integrated_scale_up_factor - 1.0)
 avg_increase_rate_exp = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
 
 # get the linear regression prediction
-# 1.003	0.4122	1.0178	0.269	0.2002	-0.0686
-# const = -0.0686
-# coefs = [1.003, 0.4122, 1.0178, 0.269, 0.2002]
+# 1.003	0.4122	1.0178	0.269	0.2002	-0.0686, main analysis 5 runs
+# -0.0699 + 1.0046 * x_clinical + 0.4170 * x_dcsa + 1.0309 * x_nursing + 0.2691 * x_pharmacy + 0.1965 * x_other,
+# main analysis 10 runs
+# const = -0.0699
+# coefs = [1.0046, 0.4170, 1.0309, 0.2691, 0.1965]
 # predict_dalys_averted_percent = avg_increase_rate_exp.loc[
 #                                 ['Clinical', 'DCSA', 'Nursing_and_Midwifery', 'Pharmacy', 'Dental'],
 #                                 :].mul(coefs, axis=0).sum() + const
