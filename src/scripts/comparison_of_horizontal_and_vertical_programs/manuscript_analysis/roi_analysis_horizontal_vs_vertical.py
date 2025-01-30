@@ -107,6 +107,7 @@ chosen_cet = 199.620811947318 # This is based on the estimate from Lomas et al (
 # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is $77.4 in 2023 USD terms
 chosen_value_of_statistical_life = 834 # This is based on Munthali et al (2020) National Planning Commission Report on
 #"Medium and long-term impacts of a moderate lockdown (social restrictions) in response to the COVID-19 pandemic in Malawi"
+lomas_consumption_value_of_health = 230
 
 # Discount rate
 discount_rate = 0.03
@@ -582,6 +583,17 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HSS_VSL',
                    _plot_vertical_lines_at = [0, 1e9, 3e9],
+                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                    _projected_health_spending = projected_health_spending_baseline,
+                   _draw_colors = draw_colors)
+
+draw_colors = {36: '#438FBA', 44:'#5E4FA2'}
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = lomas_consumption_value_of_health),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [8, 36, 44],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = '_Lomas_CVH',
                     _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
                     _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors)
