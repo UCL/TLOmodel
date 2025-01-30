@@ -235,9 +235,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.recovery_options = ['mod_MAM_nat_full_recov',
                                  'mod_SAM_nat_full_recov', 'mod_SAM_nat_recov_to_MAM',
                                  'sev_SAM_nat_full_recov', 'sev_SAM_nat_recov_to_MAM',
-                                 'mod_MAM_tx_full_recov',
-                                 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
-                                 'sev_SAM_tx_full_recov', 'sev_SAM_tx_recov_to_MAM',
+                                 'mod_MAM_tx/nat_full_recov',
+                                 'mod_SAM_tx_full_recov', 'mod_SAM_tx/nat_recov_to_MAM',
+                                 'sev_SAM_tx_full_recov', 'sev_SAM_tx/nat_recov_to_MAM',
                                  'mod_not_yet_recovered',
                                  'sev_not_yet_recovered']
         blank_length_counter = dict(
@@ -1233,7 +1233,10 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         if pd.isnull(df.at[person_id, 'un_am_tx_start_date']):
             recov_how = 'nat'
         else:
-            recov_how = 'tx'
+            if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
+                recov_how = 'tx'
+            else:
+                recov_how = 'tx/nat'
 
         do_prints = False
         if person_id == self.module.person_of_interest_id:
@@ -1270,23 +1273,25 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
             wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
 
             def get_min_length(in_recov_how, in_person_id, in_whz):
-                if in_recov_how == 'tx':
-                    if df.at[in_person_id, 'un_sam_with_complications']:
-                        min_length = p['tx_length_weeks_InpatientSAM'] * 7
-                    elif df.at[in_person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
-                        min_length = p['tx_length_weeks_OutpatientSAM'] * 7
-                    else:  # df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM':
-                        min_length = p['tx_length_weeks_SuppFeedingMAM'] * 7
+                if in_whz == '-3<=WHZ<-2':
+                    min_length_nat = p['duration_of_untreated_mod_wasting']
+                else:  # in_whz == 'WHZ<=-3'
+                    min_length_nat = p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting']
+                if df.at[in_person_id, 'un_sam_with_complications']:
+                    min_length_tx = p['tx_length_weeks_InpatientSAM'] * 7
+                else:  # SAM without complications
+                    min_length_tx = p['tx_length_weeks_OutpatientSAM'] * 7
+                if in_recov_how == 'tx/nat':
+                    min_length = min(min_length_tx, min_length_nat)
+                elif in_recov_how == 'tx':
+                    min_length = min_length_tx
                 else:  # in_recov_how == 'nat'
-                    if in_whz == '-3<=WHZ<-2':
-                        min_length = p['duration_of_untreated_mod_wasting']
-                    else:  # in_whz == 'WHZ<=-3'
-                        min_length = p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting']
+                    min_length = min_length_nat
                 return min_length
 
             whz = df.at[person_id, 'un_WHZ_category']
             assert wasted_days >= get_min_length(recov_how, person_id, whz),\
-                (f" The {person_id=} is wasted less than min_length= {get_min_length(recov_how, person_id, whz)} days "
+                (f" The {person_id=} is {wasted_days=} < minimal expected length= {get_min_length(recov_how, person_id, whz)} days "
                  f"when {recov_opt=}.")
             self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
 
@@ -1329,7 +1334,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         if pd.isnull(df.at[person_id, 'un_am_tx_start_date']):
             recov_how = 'nat'
         else:
-            recov_how = 'tx'
+            recov_how = 'tx/nat'
 
         do_prints = False
         if person_id == self.module.person_of_interest_id:
@@ -1382,16 +1387,18 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
                 wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
 
                 def get_min_length(in_recov_how, in_person_id, in_whz):
-                    if in_recov_how == 'tx':
+                    if in_whz == '-3<=WHZ<-2':
+                        min_length_nat = p['duration_of_untreated_mod_wasting']
+                    else:  # in_whz == 'WHZ<=-3'
+                        min_length_nat = p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting']
+                    if in_recov_how == 'tx/nat':
                         if df.at[in_person_id, 'un_sam_with_complications']:
-                            min_length = p['tx_length_weeks_InpatientSAM'] * 7
+                            min_length_tx = p['tx_length_weeks_InpatientSAM'] * 7
                         else:  # SAM without complications
-                            min_length = p['tx_length_weeks_OutpatientSAM'] * 7
+                            min_length_tx = p['tx_length_weeks_OutpatientSAM'] * 7
+                        min_length = min(min_length_tx, min_length_nat)
                     else: # in_recov_how == 'nat'
-                        if in_whz == '-3<=WHZ<-2':
-                            min_length = p['duration_of_untreated_mod_wasting']
-                        else: # in_whz == 'WHZ<=-3'
-                            min_length = p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting']
+                        min_length = min_length_nat
                     return min_length
 
 
@@ -2058,7 +2065,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(key='wasting_incidence_count', data=inc_df.to_dict())
 
-        # Reset the tracker and the date_last_run
+        # Reset the incidence tracker and the date_last_run
         self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
         self.date_last_run = self.sim.date
 
@@ -2088,21 +2095,33 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         f"{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < "\
                         f"duration of (mod + sev wast): {p['duration_of_untreated_mod_wasting']} days;"\
                         f"{age_grp=}, {recov_opt=}"
-                elif recov_opt in ['mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
-                                   'sev_SAM_tx_full_recov', 'sev_SAM_tx_recov_to_MAM']:
-                    if recov_opt == 'mod_MAM_tx_full_recov':
-                        min_tx_length = p['tx_length_weeks_SuppFeedingMAM']
-                    else:
-                        min_tx_length = min(p['tx_length_weeks_OutpatientSAM'], p['tx_length_weeks_InpatientSAM'])
-                    assert all(length >= min_tx_length for length in
+                elif recov_opt in ['mod_MAM_tx/nat_full_recov', 'mod_SAM_tx_full_recov', 'mod_SAM_tx/nat_recov_to_MAM',
+                                   'sev_SAM_tx_full_recov', 'sev_SAM_tx/nat_recov_to_MAM']:
+                    if recov_opt == 'mod_MAM_tx/nat_full_recov':
+                        min_length = min(
+                            (p['tx_length_weeks_SuppFeedingMAM'] * 7), p['duration_of_untreated_mod_wasting']
+                        )
+                    elif recov_opt in ['mod_SAM_tx_full_recov', 'sev_SAM_tx_full_recov']:
+                        min_length = min(p['tx_length_weeks_OutpatientSAM'], p['tx_length_weeks_InpatientSAM']) * 7
+                    elif recov_opt == 'mod_SAM_tx/nat_recov_to_MAM':
+                        min_length = min(
+                            (p['tx_length_weeks_OutpatientSAM'] * 7), (p['tx_length_weeks_InpatientSAM'] * 7),
+                            p['duration_of_untreated_mod_wasting']
+                        )
+                    else:  # recov_opt == 'sev_SAM_tx/nat_recov_to_MAM'
+                        min_length = min(
+                            (p['tx_length_weeks_OutpatientSAM'] * 7), (p['tx_length_weeks_InpatientSAM'] * 7),
+                            (p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'])
+                        )
+                    assert all(length >= min_length for length in
                                self.module.wasting_length_tracker[age_grp][recov_opt]), \
                         f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < ' \
-                        f'{min_tx_length=} weeks; {age_grp=}, {recov_opt=}'
+                        f'{min_length=} days; {age_grp=}, {recov_opt=}'
 
                 assert recov_opt in self.module.recovery_options, f'\nInvalid {recov_opt=}.'
 
-        # Reset the tracker
-        self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
+        # Reset the length tracker
+        self.module.wasting_length_tracker = copy.deepcopy(self.module.wasting_length_tracker_blank)
 
         under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
         above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
