@@ -269,6 +269,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         )
         # Adjust monthly severe wasting incidence to the duration of untreated moderate wasting
         p = self.parameters
+        print(f"\nPARAMETERS:")
+        print(f"{p['base_death_rate_untreated_SAM']=}")
+        print(f"mod_wast_incidence__coef={p['base_inc_rate_wasting_by_agegp'][0]/0.0023}")
+        print(f"progression_to_sev_wast__coef={p['progression_severe_wasting_monthly_by_agegp'][0]/0.0027}")
+        print("prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam="
+              f"{p['prob_death_after_SAMcare']*(1-0.738)/p['base_death_rate_untreated_SAM']}")
+        print("-----------")
+        print(f"{p['base_inc_rate_wasting_by_agegp']=}")
+        print(f"{p['progression_severe_wasting_monthly_by_agegp']=}")
+        print(f"{p['prob_death_after_SAMcare']=}")
+
         p['progression_severe_wasting_by_agegp'] = \
             [s/30*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
 
