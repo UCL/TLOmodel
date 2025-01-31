@@ -54,7 +54,7 @@ def apply(results_folder: Path, output_folder: Path):
     # Define the target periods
     periods = {
         str(year): (datetime.date(year, 1, 1), datetime.date(year, 12, 31))
-        for year in [2010] + list(range(2024, e.end_date.year))
+        for year in [2010] + list(range(2023, e.end_date.year))
     }
 
     summaries = {}
@@ -64,7 +64,7 @@ def apply(results_folder: Path, output_folder: Path):
         df = get_life_expectancy_estimates(
             results_folder=results_folder,
             target_period=period,
-            summary=True,
+            summary=True,  # change to True for central with CI
         )
 
         if isinstance(df.columns, pd.MultiIndex) and df.columns.nlevels > 1:
