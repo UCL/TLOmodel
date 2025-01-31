@@ -7,7 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
 
-ANC = True
+ANC = False
 # facility data
 multiplier = 1000
 five_day = True
@@ -31,7 +31,7 @@ else:
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv') #January 2011 - January 2024
 else:
-    reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv') #January 2011 - January 2024
+    reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Inpatient_Data/HMIS_Total_Number_Admissions.csv') #January 2011 - January 2024
 # ANALYSIS DONE IN OCTOBER 2024 - so drop October, November, December 2024
 columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
 reporting_data = reporting_data.drop(columns=columns_to_drop)
@@ -151,14 +151,14 @@ if five_day:
         if ANC:
             df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv")
         else:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_cumulative.csv")
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_cumulative_inpatient.csv")
     else:
         if ANC:
             df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_average.csv")
         else:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_average.csv")
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_average_inpatient.csv")
 else:
         if ANC:
             df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC.csv")
         else:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility.csv")
+            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_inpatient.csv")
