@@ -424,6 +424,9 @@ X_continuous = np.column_stack([
         weather_data,
         weather_data[:,0]*weather_data[:,0],
         weather_data[:,1] * weather_data[:,1],
+        weather_data[:, 0] * weather_data[:, 0] * weather_data[:, 0],
+        weather_data[:, 1] * weather_data[:, 1] * weather_data[:, 1],
+        weather_data[:, 1] * weather_data[:,0],
         np.array(year_flattened),
         np.array(month_flattened),
         lag_1_month,
@@ -460,7 +463,8 @@ X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 #                                                                  X_mask_mm=mask_threshold, feature_selection =  feature_selection)
 included_weather, results_of_weather_model, y_pred_weather, mask_all_data = stepwise_selection(X_weather_standardized , y, poisson = poisson, log_y=log_y,)
 
-coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "precip_monthly_total_2", "precip_5_day_max_2", "year", "month",
+coefficient_names_weather = ["precip_monthly_total", "precip_5_day_max", "precip_monthly_total_2", "precip_5_day_max_2",
+                             "precip_monthly_total_3", "precip_5_day_max_3", "5_day_monthly", "year", "month",
                              "lag_1_month", "lag_2_month", "lag_3_month", "lag_4_month", "lag_9_month",
                              "lag_1_5_day", "lag_2_5_day", "lag_3_5_day", "lag_4_5_day", "lag_9_month",
                              "altitude", "minimum_distance"] + \
