@@ -1560,7 +1560,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             # or
             # df.at[person_id, 'un_am_treatment_type'].isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
             if do_prints:
-                print("not going through because")
+                print("not going through and no more monitoring scheduled because")
                 if not df.at[person_id, 'is_alive']:
                     print("already dead")
                 if df.at[person_id, 'age_exact_years'] >= 5:
@@ -1595,6 +1595,14 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         # TODO: as stated above, for now we schedule next monitoring for all children, even those sent for treatment
         schedule_next_monitoring()
+
+        # but if they are currently treated, the growth monitoring will not go through
+        # TODO: later will be scheduled for monitoring within the tx to use the resources
+        if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
+                self.sim.date):
+            if do_prints:
+                print("not going through because is currently treated")
+            return
 
         if not self.attendance:
             if do_prints:
