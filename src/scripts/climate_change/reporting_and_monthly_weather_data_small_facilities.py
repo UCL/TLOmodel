@@ -9,8 +9,8 @@ from scipy.spatial.distance import cdist
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
-ANC = True
-Inpatient = False
+ANC = False
+Inpatient = True
 multiplier = 1000
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
@@ -32,13 +32,12 @@ if Inpatient:
     months = set(col.split("HMIS Total # of Admissions (including Maternity) ")[1] for col in reporting_data.columns if "HMIS Total # of Admissions (including Maternity) " in col)
 else:
     months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
-months = set(col.split("HMIS Total Antenatal Visits ")[1] for col in reporting_data.columns if "HMIS Total Antenatal Visits " in col)
+#months = set(col.split("HMIS Total Antenatal Visits ")[1] for col in reporting_data.columns if "HMIS Total Antenatal Visits " in col)
 
 # put in order
 months = [date.strip() for date in months] # extra spaces??
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist() # puts them in ascending order
-print(months)
 for month in months:
     columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[reporting_data.columns.str.endswith(month)].tolist()
     data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
@@ -93,7 +92,6 @@ for polygon in malawi_grid["geometry"]:
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
 facilities_with_lat_long = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")
-print(facilities_with_lat_long.columns)
 weather_data_by_facility = {}
 facilities_with_location = []
 for reporting_facility in monthly_reporting_by_facility["facility"]:
@@ -124,9 +122,11 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
     elif reporting_facility == "Central East Zone":
         grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0] # furtherst east zone
         weather_data_by_facility[reporting_facility]  = weather_by_grid[grid]
+        facilities_with_location.append(reporting_facility)
     elif (reporting_facility == "Central Hospital"):
          grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0] # all labelled X City will be in the same grid
          weather_data_by_facility[reporting_facility]  = weather_by_grid[grid]
+         facilities_with_location.append(reporting_facility)
     else:
         continue
 
@@ -153,11 +153,15 @@ else:
     weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
 
 
+for facility in facilities_with_location:
+    print(facility)
 ## Get additional data - e.g. which zone it is in, altitude
 included_facilities_with_lat_long = facilities_with_lat_long[
     facilities_with_lat_long["Fname"].isin(facilities_with_location)
 ]
 
+unique_columns =  set(facilities_with_location) - set(included_facilities_with_lat_long)
+print(unique_columns)
 additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype", 'A109__Latitude', 'A109__Longitude']
 expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
 expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Blanytyre", "Blantyre")

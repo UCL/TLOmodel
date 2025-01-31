@@ -10,7 +10,7 @@ from netCDF4 import Dataset
 ANC = False
 # facility data
 multiplier = 1000
-five_day = True
+five_day = False
 cumulative = True
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
@@ -111,6 +111,10 @@ for year in years:
     for reporting_facility in monthly_reporting_by_facility["facility"]:
         matching_facility_name = difflib.get_close_matches(reporting_facility, facilities_with_lat_long['Fname'], n=3,
                                                            cutoff=0.90)
+
+        if (reporting_facility == "Central Hospital"):
+            matching_facility_name = "Lilongwe City Assembly Chinsapo"
+
         if matching_facility_name:
             match_name = matching_facility_name[0]  # Access the string directly
             # Initialize facility key if not already
@@ -140,6 +144,9 @@ for year in years:
                 max_average_by_facility[reporting_facility].append(max_moving_average * multiplier)
 
                 begin_day += month_length
+
+
+
 #
 df_of_facilities = pd.DataFrame.from_dict(max_average_by_facility, orient='index')
 df_of_facilities = df_of_facilities.iloc[:, :-3] ## THESE ARE OCT/NOV/DEC OF 2024, and for moment don't have that reporting data
