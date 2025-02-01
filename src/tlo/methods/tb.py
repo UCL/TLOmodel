@@ -2053,6 +2053,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,  # Adjust if needed
                     priority=0,
                 )
+                logger.debug(
+                    key="message",
+                    data=f"schedule HSI_Tb_Culture for person {person_id}",
+                )
         # ------------------------- testing outcomes ------------------------- #
 
         # diagnosed with mdr-tb - only if xpert used
