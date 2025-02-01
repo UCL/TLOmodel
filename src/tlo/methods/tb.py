@@ -1978,6 +1978,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         ].dx_manager.run_dx_test(
                             dx_tests_to_run="tb_clinical", hsi_event=self
                         )
+
                 if test_result is not None:
                     # Add used equipment
                     self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
@@ -2044,6 +2045,15 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
 
+        # If still no result, refer for TB culture testing
+            if test_result is None:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_Culture(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,  # Adjust if needed
+                    priority=0,
+                )
+                logging.info(f"HSI TB Culture event referred for person {person_id} at {self.sim.date}.")
         # ------------------------- testing outcomes ------------------------- #
 
         # diagnosed with mdr-tb - only if xpert used
@@ -2224,10 +2234,11 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         # under program scale-up, if a person tests negative but still has all symptoms
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
+
         person_has_tb_symptoms = all(symptom in persons_symptoms for symptom in self.module.symptom_list)
 
         if not test_result and person_has_tb_symptoms:
-            if p['type_of_scaleup'] == 'none' and self.sim.date.year >= p['scaleup_start_year']:
+            if p['type_of_scaleup'] == 'Target' and self.sim.date.year >= p['scaleup_start_year']:
 
                 logger.debug(
                     key="message",
@@ -2332,6 +2343,12 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
         #included the screening part so only people with TB symptoms are screened
     def apply(self, person_id, squeeze_factor):
+
+        print(f"STARTING TB CHEST XRAY SCREENING AT LEVEL1B {self.ACCEPTED_FACILITY_LEVEL} ")
+
+        #logger.info(f'"STARTING TB CHEST XRAY SCREENING AT LEVEL1B"')
+        # logger.debug(key="message", data=f"Performing Tb chest X-ray screening for {person_id}")
+
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
             print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.")
@@ -2414,7 +2431,11 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         # try to include "Under5OPD": 1, to appreciate behaviour in the outputs
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
+
     def apply(self, person_id, squeeze_factor):
+
+        print(f"STARTING TB CHEST XRAY SCREENING AT LEVEL2 {self.ACCEPTED_FACILITY_LEVEL} ")
+
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
             print(f"facility CXR scheduled for person {person_id} due to TB symptoms.")
@@ -2440,7 +2461,20 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             )
 
         # if consumables not available, rely on clinical diagnosis
-        if test_result is None:
+        # if test_result is None:
+        #     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+        #         dx_tests_to_run="tb_clinical", hsi_event=self
+        #     )
+
+            #if test is none then call Tb_Clinical HSI event
+            if test_result is None:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_ClinicalDiagnosis(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0,
+                )
+
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
