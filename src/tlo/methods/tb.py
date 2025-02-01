@@ -2053,7 +2053,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,  # Adjust if needed
                     priority=0,
                 )
-                logging.info(f"HSI TB Culture event referred for person {person_id} at {self.sim.date}.")
         # ------------------------- testing outcomes ------------------------- #
 
         # diagnosed with mdr-tb - only if xpert used
