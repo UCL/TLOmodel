@@ -20,7 +20,7 @@ class PerformanceMonitor(Module):
         pass
 
     def initialise_simulation(self, sim: Simulation) -> None:
-        sim.schedule_event(LogProgress(), sim.start_date)
+        sim.schedule_event(LogProgress(self), sim.start_date)
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
         pass
@@ -39,9 +39,9 @@ class LogProgress(RegularEvent, PopulationScopeEventMixin):
         now = time.time()
         duration = (now - self.time) / 60  # minutes
         self.time = now
-        sim: Simulation = population.sim
+        sim = self.module.sim
         sim_queue_size = len(sim.event_queue)
-        health_system: "HealthSystem" = sim.modules["HealtSystem"]
+        health_system: "HealthSystem" = sim.modules["HealthSystem"]
         hsi_queue_size = len(health_system.HSI_EVENT_QUEUE)
 
         logger.info(
