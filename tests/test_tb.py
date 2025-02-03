@@ -136,6 +136,17 @@ def test_basic_run(seed):
                          ]).all().all()
 
 
+def test_tb_screening(seed):
+
+    popsize=10000
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+    sim.modules['Tb'].parameters['incidence_active_tb_2010'] =1
+    sim.modules['Tb'].parameters['rr_tb_child'] = 1
+    sim.make_initial_population(n=popsize)
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(months=2))
+
+
 # check natural history of TB infection
 def test_natural_history(seed):
     """
