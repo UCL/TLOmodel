@@ -480,7 +480,7 @@ X_continuous_scaled = X_continuous
 
 X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 if use_percentile_mask_threshold:
-    mask_threshold = np.nanpercentile(X_weather_standardized[:,0], 5)
+    mask_threshold = np.nanpercentile(X_weather_standardized[:,0], 0)
     print(mask_threshold)
     X_weather_standardized[:, 0] = np.where(
         X_weather_standardized[:, 0] < mask_threshold, np.nan, X_weather_standardized[:, 0]
