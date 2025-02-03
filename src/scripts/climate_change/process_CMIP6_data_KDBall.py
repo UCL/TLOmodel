@@ -12,8 +12,12 @@ import pandas as pd
 from netCDF4 import Dataset
 from scipy.spatial import KDTree
 
-ANC = True
-Inpatient = False
+ANC = False
+Inpatient = True
+if ANC:
+    service = 'ANC'
+if Inpatient:
+    service = 'Inpatient'
 monthly_cumulative = False
 multiplier = 86400
 years = range(2015, 2100)
@@ -156,7 +160,7 @@ for scenario in scenarios:
     na_values = data_by_model_and_grid_same_length.isna()
     na_values_count = na_values.sum()
     data_by_model_and_grid_same_length = data_by_model_and_grid_same_length.dropna(axis=0)
-    data_by_model_and_grid_same_length.to_csv(Path(scenario_directory)/"data_by_model_and_grid_modal_resolution.csv", index = True)
+    data_by_model_and_grid_same_length.to_csv(Path(scenario_directory)/f"data_by_model_and_grid_modal_resolution_{service}.csv", index = True)
 
     # Now loop over facilities to locate each one in a grid cell for each model
     facilities_with_location = []
