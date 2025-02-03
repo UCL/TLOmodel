@@ -19,8 +19,8 @@ class Profiling(BaseScenario):
         super().__init__()
         self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2030, 1, 1)
-        self.pop_size = 50000
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 100000
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
