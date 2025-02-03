@@ -25,11 +25,18 @@ year_range = range(min_year, max_year)
 # global min for all heatmaps for same scale
 global_min = -5
 global_max = 0
+# service
+ANC = False
+Inpatient = True
+if ANC:
+    service = 'ANC'
+if Inpatient:
+    service = 'Inpatient'
 ## Get birth results
-results_folder_to_save = Path('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions')
+results_folder_to_save = Path(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions')
 results_folder_for_births = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
 resourcefilepath = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
-historical_predictions = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_ANC_model_historical_predictions.csv')
+historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
 precipitation_threshold = historical_predictions['Precipitation'].quantile(0.9)
 print(precipitation_threshold)
 agegrps, agegrplookup = make_age_grp_lookup()
@@ -101,7 +108,7 @@ for scenario in scenarios:
         filtered_predictions = predictions_from_cmip[predictions_from_cmip['Precipitation'] >= precipitation_threshold]
         filtered_predictions_sum = filtered_predictions.groupby('Year').sum().reset_index()
         percent_due_to_extreme = filtered_predictions_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
-
+        print(percent_due_to_extreme)
         multiplied_values_extreme_precip = births_model_subset.head(matching_rows).iloc[:, 1].values * percent_due_to_extreme.head(matching_rows).values * 1.4
         negative_sum_extreme_precip = np.sum(multiplied_values_extreme_precip[multiplied_values_extreme_precip < 0])
         result_df = pd.DataFrame({
@@ -128,7 +135,7 @@ for scenario in scenarios:
 
 final_results = pd.concat(results_list, ignore_index=True)
 print(final_results)
-final_results.to_csv('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/negative_sums_and_percentages.csv', index=False)
+final_results.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages.csv', index=False)
 
 
 
@@ -318,7 +325,7 @@ for i, scenario in enumerate(scenarios):
         if i == len(scenarios) - 1:
             ax.set_xlabel('Year', fontsize=12)
         if j == 0:
-            ax.set_ylabel('Deficit of ANC services', fontsize=12)
+            ax.set_ylabel(f'Deficit of {service} services', fontsize=12)
         #if (i == 0) & (j == 2):
         #    ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
         percentage_diff_by_year_district_all[scenario][model_type] = percentage_diff_by_year_district
@@ -410,7 +417,7 @@ for i, scenario in enumerate(scenarios):
         if i == len(scenarios) - 1:
             ax.set_xlabel('Year', fontsize=12)
         if j == 0:
-            ax.set_ylabel('Deficit of ANC services', fontsize=12)
+            ax.set_ylabel(f'Deficit of {service} services', fontsize=12)
         #if (i == 0) & (j == 2):
         #    ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
         percentage_diff_by_year_district_all[scenario][model_type] = percentage_diff_by_year_district
@@ -427,7 +434,7 @@ plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_
 ####### Historical disruptions ##########
 
 
-historical_predictions = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_ANC_model_historical_predictions.csv')
+historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_{service}_model_historical_predictions.csv')
 historical_predictions = historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
 
 historical_predictions_sum = historical_predictions.groupby('District').sum().reset_index()
@@ -443,8 +450,12 @@ percentage_diff_by_district_historical = historical_predictions_sum.groupby('Dis
 malawi_admin2['Percentage_Difference_historical'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district_historical)
 malawi_admin2.loc[malawi_admin2['Percentage_Difference_historical'] > 0, 'Percentage_Difference_historical'] = 0
 percentage_diff_by_district_historical_average = historical_predictions_sum['Percentage_Difference'].mean()
-print(percentage_diff_by_district_historical_average)
-
+print(malawi_admin2)
+filtered_predictions = historical_predictions[historical_predictions['Precipitation'] >= precipitation_threshold]
+filtered_predictions_sum = filtered_predictions.groupby('Year').sum().reset_index()
+percent_due_to_extreme = filtered_predictions_sum['Difference_in_Expectation'].sum()
+percent_due_to_extreme = percent_due_to_extreme/historical_predictions['Difference_in_Expectation'].sum()
+print(percent_due_to_extreme)
 fig, ax = plt.subplots(figsize=(10, 10))
 
 malawi_admin2.dropna(subset=['Percentage_Difference_historical']).plot(

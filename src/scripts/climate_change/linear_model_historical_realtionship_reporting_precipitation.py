@@ -9,8 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.feature_selection import SelectKBest, f_regression
 
-ANC = True
-Inpatient = False
+ANC = False
+Inpatient = True
 if ANC:
     service = 'ANC'
 if Inpatient:
@@ -507,7 +507,7 @@ coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficie
 p_values_weather = results_of_weather_model.pvalues
 p_values_weather_df = pd.DataFrame(p_values_weather, columns=['p_values'])
 results_weather_df = pd.concat([coefficient_names_weather, coefficients_weather_df, p_values_weather_df, rescaled_coefficients_df], axis=1)
-results_weather_df.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical{service}.csv')
+results_weather_df.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical_{service}.csv')
 
 print("All predictors", results_of_weather_model.summary())
 #
@@ -605,14 +605,14 @@ full_data_weather_predictions_historical.to_csv(f'/Users/rem76/Desktop/Climate_c
 ############### ADD IN CMIP DATA ###########################
 def get_weather_data(ssp_scenario, model_type):
     weather_data_prediction_five_day_cumulative_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_window_prediction_weather_by_facility.csv",
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_window_prediction_weather_by_facility_{service}.csv",
         dtype={'column_name': 'float64'}
     )
     weather_data_prediction_five_day_cumulative_original = weather_data_prediction_five_day_cumulative_original.drop(
         weather_data_prediction_five_day_cumulative_original.columns[0], axis=1
     ) # first column are date/months
     weather_data_prediction_monthly_original = pd.read_csv(
-        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_monthly_prediction_weather_by_facility.csv",
+        f"{data_path}Precipitation_data/Downscaled_CMIP6_data_CIL/{ssp_scenario}/{model_type}_monthly_prediction_weather_by_facility_{service}.csv",
         dtype={'column_name': 'float64'}
     )
     weather_data_prediction_monthly_original = weather_data_prediction_monthly_original.drop(
