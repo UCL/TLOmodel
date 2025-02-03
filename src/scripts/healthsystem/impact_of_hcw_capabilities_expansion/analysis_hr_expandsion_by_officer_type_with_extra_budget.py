@@ -2564,7 +2564,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Services increased by treatment area vs no extra budget allocation, {target_period()}'
     data_to_plot = num_treatments_group_increased / 1e6
     data_to_plot = data_to_plot[
-        ['RMNCH', 'HIV/AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']
+        ['RMNCH', 'HIV/AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs', 'Transport Injuries']
     ]
     # yerr_services = np.array([
     #     (num_treatments_total_increased['mean'] - num_treatments_total_increased['lower']).values,
@@ -2612,13 +2612,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     name_of_plot = f'HCW time-used increased by cadre \nvs no extra budget allocation, {target_period()}'
-    data_to_plot = hcw_time_increased_by_cadre.drop(columns='all') / 1e6
+    data_to_plot = hcw_time_increased_by_cadre.drop(columns='all') / 1e9
     column_dcsa = data_to_plot.pop('DCSA')
     data_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
     data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
-    ax.set_ylabel('Millions minutes', fontsize='small')
-    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    ax.set_ylabel('Billions minutes', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
@@ -2626,9 +2626,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     xtick.set_color(color)  # color scenarios based on the group info
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Officer category', title_fontsize='small',
+    plt.legend(title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
-    plt.title(name_of_plot)
+    plt.title(name_of_plot, fontsize='medium')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(
         name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
@@ -2674,7 +2674,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     name_of_plot = f'DALYs by cause area averted vs no extra budget allocation, {target_period()}'
     data_to_plot = num_dalys_by_cause_group_averted / 1e6
-    data_to_plot = data_to_plot[['RMNCH', 'HIV/AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs']]
+    data_to_plot = data_to_plot[
+        ['RMNCH', 'HIV/AIDS', 'Malaria', 'TB (non-AIDS)', 'NCDs', 'Transport Injuries']
+    ]
     # yerr_dalys = np.array([
     #     (num_dalys_averted['mean'] - num_dalys_averted['lower']).values,
     #     (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
