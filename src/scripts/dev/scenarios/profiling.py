@@ -27,8 +27,8 @@ class Profiling(BaseScenario):
     def log_configuration(self):
         return {
             "directory": Path("."),
-            "custom_levels": {"*": getattr(logging, "WARNING"), "tlo.profiling": logging.INFO},
-            "suppress_stdout": False
+            "custom_levels": {"*": getattr(logging, "WARNING"), "tlo.profiling": logging.INFO, "tlo.analysis.performance": logging.INFO},
+            "suppress_stdout": True
         }
 
     def modules(self):
