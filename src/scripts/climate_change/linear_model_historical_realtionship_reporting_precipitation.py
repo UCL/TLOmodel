@@ -10,6 +10,11 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.feature_selection import SelectKBest, f_regression
 
 ANC = True
+Inpatient = False
+if ANC:
+    service = 'ANC'
+if Inpatient:
+    service = 'Inpatient'
 daily_max = False
 daily_total = False
 if daily_total:
@@ -23,7 +28,8 @@ use_all_weather = True
 min_year_for_analysis = 2012
 absolute_min_year = 2011
 mask_threshold = -np.inf # accounts for scaling
-use_percentile_mask_threshold = False
+#mask_threshold = 50
+use_percentile_mask_threshold = True
 
 poisson = False
 log_y = True
@@ -50,9 +56,10 @@ print(model_filename_weather_model)
 # # data is from 2011 - 2024 - for facility
 if ANC:
     monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv", index_col=0)
+elif Inpatient:
+    monthly_reporting_by_facility = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv", index_col=0)
 
-
-def build_model(X, y, poisson=False, log_y=False, X_mask_mm=0, feature_selection=False, k_best=None):
+def build_model(X, y, poisson=False, log_y=False, feature_selection=False, k_best=None):
     epsilon = 1
 
     # Log-transform y with clipping for positivity
@@ -60,8 +67,7 @@ def build_model(X, y, poisson=False, log_y=False, X_mask_mm=0, feature_selection
         y = np.log(np.clip(y, epsilon, None))
 
         # Apply mask to filter valid data
-    mask = (~np.isnan(X).any(axis=1) & ~np.isnan(y) &
-            (X[:, 0] >= X_mask_mm) & (y <= 1e4))
+    mask = (~np.isnan(X).any(axis=1) & ~np.isnan(y) & (y <= 1e4))
     X_filtered, y_filtered = X[mask], y[mask]
 
     # Feature selection step (optional)
@@ -107,7 +113,7 @@ def stepwise_selection(X, y, log_y, poisson, p_value_threshold=0.05):
         new_aic = pd.Series(index=excluded, dtype=float)
         for new_column in excluded:
             subset_X = X[:, included + [new_column]]
-            results, y_pred, mask_ANC_data, _ = build_model(subset_X, y, poisson, log_y=log_y, X_mask_mm=mask_threshold)
+            results, y_pred, mask_ANC_data, _ = build_model(subset_X, y, poisson, log_y=log_y)
             new_aic[new_column] = results.aic
 
         # Add the predictor with the best AIC if it's better than the current model's AIC
@@ -123,7 +129,7 @@ def stepwise_selection(X, y, log_y, poisson, p_value_threshold=0.05):
         if not changed:
             break
     included.sort()
-    results, y_pred, mask_ANC_data, _ = build_model(X[:, included], y, poisson, log_y=log_y, X_mask_mm=mask_threshold)
+    results, y_pred, mask_ANC_data, _ = build_model(X[:, included], y, poisson, log_y=log_y)
 
     return included, results, y_pred, mask_ANC_data
 
@@ -144,13 +150,22 @@ def repeat_info(info, num_facilities, year_range, historical):
 #
 ### Try combine weather variables ##
 if use_all_weather:
-    weather_data_monthly_original = pd.read_csv(
-                "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
-                index_col=0)
+    if ANC:
+        weather_data_monthly_original = pd.read_csv(
+                    "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv",
+                    index_col=0)
 
-    weather_data_five_day_cumulative_original = pd.read_csv(
-                        "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
-                        index_col=0)
+        weather_data_five_day_cumulative_original = pd.read_csv(
+                            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
+                            index_col=0)
+    if Inpatient:
+        weather_data_monthly_original = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv",
+            index_col=0)
+
+        weather_data_five_day_cumulative_original = pd.read_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facility_five_day_cumulative_inpatient.csv",
+            index_col=0)
 ##############################################################################################
 ########################## STEP 0: Tidy data ##########################
 ##############################################################################################
@@ -166,7 +181,6 @@ if use_all_weather:
 
     weather_data_monthly_df = weather_data_monthly_df.drop(weather_data_monthly_df.index[-2:])
     weather_data_five_day_cumulative_df = weather_data_five_day_cumulative_df.drop(weather_data_five_day_cumulative_df.index[-1:])
-
     lag_1_month = weather_data_monthly_df.shift(1).values
     lag_2_month = weather_data_monthly_df.shift(2).values
     lag_3_month = weather_data_monthly_df.shift(3).values
@@ -206,6 +220,8 @@ if use_all_weather:
     weather_data_five_day_cumulative = weather_data_five_day_cumulative.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
     weather_data_monthly_flattened = weather_data_monthly.values.flatten()
     weather_data_five_day_cumulative_flattened = weather_data_five_day_cumulative.values.flatten()
+    print(len(weather_data_five_day_cumulative_flattened))
+
     weather_data = np.vstack((weather_data_monthly_flattened,weather_data_five_day_cumulative_flattened)).T
 
 # # Mask COVID-19 months for reporting
@@ -240,9 +256,6 @@ y = monthly_reporting_by_facility.values.flatten()
 if np.nanmin(y) < 1:
      y += 1  # Shift to ensure positivity as taking log
 y[y > 4e3] = np.nan
-if use_percentile_mask_threshold:
-    mask_threshold = np.nanpercentile(weather_data, 90)
-    print(mask_threshold)
 
 # One-hot encode facilities
 facility_encoded = pd.get_dummies(facility_flattened, drop_first=True)
@@ -255,8 +268,9 @@ above_below_X = lag_12_month > percentile_90
 # Prepare additional facility info
 if ANC:
     expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv", index_col=0)
-else:
-    expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv", index_col=0)
+elif Inpatient:
+    expanded_facility_info = pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv", index_col=0)
+
 expanded_facility_info = expanded_facility_info.drop(columns=zero_sum_columns)
 
 expanded_facility_info = expanded_facility_info.T.reindex(columns=expanded_facility_info.index)
@@ -357,7 +371,8 @@ p_values = results.pvalues
 p_values_df = pd.DataFrame(p_values, columns=['p_values'])
 results_df = pd.concat([coefficient_names, coefficients_df, p_values_df], axis=1)
 
-results_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical.csv')
+results_df.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_{service}.csv')
+
 
 y_weather = np.exp(y_pred)
 
@@ -393,8 +408,14 @@ axs[0].scatter(data_ANC_predictions_grouped['Year_Month'], data_ANC_predictions_
 axs[0].set_xticks(xticks)
 axs[0].set_xticklabels(xticks, rotation=45, ha='right')
 axs[0].set_xlabel('Year')
-axs[0].set_ylabel('Number of ANC visits')
-axs[0].set_title('A: Monthly ANC Visits vs. Precipitation')
+axs[0].set_ylabel(f'Number of {service}  visits')
+axs[0].set_title(f'A: Monthly {service}  Visits vs. Precipitation')
+
+
+
+
+
+
 axs[0].legend(loc='upper left')
 
 # Panel B: Residuals
@@ -458,6 +479,13 @@ X_continuous_scaled = scaler.fit_transform(X_continuous)
 X_continuous_scaled = X_continuous
 
 X_weather_standardized = np.column_stack([X_continuous_scaled, X_categorical])
+if use_percentile_mask_threshold:
+    mask_threshold = np.nanpercentile(X_weather_standardized[:,0], 5)
+    print(mask_threshold)
+    X_weather_standardized[:, 0] = np.where(
+        X_weather_standardized[:, 0] < mask_threshold, np.nan, X_weather_standardized[:, 0]
+    )
+    print(X_weather_standardized[:, 0] )
 
 # results_of_weather_model, y_pred_weather, mask_all_data, selected_features = build_model(X_weather_standardized, y, poisson = poisson, log_y=log_y,
 #                                                                  X_mask_mm=mask_threshold, feature_selection =  feature_selection)
@@ -479,7 +507,7 @@ coefficients_weather_df = pd.DataFrame(coefficients_weather, columns=['coefficie
 p_values_weather = results_of_weather_model.pvalues
 p_values_weather_df = pd.DataFrame(p_values_weather, columns=['p_values'])
 results_weather_df = pd.concat([coefficient_names_weather, coefficients_weather_df, p_values_weather_df, rescaled_coefficients_df], axis=1)
-results_weather_df.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical.csv')
+results_weather_df.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_weather_model_historical{service}.csv')
 
 print("All predictors", results_of_weather_model.summary())
 #
@@ -500,7 +528,9 @@ axs[0].scatter(X_filtered[:, 0], y[mask_all_data], color='red', alpha=0.5, label
 axs[0].hlines(y = 0, xmin=plt.xlim()[0], xmax=plt.xlim()[1], color = 'black', linestyle = '--')
 axs[0].scatter(X_filtered[:, 0], np.exp(y_pred_weather), label='Weather model', color="blue", alpha = 0.5)
 axs[0].hlines(y=0, xmin=plt.xlim()[0], xmax=plt.xlim()[1], color='black', linestyle='--')
-axs[0].set_ylabel('ANC visits')
+axs[0].set_ylabel(f'{service}  visits')
+
+
 
 axs[1].scatter(monthly_weather_predictions, np.exp(matched_y_pred_weather) - np.exp(matched_y_pred), color='red', alpha=0.5, label = 'Residuals')
 axs[1].hlines(y = 0, xmin=plt.xlim()[0], xmax=plt.xlim()[1], color = 'black', linestyle = '--')
@@ -537,7 +567,10 @@ y_max = max(abs(data_weather_predictions_grouped['difference'])) + 50
 ax.set_ylim(-y_max, y_max)
 
 ax.set_xlabel('Year')
-ax.set_ylabel('Difference in Predicted ANC Services (Without vs. With Precipitation)')
+ax.set_ylabel(f'Difference in Predicted {service}  Services (Without vs. With Precipitation)')
+
+
+
 ax.set_xticks(data_weather_predictions_grouped['Year'])
 ax.set_xticklabels(data_weather_predictions_grouped['Year'], rotation=45, ha='right')
 #ax.legend(loc='upper left')
@@ -566,7 +599,7 @@ full_data_weather_predictions_historical = pd.DataFrame({
     'Predicted_No_Weather_Model': np.exp(matched_y_pred),
     'Difference_in_Expectation': np.exp(matched_y_pred_weather) - np.exp(matched_y_pred),
 })
-full_data_weather_predictions_historical.to_csv('/Users/rem76/Desktop/Climate_change_health/Data/results_of_ANC_model_historical_predictions.csv')
+full_data_weather_predictions_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
 
 
 ############### ADD IN CMIP DATA ###########################
@@ -682,6 +715,11 @@ for ssp_scenario in ssp_scenarios:
 
         X_continuous_weather = np.column_stack([
             weather_data_prediction_flatten,
+            weather_data_prediction_flatten[:,0]*weather_data_prediction_flatten[:,0],
+            weather_data_prediction_flatten[:,1] * weather_data_prediction_flatten[:,1],
+            weather_data_prediction_flatten[:, 0] * weather_data_prediction_flatten[:, 0] * weather_data_prediction_flatten[:, 0],
+            weather_data_prediction_flatten[:, 1] * weather_data_prediction_flatten[:, 1] * weather_data_prediction_flatten[:, 1],
+            weather_data_prediction_flatten[:, 1] * weather_data_prediction_flatten[:,0],
             np.array(year_flattened_prediction),
             np.array(month_flattened_prediction),
             lag_1_month_prediction,
@@ -763,7 +801,7 @@ for ssp_scenario in ssp_scenarios:
         xticks = data_weather_predictions['Year_Month'][::len(year_range) * 12 * num_facilities]
         axs[0].set_xticks(xticks)
         axs[0].set_xticklabels(xticks, rotation=45, ha='right')
-        axs[0].set_ylabel('Difference Predicted ANC visits due to rainfall')
+        axs[0].set_ylabel(f'Difference Predicted {service} visits due to rainfall')
         axs[0].legend(loc='upper left')
         plt.show()
 
@@ -773,7 +811,7 @@ for ssp_scenario in ssp_scenarios:
                            label='Predictions')
 
         axs[0].set_xlabel('Precipitation (mm)')
-        axs[0].set_ylabel('Difference in of ANC visits between weather and non-weather model')
+        axs[0].set_ylabel(f'Difference in of {service} visits between weather and non-weather model')
 
         plt.tight_layout()
         plt.show()
@@ -799,9 +837,9 @@ for ssp_scenario in ssp_scenarios:
         })
 
         #Save the results
-        full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}.csv", index=False)
+        full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_{ssp_scenario}_{model_type}_{service}.csv", index=False)
 
         X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered)
 
         # Save to CSV
-        X_basis_weather_filtered.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/X_basis_weather_filtered_predictions_{ssp_scenario}_{model_type}.csv', index=False)
+        X_basis_weather_filtered.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/X_basis_weather_filtered_predictions_{ssp_scenario}_{model_type}_{service}.csv', index=False)
