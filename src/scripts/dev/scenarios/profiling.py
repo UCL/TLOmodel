@@ -11,7 +11,7 @@ class Profiling(BaseScenario):
         super().__init__()
         self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2005, 1, 1)
+        self.end_date = Date(2015, 1, 1)
         self.pop_size = 150000
         self.number_of_draws = 1
         self.runs_per_draw = 1
@@ -19,8 +19,8 @@ class Profiling(BaseScenario):
     def log_configuration(self):
         return {
             "directory": Path("."),
-            "custom_levels": {"*": getattr(logging, "WARNING"), "tlo.profiling": logging.INFO, "tlo.analysis.performance": logging.INFO},
-            "suppress_stdout": True
+            "custom_levels": {"*": getattr(logging, "INFO"), "tlo.profiling": logging.INFO, "tlo.analysis.performance": logging.INFO},
+            "suppress_stdout": False
         }
 
     def modules(self):
