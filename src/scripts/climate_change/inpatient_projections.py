@@ -9,6 +9,9 @@ from matplotlib import colors as mcolors
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import glob
+import os
 
 from tlo.analysis.utils import (
     extract_results,
@@ -55,11 +58,9 @@ malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Zomba City', 'Zomba
 
 difference_lat = lat_data[1] - lat_data[0]
 difference_long = long_data[1] - long_data[0]
-
+#
 # # Get expected disturbance from the model
-
-results_list = []
-
+#
 results_list = []
 
 #Loop through scenarios and model types
@@ -358,3 +359,138 @@ plt.tight_layout()
 plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend.png')
 #plt.show()
 #
+
+# Define file paths
+monthly_reporting_file = "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv"
+five_day_max_file = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv"
+precipitation_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL"
+
+# Define scenarios, models, and services
+scenarios = ["ssp126", "ssp245", "ssp585"]
+model_types = ["lowest", "mean", "highest"]
+services = ["ANC", "Inpatient"]
+
+# Load the monthly reporting data
+monthly_reporting_df = pd.read_csv(monthly_reporting_file)
+monthly_reporting_values = monthly_reporting_df.iloc[:, 1:].values.flatten()
+
+# Load the 5-day max reporting data
+five_day_max_df = pd.read_csv(five_day_max_file)
+five_day_max_values = five_day_max_df.iloc[:, 1:].values.flatten()
+
+# Create side-by-side plots
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+# Monthly Reporting Distribution
+sns.kdeplot(monthly_reporting_values, label="Monthly Reporting ANC", color='#1C6E8C', ax=axes[0])
+axes[0].set_title("Distribution Comparisons - Monthly")
+axes[0].set_xlabel("Value")
+axes[0].set_ylabel("Density")
+axes[0].legend()
+
+# 5-Day Max Reporting Distribution
+sns.kdeplot(five_day_max_values, label="5-Day Max Reporting ANC", color='#1C6E8C', ax=axes[1])
+axes[1].set_title("Distribution Comparisons - 5 Day Max")
+axes[1].set_xlabel("Value")
+axes[1].set_ylabel("Density")
+axes[1].legend()
+
+# Loop through scenarios, models, and services to plot distributions
+for scenario in scenarios:
+    for model in model_types:
+        for service in services:
+            # Monthly Prediction Data
+            monthly_file_path = os.path.join(
+                precipitation_path, scenario, f"{model}_monthly_prediction_weather_by_facility_{service}.csv"
+            )
+            if os.path.exists(monthly_file_path):
+                df = pd.read_csv(monthly_file_path)
+                values = df.iloc[:, 1:].values.flatten()
+                sns.kdeplot(values, label=f"{scenario} - {model} - {service}", alpha=0.7, ax=axes[0])
+
+            # 5-Day Max Prediction Data
+            five_day_file_path = os.path.join(
+                precipitation_path, scenario, f"{model}_window_prediction_weather_by_facility_{service}.csv"
+            )
+            if os.path.exists(five_day_file_path):
+                df = pd.read_csv(five_day_file_path)
+                values = df.iloc[:, 1:].values.flatten()
+                sns.kdeplot(values, label=f"{scenario} - {model} - {service}", alpha=0.7, ax=axes[1])
+
+plt.tight_layout()
+plt.show()
+
+
+
+# Define file paths
+monthly_reporting_file = "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv"
+five_day_max_file = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv"
+precipitation_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL"
+
+# Define scenarios, models, and services
+scenarios = ["ssp126", "ssp245", "ssp585"]
+model_types = ["lowest", "mean", "highest"]
+services = ["Inpatient"]
+
+def filter_top_20_percent(values):
+    """Filter values to keep only those in the top 80th percentile."""
+    threshold = np.percentile(values, 80)
+    return values[values >= threshold]
+
+# Load and filter monthly reporting data
+monthly_reporting_df = pd.read_csv(monthly_reporting_file)
+monthly_reporting_values = monthly_reporting_df.iloc[:, 1:].values.flatten()
+monthly_reporting_values = filter_top_20_percent(monthly_reporting_values)
+
+# Load and filter 5-day max reporting data
+five_day_max_df = pd.read_csv(five_day_max_file)
+five_day_max_values = five_day_max_df.iloc[:, 1:].values.flatten()
+five_day_max_values = filter_top_20_percent(five_day_max_values)
+
+# Create a figure with 3 rows (one per scenario) and 2 columns (Monthly, 5-Day Max)
+fig, axes = plt.subplots(3, 2, figsize=(14, 12))
+
+for i, scenario in enumerate(scenarios):
+    # Monthly Reporting Distribution
+    sns.kdeplot(monthly_reporting_values, label="Monthly Reporting ANC", color='black', ax=axes[i, 0], alpha=1)
+    axes[i, 0].set_title(f"Top 20% Distribution - Monthly ({scenario})")
+    axes[i, 0].set_xlabel("Precipitation (mm)")
+    axes[i, 0].set_ylabel("Density")
+
+    # 5-Day Max Reporting Distribution
+    sns.kdeplot(five_day_max_values, label="5-Day Max Reporting ANC", color='black', ax=axes[i, 1], alpha=1)
+    axes[i, 1].set_title(f"Top 20% Distribution - 5 Day Max ({scenario})")
+    axes[i, 1].set_xlabel("Precipitation (mm)")
+    axes[i, 1].set_ylabel("Density")
+
+    # Loop through model types and services to plot distributions
+    for model in model_types:
+        for service in services:
+            # Monthly Prediction Data
+            monthly_file_path = os.path.join(
+                precipitation_path, scenario, f"{model}_monthly_prediction_weather_by_facility_{service}.csv"
+            )
+            if os.path.exists(monthly_file_path):
+                df = pd.read_csv(monthly_file_path)
+                values = df.iloc[:, 1:].values.flatten()
+                values = filter_top_20_percent(values)
+                if len(values) > 0:
+                    sns.kdeplot(values, label=f"{model} - {service}", alpha=0.4, ax=axes[i, 0])
+
+            # 5-Day Max Prediction Data
+            five_day_file_path = os.path.join(
+                precipitation_path, scenario, f"{model}_window_prediction_weather_by_facility_{service}.csv"
+            )
+            if os.path.exists(five_day_file_path):
+                df = pd.read_csv(five_day_file_path)
+                values = df.iloc[:, 1:].values.flatten()
+                values = filter_top_20_percent(values)
+                if len(values) > 0:
+                    sns.kdeplot(values, label=f"{model} - {service}", alpha=0.3, ax=axes[i, 1])
+
+    axes[0, 0].legend()
+    axes[0, 1].legend()
+
+plt.tight_layout()
+plt.show()
+plt.savefig(f"/Users/rem76/Desktop/Climate_change_health/Data/historical_vs_future_precipitation_{service}.png")
