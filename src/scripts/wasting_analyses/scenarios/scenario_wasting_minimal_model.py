@@ -43,7 +43,7 @@ class WastingAnalysis(BaseScenario):
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
-            number_of_draws=5*5*5*4,
+            number_of_draws=1,
             runs_per_draw=1,
         )
 
@@ -79,35 +79,43 @@ class WastingAnalysis(BaseScenario):
                 stunting.Stunting(resourcefilepath=self.resources),
                 wasting.Wasting(resourcefilepath=self.resources)]
 
-    # def draw_parameters(self, draw_number, rng):
-    #     # Using default parameters in all cases
-    #     return {}
-
     def draw_parameters(self, draw_number, rng):
-        base_death_rate_untreated_sam__draws = [0.01, 0.03, 0.05, 0.08, 0.1]
-        mod_wast_incidence__coef = [0.1, 0.3, 0.5, 0.7, 0.9]
-        base_inc_rate_wasting_props_by_agegp = [0.0023,0.0099,0.0189,0.0102,0.003, 0.002]
-        progression_to_sev_wast__coef = [1, 5, 10, 15, 20]
-        progression_severe_wasting_monthly_props_by_agegp =  [0.0027,0.0036,0.0079,0.0053,0.0025,0.002]
-        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.85, 0.7, 0.55, 0.4]
-
-        pars_combinations = list(itertools.product(
-            base_death_rate_untreated_sam__draws,
-            mod_wast_incidence__coef,
-            progression_to_sev_wast__coef,
-            prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam
-        ))
+        # Using default parameters in all cases
         return {
             'Wasting': {
-                'base_death_rate_untreated_SAM': pars_combinations[draw_number][0],
-                'base_inc_rate_wasting_by_agegp': [s * pars_combinations[draw_number][1] for \
-                                                   s in base_inc_rate_wasting_props_by_agegp],
-                'progression_severe_wasting_monthly_by_agegp': [s * pars_combinations[draw_number][2] for \
-                                                   s in progression_severe_wasting_monthly_props_by_agegp],
-                'prob_death_after_SAMcare': ((pars_combinations[draw_number][0] * pars_combinations[draw_number][3]) /
-                                             (1-0.738))
+                'base_death_rate_untreated_SAM': 0.17,
+                'base_inc_rate_wasting_by_agegp': [0.0023, 0.0099, 0.0189, 0.0102, 0.003, 0.002],
+                'progression_severe_wasting_monthly_by_agegp': [0.0027, 0.0036, 0.0079, 0.0053, 0.0025, 0.002],
+                'prob_death_after_SAMcare': 0.324427480916031
             }
         }
+
+
+    # def draw_parameters(self, draw_number, rng):
+    #     base_death_rate_untreated_sam__draws = [0.01, 0.03, 0.05, 0.08, 0.1]
+    #     mod_wast_incidence__coef = [0.1, 0.3, 0.5, 0.7, 0.9]
+    #     base_inc_rate_wasting_props_by_agegp = [0.0023,0.0099,0.0189,0.0102,0.003, 0.002]
+    #     progression_to_sev_wast__coef = [1, 5, 10, 15, 20]
+    #     progression_severe_wasting_monthly_props_by_agegp =  [0.0027,0.0036,0.0079,0.0053,0.0025,0.002]
+    #     prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.85, 0.7, 0.55, 0.4]
+    #
+    #     pars_combinations = list(itertools.product(
+    #         base_death_rate_untreated_sam__draws,
+    #         mod_wast_incidence__coef,
+    #         progression_to_sev_wast__coef,
+    #         prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam
+    #     ))
+    #     return {
+    #         'Wasting': {
+    #             'base_death_rate_untreated_SAM': pars_combinations[draw_number][0],
+    #             'base_inc_rate_wasting_by_agegp': [s * pars_combinations[draw_number][1] for \
+    #                                                s in base_inc_rate_wasting_props_by_agegp],
+    #             'progression_severe_wasting_monthly_by_agegp': [s * pars_combinations[draw_number][2] for \
+    #                                                s in progression_severe_wasting_monthly_props_by_agegp],
+    #             'prob_death_after_SAMcare': ((pars_combinations[draw_number][0] * pars_combinations[draw_number][3]) /
+    #                                          (1-0.738))
+    #         }
+    #     }
 
 
 if __name__ == '__main__':
