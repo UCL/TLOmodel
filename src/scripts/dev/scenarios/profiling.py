@@ -1,15 +1,7 @@
 from pathlib import Path
 
 from tlo import Date, logging
-from tlo.analysis import performance
 from tlo.analysis.performance import PerformanceMonitor
-from tlo.methods import (
-    demography,
-    enhanced_lifestyle,
-    healthseekingbehaviour,
-    healthsystem,
-    symptommanager,
-)
 from tlo.methods import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -19,8 +11,8 @@ class Profiling(BaseScenario):
         super().__init__()
         self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
-        self.pop_size = 100000
+        self.end_date = Date(2005, 1, 1)
+        self.pop_size = 150000
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
