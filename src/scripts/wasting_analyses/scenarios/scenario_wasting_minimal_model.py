@@ -9,7 +9,7 @@ or locally using:
 
     tlo scenario-run src/scripts/wasting_analyses/scenarios/scenario_wasting_minimal_model.py
 """
-import itertools
+# import itertools
 import warnings
 
 from tlo import Date, logging
@@ -82,12 +82,12 @@ class WastingAnalysis(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         # Using default parameters in all cases
         return {
-            'Wasting': {
-                'base_death_rate_untreated_SAM': 0.17,
-                'base_inc_rate_wasting_by_agegp': [0.0023, 0.0099, 0.0189, 0.0102, 0.003, 0.002],
-                'progression_severe_wasting_monthly_by_agegp': [0.0027, 0.0036, 0.0079, 0.0053, 0.0025, 0.002],
-                'prob_death_after_SAMcare': 0.324427480916031
-            }
+            # 'Wasting': {
+            #     'base_death_rate_untreated_SAM': 0.17,
+            #     'base_inc_rate_wasting_by_agegp': [0.0023, 0.0099, 0.0189, 0.0102, 0.003, 0.002],
+            #     'progression_severe_wasting_monthly_by_agegp': [0.0027, 0.0036, 0.0079, 0.0053, 0.0025, 0.002],
+            #     'prob_death_after_SAMcare': 0.324427480916031
+            # }
         }
 
 
