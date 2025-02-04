@@ -170,6 +170,23 @@ extra_budget_fracs = extra_budget_fracs.reindex(columns=col_order)
 # extra_budget_fracs_sample /= 100
 # assert (abs(extra_budget_fracs_sample.iloc[:, 1:].sum(axis=0) - 1.0) < 1e-9).all()
 # extra_budget_fracs_sample.rename(columns={0: 's_0'}, inplace=True)
+
+# if do not fix DCSA and Other
+# value_list = list(np.arange(0, 105, 5))
+# combinations = []
+# for i in itertools.product(value_list, repeat=5):
+#     if sum(i) == 100:
+#         combinations.append(i)
+# extra_budget_fracs_sample = pd.DataFrame(index=extra_budget_fracs.index, columns=range(len(combinations)+1))
+# extra_budget_fracs_sample.iloc[:, 0] = 0
+# for i in range(1, len(combinations)+1):
+#     extra_budget_fracs_sample.loc[['Clinical', 'Nursing_and_Midwifery', 'Pharmacy', 'DCSA'], i] = combinations[i-1][:-1]
+#     for c in other_group:
+#         extra_budget_fracs_sample.loc[c, i] = combinations[i-1][4] * (
+#             staff_cost.loc[c, 'cost_frac'] / staff_cost.loc[staff_cost.index.isin(other_group), 'cost_frac'].sum())
+# extra_budget_fracs_sample /= 100
+# assert (abs(extra_budget_fracs_sample.iloc[:, 1:].sum(axis=0) - 1.0) < 1e-9).all()
+# extra_budget_fracs_sample.rename(columns={0: 's_0'}, inplace=True)
 #
 # extra_budget_fracs = extra_budget_fracs_sample.copy()
 
@@ -267,10 +284,13 @@ avg_increase_rate_exp = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
 #                                        + extra_budget_fracs_sample['Nursing_and_Midwifery'])
 # extra_budget_fracs_sample['NM + P'] = (extra_budget_fracs_sample['Nursing_and_Midwifery']
 #                                        + extra_budget_fracs_sample['Pharmacy'])
+# extra_budget_fracs_sample['C + NM + P'] = (extra_budget_fracs_sample['Nursing_and_Midwifery']
+#                                            + extra_budget_fracs_sample['Pharmacy']
+#                                            + extra_budget_fracs_sample['Clinical'])
 # min_row = pd.DataFrame(extra_budget_fracs_sample.min(axis=0)).T.rename(index={0: 'Min'})
 # max_row = pd.DataFrame(extra_budget_fracs_sample.max(axis=0)).T.rename(index={0: 'Max'})
 # extra_budget_fracs_sample = pd.concat([extra_budget_fracs_sample, min_row, max_row])
-# extra_budget_fracs_sample.drop(columns=other_group, inplace=True)
+# extra_budget_fracs_sample.drop(columns=other_group[1:], inplace=True)
 
 
 def func_of_avg_increase_rate(cadre, scenario='s_2', r=0.042):
