@@ -421,7 +421,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         legend_labels = list(scenario_groups[1].keys())[:-2]
         legend_handles = [plt.Rectangle((0, 0), 1, 1,
                                         color=scenario_groups[1][label]) for label in legend_labels]
-        ax.legend(legend_handles, legend_labels,  # loc='center left', bbox_to_anchor=(1, 0.5),
+        ax.legend(legend_handles, legend_labels, ncol=2,  # loc='center left', bbox_to_anchor=(1, 0.5),
                   title='Scenario groups')
 
         ax.grid(axis="y")
@@ -894,6 +894,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_services_summarized = summarize(num_services).loc[0].unstack().reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+    num_services_summarized.to_csv(output_folder / 'num_services_summarized.csv')
     num_appts_summarized = summarize(num_appts, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
@@ -950,14 +951,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     hcw_time_increased_by_treatment_type = get_hcw_time_by_treatment().reindex(num_dalys_summarized.index).drop(['s_0'])
 
-    # num_services_increased_percent = summarize(
-    #     pd.DataFrame(
-    #         find_difference_relative_to_comparison_series(
-    #             num_services.loc[0],
-    #             comparison='s_0',
-    #             scaled=True)
-    #     ).T
-    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_services_increased_percent = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_services.loc[0],
+                comparison='s_0',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_services_increased_percent.to_csv(output_folder / 'num_services_increased_percent.csv')
 
     num_deaths_averted = summarize(
         -1.0 *
@@ -1444,7 +1446,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
     # get scenario color
     # scenario_groups = scenario_grouping_coloring(by='effect')
-    scenario_groups = scenario_grouping_coloring(by='allocation_alt')
+    # scenario_groups = scenario_grouping_coloring(by='allocation_alt')
+    scenario_groups = scenario_grouping_coloring(by='allocation')
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups[1].keys():
@@ -2576,6 +2579,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('Services increased in Millions', fontsize='medium')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
+    ax.grid(axis="y")
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
@@ -2611,7 +2615,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'HCW time-used increased by cadre \nvs no extra budget allocation, {target_period()}'
+    name_of_plot = f'HCW time-used increased by cadre vs no extra budget allocation, {target_period()}'
     data_to_plot = hcw_time_increased_by_cadre.drop(columns='all') / 1e9
     column_dcsa = data_to_plot.pop('DCSA')
     data_to_plot.insert(3, "DCSA", column_dcsa)
@@ -2619,6 +2623,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
     ax.set_ylabel('Billions minutes', fontsize='medium')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
+    ax.grid(axis="y")
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
@@ -2687,6 +2692,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #             fmt=".", color="black", zorder=100)
     ax.set_ylabel('DALYs averted in Millions', fontsize='medium')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
+    ax.grid(axis="y")
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
