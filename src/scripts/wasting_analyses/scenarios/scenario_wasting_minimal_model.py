@@ -106,12 +106,12 @@ class WastingAnalysis(BaseScenario):
         ))
         return {
             'Wasting': {
-                'base_death_rate_untreated_SAM': pars_combinations[draw_number][0],
-                'base_inc_rate_wasting_by_agegp': [s * pars_combinations[draw_number][1] for \
+                'base_death_rate_untreated_SAM': pars_combinations[draw_number-1][0],
+                'base_inc_rate_wasting_by_agegp': [s * pars_combinations[draw_number-1][1] for \
                                                    s in base_inc_rate_wasting_props_by_agegp],
-                'progression_severe_wasting_monthly_by_agegp': [s * pars_combinations[draw_number][2] for \
+                'progression_severe_wasting_monthly_by_agegp': [s * pars_combinations[draw_number-1][2] for \
                                                    s in progression_severe_wasting_monthly_props_by_agegp],
-                'prob_death_after_SAMcare': ((pars_combinations[draw_number][0] * pars_combinations[draw_number][3]) /
+                'prob_death_after_SAMcare': ((pars_combinations[draw_number-1][0] * pars_combinations[draw_number-1][3]) /
                                              (1-0.738))
             }
         }
