@@ -730,6 +730,20 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
             return
 
+        # or if HSI was already scheduled due to growth monitoring, won't be checked for acute malnutrition again
+        hsi_event_scheduled = [
+            ev
+            for ev in self.sim.modules["HealthSystem"].find_events_for_person(person_id)
+            if isinstance(ev[1], (HSI_Wasting_SupplementaryFeedingProgramme_MAM,
+                                  HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
+                                  HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM))
+        ]
+        if hsi_event_scheduled:
+            if do_prints:
+                print(f"not going through because {hsi_event_scheduled=} via growth monitoring")
+            return
+
+        # track the date of the last non-emergency appt
         df.at[person_id, 'un_last_nonemergency_appt_date'] = self.sim.date
 
         # get the clinical states
@@ -1602,6 +1616,18 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                 self.sim.date):
             if do_prints:
                 print("not going through because is currently treated")
+            return
+        # or if HSI was already scheduled due to care-seeking, no need to attend the growth monitoring
+        hsi_event_scheduled = [
+            ev
+            for ev in self.sim.modules["HealthSystem"].find_events_for_person(person_id)
+            if isinstance(ev[1], (HSI_Wasting_SupplementaryFeedingProgramme_MAM,
+                                  HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
+                                  HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM))
+        ]
+        if hsi_event_scheduled:
+            if do_prints:
+                print(f"not going through because {hsi_event_scheduled=} via care-seeking")
             return
 
         if not self.attendance:
