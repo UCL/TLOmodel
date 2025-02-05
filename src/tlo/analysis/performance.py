@@ -21,6 +21,7 @@ class PerformanceMonitor(Module):
 
     def initialise_simulation(self, sim: Simulation) -> None:
         sim.schedule_event(LogProgress(self), sim.start_date)
+        sim.schedule_event(SaveSimulation(self), sim.start_date)
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
         pass
@@ -28,6 +29,17 @@ class PerformanceMonitor(Module):
     def on_simulation_end(self) -> None:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.sim.save_to_pickle(Path(f"simulation-{timestamp}.pkl"))
+
+
+class SaveSimulation(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module, frequency_months=12):
+        super().__init__(module, frequency=DateOffset(months=frequency_months))
+        self.time = time.time()
+
+    def apply(self, population):
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        self.module.sim.save_to_pickle(Path(f"simulation-{timestamp}.pkl"))
+
 
 class LogProgress(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module, frequency_months=3):

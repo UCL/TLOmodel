@@ -12,7 +12,7 @@ class Profiling(BaseScenario):
         self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2015, 1, 1)
-        self.pop_size = 150000
+        self.pop_size = 250000
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
