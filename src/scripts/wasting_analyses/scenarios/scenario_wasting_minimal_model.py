@@ -43,7 +43,7 @@ class WastingAnalysis(BaseScenario):
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
-            number_of_draws=1,
+            number_of_draws=500,
             runs_per_draw=1,
         )
 
