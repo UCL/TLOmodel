@@ -708,21 +708,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             print(f"NON-EMERGENCY APPT on {self.sim.date=}")
             print(f"{symptoms=}")
 
-        if (individual_properties["age_years"] >= 5) or \
-            (individual_properties["un_am_treatment_type"] in
-             ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']) or \
-            (self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']):
+        if (individual_properties['age_years'] >= 5) or \
+            (individual_properties['un_last_wasting_date_of_onset'] < individual_properties['un_am_tx_start_date'] <
+             self.sim.date) or \
+            (self.sim.date == individual_properties['un_last_nonemergency_appt_date']):
             if do_prints:
                 print("not going through because")
                 if individual_properties["age_years"] >= 5:
                     print(f"person not under 5, {individual_properties['age_years']=}")
-                if individual_properties['un_am_treatment_type'] in \
-                    ['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']:
-                    print(f",person currently treated, {individual_properties['un_am_treatment_type']=}")
-                if self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']:
+                if (individual_properties['un_last_wasting_date_of_onset'] < individual_properties['un_am_tx_start_date'] <
+             self.sim.date):
+                    print(f"person currently treated, {individual_properties['un_am_treatment_type']=}")
+                if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
                     print("the non-emerg. appt did went through today already")
                 print("----------------------------------")
-            if self.sim.date == df.at[person_id, 'un_last_nonemergency_appt_date']:
+            if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
                 logger.debug(
                     key="non-emergency",
                     data=f"A non-emerg. appt runs again on the same date {self.sim.date=} for the {person_id=}. "
