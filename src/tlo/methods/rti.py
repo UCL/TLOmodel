@@ -24,6 +24,7 @@ from tlo.methods.symptommanager import Symptom
 from sdv.single_table import CTGANSynthesizer
 from sdv.single_table import GaussianCopulaSynthesizer
 from sdv.single_table import TVAESynthesizer
+from sdv.sampling import Condition
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -31,9 +32,11 @@ if TYPE_CHECKING:
 
 # Decide whether to use emulator or not
 use_emulator = True
-
+include_conditionality = True
 #emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator.pkl'
-emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
+#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
+emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/new_synthesizer.pkl'
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -63,6 +66,9 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'HealthSystem',
     }
     
+    # ================================================================================
+    # EMULATOR PARAMETERS
+    
     # Counters tracking use of HealthSystem by RTI module under use of emulator
     HS_Use_Type = [
         'Level2_AccidentsandEmerg', 'Level2_DiagRadio', 'Level2_EPI',
@@ -80,6 +86,14 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     #GaussianCopulaSynthesizer.load(
     #    filepath=emulator_path
     #)
+    if include_conditionality:
+        Rti_Services = ['Rti_AcutePainManagement', 'Rti_BurnManagement', 'Rti_FractureCast', 'Rti_Imaging', 'Rti_MajorSurgeries', 'Rti_MedicalIntervention', 'Rti_MinorSurgeries']
+
+        HS_conditions = {}
+
+    # ================================================================================
+
+
 
     INJURY_INDICES = range(1, 9)
 
@@ -1060,10 +1074,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
             'rt_disability_permanent': Property(Types.REAL, 'disability weight incurred permanently'),
             'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
             'rt_road_traffic_inc': Property(Types.BOOL, 'involved in a road traffic injury'),
-            #'rt_inj_severity': Property(Types.CATEGORICAL,
-            #                            'Injury status relating to road traffic injury: none, mild, severe',
-            #                            categories=['none', 'mild', 'severe'],
-            #                            ),
         }
     else:
         PROPERTIES = {
@@ -1586,6 +1596,21 @@ class RTI(Module, GenericFirstAppointmentsMixin):
        # sim.schedule_event(RTI_Logging_Event(self), sim.date + DateOffset(months=1))
         
         
+
+        if use_emulator and include_conditionality:
+            # If all services are included, set everything to True
+            if sim.modules['HealthSystem'].service_availability == ['*']:
+                for i in sim.modules['RTI'].Rti_Services:
+                    sim.modules['RTI'].HS_conditions[i] = True
+            else:
+                for i in sim.modules['RTI'].Rti_Services:
+                    if (i + '_*') in sim.modules['HealthSystem'].service_availability:
+                        sim.modules['RTI'].HS_conditions[i] = True
+                    else:
+                        sim.modules['RTI'].HS_conditions[i] = False
+            print(sim.modules['HealthSystem'].service_availability)
+            print(sim.modules['RTI'].HS_conditions)
+
         # Look-up consumable item codes
         self.look_up_consumable_item_codes()
 
@@ -2972,9 +2997,17 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # First, sample outcomes for individuals which were selected_for_rti.
             # For now, don't consider properties of individual when sampling outcome. All we care about is the number of samples.
-            NN_model = self.sim.modules['RTI'].RTI_emulator.sample(len(selected_for_rti))
-            #NN_model = self.sample_NN_model(len(selected_for_rti))
-
+            if include_conditionality:
+                condition_for_Rti = Condition(
+                    num_rows=len(selected_for_rti),
+                    column_values=self.sim.modules['RTI'].HS_conditions
+                )
+                NN_model = self.sim.modules['RTI'].RTI_emulator.sample_from_conditions(
+                    conditions=[condition_for_Rti],
+                )
+            else:
+                NN_model = self.sim.modules['RTI'].RTI_emulator.sample(len(selected_for_rti))
+            print("I have sampled ==================")
             # HS USAGE
             # Get the total number of different types of appts that will be accessed as a result of this polling event and add to rolling count.
             for column in self.sim.modules['RTI'].HS_Use_Type:
