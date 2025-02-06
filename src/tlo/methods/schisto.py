@@ -155,10 +155,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # Define districts that this module will operate in:
         self.districts = self.sim.modules['Demography'].districts  # <- all districts
 
-        # Load parameters
-        # workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
-        # self.parameters = self._load_parameters_from_workbook(workbook)
-
         workbook = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
 
@@ -258,7 +254,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         df.at[child_id, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
-        # WASH in action, update property li_unimproved_sanitation=False for all new births
+        # if WASH in action, update property li_unimproved_sanitation=False for all new births
         if self.parameters['scaleup_WASH'] and (
             self.sim.date >= Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1)):
             df.at[child_id, 'li_unimproved_sanitation'] = False
@@ -360,8 +356,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             except ValueError:
                 parameters[_param_name] = value
 
-        # MDA coverage - historic
-        # todo this is updated now with the EPSEN data
+        # MDA coverage - historic ESPEN data
         historical_mda = workbook['ESPEN_MDA'].set_index(['District', 'Year'])[
             ['EpiCov_PSAC', 'EpiCov_SAC', 'EpiCov_Adults']]
         historical_mda.columns = historical_mda.columns.str.replace('EpiCov_', '')
@@ -369,12 +364,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         parameters['MDA_coverage_historical'] = historical_mda.astype(float)
         # clip upper limit of MDA coverage at 99%
         parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(upper=0.99)
-
-        # # MDA coverage - prognosed - default values
-        # prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
-        #     ['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']]
-        # prognosed_mda.columns = prognosed_mda.columns.str.replace('Cov_', '')
-        # parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
 
@@ -432,9 +421,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         unless otherwise specified."""
         generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
 
-        # self.sim.modules['SymptomManager'].register_symptom(*[
-        #     Symptom(name=_symp) for _symp in symptoms if _symp not in generic_symptoms
-        # ])
         # Iterate through DataFrame rows and register each symptom
         for _, row in symptoms.iterrows():
             if row['Symptom'] not in generic_symptoms:
@@ -792,11 +778,8 @@ class SchistoSpecies:
                             'baseline_prevalence',
                             ):
             parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
-            # parameters[_param_name] = float(param_list[_param_name])
 
-        # Baseline reservoir size and other district-related params (R0, proportion susceptible)
-        # schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
-        # todo this is the updated (calibrated) data
+        # this is the updated (calibrated) data
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
@@ -1013,7 +996,6 @@ class SchistoSpecies:
             df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=num_in_district)
 
             # SUSCEPTIBILITY
-            # Calculate the number of people that need to be susceptible
             prop_susceptible = params['prop_susceptible'][district]
 
             # the total number needed to fill the proportion susceptible in district
@@ -1048,73 +1030,8 @@ class SchistoSpecies:
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
 
-        global_params = self.schisto_module.parameters
-
         for district in districts:
             in_the_district = df.index[df['district_of_residence'] == district]
-
-            # get reservoir in district
-            # for calibration, over-ride the default params to create multiple starting points
-
-            # select starting points
-            # HAEMATOBIUM CALIBRATION
-            # if global_params['calibration_scenario'] == 1:
-            #     if self.name == 'haematobium':
-            #         params['mean_worm_burden2010'][:] = 2.0
-            #     # set mansoni to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-            #
-            # if global_params['calibration_scenario'] == 2:
-            #     if self.name == 'haematobium':
-            #         params['mean_worm_burden2010'][:] = 5.0
-            #     # set mansoni to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-            #
-            # if global_params['calibration_scenario'] == 3:
-            #     if self.name == 'haematobium':
-            #         params['mean_worm_burden2010'][:] = 10.0
-            #     # set mansoni to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-            #
-            # if global_params['calibration_scenario'] == 4:
-            #     if self.name == 'haematobium':
-            #         params['mean_worm_burden2010'][:] = 25.0
-            #     # set mansoni to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-            #
-            # # MANSONI CALIBRATION
-            # if global_params['calibration_scenario'] == 5:
-            #     if self.name == 'mansoni':
-            #         params['mean_worm_burden2010'][:] = 2.0
-            #     # set haematobium to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-            #
-            # if global_params['calibration_scenario'] == 6:
-            #     if self.name == 'mansoni':
-            #         params['mean_worm_burden2010'][:] = 5.0
-            #     # set haematobium to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-            #
-            # if global_params['calibration_scenario'] == 7:
-            #     if self.name == 'mansoni':
-            #         params['mean_worm_burden2010'][:] = 10.0
-            #     # set haematobium to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-            #
-            # if global_params['calibration_scenario'] == 8:
-            #     if self.name == 'mansoni':
-            #         params['mean_worm_burden2010'][:] = 25.0
-            #     # set haematobium to 0
-            #     else:
-            #         params['mean_worm_burden2010'][:] = 0
-
             reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
@@ -1175,11 +1092,11 @@ class SchistoSpecies:
         ], observed=False).size()
         data.index.rename('infection_status', level=0, inplace=True)
 
-        # logger.info(
-        #     key=f'infection_status_{self.name}',
-        #     data=flatten_multi_index_series_into_dict_for_logging(data),
-        #     description='Counts of infection status with this species by age-group and district.'
-        # )
+        logger.info(
+            key=f'infection_status_{self.name}',
+            data=flatten_multi_index_series_into_dict_for_logging(data),
+            description='Counts of infection status with this species by age-group and district.'
+        )
 
         #  Group by district and calculate counts
         grouped_data = df.loc[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
@@ -1187,10 +1104,10 @@ class SchistoSpecies:
             susceptible_count=lambda x: (x == 1).sum()
         )
 
+        # reinstate if need to output prop susceptible
         # Calculate the proportion of susceptible individuals in each district
-        susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
+        # susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
 
-        # todo reinstate if needed
         # logger.info(
         #     key=f'susceptibility_{self.name}',
         #     data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
@@ -1224,7 +1141,7 @@ class SchistoSpecies:
         logger.info(
             key=f'mean_worm_burden_by_district_{self.name}',
             data=flatten_multi_index_series_into_dict_for_logging(overall_mean),
-            description='Mean worm burden of this species by age-group and district.'
+            description='Mean worm burden of this species by district.'
         )
 
 
