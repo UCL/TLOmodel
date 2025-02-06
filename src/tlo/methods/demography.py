@@ -1,3 +1,4 @@
+
 """
 The core demography module and its associated events.
 * Sets initial population size
@@ -728,7 +729,10 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         mort_risk = self.mort_risk_per_poll.loc[
             self.mort_risk_per_poll.fallbackyear == fallbackyear, [
                 'age_years', 'sex', 'prob_of_dying_before_next_poll']].copy()
-
+        
+        # Artificially increase risk for men under 50 by 50
+        mort_risk.loc[(mort_risk["sex"] == "M") & (mort_risk["age_years"] < 50), "prob_of_dying_before_next_poll"] *= 50
+        
         # get the population
         alive = df.loc[df.is_alive & (df.age_years < MAX_AGE), ['sex', 'age_years']].copy()
 
