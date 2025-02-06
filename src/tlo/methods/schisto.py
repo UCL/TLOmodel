@@ -1666,7 +1666,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        # todo this is logging MDA as well as treatment
+        # this is logging MDA as well as treatment
         new_tx = len(
             df[
                 (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
@@ -1730,29 +1730,4 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data={
                 'number_alive': flatten_multi_index_series_into_dict_for_logging(alive),
             },
-        )
-
-        # WASH properties
-        unimproved_sanitation = len(
-            df[df.li_unimproved_sanitation & df.is_alive]
-        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
-
-        no_access_handwashing = len(
-            df[df.li_no_access_handwashing & df.is_alive]
-        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
-
-        no_clean_drinking_water = len(
-            df[df.li_no_clean_drinking_water & df.is_alive]
-        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
-
-        wash = {
-            'unimproved_sanitation': unimproved_sanitation,
-            'no_access_handwashing': no_access_handwashing,
-            'no_clean_drinking_water': no_clean_drinking_water,
-        }
-
-        logger.info(
-            key='Schisto_wash_properties',
-            data=wash,
-            description='Proportion of population with each wash-related property'
         )
