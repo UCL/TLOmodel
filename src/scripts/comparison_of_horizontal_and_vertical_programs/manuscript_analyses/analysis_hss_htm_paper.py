@@ -21,8 +21,18 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize, compute_summary_statistics
-
+from tlo.analysis.utils import (
+    compare_number_of_deaths,
+    compute_summary_statistics,
+    extract_params,
+    extract_results,
+    get_scenario_info,
+    get_scenario_outputs,
+    load_pickled_dataframes,
+    summarize,
+    make_age_grp_lookup,
+    make_age_grp_types,
+)
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
@@ -31,6 +41,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """
 
     TARGET_PERIOD = (Date(2025, 1, 1), Date(2035, 12, 31))
+    scenario_info = get_scenario_info(results_folder)
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"Paper_{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -766,13 +777,176 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plot_horizontal_stacked_barpanels(scenario_groups, total_num_dalys_by_label_results_averted_vs_baseline, target_period, make_graph_file_name)
 
     # %% disease-specific outputs
-    hiv_inc = extract_results(
+
+    def compute_percentage_difference_in_indicator_across_runs(_df):
+        """
+        Computes the percentage difference between each scenario and the baseline for each run.
+        The comparison is made run-by-run.
+        negative values indicate lower value in scenario compared with baseline
+        """
+        baseline_cols = [col for col in _df.columns if "Baseline" in col]
+        scenario_cols = [col for col in _df.columns if col not in baseline_cols]
+
+        percentage_differences = _df.copy()
+        for scenario_col in scenario_cols:
+            run_number = scenario_col[1]  # Extract run number from multi-index
+            corresponding_baseline = next(col for col in baseline_cols if col[1] == run_number)
+            percentage_differences[scenario_col] = ((_df[scenario_col] - _df[corresponding_baseline]) / _df[
+                                                       corresponding_baseline]) * 100
+
+        return percentage_differences
+
+    def summarise_percentage_diffs_by_scenario(_df):
+        """
+        Computes the median, 2.5th percentile, and 97.5th percentile for each scenario's last row values across runs (excluding 'Baseline').
+        """
+        # Identify scenario columns
+        scenario_cols = [name for name in param_names if "Baseline" not in name]
+
+        summary_stats = {}
+
+        # Compute the summary statistics for each scenario
+        for scenario in scenario_cols:
+            # Extract the last row for this scenario (across all runs)
+            scenario_data = _df[scenario].iloc[-1]  # Get data for the last row
+
+            # Compute median and percentiles over the 5 runs (columns)
+            summary_stats[scenario] = {
+                "Median": scenario_data.median(),  # Median of the last row values for each run
+                "2.5%": scenario_data.quantile(0.025),  # 2.5th percentile
+                "97.5%": scenario_data.quantile(0.975)  # 97.5th percentile
+            }
+
+        # Return the results as a DataFrame
+        return pd.DataFrame(summary_stats).T
+
+    def extract_and_process_results(results_folder, module, key, column, do_scaling):
+        """
+        Extracts results from the specified module and key, processes the data, and computes summary statistics.
+        """
+        # Assuming `extract_results` function is available to extract the required data
+        _df = extract_results(
+            results_folder,
+            module=module,
+            key=key,
+            column=column,
+            index='date',
+            do_scaling=do_scaling
+        ).pipe(set_param_names_as_column_index_level_0)
+
+        # Compute percentage differences
+        percentage_diff = compute_percentage_difference_in_indicator_across_runs(_df)
+        percentage_diff.to_csv(results_folder / f'{column}_percentage_diff.csv')
+
+        # Compute summary statistics
+        summary_stats = summarise_percentage_diffs_by_scenario(percentage_diff)
+        summary_stats.to_csv(results_folder / f'{column}_percentage_diff_summary.csv')
+
+        return percentage_diff, summary_stats
+
+    # HIV
+    module = 'tlo.methods.hiv'
+    key = 'summary_inc_and_prev_for_adults_and_children_and_fsw'
+    column = "hiv_adult_inc_15plus"
+    hiv_inc_percentage_diff, hiv_inc_summary_stats = extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    column = "hiv_prev_adult_15plus"
+    hiv_prev_percentage_diff, hiv_prev_summary_stats = extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    key = 'hiv_program_coverage'
+    column = "dx_adult"
+    hiv_dx_percentage_diff, hiv_dx_summary_stats = extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    # simple extraction
+    hiv_dx_coverage = compute_summary_statistics(extract_results(
         results_folder,
-        module='tlo.methods.hiv',
-        key='death',
-        custom_generate_series=get_num_deaths,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
+        module=module,
+        key=key,
+        column=column,
+        index='date',
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0),
+                                                central_measure='median'
+                                                )
+    hiv_dx_coverage.to_csv(results_folder / 'hiv_dx_coverage.csv')
+
+    column = "art_coverage_adult"
+    hiv_art_percentage_diff, hiv_art_summary_stats = extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    hiv_art_coverage = compute_summary_statistics(extract_results(
+        results_folder,
+        module=module,
+        key=key,
+        column=column,
+        index='date',
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0),
+                                                central_measure='median'
+                                                )
+    hiv_art_coverage.to_csv(results_folder / 'hiv_art_coverage.csv')
+
+    column = "art_coverage_adult_VL_suppression"
+    hiv_art_VLsuppr_percentage_diff, hiv_art_VLsuppr_summary_stats = extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    # TB
+    module = 'tlo.methods.tb'
+    key = 'tb_prevalence'
+    column = "tbPrevActive"
+    extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    key = 'tb_treatment'
+    column = "tbTreatmentCoverage"
+    extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    # simple extraction
+    tb_tx_coverage = compute_summary_statistics(extract_results(
+        results_folder,
+        module=module,
+        key=key,
+        column=column,
+        index='date',
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0),
+                                                central_measure='median'
+                                                )
+    tb_tx_coverage.to_csv(results_folder / 'tb_tx_coverage.csv')
+
+    # MALARIA
+    module = 'tlo.methods.malaria'
+    key = 'incidence'
+    column = "inc_1000py"
+    extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    key = 'coinfection_prevalence'
+    column = "prev_malaria_in_hiv_population"
+    extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    key = 'tx_coverage'
+    column = "treatment_coverage"
+    extract_and_process_results(
+        results_folder, module, key, column, do_scaling=False)
+
+    # simple extraction
+    mal_tx_coverage = compute_summary_statistics(extract_results(
+        results_folder,
+        module=module,
+        key=key,
+        column=column,
+        index='date',
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0),
+                                                central_measure='median'
+                                                )
+    mal_tx_coverage.to_csv(results_folder / 'mal_tx_coverage.csv')
 
 
 
