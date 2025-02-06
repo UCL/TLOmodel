@@ -13,6 +13,8 @@ from tlo.analysis.utils import (
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
+from tlo.util import random_date, read_csv_files
+
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -151,10 +153,12 @@ def get_model_prevalence_by_district(spec: str, year: int):
 
 def get_expected_prevalence_by_district(species: str):
     """Get the prevalence of a particular species from the data (which is for year 2010/2011)."""
-    expected_district_prevalence = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx',
-                                                 sheet_name='OLDDistrict_Params_' + species.lower())
+
+    file_path = Path(resourcefilepath).joinpath('ResourceFile_Schisto', 'District_Params_' + species.lower() + '.csv')
+    expected_district_prevalence = pd.read_csv(file_path)
     expected_district_prevalence.set_index("District", inplace=True)
     expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
+
     return expected_district_prevalence
 
 
@@ -253,32 +257,3 @@ fig.tight_layout()
 # fig.savefig(make_graph_file_name('annual_prev_in_districts'))
 fig.show()
 
-
-# PROPORTION SUSCEPTIBLE
-
-def plot_susceptibility(dfs_susc: dict):
-    """
-    Plot susceptibility over time for each species.
-
-    Args:
-    dfs_susc (dict): A dictionary where each key is a species name and the value is a DataFrame
-                     containing susceptibility data with 'date' as the index.
-    """
-    for species, df in dfs_susc.items():
-        plt.figure(figsize=(10, 6))
-        for column in df.columns:
-            plt.plot(df.index, df[column], label=column)
-
-        plt.title(f'Proportion susceptible {species.capitalize()}')
-        plt.xlabel('Date')
-        plt.ylabel('Proportion susceptible')
-        plt.legend(title="Districts", bbox_to_anchor=(0.5, -0.2), loc="upper center", ncol=4)
-        plt.grid(True)
-        plt.ylim(0, 1.0)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.show()
-
-
-# Example usage
-plot_susceptibility(dfs_susc)
