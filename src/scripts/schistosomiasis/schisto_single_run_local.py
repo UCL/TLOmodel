@@ -53,7 +53,7 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 12, 31)
+    end_date = Date(2016, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
@@ -94,7 +94,7 @@ def run_simulation(popsize,
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
     sim.modules["Schisto"].parameters["scaleup_WASH"] = 1.0  # True
     sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
-    sim.modules["Schisto"].parameters['mda_coverage'] = 0
+    sim.modules["Schisto"].parameters['mda_coverage'] = 0.8
     sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
     sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
 
