@@ -229,8 +229,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # over-ride availability of PZQ for MDA
         # self.sim.modules['HealthSystem'].override_availability_of_consumables(
         #     {1735: 1.0})  # this is the donated PZQ not currently in consumables availability worksheet
-        self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            {286: 1.0})
 
         # Schedule MDA events
         if self.mda_execute:
@@ -1583,19 +1581,6 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         self.beneficiaries_ids = beneficiaries_ids
 
         self.TREATMENT_ID = 'Schisto_MDA'
-
-        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-        #     'EPI': len(beneficiaries_ids) if beneficiaries_ids else 1})
-        # self.ACCEPTED_FACILITY_LEVEL = '1a'
-        # The `EPI` appointment is appropriate because it's a very small appointment, and we note that this is used in
-        # the coding for 'de-worming'-type activities in the DHIS2 data. We show that expect there will be one of these
-        # appointments for each of the beneficiaries, whereas, in fact, it may be more realistic to consider that the
-        # real requirement is fewer than that.
-        # This class is created when running `tlo_hsi_event.py`, which doesn't provide the argument `beneficiaries_ids`
-        # but does require that `self.EXPECTED_APPT_FOOTPRINT` is valid. So, in this case, we let
-        # `self.EXPECTED_APPT_FOOTPRINT` show that this requires 1 * that appointment type.
-        # EPI footprint at level 1a = Clinical 0.06, Nursing_and_Midwifery 4.0, Pharmacy 1.68
-
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             'ConWithDCSA': len(beneficiaries_ids) * 0.5 if beneficiaries_ids else 0.5})
         self.ACCEPTED_FACILITY_LEVEL = '0'
