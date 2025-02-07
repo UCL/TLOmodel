@@ -13,7 +13,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2070, 1, 12)
+        self.end_date = Date(2025, 1, 12)
         self.pop_size = 50_000
         self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2020
