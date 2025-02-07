@@ -6,6 +6,7 @@ import time
 from tlo import Module, Simulation, DateOffset, logging, Date
 from tlo.events import RegularEvent, PopulationScopeEventMixin
 from tlo.methods.healthsystem import HealthSystem
+from tlo.util import hash_dataframe
 
 try:
     import psutil
@@ -42,7 +43,7 @@ class SaveSimulation(RegularEvent, PopulationScopeEventMixin):
 
 
 class LogProgress(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module, frequency_months=3):
+    def __init__(self, module, frequency_months=1):
         super().__init__(module, frequency=DateOffset(months=frequency_months))
         self.time = time.time()
 
@@ -55,6 +56,7 @@ class LogProgress(RegularEvent, PopulationScopeEventMixin):
         sim_queue_size = len(sim.event_queue)
         health_system: "HealthSystem" = sim.modules["HealthSystem"]
         hsi_queue_size = len(health_system.HSI_EVENT_QUEUE)
+        pop_df_hash = hash_dataframe(df)
 
         logger.info(
             key="stats",
@@ -64,6 +66,7 @@ class LogProgress(RegularEvent, PopulationScopeEventMixin):
                 "pop_df_number_alive": df.is_alive.sum(),
                 "pop_df_rows": len(df),
                 "pop_df_mem_MiB": df.memory_usage(index=True, deep=True).sum() / 2**20,
+                "pop_df_hash": pop_df_hash,
                 "sim_queue_size": sim_queue_size,
                 "hsi_queue_size": hsi_queue_size,
                 **memory_statistics(),
