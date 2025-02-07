@@ -1465,13 +1465,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     increase_rate_avg_exp = avg_increase_rate_exp.T.reindex(num_dalys_summarized.index)
     increase_rate_avg_exp['Other'] = increase_rate_avg_exp['Dental'].copy()
 
-    name_of_plot = f'Extra budget allocation sample test by regression model'
+    name_of_plot = f'3D DALYs averted (%) vs no extra budget allocation, {target_period()}'
     # name_of_plot = f'DALYs averted (%) vs no HCW expansion investment (avg. HCW increase rate), {target_period()}'
-    # heat_data = pd.merge(num_dalys_averted_percent['mean'],
-    #                      extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
-    #                      # increase_rate_avg_exp[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
-    #                      left_index=True, right_index=True, how='inner')
-    heat_data = SAMPLE.rename(columns={'DALYs averted %': 'mean'})
+    heat_data = pd.merge(num_dalys_averted_percent['mean'],
+                         extra_budget_allocation[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
+                         # increase_rate_avg_exp[['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']],
+                         left_index=True, right_index=True, how='inner')
     # scenarios_with_CNP_only = ['s_4', 's_6', 's_7', 's_10', 's_11', 's_16', 's_22']
     # heat_data = heat_data.loc[heat_data.index.isin(scenarios_with_CNP_only)]
     # colors = [scenario_color[s] for s in heat_data.index]
@@ -1479,22 +1478,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax = fig.add_subplot(111, projection='3d')
     img = ax.scatter(heat_data['Clinical'], heat_data['Pharmacy'], heat_data['Nursing_and_Midwifery'],
                      alpha=0.8, marker='o', #s=heat_data['mean'] * 2000, c=colors,
-                     c=heat_data['mean'], cmap='viridis'
+                     c=heat_data['mean'] * 100, cmap='viridis'
                      )
-    # # plot lines from the best point to three axes panes
-    # ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
-    #           [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
-    #           [0, heat_data['Nursing_and_Midwifery'][0]],
-    #           linestyle='--', color='gray', alpha=0.8)
-    # ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
-    #           [0, heat_data['Pharmacy'][0]],
-    #           [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
-    #           linestyle='--', color='gray', alpha=0.8)
-    # ax.plot3D([0, heat_data['Clinical'][0]],
-    #           [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
-    #           [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
-    #           linestyle='--', color='gray', alpha=0.8)
-    ax.set_xlabel('Proportion of Clinical cadre', fontsize='small')
+    # plot lines from the best point to three axes panes
+    ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
+              [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
+              [0, heat_data['Nursing_and_Midwifery'][0]],
+              linestyle='--', color='gray', alpha=0.8)
+    ax.plot3D([heat_data['Clinical'][0], heat_data['Clinical'][0]],
+              [0, heat_data['Pharmacy'][0]],
+              [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
+              linestyle='--', color='gray', alpha=0.8)
+    ax.plot3D([0, heat_data['Clinical'][0]],
+              [heat_data['Pharmacy'][0], heat_data['Pharmacy'][0]],
+              [heat_data['Nursing_and_Midwifery'][0], heat_data['Nursing_and_Midwifery'][0]],
+              linestyle='--', color='gray', alpha=0.8)
+    ax.set_xlabel('Fraction of extra budget allocated to \nClinical cadre', fontsize='small')
     # ax.set_xlabel('Avg. annual increase rate of \nClinical cadre', fontsize='small')
     ax.set_ylabel('Pharmacy cadre', fontsize='small')
     #ax.invert_xaxis()
@@ -1508,12 +1507,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plt.legend(legend_handles, legend_labels,
     #            loc='upper center', fontsize='small', bbox_to_anchor=(0.5, -0.2), ncol=2,
     #            title='Scenario groups')
-    plt.colorbar(
-        img, orientation='horizontal', fraction=0.046, pad=0.1, label='DALYs averted % vs no expansion scenario'
-    )
+    plt.colorbar(img, orientation='horizontal', fraction=0.046, pad=0.1, label='DALYs averted %')
     plt.title(name_of_plot)
     plt.tight_layout()
-    #fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
 
