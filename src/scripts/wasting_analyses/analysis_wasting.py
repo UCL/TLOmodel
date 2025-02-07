@@ -224,10 +224,14 @@ class WastingAnalyses:
             # get age_years, doesn't matter from which dict
             age_years = list(w_length_df.loc[w_length_df.index[0], 'mod_MAM_tx_full_recov'].keys())
             # age_years.remove('5+y')
-            w_length_df = w_length_df.loc[:, ['mod_nat_recov', 'mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov',
-                                                  'mod_SAM_tx_recov_to_MAM', 'mod_not_yet_recovered',
-                                                  'sev_SAM_tx_full_recov', 'sev_SAM_tx_recov_to_MAM',
-                                                  'sev_not_yet_recovered']]
+            w_length_df = w_length_df.loc[:, ['mod_MAM_nat_full_recov',
+                                 'mod_SAM_nat_full_recov', 'mod_SAM_nat_recov_to_MAM',
+                                 'sev_SAM_nat_full_recov', 'sev_SAM_nat_recov_to_MAM',
+                                 'mod_MAM_tx/nat_full_recov',
+                                 'mod_SAM_tx_full_recov', 'mod_SAM_tx/nat_recov_to_MAM',
+                                 'sev_SAM_tx_full_recov', 'sev_SAM_tx/nat_recov_to_MAM',
+                                 'mod_not_yet_recovered',
+                                 'sev_not_yet_recovered']]
 
             for recov_opt in w_length_df.columns:
                 _row_counter = 0
@@ -579,7 +583,7 @@ if __name__ == "__main__":
         # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
 
         # plot wasting length
-        wasting_analyses.plot_wasting_length()
+        # wasting_analyses.plot_wasting_length()
 
         # plot wasting prevalence
         wasting_analyses.plot_wasting_prevalence_per_year()
