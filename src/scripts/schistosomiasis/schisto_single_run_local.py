@@ -8,17 +8,13 @@ import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
-    format_gbd,
-    make_age_grp_types,
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
-from tlo.util import random_date, read_csv_files
 
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
     schisto,
@@ -76,7 +72,6 @@ def run_simulation(popsize,
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable_and_reject_all=hs_disable_and_reject_all,
                                            cons_availability='all'),

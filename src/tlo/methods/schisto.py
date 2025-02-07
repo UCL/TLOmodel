@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, List, Sequence, Optional, Union
 
 import numpy as np
 import pandas as pd
-from itertools import product
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
