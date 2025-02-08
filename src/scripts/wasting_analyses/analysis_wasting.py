@@ -74,14 +74,18 @@ class WastingAnalyses:
         cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
         # # define colo(u)rs to use:
         self.__colors_model = {
-            'severe wasting': cycle[0],
-            'moderate wasting': cycle[1],
-            'SAM': cycle[2],
-            'MAM': cycle[3],
+            'severe wasting': cycle[0],  # #1f77b4
+            'moderate wasting': cycle[1],  # #ff7f0e
+            'SAM': cycle[2],  # #2ca02c
+            'MAM': cycle[3],  # #d62728
         }
         self.__colors_data = {
             'severe wasting': '#82C1EC',
             'moderate wasting': '#C71E1E',
+        }
+        self.__colors_init_data = {
+            'severe wasting': '#0E53EA',
+            'moderate wasting': '#FFA783',
         }
 
     def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
@@ -290,7 +294,7 @@ class WastingAnalyses:
         w_prev_calib_data_years_only_df = pd.DataFrame({
             'sev_wast_calib': [0.015, 0.011, 0.006, 0.007],
             'mod_wast_calib': [0.025, 0.027, 0.021, 0.019]
-        }, index=[2010, 2014, 2016, 2020])
+        }, index=[2010, 2013, 2015, 2019])
         date_range = pd.Index(range(2010, 2031), name='date')
         w_prev_calib = pd.DataFrame(index=date_range)
         # filling missing values with 0
@@ -303,19 +307,43 @@ class WastingAnalyses:
         w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
         w_prev_df = w_prev_df.drop(columns='date')
 
-        w_prev_plot_df = pd.merge(w_prev_df, w_prev_calib_df, on='date')
-        columns_to_plot = [['total_sev_under5_prop', 'total_mod_under5_prop'], ['sev_wast_calib', 'mod_wast_calib']]
+        # Add initial prevalence for the year 2010
+        init_prev_2010_only_df = self.__w_logs_dict["wasting_init_prevalence_props"]
+        init_prev_2010_only_df = init_prev_2010_only_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']].rename(
+            columns={'total_sev_under5_prop': 'total_init_sev_under5_prop', 'total_mod_under5_prop': 'total_init_mod_under5_prop'}
+        )
+        init_prev_2010_only_df = init_prev_2010_only_df.set_index(init_prev_2010_only_df.date.dt.year)
+        init_prev_2010_only_df = init_prev_2010_only_df.drop(columns='date')
+        init_prev_2010_only_df = init_prev_2010_only_df.loc[[2010]]
+        init_prev_df = pd.DataFrame(index=date_range)
+        # filling missing values with 0
+        init_prev_df = init_prev_df.merge(
+            init_prev_2010_only_df, left_index=True, right_index=True, how='left'
+        ).fillna(0)
+
+        w_prev_calib_and_init_df = pd.merge(init_prev_df, w_prev_calib_df, on='date')
+        w_prev_plot_df = pd.merge(w_prev_df, w_prev_calib_and_init_df, on='date')
+        columns_to_plot = [
+            ['total_init_sev_under5_prop', 'total_init_mod_under5_prop'],
+            ['total_sev_under5_prop', 'total_mod_under5_prop'],
+            ['sev_wast_calib', 'mod_wast_calib'],
+            ]
         colors_to_plot = {
             'total_sev_under5_prop': self.__colors_model['severe wasting'],
             'total_mod_under5_prop': self.__colors_model['moderate wasting'],
             'sev_wast_calib': self.__colors_data['severe wasting'],
-            'mod_wast_calib': self.__colors_data['moderate wasting']
+            'mod_wast_calib': self.__colors_data['moderate wasting'],
+            'total_init_sev_under5_prop': self.__colors_init_data['severe wasting'],
+            'total_init_mod_under5_prop': self.__colors_init_data['moderate wasting']
+
         }
         labels_to_plot = {
             'total_sev_under5_prop': 'severe wasting (model)',
             'total_mod_under5_prop': 'moderate wasting (model)',
             'sev_wast_calib': 'severe wasting (data)',
-            'mod_wast_calib': 'moderate wasting (data)'
+            'mod_wast_calib': 'moderate wasting (data)',
+            'total_init_sev_under5_prop': 'severe wasting (initial data)',
+            'total_init_mod_under5_prop': 'moderate wasting (initial data)'
         }
 
         fig, ax = plt.subplots()
@@ -352,15 +380,15 @@ class WastingAnalyses:
                 'wasted_calib': [7.0, 13.0, 12.7, 2.4, 2.7, 1.9, 0.0],
                 'sev_wast_calib': [2.1, 7.1, 4.7, 0.9, 0.7, 0.6, 0.0]
             },
-            2014: {
+            2013: {
                 'wasted_calib': [5.8, 5.8, 5.4, 3.9, 2.2, 2.0, 0.0],
                 'sev_wast_calib': [2.6, 2.5, 1.1, 0.8, 0.7, 0.3, 0.0]
             },
-            2016: {
+            2015: {
                 'wasted_calib': [3.7, 7.7, 6.5, 2.2, 1.9, 2.6, 0.0],
                 'sev_wast_calib': [1.1, 1.0, 0.7, 1.0, 0.1, 0.5, 0.0]
             },
-            2020: {
+            2019: {
                 'wasted_calib': [2.5, 2.6, 9.1, 2.0, 1.8, 1.8, 0.0],
                 'sev_wast_calib': [1.0, 1.0, 2.7, 0.8, 0.2, 0.3, 0.0]
             }
