@@ -1536,11 +1536,15 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         person_age = self.sim.population.props.loc[self.target].age_exact_years
 
+        # TODO: for now assumed general attendence prob for <1 y old,
+        #  later will be excluded and dealt with within epi module
         def get_attendance_prob(age):
-            if age <= 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+            if age < 1:
                 return p['growth_monitoring_attendance_prob'][0]
-            else:
+            if age <= 2:
                 return p['growth_monitoring_attendance_prob'][1]
+            else:
+                return p['growth_monitoring_attendance_prob'][2]
 
         # perform growth monitoring if attending
         self.attendance = rng.random_sample() < get_attendance_prob(person_age)
