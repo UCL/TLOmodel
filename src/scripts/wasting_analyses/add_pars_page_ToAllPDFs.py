@@ -24,7 +24,7 @@ pars_combinations = list(itertools.product(*param_values))
 def create_parameter_page(params):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=(200, 45))  # Smaller page size
-    c.setFont("Helvetica", 5)  # Set font size to 10
+    c.setFont("Helvetica", 5)  # Set font and size
     y_position = 35
     for name, value in zip(param_names, params):
         c.drawString(10, y_position, f"{name} = {value}")
@@ -57,7 +57,13 @@ def process_pdfs(folder_name):
     # Sort the PDF files by the extracted indices
     pdf_files.sort(key=lambda x: extract_indices(x.name))
 
-    for pdf_file, params in zip(pdf_files, itertools.cycle(pars_combinations)):
+    # Extract the draw indices from the file names
+    existing_draws = {extract_indices(pdf_file.name)[0] for pdf_file in pdf_files}
+
+    # Filter out the parameter combinations for the missing draws
+    filtered_pars_combinations = [params for i, params in enumerate(pars_combinations) if i in existing_draws]
+
+    for pdf_file, params in zip(pdf_files, filtered_pars_combinations):
         print(f"Processing file: {pdf_file}")
         reader = PdfReader(str(pdf_file))
         writer = PdfWriter()
