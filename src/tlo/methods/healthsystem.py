@@ -1404,7 +1404,7 @@ class HealthSystem(Module):
 
         # Check that non-empty treatment ID specified
         assert hsi_event.TREATMENT_ID != ''
-        
+
         # Check that the target of the HSI is not the entire population
         assert not isinstance(hsi_event.target, tlo.population.Population)
 
@@ -1598,6 +1598,7 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
+    get_squeeze_factors_store = np.zeros(1000)
     def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities,
                             compute_squeeze_factor_to_district_level: bool
                             ):
@@ -1687,23 +1688,37 @@ class HealthSystem(Module):
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the load-factor of the officer with the largest time requirement for that
         # event (or zero if event has an empty footprint)
-        squeeze_factor_per_hsi_event = []
-        for footprint in footprints_per_event:
-            if len(footprint) > 0:
-                # If any of the required officers are not available at the facility, set overall squeeze to inf
-                require_missing_officer = any([load_factor[officer] == float('inf') for officer in footprint])
+        # squeeze_factor_per_hsi_event = []
+        # for footprint in footprints_per_event:
+        #     if len(footprint) > 0:
+        #         # If any of the required officers are not available at the facility, set overall squeeze to inf
+        #         require_missing_officer = any([load_factor[officer] == float('inf') for officer in footprint])
+        #
+        #         if require_missing_officer:
+        #             squeeze_factor_per_hsi_event.append(float('inf'))
+        #         else:
+        #             squeeze_factor_per_hsi_event.append(max(load_factor[footprint.most_common()[0][0]], 0.))
+        #     else:
+        #         squeeze_factor_per_hsi_event.append(0.0)
+        #
+        # squeeze_factor_per_hsi_event = np.array(squeeze_factor_per_hsi_event)
 
-                if require_missing_officer:
-                    squeeze_factor_per_hsi_event.append(float('inf'))
-                else:
-                    squeeze_factor_per_hsi_event.append(max(load_factor[footprint.most_common()[0][0]], 0.))
+        # self.squeeze_factor_per_hsi_event = [0.0 if not footprint else load_factor[footprint.most_common()[0][0]] for footprint in footprints_per_event]
+
+        for i, footprint in enumerate(footprints_per_event):
+            if footprint:
+                self.get_squeeze_factors_store[i] = load_factor[footprint.most_common()[0][0]]
             else:
-                squeeze_factor_per_hsi_event.append(0.0)
-        squeeze_factor_per_hsi_event = np.array(squeeze_factor_per_hsi_event)
+                self.get_squeeze_factors_store[i] = 0.0
 
-        assert (squeeze_factor_per_hsi_event >= 0).all()
+        # assert (squeeze_factor_per_hsi_event==squeeze_factor_per_hsi_event2).all()
+        # import random
+        # print("ok!", random.random())
+        #
+        # assert (squeeze_factor_per_hsi_event >= 0).all()
 
-        return squeeze_factor_per_hsi_event
+        return self.get_squeeze_factors_store
+
 
     def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None):
         """
@@ -2206,7 +2221,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
          * list_of_individual_hsi_event_tuples_due_today
         """
         _list_of_individual_hsi_event_tuples_due_today = list()
-        _list_of_events_not_due_today = list()
 
         # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
         # person IDs as  one-off operation, exploiting the improved efficiency of
@@ -2215,9 +2229,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # direct conversion to set, while checking membership of set is ~10x quicker
         # than checking membership of Pandas Index object and ~25x quicker than checking
         # membership of list
-        alive_persons = set(
-            self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
-        )
+        is_alive = self.sim.population.props.is_alive
 
         # Traverse the queue and split events into the two lists (due-individual, not_due)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
@@ -2234,14 +2246,16 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                       priority=next_event_tuple.priority
                      )
 
-            elif event.target not in alive_persons:
+            elif not is_alive[event.target]:
                 # if the person who is the target is no longer alive, do nothing more,
                 # i.e. remove from heapq
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
                 # The event is not yet due (before topen)
-                hp.heappush(_list_of_events_not_due_today, next_event_tuple)
+                # put it back and exit
+                hp.heappush(self.module.HSI_EVENT_QUEUE, next_event_tuple)
+                break
 
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
@@ -2249,22 +2263,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # NB. These list is ordered by priority and then due date
                 _list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
 
-        # add events from the _list_of_events_not_due_today back into the queue
-        while len(_list_of_events_not_due_today) > 0:
-            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(_list_of_events_not_due_today))
-
         return _list_of_individual_hsi_event_tuples_due_today
 
     def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
             # Get the events that are due today:
-            (
-                list_of_individual_hsi_event_tuples_due_today
-             ) = self._get_events_due_today()
+            list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
-            if (
-                (len(list_of_individual_hsi_event_tuples_due_today) == 0)
-            ):
+            if not list_of_individual_hsi_event_tuples_due_today:
                 break
 
             # For each individual level event, check whether the equipment it has already declared is available. If it
