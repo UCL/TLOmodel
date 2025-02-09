@@ -548,10 +548,10 @@ class WastingAnalyses:
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
 
-    def plot_all_figs_in_one_pdf(self):
+    def plot_all_figs_in_one_pdf(self, in_outcome_figs_folder):
 
-        output_file_path = Path(self.outcomes_folder_path + '/wasting_all_figures__' + self.datestamp +
-                                f'_{self.draw_nmb}_{self.run_nmb}' + '.pdf')
+        output_file_path = \
+            in_outcome_figs_folder / f'wasting_all_figures__{self.datestamp}_{self.draw_nmb}_{self.run_nmb}.pdf'
         # Remove the existing output file if it exists to ensure a clean start
         if os.path.exists(output_file_path):
             os.remove(output_file_path)
@@ -626,7 +626,9 @@ if __name__ == "__main__":
         wasting_analyses.plot_modal_gbd_deaths_by_gender()
 
         # save all figures in one pdf
-        wasting_analyses.plot_all_figs_in_one_pdf()
+        outcome_figs_folder = Path(sim_results_folder_path + '/_outcome_figures')
+        outcome_figs_folder.mkdir(parents=True, exist_ok=True)
+        wasting_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
 
         time_end = time.time()
         print(f"... finished in (s): {(time_end - time_start)}")

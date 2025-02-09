@@ -43,9 +43,9 @@ def extract_indices(file_name):
     return (int(match.group(1)), int(match.group(2))) if match else (-1, -1)
 
 # Process each PDF
-def process_pdfs(folder_name):
-    pdf_dir = BASE_PATH / folder_name
-    output_dir = pdf_dir / "outputs_with_pars"
+def process_pdfs(in_folder_name):
+    pdf_dir = BASE_PATH / in_folder_name / "_outcome_figures"
+    output_dir = BASE_PATH / in_folder_name / "_outputs_with_pars"
     output_dir.mkdir(exist_ok=True)
     print(f"Processing PDFs in directory: {pdf_dir}")
 
