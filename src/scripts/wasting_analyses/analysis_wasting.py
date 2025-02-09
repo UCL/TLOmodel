@@ -342,8 +342,8 @@ class WastingAnalyses:
             'total_mod_under5_prop': 'moderate wasting (model)',
             'sev_wast_calib': 'severe wasting (data)',
             'mod_wast_calib': 'moderate wasting (data)',
-            'total_init_sev_under5_prop': 'severe wasting (initial data)',
-            'total_init_mod_under5_prop': 'moderate wasting (initial data)'
+            'total_init_sev_under5_prop': 'severe wasting (initial)',
+            'total_init_mod_under5_prop': 'moderate wasting (initial)'
         }
 
         fig, ax = plt.subplots()
