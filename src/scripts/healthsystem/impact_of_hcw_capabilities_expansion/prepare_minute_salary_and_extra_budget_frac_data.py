@@ -192,14 +192,18 @@ extra_budget_fracs = extra_budget_fracs.reindex(columns=col_order)
 #
 # extra_budget_fracs = extra_budget_fracs_sample.copy()
 
+# define the HRH budget growth rate
+R = 0.042  # 0.042, 0.058, 0.026
+
 
 # calculate hr scale up factor for years 2020-2030 (10 years in total) outside the healthsystem module
-def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFrame:
+def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario, r=R) -> pd.DataFrame:
     """This function calculates the yearly hr scale up factor for cadres for a year yr,
     given a fraction of an extra budget allocated to each cadre and a yearly budget growth rate of 4.2%.
     Parameter extra_budget_frac (list) is a list of 9 floats, representing the fractions.
     Parameter yr (int) is a year between 2025 and 2035 (exclusive).
     Parameter scenario (string) is a column name in the extra budget fractions resource file.
+    Parameter r (float) is the HRH budget growth rate.
     Output dataframe stores scale up factors and relevant for the year yr.
     """
     # get data of previous year
@@ -208,7 +212,7 @@ def calculate_hr_scale_up_factor(extra_budget_frac, yr, scenario) -> pd.DataFram
 
     # calculate and update scale_up_factor
     prev_data['extra_budget_frac'] = extra_budget_frac
-    prev_data['extra_budget'] = 0.042 * prev_data.annual_cost.sum() * prev_data.extra_budget_frac
+    prev_data['extra_budget'] = r * prev_data.annual_cost.sum() * prev_data.extra_budget_frac
     prev_data['extra_staff'] = prev_data.extra_budget / prev_data.Annual_Salary_USD
     prev_data['scale_up_factor'] = (prev_data.Staff_Count + prev_data.extra_staff) / prev_data.Staff_Count
 
@@ -242,7 +246,7 @@ for y in total_cost.index:
 
 # check the total cost after 10 years are increased as expected
 assert (
-    abs(total_cost.loc[2034, total_cost.columns[1:]] - (1 + 0.042) ** 10 * total_cost.loc[2024, 's_0']) < 1/1e6
+    abs(total_cost.loc[2034, total_cost.columns[1:]] - (1 + R) ** 10 * total_cost.loc[2024, 's_0']) < 1/1e6
 ).all()
 
 # get the integrated scale up factors by the end of year 2034 and each scenario
@@ -302,7 +306,7 @@ avg_increase_rate_exp = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
 # extra_budget_fracs_sample.drop(columns=other_group, inplace=True)
 
 
-def func_of_avg_increase_rate(cadre, scenario='s_2', r=0.042):
+def func_of_avg_increase_rate(cadre, scenario='s_2', r=R):
     """
     This return the average growth rate of the staff of a cadre from 2025 to 2034.
     The total HRH cost growth rate is r.
