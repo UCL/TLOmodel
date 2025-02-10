@@ -1,6 +1,7 @@
 from typing import Dict
 
 from tlo import Date, logging
+from tlo.analysis.performance import PerformanceMonitor
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
@@ -12,7 +13,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2070, 1, 12)
+        self.end_date = Date(2012, 1, 12)
         self.pop_size = 100_000
         self.runs_per_draw = 5
         self.YEAR_OF_CHANGE = 2020
@@ -25,19 +26,15 @@ class LongRun(BaseScenario):
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.population': logging.INFO,
-                "tlo.methods.enhanced_lifestyle": logging.INFO
+                'tlo.analysis.performance': logging.INFO
             }
         }
 
     def modules(self):
         return (
             fullmodel(resourcefilepath=self.resources)
-            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources)]
+            + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher(resourcefilepath=self.resources),
+               PerformanceMonitor()]
         )
 
     def draw_parameters(self, draw_number, rng):
