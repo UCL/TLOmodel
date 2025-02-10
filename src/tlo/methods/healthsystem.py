@@ -1598,7 +1598,7 @@ class HealthSystem(Module):
 
         return appt_footprint_times
 
-    get_squeeze_factors_store = np.zeros(1000)
+    get_squeeze_factors_store = np.zeros(8000)
     def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities,
                             compute_squeeze_factor_to_district_level: bool
                             ):
