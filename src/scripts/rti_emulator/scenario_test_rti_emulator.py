@@ -55,11 +55,10 @@ class GenerateDataChains(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(years=10)
-        self.pop_size = 50000
+        self.pop_size = 50_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 10
-        self.generate_event_chains = True
 
     def log_configuration(self):
         return {
@@ -110,8 +109,6 @@ class GenerateDataChains(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
-        
-        self.YEAR_OF_CHANGE = 2019
 
         return {
    
@@ -119,11 +116,11 @@ class GenerateDataChains(BaseScenario):
             "Baseline":
                 mix_scenarios(
                     self._baseline(),
-                    {
-                     "HealthSystem": {
-                        "yearly_HR_scaling_mode": "no_scaling",
-                      },
-                    }
+                    #{
+                    # "HealthSystem": {
+                    #    "yearly_HR_scaling_mode": "no_scaling",
+                    #  },
+                    #}
                 ),
 
         }
@@ -134,15 +131,9 @@ class GenerateDataChains(BaseScenario):
             get_parameters_for_status_quo(),
             {
                 "HealthSystem": {
-                    "mode_appt_constraints": 1,                 # <-- Mode 1 prior to change to preserve calibration
-                    "mode_appt_constraints_postSwitch": 2,      # <-- Mode 2 post-change to show effects of HRH
-                    "year_mode_switch": self.YEAR_OF_CHANGE,
-                    "scale_to_effective_capabilities": True,
-                    "policy_name": "Naive",
-                    "tclose_overwrite": 1,
-                    "tclose_days_offset_overwrite": 7,
+                    "mode_appt_constraints": 1,
                     "use_funded_or_actual_staffing": "actual",
-                    "cons_availability": "default",
+                    "cons_availability": "all",
                 }
             },
         )
