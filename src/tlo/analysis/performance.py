@@ -22,14 +22,14 @@ class PerformanceMonitor(Module):
 
     def initialise_simulation(self, sim: Simulation) -> None:
         sim.schedule_event(LogProgress(self), sim.start_date)
-        sim.schedule_event(SaveSimulation(self), sim.start_date)
+        #sim.schedule_event(SaveSimulation(self), sim.start_date)
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
         pass
 
     def on_simulation_end(self) -> None:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        self.sim.save_to_pickle(Path(f"simulation-{timestamp}.pkl"))
+        #self.sim.save_to_pickle(Path(f"simulation-{timestamp}.pkl"))
 
 
 class SaveSimulation(RegularEvent, PopulationScopeEventMixin):
@@ -56,7 +56,7 @@ class LogProgress(RegularEvent, PopulationScopeEventMixin):
         sim_queue_size = len(sim.event_queue)
         health_system: "HealthSystem" = sim.modules["HealthSystem"]
         hsi_queue_size = len(health_system.HSI_EVENT_QUEUE)
-        pop_df_hash = hash_dataframe(df)
+        # pop_df_hash = hash_dataframe(df)
 
         logger.info(
             key="stats",
@@ -66,7 +66,7 @@ class LogProgress(RegularEvent, PopulationScopeEventMixin):
                 "pop_df_number_alive": df.is_alive.sum(),
                 "pop_df_rows": len(df),
                 "pop_df_mem_MiB": df.memory_usage(index=True, deep=True).sum() / 2**20,
-                "pop_df_hash": pop_df_hash,
+                # "pop_df_hash": pop_df_hash,
                 "sim_queue_size": sim_queue_size,
                 "hsi_queue_size": hsi_queue_size,
                 **memory_statistics(),
