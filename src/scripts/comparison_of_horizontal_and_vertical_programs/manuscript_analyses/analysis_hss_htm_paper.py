@@ -776,6 +776,69 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     plot_horizontal_stacked_barpanels(scenario_groups, total_num_dalys_by_label_results_averted_vs_baseline, target_period, make_graph_file_name)
 
+    # get numbers of deaths by cause
+    def summarise_deaths_by_cause(results_folder):
+        """ returns mean deaths for each year of the simulation
+        values are aggregated across the runs of each draw
+        for the specified cause
+        """
+
+        def get_num_deaths_by_label(_df):
+            """Return total number of Deaths by label within the TARGET_PERIOD
+            values are summed for all ages
+            df returned: rows=COD, columns=draw
+            """
+            return _df \
+                .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+                .groupby(_df['label']) \
+                .size()
+
+        num_deaths_by_label = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=get_num_deaths_by_label,
+            do_scaling=True,
+        ).pipe(set_param_names_as_column_index_level_0)
+
+        causes = {
+            'AIDS': 'HIV/AIDS',
+            'TB (non-AIDS)': 'TB',
+            'Malaria': 'Malaria',
+            '': 'Other',  # defined in order to use this dict to determine ordering of the causes in output
+        }
+
+        causes_relabels = num_deaths_by_label.index.map(causes).fillna('Other')
+
+        grouped_deaths = num_deaths_by_label.groupby(causes_relabels).sum()
+        # Reorder based on the causes keys that are in the grouped data
+        ordered_causes = [cause for cause in causes.values() if cause in grouped_deaths.index]
+        test = grouped_deaths.reindex(ordered_causes)
+
+        return compute_summary_statistics(test, central_measure='median')
+
+    num_deaths_by_cause = summarise_deaths_by_cause(results_folder)
+
+    def calculate_deaths_averted(_df):
+        """Calculate the number of deaths averted compared to the Baseline for each draw."""
+
+        # Extract the median values
+        median_values = _df.xs('central', level=1, axis=1)
+
+        # Get the median values for the 'Baseline' draw
+        baseline_values = median_values['Baseline']
+
+        # Calculate diff in number of deaths
+        deaths_diff = median_values.subtract(baseline_values, axis=0)
+
+        # Multiply by -1 to get deaths averted
+        return deaths_diff * -1
+
+    # Use the function with your data
+    deaths_averted_by_cause = calculate_deaths_averted(num_deaths_by_cause)
+    deaths_averted_by_cause.to_csv(results_folder / f'num_deaths_averted_by_cause_{target_period()}.csv')
+
+
     # %% disease-specific outputs
 
     def compute_percentage_difference_in_indicator_across_runs(_df):
@@ -861,11 +924,35 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder, module, key, column, do_scaling=False)
 
     # simple extraction
+    hiv_inc = compute_summary_statistics(extract_results(
+        results_folder,
+        module=module,
+        key='summary_inc_and_prev_for_adults_and_children_and_fsw',
+        column='hiv_adult_inc_15plus',
+        index='date',
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0),
+                                                 central_measure='median'
+                                                 )
+    hiv_inc.to_csv(results_folder / 'hiv_inc.csv')
+
+    hiv_num_cases = compute_summary_statistics(extract_results(
+        results_folder,
+        module=module,
+        key='summary_inc_and_prev_for_adults_and_children_and_fsw',
+        column='n_new_infections_adult_1549',
+        index='date',
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0),
+                                                 central_measure='median'
+                                                 )
+    hiv_num_cases.to_csv(results_folder / 'hiv_num_cases.csv')
+
     hiv_dx_coverage = compute_summary_statistics(extract_results(
         results_folder,
         module=module,
-        key=key,
-        column=column,
+        key='hiv_program_coverage',
+        column='dx_adult',
         index='date',
         do_scaling=False
     ).pipe(set_param_names_as_column_index_level_0),
@@ -880,7 +967,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hiv_art_coverage = compute_summary_statistics(extract_results(
         results_folder,
         module=module,
-        key=key,
+        key='hiv_program_coverage',
         column=column,
         index='date',
         do_scaling=False
@@ -900,12 +987,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     extract_and_process_results(
         results_folder, module, key, column, do_scaling=False)
 
+    # simple extraction
+    tb_prevalence = compute_summary_statistics(extract_results(
+        results_folder,
+        module=module,
+        key=key,
+        column=column,
+        index='date',
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0),
+                                                central_measure='median'
+                                                )
+    tb_prevalence.to_csv(results_folder / 'tb_prevalence.csv')
+
     key = 'tb_treatment'
     column = "tbTreatmentCoverage"
     extract_and_process_results(
         results_folder, module, key, column, do_scaling=False)
 
-    # simple extraction
     tb_tx_coverage = compute_summary_statistics(extract_results(
         results_folder,
         module=module,
