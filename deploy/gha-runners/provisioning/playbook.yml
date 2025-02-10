@@ -7,7 +7,7 @@
     github_repo: TLOmodel
     runner_user: gha
     runner_user_homedir: "/home/{{ runner_user }}"
-    runner_workdir: /mnt/tlo
+    runner_workdir: "{{ runner_user_homedir }}/tlo"
     python_version: "3.11"
     ## SSH hardening
     ssh_deny_users: "{{ runner_user }}"
@@ -50,13 +50,6 @@
      ansible.builtin.shell: "python{{ python_version }} -m pip install tox"
      args:
        creates: /usr/local/bin/tox
-
-   - name: make /mnt writable by everyone
-     become: true
-     ansible.builtin.file:
-       path: "/mnt"
-       state: directory
-       mode: '1777'
 
    - name: run github actions runner role
      with_sequence: count="{{ n_runners | default(1) }}"
