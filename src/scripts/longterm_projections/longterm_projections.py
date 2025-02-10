@@ -26,12 +26,7 @@ class LongRun(BaseScenario):
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.population': logging.INFO,
-                "tlo.methods.enhanced_lifestyle": logging.INFO
+                'tlo.analysis.performance': logging.INFO,
             }
         }
 
