@@ -83,7 +83,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     self._baseline(),
                     {
                      "HealthSystem": {
-                        "use_funded_or_actual_staffing_postSwitch": "funded",
+                        "use_funded_or_actual_staffing_postSwitch": "funded_plus",
                       },
                     }
                 ),
