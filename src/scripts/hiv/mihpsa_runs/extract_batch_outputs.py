@@ -547,6 +547,19 @@ num_dalys_by_year = summarize(extract_results(
 
 
 aids_dalys = num_dalys_by_year[num_dalys_by_year.index.get_level_values(1) == 'AIDS']
+with pd.ExcelWriter(results_folder / 'dalys.xlsx', engine='openpyxl') as writer:
+    aids_dalys.to_excel(writer, sheet_name='DALYs')
+
+num_dalys_by_year_FULL = extract_results(
+    results_folder,
+    module='tlo.methods.healthburden',
+    key='dalys_stacked',
+    custom_generate_series=get_num_dalys_by_year,
+    do_scaling=True
+)
+aids_dalys_FULL = num_dalys_by_year_FULL[num_dalys_by_year_FULL.index.get_level_values(1) == 'AIDS']
+with pd.ExcelWriter(results_folder / 'dalys_FULL.xlsx', engine='openpyxl') as writer:
+    aids_dalys_FULL.to_excel(writer, sheet_name='DALYs')
 
 # need to get number DALYs averted compared to minimal scenario
 dalys_averted = pd.DataFrame()
