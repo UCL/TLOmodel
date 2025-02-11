@@ -1,11 +1,18 @@
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 
-from tlo import Module, Simulation, Parameter, Types, Property, Population
-from tlo.events import RegularEvent, PopulationScopeEventMixin
+from tlo import Module, Simulation, Parameter, Types, Property, Population, logging
+from tlo.events import RegularEvent, PopulationScopeEventMixin, IndividualScopeEventMixin
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata
+from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+from tlo.methods.symptommanager import Symptom
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class Diabetes_Retinopathy(Module):
     """ This is Diabetes Retinopathy module. It seeks to skeleton of blindness due to diabetes. """
@@ -40,6 +47,20 @@ class Diabetes_Retinopathy(Module):
             ],
             description="dr status",
         ),
+        'dr_on_treatment': Property(
+            Types.BOOL, 'Whether this person will die during a current severe exacerbation'
+        ),
+        'dr_early_diagnosed': Property(
+            Types.BOOL, 'Whether this person will die during a current severe exacerbation'
+        ),
+        'dr_late_diagnosed': Property(
+            Types.BOOL, 'Whether this person will die during a current severe exacerbation'
+        ),
+        'dr_diagnosed': Property(
+            Types.BOOL, 'Whether this person will die during a current severe exacerbation'
+        ),
+        'p_medication': Parameter(
+            Types.REAL, 'Probability that a treatment is successful in curing the individual'),
     }
 
     def __init__(self):
@@ -60,6 +81,12 @@ class Diabetes_Retinopathy(Module):
         self.parameters['prob_fast_dr'] = 0.5
         self.parameters['init_prob_any_dr'] = 0.5
         self.parameters['init_prob_late_dr'] = 0.5
+        self.parameters['p_medication'] = 0.4
+
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='blindness_partial'),  # will not trigger any health seeking behaviour
+            Symptom(name='blindness_full')
+        )
 
     def initialise_population(self, population: Population) -> None:
         """ set the initial state of the population. The state will be update over time
@@ -89,9 +116,8 @@ class Diabetes_Retinopathy(Module):
         df.loc[list(no_dr_idx), 'dr_status'] = 'none'
         df.loc[list(early_dr_idx), "dr_status"] = "early"
         df.loc[list(late_dr_idx), "dr_status"] = "late"
-
-
-
+        df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
+        df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
 
 
     def initialise_simulation(self, sim: Simulation) -> None:
@@ -100,82 +126,143 @@ class Diabetes_Retinopathy(Module):
         :param sim: simulation object
 
         """
-        # schedule an event to infect people with tb
-        sim.schedule_event(DrPollEvent(self), date=sim.date + pd.DateOffset(years=3))
-        # sim.schedule_event(TblInfectionEvent(self), date=sim.date + pd.DateOffset(months=1))
-        # schedule an event to cure people from tb
-        sim.schedule_event(TblCureEvent(self), date=sim.date + pd.DateOffset(months=2))
+        sim.schedule_event(DrPollEvent(self), date=sim.date)
+
+        self.make_the_linear_models()
+
+
+    def report_daly_values(self) -> pd.Series:
+        return pd.Series(index=self.sim.population.props.index, data=0.0)
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
         """ set properties of a child when they are born. """
-        pass
+        self.sim.population.props.at[child_id, 'dr_status'] = 'none'
+        self.sim.population.props.at[child_id, 'dr_on_treatment'] = False
+        self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
+        self.sim.population.props.at[child_id, 'dr_diagnosis_date'] = pd.NaT
+
 
     def on_simulation_end(self) -> None:
-        tb_inc_and_prev = pd.DataFrame(index=list(self.incidence_tb.keys()),
-                                       data={'incidence': self.incidence_tb.values(),
-                                             'prevalence': self.prevalence_tb.values(),
-                                             'total_pop': len(self.sim.population.props)})
+        pass
 
-        print(f'\n\nrunning the model with infection probability at {self.parameters["p_infection"]}')
-        print(tb_inc_and_prev)
+    def make_the_linear_models(self) -> None:
+        """Here is where we make and save LinearModels that will be used when the module is running"""
 
+        self.lm = dict()
+
+        self.lm['onset_early_dr'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            intercept=self.parameters['rate_onset_to_early_dr']
+        )
+
+        self.lm['onset_late_dr'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            intercept=self.parameters['rate_progression_to_dr']
+        )
+
+        self.lm['onset_fast_dr'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            intercept=self.parameters['prob_fast_dr']
+        )
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the development process of Diabetes Retionpathy (DR) and logs current states. DR diagnosis
     begins at least after 3 years of being infected with Diabetes Mellitus."""
 
     def __init__(self, module):
-        super().__init__(module, frequency=pd.DateOffset(months=3))
-
-class TblInfectionEvent(RegularEvent, PopulationScopeEventMixin):
-    """ cause individuals to be infected by Tb. This event will run every one month """
-
-    def __init__(self, module: Module) -> None:
-        self.repeat = 1
-        super().__init__(module, frequency=pd.DateOffset(months=self.repeat))
+        super().__init__(module, frequency=pd.DateOffset(months=1))
 
     def apply(self, population: Population) -> None:
-        """ actions that should be applied to the population when this event is triggered """
+        """
+
+        """
         df = population.props
 
-        # select individuals to infect. should be those without tb at the present time
-        individuals_to_infect = ~df['tbl_is_infected']
-        random_selection = self.module.rng.choice([True, False], size=len(individuals_to_infect),
-                                                  p=[self.module.parameters['p_infection'],
-                                                     1 - self.module.parameters['p_infection']])
+        diabetes_and_alive_nodr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'none')]
+        diabetes_and_alive_earlydr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'early')]
 
-        # update the properties of individuals that have been selected for tb infection
-        idx_individuals_to_infect = individuals_to_infect.index[random_selection]
-        df.loc[idx_individuals_to_infect, 'tbl_is_infected'] = True
-        df.loc[idx_individuals_to_infect, 'tbl_date_infected'] = self.sim.date
+        will_progress = self.module.lm['onset_early_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
+        will_progress_idx = will_progress[will_progress].index
+        df.loc[will_progress_idx, 'dr_status'] = 'early'
 
-        # incidence of Tb
-        self.module.incidence_tb.update({self.sim.date: len(idx_individuals_to_infect)})
-        self.module.prevalence_tb.update({self.sim.date: df.tbl_is_infected.sum()})
+        early_to_late = self.module.lm['onset_late_dr'].predict(diabetes_and_alive_earlydr, self.module.rng)
+        early_to_late_idx = early_to_late[early_to_late].index
+        df.loc[early_to_late_idx, 'dr_status'] = 'late'
+
+        fast_dr = self.module.lm['onset_fast_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
+        fast_dr_idx = fast_dr[fast_dr].index
+        df.loc[fast_dr_idx, 'dr_status'] = 'late'
+
+        if len(will_progress_idx):
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=will_progress_idx,
+                symptom_string='blindness_partial',
+                add_or_remove='+',
+                disease_module=self,
+            )
+
+        if len(early_to_late_idx):
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=early_to_late_idx,
+                symptom_string='blindness_full',
+                add_or_remove='+',
+                disease_module=self,
+            )
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        person_id: int,
+        symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
+        **kwargs,
+    ) -> None:
+        # Example for mockitis
+        if "blindness_full" in symptoms or "blindness_partial" in symptoms:
+            event = HSI_Dr_StartTreatment(
+                module=self,
+                person_id=person_id,
+            )
+            schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 
-class TblCureEvent(RegularEvent, PopulationScopeEventMixin):
-    """ cause individuals to recover from Tb. This event will run every one month """
 
-    def __init__(self, module: Module) -> None:
-        self.repeat = 1
-        super().__init__(module, frequency=pd.DateOffset(months=self.repeat))
-        self.module = module
 
-    def apply(self, population: Population) -> None:
-        """ actions that should be applied to the population when this event is triggered """
-        df = population.props
+class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
 
-        # select individuals to recover. should be those with tb and infected not less than a month ago
-        individuals_to_recover = df.loc[df.tbl_is_infected &
-                                        (self.sim.date - pd.DateOffset(months=1) > df.tbl_date_infected)]
+    It is appointment at which treatment for mockitiis is inititaed.
 
-        random_selection = self.module.rng.choice([True, False], size=len(individuals_to_recover),
-                                                  p=[self.module.parameters['p_cure'],
-                                                     1 - self.module.parameters['p_cure']])
+    """
 
-        # update the properties of individuals that have been selected for tb cure.
-        # they should be well and have a date of recovery
-        idx_individuals_to_recover = individuals_to_recover.index[random_selection]
-        df.loc[idx_individuals_to_recover, 'tbl_is_infected'] = False
-        df.loc[idx_individuals_to_recover, 'tbl_date_cure'] = self.sim.date
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Diabetes_Retinopathy)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ALERT_OTHER_DISEASES = []
+        def apply(self, person_id, squeeze_factor):
+            logger.debug(key='debug',
+                         data=f'This is HSI_Dr_StartTreatment: initiating treatment for person {person_id}')
+            df = self.sim.population.props
+            person = df.loc[person_id]
+
+            if not df.at[person_id, 'is_alive']:
+                # The person is not alive, the event did not happen: so return a blank footprint
+                return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+            # if person already on treatment or not yet diagnosed, do nothing
+            if person["dr_on_treatment"] or not person["dr_diagnosed"]:
+                return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+            treatment_slows_progression_to_late = self.module.rng.rand() < self.module.parameters['p_medication']
+
+            #TODO Add consumables in codition below
+            if treatment_slows_progression_to_late:
+                df.at[person_id, 'dr_on_treatment'] = True
+
+
+
