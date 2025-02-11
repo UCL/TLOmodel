@@ -34,6 +34,7 @@ class Diabetes_Retinopathy(Module):
         'prob_fast_dr': Parameter(Types.REAL, 'Probability to dr'),
         'init_prob_any_dr': Parameter(Types.REAL, 'Probability to dr'),
         'init_prob_late_dr': Parameter(Types.REAL, 'Probability to dr'),
+        'p_medication': Parameter(Types.REAL, 'Probability to dr'),
     }
 
     # define a dictionary of properties this module will use
@@ -59,8 +60,7 @@ class Diabetes_Retinopathy(Module):
         'dr_diagnosed': Property(
             Types.BOOL, 'Whether this person will die during a current severe exacerbation'
         ),
-        'p_medication': Parameter(
-            Types.REAL, 'Probability that a treatment is successful in curing the individual'),
+
     }
 
     def __init__(self):
@@ -198,7 +198,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 person_id=will_progress_idx,
                 symptom_string='blindness_partial',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
             )
 
         if len(early_to_late_idx):
@@ -206,7 +206,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 person_id=early_to_late_idx,
                 symptom_string='blindness_full',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
             )
 
     def do_at_generic_first_appt_emergency(
