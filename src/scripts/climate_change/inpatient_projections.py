@@ -485,6 +485,9 @@ for i, scenario in enumerate(scenarios):
                 df = pd.read_csv(five_day_file_path)
                 values = df.iloc[:, 1:].values.flatten()
                 values = filter_top_20_percent(values)
+                num_events_above_X = (values > 300).sum()
+                print(f"Number of 5-day max precipitation events above X mm: {num_events_above_X}")
+
                 if len(values) > 0:
                     sns.kdeplot(values, label=f"{model} - {service}", alpha=0.3, ax=axes[i, 1])
 
@@ -492,5 +495,4 @@ for i, scenario in enumerate(scenarios):
     axes[0, 1].legend()
 
 plt.tight_layout()
-plt.show()
 plt.savefig(f"/Users/rem76/Desktop/Climate_change_health/Data/historical_vs_future_precipitation_{service}.png")

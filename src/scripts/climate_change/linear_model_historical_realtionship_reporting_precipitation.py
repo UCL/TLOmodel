@@ -9,8 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.feature_selection import SelectKBest, f_regression
 
-ANC = False
-Inpatient = True
+ANC = True
+Inpatient = False
 if ANC:
     service = 'ANC'
 if Inpatient:
@@ -843,3 +843,6 @@ for ssp_scenario in ssp_scenarios:
 
         # Save to CSV
         X_basis_weather_filtered.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/X_basis_weather_filtered_predictions_{ssp_scenario}_{model_type}_{service}.csv', index=False)
+
+
+
