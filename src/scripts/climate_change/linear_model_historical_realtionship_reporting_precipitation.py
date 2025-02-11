@@ -228,7 +228,7 @@ if use_all_weather:
 monthly_reporting_by_facility.iloc[covid_months, :] = np.nan
 # Mask for missing data with Cyclone Freddy
 monthly_reporting_by_facility.loc[cyclone_freddy_months_phalombe, 'Phalombe Health Centre'] = 0
-monthly_reporting_by_facility.loc[cyclone_freddy_months_phalombe, 'Thumbwe Health Centre'] = 0
+monthly_reporting_by_facility.loc[cyclone_freddy_months_thumbwe, 'Thumbwe Health Centre'] = 0
 
 # Drop September 2024 in ANC/reporting data
 monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
@@ -544,40 +544,47 @@ axs[0].legend(loc='upper left', borderaxespad=0.)
 
 plt.show()
 ## average of predictions
-
 data_weather_predictions = pd.DataFrame({
     'Year': np.array(year_flattened)[mask_all_data],
-    'Year_Month': year_month_labels_filtered,
+    'Month': np.array(month_flattened)[mask_all_data],
+    'Year_Month': year_month_labels_filtered,  # Ensure this is properly formatted
     'y_pred_weather': np.exp(matched_y_pred_weather),
     'y_pred_no_weather': np.exp(matched_y_pred),
     'difference': np.exp(matched_y_pred) - np.exp(matched_y_pred_weather)
 })
 
-data_weather_predictions_grouped = data_weather_predictions.groupby('Year', as_index=False).sum()
+data_weather_predictions_grouped = data_weather_predictions.groupby('Year_Month', as_index=False).sum()
 
 fig, ax = plt.subplots(figsize=(7, 7))
 
-ax.scatter(data_weather_predictions_grouped['Year'],
+ax.scatter(data_weather_predictions_grouped['Year_Month'],
            data_weather_predictions_grouped['difference'],
-           color='#823038', alpha=0.7,)
+           color='#823038', alpha=0.7)
 
 ax.axhline(y=0, color='black', linestyle='--', linewidth=1)
 
 y_max = max(abs(data_weather_predictions_grouped['difference'])) + 50
 ax.set_ylim(-y_max, y_max)
 
-ax.set_xlabel('Year')
-ax.set_ylabel(f'Difference in Predicted {service}  Services (Without vs. With Precipitation)')
+ax.stem(data_weather_predictions_grouped['Year_Month'],
+        data_weather_predictions_grouped['difference'],
+        linefmt='gray', markerfmt='o', basefmt="black")
 
+ax.set_xlabel('Year-Month')
+ax.set_ylabel(f'Difference in Predicted {service} Services (Without vs. With Precipitation)')
 
+# Ensure 'Year_Month' is properly formatted as strings
+ax.set_xticks(data_weather_predictions_grouped['Year_Month'])
+ax.set_xticklabels(data_weather_predictions_grouped['Year_Month'], rotation=45, ha='right')
 
-ax.set_xticks(data_weather_predictions_grouped['Year'])
-ax.set_xticklabels(data_weather_predictions_grouped['Year'], rotation=45, ha='right')
-#ax.legend(loc='upper left')
-
-plt.show()
+# Highlight Cyclone Freddy impact in 2023
+ax.axvline(x='2023-03', color='#9AC4F8', linestyle='--', linewidth=1, label="Cyclone Freddy")
 
 plt.tight_layout()
+plt.legend()
+plt.show()
+plt.savefig( f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/{service}_disruptions_difference_historical_models.png')
+
 plt.show()
 ## save historical predictions
 full_data_weather_predictions_historical = pd.DataFrame({
