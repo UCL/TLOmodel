@@ -36,6 +36,10 @@ class ScenarioDefinitions:
                     "policy_name": "HTM",  # use priority ranking 2 for HTM treatments only
                     "tclose_overwrite": 1,
                     "tclose_days_offset_overwrite": 7,
+
+                    # allow historical HRH scaling to occur 2018-2024
+                    # 'year_HR_scaling_by_level_and_officer_type': self.YEAR_OF_CHANGE_FOR_HSS,
+                    'yearly_HR_scaling_mode': 'historical_scaling',
                 }
             },
         )
