@@ -2919,9 +2919,39 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
+        preswitch_mode = self.module.mode_appt_constraints
+        health_system: HealthSystem = self.module
 
         # Change mode_appt_constraints
-        self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
+        health_system.mode_appt_constraints = health_system.parameters["mode_appt_constraints_postSwitch"]
+
+        # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
+        if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
+            # A place to store events with updated priority
+            updated_events: List[HSIEventQueueItem|None] = [None] * len(health_system.HSI_EVENT_QUEUE)
+            offset = 0
+
+            # For each HSI event in the queue
+            while health_system.HSI_EVENT_QUEUE:
+                event = hp.heappop(health_system.HSI_EVENT_QUEUE)
+
+                # Get its priority
+                enforced_priority = health_system.enforce_priority_policy(event.hsi_event)
+
+                # If it's different
+                if event.priority != enforced_priority:
+                    # Wrap it up with the new priority - everything else is the same
+                    event = HSIEventQueueItem(enforced_priority, event.topen, event.rand_queue_counter, event.queue_counter, event.tclose, event.hsi_event)
+
+                # Save it
+                updated_events[offset] = event
+                offset += 1
+
+            # Add all the events back in the event queue
+            while updated_events:
+                hp.heappush(health_system.HSI_EVENT_QUEUE, updated_events.pop())
+
+            del updated_events
 
         logger.info(key="message",
                     data=f"Switched mode at sim date: "
