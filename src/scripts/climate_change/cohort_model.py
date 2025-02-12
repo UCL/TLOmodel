@@ -23,15 +23,13 @@ scenarios = ['ssp126', 'ssp245', 'ssp585']
 model_types = ['lowest', 'mean', 'highest']
 year_range = range(min_year, max_year)
 # global min for all heatmaps for same scale
-global_min = -5
-global_max = 0
+global_min = 0
+global_max = 5
 # service
-ANC = False
-Inpatient = True
+ANC =True
 if ANC:
     service = 'ANC'
-if Inpatient:
-    service = 'Inpatient'
+
 ## Get birth results
 results_folder_to_save = Path(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions')
 results_folder_for_births = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
@@ -59,8 +57,8 @@ births_model = summarize(births_results, collapse_columns=True)
 births_model.columns = ['Model_' + col for col in births_model.columns]
 births_model_subset = births_model.iloc[15:].copy() # don't want 2010-2024
 
-print("historical:", births_model.iloc[1:15, 1].sum())
-births_model_subset_historical = births_model.iloc[1:15, 1].sum()
+print("historical:", births_model.iloc[2:15, 1].sum())
+births_model_subset_historical = births_model.iloc[2:15, 1]
 # Load map of Malawi for later
 file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
 dataset = Dataset(file_path_historical_data, mode='r')
@@ -71,6 +69,7 @@ meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
 
 malawi = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
 malawi_admin2 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
+water_bodies = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp")
 #
 # change names of some districts for consistency
 malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Blantyre City', 'Blantyre')
@@ -165,6 +164,7 @@ for scenario in scenarios:
         percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
         malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+        malawi_admin2['Percentage_Difference'] = malawi_admin2['Percentage_Difference'].abs() # for mapping, to show %
 
 
 for i, scenario in enumerate(scenarios):
@@ -179,18 +179,23 @@ for i, scenario in enumerate(scenarios):
         predictions_from_cmip_sum['Percentage_Difference'] = (
             predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
         ) * 100
-
         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
         )
         percentage_diff_by_district = predictions_from_cmip_sum.groupby('District')['Percentage_Difference'].mean()
+
         malawi_admin2['Percentage_Difference'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district)
         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+        malawi_admin2['Percentage_Difference'] = malawi_admin2['Percentage_Difference'].abs() # for mapping, to show %
+
         ax = axes[i, j]
+        water_bodies.plot(ax=ax, facecolor="none", edgecolor="#999999", linewidth=0.5, hatch="xxx")
+        water_bodies.plot(ax=ax, facecolor="none", edgecolor="black", linewidth=1)
+
         malawi_admin2.dropna(subset=['Percentage_Difference']).plot(
             ax=ax,
             column='Percentage_Difference',
-            cmap='Blues_r',
+            cmap='Blues',
             edgecolor='black',
             alpha=1,
             legend=False,
@@ -211,7 +216,7 @@ for i, scenario in enumerate(scenarios):
             ax.set_xlabel("Longitude", fontsize=10)
 
 sm = plt.cm.ScalarMappable(
-    cmap='Blues_r',
+    cmap='Blues',
     norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
 )
 sm.set_array([])
@@ -293,6 +298,8 @@ for i, scenario in enumerate(scenarios):
                                                              )
         predictions_from_cmip_sum.loc[
             predictions_from_cmip_sum['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+        predictions_from_cmip_sum['Percentage_Difference'] = predictions_from_cmip_sum['Percentage_Difference'].abs() # for mapping, to show %
+
         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
         )
@@ -385,6 +392,8 @@ for i, scenario in enumerate(scenarios):
                                                              )
         predictions_from_cmip_sum.loc[
             predictions_from_cmip_sum['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+        predictions_from_cmip_sum['Percentage_Difference'] = predictions_from_cmip_sum['Percentage_Difference'].abs() # for mapping, to show %
+
         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
         )
@@ -424,7 +433,7 @@ for i, scenario in enumerate(scenarios):
         #    ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
         percentage_diff_by_year_district_all[scenario][model_type] = percentage_diff_by_year_district
 for ax in axes.flatten():
-    ax.set_ylim(y_min*18, y_max)
+    ax.set_ylim(y_min, y_max*19)
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(handles, labels,  bbox_to_anchor=(1, -10), loc = "center right", fontsize=10, title="Districts")
 plt.tight_layout()
@@ -451,31 +460,34 @@ historical_predictions_sum['District'] = historical_predictions_sum['District'].
 percentage_diff_by_district_historical = historical_predictions_sum.groupby('District')['Percentage_Difference'].mean()
 malawi_admin2['Percentage_Difference_historical'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district_historical)
 malawi_admin2.loc[malawi_admin2['Percentage_Difference_historical'] > 0, 'Percentage_Difference_historical'] = 0
+malawi_admin2['Percentage_Difference_historical'] = malawi_admin2['Percentage_Difference_historical'].abs()  # for mapping, to show %
+
 percentage_diff_by_district_historical_average = historical_predictions_sum['Percentage_Difference'].mean()
-print(malawi_admin2)
 filtered_predictions = historical_predictions[historical_predictions['Precipitation'] >= precipitation_threshold]
 filtered_predictions_sum = filtered_predictions.groupby('Year').sum().reset_index()
 percent_due_to_extreme = filtered_predictions_sum['Difference_in_Expectation'].sum()
 percent_due_to_extreme = percent_due_to_extreme/historical_predictions['Difference_in_Expectation'].sum()
 print(percent_due_to_extreme)
 fig, ax = plt.subplots(figsize=(10, 10))
+water_bodies.plot(ax=ax, facecolor="none", edgecolor="#999999", linewidth=0.5, hatch="xxx")
+water_bodies.plot(ax=ax, facecolor="none", edgecolor="black", linewidth=1)
 
 malawi_admin2.dropna(subset=['Percentage_Difference_historical']).plot(
     ax=ax,
     column='Percentage_Difference_historical',
-    cmap='Blues_r',
+    cmap='Blues',
     edgecolor='black',
     alpha=1,
     legend=False,
     vmin=global_min,
-    vmax=0
+    vmax=global_max
 )
 
 ax.set_ylabel("Latitude", fontsize=10)
 ax.set_xlabel("Longitude", fontsize=10)
 
 sm = plt.cm.ScalarMappable(
-    cmap='Blues_r',
+    cmap='Blues',
     norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
 )
 sm.set_array([])
@@ -497,34 +509,31 @@ historical_predictions_negative_sum['Percentage_Difference'] = (
                 historical_predictions_negative_sum['Difference_in_Expectation'] / historical_predictions_negative_sum[
                 'Predicted_No_Weather_Model'])
         # Match birth results and predictions
-matching_rows_historical = min(len(births_model_subset_historical), len(historical_predictions_negative_sum))
-multiplied_values = births_model_subset_historical.head(matching_rows_historical).iloc[1:15, 1].values * historical_predictions_negative_sum[
-            'Percentage_Difference'].head(matching_rows_historical).values * 1.4 # 1.4 is conversion from births to pregnacnies
+multiplied_values_historical = births_model_subset_historical.values * historical_predictions_negative_sum[
+            'Percentage_Difference'].values * 1.4 # 1.4 is conversion from births to pregnacnies
 
 # Check for negative values (missed cases?)
-negative_sum_historical = np.sum(multiplied_values[multiplied_values < 0])
+negative_sum_historical = np.sum(multiplied_values_historical[multiplied_values_historical < 0])
 
 # now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
 filtered_predictions_historical = historical_predictions_negative[historical_predictions_negative['Precipitation'] >= precipitation_threshold]
 filtered_predictions_sum_historical = filtered_predictions_historical.groupby('Year').sum().reset_index()
 percent_due_to_extreme_historical = filtered_predictions_sum_historical['Difference_in_Expectation'] / historical_predictions_negative_sum['Predicted_No_Weather_Model']
 print(percent_due_to_extreme_historical)
-multiplied_values_extreme_precip_historical = births_model_subset_historical.head(matching_rows_historical).iloc[:, 1].values * percent_due_to_extreme_historical.head(matching_rows).values * 1.4
+multiplied_values_extreme_precip_historical = births_model_subset_historical.values * percent_due_to_extreme_historical.values * 1.4
 negative_sum_extreme_precip_historical = np.sum(multiplied_values_extreme_precip_historical[multiplied_values_extreme_precip_historical < 0])
 result_df_historical = pd.DataFrame({
             "Negative_Sum": [negative_sum_historical],
-            "Negative_Percentage": [negative_sum_historical / (births_model_subset_historical['Model_mean'].sum() * 1.4) * 100],
+            "Negative_Percentage": [negative_sum_historical / (births_model_subset_historical.sum() * 1.4) * 100],
             "Extreme_Precip": [negative_sum_extreme_precip_historical],
             "Extreme_Precip_Percentage": [(negative_sum_extreme_precip_historical  / negative_sum_historical) * 100]
         })
 
 # Save multiplied values by model and scenario
 multiplied_values_df_historical = pd.DataFrame({
-            'Year': year_range[:matching_rows],
-            'Scenario': scenario,
-            'Model_Type': model_type,
-            'Multiplied_Values': multiplied_values,
-            'Multiplied_Values_extreme_precip': multiplied_values_extreme_precip
+            'Year': range(2012, 2025),
+            'Multiplied_Values': multiplied_values_historical,
+            'Multiplied_Values_extreme_precip': multiplied_values_extreme_precip_historical
 
         })
 multiplied_values_df_historical.to_csv(results_folder_to_save/f'multiplied_values_historical.csv', index=False)
