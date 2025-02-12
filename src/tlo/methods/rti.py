@@ -32,10 +32,10 @@ if TYPE_CHECKING:
 
 # Decide whether to use emulator or not
 use_emulator = True
-include_conditionality = True
-#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator.pkl'
+include_conditionality = False
+emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator.pkl'
 #emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
-emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/new_synthesizer.pkl'
+#emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/new_synthesizer.pkl'
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -79,13 +79,13 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     # Initialize the counter with all items set to 0
     HS_Use_by_RTI = Counter({col: 0 for col in HS_Use_Type})
     
-    RTI_emulator = TVAESynthesizer.load(
-        filepath=emulator_path
-    )
-    
-    #GaussianCopulaSynthesizer.load(
+    #RTI_emulator = TVAESynthesizer.load(
     #    filepath=emulator_path
     #)
+    
+    RTI_emulator = GaussianCopulaSynthesizer.load(
+        filepath=emulator_path
+    )
     if include_conditionality:
         Rti_Services = ['Rti_AcutePainManagement', 'Rti_BurnManagement', 'Rti_FractureCast', 'Rti_Imaging', 'Rti_MajorSurgeries', 'Rti_MedicalIntervention', 'Rti_MinorSurgeries']
 
@@ -3007,7 +3007,6 @@ class RTIPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 )
             else:
                 NN_model = self.sim.modules['RTI'].RTI_emulator.sample(len(selected_for_rti))
-            print("I have sampled ==================")
             # HS USAGE
             # Get the total number of different types of appts that will be accessed as a result of this polling event and add to rolling count.
             for column in self.sim.modules['RTI'].HS_Use_Type:
