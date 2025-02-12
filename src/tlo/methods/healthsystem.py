@@ -640,6 +640,10 @@ class HealthSystem(Module):
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
 
+        # If we're using mode 1, HSI event priorities are ignored - all events will have the same priority
+        if self.mode_appt_constraints == 1:
+            self.ignore_priority = True
+
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
@@ -1292,9 +1296,7 @@ class HealthSystem(Module):
         # If ignoring the priority in scheduling, then over-write the provided priority information with 0.
         if self.ignore_priority:
             priority = 0
-
-        # Use of "" not ideal, see note in initialise_population
-        if self.priority_policy != "":
+        elif self.priority_policy != "":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
