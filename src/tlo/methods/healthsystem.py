@@ -1,6 +1,7 @@
 import datetime
 import heapq as hp
 import itertools
+import math
 import re
 import warnings
 from collections import Counter, defaultdict
@@ -498,6 +499,10 @@ class HealthSystem(Module):
 
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
+
+        # A reusable store for holding squeeze factors in get_squeeze_factors()
+        self._get_squeeze_factors_store_grow = 500
+        self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -1687,23 +1692,32 @@ class HealthSystem(Module):
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the load-factor of the officer with the largest time requirement for that
         # event (or zero if event has an empty footprint)
-        squeeze_factor_per_hsi_event = []
-        for footprint in footprints_per_event:
-            if len(footprint) > 0:
+
+        # Instead of repeatedly creating lists for squeeze factors, we reuse a numpy array
+        # If the current store is too small, replace it
+        if len(footprints_per_event) > len(self._get_squeeze_factors_store):
+            # The new array size is a multiple of `grow`
+            new_size = math.ceil(len(footprints_per_event) / self._get_squeeze_factors_store_grow) * self._get_squeeze_factors_store_grow
+            self._get_squeeze_factors_store = np.zeros(new_size)
+
+        for i, footprint in enumerate(footprints_per_event):
+            if footprint:
                 # If any of the required officers are not available at the facility, set overall squeeze to inf
-                require_missing_officer = any([load_factor[officer] == float('inf') for officer in footprint])
+                require_missing_officer = False
+                for officer in footprint:
+                    if load_factor[officer] == float('inf'):
+                        require_missing_officer = True
+                        # No need to check the rest
+                        break
 
                 if require_missing_officer:
-                    squeeze_factor_per_hsi_event.append(float('inf'))
+                    self._get_squeeze_factors_store[i] = np.inf
                 else:
-                    squeeze_factor_per_hsi_event.append(max(load_factor[footprint.most_common()[0][0]], 0.))
+                    self._get_squeeze_factors_store[i] = max(load_factor[footprint.most_common()[0][0]], 0.)
             else:
-                squeeze_factor_per_hsi_event.append(0.0)
-        squeeze_factor_per_hsi_event = np.array(squeeze_factor_per_hsi_event)
+                self._get_squeeze_factors_store[i] = 0.0
 
-        assert (squeeze_factor_per_hsi_event >= 0).all()
-
-        return squeeze_factor_per_hsi_event
+        return self._get_squeeze_factors_store
 
     def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None):
         """
