@@ -27,6 +27,7 @@ malawi_admin1 = gpd.read_file(
     "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm1_nso_20181016.shp")
 malawi_admin2 = gpd.read_file(
     "/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
+water_bodies = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp")
 
 difference_lat = lat_data[1] - lat_data[0]  # as is a grid, the difference is the same for all sequential coordinates
 difference_long = long_data[1] - long_data[0]
@@ -52,6 +53,9 @@ colors = cm.get_cmap("tab20", 20)
 # Corrected part for processing model files
 nc_file_directory = "/path/to/your/nc_files"  # Define this correctly
 fig, ax = plt.subplots(figsize=(10, 10))  # Ensure you create the axis before plotting
+water_bodies.plot(ax=ax, facecolor="none", edgecolor="#999999", linewidth=0.5, hatch="xxx")
+water_bodies.plot(ax=ax, facecolor="none",edgecolor='#1C6E8C', alpha=0.4, linewidth=1)
+
 for idx, file in enumerate(glob.glob(os.path.join(nc_file_directory, "*.nc"))):
     data_per_model = Dataset(file, mode='r')
     pr_data_model = data_per_model.variables['pr'][:]  # in kg m-2 s-1 = mm s-1 x 86400 to get to day
