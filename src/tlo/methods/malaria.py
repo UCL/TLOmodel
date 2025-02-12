@@ -417,11 +417,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_lookup = (
-                df[_where]
-                .set_index(['district_num_of_residence', 'ma_age_edited'])
-                .index
-            )
+            district_age_lookup = pd.MultiIndex.from_frame(df.loc[_where, ['district_num_of_residence', 'ma_age_edited']])
+
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it's the same as the original population dataframe for these individuals
@@ -1582,7 +1579,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         tmp = len(
             df.loc[(df.ma_date_symptoms > (now - DateOffset(months=self.repeat)))]
         )
-        pop = len(df[df.is_alive])
+        pop = sum(df.is_alive)
 
         inc_1000py = ((tmp / pop) * 1000) if pop else 0
 
@@ -1594,7 +1591,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
 
-        pop2_10 = len(df[df.is_alive & (df.age_years.between(2, 10))])
+        pop2_10 = sum(df.is_alive & (df.age_years.between(2, 10)))
         inc_1000py_2_10 = ((tmp2 / pop2_10) * 1000) if pop2_10 else 0
 
         inc_1000py_hiv = 0  # if running without hiv/tb
@@ -1643,7 +1640,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # population size - children
-        child2_10_pop = len(df[df.is_alive & (df.age_years.between(2, 10))])
+        child2_10_pop = sum(df.is_alive & (df.age_years.between(2, 10)))
 
         # prevalence in children aged 2-10
         child_prev = child2_10_inf / child2_10_pop if child2_10_pop else 0
@@ -1655,7 +1652,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'severe'))
                 ]
         )
-        pop2 = len(df[df.is_alive])
+        pop2 = sum(df.is_alive)
         prev_clin = total_clin / pop2
 
         prev = {
@@ -1754,9 +1751,9 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
         infected = (
-            df[df.is_alive & df.ma_is_infected].groupby('district_num_of_residence').size()
+            df.district_num_of_residence[df.is_alive & df.ma_is_infected].value_counts()
         )
-        pop = df[df.is_alive].groupby('district_num_of_residence').size()
+        pop = df.district_num_of_residence[df.is_alive].value_counts()
         prev = infected / pop
         prev_ed = prev.fillna(0)
         assert prev_ed.all() >= 0  # checks
