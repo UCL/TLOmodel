@@ -640,6 +640,10 @@ class HealthSystem(Module):
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
 
+        # If we're using mode 1, HSI event priorities are ignored - all events will have the same priority
+        if self.mode_appt_constraints == 1:
+            self.ignore_priority = True
+
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
@@ -1292,9 +1296,7 @@ class HealthSystem(Module):
         # If ignoring the priority in scheduling, then over-write the provided priority information with 0.
         if self.ignore_priority:
             priority = 0
-
-        # Use of "" not ideal, see note in initialise_population
-        if self.priority_policy != "":
+        elif self.priority_policy != "":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
@@ -1404,7 +1406,7 @@ class HealthSystem(Module):
 
         # Check that non-empty treatment ID specified
         assert hsi_event.TREATMENT_ID != ''
-        
+
         # Check that the target of the HSI is not the entire population
         assert not isinstance(hsi_event.target, tlo.population.Population)
 
@@ -2200,71 +2202,50 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def _is_last_day_of_the_month(date):
         return date.month != (date + pd.DateOffset(days=1)).month
 
-    def _get_events_due_today(self,) -> Tuple[List, List]:
-        """Interrogate the HSI_EVENT queue object to remove from it the events due today, and to return these in two
-        lists:
-         * list_of_individual_hsi_event_tuples_due_today
+    def _get_events_due_today(self) -> List:
+        """Interrogate the HSI_EVENT queue to remove and return the events due today
         """
-        _list_of_individual_hsi_event_tuples_due_today = list()
-        _list_of_events_not_due_today = list()
+        due_today = list()
 
-        # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
-        # person IDs as  one-off operation, exploiting the improved efficiency of
-        # boolean-indexing of a Series compared to row-by-row access. From benchmarks
-        # converting Series to list before converting to set is ~2x more performant than
-        # direct conversion to set, while checking membership of set is ~10x quicker
-        # than checking membership of Pandas Index object and ~25x quicker than checking
-        # membership of list
-        alive_persons = set(
-            self.sim.population.props.index[self.sim.population.props.is_alive].to_list()
-        )
+        is_alive = self.sim.population.props.is_alive
 
         # Traverse the queue and split events into the two lists (due-individual, not_due)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
-            next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-            # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
+            event = hp.heappop(self.module.HSI_EVENT_QUEUE)
 
-            event = next_event_tuple.hsi_event
-
-            if self.sim.date > next_event_tuple.tclose:
+            if self.sim.date > event.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
-                      hsi_event=event,
-                      priority=next_event_tuple.priority
+                      hsi_event=event.hsi_event,
+                      priority=event.priority
                      )
 
-            elif event.target not in alive_persons:
+            elif not is_alive[event.hsi_event.target]:
                 # if the person who is the target is no longer alive, do nothing more,
-                # i.e. remove from heapq
-                pass
+                # i.e. remove from queue
+                continue
 
-            elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen)
-                hp.heappush(_list_of_events_not_due_today, next_event_tuple)
+            elif self.sim.date < event.topen:
+                # The event is not yet due (before topen). In mode 1, all events have the same priority and are,
+                # therefore, sorted by date. Put this event back and exit.
+                hp.heappush(self.module.HSI_EVENT_QUEUE, event)
+                break
 
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today
                 # NB. These list is ordered by priority and then due date
-                _list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
+                due_today.append(event)
 
-        # add events from the _list_of_events_not_due_today back into the queue
-        while len(_list_of_events_not_due_today) > 0:
-            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(_list_of_events_not_due_today))
-
-        return _list_of_individual_hsi_event_tuples_due_today
+        return due_today
 
     def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
             # Get the events that are due today:
-            (
-                list_of_individual_hsi_event_tuples_due_today
-             ) = self._get_events_due_today()
+            list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
-            if (
-                (len(list_of_individual_hsi_event_tuples_due_today) == 0)
-            ):
+            if not list_of_individual_hsi_event_tuples_due_today:
                 break
 
             # For each individual level event, check whether the equipment it has already declared is available. If it
@@ -2938,9 +2919,39 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
+        health_system: HealthSystem = self.module
+        preswitch_mode = health_system.mode_appt_constraints
 
         # Change mode_appt_constraints
-        self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
+        health_system.mode_appt_constraints = health_system.parameters["mode_appt_constraints_postSwitch"]
+
+        # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
+        if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
+            # A place to store events with updated priority
+            updated_events: List[HSIEventQueueItem|None] = [None] * len(health_system.HSI_EVENT_QUEUE)
+            offset = 0
+
+            # For each HSI event in the queue
+            while health_system.HSI_EVENT_QUEUE:
+                event = hp.heappop(health_system.HSI_EVENT_QUEUE)
+
+                # Get its priority
+                enforced_priority = health_system.enforce_priority_policy(event.hsi_event)
+
+                # If it's different
+                if event.priority != enforced_priority:
+                    # Wrap it up with the new priority - everything else is the same
+                    event = HSIEventQueueItem(enforced_priority, event.topen, event.rand_queue_counter, event.queue_counter, event.tclose, event.hsi_event)
+
+                # Save it
+                updated_events[offset] = event
+                offset += 1
+
+            # Add all the events back in the event queue
+            while updated_events:
+                hp.heappush(health_system.HSI_EVENT_QUEUE, updated_events.pop())
+
+            del updated_events
 
         logger.info(key="message",
                     data=f"Switched mode at sim date: "
