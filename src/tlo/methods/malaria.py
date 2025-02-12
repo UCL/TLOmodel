@@ -1576,9 +1576,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # infected in the last time-step, clinical and severe cases only
         # incidence rate per 1000 person-years
         # include those cases that have died in the case load
-        tmp = len(
-            df.loc[(df.ma_date_symptoms > (now - DateOffset(months=self.repeat)))]
-        )
+        tmp = sum(df.ma_date_symptoms > (now - DateOffset(months=self.repeat)))
         pop = sum(df.is_alive)
 
         inc_1000py = ((tmp / pop) * 1000) if pop else 0
