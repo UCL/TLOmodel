@@ -50,13 +50,17 @@ births_results = extract_results(
         ),
         do_scaling=True
     )
+
+print(births_results)
 births_results = births_results.groupby(by=births_results.index).sum()
 births_results = births_results.replace({0: np.nan})
 
 births_model = summarize(births_results, collapse_columns=True)
 births_model.columns = ['Model_' + col for col in births_model.columns]
 births_model_subset = births_model.iloc[15:].copy() # don't want 2010-2024
-#
+
+print("historical:", births_model.iloc[1:15, 1].sum())
+births_model_subset_historical = births_model.iloc[1:15, 1].sum()
 # Load map of Malawi for later
 file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
 dataset = Dataset(file_path_historical_data, mode='r')
@@ -78,8 +82,6 @@ difference_lat = lat_data[1] - lat_data[0]
 difference_long = long_data[1] - long_data[0]
 
 # # Get expected disturbance from the model
-
-results_list = []
 
 results_list = []
 
@@ -485,15 +487,56 @@ plt.show()
 
 
 
+# #### Now do number of births based on the TLO model (2010 - 2024) and 2018 census
+
+historical_predictions_negative =  historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
+historical_predictions_negative = historical_predictions_negative[historical_predictions_negative['Year'] <= 2024]
+        # total disruptions
+historical_predictions_negative_sum = historical_predictions_negative.groupby('Year').sum().reset_index()
+historical_predictions_negative_sum['Percentage_Difference'] = (
+                historical_predictions_negative_sum['Difference_in_Expectation'] / historical_predictions_negative_sum[
+                'Predicted_No_Weather_Model'])
+        # Match birth results and predictions
+matching_rows_historical = min(len(births_model_subset_historical), len(historical_predictions_negative_sum))
+multiplied_values = births_model_subset_historical.head(matching_rows_historical).iloc[1:15, 1].values * historical_predictions_negative_sum[
+            'Percentage_Difference'].head(matching_rows_historical).values * 1.4 # 1.4 is conversion from births to pregnacnies
+
+# Check for negative values (missed cases?)
+negative_sum_historical = np.sum(multiplied_values[multiplied_values < 0])
+
+# now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
+filtered_predictions_historical = historical_predictions_negative[historical_predictions_negative['Precipitation'] >= precipitation_threshold]
+filtered_predictions_sum_historical = filtered_predictions_historical.groupby('Year').sum().reset_index()
+percent_due_to_extreme_historical = filtered_predictions_sum_historical['Difference_in_Expectation'] / historical_predictions_negative_sum['Predicted_No_Weather_Model']
+print(percent_due_to_extreme_historical)
+multiplied_values_extreme_precip_historical = births_model_subset_historical.head(matching_rows_historical).iloc[:, 1].values * percent_due_to_extreme_historical.head(matching_rows).values * 1.4
+negative_sum_extreme_precip_historical = np.sum(multiplied_values_extreme_precip_historical[multiplied_values_extreme_precip_historical < 0])
+result_df_historical = pd.DataFrame({
+            "Negative_Sum": [negative_sum_historical],
+            "Negative_Percentage": [negative_sum_historical / (births_model_subset_historical['Model_mean'].sum() * 1.4) * 100],
+            "Extreme_Precip": [negative_sum_extreme_precip_historical],
+            "Extreme_Precip_Percentage": [(negative_sum_extreme_precip_historical  / negative_sum_historical) * 100]
+        })
+
+# Save multiplied values by model and scenario
+multiplied_values_df_historical = pd.DataFrame({
+            'Year': year_range[:matching_rows],
+            'Scenario': scenario,
+            'Model_Type': model_type,
+            'Multiplied_Values': multiplied_values,
+            'Multiplied_Values_extreme_precip': multiplied_values_extreme_precip
+
+        })
+multiplied_values_df_historical.to_csv(results_folder_to_save/f'multiplied_values_historical.csv', index=False)
+
+print(result_df_historical)
+result_df_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_historical.csv', index=False)
+
+
 # Define file paths
 monthly_reporting_file = "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv"
 five_day_max_file = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv"
 precipitation_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL"
-
-# Define scenarios, models, and services
-scenarios = ["ssp126", "ssp245", "ssp585"]
-model_types = ["lowest", "mean", "highest"]
-services = ["ANC"]  # Only ANC is used
 
 def filter_top_20_percent(values):
     """Filter values to keep only those in the top 80th percentile."""

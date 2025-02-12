@@ -252,7 +252,6 @@ facility_flattened = list(range(len(monthly_reporting_by_facility.columns))) * l
 
 # Flatten data
 y = monthly_reporting_by_facility.values.flatten()
-#y[np.isnan(y)] = 0 # if all of these are expected to report, then can I assume all 0?
 if np.nanmin(y) < 1:
      y += 1  # Shift to ensure positivity as taking log
 y[y > 4e3] = np.nan
@@ -565,27 +564,29 @@ ax.axhline(y=0, color='black', linestyle='--', linewidth=1)
 
 y_max = max(abs(data_weather_predictions_grouped['difference'])) + 50
 ax.set_ylim(-y_max, y_max)
+# Separate positive and negative values
+positive_mask = data_weather_predictions_grouped['difference'] >= 0
+negative_mask = ~positive_mask
 
-ax.stem(data_weather_predictions_grouped['Year_Month'],
-        data_weather_predictions_grouped['difference'],
-        linefmt='gray', markerfmt='o', basefmt="black")
-
+ax.stem(data_weather_predictions_grouped['Year_Month'][positive_mask],
+        data_weather_predictions_grouped['difference'][positive_mask],
+        linefmt='#1C6E8C', markerfmt='o', basefmt="black")
+ax.stem(data_weather_predictions_grouped['Year_Month'][negative_mask],
+        data_weather_predictions_grouped['difference'][negative_mask],
+        linefmt='#823038', markerfmt='o', basefmt="black")
 ax.set_xlabel('Year-Month')
 ax.set_ylabel(f'Difference in Predicted {service} Services (Without vs. With Precipitation)')
-
-# Ensure 'Year_Month' is properly formatted as strings
-ax.set_xticks(data_weather_predictions_grouped['Year_Month'])
-ax.set_xticklabels(data_weather_predictions_grouped['Year_Month'], rotation=45, ha='right')
-
-# Highlight Cyclone Freddy impact in 2023
-ax.axvline(x='2023-03', color='#9AC4F8', linestyle='--', linewidth=1, label="Cyclone Freddy")
-
+january_ticks = data_weather_predictions_grouped[data_weather_predictions_grouped['Year_Month'].str.endswith('-1')]
+print(january_ticks)
+ax.set_xticks(january_ticks['Year_Month'])
+ax.set_xticklabels(january_ticks['Year_Month'].str[:4], rotation=45, ha='right')
+ax.axvline(x='2023-3', color='#CDC6AE', linestyle='--', linewidth=1,  alpha=0.3, label="Cyclone Freddy")
+ax.axvline(x='2023-2', color='#CDC6AE', linestyle='--', linewidth=1, alpha=0.3)
+ax.axvspan('2023-2', '2023-3', color='#CDC6AE', alpha=0.3)
 plt.tight_layout()
-plt.legend()
-plt.show()
 plt.savefig( f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/{service}_disruptions_difference_historical_models.png')
-
 plt.show()
+
 ## save historical predictions
 full_data_weather_predictions_historical = pd.DataFrame({
     'Year': np.array(year_flattened)[mask_all_data],
