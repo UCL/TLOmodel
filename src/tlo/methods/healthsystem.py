@@ -2919,8 +2919,8 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-        preswitch_mode = self.module.mode_appt_constraints
         health_system: HealthSystem = self.module
+        preswitch_mode = health_system.mode_appt_constraints
 
         # Change mode_appt_constraints
         health_system.mode_appt_constraints = health_system.parameters["mode_appt_constraints_postSwitch"]
