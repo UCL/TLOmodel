@@ -8,7 +8,7 @@ from statsmodels.genmod.generalized_linear_model import GLM
 from sklearn.preprocessing import StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.feature_selection import SelectKBest, f_regression
-
+import scipy.stats as stats
 ANC = True
 Inpatient = False
 if ANC:
@@ -609,6 +609,26 @@ full_data_weather_predictions_historical = pd.DataFrame({
 })
 full_data_weather_predictions_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
 
+############## LR #########################################
+
+# Extract log-likelihood values
+log_likelihood_null = results.llf  # Null model
+log_likelihood_full = results_of_weather_model.llf  # Full model
+
+LR_stat = -2 * (log_likelihood_null - log_likelihood_full)
+df = len(results_of_weather_model.params) - len(results.params)
+p_value = 1 - stats.chi2.cdf(LR_stat, df)
+
+# Print results
+print(f"Likelihood Ratio Test Statistic: {LR_stat:.4f}")
+print(f"Degrees of Freedom: {df}")
+print(f"P-value: {p_value:.4f}")
+
+# Interpretation
+if p_value < 0.05:
+    print("The full model is significantly better than the null model (p < 0.05).")
+else:
+    print("No significant improvement by adding weather variables.")
 
 ############### ADD IN CMIP DATA ###########################
 def get_weather_data(ssp_scenario, model_type):
