@@ -1361,44 +1361,31 @@ class HealthSystem(Module):
     # This is where the priority policy is enacted
     def enforce_priority_policy(self, hsi_event) -> int:
         """Return priority for HSI_Event based on policy under consideration """
+        priority_ranking = self.priority_rank_dict
 
-        pr = self.priority_rank_dict
-        pdf = self.sim.population.props
-
-        if hsi_event.TREATMENT_ID in pr:
-            _priority_ranking = pr[hsi_event.TREATMENT_ID]['Priority']
-
-            # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
-            # don't check remaining.
-
-            # Look up relevant attributes for HSI_Event's target
-            list_targets = [_t[0] for _t in self.list_fasttrack]
-            target_attributes = pdf.loc[hsi_event.target, list_targets]
-
-            # Warning: here assuming that the first fast-tracking eligibility encountered
-            # will determine the priority to be used. If different fast-tracking channels have
-            # different priorities for the same treatment, this will be a problem!
-            # First item in Lists is age-related, therefore need to invoke different logic.
-            if (
-                (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
-                and (target_attributes['age_exact_years'] <= 5)
-            ):
-                return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
-
-            # All other attributes are looked up the same way, so can do this in for loop
-            for i in range(1, len(self.list_fasttrack)):
-                if (
-                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > - 1)
-                    and target_attributes[i]
-                ):
-                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
-
-            return _priority_ranking
-
-        else:  # If treatment is not ranked in the policy, issue a warning and assign priority=3 by default
-            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID \n"
-                                      f"{hsi_event.TREATMENT_ID}"))
+        if hsi_event.TREATMENT_ID not in priority_ranking:
+            # If treatment is not ranked in the policy, issue a warning and assign priority=3 by default
+            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID {hsi_event.TREATMENT_ID}"))
             return self.lowest_priority_considered
+
+        # Check whether fast-tracking routes are available for this treatment.
+        # If person qualifies for one don't check remaining.
+        # Warning: here assuming that the first fast-tracking eligibility encountered
+        # will determine the priority to be used. If different fast-tracking channels have
+        # different priorities for the same treatment, this will be a problem!
+        # First item in Lists is age-related, therefore need to invoke different logic.
+        df = self.sim.population.props
+        treatment_ranking = priority_ranking[hsi_event.TREATMENT_ID]
+        for attribute, fasttrack_code in self.list_fasttrack:
+            if treatment_ranking[fasttrack_code] > -1:
+                if attribute == 'age_exact_years':
+                    if df.at[hsi_event.target, attribute] <= 5:
+                        return treatment_ranking[fasttrack_code]
+                else:
+                    if df.at[hsi_event.target, attribute]:
+                        return treatment_ranking[fasttrack_code]
+
+        return treatment_ranking["Priority"]
 
     def check_hsi_event_is_valid(self, hsi_event):
         """Check the integrity of an HSI_Event."""
