@@ -60,19 +60,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
     }
 
     PARAMETERS = {
-        # prevalence of wasting by age group
-        'prev_WHZ_distribution_age_0_5mo': Parameter(
-            Types.LIST, 'distribution of WHZ among less than 6 months of age in 2015'),
-        'prev_WHZ_distribution_age_6_11mo': Parameter(
-            Types.LIST, 'distribution of WHZ among 6 months and 1 year of age in 2015'),
-        'prev_WHZ_distribution_age_12_23mo': Parameter(
-            Types.LIST, 'distribution of WHZ among 1 year olds in 2015'),
-        'prev_WHZ_distribution_age_24_35mo': Parameter(
-            Types.LIST, 'distribution of WHZ among 2 year olds in 2015'),
-        'prev_WHZ_distribution_age_36_47mo': Parameter(
-            Types.LIST, 'distribution of WHZ among 3 year olds in 2015'),
-        'prev_WHZ_distribution_age_48_59mo': Parameter(
-            Types.LIST, 'distribution of WHZ among 4 year olds  in 2015'),
+        # initial prevalence of wasting by age group
+        'prev_init_any_by_agegp': Parameter(
+            Types.LIST, 'initial any wasting (WHZ < -2) prevalence in 2010 by age groups'),
+        'prev_init_sev_by_agegp': Parameter(
+            Types.LIST, 'initial severe wasting (WHZ < -3) prevalence in 2010 by age groups'),
         # effect of risk factors on wasting prevalence
         'or_wasting_hhwealth_Q5': Parameter(
             Types.REAL, 'odds ratio of wasting if household wealth is poorest Q5, ref group Q1'),
@@ -250,9 +242,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             _agrp: copy.deepcopy(blank_length_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
         self.wasting_length_tracker = copy.deepcopy(self.wasting_length_tracker_blank)
 
-        self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
-
         self.person_of_interest_id = 3219 # debugging
+
+        # define age groups
+        self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
+        self.age_gps_range_mo = []
+        for low_bound_mos, high_bound_mos in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
+            agegp_i = f'{low_bound_mos}_{high_bound_mos}mo'
+            self.age_gps_range_mo.append(agegp_i)
 
     def read_parameters(self, data_folder):
         """
@@ -399,37 +396,36 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def get_prob_severe_wasting_among_wasted(self, agegp: str) -> Union[float, int]:
         """
-        This function will calculate the WHZ scores by categories and return probability of severe wasting
-        for those with wasting status
-        :param agegp: age grouped in months
-        :return: probability of severe wasting among all wasting cases
+        This function will return the probability of severe wasting for those with wasting status within the agegp
+        :param agegp: age group defined be range in months
+        :return: probability of severe wasting among all wasting cases in the agegp
         """
-        # generate random numbers from N(mean, sd)
-        mean, stdev = self.parameters[f'prev_WHZ_distribution_age_{agegp}']
-        whz_normal_distribution = norm(loc=mean, scale=stdev)
+        # determine age group
+        i = self.age_gps_range_mo.index(agegp)
 
-        # get probability of any wasting: WHZ < -2
-        probability_less_than_minus2sd = 1 - whz_normal_distribution.sf(-2)
+        # get probability of any wasting (WHZ < -2) for the age group
+        probability_less_than_minus2sd = self.parameters['prev_init_any_by_agegp'][i]
 
         # get probability of severe wasting: WHZ < -3
-        probability_less_than_minus3sd = 1 - whz_normal_distribution.sf(-3)
+        probability_less_than_minus3sd = self.parameters['prev_init_sev_by_agegp'][i]
+        print(f"orig init prev sev wast: {agegp=}, {probability_less_than_minus3sd=}")
 
         # make WHZ < -2 as the 100% and get the adjusted probability of severe wasting within overall wasting
-        # return the probability of severe wasting among all wasting cases
+        # return the probability of severe wasting among all wasting cases for the agegp
         return probability_less_than_minus3sd / probability_less_than_minus2sd
+
 
     def get_odds_wasting(self, agegp: str) -> Union[float, int]:
         """
         This function will calculate the WHZ scores by categories and return odds of wasting
         :param agegp: age grouped in months
-        :return: odds of wasting among all children under 5
+        :return: odds of wasting among all children of the agegp
         """
-        # generate random numbers from N(mean, sd)
-        mean, stdev = self.parameters[f'prev_WHZ_distribution_age_{agegp}']
-        whz_normal_distribution = norm(loc=mean, scale=stdev)
+        # determine age group
+        i = self.age_gps_range_mo.index(agegp)
 
-        # get probability of any wasting: WHZ < -2
-        probability_less_than_minus2sd = 1 - whz_normal_distribution.sf(-2)
+        # get probability of any wasting (WHZ < -2) for the age group
+        probability_less_than_minus2sd = self.parameters['prev_init_any_by_agegp'][i]
 
         # convert probability of wasting to odds and return the odds of wasting
         return probability_less_than_minus2sd / (1 - probability_less_than_minus2sd)
