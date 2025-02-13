@@ -138,6 +138,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     Calculate the extra budget allocated, extra staff by cadre, return on investment and marginal productivity by cadre.
     """
     TARGET_PERIOD = the_target_period
+    the_cause = 'TB (non-AIDS)'  # the cause to investigate for yearly DALYs
+    # TB (non-AIDS), Transport Injuries, Lower respiratory infections, Transport Injuries
 
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
@@ -225,13 +227,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
         results from runs that crashed mid-way through the simulation).
         """
-        years_needed = [i.year for i in TARGET_PERIOD]
+        period = (Date(2010, 1, 1), Date(2034, 12, 31))
+        years_needed = [i.year for i in period]
         assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
         _df = (_df.loc[_df.year.between(*years_needed)]
                .drop(columns=['date', 'sex', 'age_range'])
                .groupby('year').sum()
                .sum(axis=1)
                )
+        return _df
+
+    def get_num_dalys_by_one_cause_yearly(_df, one_cause=the_cause):
+        """Return total number of DALYS by TB (Stacked) for every year in simulation period 2010-2034.
+        Throw error if not a record for every year in the period (to guard against inadvertently using
+        results from runs that crashed mid-way through the simulation).
+        """
+        period = (Date(2010, 1, 1), Date(2034, 12, 31))
+        years_needed = [i.year for i in period]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        _df = (_df.loc[_df.year.between(*years_needed)]
+               .drop(columns=['date', 'sex', 'age_range'])
+               .groupby('year').sum()
+               )
+        _df = _df[one_cause]
         return _df
 
     def get_num_dalys_by_cause(_df):
@@ -740,13 +758,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    # num_dalys_yearly = extract_results(
-    #     results_folder,
-    #     module='tlo.methods.healthburden',
-    #     key='dalys_stacked',
-    #     custom_generate_series=get_num_dalys_yearly,
-    #     do_scaling=True
-    # ).pipe(set_param_names_as_column_index_level_0)
+    num_dalys_yearly = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys_yearly,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    num_dalys_by_one_cause_yearly = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys_by_one_cause_yearly,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
 
     num_dalys_by_cause = extract_results(
         results_folder,
@@ -879,14 +905,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_by_cause_summarized = summarize(num_dalys_by_cause, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+    num_dalys_by_cause_summarized.to_csv(output_folder / 'num_dalys_by_cause_summarized.csv')
     num_dalys_by_cause_group_summarized = summarize(num_dalys_by_cause_group, only_mean=True
                                                     ).T.reindex(param_names).reindex(num_dalys_summarized.index)
+    num_dalys_by_cause_group_summarized.to_csv(output_folder / 'num_dalys_by_cause_group_summarized.csv')
 
-    # num_dalys_yearly_summarized = (summarize(num_dalys_yearly)
-    #                                .stack([0, 1])
-    #                                .rename_axis(['year', 'scenario', 'stat'])
-    #                                .reset_index(name='count'))
-    #
+    num_dalys_yearly_summarized = (summarize(num_dalys_yearly)
+                                   .stack([0, 1])
+                                   .rename_axis(['year', 'scenario', 'stat'])
+                                   .reset_index(name='count'))
+    num_dalys_yearly_summarized.to_csv(output_folder / 'num_dalys_yearly_summarized.csv')
+
+    num_dalys_by_one_cause_yearly_summarized = (summarize(num_dalys_by_one_cause_yearly)
+                                                .stack([0, 1])
+                                                .rename_axis(['year', 'scenario', 'stat'])
+                                                .reset_index(name='count'))
+    name_of_data = f'num_dalys_by_{the_cause}_yearly_summarized.csv'
+    num_dalys_by_one_cause_yearly_summarized.to_csv(output_folder / name_of_data)
+
     # num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
@@ -1027,6 +1063,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+
+    # num_dalys_by_cause_group_averted_percent = summarize(
+    #     -1.0 * find_difference_relative_to_comparison_dataframe(
+    #         num_dalys_by_cause_group,
+    #         comparison='s_0',
+    #         scaled=True
+    #     ),
+    #     only_mean=True
+    # ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
 
     num_dalys_by_cause_averted_CNP = num_dalys_by_cause_averted.loc['s_22', :].sort_values(ascending=False)
     # num_dalys_by_cause_averted_CP = num_dalys_by_cause_averted.loc['s_11', :].sort_values(ascending=False)
@@ -1446,8 +1491,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
     # get scenario color
     # scenario_groups = scenario_grouping_coloring(by='effect')
-    # scenario_groups = scenario_grouping_coloring(by='allocation_alt')
-    scenario_groups = scenario_grouping_coloring(by='allocation')
+    scenario_groups = scenario_grouping_coloring(by='allocation_alt')
+    # scenario_groups = scenario_grouping_coloring(by='allocation')
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups[1].keys():
@@ -1680,6 +1725,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     data_to_plot.plot.scatter(x='strategy', y='predicted', color='orange', label='predicted', ax=ax)
     ax.set_ylabel('DALYs averted %', fontsize='small')
     ax.set(xlabel=None)
+    ax.grid(axis="both")
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
@@ -1801,34 +1847,67 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # fig.show()
     # plt.close(fig)
 
-    # # plot yearly DALYs for best 9 scenarios
-    # name_of_plot = f'Yearly DALYs, {target_period()}'
-    # fig, ax = plt.subplots(figsize=(9, 6))
-    # best_scenarios = list(num_dalys_summarized.index[0:9]) + ['s_1']
-    # for s in best_scenarios:
-    #     data = (num_dalys_yearly_summarized.loc[num_dalys_yearly_summarized.scenario == s, :]
-    #             .drop(columns='scenario')
-    #             .pivot(index='year', columns='stat')
-    #             .droplevel(0, axis=1))
-    #     ax.plot(data.index, data['mean'] / 1e6, label=substitute_labels[s], color=best_scenarios_color[s], linewidth=2)
-    #     # ax.fill_between(data.index.to_numpy(),
-    #     #                 (data['lower'] / 1e6).to_numpy(),
-    #     #                 (data['upper'] / 1e6).to_numpy(),
-    #     #                 color=best_scenarios_color[s],
-    #     #                 alpha=0.2)
-    # ax.set_title(name_of_plot)
-    # ax.set_ylabel('(Millions)')
-    # ax.set_xticks(data.index)
-    # legend_labels = [substitute_labels[v] for v in best_scenarios]
-    # legend_handles = [plt.Rectangle((0, 0), 1, 1,
-    #                                 color=best_scenarios_color[v]) for v in best_scenarios]
-    # ax.legend(legend_handles, legend_labels,
-    #           loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
-    #           title='Best scenario group')
-    # fig.tight_layout()
-    # fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-    # fig.show()
-    # plt.close(fig)
+    # plot yearly DALYs for s_0, s_1, s_2, s_22 scenarios
+    name_of_plot = f'Yearly DALYs, {target_period()}'
+    fig, ax = plt.subplots(figsize=(9, 6))
+    scenarios_to_plot = ['s_0', 's_1', 's_22', 's_2']
+    scenarios_color = {'s_0': 'red', 's_1': 'yellow', 's_22': 'blue', 's_2': 'green'}
+    for s in scenarios_to_plot:
+        data = (num_dalys_yearly_summarized.loc[num_dalys_yearly_summarized.scenario == s, :]
+                .drop(columns='scenario')
+                .pivot(index='year', columns='stat')
+                .droplevel(0, axis=1))
+        ax.plot(data.index, data['mean'] / 1e6, label=substitute_labels[s], color=scenarios_color[s], linewidth=2)
+        ax.fill_between(data.index.to_numpy(),
+                        (data['lower'] / 1e6).to_numpy(),
+                        (data['upper'] / 1e6).to_numpy(),
+                        color=scenarios_color[s],
+                        alpha=0.2)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    ax.set_xticks(data.index)
+    ax.set_xticklabels(data.index, rotation=90)
+    legend_labels = [substitute_labels[v] for v in scenarios_to_plot]
+    legend_handles = [plt.Rectangle((0, 0), 1, 1,
+                                    color=scenarios_color[v]) for v in scenarios_to_plot]
+    ax.legend(legend_handles, legend_labels,
+              loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
+              title='selected scenarios')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # plot yearly DALYs for s_0, s_1, s_2, s_22 scenarios
+    name_of_plot = f'Yearly DALYs by {the_cause}, {target_period()}'  # TB (non-AIDS)
+    fig, ax = plt.subplots(figsize=(9, 6))
+    scenarios_to_plot = ['s_0', 's_1', 's_22', 's_2']
+    scenarios_color = {'s_0': 'red', 's_1': 'yellow', 's_22': 'blue', 's_2': 'green'}
+    for s in scenarios_to_plot:
+        data = (num_dalys_by_one_cause_yearly_summarized.loc[num_dalys_by_one_cause_yearly_summarized.scenario == s, :]
+                .drop(columns='scenario')
+                .pivot(index='year', columns='stat')
+                .droplevel(0, axis=1))
+        ax.plot(data.index, data['mean'] / 1e6, label=substitute_labels[s], color=scenarios_color[s], linewidth=2)
+        ax.fill_between(data.index.to_numpy(),
+                        (data['lower'] / 1e6).to_numpy(),
+                        (data['upper'] / 1e6).to_numpy(),
+                        color=scenarios_color[s],
+                        alpha=0.2)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    ax.set_xticks(data.index)
+    ax.set_xticklabels(data.index, rotation=90)
+    legend_labels = [substitute_labels[v] for v in scenarios_to_plot]
+    legend_handles = [plt.Rectangle((0, 0), 1, 1,
+                                    color=scenarios_color[v]) for v in scenarios_to_plot]
+    ax.legend(legend_handles, legend_labels,
+              loc='center left', fontsize='small', bbox_to_anchor=(1, 0.5),
+              title='selected scenarios')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
 
     # # plot yearly staff count (Clinical/Pharmacy/Nursing and Midwifery) for best 9 scenarios
     # best_cadres = ['Clinical', 'Pharmacy', 'Nursing_and_Midwifery']
@@ -2651,14 +2730,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
     # ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
     #             fmt=".", color="black", zorder=100)
-    ax.set_ylabel('Millions', fontsize='small')
-    ax.set_xlabel('Extra budget allocation scenario', fontsize='small')
+    ax.set_ylabel('Millions', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
 
     xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_averted.index]
-    xtick_colors = [scenario_color[v] for v in num_dalys_by_cause_averted.index]
-    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
-        xtick.set_color(color)  # color scenarios based on the group info
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+    # xtick_colors = [scenario_color[v] for v in num_dalys_by_cause_averted.index]
+    # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+    #     xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='medium')  # re-label scenarios
 
     fig.subplots_adjust(right=0.7)
     ax.legend(
@@ -2671,7 +2750,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ncol=1,
         reverse=True
     )
-    plt.title(name_of_plot)
+    plt.title(name_of_plot, fontsize='medium')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
