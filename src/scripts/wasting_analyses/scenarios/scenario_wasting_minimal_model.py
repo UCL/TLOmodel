@@ -86,9 +86,9 @@ class WastingAnalysis(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         # Setting up just one combination to be used
         base_death_rate_untreated_sam__draws = [0.05, 0.05]
-        mod_wast_incidence__coef = [0.7]
-        base_inc_rate_wasting_props_by_agegp = [0.0023,0.0099,0.0189,0.0102,0.003, 0.002]
-        progression_to_sev_wast__coef = [10]
+        mod_wast_incidence__coef = [1.0]
+        base_overall_mod_wast_inc_rate = 0.0023
+        progression_to_sev_wast__coef = [1.0]
         progression_severe_wasting_monthly_props_by_agegp =  [0.0027,0.0036,0.0079,0.0053,0.0025,0.002]
         prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.55]
 
@@ -101,8 +101,7 @@ class WastingAnalysis(BaseScenario):
         return {
             'Wasting': {
                 'base_death_rate_untreated_SAM': pars_combinations[draw_number][0],
-                'base_inc_rate_wasting_by_agegp': [s * pars_combinations[draw_number][1] for \
-                                                   s in base_inc_rate_wasting_props_by_agegp],
+                'base_overall_inc_rate_wasting': base_overall_mod_wast_inc_rate * pars_combinations[draw_number][1] ,
                 'progression_severe_wasting_monthly_by_agegp': [s * pars_combinations[draw_number][2] for \
                                                    s in progression_severe_wasting_monthly_props_by_agegp],
                 'prob_death_after_SAMcare': ((pars_combinations[draw_number][0] * pars_combinations[draw_number][3]) /

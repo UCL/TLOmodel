@@ -89,8 +89,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'or_wasting_SGA_and_preterm': Parameter(
             Types.REAL, 'odds ratio of wasting if born preterm and small for gestational age'),
         # incidence
-        'base_inc_rate_wasting_by_agegp': Parameter(
-            Types.LIST, 'List with baseline incidence rate of moderate wasting by age group'),
+        'base_overall_inc_rate_wasting': Parameter(
+            Types.REAL, 'base moderate wasting incidence rate (reference age group 0-5 months old)'),
+        'rr_inc_rate_wasting_by_agegp': Parameter(
+            Types.LIST, 'list with relative risks of moderate wasting incidence rate by age group, reference '
+                        'group 0-5 months old'),
         'rr_wasting_preterm_and_AGA': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and adequate for gestational age'),
         'rr_wasting_SGA_and_term': Parameter(
@@ -113,9 +116,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'duration_sam_to_death': Parameter(
             Types.REAL, 'duration of SAM till death if supposed to die due to SAM (days)'),
         'base_death_rate_untreated_SAM': Parameter(
-            Types.REAL, 'base death rate due to untreated SAM for age group of children <0.5 months old'),
+            Types.REAL, 'base death rate due to untreated SAM (reference age group <0.5 months old)'),
         'rr_death_rate_by_agegp': Parameter(
-            Types.LIST, 'list with relative risks of death due to untreated SAM by age gp, reference gp <0.5 months'),
+            Types.LIST, 'list with relative risks of death due to untreated SAM by age group, reference '
+                        'group <0.5 months old'),
         # MUAC distributions
         'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
             Types.REAL, 'proportion of individuals with severe wasting who have MUAC < 115 mm'),
@@ -280,18 +284,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         print("\nPARAMETERS:")
         print(f"{p['base_death_rate_untreated_SAM']=}")
-        print(f"mod_wast_incidence__coef={p['base_inc_rate_wasting_by_agegp'][0]/0.0023}")
+        print(f"mod_wast_incidence__coef={p['base_overall_inc_rate_wasting']/0.0023}")
         print(f"progression_to_sev_wast__coef={p['progression_severe_wasting_monthly_by_agegp'][0]/0.0027}")
         print("prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam="
               f"{p['prob_death_after_SAMcare']*(1-0.738)/p['base_death_rate_untreated_SAM']}")
         print("-----------")
-        print(f"{p['base_inc_rate_wasting_by_agegp']=}")
+        print(f"{p['base_overall_inc_rate_wasting']=}")
+        print("base inc rates by age group: "
+              f"{[s * p['base_overall_inc_rate_wasting'] for s in p['rr_inc_rate_wasting_by_agegp']]}")
         print(f"{p['progression_severe_wasting_monthly_by_agegp']=}")
         print(f"{p['prob_death_after_SAMcare']=}")
 
         # Adjust monthly severe wasting incidence to the duration of untreated moderate wasting
         p['progression_severe_wasting_by_agegp'] = \
             [s/30*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
+        print(f"{p['progression_severe_wasting_by_agegp']=}")
 
         # Set initial properties
         df.loc[df.is_alive, 'un_ever_wasted'] = False
@@ -327,9 +334,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             )]
 
             # apply prevalence of wasting and categorise into moderate (-3 <= WHZ < -2) or severe (WHZ < -3) wasting
-            wasted = self.wasting_models.get_wasting_prevalence(agegp=agegp).predict(
-                children_of_agegp, self.rng, False
-            )
+            wasted = \
+                self.wasting_models.get_wasting_prevalence(agegp=agegp, children_of_agegp=children_of_agegp).predict(
+                    children_of_agegp, self.rng, False
+                )
             probability_of_severe = self.get_prob_severe_wasting_among_wasted(agegp=agegp)
             for idx in children_of_agegp.index[wasted]:
                 wasted_category = self.rng.choice(['WHZ<-3', '-3<=WHZ<-2'], p=[probability_of_severe,
@@ -1975,13 +1983,14 @@ class WastingModels:
         # (natural history only, no interventions)
         self.severe_wasting_progression_lm = LinearModel.multiplicative(
             Predictor('age_exact_years',
-                      conditions_are_mutually_exclusive=True, conditions_are_exhaustive=False)
+                      conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
             .when('<0.5', self.params['progression_severe_wasting_by_agegp'][0])
             .when('.between(0.5,1, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][1])
             .when('.between(1,2, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][2])
             .when('.between(2,3, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][3])
             .when('.between(3,4, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][4])
             .when('.between(4,5, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][5])
+            .when('>=5', 0)
         )
 
         # get wasting incidence linear model
@@ -2004,7 +2013,7 @@ class WastingModels:
 
     def get_wasting_incidence(self) -> LinearModel:
         """
-        :return: a scaled wasting incidence linear model amongst young children
+        :return: the scaled multiplicative linear model of wasting incidence rate
         """
         df = self.module.sim.population.props
 
@@ -2012,44 +2021,46 @@ class WastingModels:
             # linear model to predict the incidence of wasting
             return LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                intercept,
+                intercept,  # base_overall_inc_rate_wasting
                 Predictor('age_exact_years',
                           conditions_are_mutually_exclusive=True, conditions_are_exhaustive=False)
-                .when('<0.5', self.params['base_inc_rate_wasting_by_agegp'][0])
-                .when('.between(0.5,1, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][1])
-                .when('.between(1,2, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][2])
-                .when('.between(2,3, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][3])
-                .when('.between(3,4, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][4])
-                .when('.between(4,5, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][5]),
+                .when('<0.5', self.params['rr_inc_rate_wasting_by_agegp'][0])
+                .when('.between(0.5,1, inclusive="left")', self.params['rr_inc_rate_wasting_by_agegp'][1])
+                .when('.between(1,2, inclusive="left")', self.params['rr_inc_rate_wasting_by_agegp'][2])
+                .when('.between(2,3, inclusive="left")', self.params['rr_inc_rate_wasting_by_agegp'][3])
+                .when('.between(3,4, inclusive="left")', self.params['rr_inc_rate_wasting_by_agegp'][4])
+                .when('.between(4,5, inclusive="left")', self.params['rr_inc_rate_wasting_by_agegp'][5]),
                 Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                  '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                  self.params['rr_wasting_SGA_and_term']),
                 Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                 '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                 '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
                                  self.params['rr_wasting_SGA_and_preterm']),
                 Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
-                                 '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                 '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
                                  self.params['rr_wasting_preterm_and_AGA']),
                 Predictor('li_wealth').apply(
                     lambda x: 1 if x == 1 else (x - 1) ** (self.params['rr_wasting_wealth_level'])),
             )
 
-        unscaled_lm = unscaled_wasting_incidence_lm()
-        target_mean = self.params['base_inc_rate_wasting_by_agegp'][2]  # base inc rate for 12-23mo old
-        actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
-                                                 (df.un_WHZ_category != 'WHZ>=-2')]).mean()
-
-        scaled_intercept = 1.0 * (target_mean / actual_mean) \
-            if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else 1.0
+        # target: base inc rate (i.e. inc rate of reference group 1-5mo old)
+        target_mean = self.params['base_overall_inc_rate_wasting']
+        unscaled_lm = unscaled_wasting_incidence_lm(intercept=target_mean)
+        not_am_or_treated_ref_agegp = df.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'well') &
+                                             (df.un_am_tx_start_date.isna()) & (df.age_exact_years < 0.5)]
+        actual_mean = unscaled_lm.predict(not_am_or_treated_ref_agegp).mean()
+        scaled_intercept = target_mean * (target_mean / actual_mean) if \
+            (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else target_mean
         scaled_wasting_incidence_lm = unscaled_wasting_incidence_lm(intercept=scaled_intercept)
+
         return scaled_wasting_incidence_lm
 
-    def get_wasting_prevalence(self, agegp: str) -> LinearModel:
+    def get_wasting_prevalence(self, agegp: str, children_of_agegp: pd.DataFrame) -> LinearModel:
         """
         :param agegp: children's age group
-        :return: a scaled wasting prevalence linear model amongst young children less than 5 years
+        :param children_of_agegp: df with children in the age group
+        :return: the scaled logistic linear model of wasting prevalence, i.e., odds of wasting among the specific agegp
         """
-        df = self.module.sim.population.props
 
         def unscaled_wasting_prevalence_lm(intercept: Union[float, int]) -> LinearModel:
             return LinearModel(
@@ -2065,19 +2076,18 @@ class WastingModels:
                                  '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                  self.params['or_wasting_SGA_and_term']),
                 Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
-                                 '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                 '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
                                  self.params['or_wasting_SGA_and_preterm']),
                 Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
-                                 '& (nb_late_preterm == True) | (nb_early_preterm == True)',
+                                 '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
                                  self.params['or_wasting_preterm_and_AGA'])
             )
 
-        get_odds_wasting = self.module.get_odds_wasting(agegp=agegp)
-        unscaled_lm = unscaled_wasting_prevalence_lm(intercept=get_odds_wasting)
-        target_mean = self.module.get_odds_wasting(agegp='12_23mo')
-        actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
-        scaled_intercept = get_odds_wasting * (target_mean / actual_mean) if \
-            (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else get_odds_wasting
+        target_mean = self.module.get_odds_wasting(agegp=agegp)
+        unscaled_lm = unscaled_wasting_prevalence_lm(intercept=target_mean)
+        actual_mean = unscaled_lm.predict(children_of_agegp).mean()
+        scaled_intercept = target_mean * (target_mean / actual_mean) if \
+            (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else target_mean
         scaled_wasting_prevalence_lm = unscaled_wasting_prevalence_lm(intercept=scaled_intercept)
 
         return scaled_wasting_prevalence_lm
