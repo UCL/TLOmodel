@@ -947,6 +947,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_treatments_group_summarized = summarize(num_treatments_group, only_mean=True).T.reindex(param_names).reindex(
         num_dalys_summarized.index
     )
+    num_treatments_group_summarized.to_csv(output_folder / 'num_treatments_area_summarized.csv')
     # num_treatments_total_summarized = summarize(num_treatments_total).loc[0].unstack().reindex(param_names).reindex(
     #     num_dalys_summarized.index
     # )
