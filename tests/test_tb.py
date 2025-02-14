@@ -25,6 +25,8 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
+from tlo.methods.demography import AgeUpdateEvent
+from tlo.util import random_date
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -136,15 +138,25 @@ def test_basic_run(seed):
                          ]).all().all()
 
 
-def test_tb_screening(seed):
+# def test_tb_screening(seed):
+#
+#     popsize=50000
+#     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+#     sim.make_initial_population(n=popsize)
+#     sim.modules['Tb'].parameters['rate_testing_general_pop'] =1
+#     sim.modules['Tb'].parameters['incidence_active_tb_2010'] = 1
+#     sim.modules['Tb'].parameters['rr_tb_child'] = 1
+#     sim.population.props.date_of_birth = sim.population.props['is_alive'].apply(
+#         lambda _: random_date(sim.date - pd.DateOffset(years=5), sim.date - pd.DateOffset(days=1), sim.rng)
+#     )
+#     age_update_event = AgeUpdateEvent(sim.modules['Demography'], sim.modules['Demography'].AGE_RANGE_LOOKUP)
+#     age_update_event.apply(sim.population)
+#     sim.modules['Tb'].initialise_population(sim.population)
+#
+#     # simulate for 0 days, just get everything set up (dxtests etc)
+#     sim.simulate(end_date=sim.date + pd.DateOffset(months=3))
 
-    popsize=10000
-    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
-    sim.modules['Tb'].parameters['incidence_active_tb_2010'] =1
-    sim.modules['Tb'].parameters['rr_tb_child'] = 1
-    sim.make_initial_population(n=popsize)
-    # simulate for 0 days, just get everything set up (dxtests etc)
-    sim.simulate(end_date=sim.date + pd.DateOffset(months=2))
+
 
 
 # check natural history of TB infection

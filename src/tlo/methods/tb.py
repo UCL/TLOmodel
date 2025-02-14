@@ -1830,7 +1830,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
 
-
 class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     This is the Screening-and-Refer HSI.
@@ -2181,6 +2180,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """ Do the screening and referring process """
+        print(f"STARTING TB clinical screening {self.ACCEPTED_FACILITY_LEVEL} ")
 
         df = self.sim.population.props
         now = self.sim.date
@@ -2287,6 +2287,8 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
+
+        print(f"STARTING TB Culture testing {self.ACCEPTED_FACILITY_LEVEL} ")
 
         df = self.sim.population.props
 
