@@ -4,6 +4,8 @@ import cdsapi
 
 years = ["2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021",
          "2022", "2023", "2024"]
+years = range(1940, 1990)
+years = [str(year) for year in range(1940, 1990)]
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total"
 
 for year in years:
