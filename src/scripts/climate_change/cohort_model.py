@@ -80,7 +80,7 @@ malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Zomba City', 'Zomba
 difference_lat = lat_data[1] - lat_data[0]
 difference_long = long_data[1] - long_data[0]
 
-# # Get expected disturbance from the model
+# # # Get expected disturbance from the model
 
 results_list = []
 
@@ -641,18 +641,52 @@ print(result_df_historical)
 result_df_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_historical.csv', index=False)
 
 
-####### Effect of CYCLONE FREDDY #######
+###### Effect of CYCLONE FREDDY #######
 
-# historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
-#
-# # Filter the dataset for Year == 2023, Month == 2 or 3, and District == 'Blantyre'
-# filtered_results = historical_predictions[
-#     (historical_predictions['Year'] == 2023) &
-#     (historical_predictions['Month'].isin([2, 3])) &
-#     (historical_predictions['District'] == 'Blantyre')
-# ]
-#
-# print(filtered_results)
+historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
+
+
+def calculate_percentage_difference(historical_predictions, year, zone=None):
+    months = [1, 2, 3]
+    filtered_data = {
+        month: historical_predictions[
+            (historical_predictions['Year'] == year) & (historical_predictions['Month'] == month)
+            & ((historical_predictions['Zone'] == zone) if zone else True)
+            ]
+        for month in months
+    }
+
+    for month in months[1:]:
+        if not filtered_data[1].empty and not filtered_data[month].empty:
+            total_1 = filtered_data[1]['Predicted_Weather_Model'].sum()
+            total_n = filtered_data[month]['Predicted_Weather_Model'].sum()
+            percent_difference = ((total_1 - total_n) / total_1) * 100
+            print(f"Percentage Difference January and {month} for {zone}: {percent_difference:.2f}%")
+        else:
+            print(f"One of the datasets for January or {month} is empty, cannot compute percentage difference.")
+
+
+# Run the function for different zones
+calculate_percentage_difference(historical_predictions, 2023, 'South East')
+calculate_percentage_difference(historical_predictions, 2023, 'South West')
+calculate_percentage_difference(historical_predictions, 2023)  # Without zone filter
+
+###
+historical_predictions_negative_freddy = historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
+historical_predictions_negative_freddy = historical_predictions_negative_freddy[historical_predictions_negative_freddy['Year'] == 2023]
+historical_predictions_negative_freddy = historical_predictions_negative_freddy[historical_predictions_negative_freddy['Zone'] == "South West"]
+historical_predictions_negative_freddy_feb = historical_predictions_negative_freddy[
+    historical_predictions_negative_freddy['Month'].isin([2])
+]
+print("February mean:", historical_predictions_negative_freddy_feb['Difference_in_Expectation'].mean())
+print("February max:", historical_predictions_negative_freddy_feb['Difference_in_Expectation'].min())
+
+historical_predictions_negative_freddy_march = historical_predictions_negative_freddy[
+    historical_predictions_negative_freddy['Month'].isin([3])
+]
+print("March mean:", historical_predictions_negative_freddy_march['Difference_in_Expectation'].mean(skipna=True))
+print("March max:", historical_predictions_negative_freddy_march['Difference_in_Expectation'].min(skipna=True))
+
 
 ##################
 # Define file paths
