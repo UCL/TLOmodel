@@ -42,8 +42,8 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=4_000,
-            number_of_draws=6,
+            initial_population_size=30_000,
+            number_of_draws=15,
             runs_per_draw=1,
         )
 
@@ -85,12 +85,12 @@ class WastingAnalysis(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         # Setting up just one combination to be used
-        base_death_rate_untreated_sam__draws = [0.17, 0.1]
+        base_death_rate_untreated_sam__draws = [0.17, 0.1, 0.08]
         mod_wast_incidence__coef = [1.0]
-        base_overall_mod_wast_inc_rate = 0.0023
+        base_overall_mod_wast_inc_rate = 0.0475
         progression_to_sev_wast__coef = [1.0]
-        progression_severe_wasting_monthly_props_by_agegp =  [0.0027,0.0036,0.0079,0.0053,0.0025,0.002]
-        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.5, 0.7, 0.9]
+        progression_severe_wasting_monthly_props_by_agegp =  [0.0200, 0.0691, 0.0470, 0.0090, 0.0065, 0.0058]
+        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.3, 0.4, 0.5, 0.7, 0.9]
 
         pars_combinations = list(itertools.product(
             base_death_rate_untreated_sam__draws,
