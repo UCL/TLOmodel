@@ -311,7 +311,7 @@ X_continuous = np.column_stack([
 X_categorical = np.column_stack([
     resid_encoded,
     zone_encoded,
-    #dist_encoded,
+    dist_encoded,
     owner_encoded,
     #ftype_encoded,
     #facility_encoded,
@@ -466,7 +466,7 @@ X_continuous = np.column_stack([
 X_categorical = np.column_stack([
         resid_encoded,
         zone_encoded,
-        #dist_encoded,
+        dist_encoded,
         owner_encoded,
         #ftype_encoded,
         #facility_encoded,
