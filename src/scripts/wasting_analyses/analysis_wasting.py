@@ -291,6 +291,7 @@ class WastingAnalyses:
         """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
         children wasted divide by the total number of children less than 5 years"""
 
+        ## Prevalence at some years - data (2010 are the data used to draw initial prevalence)
         w_prev_calib_data_years_only_df = pd.DataFrame({
             'sev_wast_calib': [0.015, 0.011, 0.006, 0.007],
             'mod_wast_calib': [0.025, 0.027, 0.021, 0.019]
@@ -302,26 +303,27 @@ class WastingAnalyses:
             w_prev_calib_data_years_only_df, left_index=True, right_index=True, how='left'
         ).fillna(0)
 
+        ## Prevalence at the end of years - model
         w_prev_df = self.__w_logs_dict["wasting_prevalence_props"]
         w_prev_df = w_prev_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']]
         w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
         w_prev_df = w_prev_df.drop(columns='date')
 
-        # Add initial prevalence for the year 2010
-        init_prev_2010_only_df = self.__w_logs_dict["wasting_init_prevalence_props"]
-        init_prev_2010_only_df = init_prev_2010_only_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']].rename(
+        ## Initial prevalence at the beginning of 2010 - model
+        init_w_prev_2010_only_df = self.__w_logs_dict["wasting_init_prevalence_props"]
+        init_w_prev_2010_only_df = init_w_prev_2010_only_df[['date', 'total_sev_under5_prop', 'total_mod_under5_prop']].rename(
             columns={'total_sev_under5_prop': 'total_init_sev_under5_prop', 'total_mod_under5_prop': 'total_init_mod_under5_prop'}
         )
-        init_prev_2010_only_df = init_prev_2010_only_df.set_index(init_prev_2010_only_df.date.dt.year)
-        init_prev_2010_only_df = init_prev_2010_only_df.drop(columns='date')
-        init_prev_2010_only_df = init_prev_2010_only_df.loc[[2010]]
-        init_prev_df = pd.DataFrame(index=date_range)
+        init_w_prev_2010_only_df = init_w_prev_2010_only_df.set_index(init_w_prev_2010_only_df.date.dt.year)
+        init_w_prev_2010_only_df = init_w_prev_2010_only_df.drop(columns='date')
+        init_w_prev_2010_only_df = init_w_prev_2010_only_df.loc[[2010]]
+        init_w_prev_df = pd.DataFrame(index=date_range)
         # filling missing values with 0
-        init_prev_df = init_prev_df.merge(
-            init_prev_2010_only_df, left_index=True, right_index=True, how='left'
+        init_w_prev_df = init_w_prev_df.merge(
+            init_w_prev_2010_only_df, left_index=True, right_index=True, how='left'
         ).fillna(0)
 
-        w_prev_calib_and_init_df = pd.merge(init_prev_df, w_prev_calib_df, on='date')
+        w_prev_calib_and_init_df = pd.merge(init_w_prev_df, w_prev_calib_df, on='date')
         w_prev_plot_df = pd.merge(w_prev_df, w_prev_calib_and_init_df, on='date')
         columns_to_plot = [
             ['total_init_sev_under5_prop', 'total_init_mod_under5_prop'],
@@ -521,7 +523,7 @@ class WastingAnalyses:
         self.fig_files.append('wasting_initial_prevalence_per_each_age_group__' + self.datestamp + '.pdf')
 
     def plot_modal_gbd_deaths_by_gender(self):
-        """ compare modal and GBD deaths by gender """
+        """ compare model and GBD deaths 2010-2014 & 2015-2019 """
         death_compare = \
             compare_number_of_deaths(self.__log_file_path, resources_path)
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -597,7 +599,7 @@ if __name__ == "__main__":
     # Analyse each draw
     # for now, we always have just one run, run 0
     run_nmb = 0
-    for draw_nmb in range(len(folders)):
+    for draw_nmb in range(0, len(folders)):
         print(f"Analysing {draw_nmb=} ...")
         time_start = time.time()
 
