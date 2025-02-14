@@ -2091,9 +2091,12 @@ class WastingModels:
 
 class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-        This Event logs the number of incident cases that have occurred since the previous logging event.
-         Analysis scripts expect that the frequency of this logging event is once per year.
-        """
+    This Event logs the number of incident cases that have occurred since the previous logging event, the average length
+    of wasting cases at recovery point since the previous logging, the prevalence proportions at the time of logging,
+    and population sizes at the time of logging.
+    Analysis scripts expect that the frequency of this logging event is once per year. Logs are expected to happen on
+    the last day of each year.
+    """
 
     def __init__(self, module):
         # This event to occur every year
@@ -2308,9 +2311,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class Wasting_InitLoggingEvent(Event, PopulationScopeEventMixin):
     """
-        This Event logs the number of incident cases that have occurred since the previous logging event.
-         Analysis scripts expect that the frequency of this logging event is once per year.
-        """
+    This Event logs initial prevalence proportions of moderate and severe wasting, and initial population sizes.
+    """
 
     def __init__(self, module):
         # This event to occur every year
