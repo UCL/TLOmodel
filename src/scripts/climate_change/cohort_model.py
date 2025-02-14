@@ -258,7 +258,11 @@ for scenario in scenarios:
 # #### Now do number of births based on the TLO model and 2018 census
 population_file = "/Users/rem76/PycharmProjects/TLOmodel/resources/demography/ResourceFile_PopulationSize_2018Census.csv"
 population_data = pd.read_csv(population_file)
-
+population_data = population_data.merge(
+    predictions_from_cmip[['District', 'Zone']], # need for larger aggregation, equivalent to zones. also invariant across scenarios
+    on='District',
+    how='left'
+)
 population_data_grouped = population_data.groupby("District")["Count"].sum()
 total_population = population_data_grouped.sum()
 population_proportion = population_data_grouped / total_population
@@ -330,33 +334,33 @@ for i, scenario in enumerate(scenarios):
 
         ax = axes[i, j]
         data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20', legend=False)
-        ax.set_title(f"{scenario}: {model_type}", fontsize=10)
+        #ax.set_title(f"{scenario}: {model_type}", fontsize=10)
         if i == len(scenarios) - 1:
             ax.set_xlabel('Year', fontsize=12)
         if j == 0:
-            ax.set_ylabel(f'Deficit of {service} services', fontsize=12)
+            ax.set_ylabel(f'Distruption of {service} services', fontsize=10)
         #if (i == 0) & (j == 2):
         #    ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
         percentage_diff_by_year_district_all[scenario][model_type] = percentage_diff_by_year_district
 for ax in axes.flatten():
-    ax.set_ylim(y_min*11, y_max)
+    ax.set_ylim(y_min, y_max*19)
+
+for j, model_type in enumerate(["Lowest", "Mean", "Highest"]):
+    axes[0, j].set_title(model_type, fontsize=14, fontweight='bold')
+for i, scenario in enumerate(scenarios):
+    axes[i, 0].annotate(scenario, xy=(-0.3, 0.5), xycoords="axes fraction",
+                         fontsize=14, fontweight='bold', ha='center', va='center', rotation=90)
+
 handles, labels = ax.get_legend_handles_labels()
 fig.legend(handles, labels,  bbox_to_anchor=(1, -10), loc = "center right", fontsize=10, title="Districts")
-plt.tight_layout()
+#plt.tight_layout()
 plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births.png')
 #plt.show()
-#
+# #
 #
 
 ## % of cases that occur due to being in the top 10 percet?
 # #### Now do number of births based on the TLO model and 2018 census
-population_file = "/Users/rem76/PycharmProjects/TLOmodel/resources/demography/ResourceFile_PopulationSize_2018Census.csv"
-population_data = pd.read_csv(population_file)
-
-population_data_grouped = population_data.groupby("District")["Count"].sum()
-total_population = population_data_grouped.sum()
-population_proportion = population_data_grouped / total_population
-
 # Create the figure and axes grid
 fig, axes = plt.subplots(3, 3, figsize=(18, 18))
 y_min = float('inf')
@@ -393,10 +397,10 @@ for i, scenario in enumerate(scenarios):
         predictions_from_cmip_sum.loc[
             predictions_from_cmip_sum['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
         predictions_from_cmip_sum['Percentage_Difference'] = predictions_from_cmip_sum['Percentage_Difference'].abs() # for mapping, to show %
-
         predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
             {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
         )
+
 
         for year in year_groupings:
             subset = predictions_from_cmip_sum[
@@ -424,22 +428,117 @@ for i, scenario in enumerate(scenarios):
 
         ax = axes[i, j]
         data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20', legend=False)
-        ax.set_title(f"{scenario}: {model_type}", fontsize=10)
+        #ax.set_title(f"{scenario}: {model_type}", fontsize=10)
         if i == len(scenarios) - 1:
-            ax.set_xlabel('Year', fontsize=12)
+            ax.set_xlabel('Year', fontsize=10)
         if j == 0:
-            ax.set_ylabel(f'Deficit of {service} services', fontsize=12)
+            ax.set_ylabel(f'Distruption of {service} services per 1,000 pregnancies', fontsize=12)
         #if (i == 0) & (j == 2):
         #    ax.legend(title="Districts", fontsize=10, title_fontsize=10, bbox_to_anchor=(1., 1))
         percentage_diff_by_year_district_all[scenario][model_type] = percentage_diff_by_year_district
 for ax in axes.flatten():
     ax.set_ylim(y_min, y_max*19)
 handles, labels = ax.get_legend_handles_labels()
-fig.legend(handles, labels,  bbox_to_anchor=(1, -10), loc = "center right", fontsize=10, title="Districts")
-plt.tight_layout()
+
+for j, model_type in enumerate(["Lowest", "Mean", "Highest"]):
+    axes[0, j].set_title(model_type, fontsize=14, fontweight='bold')
+for i, scenario in enumerate(scenarios):
+    axes[i, 0].annotate(scenario, xy=(-0.3, 0.5), xycoords="axes fraction",
+                         fontsize=14, fontweight='bold', ha='center', va='center', rotation=90)
+#plt.tight_layout()
 plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births_per_1000.png')
 #plt.show()
 #
+#
+
+# #### By zone
+
+population_data_grouped_zone = population_data.groupby("Zone")["Count"].sum()
+population_proportion_zone = population_data_grouped_zone / total_population
+
+# Create the figure and axes grid
+fig, axes = plt.subplots(3, 3, figsize=(18.5, 18))
+y_min = float('inf')
+y_max = float('-inf')
+x_min = float('inf')
+x_max = float('-inf')
+percentage_diff_by_year_zone_all = {}
+percentage_diff_by_year_zone_scenario = {}
+year_groupings = range(2025, 2060, 5)
+for i, scenario in enumerate(scenarios):
+    percentage_diff_by_year_zone_all[scenario] = {}
+    percentage_diff_by_year_zone_scenario[scenario] = {}
+
+    for j, model_type in enumerate(model_types):
+        percentage_diff_by_year_zone_all[scenario][model_type] = {}
+        percentage_diff_by_year_zone_scenario[scenario][model_type] = {}
+        percentage_diff_by_year_zone_scenario[scenario][model_type] = 0
+
+        percentage_diff_by_year_zone = {}
+
+        predictions_from_cmip =  predictions_from_cmip.loc[predictions_from_cmip['Difference_in_Expectation'] < 0]
+        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2061]
+
+        predictions_from_cmip_sum = predictions_from_cmip.groupby(['Year', 'Zone']).sum().reset_index()
+        predictions_from_cmip_sum = predictions_from_cmip_sum[predictions_from_cmip_sum['Year'] <= 2060]
+        predictions_from_cmip_sum['Percentage_Difference'] = (
+                                                                 predictions_from_cmip_sum[
+                                                                     'Difference_in_Expectation'] /
+                                                                 predictions_from_cmip_sum['Predicted_No_Weather_Model'])
+        predictions_from_cmip_sum.loc[
+            predictions_from_cmip_sum['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
+        predictions_from_cmip_sum['Percentage_Difference'] = predictions_from_cmip_sum['Percentage_Difference'].abs() # for mapping, to show %
+
+        predictions_from_cmip_sum['District'] = predictions_from_cmip_sum['District'].replace(
+            {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+        )
+
+        for year in year_groupings:
+            subset = predictions_from_cmip_sum[
+                (predictions_from_cmip_sum['Year'] >= year) &
+                (predictions_from_cmip_sum['Year'] <= year + 5)
+                ]
+            for _, row in subset.iterrows():
+                zone = row['Zone']
+                percentage_diff = row['Percentage_Difference']
+                row_index = births_model_subset.index.get_loc(year)
+
+                number_of_births = population_data_grouped_zone[zone] * births_model_subset.iloc[row_index]["Model_mean"]
+                if year not in percentage_diff_by_year_zone:
+                    percentage_diff_by_year_zone[year] = {}
+                if zone not in percentage_diff_by_year_zone[year]:
+                    percentage_diff_by_year_zone[year][zone] = 0
+                percentage_diff_by_year_zone[year][zone] += ((percentage_diff * number_of_births) * 1.4)/(number_of_births*1.4) * 1000 # 1.4 is conversion factor between births and pregancies
+                percentage_diff_by_year_zone_scenario[scenario][model_type] = (percentage_diff * number_of_births) * 1.4
+
+        data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_zone, orient='index').fillna(0)
+        y_min = min(y_min, data_for_plot.min().min())
+        y_max = max(y_max, data_for_plot.max().max())
+        x_min = min(x_min, data_for_plot.index.min())
+        x_max = max(x_max, data_for_plot.index.max())
+
+        ax = axes[i, j]
+        data_for_plot.plot(kind='bar', stacked=True, ax=ax, cmap='tab20', legend=False)
+        #ax.set_title(f"{scenario}: {model_type}", fontsize=10)
+        if i == len(scenarios) - 1:
+            ax.set_xlabel('Year', fontsize=12)
+        if j == 0:
+            ax.set_ylabel(f'Deficit of {service} services per 1,000 pregnancies', fontsize=10,  labelpad=10)
+        if (i == 0) & (j == 2):
+           ax.legend(title="Zones", fontsize=10, title_fontsize=10, ncol = 2)
+        percentage_diff_by_year_zone_all[scenario][model_type] = percentage_diff_by_year_zone
+for ax in axes.flatten():
+    ax.set_ylim(y_min, y_max*6)
+
+for j, model_type in enumerate(["Lowest", "Mean", "Highest"]):
+    axes[0, j].set_title(model_type, fontsize=14, fontweight='bold')
+for i, scenario in enumerate(scenarios):
+    axes[i, 0].annotate(scenario, xy=(-0.3, 0.5), xycoords="axes fraction",
+                         fontsize=13, fontweight='bold', ha='center', va='center', rotation=90)
+plt.subplots_adjust(left=0.12)
+#plt.tight_layout()
+plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births_per_1000_ZONE.png')
+#plt.show()
 #
 
 ####### Historical disruptions ##########
@@ -542,6 +641,20 @@ print(result_df_historical)
 result_df_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_historical.csv', index=False)
 
 
+####### Effect of CYCLONE FREDDY #######
+
+# historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
+#
+# # Filter the dataset for Year == 2023, Month == 2 or 3, and District == 'Blantyre'
+# filtered_results = historical_predictions[
+#     (historical_predictions['Year'] == 2023) &
+#     (historical_predictions['Month'].isin([2, 3])) &
+#     (historical_predictions['District'] == 'Blantyre')
+# ]
+#
+# print(filtered_results)
+
+##################
 # Define file paths
 monthly_reporting_file = "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv"
 five_day_max_file = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv"
@@ -606,6 +719,9 @@ for i, scenario in enumerate(scenarios):
     axes[0, 0].legend()
     axes[0, 1].legend()
 
-plt.tight_layout()
+#plt.tight_layout()
 plt.show()
 plt.savefig(f"/Users/rem76/Desktop/Climate_change_health/Data/historical_vs_future_precipitation_ANC.png")
+
+
+
