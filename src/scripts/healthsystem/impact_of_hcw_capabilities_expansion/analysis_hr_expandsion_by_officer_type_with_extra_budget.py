@@ -1130,6 +1130,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ),
         only_mean=True
     ).T.reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_treatments_increased.to_csv(output_folder / 'num_treatments_type_increased.csv')
 
     num_treatments_group_increased = summarize(
         find_difference_relative_to_comparison_dataframe(
@@ -1157,14 +1158,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
 
-    # num_treatments_total_increased_percent = summarize(
-    #     pd.DataFrame(
-    #         find_difference_relative_to_comparison_series(
-    #             num_treatments_total.loc[0],
-    #             comparison='s_1',
-    #             scaled=True)
-    #     ).T
-    # ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_1'])
+    num_treatments_total_increased_percent = summarize(
+        pd.DataFrame(
+            find_difference_relative_to_comparison_series(
+                num_treatments_total.loc[0],
+                comparison='s_0',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().reindex(param_names).reindex(num_dalys_summarized.index).drop(['s_0'])
+    num_treatments_total_increased_percent.to_csv(output_folder / 'num_treatments_total_increased_%.csv')
 
     # service_ratio_increased = summarize(
     #     pd.DataFrame(
@@ -1251,13 +1253,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         use_increased = use.subtract(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
 
-        # use_increase_percent = use.subtract(use.loc['s_0', :], axis=1).divide(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
+        use_increase_percent = use.subtract(use.loc['s_0', :], axis=1
+                                            ).divide(use.loc['s_0', :], axis=1).drop('s_0', axis=0)
 
-        return use, use_increased
+        return use, use_increased, use_increase_percent
 
     hcw_time_used = hcw_time_or_cost_used(time_cost_df=appt_time)[0]
     hcw_time_increased_by_cadre = hcw_time_or_cost_used(time_cost_df=appt_time)[1]
+    hcw_time_increased_by_cadre_percent = hcw_time_or_cost_used(time_cost_df=appt_time)[2]
     hcw_time_increased_by_cadre.to_csv(output_folder / 'hcw_time_increased_by_cadre.csv')
+    hcw_time_increased_by_cadre_percent.to_csv(output_folder / 'hcw_time_increased_by_cadre_percent.csv')
 
     # get HCW time and cost needed to run the never run appts
     def hcw_time_or_cost_gap(time_cost_df=appt_time, count_df=num_never_ran_appts_by_level_summarized):
@@ -1492,8 +1497,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     }
     # get scenario color
     # scenario_groups = scenario_grouping_coloring(by='effect')
-    scenario_groups = scenario_grouping_coloring(by='allocation_alt')
-    # scenario_groups = scenario_grouping_coloring(by='allocation')
+    # scenario_groups = scenario_grouping_coloring(by='allocation_alt')
+    scenario_groups = scenario_grouping_coloring(by='allocation')
     scenario_color = {}
     for s in param_names:
         for k in scenario_groups[1].keys():
@@ -2622,21 +2627,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
     # ]) / 1e6
     fig, ax = plt.subplots(figsize=(10, 6))
-    data_to_plot.plot(kind='bar', stacked=True, color=treatment_color, rot=0, ax=ax)
+    data_to_plot.plot(kind='bar', stacked=True, color=treatment_color, rot=0, width=0.8, ax=ax)
     # ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
     #             fmt=".", color="black", zorder=100)
-    ax.set_ylabel('Millions', fontsize='small')
+    # move bars to new xticks
+    new_xticks = {(i + 0.5): k for i, k in enumerate(data_to_plot.index)}
+    ax.set_xticks(list(new_xticks.keys()))
+    ax.set_xticklabels(list(new_xticks.values()))
+    for i, rect in enumerate(ax.patches):
+        # Shift the bars based on their new position
+        rect.set_x(list(new_xticks.keys())[i % len(list(new_xticks.keys()))] - rect.get_width() / 2)
+    ax.set_xlim(-1, len(data_to_plot.index) + 1)
+
+    ax.set_ylabel('Millions', fontsize='medium')
     ax.set(xlabel=None)
+    ax.grid(axis='y')
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
-    xtick_colors = [scenario_color[v] for v in data_to_plot.index]
-    for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
-        xtick.set_color(color)  # color scenarios based on the group info
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+    # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
+    # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
+    #     xtick.set_color(color)  # color scenarios based on the group info
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='medium')  # re-label scenarios
 
-    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.4), title='Treatment type', title_fontsize='small',
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.3), title='Treatment type', title_fontsize='small',
                fontsize='small', reverse=True)
-    plt.title(name_of_plot)
+    plt.title(name_of_plot, fontsize='medium')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(
         name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
@@ -2654,9 +2669,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     (num_treatments_total_increased['upper'] - num_treatments_total_increased['mean']).values,
     # ]) / 1e6
     fig, ax = plt.subplots(figsize=(9, 6))
-    data_to_plot.plot(kind='bar', stacked=True, color=treatment_group_color, rot=0, ax=ax)
+    data_to_plot.plot(kind='bar', stacked=True, color=treatment_group_color, rot=0, width=0.8, ax=ax)
+    # move bars to new xticks
+    new_xticks = {(i + 0.5): k for i, k in enumerate(data_to_plot.index)}
+    ax.set_xticks(list(new_xticks.keys()))
+    ax.set_xticklabels(list(new_xticks.values()))
+    for i, rect in enumerate(ax.patches):
+        # Shift the bars based on their new position
+        rect.set_x(list(new_xticks.keys())[i % len(list(new_xticks.keys()))] - rect.get_width() / 2)
+    ax.set_xlim(-1, len(data_to_plot.index) + 1)
+
     # ax.errorbar(range(len(param_names)-1), num_treatments_total_increased['mean'].values / 1e6, yerr=yerr_services,
     #             fmt=".", color="black", zorder=100)
+    # add annotation
+    assert (data_to_plot.index == num_treatments_total_increased_percent.index).all()
+    assert (data_to_plot.index == num_treatments_total_increased.index).all()
+    for xpos, ypos, text1 in zip(ax.get_xticks(),
+                                               (num_treatments_total_increased['upper'] / 1e6).values,
+                                               num_treatments_total_increased_percent['mean'].values):
+        text = f"{int(round(text1 * 100, 2))}%"  # \n{[round(text2, 2),round(text3, 2)]}"
+        ax.text(xpos, ypos + 0.05, text, horizontalalignment='center', fontsize='small')
+
     ax.set_ylabel('Services increased in Millions', fontsize='medium')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
     ax.grid(axis="y")
@@ -2665,7 +2698,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
     # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
     #     xtick.set_color(color)  # color scenarios based on the group info
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='medium')  # re-label scenarios
 
     plt.legend(title='Treatment area', title_fontsize='small',
                fontsize='small', reverse=True)
@@ -2700,7 +2733,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     column_dcsa = data_to_plot.pop('DCSA')
     data_to_plot.insert(3, "DCSA", column_dcsa)
     fig, ax = plt.subplots(figsize=(9, 6))
-    data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, ax=ax)
+    data_to_plot.plot(kind='bar', stacked=True, color=officer_category_color, rot=0, width=0.8, alpha=0.8, ax=ax)
+    # move bars to new xticks
+    new_xticks = {(i + 0.5): k for i, k in enumerate(data_to_plot.index)}
+    ax.set_xticks(list(new_xticks.keys()))
+    ax.set_xticklabels(list(new_xticks.values()))
+    for i, rect in enumerate(ax.patches):
+        # Shift the bars based on their new position
+        rect.set_x(list(new_xticks.keys())[i % len(list(new_xticks.keys()))] - rect.get_width() / 2)
+    ax.set_xlim(-1, len(data_to_plot.index) + 1)
+    # add annotation
+    assert (data_to_plot.index == hcw_time_increased_by_cadre_percent.index).all()
+    for xpos, ypos, text1 in zip(ax.get_xticks(),
+                                 (hcw_time_increased_by_cadre['all'] / 1e9).values,
+                                 hcw_time_increased_by_cadre_percent['all'].values):
+        text = f"{int(round(text1 * 100, 2))}%"
+        ax.text(xpos, ypos + 0.05, text, horizontalalignment='center', fontsize='small')
     ax.set_ylabel('Billions minutes', fontsize='medium')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
     ax.grid(axis="y")
@@ -2709,7 +2757,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
     # for xtick, color in zip(ax.get_xticklabels(), xtick_colors):
     #     xtick.set_color(color)  # color scenarios based on the group info
-    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
+    ax.set_xticklabels(xtick_labels, rotation=90, fontsize='medium')  # re-label scenarios
 
     plt.legend(title='Officer category', title_fontsize='small',
                fontsize='small', reverse=True)
@@ -2728,11 +2776,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
     # ]) / 1e6
     fig, ax = plt.subplots(figsize=(9, 6))
-    num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, ax=ax)
+    num_dalys_by_cause_averted_in_millions.plot(kind='bar', stacked=True, color=cause_color, rot=0, width=0.8, ax=ax)
     # ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
     #             fmt=".", color="black", zorder=100)
+    # move bars to new xticks
+    new_xticks = {(i + 0.5): k for i, k in enumerate(data_to_plot.index)}
+    ax.set_xticks(list(new_xticks.keys()))
+    ax.set_xticklabels(list(new_xticks.values()))
+    for i, rect in enumerate(ax.patches):
+        # Shift the bars based on their new position
+        rect.set_x(list(new_xticks.keys())[i % len(list(new_xticks.keys()))] - rect.get_width() / 2)
+    ax.set_xlim(-1, len(data_to_plot.index) + 1)
+
     ax.set_ylabel('Millions', fontsize='medium')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
+    ax.grid(axis='y')
 
     xtick_labels = [substitute_labels[v] for v in num_dalys_by_cause_averted.index]
     # xtick_colors = [scenario_color[v] for v in num_dalys_by_cause_averted.index]
@@ -2767,9 +2825,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     (num_dalys_averted['upper'] - num_dalys_averted['mean']).values,
     # ]) / 1e6
     fig, ax = plt.subplots(figsize=(9, 6))
-    data_to_plot.plot(kind='bar', stacked=True, color=cause_group_color, rot=0, ax=ax)
+    data_to_plot.plot(kind='bar', stacked=True, color=cause_group_color, rot=0, width=0.8, ax=ax)
     # ax.errorbar(range(len(param_names)-1), num_dalys_averted['mean'].values / 1e6, yerr=yerr_dalys,
     #             fmt=".", color="black", zorder=100)
+    # move bars to new xticks
+    new_xticks = {(i + 0.5): k for i, k in enumerate(data_to_plot.index)}
+    ax.set_xticks(list(new_xticks.keys()))
+    ax.set_xticklabels(list(new_xticks.values()))
+    for i, rect in enumerate(ax.patches):
+        # Shift the bars based on their new position
+        rect.set_x(list(new_xticks.keys())[i % len(list(new_xticks.keys()))] - rect.get_width() / 2)
+    ax.set_xlim(-1, len(data_to_plot.index) + 1)
+
     ax.set_ylabel('DALYs averted in Millions', fontsize='medium')
     ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
     ax.grid(axis="y")
