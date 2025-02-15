@@ -675,6 +675,8 @@ class HealthSystem(Module):
             rng=rng_for_consumables,
             availability=self.get_cons_availability()
         )
+        # We don't need to hold onto this large dataframe
+        del self.parameters['availability_estimates']
 
         # Determine equip_availability
         self.equipment = Equipment(
