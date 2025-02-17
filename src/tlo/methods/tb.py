@@ -1007,7 +1007,7 @@ class Tb(Module):
                 parse_csv_values_for_columns_with_mixed_datatypes
             )
 
-        if p['type_of_scaleup'] == 'none':
+        if p['type_of_scaleup'] == 'target':
             scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
         else:
             scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
@@ -2133,7 +2133,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
         if not test_result and person_has_tb_symptoms:
-            if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
+            if p['type_of_scaleup'] == 'target' and self.sim.date.year >= p['scaleup_start_year']:
                 logger.debug(
                     key="message",
                     data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
@@ -2329,45 +2329,129 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
             else:
                 return ACTUAL_APPT_FOOTPRINT
 
+# class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
+#     """
+#     This is the x-ray HSI
+#     usually used for testing children unable to produce sputum
+#     positive result will prompt referral to start treatment
+#     """
+#     def __init__(self, module, person_id, suppress_footprint=False):
+#         super().__init__(module, person_id=person_id)
+#         assert isinstance(module, Tb)
+#
+#         assert isinstance(suppress_footprint, bool)
+#         self.suppress_footprint = suppress_footprint
+#
+#         self.TREATMENT_ID = "Tb_Test_Xray"
+#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
+#         self.ACCEPTED_FACILITY_LEVEL = '1b'
+#
+#         #included the screening part so only people with TB symptoms are screened
+#     def apply(self, person_id, squeeze_factor):
+#
+#         print(f"STARTING TB CHEST XRAY SCREENING AT LEVEL1B {self.ACCEPTED_FACILITY_LEVEL} ")
+#
+#         #logger.info(f'"STARTING TB CHEST XRAY SCREENING AT LEVEL1B"')
+#         # logger.debug(key="message", data=f"Performing Tb chest X-ray screening for {person_id}")
+#
+#         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+#         if not any(x in self.module.symptom_list for x in persons_symptoms):
+#             print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.")
+#             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         df = self.sim.population.props
+#
+#         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
+#             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#
+#         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+#
+#         smear_status = df.at[person_id, "tb_smear"]
+#
+#         # select sensitivity/specificity of test based on smear status
+#         if smear_status:
+#             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                 dx_tests_to_run="tb_xray_smear_positive", hsi_event=self
+#             )
+#         else:
+#             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
+#             )
+#
+#         # if consumables not available, either refer to level 2 or use clinical diagnosis
+#         if test_result is None:
+#
+#             # if smear-positive, assume symptoms strongly predictive of TB
+#             if smear_status:
+#                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                     dx_tests_to_run="tb_clinical", hsi_event=self
+#                 )
+#                 # add another clinic appointment
+#                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+#                     {"Under5OPD": 1, "DiagRadio": 1}
+#                 )
+#
+#             # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
+#             else:
+#                 self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                     HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
+#                     topen=self.sim.date + pd.DateOffset(weeks=1),
+#                     tclose=None,
+#                     priority=0,
+#                 )
+#
+#         # if test returns positive result, refer for appropriate treatment
+#         if test_result:
+#             df.at[person_id, "tb_diagnosed"] = True
+#             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+#
+#             self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+#                 topen=self.sim.date,
+#                 tclose=None,
+#                 priority=0,
+#             )
+#
+#         # Return the footprint. If it should be suppressed, return a blank footprint.
+#         if self.suppress_footprint:
+#             return self.make_appt_footprint({})
+#         else:
+#             return ACTUAL_APPT_FOOTPRINT
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
     This is the x-ray HSI
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
     """
+
     def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
-
         assert isinstance(suppress_footprint, bool)
-        self.suppress_footprint = suppress_footprint
 
+        self.suppress_footprint = suppress_footprint
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
-        #included the screening part so only people with TB symptoms are screened
+        print(f"Initialized TB X-Ray Level 1b event for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
+
     def apply(self, person_id, squeeze_factor):
-
-        print(f"STARTING TB CHEST XRAY SCREENING AT LEVEL1B {self.ACCEPTED_FACILITY_LEVEL} ")
-
-        #logger.info(f'"STARTING TB CHEST XRAY SCREENING AT LEVEL1B"')
-        # logger.debug(key="message", data=f"Performing Tb chest X-ray screening for {person_id}")
+        print(f"STARTING TB CHEST XRAY SCREENING AT LEVEL1B {self.ACCEPTED_FACILITY_LEVEL} for person {person_id}")
 
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
-            print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.")
+            print(f"Skipping X-Ray: Person {person_id} has no TB symptoms.")
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         df = self.sim.population.props
-
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
+            print(f"Skipping X-Ray: Person {person_id} is either deceased or already diagnosed.")
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        print(f"Processing X-Ray screening for person {person_id} with treatment ID {self.TREATMENT_ID}")
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
-
         smear_status = df.at[person_id, "tb_smear"]
 
-        # select sensitivity/specificity of test based on smear status
         if smear_status:
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_xray_smear_positive", hsi_event=self
@@ -2377,20 +2461,13 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
 
-        # if consumables not available, either refer to level 2 or use clinical diagnosis
         if test_result is None:
-
-            # if smear-positive, assume symptoms strongly predictive of TB
+            print(f"X-Ray Test Not Available for person {person_id}, considering alternatives.")
             if smear_status:
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_clinical", hsi_event=self
                 )
-                # add another clinic appointment
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Under5OPD": 1, "DiagRadio": 1}
-                )
-
-            # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1, "DiagRadio": 1})
             else:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
@@ -2398,23 +2475,25 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+                print(f"Person {person_id} referred for Level 2 X-Ray.")
+                return ACTUAL_APPT_FOOTPRINT
 
-        # if test returns positive result, refer for appropriate treatment
         if test_result:
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
-
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
             )
+            print(f"Person {person_id} diagnosed with TB, treatment scheduled.")
 
-        # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
+            print(f"Suppressing footprint for person {person_id}, returning empty footprint.")
             return self.make_appt_footprint({})
         else:
+            print(f"Returning X-Ray screening footprint for person {person_id}.")
             return ACTUAL_APPT_FOOTPRINT
 
 
