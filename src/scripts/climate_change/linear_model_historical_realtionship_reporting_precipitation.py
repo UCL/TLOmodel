@@ -30,6 +30,10 @@ absolute_min_year = 2011
 mask_threshold = -np.inf # accounts for scaling
 #mask_threshold = 50
 use_percentile_mask_threshold = True
+baseline_years = range(1940, 1979)
+min_year_for_analysis_baseline = min(baseline_years)
+absolute_min_year_baseline = min_year_for_analysis_baseline - 1
+max_year_for_analysis_baseline = max(baseline_years) + 1
 
 poisson = False
 log_y = True
@@ -148,6 +152,15 @@ def repeat_info(info, num_facilities, year_range, historical):
     else:
         return repeated_info
 #
+
+def process_weather_data(weather_df, zero_sum_columns, min_year_for_analysis, absolute_min_year, lags=[1, 2, 3, 4, 9, 12]):
+    """
+    Processes weather data by dropping zero-sum columns, computing lags, and flattening.
+    """
+    weather_df = weather_df.drop(columns=zero_sum_columns, errors='ignore').iloc[:-(2 if 'monthly' in weather_df.columns else 1)]
+    lags_data = {lag: weather_df.shift(lag).values[(min_year_for_analysis - absolute_min_year) * 12:].flatten() for lag in lags}
+    return weather_df.iloc[(min_year_for_analysis - absolute_min_year) * 12:], lags_data
+
 ### Try combine weather variables ##
 if use_all_weather:
     if ANC:
@@ -874,3 +887,196 @@ for ssp_scenario in ssp_scenarios:
 
 
 
+################# Semi-post industrial, pre-2000 data #################
+if ANC:
+    # Load data
+    weather_data_monthly_20th_century = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv",
+        index_col=0
+    )
+
+    weather_data_five_day_cumulative_20th_century = pd.read_csv(
+        f"/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_{min(baseline_years)}_{max(baseline_years)}_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
+        index_col=0
+    )
+
+    # Drop zero-sum columns
+    weather_data_monthly_20th_century = weather_data_monthly_20th_century.drop(columns=zero_sum_columns,
+                                                                               errors='ignore')
+    weather_data_five_day_cumulative_20th_century = weather_data_five_day_cumulative_20th_century.drop(
+        columns=zero_sum_columns, errors='ignore')
+
+    # lags
+    lags_monthly_baseline = {i: weather_data_monthly_20th_century.shift(i).values for i in [1, 2, 3, 4, 9, 12]}
+    for key in lags_monthly_baseline:
+        lags_monthly_baseline[key] = lags_monthly_baseline[key][(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
+
+    lags_five_day_baseline = {i: weather_data_five_day_cumulative_20th_century.shift(i).values for i in [1, 2, 3, 4, 9]}
+    for key in lags_five_day_baseline:
+        lags_five_day_baseline[key] = lags_five_day_baseline[key][(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
+    # process
+    weather_data_monthly_20th_century = weather_data_monthly_20th_century.iloc[
+                                        (min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:]
+    weather_data_five_day_cumulative_20th_century = weather_data_five_day_cumulative_20th_century.iloc[
+                                                    (min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:]
+
+    weather_data_monthly_flattened = weather_data_monthly_20th_century.values.flatten()
+    weather_data_five_day_cumulative_flattened = weather_data_five_day_cumulative_20th_century.values.flatten()
+    print(len(weather_data_five_day_cumulative_flattened))
+    weather_data_baseline = np.vstack(
+        (weather_data_monthly_flattened, weather_data_five_day_cumulative_flattened)).T
+
+# covariates
+year_range_baseline = range(min_year_for_analysis_baseline, max_year_for_analysis_baseline, 1)
+year_repeated_baseline = [y for y in year_range_baseline for _ in range(12)]
+year_flattened_baseline = year_repeated_baseline*len(monthly_reporting_by_facility.columns) # to get flattened data
+month = range(12)
+month_repeated = []
+for _ in year_range:
+    month_repeated.extend(range(1, 13))
+month_flattened_baseline = month*len(monthly_reporting_by_facility.columns)
+
+zone_info_each_month_baseline = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range_baseline, historical = False)
+zone_encoded_baseline = pd.get_dummies(zone_info_each_month_baseline, drop_first=True)
+dist_info_each_month_baseline = repeat_info(expanded_facility_info["Dist"], num_facilities, year_range_baseline, historical = False)
+dist_encoded_baseline = pd.get_dummies(dist_info_each_month_baseline, drop_first=True)
+resid_info_each_month_baseline = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range_baseline, historical = False)
+resid_encoded_baseline = pd.get_dummies(resid_info_each_month_baseline, drop_first=True)
+owner_info_each_month_baseline = repeat_info(expanded_facility_info['A105'], num_facilities, year_range_baseline, historical = False)
+owner_encoded_baseline = pd.get_dummies(owner_info_each_month_baseline, drop_first=True)
+ftype_info_each_month_baseline = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range_baseline, historical = False)
+ftype_encoded_baseline = pd.get_dummies(ftype_info_each_month_baseline, drop_first=True)
+altitude_baseline = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities, year_range_baseline, historical = False)]
+minimum_distance_baseline = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'], num_facilities, year_range_baseline, historical = False)]
+
+altitude_baseline = np.array(altitude_baseline)
+altitude_baseline = np.where(altitude_baseline < 0, np.nan, altitude_baseline)
+mean_altitude = round(np.nanmean(altitude_baseline))
+altitude_baseline = np.where(np.isnan(altitude_baseline), float(mean_altitude), altitude_baseline)
+altitude_baseline = np.nan_to_num(altitude_baseline, nan=mean_altitude, posinf=mean_altitude, neginf=mean_altitude)
+altitude_baseline = list(altitude_baseline)
+
+minimum_distance_baseline = np.nan_to_num(minimum_distance_baseline, nan=np.nan, posinf=np.nan, neginf=np.nan) # just in case
+
+
+X_continuous_baseline = np.column_stack([
+    year_flattened_baseline,
+    month_flattened_baseline,
+    altitude_baseline,
+    np.array(minimum_distance_baseline)
+])
+
+X_categorical_baseline = np.column_stack([
+    resid_encoded_baseline,
+    zone_encoded_baseline,
+    dist_encoded_baseline,
+    owner_encoded_baseline,
+    #ftype_encoded,
+    #facility_encoded,
+])
+scaler = StandardScaler()
+X_continuous_scaled_baseline = scaler.fit_transform(X_continuous_baseline)
+X_continuous_scaled_baseline = X_continuous_baseline
+X_ANC_standardized_baseline = np.column_stack([X_continuous_scaled_baseline, X_categorical_baseline])
+X_basis_weather_filtered_baseline = X_ANC_standardized_baseline[X_ANC_standardized_baseline[:, 0] > mask_threshold]
+
+X_continuous_baseline = np.column_stack([
+        weather_data_baseline,
+        weather_data_baseline[:,0]*weather_data_baseline[:,0],
+        weather_data_baseline[:,1] * weather_data_baseline[:,1],
+        weather_data_baseline[:, 0] * weather_data_baseline[:, 0] * weather_data_baseline[:, 0],
+        weather_data_baseline[:, 1] * weather_data_baseline[:, 1] * weather_data_baseline[:, 1],
+        weather_data_baseline[:, 1] * weather_data_baseline[:,0],
+        np.array(year_flattened_baseline),
+        np.array(month_flattened_baseline),
+        lags_monthly_baseline,
+        lags_monthly_baseline,
+        np.array(altitude_baseline),
+        np.array(minimum_distance_baseline)]
+)
+
+X_categorical_baseline = np.column_stack([
+        resid_encoded_baseline,
+        zone_encoded_baseline,
+        dist_encoded_baseline,
+        owner_encoded_baseline,
+    ])
+
+scaler = StandardScaler()
+X_continuous_scaled_baseline = scaler.fit_transform(X_continuous_baseline)
+X_continuous_scaled_baseline = X_continuous_baseline
+X_bases_ANC_standardized_baseline = np.column_stack([X_continuous_scaled_baseline, X_categorical_baseline])
+X_bases_ANC_standardized_baseline = X_bases_ANC_standardized_baseline[:, included]
+X_basis_weather_filtered_baseline = X_basis_weather_filtered_baseline[:,included_weather]
+
+predictions_weather_baseline = results_of_weather_model.predict(X_basis_weather_filtered_baseline )
+y_pred_ANC_baseline = results.predict(X_bases_ANC_standardized_baseline)
+
+predictions_baseline = np.exp(predictions_weather_baseline) - np.exp(y_pred_ANC_baseline[X_basis_weather[:, 0] > mask_threshold])
+year_month_labels_baseline = np.array([f"{y}-{m}" for y, m in zip(X_basis_weather_filtered_baseline[:, 2], X_basis_weather_filtered_baseline[:, 3])])
+
+data_weather_predictions_baseline = pd.DataFrame({
+    'Year_Month': year_month_labels_baseline,
+    'y_pred_weather': np.exp(predictions_weather_baseline)
+})
+
+data_weather_predictions_baseline['y_pred_no_weather'] = np.exp(y_pred_ANC_baseline[X_basis_weather[:, 0] > mask_threshold])
+
+data_weather_predictions_baseline['difference_in_expectation'] = predictions_baseline
+data_weather_predictions_baseline['weather'] = X_basis_weather[X_basis_weather[:, 0] > mask_threshold, 0]
+data_weather_predictions_grouped_baseline = data_weather_predictions.groupby('Year_Month').mean().reset_index()
+
+# Plotting results
+fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+# axs[0].scatter(data_weather_predictions['Year_Month'], data_weather_predictions['difference_in_expectation'], color='#9AC4F8', alpha=0.1, label ='Predictions from weather model')
+axs[0].scatter(data_weather_predictions_grouped_baseline['Year_Month'],
+               data_weather_predictions_grouped_baseline['difference_in_expectation'], color='red', alpha=0.7,
+               label='Mean of predictions')
+axs[0].set_xlabel('Year/Month')
+xticks = data_weather_predictions_baseline['Year_Month'][::len(year_range) * 12 * num_facilities]
+axs[0].set_xticks(xticks)
+axs[0].set_xticklabels(xticks, rotation=45, ha='right')
+axs[0].set_ylabel(f'Difference Predicted {service} visits due to rainfall')
+axs[0].legend(loc='upper left')
+plt.show()
+
+fig, axs = plt.subplots(1, 2, figsize=(14, 6))
+
+axs[0].scatter(data_weather_predictions_baseline['weather'], data_weather_predictions_baseline['difference_in_expectation'],
+               color='#9AC4F8', alpha=0.1,
+               label='Predictions')
+
+axs[0].set_xlabel('Precipitation (mm)')
+axs[0].set_ylabel(f'Difference in of {service} visits between weather and non-weather model')
+
+plt.tight_layout()
+plt.show()
+# Format output: Add all relevant X variables
+full_data_weather_predictions = pd.DataFrame({
+    'Year': year_flattened_baseline[X_basis_weather[:, 0] > mask_threshold],
+    'Month': np.array(month_flattened_baseline)[X_basis_weather[:, 0] > mask_threshold],
+    'Facility_ID': facility_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
+    'Altitude': np.array(altitude_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Zone': np.array(zone_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'District': np.array(dist_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Resid': np.array(resid_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Owner': np.array(owner_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Facility_Type': np.array(ftype_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Precipitation': X_basis_weather[X_basis_weather[:, 0] > mask_threshold, 0],
+    'Lag_1_Precipitation': np.array(lag_1_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Lag_2_Precipitation': np.array(lag_2_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Lag_3_Precipitation': np.array(lag_3_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Lag_4_Precipitation': np.array(lag_4_month_prediction)[X_basis_weather[:, 0] > mask_threshold],
+    'Predicted_Weather_Model': np.exp(predictions_weather),
+    'Predicted_No_Weather_Model': np.exp(y_pred_ANC[X_basis_weather[:, 0] > mask_threshold]),
+    'Difference_in_Expectation': predictions,
+})
+
+# Save the results
+full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_baseline_{service}.csv",
+                                     index=False)
+
+X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered)
+
+# Save to CSV
+full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_baseline_{service}.csv", index=False)
