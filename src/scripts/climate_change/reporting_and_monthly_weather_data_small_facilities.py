@@ -9,9 +9,10 @@ from scipy.spatial.distance import cdist
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
-ANC = False
-Inpatient = True
+ANC = True
+Inpatient = False
 multiplier = 1000
+baseline = True
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
 elif Inpatient:
@@ -48,7 +49,10 @@ monthly_reporting_by_facility = pd.DataFrame(monthly_reporting_data_by_facility)
 monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname"].values
 
 # Weather data
-directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data" # from 2011 on
+if baseline:
+    directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/Baseline" # from 2011 on
+else:
+    directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data" # from 2011 on
 malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
 # find indices of interest from the malawi file
 
@@ -59,12 +63,12 @@ for file in files:
         file_path = os.path.join(directory, file)
         # Open the NetCDF file - unsure of name, should only be one though
         weather_monthly_all_grids = Dataset(file_path, mode='r')
+        print(weather_monthly_all_grids)
 # the historical data is at a different resolution to the projections. so try and find the closest possible indicses
 # to create a new grid for the historical data
 pr_data = weather_monthly_all_grids.variables['tp'][:]  # total precipitation in kg m-2 s-1 = mm s-1 x 86400 to get to day
 lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
-date = weather_monthly_all_grids['date'][:]
 grid = 0
 regridded_weather_data = {}
 days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -141,17 +145,34 @@ monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:, monthly_rep
 monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
 
 #monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
-if ANC:
-    monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv")
-    weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv")
-if Inpatient:
-    monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv")
-    weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv")
+if baseline:
+    if ANC:
+        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv")
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv")
+    if Inpatient:
+        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv")
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv")
 
+    else:
+        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
 else:
-    monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
-    weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
+    if ANC:
+        monthly_reporting_by_facility.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm_baseline.csv")
+        weather_df.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv")
+    if Inpatient:
+        monthly_reporting_by_facility.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm_baseline.csv")
+        weather_df.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm_baseline.csv")
 
+    else:
+        monthly_reporting_by_facility.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm_baseline.csv")
+        weather_df.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm_baseline.csv")
 
 for facility in facilities_with_location:
     print(facility)
@@ -190,12 +211,23 @@ expanded_facility_info['average_precipitation'] = expanded_facility_info.index.m
 )
 expanded_facility_info = expanded_facility_info.T
 expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
-if ANC:
-    expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv")
-elif Inpatient:
-    expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv")
+if baseline:
+    if ANC:
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv")
+    elif Inpatient:
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days_baseline.csv")
 
+    else:
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_baseline.csv")
 else:
-    expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv")
+    if ANC:
+            expanded_facility_info.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv")
+    elif Inpatient:
+            expanded_facility_info.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days_baseline.csv")
 
+    else:
+            expanded_facility_info.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_baseline.csv")
 
