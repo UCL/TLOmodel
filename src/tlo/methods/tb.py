@@ -1852,11 +1852,11 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     * give IPT for paediatric contacts of diagnosed case
     """
 
-    #def __init__(self, module, person_id, suppress_footprint=False, facility_level='1a'):
-    def __init__(self, module, person_id, suppress_footprint=False):
+    def __init__(self, module, person_id, suppress_footprint=False, facility_level='1a'):
+    #def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
-        #self.facility_level = facility_level
+        self.facility_level = facility_level
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
