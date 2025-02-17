@@ -11,6 +11,7 @@ or locally using:
 """
 
 from tlo import Date, logging
+from tlo.analysis.performance import PerformanceMonitor
 from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
@@ -21,10 +22,10 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)  # The simulation will stop before reaching this date.
-        self.pop_size = 20_000
+        self.end_date = Date(2021, 1, 1)  # The simulation will stop before reaching this date.
+        self.pop_size = 100_000
         self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -32,17 +33,16 @@ class LongRun(BaseScenario):
             'directory': './outputs',  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-                "tlo.methods.contraception": logging.INFO,
             }
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return (fullmodel(resourcefilepath=self.resources) +
+                [
+                    PerformanceMonitor(log_perf=True,
+                           log_perf_freq=1,
+                           log_pop_hash=False,
+                           save_sim=False)])
 
     def draw_parameters(self, draw_number, rng):
         return get_parameters_for_status_quo()
