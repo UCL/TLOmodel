@@ -7,7 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from netCDF4 import Dataset
 
-ANC = False
+ANC = True
 # facility data
 multiplier = 1000
 five_day = False
@@ -57,8 +57,8 @@ monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname
 # historical weather directory
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total"
 
-years = range(2011, 2025)
-#years = range(1940, 1980)
+#years = range(2011, 2025)
+years = range(1940, 1980)
 
 month_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 max_average_by_grid = {}
