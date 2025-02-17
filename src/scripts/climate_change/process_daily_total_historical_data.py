@@ -10,7 +10,7 @@ from netCDF4 import Dataset
 ANC = True
 # facility data
 multiplier = 1000
-five_day = False
+five_day = True
 cumulative = True
 general_facilities = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_districts.shp")
 
