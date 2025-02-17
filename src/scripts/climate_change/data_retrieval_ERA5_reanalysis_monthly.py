@@ -5,16 +5,20 @@ import cdsapi
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data"
 os.chdir(base_dir)
 dataset = "reanalysis-era5-single-levels-monthly-means"
+years = range(1940, 1980)
+years = [str(year) for year in range(1940, 1980)]
+
 request = {
     "product_type": ["monthly_averaged_reanalysis"],
     "variable": ["total_precipitation"],
-    "year": [
-        "2011", "2012", "2013",
-        "2014", "2015", "2016",
-        "2017", "2018", "2019",
-        "2020", "2021", "2022",
-        "2023", "2024"
-    ],
+    # "year": [
+    #     "2011", "2012", "2013",
+    #     "2014", "2015", "2016",
+    #     "2017", "2018", "2019",
+    #     "2020", "2021", "2022",
+    #     "2023", "2024"
+    # ],
+    "year": years,
     "month": [
         "01", "02", "03",
         "04", "05", "06",
