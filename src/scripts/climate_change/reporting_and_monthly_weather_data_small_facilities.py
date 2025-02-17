@@ -12,7 +12,7 @@ from scipy.spatial.distance import cdist
 ANC = True
 Inpatient = False
 multiplier = 1000
-baseline = False
+baseline = True
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
 elif Inpatient:
@@ -29,16 +29,16 @@ reporting_data = reporting_data.dropna(subset = reporting_data.columns[3:], how=
 monthly_reporting_data_by_facility =  {}
 if ANC:
     months = set(col.split("HMIS Total Antenatal Visits ")[1] for col in reporting_data.columns if "HMIS Total Antenatal Visits " in col)
-if Inpatient:
+elif Inpatient:
     months = set(col.split("HMIS Total # of Admissions (including Maternity) ")[1] for col in reporting_data.columns if "HMIS Total # of Admissions (including Maternity) " in col)
 else:
     months = set(col.split(" - Reporting rate ")[1] for col in reporting_data.columns if " - Reporting rate " in col)
-#months = set(col.split("HMIS Total Antenatal Visits ")[1] for col in reporting_data.columns if "HMIS Total Antenatal Visits " in col)
 
 # put in order
 months = [date.strip() for date in months] # extra spaces??
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist() # puts them in ascending order
+print(reporting_data)
 for month in months:
     columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[reporting_data.columns.str.endswith(month)].tolist()
     data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
@@ -50,7 +50,7 @@ monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname
 
 # Weather data
 if baseline:
-    directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/Baseline" # from 2011 on
+    directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/Baseline" # from 1940 - 1980 on
 else:
     directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data" # from 2011 on
 malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
@@ -63,12 +63,13 @@ for file in files:
         file_path = os.path.join(directory, file)
         # Open the NetCDF file - unsure of name, should only be one though
         weather_monthly_all_grids = Dataset(file_path, mode='r')
-        print(weather_monthly_all_grids)
 # the historical data is at a different resolution to the projections. so try and find the closest possible indicses
 # to create a new grid for the historical data
 pr_data = weather_monthly_all_grids.variables['tp'][:]  # total precipitation in kg m-2 s-1 = mm s-1 x 86400 to get to day
 lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
+if not baseline:
+    date = weather_monthly_all_grids['date'][:]
 grid = 0
 regridded_weather_data = {}
 days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -122,15 +123,15 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
             precip_total_for_month = precip_data_for_facility[i] * days_in_month[month] * multiplier
             precip_data_monthly_for_facility.append(precip_total_for_month)
         weather_data_by_facility[reporting_facility]  = precip_data_monthly_for_facility  # to get from per second to per day
-## below are not in facilities file?
+    ## below are not in facilities file?
     elif reporting_facility == "Central East Zone":
         grid = general_facilities[general_facilities["District"] == "Nkhotakota"]["Grid_Index"].iloc[0] # furtherst east zone
         weather_data_by_facility[reporting_facility]  = weather_by_grid[grid]
         facilities_with_location.append(reporting_facility)
     elif (reporting_facility == "Central Hospital"):
-         grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0] # all labelled X City will be in the same grid
-         weather_data_by_facility[reporting_facility]  = weather_by_grid[grid]
-         facilities_with_location.append(reporting_facility)
+        grid = general_facilities[general_facilities["District"] == "Lilongwe City"]["Grid_Index"].iloc[0] # all labelled X City will be in the same grid
+        weather_data_by_facility[reporting_facility]  = weather_by_grid[grid]
+        facilities_with_location.append(reporting_facility)
     else:
         continue
 
@@ -138,96 +139,80 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
 weather_df.columns = facilities_with_location
-monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
-monthly_reporting_by_facility.index.name = "date"
-# ### Save CSVs
-monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:, monthly_reporting_by_facility.columns.isin(facilities_with_location)]
-monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
+if not baseline:
+    monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
+    monthly_reporting_by_facility.index.name = "date"
+    # ### Save CSVs
+    monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:, monthly_reporting_by_facility.columns.isin(facilities_with_location)]
+    monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
 
-#monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
-if baseline:
+    #monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
+
     if ANC:
-        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm_baseline.csv")
-        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv")
+        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv")
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv")
     if Inpatient:
-        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm_baseline.csv")
-        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm_baseline.csv")
+        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv")
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv")
 
     else:
-        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm_baseline.csv")
-        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm_baseline.csv")
-else:
+        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
+
+
+    for facility in facilities_with_location:
+        print(facility)
+    ## Get additional data - e.g. which zone it is in, altitude
+    included_facilities_with_lat_long = facilities_with_lat_long[
+        facilities_with_lat_long["Fname"].isin(facilities_with_location)
+    ]
+
+    unique_columns =  set(facilities_with_location) - set(included_facilities_with_lat_long)
+    print(unique_columns)
+    additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype", 'A109__Latitude', 'A109__Longitude']
+    expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
+    expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Blanytyre", "Blantyre")
+    expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Nkhatabay", "Nkhata Bay")
+
+    expanded_facility_info.columns = ["Fname"] + additional_rows
+    expanded_facility_info.set_index("Fname", inplace=True)
+    # minimum distances between facilities
+    coordinates = expanded_facility_info[['A109__Latitude', 'A109__Longitude']].values
+    distances = cdist(coordinates, coordinates, metric='euclidean')
+    np.fill_diagonal(distances, np.inf)
+    expanded_facility_info['minimum_distance'] = np.nanmin(distances, axis=1)
+
+    average_precipitation_by_facility = {
+        facility: np.mean(precipitation)
+        for facility, precipitation in weather_data_by_facility.items()
+    }
+
+    average_precipitation_df = pd.DataFrame.from_dict(
+        average_precipitation_by_facility, orient='index', columns=['average_precipitation']
+    )
+
+    average_precipitation_df.index.name = "Fname"
+    expanded_facility_info['average_precipitation'] = expanded_facility_info.index.map(
+        average_precipitation_df['average_precipitation']
+    )
+    expanded_facility_info = expanded_facility_info.T
+    expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
     if ANC:
-        monthly_reporting_by_facility.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm_baseline.csv")
-        weather_df.to_csv(
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv")
+    elif Inpatient:
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv")
+
+    else:
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv")
+
+if baseline:
+    if ANC:
+       weather_df.to_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv")
     if Inpatient:
-        monthly_reporting_by_facility.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm_baseline.csv")
         weather_df.to_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm_baseline.csv")
 
     else:
-        monthly_reporting_by_facility.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm_baseline.csv")
         weather_df.to_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm_baseline.csv")
-
-for facility in facilities_with_location:
-    print(facility)
-## Get additional data - e.g. which zone it is in, altitude
-included_facilities_with_lat_long = facilities_with_lat_long[
-    facilities_with_lat_long["Fname"].isin(facilities_with_location)
-]
-
-unique_columns =  set(facilities_with_location) - set(included_facilities_with_lat_long)
-print(unique_columns)
-additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype", 'A109__Latitude', 'A109__Longitude']
-expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
-expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Blanytyre", "Blantyre")
-expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Nkhatabay", "Nkhata Bay")
-
-expanded_facility_info.columns = ["Fname"] + additional_rows
-expanded_facility_info.set_index("Fname", inplace=True)
-# minimum distances between facilities
-coordinates = expanded_facility_info[['A109__Latitude', 'A109__Longitude']].values
-distances = cdist(coordinates, coordinates, metric='euclidean')
-np.fill_diagonal(distances, np.inf)
-expanded_facility_info['minimum_distance'] = np.nanmin(distances, axis=1)
-
-average_precipitation_by_facility = {
-    facility: np.mean(precipitation)
-    for facility, precipitation in weather_data_by_facility.items()
-}
-
-average_precipitation_df = pd.DataFrame.from_dict(
-    average_precipitation_by_facility, orient='index', columns=['average_precipitation']
-)
-
-average_precipitation_df.index.name = "Fname"
-expanded_facility_info['average_precipitation'] = expanded_facility_info.index.map(
-    average_precipitation_df['average_precipitation']
-)
-expanded_facility_info = expanded_facility_info.T
-expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
-if baseline:
-    if ANC:
-        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv")
-    elif Inpatient:
-        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days_baseline.csv")
-
-    else:
-        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_baseline.csv")
-else:
-    if ANC:
-            expanded_facility_info.to_csv(
-                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv")
-    elif Inpatient:
-            expanded_facility_info.to_csv(
-                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days_baseline.csv")
-
-    else:
-            expanded_facility_info.to_csv(
-                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_baseline.csv")
-
