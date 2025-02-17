@@ -58,6 +58,8 @@ monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total"
 
 years = range(2011, 2025)
+#years = range(1940, 1980)
+
 month_lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 max_average_by_grid = {}
 
@@ -94,7 +96,10 @@ for year in years:
 
 df = pd.DataFrame.from_dict(max_average_by_grid, orient='index')
 df = df.T
-df.to_csv(Path(base_dir)/"historical_daily_total_by_grid.csv")
+if max(years) < 2000:
+    df.to_csv(Path(base_dir)/f"historical_{min(years)}_{max(years)}_daily_total_by_grid.csv")
+else:
+    df.to_csv(Path(base_dir)/"historical_daily_total_by_grid.csv")
 
 
 ########## add in reporting data ##################
@@ -152,20 +157,37 @@ df_of_facilities = pd.DataFrame.from_dict(max_average_by_facility, orient='index
 df_of_facilities = df_of_facilities.iloc[:, :-3] ## THESE ARE OCT/NOV/DEC OF 2024, and for moment don't have that reporting data
 df_of_facilities = df_of_facilities.T
 
-
-if five_day:
-    if cumulative:
-        if ANC:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv")
+if max(years) > 2000:
+    if five_day:
+        if cumulative:
+            if ANC:
+                df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv")
+            else:
+                df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_cumulative_inpatient.csv")
         else:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_cumulative_inpatient.csv")
+            if ANC:
+                df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_average.csv")
+            else:
+                df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_average_inpatient.csv")
     else:
-        if ANC:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC_five_day_average.csv")
-        else:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_five_day_average_inpatient.csv")
+            if ANC:
+                df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC.csv")
+            else:
+                df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_inpatient.csv")
 else:
-        if ANC:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facilities_with_ANC.csv")
+    if five_day:
+        if cumulative:
+            if ANC:
+                df_of_facilities.to_csv(Path(base_dir) / f"historical_{min(years)}_{max(years)}_daily_total_by_facilities_with_ANC_five_day_cumulative.csv")
+            else:
+                df_of_facilities.to_csv(Path(base_dir) / f"historical_{min(years)}_{max(years)}_daily_total_by_facility_five_day_cumulative_inpatient.csv")
         else:
-            df_of_facilities.to_csv(Path(base_dir) / "historical_daily_total_by_facility_inpatient.csv")
+            if ANC:
+                df_of_facilities.to_csv(Path(base_dir) / f"historical_{min(years)}_{max(years)}_daily_total_by_facilities_with_ANC_five_day_average.csv")
+            else:
+                df_of_facilities.to_csv(Path(base_dir) / f"historical_{min(years)}_{max(years)}_daily_total_by_facility_five_day_average_inpatient.csv")
+    else:
+            if ANC:
+                df_of_facilities.to_csv(Path(base_dir) / f"historical_{min(years)}_{max(years)}_daily_total_by_facilities_with_ANC.csv")
+            else:
+                df_of_facilities.to_csv(Path(base_dir) / f"historical_{min(years)}_{max(years)}_daily_total_by_facility_inpatient.csv")
