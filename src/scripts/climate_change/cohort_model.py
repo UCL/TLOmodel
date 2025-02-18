@@ -544,6 +544,106 @@ plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_
 ####### Historical disruptions ##########
 
 
+baseline_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_baseline_{service}.csv')
+baseline_predictions = baseline_predictions.loc[baseline_predictions['Difference_in_Expectation'] < 0]
+
+baseline_predictions_sum = baseline_predictions.groupby('District').sum().reset_index()
+baseline_predictions_sum['Percentage_Difference'] = (
+    baseline_predictions_sum['Difference_in_Expectation'] / baseline_predictions_sum['Predicted_No_Weather_Model']
+) * 100
+
+baseline_predictions_sum['District'] = baseline_predictions_sum['District'].replace(
+    {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+)
+
+percentage_diff_by_district_baseline = baseline_predictions_sum.groupby('District')['Percentage_Difference'].mean()
+malawi_admin2['Percentage_Difference_baseline'] = malawi_admin2['ADM2_EN'].map(percentage_diff_by_district_baseline)
+malawi_admin2.loc[malawi_admin2['Percentage_Difference_baseline'] > 0, 'Percentage_Difference_baseline'] = 0
+malawi_admin2['Percentage_Difference_baseline'] = malawi_admin2['Percentage_Difference_baseline'].abs()  # for mapping, to show %
+
+percentage_diff_by_district_baseline_average = baseline_predictions_sum['Percentage_Difference'].mean()
+filtered_predictions_baseline = baseline_predictions[baseline_predictions['Precipitation'] >= precipitation_threshold]
+filtered_predictions_baseline_sum = filtered_predictions_baseline.groupby('Year').sum().reset_index()
+percent_due_to_extreme_baseline = filtered_predictions_baseline_sum['Difference_in_Expectation'].sum()
+percent_due_to_extreme_baseline = percent_due_to_extreme_baseline/baseline_predictions['Difference_in_Expectation'].sum()
+print(percent_due_to_extreme_baseline)
+fig, ax = plt.subplots(figsize=(10, 10))
+water_bodies.plot(ax=ax, facecolor="none", edgecolor="#999999", linewidth=0.5, hatch="xxx")
+water_bodies.plot(ax=ax, facecolor="none", edgecolor="black", linewidth=1)
+print(malawi_admin2['Percentage_Difference_baseline'])
+malawi_admin2.dropna(subset=['Percentage_Difference_baseline']).plot(
+    ax=ax,
+    column='Percentage_Difference_baseline',
+    cmap='Blues',
+    edgecolor='black',
+    alpha=1,
+    legend=False,
+    # vmin=0,
+    # vmax=0.04
+)
+
+ax.set_ylabel("Latitude", fontsize=10)
+ax.set_xlabel("Longitude", fontsize=10)
+sm = plt.cm.ScalarMappable(
+    cmap='Blues',
+    #norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
+)
+sm.set_array([])
+fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
+
+plt.title("Baseline", fontsize=16)
+plt.savefig(results_folder_to_save / 'percentage_difference_map_baseline.png')
+plt.show()
+
+
+
+# #### Now do number of births based on the TLO model (2010 - 2024) and 2018 census
+
+historical_predictions_negative =  historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
+historical_predictions_negative = historical_predictions_negative[historical_predictions_negative['Year'] <= 2024]
+        # total disruptions
+historical_predictions_negative_sum = historical_predictions_negative.groupby('Year').sum().reset_index()
+historical_predictions_negative_sum['Percentage_Difference'] = (
+                historical_predictions_negative_sum['Difference_in_Expectation'] / historical_predictions_negative_sum[
+                'Predicted_No_Weather_Model'])
+        # Match birth results and predictions
+multiplied_values_historical = births_model_subset_historical.values * historical_predictions_negative_sum[
+            'Percentage_Difference'].values * 1.4 # 1.4 is conversion from births to pregnacnies
+
+# Check for negative values (missed cases?)
+negative_sum_historical = np.sum(multiplied_values_historical[multiplied_values_historical < 0])
+
+# now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
+filtered_predictions_historical = historical_predictions_negative[historical_predictions_negative['Precipitation'] >= precipitation_threshold]
+filtered_predictions_sum_historical = filtered_predictions_historical.groupby('Year').sum().reset_index()
+percent_due_to_extreme_historical = filtered_predictions_sum_historical['Difference_in_Expectation'] / historical_predictions_negative_sum['Predicted_No_Weather_Model']
+print(percent_due_to_extreme_historical)
+multiplied_values_extreme_precip_historical = births_model_subset_historical.values * percent_due_to_extreme_historical.values * 1.4
+negative_sum_extreme_precip_historical = np.sum(multiplied_values_extreme_precip_historical[multiplied_values_extreme_precip_historical < 0])
+result_df_historical = pd.DataFrame({
+            "Negative_Sum": [negative_sum_historical],
+            "Negative_Percentage": [negative_sum_historical / (births_model_subset_historical.sum() * 1.4) * 100],
+            "Extreme_Precip": [negative_sum_extreme_precip_historical],
+            "Extreme_Precip_Percentage": [(negative_sum_extreme_precip_historical  / negative_sum_historical) * 100]
+        })
+
+# Save multiplied values by model and scenario
+multiplied_values_df_historical = pd.DataFrame({
+            'Year': range(2012, 2025),
+            'Multiplied_Values': multiplied_values_historical,
+            'Multiplied_Values_extreme_precip': multiplied_values_extreme_precip_historical
+
+        })
+multiplied_values_df_historical.to_csv(results_folder_to_save/f'multiplied_values_historical.csv', index=False)
+
+print(result_df_historical)
+result_df_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_historical.csv', index=False)
+
+###### Baseline historical disruptions #######
+
+####### Historical disruptions ##########
+
+
 historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
 historical_predictions = historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
 
@@ -595,51 +695,6 @@ fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Percentage Di
 plt.title("", fontsize=16)
 plt.savefig(results_folder_to_save / 'percentage_difference_map_historical.png')
 plt.show()
-
-
-
-# #### Now do number of births based on the TLO model (2010 - 2024) and 2018 census
-
-historical_predictions_negative =  historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
-historical_predictions_negative = historical_predictions_negative[historical_predictions_negative['Year'] <= 2024]
-        # total disruptions
-historical_predictions_negative_sum = historical_predictions_negative.groupby('Year').sum().reset_index()
-historical_predictions_negative_sum['Percentage_Difference'] = (
-                historical_predictions_negative_sum['Difference_in_Expectation'] / historical_predictions_negative_sum[
-                'Predicted_No_Weather_Model'])
-        # Match birth results and predictions
-multiplied_values_historical = births_model_subset_historical.values * historical_predictions_negative_sum[
-            'Percentage_Difference'].values * 1.4 # 1.4 is conversion from births to pregnacnies
-
-# Check for negative values (missed cases?)
-negative_sum_historical = np.sum(multiplied_values_historical[multiplied_values_historical < 0])
-
-# now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
-filtered_predictions_historical = historical_predictions_negative[historical_predictions_negative['Precipitation'] >= precipitation_threshold]
-filtered_predictions_sum_historical = filtered_predictions_historical.groupby('Year').sum().reset_index()
-percent_due_to_extreme_historical = filtered_predictions_sum_historical['Difference_in_Expectation'] / historical_predictions_negative_sum['Predicted_No_Weather_Model']
-print(percent_due_to_extreme_historical)
-multiplied_values_extreme_precip_historical = births_model_subset_historical.values * percent_due_to_extreme_historical.values * 1.4
-negative_sum_extreme_precip_historical = np.sum(multiplied_values_extreme_precip_historical[multiplied_values_extreme_precip_historical < 0])
-result_df_historical = pd.DataFrame({
-            "Negative_Sum": [negative_sum_historical],
-            "Negative_Percentage": [negative_sum_historical / (births_model_subset_historical.sum() * 1.4) * 100],
-            "Extreme_Precip": [negative_sum_extreme_precip_historical],
-            "Extreme_Precip_Percentage": [(negative_sum_extreme_precip_historical  / negative_sum_historical) * 100]
-        })
-
-# Save multiplied values by model and scenario
-multiplied_values_df_historical = pd.DataFrame({
-            'Year': range(2012, 2025),
-            'Multiplied_Values': multiplied_values_historical,
-            'Multiplied_Values_extreme_precip': multiplied_values_extreme_precip_historical
-
-        })
-multiplied_values_df_historical.to_csv(results_folder_to_save/f'multiplied_values_historical.csv', index=False)
-
-print(result_df_historical)
-result_df_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_historical.csv', index=False)
-
 
 ###### Effect of CYCLONE FREDDY #######
 
