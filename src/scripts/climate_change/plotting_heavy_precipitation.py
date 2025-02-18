@@ -112,14 +112,31 @@ historical_weather = historical_weather.mean(axis = 1)
 historical_weather = historical_weather.to_frame(name='mean_precipitation')
 historical_weather.reset_index()
 historical_weather_sum = historical_weather.groupby(historical_weather.index // 12).sum()
+
+baseline_weather = pd.read_csv(
+    "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv",
+    index_col=0)
+baseline_weather = baseline_weather.mean(axis = 1)
+baseline_weather = baseline_weather.to_frame(name='mean_precipitation')
+baseline_weather.reset_index()
+baseline_weather_sum = baseline_weather.groupby(baseline_weather.index // 12).sum()
+
 for i, ssp_scenario in enumerate(ssp_scenarios):
     axes[i].plot(
-        range(len(historical_weather_sum)),
+        range(len(baseline_weather_sum),len(baseline_weather_sum) + len(historical_weather_sum)),
         historical_weather_sum,
         color="#312F2F",
         linewidth=2,
         linestyle='--',
         label='ERA5'
+    )
+    axes[i].plot(
+        range(len(baseline_weather_sum)),
+        baseline_weather_sum,
+        color="#A03E99",
+        linewidth=2,
+        linestyle='--',
+        label='1940-1980'
     )
     for model in model_types:
         weather_data_prediction_monthly_original = pd.read_csv(
@@ -134,14 +151,15 @@ for i, ssp_scenario in enumerate(ssp_scenarios):
             y_data.index // 12
         ).sum()
         axes[i].plot(
-            range(len(historical_weather_sum), len(historical_weather_sum) + len(y_data)),
+            range(len(baseline_weather_sum) + len(historical_weather_sum), len(baseline_weather_sum) + len(historical_weather_sum) + len(y_data)),
             y_data['mean_precipitation'],
             label=f"{model}",
         )
 
         # Fix xticks and labels
-        axes[i].set_xticks(range(0,len(historical_weather_sum) + len(y_data), 10))
-        axes[i].set_xticklabels(range(2010, 2071, 10))
+        axes[i].set_xticks(range(0,len(baseline_weather_sum) + len(historical_weather_sum) + len(y_data), 10))
+        years = list(range(1940, 1971, 10)) + list(range(2010, 2071, 10))
+        axes[i].set_xticklabels(years)
         axes[i].set_title(ssp_scenario.upper())
         axes[i].set_xlabel('Year')
         if i == 0:
@@ -149,4 +167,4 @@ for i, ssp_scenario in enumerate(ssp_scenarios):
             axes[i].legend()
 
 plt.tight_layout()
-plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/histroical_future_precip_annual_selected_models.png')
+plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/histroical_baseline_future_precip_annual_selected_models.png')
