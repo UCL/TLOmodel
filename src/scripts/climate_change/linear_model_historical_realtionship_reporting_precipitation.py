@@ -32,7 +32,8 @@ use_percentile_mask_threshold = False
 baseline_years = range(1940, 1980)
 min_year_for_analysis_baseline = min(baseline_years) + 1
 absolute_min_year_baseline = min(baseline_years)
-max_year_for_analysis_baseline =  max(baseline_years) + 1
+max_year_for_analysis_baseline =  1950 #max(baseline_years) + 1
+absolute_max_year_baseline =  max(baseline_years) + 1
 
 poisson = False
 log_y = True
@@ -887,33 +888,36 @@ if ANC:
     lag_4_month_baseline = weather_data_monthly_20th_century.shift(4).values
     lag_9_month_baseline = weather_data_monthly_20th_century.shift(9).values
 
-    lag_1_month_baseline = lag_1_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_2_month_baseline = lag_2_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_3_month_baseline = lag_3_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_4_month_baseline = lag_4_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_9_month_baseline = lag_9_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
 
+    lag_1_month_baseline = lag_1_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_2_month_baseline = lag_2_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_3_month_baseline = lag_3_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_4_month_baseline = lag_4_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_9_month_baseline = lag_9_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
     lag_1_5_day_baseline = weather_data_five_day_cumulative_20th_century.shift(1).values
     lag_2_5_day_baseline = weather_data_five_day_cumulative_20th_century.shift(2).values
     lag_3_5_day_baseline = weather_data_five_day_cumulative_20th_century.shift(3).values
     lag_4_5_day_baseline = weather_data_five_day_cumulative_20th_century.shift(4).values
     lag_9_5_day_baseline = weather_data_five_day_cumulative_20th_century.shift(9).values
 
-    lag_1_5_day_baseline = lag_1_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_2_5_day_baseline = lag_2_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_3_5_day_baseline = lag_3_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_4_5_day_baseline = lag_4_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
-    lag_9_5_day_baseline = lag_9_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
+    lag_1_5_day_baseline = lag_1_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_2_5_day_baseline = lag_2_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_3_5_day_baseline = lag_3_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_4_5_day_baseline = lag_4_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    lag_9_5_day_baseline = lag_9_5_day_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
+    print("one month", len(lag_1_5_day_baseline))
 
     # need for binary
     lag_12_month_baseline = weather_data_monthly_20th_century.shift(12).values
-    lag_12_month_baseline = lag_12_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:].flatten()
+    lag_12_month_baseline = lag_12_month_baseline[(min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12].flatten()
 
     # process
     weather_data_monthly_20th_century = weather_data_monthly_20th_century.iloc[
                                         (min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:]
+    weather_data_monthly_20th_century = weather_data_monthly_20th_century.iloc[:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12]
     weather_data_five_day_cumulative_20th_century = weather_data_five_day_cumulative_20th_century.iloc[
                                                     (min_year_for_analysis_baseline - absolute_min_year_baseline) * 12:]
+    weather_data_five_day_cumulative_20th_century = weather_data_five_day_cumulative_20th_century.iloc[:(max_year_for_analysis_baseline - absolute_max_year_baseline) * 12]
 
     weather_data_monthly_flattened = weather_data_monthly_20th_century.values.flatten()
     weather_data_five_day_cumulative_flattened = weather_data_five_day_cumulative_20th_century.values.flatten()
@@ -922,16 +926,20 @@ if ANC:
 
 # covariates
 year_range_baseline = range(min_year_for_analysis_baseline, max_year_for_analysis_baseline, 1)
-year_repeated_baseline = [y for y in year_range_baseline for _ in range(12)]
+#year_repeated_baseline = [y for y in year_range_baseline for _ in range(12)]
+year_repeated_baseline = [y for y in range(min_year_for_analysis,max_year_for_analysis) for _ in range(12)] # "transpose'
+
 year_flattened_baseline = year_repeated_baseline*num_facilities_baseline # to get flattened data
-#year_flattened_baseline = [2015] * len(year_flattened_baseline)
+
 month_repeated = []
 for _ in year_range_baseline:
     month_repeated.extend(range(1, 13))
 month_flattened_baseline = month_repeated*num_facilities_baseline
+print("month",len(month_flattened_baseline))
 
 zone_info_each_month_baseline = repeat_info(expanded_facility_info["Zonename"], num_facilities_baseline, year_range_baseline, historical = False)
 zone_encoded_baseline = pd.get_dummies(zone_info_each_month_baseline, drop_first=True)
+print("zone",len(zone_encoded_baseline))
 dist_info_each_month_baseline = repeat_info(expanded_facility_info["Dist"], num_facilities_baseline, year_range_baseline, historical = False)
 dist_encoded_baseline = pd.get_dummies(dist_info_each_month_baseline, drop_first=True)
 resid_info_each_month_baseline = repeat_info(expanded_facility_info['Resid'], num_facilities_baseline, year_range_baseline, historical = False)
