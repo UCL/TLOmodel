@@ -1937,7 +1937,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # this HSI will choose relevant sensitivity/specificity depending on person's smear status
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
                 topen=now,
                 tclose=None,
                 priority=0,
@@ -3064,7 +3064,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                 if any(x in self.module.symptom_list for x in persons_symptoms):
                     print(f"Community CXR scheduled for person {person_id} due to TB symptoms.")
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
+                        hsi_event=HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
                         topen=now,
                         tclose=None,
                         priority=0,
