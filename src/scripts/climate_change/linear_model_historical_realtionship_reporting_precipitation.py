@@ -1004,8 +1004,7 @@ y_pred_baseline = results.predict(X_standardized_baseline)
 
 
 predictions_baseline = np.exp(predictions_weather_baseline) - np.exp(y_pred_baseline[X_basis_weather_filtered_baseline[:, 0] > mask_threshold])
-#predictions_baseline = (predictions_weather_baseline) - (y_pred_baseline[X_basis_weather_filtered_baseline[:, 0] > mask_threshold])
-predictions_baseline[predictions_baseline > 10000] = 0
+predictions_baseline = (predictions_weather_baseline) - (y_pred_baseline[X_basis_weather_filtered_baseline[:, 0] > mask_threshold])
 year_month_labels_baseline = np.array([f"{y}-{m}" for y, m in zip(X_basis_weather_filtered_baseline[:, 2], X_basis_weather_filtered_baseline[:, 3])])
 
 data_weather_predictions_baseline = pd.DataFrame({
@@ -1020,7 +1019,7 @@ data_weather_predictions_baseline['weather'] = X_basis_weather_filtered_baseline
 data_weather_predictions_grouped_baseline = data_weather_predictions_baseline.groupby('Year_Month').mean().reset_index()
 
 ## plot difference
-axs[0].scatter(X_basis_weather_filtered_baseline[:, 0], y_pred_baseline[X_basis_weather_filtered_baseline[:, 0] > mask_threshold], color='red', alpha=0.5, label = 'Non weather model')
+axs[0].scatter(X_basis_weather_filtered_baseline[:, 0], np.exp(y_pred_baseline[X_basis_weather_filtered_baseline[:, 0] > mask_threshold]), color='red', alpha=0.5, label = 'Non weather model')
 axs[0].hlines(y = 0, xmin=plt.xlim()[0], xmax=plt.xlim()[1], color = 'black', linestyle = '--')
 axs[0].scatter(X_basis_weather_filtered_baseline[:, 0], np.exp(predictions_weather_baseline), label='Weather model', color="blue", alpha = 0.5)
 axs[0].hlines(y=0, xmin=plt.xlim()[0], xmax=plt.xlim()[1], color='black', linestyle='--')
@@ -1062,7 +1061,7 @@ plt.tight_layout()
 plt.show()
 # Format output: Add all relevant X variables
 full_data_weather_predictions = pd.DataFrame({
-    'Year': year_flattened_baseline[X_basis_weather_filtered_baseline[:, 0] > mask_threshold],
+    'Year': np.array(year_flattened_baseline)[X_continuous_baseline_weather[:, 0] > mask_threshold],
     'Month': np.array(month_flattened_baseline)[X_basis_weather_filtered_baseline[:, 0] > mask_threshold],
     'Altitude': np.array(altitude_baseline)[X_basis_weather_filtered_baseline[:, 0] > mask_threshold],
     'Zone': np.array(zone_info_each_month_baseline)[X_basis_weather_filtered_baseline[:, 0] > mask_threshold],
@@ -1077,7 +1076,7 @@ full_data_weather_predictions = pd.DataFrame({
 })
 
 # Save the results
-full_data_weather_predictions.to_csv(f"{data_path_base}weather_predictions_with_X_baseline_{service}.csv",
+full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_baseline_{service}.csv",
                                      index=False)
 
 X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered_baseline)
