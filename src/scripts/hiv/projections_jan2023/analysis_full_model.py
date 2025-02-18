@@ -47,10 +47,9 @@ log_config = {
 # seed = random.randint(0, 50000)
 seed = 32  # set seed for reproducibility
 
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
-sim.register(*fullmodel(
-    resourcefilepath=resourcefilepath,
-    use_simplified_births=False,
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config,
+                 show_progress_bar=True, resourcefilepath=resourcefilepath)
+sim.register(*fullmodel(use_simplified_births=False,
     module_kwargs={
         "SymptomManager": {"spurious_symptoms": True},
         "HealthSystem": {"disable": False,
