@@ -139,29 +139,17 @@ for reporting_facility in monthly_reporting_by_facility["facility"]:
 ### Get data ready for linear regression between reporting and weather data
 weather_df = pd.DataFrame.from_dict(weather_data_by_facility, orient='index').T
 weather_df.columns = facilities_with_location
-if not baseline:
-    monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
-    monthly_reporting_by_facility.index.name = "date"
-    # ### Save CSVs
-    monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:, monthly_reporting_by_facility.columns.isin(facilities_with_location)]
-    monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
+monthly_reporting_by_facility = monthly_reporting_by_facility.set_index('facility').T
+monthly_reporting_by_facility.index.name = "date"
+# ### Save CSVs
+monthly_reporting_by_facility = monthly_reporting_by_facility.loc[:,
+                                monthly_reporting_by_facility.columns.isin(facilities_with_location)]
+monthly_reporting_by_facility = monthly_reporting_by_facility[facilities_with_location]
 
-    #monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
+# monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
 
-    if ANC:
-        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv")
-        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv")
-    if Inpatient:
-        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv")
-        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv")
-
-    else:
-        monthly_reporting_by_facility.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
-        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
-
-
-    for facility in facilities_with_location:
-        print(facility)
+for facility in facilities_with_location:
+    print(facility)
     ## Get additional data - e.g. which zone it is in, altitude
     included_facilities_with_lat_long = facilities_with_lat_long[
         facilities_with_lat_long["Fname"].isin(facilities_with_location)
@@ -197,22 +185,42 @@ if not baseline:
     )
     expanded_facility_info = expanded_facility_info.T
     expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
-    if ANC:
-        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv")
-    elif Inpatient:
-        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv")
-
-    else:
-        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv")
 
 if baseline:
     if ANC:
        weather_df.to_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv")
+       expanded_facility_info.to_csv(
+           "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv")
+
     if Inpatient:
         weather_df.to_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm_baseline.csv")
-
+        expanded_facility_info.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_Inpatient_baseline.csv")
     else:
         weather_df.to_csv(
             "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm_baseline.csv")
+        expanded_facility_info.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_baseline.csv")
+
+
+
+else:
+    if ANC:
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv")
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv")
+        monthly_reporting_by_facility.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_ANC_by_smaller_facility_lm.csv")
+
+    if Inpatient:
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm.csv")
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_inpatient_days.csv")
+        monthly_reporting_by_facility.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_Inpatient_by_smaller_facility_lm.csv")
+
+    else:
+        weather_df.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm.csv")
+        expanded_facility_info.to_csv("/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm.csv")
+        monthly_reporting_by_facility.to_csv(
+            "/Users/rem76/Desktop/Climate_change_health/Data/monthly_reporting_by_smaller_facility_lm.csv")
