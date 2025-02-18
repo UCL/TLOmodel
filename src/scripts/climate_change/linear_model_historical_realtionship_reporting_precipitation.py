@@ -926,11 +926,9 @@ if ANC:
 
 # covariates
 year_range_baseline = range(min_year_for_analysis_baseline, max_year_for_analysis_baseline, 1)
-#year_repeated_baseline = [y for y in year_range_baseline for _ in range(12)]
-year_repeated_baseline = [y for y in range(min_year_for_analysis,max_year_for_analysis) for _ in range(12)] # "transpose'
-
+year_repeated_baseline = [y for y in year_range_baseline for _ in range(12)]
 year_flattened_baseline = year_repeated_baseline*num_facilities_baseline # to get flattened data
-
+year_flattened_baseline = [2015] * len(year_flattened_baseline)
 month_repeated = []
 for _ in year_range_baseline:
     month_repeated.extend(range(1, 13))
