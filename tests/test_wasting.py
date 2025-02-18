@@ -906,3 +906,67 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     death_event.apply(person_id=person_id)
     person = df.loc[person_id]
     assert person['is_alive']
+
+def test_sam_by_oedema_misdiagnosis(tmpdir):
+    """ Test when person is having SAM only by oedema, if the attendance to growth monitoring is 100%,
+    probability of oedema_check is 0%, death rate due to untreated SAM is 0%:
+    On the first day of simulation, the growth monitoring should be initialised. It should diagnose the person as having MAM and send them for SFP treatment. Then, when
+    HSI_SFP runs, it should recognise the person as being misdiagnosed and reschedule them for appropriate tx. """
+
+    dur = pd.DateOffset(days=1)
+    popsize = 1000
+    sim = get_sim(tmpdir)
+    wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
+
+    # Set growth monitoring attendance at 100%
+    p['growth_monitoring_attendance_prob'] = [1.0, 1.0, 1.0]
+    # Set the probability of oedema being checked at 0%
+    p['oedema_check_prob'] = 0.0
+    # Set death rate for untreated SAM at 0%
+    p['base_death_rate_untreated_SAM'] = 0.0
+    # Set probability of complications in SAM at 0%
+    p['prob_complications_in_SAM'] = 0.0
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    print(f"\n{person_id=}")
+
+    # Manually set this individual properties to have SAM only by oedema
+    df.loc[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
+    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.loc[person_id, 'un_am_nutritional_oedema'] = True
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
+
+    # Check actual acute malnutrition status
+    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+    assert not df.loc[person_id, 'un_sam_with_complications']
+
+    # Check after the first day, SFP event is scheduled (as the person should be misdiagnosed due to oedema not being checked)
+    print(f"{sim.date=}")
+    sfp_event_scheduled = [
+        ev[1] for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Wasting_SupplementaryFeedingProgramme_MAM)
+    ]
+    assert len(sfp_event_scheduled) == 1
+    # and no OTP event scheduled
+    otp_event_scheduled = [
+        ev[1] for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
+    ]
+    assert len(otp_event_scheduled) == 0
+
+    # Run the created instance of SFP event
+    sfp_event_scheduled[0].run(squeeze_factor=0.0)
+    # and check they are re-schedule for an appropriate tx
+    otp_event_scheduled = [
+        ev[1] for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
+        if isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
+    ]
+    assert len(otp_event_scheduled) == 1
