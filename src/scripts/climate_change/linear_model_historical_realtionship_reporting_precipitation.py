@@ -1078,8 +1078,3 @@ full_data_weather_predictions = pd.DataFrame({
 # Save the results
 full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_baseline_{service}.csv",
                                      index=False)
-
-X_basis_weather_filtered = pd.DataFrame(X_basis_weather_filtered_baseline)
-
-# Save to CSV
-full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_baseline_{service}.csv", index=False)
