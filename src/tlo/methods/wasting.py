@@ -408,7 +408,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # get probability of severe wasting: WHZ < -3
         probability_less_than_minus3sd = self.parameters['prev_init_sev_by_agegp'][i]
-        print(f"orig init prev sev wast: {agegp=}, {probability_less_than_minus3sd=}")
 
         # make WHZ < -2 as the 100% and get the adjusted probability of severe wasting within overall wasting
         # return the probability of severe wasting among all wasting cases for the agegp
