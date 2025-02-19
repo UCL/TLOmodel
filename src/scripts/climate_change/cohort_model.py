@@ -83,7 +83,7 @@ difference_long = long_data[1] - long_data[0]
 # # # Get expected disturbance from the model
 
 results_list = []
-
+#
 #Loop through scenarios and model types
 for scenario in scenarios:
     for model_type in model_types:
@@ -541,7 +541,7 @@ plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_
 #plt.show()
 #
 
-####### Historical disruptions ##########
+####### BASELINE HISTORICAL disruptions ##########
 
 
 baseline_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_baseline_{service}.csv')
@@ -584,19 +584,59 @@ malawi_admin2.dropna(subset=['Percentage_Difference_baseline']).plot(
 
 ax.set_ylabel("Latitude", fontsize=10)
 ax.set_xlabel("Longitude", fontsize=10)
-sm = plt.cm.ScalarMappable(
-    cmap='Blues',
-    #norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
-)
+sm = plt.cm.ScalarMappable(cmap='Blues', norm=mcolors.Normalize(vmin=malawi_admin2['Percentage_Difference_baseline'].min(),
+                                                                 vmax=malawi_admin2['Percentage_Difference_baseline'].max()))
 sm.set_array([])
 fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
 
-plt.title("Baseline", fontsize=16)
+#plt.title("Baseline", fontsize=16)
 plt.savefig(results_folder_to_save / 'percentage_difference_map_baseline.png')
 plt.show()
 
+# #### Now do number of births based on the TLO model (2010 - 2024) and 2018 census, but with counterfactual precipitation
+# i.e. use births_model_subset_historical, as it is what would have been
+baseline_predictions_negative =  baseline_predictions.loc[baseline_predictions['Difference_in_Expectation'] < 0]
+baseline_predictions_negative = baseline_predictions_negative[baseline_predictions_negative['Year'] <= 2024]
+        # total disruptions
+baseline_predictions_negative_sum = baseline_predictions_negative.groupby('Year').sum().reset_index()
+baseline_predictions_negative_sum['Percentage_Difference'] = (
+                baseline_predictions_negative_sum['Difference_in_Expectation'] / baseline_predictions_negative_sum[
+                'Predicted_No_Weather_Model'])
+        # Match birth results and predictions
+multiplied_values_baseline = births_model_subset_historical.values * baseline_predictions_negative_sum[
+            'Percentage_Difference'].values * 1.4 # 1.4 is conversion from births to pregnacnies
+
+# Check for negative values (missed cases?)
+negative_sum_baseline = np.sum(multiplied_values_baseline[multiplied_values_baseline < 0])
+
+# now do extreme precipitation by district and year, use original dataframe to get monthly top 10% precip
+filtered_predictions_baseline = baseline_predictions_negative[baseline_predictions_negative['Precipitation'] >= precipitation_threshold]
+filtered_predictions_sum_baseline = filtered_predictions_baseline.groupby('Year').sum().reset_index()
+percent_due_to_extreme_baseline = filtered_predictions_sum_baseline['Difference_in_Expectation'] / baseline_predictions_negative_sum['Predicted_No_Weather_Model']
+print(percent_due_to_extreme_baseline)
+multiplied_values_extreme_precip_baseline = births_model_subset_historical.values * percent_due_to_extreme_baseline.values * 1.4
+negative_sum_extreme_precip_baseline = np.sum(multiplied_values_extreme_precip_baseline[multiplied_values_extreme_precip_baseline < 0])
+result_df_baseline = pd.DataFrame({
+            "Negative_Sum": [negative_sum_baseline],
+            "Negative_Percentage": [negative_sum_baseline / (births_model_subset_historical.sum() * 1.4) * 100],
+            "Extreme_Precip": [negative_sum_extreme_precip_baseline],
+            "Extreme_Precip_Percentage": [(negative_sum_extreme_precip_baseline  / negative_sum_baseline) * 100]
+        })
+
+# Save multiplied values by model and scenario
+multiplied_values_df_baseline = pd.DataFrame({
+            'Year': range(2012, 2025),
+            'Multiplied_Values': multiplied_values_baseline,
+            'Multiplied_Values_extreme_precip': multiplied_values_extreme_precip_baseline
+
+        })
+multiplied_values_df_baseline.to_csv(results_folder_to_save/f'multiplied_values_baseline.csv', index=False)
+
+print(result_df_baseline)
+result_df_baseline.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_baseline.csv', index=False)
 
 
+### HISTORICAL disruptions #########
 # #### Now do number of births based on the TLO model (2010 - 2024) and 2018 census
 
 historical_predictions_negative =  historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
