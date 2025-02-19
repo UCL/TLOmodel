@@ -21,11 +21,41 @@ from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 
+index_HTM_plot = ['AIDS', 'TB (non-AIDS)', 'Malaria']
+index_NeoChild_plot = ['Lower respiratory infections','Childhood Diarrhoea', 'Maternal Disorders', 'Measles', 'Neonatal Disorders', 'Schistosomiasis'] #'Congenital birth defects',
+index_NCDs_plot = ['COPD', 'Cancer (Bladder)', 'Cancer (Breast)', 'Cancer (Oesophagus)', 'Cancer (Other)', 'Cancer (Prostate)','Depression / Self-harm', 'Diabetes', 'Epilepsy', 'Heart Disease', 'Kidney Disease', 'Stroke', 'Transport Injuries']
+
+min_NCDs = 0
+max_NCDs = 1.6
+ymin_range = {
+'AIDS' : 0.1,
+'TB (non-AIDS)' : 0.1,
+'Malaria' : 0.1,
+'Lower respiratory infections' : 0.0,
+'Childhood Diarrhoea': 0.0,
+'Maternal Disorders': 0.0,
+'Measles': 0.0,
+'Neonatal Disorders': 0.0,
+'Schistosomiasis': 0.0,
+'COPD' : min_NCDs, 'Cancer (Bladder)' : min_NCDs, 'Cancer (Breast)' : min_NCDs, 'Cancer (Oesophagus)' : min_NCDs, 'Cancer (Other)' : min_NCDs, 'Cancer (Prostate)' : min_NCDs,'Depression / Self-harm'  : min_NCDs, 'Diabetes' : min_NCDs, 'Epilepsy' : min_NCDs, 'Heart Disease' : min_NCDs, 'Kidney Disease' : min_NCDs, 'Stroke' : min_NCDs, 'Transport Injuries' : min_NCDs
+}
+max_RMNCH = 3
+ymax_range = {
+'AIDS' : 1.5,
+'TB (non-AIDS)' : 1.5,
+'Malaria' : 1.5,
+'Lower respiratory infections' : max_RMNCH,
+'Childhood Diarrhoea': max_RMNCH,
+'Maternal Disorders': max_RMNCH, 'Measles': max_RMNCH,
+'Neonatal Disorders': max_RMNCH,
+'Schistosomiasis': max_RMNCH,
+'COPD' : max_NCDs, 'Cancer (Bladder)' : max_NCDs, 'Cancer (Breast)' : max_NCDs, 'Cancer (Oesophagus)' : max_NCDs, 'Cancer (Other)' : max_NCDs, 'Cancer (Prostate)' : max_NCDs,'Depression / Self-harm'  : max_NCDs, 'Diabetes' : max_NCDs, 'Epilepsy' : max_NCDs, 'Heart Disease' : max_NCDs, 'Kidney Disease' : max_NCDs, 'Stroke' : max_NCDs, 'Transport Injuries' : max_NCDs
+}
 
 # Range of years considered
 min_year = 2018
 max_year = 2040
-
+inc_IHME_2024 = False
 scenarios_properties = {
     0: {'sf_name': 'No growth status quo', 'g_GDP': 0, 'g_fHE': 0, 'k': '-', 't_c': '-', 'THE': 22.00, 'int_name': 'No growth', 'color': '#441F54'},
     1: {'sf_name': 'GDP growth status quo', 'g_GDP': 4.2, 'g_fHE': 0, 'k': '-', 't_c': '-', 'THE': 36.53, 'int_name': 'GDP growth', 'color': '#257D8F'},
@@ -66,7 +96,7 @@ status_quo_scenarios = ['No growth status quo', 'GDP growth fHE growth case 1 st
 PC_scenarios = ['No growth perfect consumables', 'GDP growth fHE growth case 1 perfect consumables', 'GDP growth fHE growth case 3 perfect consumables', 'GDP growth perfect consumables', 'GDP growth fHE growth case 4 perfect consumables',  'GDP growth fHE growth case 6 perfect consumables']
 
 scenarios_map = {
-    'Status quo' : {'scenarios' : status_quo_scenarios, 'colour' : '#CC0066', 'comparison' : 'GDP growth status quo', 'title': 'Present-day Cons. Avail.'},
+ #   'Status quo' : {'scenarios' : status_quo_scenarios, 'colour' : '#CC0066', 'comparison' : 'GDP growth status quo', 'title': 'Present-day Cons. Avail.'},
     'Perfect Consumables' : {'scenarios' : PC_scenarios, 'colour' : '#0080FF', 'comparison' : 'GDP growth perfect consumables', 'title': 'Perfect Cons. Avail.'},
 }
 
@@ -96,7 +126,8 @@ color_palette = {
     'COPD': '#008080',  # Teal
     'Lower Back Pain': '#F08080',  # Light Coral
     'Other': '#D3D3D3',  # Light Gray
-    'Combined': 'black'
+    'Combined': 'black',
+    'NCDs': 'blue'
     }
 
 
@@ -255,8 +286,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         year_target = year
         life_expectancy = get_life_expectancy_estimates(results_folder,target_period=(datetime.date(year_target, 1, 1), datetime.date(year_target+1, 12, 31)), summary=False).pipe(set_param_names_as_column_index_level_0)
         average_values = life_expectancy.mean().to_frame().T
-        print(summarize(life_expectancy))
-        print(summarize(average_values))
+       # print(summarize(life_expectancy))
+       # print(summarize(average_values))
         ALL[year_target] = summarize(average_values)
 
     # Concatenate the DataFrames into a single DataFrame
@@ -343,6 +374,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     concatenated_df.index = concatenated_df.index.set_names(['date', 'cause'])
     DALYs_with_time_and_cause = concatenated_df.copy()
     
+    
+    
+    
     pop_model = extract_results(results_folder,
                                 module="tlo.methods.demography",
                                 key="population",
@@ -398,9 +432,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     DALYs_with_time_summarised = summarize(DALYs_with_time)
     DALYs_with_time_popnorm_summarised = summarize(DALYs_with_time_popnorm)
     DALYs_with_time_and_cause_summarised = summarize(DALYs_with_time_and_cause)
+
     DALYs_with_time_and_cause_popnorm_summarised = summarize(DALYs_with_time_and_cause_popnorm)
     Population_with_time_summarised = summarize(Population_with_time)
-    print(DALYs_with_time_and_cause.index.get_level_values('cause').unique())
+    # print(DALYs_with_time_and_cause.index.get_level_values('cause').unique())
   
     Total_DALYs_in_period = adjust(((DALYs_with_time_and_cause[DALYs_with_time_and_cause.index.get_level_values('date') >= 2019]).groupby('date').sum()).sum())
     Total_DALYs_in_period_summarised = summarize(Total_DALYs_in_period).loc[0].unstack()
@@ -427,14 +462,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     
     # ================================================================================================
     # PLOT 1: time evolution of total DALYs and life expectancy
-    def plot_X_with_time(df, ylabel, plot_name):
+    def plot_X_with_time(df, ylabel, plot_name, title=''):
 
         for case in scenarios_map.keys():
             scenarios_spec = scenarios_map[case]['scenarios']
 
-            plt.figure(figsize=(8, 6))
             i = 1
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize=(6.5, 8))
             for draw in scenarios_spec:
                 draw_data = df[draw]
                 x_values = draw_data.index.get_level_values('date')
@@ -473,20 +507,45 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             plt.xlabel("Year")
             plt.grid(True)
             #plt.title(str(case))
-            name_fig = 'plots/' + plot_name + '_' + str(case) + '.png'
+            subfolder = ''
+            if title != '':
+                if title in index_HTM_plot:
+                    subfolder = "HTM_plots/"
+                elif title in index_NCDs_plot:
+                    subfolder = "NCDs_and_RTIs_plots/"
+                elif title in index_NeoChild_plot:
+                    subfolder = "RMNCH_plots/"
+                    
+                if title in ymin_range.keys():
+                    ax.set_ylim(ymin_range[title],ymax_range[title])
+                if 'quo' in case:
+                    title_comp = title #+ " (pres.-day cons. avail.)"
+                else:
+                    title_comp = title #+ " (perf. cons. avail.)"
+                plt.title(title_comp)
+            name_fig = 'plots/' + subfolder + plot_name + '_' + str(case) + '.png'
             plt.ylabel(ylabel)
+
             name_fig = name_fig.replace(" ", "_")
-            plt.legend(loc='upper left')
+            if title == 'AIDS':
+                plt.legend(loc='lower left')
+            elif title == 'Childhood Diarrhoea' or title == 'Cancer (Other)':
+                plt.legend(loc='upper right')
             plt.tight_layout()
 
             plt.savefig(name_fig, dpi=400)
             plt.close()
     
-    df = LifeExpectancy
+    df = LifeExpectancy.copy()
     plot_X_with_time(df, "Life Expectancy (years)", "LifeExpectancy")
-    df = DALYs_with_time_from_2019_summarised/1e6
+    df = DALYs_with_time_from_2019_summarised.copy()/1e6
     plot_X_with_time(df, "Yearly DALYs (millions)", "Yearly_DALYs_Averaged")
-
+    
+    for cause in DALYs_with_time_and_cause_summarised.index.get_level_values('cause').unique():
+        df_filtered = DALYs_with_time_and_cause_summarised.xs(cause, level='cause')/1e6
+        use_cause = cause.replace("/", "_and_")
+        plot_X_with_time(df_filtered, "Yearly DALYs (millions)", "Yearly_DALYs_" + use_cause, cause)
+    exit(-1)
     # ================================================================================================
     # Plot 2: DALYs incurred as a fnc of growth and total health expenditure
     
@@ -569,8 +628,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             linear = popt[1]
             quadratic = popt[2]
             perr = np.sqrt(np.diag(pcov))
-            print(popt)
-            print(perr)
+           # print(popt)
+          #  print(perr)
             constant_err = np.sqrt(pcov[0][0])
             linear_err = np.sqrt(pcov[1][1])
             quadratic_err = np.sqrt(pcov[2][2])
@@ -586,14 +645,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     color="black",
                     label=label,
                     linestyle="dashed")
-        
+            """
             print(f"constant = {constant:.7f}")
             print(f"constant std. error = {constant_err:.7f} DALYs")
             print(f"linear = {linear:.2E}")
             print(f"linear std. error = {linear_err:.2E} DALYs")
             print(f"quadratic = {quadratic:.4E}")
             print(f"quadratic std. error = {quadratic_err:.2E} DALYs")
-            
+            """
             constant_str = f"{constant:.2f}"
             constant_err_str = f"{constant_err:.2f}"
             linear_str = f"{linear:.2f}"
@@ -636,7 +695,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         else:
             ax.set_ylim(180,282)
 
-        print(spec_cases)
+        # print(spec_cases)
 
         # Set labels and legends
         ax.set_xlabel('Yearly expenditure growth (%)')
@@ -679,7 +738,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             print("For scaled", scaled)
 
             for case in scenarios_map.keys():
-                print(case)
+                #print(case)
                 
                 if len(scenarios_map)> 1:
                     chosen_colour = scenarios_map[case]['colour']
@@ -731,7 +790,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         row = df.loc[scenario]
                         label = ''
                         color = colour
-                        print(row)
+                        #print(row)
                         ax.errorbar(row['YearlyExpRate'], row['mean'], yerr=[[row['mean'] - row['lower']], [row['upper'] - row['mean']]],
                                      fmt='o', color=chosen_colour, linestyle='None', capsize=5)
                         if 'case 1' in scenario or 'case 3' in scenario:
@@ -759,8 +818,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 plt.fill_between(x_vals, y_vals, alpha=0.3, color=chosen_colour_shaded, edgecolor='none')
                 plt.text((x1+x2)/2, -15, 'IHME \n forecast', fontsize=12,ha='center', color=chosen_colour_text)
 
-                if scaled:
-                    print(df)
+                #if scaled:
+                #    print(df)
                     
             ax.set_xlim(-0.5,7.5)
             if len(scenarios_map)>1:
@@ -818,7 +877,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
       
     index_HTM = ['AIDS', 'TB (non-AIDS)', 'Malaria']
-    index_NeoChild = ['Lower respiratory infections','Childhood Diarrhoea', 'Maternal Disorders', 'Measles', 'Neonatal Disorders'] #'Congenital birth defects',
+    index_NeoChild = ['Lower respiratory infections','Childhood Diarrhoea', 'Maternal Disorders', 'Measles', 'Neonatal Disorders', 'Schistosomiasis'] #'Congenital birth defects',
     index_NCDs = ['COPD', 'Cancer (Bladder)', 'Cancer (Breast)', 'Cancer (Oesophagus)', 'Cancer (Other)', 'Cancer (Prostate)','Depression / Self-harm', 'Diabetes', 'Epilepsy', 'Heart Disease', 'Kidney Disease', 'Stroke']
     check_if_cause_is_missing(index_HTM)
     check_if_cause_is_missing(index_NeoChild)
@@ -827,26 +886,120 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_total_time_average = df_total.groupby('cause').mean()
     df_total_time_average_2018 = df_total_2018.groupby('cause').mean()
 
+    def sum_over_indices_and_add(df, index_list):
+
+        # Compute the sum of the selected rows
+        total_row = df.loc[index_list].sum()
+
+        # Create a new MultiIndex row while preserving the structure
+        combined_index = pd.Index(['Combined'], name=df.index.names)
+
+        # Convert summed row into DataFrame with correct index and columns
+        total_row_df = pd.DataFrame([total_row], index=combined_index, columns=df.columns)
+
+        # Concatenate to maintain structure
+        df = pd.concat([df, total_row_df])
+        df.index.names = ['cause']  # Explicitly set the index name to 'cause'
+        return df
+        
+    def sum_over_indices_and_add_NCDs_and_RTI(df, index_list):
+
+        # Compute the sum of the selected rows
+        total_row = df.loc[index_list].sum()
+
+        # Create a new MultiIndex row while preserving the structure
+        combined_index = pd.Index(['NCDs'], name=df.index.names)
+
+        # Convert summed row into DataFrame with correct index and columns
+        total_row_df = pd.DataFrame([total_row], index=combined_index, columns=df.columns)
+
+        # Concatenate to maintain structure
+        df = pd.concat([df, total_row_df])
+        df.index.names = ['cause']  # Explicitly set the index name to 'cause'
+        index_add_RTIs = index_list + ['Transport Injuries']
+        total_row = df.loc[index_add_RTIs].sum()
+        combined_index = pd.Index(['Combined'], name=df.index.names)
+
+        # Convert summed row into DataFrame with correct index and columns
+        total_row_df = pd.DataFrame([total_row], index=combined_index, columns=df.columns)
+
+        # Concatenate to maintain structure
+        df = pd.concat([df, total_row_df])
+        df.index.names = ['cause']  # Explicitly set the index name to 'cause'
+        
+        return df
+
     def plot_burden_by_area_vs_THE(df_total_time_average, df_total_time_average_2018, index, ylabel, plot_name, use_THE, title, inc_breakdown):
 
-        df = summarize(df_total_time_average[df_total_time_average.index.get_level_values('cause').isin(index)])
-        df_2018 = summarize(df_total_time_average_2018[df_total_time_average_2018.index.get_level_values('cause').isin(index)])
+        df = df_total_time_average.copy()
+        if 'NCD' in title:
+            df = sum_over_indices_and_add_NCDs_and_RTI(df, index)
+        else:
+            df = sum_over_indices_and_add(df, index)
+        df_total_time_average_temp = df.copy()
 
-        total_row = df.sum()
-        # Create a new DataFrame for the total row with the same index structure
-        total_row_df = pd.DataFrame([total_row], columns=df.columns, index=pd.Index(['Combined'], name=df.index.names))
-        # Concatenate the original DataFrame with the total row DataFrame
-        df_with_total = pd.concat([df, total_row_df])
-        df = df_with_total
-        df = df.sort_values(by=('No growth status quo', 'mean'), ascending=False)
-        print(df)
+        df = df_total_time_average_2018.copy()
+        if 'NCD' in title:
+            df = sum_over_indices_and_add_NCDs_and_RTI(df, index)
+        else:
+            df = sum_over_indices_and_add(df, index)
+        df_total_time_average_2018_temp = df.copy()
         
-        total_row_2018 = df_2018.sum()
-        # Create a new DataFrame for the total row with the same index structure
-        total_row_df_2018 = pd.DataFrame([total_row_2018], columns=df_2018.columns, index=pd.Index(['Combined'], name=df_2018.index.names))
-        # Concatenate the original DataFrame with the total row DataFrame
-        df_with_total_2018 = pd.concat([df_2018, total_row_df_2018])
-        df_2018 = df_with_total_2018
+        """
+        # Compute the sum of the selected rows
+        #total_row = df.loc[index].sum()
+
+        # Create a new MultiIndex row while preserving the structure
+       # combined_index = pd.Index(['Combined'], name=df.index.names)
+
+        # Convert summed row into DataFrame with correct index and columns
+       # total_row_df = pd.DataFrame([total_row], index=combined_index, columns=df.columns)
+
+        # Concatenate to maintain structure
+        #df = pd.concat([df, total_row_df])
+       # df.index.names = ['cause']  # Explicitly set the index name to 'cause'
+        
+        
+        #print(df.index.names)
+        #print(df)
+       # exit(-1)
+        #df_total_time_average_temp = df.copy()
+        
+        df = df_total_time_average_2018.copy()
+
+        # Compute the sum of the selected rows
+        total_row = df.loc[index].sum()
+
+        # Create a new MultiIndex row while preserving the structure
+        combined_index = pd.Index(['Combined'], name=df.index.names)
+
+        # Convert summed row into DataFrame with correct index and columns
+        total_row_df = pd.DataFrame([total_row], index=combined_index, columns=df.columns)
+
+        # Concatenate to maintain structure
+        df = pd.concat([df, total_row_df])
+        df.index.names = ['cause']  # Explicitly set the index name to 'cause'
+        print(df.index.names)
+        print(df)
+       # exit(-1)
+        df_total_time_average_2018_temp = df.copy()
+        """
+        if 'NCD' in title:
+            index_with_combined = index + ['NCDs', 'Transport Injuries','Combined']
+        else:
+            index_with_combined = index + ['Combined']
+            
+        df = summarize(df_total_time_average_temp[df_total_time_average_temp.index.get_level_values('cause').isin(index_with_combined)])
+
+        df_2018 = summarize(df_total_time_average_2018_temp[df_total_time_average_2018_temp.index.get_level_values('cause').isin(index_with_combined)])
+
+        
+        df = df.sort_values(by=('No growth status quo', 'mean'), ascending=False)
+        if 'NCD' in title:
+            df = df.sort_index(key=lambda x: x != 'NCDs')
+            df_2018 = df_2018.sort_index(key=lambda x: x != 'NCDs')
+        df = df.sort_index(key=lambda x: x != 'Combined')
+        df_2018 = df_2018.sort_index(key=lambda x: x != 'Combined')
         
          #df_total_time_average.loc['Total'] = df_total_time_average.sum()
 
@@ -857,7 +1010,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         for case in scenarios_map.keys():
             scenario = scenarios_map[case]['scenarios']
             filtered_df = df.loc[:, scenario]
-            print(filtered_df)
+            #print(filtered_df)
             if use_THE:
                 x_values_dict = sf_THE_dict
             else:
@@ -870,10 +1023,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             else:
                 linestyle = '--'
  
-            if inc_breakdown:
-                causes_to_include = filtered_df.index
+            if 'NCD' in title:
+                causes_to_include = ['NCDs', 'Transport Injuries', 'Combined']
             else:
-                causes_to_include = ['Combined']
+                if inc_breakdown:
+                    causes_to_include = filtered_df.index
+                else:
+                    causes_to_include = ['Combined']
  
             for cause in causes_to_include:
                 print("Including", cause)
@@ -928,7 +1084,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 plt.errorbar(-2, y, yerr=[[yerr_lower], [yerr_upper]], marker='x', linestyle=linestyle, color=color_palette[cause], linewidth=2)
                 if 'Perfect' in case:
                     if cause == 'Combined':
-                        label = 'HTM combined'
+                        if 'HTM' in title:
+                            label = 'HTM combined'
+                        elif 'NCD' in title:
+                            label = 'NCDs and RTIs combined'
+                        else:
+                            if cause == 'Transport Injuries':
+                                label = 'RTIs'
+                            else:
+                                label = cause
                     else:
                         label = cause
                     plt.axhline(y=df_2018.loc[cause, ('No growth status quo', 'mean')], color=color_palette[cause], linestyle='-', linewidth=2,label=label)
@@ -944,11 +1108,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                  plt.plot(-1.8, 2,  marker='x', markerfacecolor='none', markeredgecolor='black', markeredgewidth=2, color='black', linewidth=2,markersize=8, label="2019 - 2040 av. (perf. cons. avail.)")
             plt.plot(-1.8, 2, linestyle='-',  color='black', linewidth=2,markersize=10, mew=2, label="2018 value")
             plt.legend()
-
+        if 'NCD' in title:
+           # plt.plot(-1.8, 2, linestyle='-',  color=color_palette['NCDs'], linewidth=2,markersize=10, mew=2, label="NCDs")
+           # plt.plot(-1.8, 2, linestyle='-',  color=color_palette['Transport Injuries'], linewidth=2,markersize=10, mew=2, label="RTIs")
+           # plt.plot(-1.8, 2, linestyle='-',  color=color_palette['Combined'], linewidth=2,markersize=10, mew=2, label="Combined")
+            plt.legend()
+            
         plt.axvspan(1.1, 2.6, facecolor=scenarios_map[case]['colour'], alpha=0.3,edgecolor='none')
-        plt.text((1.1+2.6)/2, 3.5, 'IHME \n forecast \n 2021', fontsize=12,ha='center', color=scenarios_map[case]['colour'])
-        plt.axvspan(2, 3.3, facecolor='orange', alpha=0.3,edgecolor='none')
-        plt.text((2+3.3)/2, 4, 'IHME \n forecast \n 2024', fontsize=12,ha='center', color='red')
+        plt.text((1.1+2.6)/2, 3.5, 'IHME \n forecast', fontsize=12,ha='center', color=scenarios_map[case]['colour'])
+        if inc_IHME_2024:
+            plt.axvspan(2, 3.3, facecolor='orange', alpha=0.3,edgecolor='none')
+            plt.text((2+3.3)/2, 4, 'IHME \n forecast \n 2024', fontsize=12,ha='center', color='red')
         
         if use_THE:
             plt.xlabel('NHE')
@@ -971,7 +1141,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     plot_burden_by_area_vs_THE(df_total_time_average/1e6,df_total_time_average_2018/1e6, index_HTM, "DALYs per year (millions)", "HTM_evolution", False, "HTM", True)
     plot_burden_by_area_vs_THE(df_total_time_average/1e6,df_total_time_average_2018/1e6, index_NeoChild, "", "RMNCH_evolution", False, "RMNCH", False)
-    plot_burden_by_area_vs_THE(df_total_time_average/1e6,df_total_time_average_2018/1e6, index_NCDs, "", "NCDs_evolution", False, "NCDs", False)
+    plot_burden_by_area_vs_THE(df_total_time_average/1e6,df_total_time_average_2018/1e6, index_NCDs, "", "NCDs_evolution", False, "NCDs and RTIs", True)
   
 
 if __name__ == "__main__":
