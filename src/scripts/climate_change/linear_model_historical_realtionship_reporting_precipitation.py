@@ -32,7 +32,6 @@ absolute_min_year_baseline = min(baseline_years_for_file)
 max_year_for_analysis_baseline =  1940 + len(year_range)
 absolute_max_year_baseline =  max(baseline_years_for_file) + 1
 baseline_years_for_analysis = range(min_year_for_analysis_baseline, max_year_for_analysis_baseline)
-
 poisson = False
 log_y = True
 
