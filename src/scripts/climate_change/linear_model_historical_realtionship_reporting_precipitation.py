@@ -8,20 +8,15 @@ from sklearn.preprocessing import StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.feature_selection import SelectKBest, f_regression
 import scipy.stats as stats
+
+
 ANC = True
 Inpatient = False
 if ANC:
     service = 'ANC'
 if Inpatient:
     service = 'Inpatient'
-daily_max = False
-daily_total = False
-if daily_total:
-    five_day = True
-    cumulative = True
-else:
-    five_day = False
-    cumulative = False
+
 feature_selection = False
 use_all_weather = True
 min_year_for_analysis = 2012
@@ -29,11 +24,14 @@ absolute_min_year = 2011
 mask_threshold = -np.inf # accounts for scaling
 #mask_threshold = 50
 use_percentile_mask_threshold = False
-baseline_years = range(1940, 1980)
-min_year_for_analysis_baseline = min(baseline_years) + 1
-absolute_min_year_baseline = min(baseline_years)
-max_year_for_analysis_baseline =  1950 #max(baseline_years) + 1
-absolute_max_year_baseline =  max(baseline_years) + 1
+year_range = range(min_year_for_analysis, 2025, 1) # year as a fixed effect
+
+baseline_years_for_file = range(1940, 1980)
+min_year_for_analysis_baseline = min(baseline_years_for_file) + 1
+absolute_min_year_baseline = min(baseline_years_for_file)
+max_year_for_analysis_baseline =  1940 + len(year_range)
+absolute_max_year_baseline =  max(baseline_years_for_file) + 1
+baseline_years_for_analysis = range(min_year_for_analysis_baseline, max_year_for_analysis_baseline)
 
 poisson = False
 log_y = True
@@ -229,7 +227,6 @@ monthly_reporting_by_facility = monthly_reporting_by_facility.iloc[(min_year_for
 # Linear regression
 month_range = range(12)
 num_facilities = len(monthly_reporting_by_facility.columns)
-year_range = range(min_year_for_analysis, 2025, 1) # year as a fixed effect
 year_repeated = [y for y in year_range for _ in range(12)]
 year = year_repeated[:-4]
 year_flattened = year*len(monthly_reporting_by_facility.columns) # to get flattened data
@@ -875,7 +872,7 @@ if ANC:
     )
 
     weather_data_five_day_cumulative_20th_century = pd.read_csv(
-        f"/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_{min(baseline_years)}_{max(baseline_years)}_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
+        f"/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_{min(baseline_years_for_file)}_{max(baseline_years_for_file)}_daily_total_by_facilities_with_ANC_five_day_cumulative.csv",
         index_col=0
     )
 
@@ -925,29 +922,28 @@ if ANC:
         (weather_data_monthly_flattened, weather_data_five_day_cumulative_flattened)).T
 
 # covariates
-year_range_baseline = range(min_year_for_analysis_baseline, max_year_for_analysis_baseline, 1)
-year_repeated_baseline = [y for y in year_range_baseline for _ in range(12)]
+year_repeated_baseline = [y for y in baseline_years_for_analysis for _ in range(12)]
 year_flattened_baseline = year_repeated_baseline*num_facilities_baseline # to get flattened data
 year_flattened_baseline = [2015] * len(year_flattened_baseline)
 month_repeated = []
-for _ in year_range_baseline:
+for _ in baseline_years_for_analysis:
     month_repeated.extend(range(1, 13))
 month_flattened_baseline = month_repeated*num_facilities_baseline
 print("month",len(month_flattened_baseline))
 
-zone_info_each_month_baseline = repeat_info(expanded_facility_info["Zonename"], num_facilities_baseline, year_range_baseline, historical = False)
+zone_info_each_month_baseline = repeat_info(expanded_facility_info["Zonename"], num_facilities_baseline, baseline_years_for_analysis, historical = False)
 zone_encoded_baseline = pd.get_dummies(zone_info_each_month_baseline, drop_first=True)
 print("zone",len(zone_encoded_baseline))
-dist_info_each_month_baseline = repeat_info(expanded_facility_info["Dist"], num_facilities_baseline, year_range_baseline, historical = False)
+dist_info_each_month_baseline = repeat_info(expanded_facility_info["Dist"], num_facilities_baseline, baseline_years_for_analysis, historical = False)
 dist_encoded_baseline = pd.get_dummies(dist_info_each_month_baseline, drop_first=True)
-resid_info_each_month_baseline = repeat_info(expanded_facility_info['Resid'], num_facilities_baseline, year_range_baseline, historical = False)
+resid_info_each_month_baseline = repeat_info(expanded_facility_info['Resid'], num_facilities_baseline, baseline_years_for_analysis, historical = False)
 resid_encoded_baseline = pd.get_dummies(resid_info_each_month_baseline, drop_first=True)
-owner_info_each_month_baseline = repeat_info(expanded_facility_info['A105'], num_facilities_baseline, year_range_baseline, historical = False)
+owner_info_each_month_baseline = repeat_info(expanded_facility_info['A105'], num_facilities_baseline, baseline_years_for_analysis, historical = False)
 owner_encoded_baseline = pd.get_dummies(owner_info_each_month_baseline, drop_first=True)
-ftype_info_each_month_baseline = repeat_info(expanded_facility_info['Ftype'], num_facilities_baseline, year_range_baseline, historical = False)
+ftype_info_each_month_baseline = repeat_info(expanded_facility_info['Ftype'], num_facilities_baseline, baseline_years_for_analysis, historical = False)
 ftype_encoded_baseline = pd.get_dummies(ftype_info_each_month_baseline, drop_first=True)
-altitude_baseline = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities_baseline, year_range_baseline, historical = False)]
-minimum_distance_baseline = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'], num_facilities_baseline, year_range_baseline, historical = False)]
+altitude_baseline = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities_baseline, baseline_years_for_analysis, historical = False)]
+minimum_distance_baseline = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'], num_facilities_baseline, baseline_years_for_analysis, historical = False)]
 
 altitude_baseline = np.array(altitude_baseline)
 altitude_baseline = np.where(altitude_baseline < 0, np.nan, altitude_baseline)
