@@ -12,6 +12,7 @@ from netCDF4 import Dataset
 from shapely.geometry import Polygon
 
 # Load the dataset and the variable
+baseline = True
 file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
 dataset = Dataset(file_path_historical_data, mode='r')
 print(dataset.variables.keys())
@@ -69,10 +70,16 @@ for idx, file in enumerate(glob.glob(os.path.join(nc_file_directory, "*.nc"))):
         ax.axhline(y=lat, color=colors(idx), linestyle='--', linewidth=0.5)
 
 # Add in facility information
-expanded_facility_info = pd.read_csv(
-    "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
-    index_col=0
-)
+if baseline:
+    expanded_facility_info = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv",
+        index_col=0
+    )
+else:
+    expanded_facility_info = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+        index_col=0
+    )
 
 long_format = expanded_facility_info.T.reset_index()
 long_format.columns = [
@@ -108,6 +115,29 @@ cbar = plt.colorbar(sm, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
 cbar.set_label('Mean Monthly Precipitation (mm)')
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")
-plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/historical_weather.png')
+if baseline:
+    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/baseline_weather.png')
 
+else:
+    plt.savefig('/Users/rem76/Desktop/Climate_change_health/Results/ANC_disruptions/historical_weather.png')
+
+plt.show()
+
+
+### compare baseline and non-baseline data
+
+expanded_facility_info_baseline = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv",
+        index_col=0
+    ).T
+
+expanded_facility_info = pd.read_csv(
+        "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC.csv",
+        index_col=0
+    ).T
+expanded_facility_info_baseline['average_precipitation'] = pd.to_numeric(expanded_facility_info_baseline['average_precipitation'], errors='coerce')
+expanded_facility_info['average_precipitation'] = pd.to_numeric(expanded_facility_info['average_precipitation'], errors='coerce')
+plt.plot(range(len(expanded_facility_info_baseline['average_precipitation'])), expanded_facility_info_baseline['average_precipitation'], label='baseline')
+plt.plot(range(len(expanded_facility_info['average_precipitation'])), expanded_facility_info['average_precipitation'], label='historical')
+plt.legend(loc='upper right')
 plt.show()

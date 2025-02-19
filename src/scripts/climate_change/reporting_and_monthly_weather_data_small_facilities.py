@@ -169,11 +169,16 @@ for facility in facilities_with_location:
     distances = cdist(coordinates, coordinates, metric='euclidean')
     np.fill_diagonal(distances, np.inf)
     expanded_facility_info['minimum_distance'] = np.nanmin(distances, axis=1)
-
-    average_precipitation_by_facility = {
-        facility: np.mean(precipitation)
-        for facility, precipitation in weather_data_by_facility.items()
-    }
+    if baseline:
+        average_precipitation_by_facility = {
+            facility: np.mean(precipitation[12: 12*(1953 - 1941)])
+            for facility, precipitation in weather_data_by_facility.items()
+        }
+    else:
+        average_precipitation_by_facility = {
+            facility: np.mean(precipitation)
+            for facility, precipitation in weather_data_by_facility.items()
+        }
 
     average_precipitation_df = pd.DataFrame.from_dict(
         average_precipitation_by_facility, orient='index', columns=['average_precipitation']
