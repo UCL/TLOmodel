@@ -921,9 +921,9 @@ if ANC:
         (weather_data_monthly_flattened, weather_data_five_day_cumulative_flattened)).T
 
 # covariates
-year_repeated_baseline = [y for y in baseline_years_for_analysis for _ in range(12)]
+year_repeated_baseline = [y for y in range(2012, 2012 + len(baseline_years_for_analysis)) for _ in range(12)]
 year_flattened_baseline = year_repeated_baseline*num_facilities_baseline # to get flattened data
-year_flattened_baseline = [2015] * len(year_flattened_baseline)
+#year_flattened_baseline = [2015] * len(year_flattened_baseline)
 month_repeated = []
 for _ in baseline_years_for_analysis:
     month_repeated.extend(range(1, 13))
