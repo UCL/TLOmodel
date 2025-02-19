@@ -1729,8 +1729,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     data_to_plot.rename(columns={'mean': 'simulated'}, inplace=True)
     data_to_plot.plot.scatter(x='strategy', y='simulated', color='blue', label='simulated', ax=ax)
     data_to_plot.plot.scatter(x='strategy', y='predicted', color='orange', label='predicted', ax=ax)
-    ax.set_ylabel('DALYs averted %', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_ylabel('DALYs averted %', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
     ax.grid(axis="both")
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
@@ -1740,7 +1740,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
     plt.legend(loc='upper right')
-    plt.title(name_of_plot)
+    plt.title(name_of_plot, fontsize='medium')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -1776,15 +1776,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
     # plot mean and predicted DALYs from regression analysis
-    name_of_plot = 'DALYs-averted simulated vs predicted from linear regression on Euclidean distance'
+    name_of_plot = 'DALYs-averted simulated vs predicted from Euclidean distance to gap allocation'
     fig, ax = plt.subplots(figsize=(9, 6))
-    data_to_plot = regression_data_1[['mean', 'predicted']] * 100
+    data_to_plot = (regression_data_1[['mean', 'predicted']].drop(index=['s_2'], axis=0)) * 100
     data_to_plot['strategy'] = data_to_plot.index
     data_to_plot.rename(columns={'mean': 'simulated'}, inplace=True)
     data_to_plot.plot.scatter(x='strategy', y='simulated', color='blue', label='simulated', ax=ax)
     data_to_plot.plot.scatter(x='strategy', y='predicted', color='orange', label='predicted', ax=ax)
-    ax.set_ylabel('DALYs averted %', fontsize='small')
-    ax.set(xlabel=None)
+    ax.set_ylabel('DALYs averted %', fontsize='medium')
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
+    ax.grid(axis="both")
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
     # xtick_colors = [scenario_color[v] for v in data_to_plot.index]
@@ -1793,7 +1794,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_xticklabels(xtick_labels, rotation=90, fontsize='small')  # re-label scenarios
 
     plt.legend(loc='upper right')
-    plt.title(name_of_plot)
+    plt.title(name_of_plot, fontsize='medium')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
@@ -2640,7 +2641,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_xlim(-1, len(data_to_plot.index) + 1)
 
     ax.set_ylabel('Millions', fontsize='medium')
-    ax.set(xlabel=None)
+    ax.set_xlabel('Extra budget allocation scenario', fontsize='medium')
     ax.grid(axis='y')
 
     xtick_labels = [substitute_labels[v] for v in data_to_plot.index]
