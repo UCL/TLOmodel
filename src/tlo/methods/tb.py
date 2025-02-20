@@ -2348,6 +2348,7 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 return self.make_appt_footprint({})
             else:
                 return ACTUAL_APPT_FOOTPRINT
+
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
     This is the x-ray HSI
