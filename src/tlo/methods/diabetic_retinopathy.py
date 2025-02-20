@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Diabetes_Retinopathy(Module):
-    """ This is Diabetes Retinopathy module. It seeks to skeleton of blindness due to diabetes. """
+class Diabetic_Retinopathy(Module):
+    """ This is Diabetic Retinopathy module. It seeks to skeleton of blindness due to diabetes. """
 
     INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders'}
     ADDITIONAL_DEPENDENCIES = set()
@@ -85,12 +85,12 @@ class Diabetes_Retinopathy(Module):
         :param data_folder: Path to the folder containing parameter values
 
         """
-        self.parameters['rate_onset_to_early_dr'] = 0.5
-        self.parameters['rate_progression_to_dr'] = 0.5
+        self.parameters['rate_onset_to_early_dr'] = 0.29
+        self.parameters['rate_progression_to_dr'] = 0.07
         self.parameters['prob_fast_dr'] = 0.5
-        self.parameters['init_prob_any_dr'] = 0.5
-        self.parameters['init_prob_late_dr'] = 0.5
-        self.parameters['p_medication'] = 0.4
+        self.parameters['init_prob_any_dr'] = 0.36
+        self.parameters['init_prob_late_dr'] = 0.09
+        self.parameters['p_medication'] = 0.8
 
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='blindness_partial'),
@@ -175,7 +175,7 @@ class Diabetes_Retinopathy(Module):
 
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
-    """An event that controls the development process of Diabetes Retionpathy (DR) and logs current states. DR diagnosis
+    """An event that controls the development process of Diabetes Retinopathy (DR) and logs current states. DR diagnosis
     begins at least after 3 years of being infected with Diabetes Mellitus."""
 
     def __init__(self, module):
@@ -252,7 +252,7 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Diabetes_Retinopathy)
+        assert isinstance(module, Diabetic_Retinopathy)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dr_Treatment_Initiation'
@@ -274,12 +274,30 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if person["dr_on_treatment"] or not person["dr_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        treatment_slows_progression_to_late = self.module.rng.rand() < self.module.parameters['p_medication']
+        randomly_sampled = self.module.rng.rand()
+        print(f'Randomly sampled {randomly_sampled}')
+        treatment_slows_progression_to_late = randomly_sampled < self.module.parameters['p_medication']
 
         #TODO Add consumables in codition below
         if treatment_slows_progression_to_late:
             df.at[person_id, 'dr_on_treatment'] = True
             df.at[person_id, 'dr_date_treatment'] = self.sim.date
+
+            # Reduce probability of progression to "late" DR
+            progression_chance = self.module.parameters['rate_progression_to_dr'] * (
+                    1 - self.module.parameters['p_medication'])
+
+            # Determine if person will still progress
+            if self.module.rng.rand() < progression_chance:
+                df.at[person_id, 'dr_status'] = 'late'
+            else:
+                df.at[person_id, 'dr_status'] = 'early'  # Stays in early stage due to medication
+
+        else:
+            # If medication is not effective, progression happens as usual
+            df.at[person_id, 'dr_on_treatment'] = True
+            df.at[person_id, 'dr_status'] = 'late'
+
         #     df.at[person_id, 'dr_status'] = 'early'
         # else:
         #     df.at[person_id, 'dr_on_treatment'] = True

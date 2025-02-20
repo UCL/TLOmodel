@@ -32,7 +32,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     prostate_cancer,
     symptommanager,
-    diabetes_retionopathy,
+    diabetic_retinopathy,
     hiv, tb, epi,
     cardio_metabolic_disorders,
     depression,
@@ -49,7 +49,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 6, 6)
+end_date = Date(2011, 1, 1)
 popsize = 5000
 
 
@@ -78,7 +78,7 @@ def run_sim(service_availability):
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  # prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 diabetes_retionopathy.Diabetes_Retinopathy(),
+                 diabetic_retinopathy.Diabetic_Retinopathy(),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  tb.Tb(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
@@ -97,7 +97,7 @@ def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
     # 1) TOTAL COUNTS BY STAGE OVER TIME
-    counts_by_stage = output['tlo.methods.diabetes_retionopathy']['summary_stats']
+    counts_by_stage = output['tlo.methods.diabetic_retinopathy']['summary_stats']
     counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
     counts_by_stage = counts_by_stage.set_index('date', drop=True)
 

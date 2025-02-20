@@ -5,7 +5,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import cardio_metabolic_disorders, demography, enhanced_lifestyle, simplified_births, healthsystem, \
-    symptommanager, healthseekingbehaviour, healthburden, diabetes_retionopathy, depression
+    symptommanager, healthseekingbehaviour, healthburden, diabetic_retinopathy, depression
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
@@ -37,7 +37,7 @@ def test_basic_run(tmpdir, seed, diabetes_retinopathy=None):
                                                                ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-                 diabetes_retionopathy.Diabetes_Retinopathy(),
+                 diabetic_retinopathy.Diabetic_Retinopathy(),
                  depression.Depression(resourcefilepath=resourcefilepath),
                  )
     sim.make_initial_population(n=popsize)
