@@ -177,9 +177,8 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
         vm_size = config["BATCH"]["POOL_VM_SIZE_MORE_MEMORY"]
     else:
         vm_size = config["BATCH"]["POOL_VM_SIZE"]
-    # TODO: cap the number of nodes in the pool?  Take the number of nodes in
-    # input from the user, but always at least 2?
-    pool_node_count = max(2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw))
+
+    pool_node_count = scenario.number_of_draws * scenario.runs_per_draw
 
     # User identity in the Batch tasks
     auto_user = batch_models.AutoUserSpecification(
@@ -748,20 +747,20 @@ def create_job(
     print("Creating job.")
 
     # From https://docs.microsoft.com/en-us/azure/batch/batch-docker-container-workloads#linux-support
-    # We require Ubuntu image with container support (publisher microsoft-azure-batch; offer microsoft-azure-batch)
+    # We require Ubuntu image with container support
     # Get the latest SKU by inspecting output of `az batch pool supported-images list` for publisher+offer
     # Update node_agent_sku_id (below), if necessary
     image_reference = batch_models.ImageReference(
-        publisher="microsoft-azure-batch",
-        offer="ubuntu-server-container",
-        sku="20-04-lts",
+        publisher="microsoft-dsvm",
+        offer="ubuntu-hpc",
+        sku="2204",
         version="latest",
     )
 
     virtual_machine_configuration = batch_models.VirtualMachineConfiguration(
         image_reference=image_reference,
         container_configuration=container_conf,
-        node_agent_sku_id="batch.node.ubuntu 20.04",
+        node_agent_sku_id="batch.node.ubuntu 22.04",
     )
 
     auto_scale_formula = f"""
