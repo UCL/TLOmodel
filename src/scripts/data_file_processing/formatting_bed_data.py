@@ -58,11 +58,11 @@ def estimate_beds_by_facility_id(beds_by_district: pd.Series, beds_by_level: pd.
     total_for_district = beds_by_district.loc[cities.keys()].to_dict()
     beds_by_district.loc[cities.keys()] = pd.Series(total_for_district) * 0.5
 
-    beds_by_district = beds_by_district.append(pd.Series(
+    beds_by_district = pd.concat([beds_by_district, pd.Series(
         {_city: 0.5 * total_for_district[_district]
          for _district, _city in cities.items()
          }
-    ))
+    )])
 
     assert set(beds_by_district.index) == districts
     assert not beds_by_district.index.duplicated().any()
@@ -185,7 +185,7 @@ def compute_bed_number_custom_type(_df: pd.DataFrame, _bed_types: dict) -> pd.Da
         else:
             # None means to let this be "all_beds" minus any other type that has been assigned to a custom type.
             df[_custom_type] = (
-                _df['all_beds'] - _df[{x for v in _bed_types.values() if v is not None for x in v}].sum(axis=1)
+                _df['all_beds'] - _df[list(x for v in _bed_types.values() if v is not None for x in v)].sum(axis=1)
             )
 
     assert (df.sum(axis=1) == _df['all_beds']).all()
