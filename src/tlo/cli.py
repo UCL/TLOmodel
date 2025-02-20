@@ -2,7 +2,6 @@
 import configparser
 import datetime
 import json
-import math
 import os
 import pickle
 import tempfile
