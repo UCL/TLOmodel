@@ -35,14 +35,14 @@ outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
 #outputfilepath = Path("./outputs")
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios10x-2025-02-21T194929Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios10x-2025-02-21T202424Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
 #info.to_excel(Unresolved reference 'outputspath' / "info.xlsx")
 params = extract_params(results_folder)
 print("the parameter info as follows")
-params.to_excel(outputfilepath / "parameters.xlsx")
+#params.to_excel(outputfilepath / "parameters.xlsx")
 
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']

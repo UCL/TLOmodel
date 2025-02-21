@@ -1913,59 +1913,65 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         #child under 5 -> chest x-ray, but access is limited
        # if xray not available, HSI_Tb_Xray_level1b will refer
-        if person["age_years"] < 5:
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                {"Under5OPD": 1}
-            )
+       #  if person["age_years"] < 5:
+       #      ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+       #          {"Under5OPD": 1}
+       #      )
+       #
+       #      # this HSI will choose relevant sensitivity/specificity depending on person's smear status
+       #      self.sim.modules["HealthSystem"].schedule_hsi_event(
+       #          hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+       #          topen=now,
+       #          tclose=None,
+       #          priority=0,
+       #      )
+       #      test_result = False  # to avoid calling a clinical diagnosis
+       #
+       #      return ACTUAL_APPT_FOOTPRINT
 
-            # this HSI will choose relevant sensitivity/specificity depending on person's smear status
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                topen=now,
-                tclose=None,
-                priority=0,
-            )
+        import pandas as pd  # Required for DateOffset
+
+        # Initialize test_result to ensure it's always defined
+        test_result = None
+
+        if person["age_years"] < 5:
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
+
+            # If currently at a Level 1a facility, schedule a referral to Level 1b for X-ray
+            if self.facility_level == "1a":
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_ScreeningAndRefer(
+                        person_id=person_id,
+                        module=self.module,
+                        facility_level="1b"  # Referral to Level 1b
+                    ),
+                    topen=now + pd.DateOffset(days=1),  # Schedule for the next day
+                    tclose=None,
+                    priority=0,
+                )
+            else:
+                # If already at a Level 1b facility, proceed with the X-ray
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                    topen=now,
+                    tclose=None,
+                    priority=0,
+                )
+
             test_result = False  # to avoid calling a clinical diagnosis
+
+            # If no positive result, proceed with further screening at Level 1b
+            if not test_result:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                    topen=now,
+                    tclose=None,
+                    priority=0,
+                )
 
             return ACTUAL_APPT_FOOTPRINT
 
-        # if person["age_years"] < 5:
-        #     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
-        #
-        #     # If currently at a Level 1a facility, schedule a referral to Level 1b for X-ray
-        #     if self.facility_level == "1a":
-        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #             hsi_event=HSI_Tb_ScreeningAndRefer(
-        #                 person_id=person_id,
-        #                 module=self.module,
-        #                 facility_level="1b"  # Referral to Level 1b
-        #             ),
-        #             topen=now + DateOffset(days=1),  # Schedule for the next day
-        #             tclose=None,
-        #             priority=0,
-        #         )
-        #     else:
-        #         # If already at a Level 1b facility, proceed with the X-ray
-        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #             hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-        #             topen=now,
-        #             tclose=None,
-        #             priority=0,
-        #         )
-        #
-        #     test_result = False  # to avoid calling a clinical diagnosis
-        #
-        # if not test_result:
-        #     self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #         hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-        #         topen=now,
-        #         tclose=None,
-        #         priority=0,
-        #     )
-          #  return ACTUAL_APPT_FOOTPRINT
-
         # ------------------------- select test for adults ------------------------- #
-
         # for all presumptive cases over 5 years of age
         else:
             # this selects a test for the person
@@ -1978,40 +1984,26 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     {"Over5OPD": 1, "LabTBMicro": 1}
                 )
 
-                # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                # relevant test depends on smear status (changes parameters on sensitivity/specificity)
                 if smear_status:
-                    test_result = self.sim.modules[
-                        "HealthSystem"
-                    ].dx_manager.run_dx_test(
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
                     )
                 else:
                     # if smear-negative, sputum smear should always return negative
                     # run the dx test to log the consumable
-                    test_result = self.sim.modules[
-                        "HealthSystem"
-                    ].dx_manager.run_dx_test(
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                     )
-                    # if negative, check for presence of all symptoms (clinical diagnosis)
+
+                # if negative, check for presence of all symptoms (clinical diagnosis)
                 if all(x in self.module.symptom_list for x in persons_symptoms):
-                    test_result = self.sim.modules[
-                        "HealthSystem"
-                    ].dx_manager.run_dx_test(
-                        # replaced Tb_clinical with Tb_Test_Clinical
+                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="Tb_Test_Clinical", hsi_event=self
                     )
-                # self.sim.modules["HealthSystem"].schedule_hsi_event(
-                #     hsi_event=HSI_Tb_ClinicalDiagnosis(
-                #         person_id=person_id, module=self.module
-                #     ),
-                #     topen=self.sim.date + DateOffset(days=1),
-                #     tclose=None,
-                #     priority=0,
-                # )
 
+                # Add used equipment if test was conducted
                 if test_result is not None:
-                    # Add used equipment
                     self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
             elif test == "xpert":
@@ -2022,7 +2014,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         hsi_event=HSI_Tb_ScreeningAndRefer(
                             person_id=person_id, module=self.module, facility_level="1b"
                         ),
-                        topen=self.sim.date + DateOffset(days=1),
+                        topen=self.sim.date + pd.DateOffset(days=1),
                         tclose=None,
                         priority=0,
                     )
@@ -2030,23 +2022,20 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 else:
                     if smear_status:
-                        # relevant test depends on smear status (changes parameters on sensitivity/specificity
-                        test_result = self.sim.modules[
-                            "HealthSystem"
-                        ].dx_manager.run_dx_test(
+                        # relevant test depends on smear status (changes parameters on sensitivity/specificity)
+                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                             dx_tests_to_run="tb_xpert_test_smear_positive",
                             hsi_event=self,
                         )
-                    # for smear-negative people
                     else:
-                        test_result = self.sim.modules[
-                            "HealthSystem"
-                        ].dx_manager.run_dx_test(
+                        # for smear-negative people
+                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                             dx_tests_to_run="tb_xpert_test_smear_negative",
                             hsi_event=self,
                         )
+
+                    # Add used equipment if test was conducted
                     if test_result is not None:
-                        # Add used equipment
                         self.add_equipment({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # ------------------------- testing referrals ------------------------- #
@@ -3008,8 +2997,6 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                 # Check if the patient has cough, fever, night sweat, or weight loss
                 if any(x in self.module.symptom_list for x in persons_symptoms):
                     print(f"Community CXR scheduled for person {person_id} due to TB symptoms.")
-                    print(
-                        f"Scheduling Community CXR for person {person_id} with TREATMENT_ID: Tb_Test_ScreeningOutreach")
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
                         topen=now,
@@ -3080,7 +3067,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
             # logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
             # logger.info({"treatment_id": self.TREATMENT_ID})
-            print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
+            #print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
