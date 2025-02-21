@@ -1251,3 +1251,4 @@ plt.legend(handles=[blue_line, orange_line])
 plt.savefig(make_graph_file_name("Malaria_mortality"))
 
 plt.show()
+

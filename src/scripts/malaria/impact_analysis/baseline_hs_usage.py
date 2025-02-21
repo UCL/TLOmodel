@@ -236,9 +236,12 @@ def percentageHTM_by_year(results_folder, module, key, column, draw, year):
         tmp = pd.DataFrame(tmp[column].to_list())
 
         # sum to get total tx_id numbers  over the simulation
-        total_sum = tmp.sum(axis=1).iloc[0]
-        subset_sum = tmp.filter(regex='^(Hiv|Tb|Malaria)').sum(axis=1).iloc[0]
-
+        # total_sum = tmp.sum(axis=1).iloc[0]
+        # subset_sum = tmp.filter(regex='^(Hiv|Tb|Malaria)').sum(axis=1).iloc[0]
+        total_sum = tmp.sum().sum()  # Summing over all rows and columns
+        print(total_sum)
+        subset_sum = tmp.filter(regex='^(Hiv|Tb|Malaria)').sum().sum()  # Summing across years
+        print(subset_sum)
         proportion = subset_sum / total_sum
         results.append(proportion)
 
@@ -277,3 +280,71 @@ print(htm_percentage_2019.quantile(0.975))
 print(htm_percentage_All.median())
 print(htm_percentage_All.quantile(0.025))
 print(htm_percentage_All.quantile(0.975))
+
+
+# get the summary for every year
+
+def summary_percentageHTM_by_year(results_folder, module, key, column, draw, year):
+    """
+    Compute the percentage of services that are HTM (HIV/TB/Malaria) divided by total services for a given year.
+
+    Also returns total service count (total_sum) and HTM service count (subset_sum).
+
+    Results are summarised using median and uncertainty intervals.
+    """
+
+    info = get_scenario_info(results_folder)
+
+    # Store results across runs
+    percentages = []
+    total_sums = []
+    subset_sums = []
+
+    for run in range(info['runs_per_draw']):
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw=0, run=run)[module][key]
+
+        # Convert 'datetime' column to year
+        df['date'] = pd.to_datetime(df['date']).dt.year
+
+        # Select year of interest
+        tmp = df.loc[df.date == year]
+        if tmp.empty:
+            continue  # Skip if no data for the year
+
+        # Extract service counts
+        tmp = pd.DataFrame(tmp[column].to_list())
+        total_sum = tmp.sum(axis=1).iloc[0]
+        subset_sum = tmp.filter(regex='^(Hiv|Tb|Malaria)').sum(axis=1).iloc[0]
+
+        # Compute proportion of HTM services
+        proportion = subset_sum / total_sum if total_sum > 0 else 0
+
+        # Store results
+        percentages.append(proportion)
+        total_sums.append(total_sum)
+        subset_sums.append(subset_sum)
+
+    # Convert to pandas Series for statistics
+    percentages = pd.Series(percentages)
+    total_sums = pd.Series(total_sums)
+    subset_sums = pd.Series(subset_sums)
+
+    # Compute summary statistics
+    summary = {
+        "Year": year,
+        "Median Percentage HTM": percentages.median(),
+        "Lower 2.5%": percentages.quantile(0.025),
+        "Upper 97.5%": percentages.quantile(0.975),
+        "Total Sum (Median)": total_sums.median(),
+        "Subset Sum (Median)": subset_sums.median()
+    }
+
+    return summary
+
+years = range(2010, 2020)
+summary_data = [summary_percentageHTM_by_year(results_folder, module, key, column, draw=0, year=y) for y in years]
+summary_df = pd.DataFrame(summary_data)
+
+print(summary_df)
+
+summary_df.to_csv(results_folder / "htm_percentage_appts_summary_table.csv")

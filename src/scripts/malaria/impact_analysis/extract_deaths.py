@@ -761,9 +761,143 @@ ax2.legend(
     bbox_to_anchor=(1.2, 1)
 )
 
-fig.savefig(outputspath / "Apr2024_HTMresults/Mortality_life_expect_exclHTM.png")
+# fig.savefig(outputspath / "Apr2024_HTMresults/Mortality_life_expect_exclHTM.png")
 
 plt.show()
+
+
+
+# ------------------------------------------------------------------
+# Split plot into 2 figures
+# additionally show mortality rates on non-log scale
+
+
+# life expectancy
+fig1, ax1 = plt.subplots(figsize=(10, 4))
+fig1.suptitle('')
+
+ax1.errorbar([0, 4, 8, 12, 16], median_le.loc['M'],
+             yerr=asymmetric_error_m, fmt='x',
+             color=sex_col[0], ecolor=sex_col[0])
+ax1.errorbar([2, 6, 10, 14, 18], median_le.loc['F'],
+             yerr=asymmetric_error_f, fmt='x',
+             color=sex_col[1], ecolor=sex_col[1])
+
+ax1.grid(axis='y', linestyle='--', color='lightgrey')
+ax1.set_ylim(40, 75)
+ax1.set_ylabel('Life expectancy, years')
+
+# Set custom x-tick labels
+ax1.set_xticks([1, 5, 9, 13, 17])
+ax1.set_xticklabels([
+    'Actual',
+    'No HIV\nservices',
+    'No TB\nservices',
+    'No malaria\nservices',
+    'No HTM\nservices'
+], fontsize=10)
+
+ax1.set_yticks([45, 50, 55, 60, 65, 70])
+ax1.set_yticklabels(['45', '50', '55', '60', '65', '70'])
+
+for i in [3.5, 7.25, 10.75, 14.5]:
+    ax1.axvline(x=i, color='grey', linestyle='--', linewidth=1)
+
+# Custom legend
+line_male = mlines.Line2D([], [], color=sex_col[0], marker='x', linestyle='-', markersize=5, label='Males')
+line_female = mlines.Line2D([], [], color=sex_col[1], marker='x', linestyle='-', markersize=5, label='Females')
+
+ax1.legend(handles=[line_male, line_female],
+           labels=['Males', 'Females'],
+           loc='upper right',
+           fontsize=10,
+           frameon=False,
+           bbox_to_anchor=(1.175, 1))
+
+fig.savefig(outputspath / "Apr2024_HTMresults/life_expect_exclHTM.png")
+
+plt.show()
+
+
+
+###
+# mortality plot
+
+fig2, ax2 = plt.subplots(figsize=(10, 4))
+fig2.suptitle('')
+
+bars = ax2.bar(xvals, deaths_for_plot, color=colours, zorder=2)
+ax2.grid(axis='y', linestyle='--', color='lightgrey', which='both', zorder=0)
+
+for bar, neg_err, pos_err, color in zip(bars, array2, array3, colours * 5):
+    plt.errorbar(x=bar.get_x() + bar.get_width() / 2,
+                 y=bar.get_y() + bar.get_height(),
+                 yerr=[[neg_err], [pos_err]],
+                 color='black',
+                 capsize=5)
+
+ax2.set_yscale('log')
+ax2.set_ylabel('Mortality rate per 1000py \n (log-scale)')
+
+for i in [4.5, 8.5, 12.5, 16.5]:
+    ax2.axvline(x=i, color='grey', linestyle='--', linewidth=1)
+
+# Set custom x-tick labels
+ax2.set_xticks([1.5, 6.0, 10.0, 14.5, 19.5])
+ax2.set_xticklabels(['Actual', 'No HIV\nservices', 'No TB\nservices',
+                     'No malaria\nservices', 'No HTM\nservices'], fontsize=10)
+
+ax2.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=color) for color in colours],
+           labels=['AIDS', 'TB', 'Malaria', 'All causes'],
+           loc='upper right',
+           fontsize=10,
+           frameon=False,
+           bbox_to_anchor=(1.2, 1))
+
+fig.savefig(outputspath / "Apr2024_HTMresults/mortality_exclHTM.png")
+
+plt.show()
+
+
+## mortality plot not log scale
+
+# mortality plot
+
+fig2, ax2 = plt.subplots(figsize=(10, 4))
+fig2.suptitle('')
+
+bars = ax2.bar(xvals, deaths_for_plot, color=colours, zorder=2)
+ax2.grid(axis='y', linestyle='--', color='lightgrey', which='both', zorder=0)
+
+for bar, neg_err, pos_err, color in zip(bars, array2, array3, colours * 5):
+    plt.errorbar(x=bar.get_x() + bar.get_width() / 2,
+                 y=bar.get_y() + bar.get_height(),
+                 yerr=[[neg_err], [pos_err]],
+                 color='black',
+                 capsize=5)
+
+# ax2.set_yscale('log')
+ax2.set_ylabel('Mortality rate per 1000py')
+
+for i in [4.5, 8.5, 12.5, 16.5]:
+    ax2.axvline(x=i, color='grey', linestyle='--', linewidth=1)
+
+# Set custom x-tick labels
+ax2.set_xticks([1.5, 6.0, 10.0, 14.5, 19.5])
+ax2.set_xticklabels(['Actual', 'No HIV\nservices', 'No TB\nservices',
+                     'No malaria\nservices', 'No HTM\nservices'], fontsize=10)
+
+ax2.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=color) for color in colours],
+           labels=['AIDS', 'TB', 'Malaria', 'All causes'],
+           loc='upper right',
+           fontsize=10,
+           frameon=False,
+           bbox_to_anchor=(1.2, 1))
+
+fig.savefig(outputspath / "Apr2024_HTMresults/mortality_exclHTM_NOT_LOG.png")
+
+plt.show()
+
 
 
 # ---------------------------------------------------------------------------------------------
