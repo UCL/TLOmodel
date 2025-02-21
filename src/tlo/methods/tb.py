@@ -2393,7 +2393,9 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         logger.debug(
             key="message", data=f"Starting CXR for person {person_id}")
 
-        logger.info(key="treatment_id", data=f"Treatment ID: {self.TREATMENT_ID}")
+       # logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
+
+        logger.info({"treatment_id": self.TREATMENT_ID})
 
         print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
 
@@ -2420,6 +2422,10 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
         # if consumables not available, either refer to level 2 or use clinical diagnosis
+
+        print(f"Debug: Test result after X-ray for person {person_id}: {test_result}", flush=True)
+        logger.info({"person_id": person_id, "test_result": test_result})
+
         if test_result is None:
             # if smear-positive, assume symptoms strongly predictive of TB
             if smear_status:
@@ -2443,8 +2449,9 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
-            logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
-            print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}")
+            logger.info({"treatment_id": self.TREATMENT_ID, "result": "positive"})
+            print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
+
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
@@ -2455,6 +2462,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             if self.suppress_footprint:
                 return self.make_appt_footprint({})
             else:
+                print(f"Debug: Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}",
+                      flush=True)
                 return ACTUAL_APPT_FOOTPRINT
 
 
@@ -3045,8 +3054,8 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         print("STARTING COMMUNITY CHEST XRAY SCREENING")
-        logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
-       # logger.info({"treatment_id": self.TREATMENT_ID})
+       # logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
+        logger.info({"treatment_id": self.TREATMENT_ID})
 
         print(
             f"Debug: Executing HSI_Tb_CommunityXray.apply() for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
@@ -3079,7 +3088,8 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
-            logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
+           # logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
+            logger.info({"treatment_id": self.TREATMENT_ID})
             print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
