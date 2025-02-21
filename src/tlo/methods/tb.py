@@ -3016,6 +3016,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
+        logger.info(key="TREATMENT_ID",data=f"{self.TREATMENT_ID}")
 
         print("STARTING COMMUNITY CHEST XRAY SCREENING")
         print(
@@ -3060,6 +3061,8 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             print(f"Debug: Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}")
+            footprint = ACTUAL_APPT_FOOTPRINT
+            footprint["TREATMENT_ID"] = self.TREATMENT_ID
             return ACTUAL_APPT_FOOTPRINT
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):

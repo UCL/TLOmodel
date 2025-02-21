@@ -541,7 +541,7 @@ counts_of_hsi_by_treatment_id = summarize(
         ).pipe(set_param_names_as_column_index_level_0),
         only_mean=True,
     )
-counts_of_hsi_by_treatment_id.to_excel(outputfilepath / "Tb_Test_Screening.xlsx")
+counts_of_hsi_by_treatment_id.to_excel(outputfilepath / "Tb_TreatmentIDs.xlsx")
 
 #TB Incidence
 tb_inc = summarize(
