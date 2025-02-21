@@ -2611,7 +2611,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
-
+            if test_result is not None:
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
         # if consumables not available, rely on clinical diagnosis
         # if test_result is None:
         #     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -2620,6 +2621,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
 
             #if test is none then call Tb_Clinical HSI event
             if test_result is None:
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Tb_ClinicalDiagnosis(person_id=person_id, module=self.module),
                     topen=self.sim.date,
