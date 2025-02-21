@@ -2388,84 +2388,178 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.facility_level = '1b'
 
 
-    def apply(self, person_id, squeeze_factor):
+    # def apply(self, person_id, squeeze_factor):
+    #
+    #     logger.debug(
+    #         key="message", data=f"Starting CXR for person {person_id}")
+    #
+    #    # logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
+    #
+    #     logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
+    #
+    #
+    #     print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
+    #
+    #     persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+    #     if not any(x in self.module.symptom_list for x in persons_symptoms):
+    #         print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.")
+    #         return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+    #     df = self.sim.population.props
+    #
+    #     if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
+    #         return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+    #
+    #     ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+    #
+    #     smear_status = df.loc[person_id, "tb_smear"]
+    #
+    #     # select sensitivity/specificity of test based on smear status
+    #     if smear_status:
+    #         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+    #             dx_tests_to_run="tb_xray_smear_positive", hsi_event=self
+    #         )
+    #     else:
+    #         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+    #             dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
+    #         )
+    #     # if consumables not available, either refer to level 2 or use clinical diagnosis
+    #
+    #     print(f"Test result after X-ray for person {person_id}: {test_result}", flush=True)
+    #     logger.info(key="test_result", data={"person_id": person_id, "test_result": test_result})
+    #
+    #     if test_result is None:
+    #         # if smear-positive, assume symptoms strongly predictive of TB
+    #         if smear_status:
+    #             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+    #                 dx_tests_to_run="tb_clinical", hsi_event=self
+    #             )
+    #             if test_result is not None:
+    #                 self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
+    #
+    #             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+    #                 {"Under5OPD": 1, "DiagRadio": 1}
+    #             )
+    #
+    #             if test_result is None:
+    #                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+    #         # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
+    #         else:
+    #
+    #             self.sim.modules["HealthSystem"].schedule_hsi_event(
+    #                 hsi_event=HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
+    #                 topen=self.sim.date + pd.DateOffset(weeks=1),
+    #                 tclose=None,
+    #                 priority=0,
+    #             )
+    #     # if test returns positive result, refer for appropriate treatment
+    #     if test_result:
+    #         df.at[person_id, "tb_diagnosed"] = True
+    #         df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+    #
+    #         logger.info(key="test_result", data={"person_id": person_id, "test_result": test_result})
+    #         print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
+    #
+    #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+    #             HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+    #             topen=self.sim.date,
+    #             tclose=None,
+    #             priority=0,
+    #         )
+    #         # Return the footprint. If it should be suppressed, return a blank footprint.
+    #         if self.suppress_footprint:
+    #             return self.make_appt_footprint({})
+    #         else:
+    #             print(f"Returning footprint for CXR with TREATMENT_ID: {self.TREATMENT_ID}",
+    #                   flush=True)
+    #             return ACTUAL_APPT_FOOTPRINT
+def apply(self, person_id, squeeze_factor):
 
-        logger.debug(
-            key="message", data=f"Starting CXR for person {person_id}")
+    logger.debug(key="message", data=f"Starting CXR for person {person_id}")
+    logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
 
-       # logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
+    print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level}", flush=True)
 
-        logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
+    persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+    if not any(x in self.module.symptom_list for x in persons_symptoms):
+        print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.", flush=True)
+        return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+    df = self.sim.population.props
 
-        print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
+    if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
+        return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        if not any(x in self.module.symptom_list for x in persons_symptoms):
-            print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.")
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        df = self.sim.population.props
+    ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+    smear_status = df.loc[person_id, "tb_smear"]
 
-        if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+    # Select sensitivity/specificity of test based on smear status
+    if smear_status:
+        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+            dx_tests_to_run="tb_xray_smear_positive", hsi_event=self
+        )
+    else:
+        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+            dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
+        )
 
-        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+    # Log and print the test result
+    print(f"Test result after X-ray for person {person_id}: {test_result}", flush=True)
+    logger.info(key="test_result", data={"person_id": person_id, "test_result": test_result})
 
-        smear_status = df.loc[person_id, "tb_smear"]
+    # Check test result and handle accordingly
+    if test_result is not None:
+        # Add equipment if test result is positive
+        self.add_equipment(self.sim.modules["HealthSystem"].equipment.from_pkg_names('X-ray'))
+        ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
 
-        # select sensitivity/specificity of test based on smear status
+    else:
+        # if test_result is None, check further conditions
         if smear_status:
+            # If smear-positive, assume symptoms strongly predictive of TB
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                dx_tests_to_run="tb_xray_smear_positive", hsi_event=self
+                dx_tests_to_run="tb_clinical", hsi_event=self
             )
+            print(f"Clinical test result for person {person_id}: {test_result}", flush=True)
+            logger.info(key="clinical_test_result", data={"person_id": person_id, "test_result": test_result})
+
+            # If test result is still None, return blank footprint
+            if test_result is None:
+                print(f"No result from clinical test. Returning blank footprint for person {person_id}", flush=True)
+                return self.make_appt_footprint({})
+
         else:
-            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
-            )
-        # if consumables not available, either refer to level 2 or use clinical diagnosis
-
-        print(f"Debug: Test result after X-ray for person {person_id}: {test_result}", flush=True)
-        logger.info(key="test_result", data={"person_id": person_id, "test_result": test_result})
-
-        if test_result is None:
-            # if smear-positive, assume symptoms strongly predictive of TB
-            if smear_status:
-                test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                    dx_tests_to_run="tb_clinical", hsi_event=self
-                )
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Under5OPD": 1, "DiagRadio": 1}
-                )
-            # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
-            else:
-
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
-                    topen=self.sim.date + pd.DateOffset(weeks=1),
-                    tclose=None,
-                    priority=0,
-                )
-        # if test returns positive result, refer for appropriate treatment
-        if test_result:
-            df.at[person_id, "tb_diagnosed"] = True
-            df.at[person_id, "tb_date_diagnosed"] = self.sim.date
-
-            logger.info(key="test_result", data={"person_id": person_id, "test_result": test_result})
-            print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
-
+            # If smear-negative, refer for another x-ray
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
-                topen=self.sim.date,
+                hsi_event=HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
+                topen=self.sim.date + pd.DateOffset(weeks=1),
                 tclose=None,
                 priority=0,
             )
-            # Return the footprint. If it should be suppressed, return a blank footprint.
-            if self.suppress_footprint:
-                return self.make_appt_footprint({})
-            else:
-                print(f"Debug: Returning footprint for CXR with TREATMENT_ID: {self.TREATMENT_ID}",
-                      flush=True)
-                return ACTUAL_APPT_FOOTPRINT
+            print(f"Smear-negative. Scheduled for Level 2 X-ray for person {person_id}", flush=True)
+            return self.make_appt_footprint({})
+
+    # If test returns positive result, refer for appropriate treatment
+    if test_result:
+        df.at[person_id, "tb_diagnosed"] = True
+        df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+
+        logger.info(key="positive_test_result", data={"person_id": person_id, "test_result": test_result})
+        print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
+
+        self.sim.modules["HealthSystem"].schedule_hsi_event(
+            HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+            topen=self.sim.date,
+            tclose=None,
+            priority=0,
+        )
+
+    # Return the footprint. If it should be suppressed, return a blank footprint.
+    if self.suppress_footprint:
+        print(f"Footprint suppressed. Returning blank footprint for person {person_id}", flush=True)
+        return self.make_appt_footprint({})
+    else:
+        print(f"Returning footprint for CXR with TREATMENT_ID: {self.TREATMENT_ID}", flush=True)
+        return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
@@ -2559,7 +2653,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
-            print(f"Debug: Returning footprint for CXR with TREATMENT_ID: {self.TREATMENT_ID}",
+            print(f"Returning footprint for CXR with TREATMENT_ID: {self.TREATMENT_ID}",
                   flush=True)
             return ACTUAL_APPT_FOOTPRINT
 
@@ -3062,7 +3156,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
 
         print(
-            f"Debug: Executing HSI_Tb_CommunityXray.apply() for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
+            f"Executing HSI_Tb_CommunityXray.apply() for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
 
         df = self.sim.population.props  # Shortcut to the dataframe
@@ -3107,7 +3201,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
-            print(f"Debug: Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}", flush=True)
+            print(f"Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}", flush=True)
             return ACTUAL_APPT_FOOTPRINT
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
