@@ -3044,12 +3044,14 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-        logger.info(key="treatment_id", data=f"Treatment ID: {self.TREATMENT_ID}")
-
         print("STARTING COMMUNITY CHEST XRAY SCREENING")
+        logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
+       # logger.info({"treatment_id": self.TREATMENT_ID})
+
         print(
             f"Debug: Executing HSI_Tb_CommunityXray.apply() for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
+
         df = self.sim.population.props  # Shortcut to the dataframe
         person = df.loc[person_id]
 
@@ -3077,6 +3079,9 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
+            logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
+            print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
+
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
@@ -3088,7 +3093,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
-            print(f"Debug: Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}")
+            print(f"Debug: Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}", flush=True)
             return ACTUAL_APPT_FOOTPRINT
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
