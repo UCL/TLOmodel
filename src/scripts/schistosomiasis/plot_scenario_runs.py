@@ -101,6 +101,9 @@ def set_param_names_as_column_index_level_0(_df):
     return _df
 
 
+# %% EXTRACT DALYS
+
+
 def get_total_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
     Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
@@ -159,7 +162,6 @@ total_num_dalys_by_label = extract_results(
 total_num_dalys_by_label_summarized = summarize(total_num_dalys_by_label)
 
 
-# %% Deaths and DALYS averted relative to Status Quo
 def find_difference_relative_to_comparison_series(
     _ser: pd.Series,
     comparison: str,
@@ -201,6 +203,7 @@ pc_dalys_averted = 100.0 * summarize(
     only_mean=False
 )
 
+# %% PLOTS DALYS RELATIVE TO BASELINE
 
 def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     """
@@ -272,7 +275,7 @@ fig.show()
 plt.close(fig)
 
 
-# -----------------------------------------------------------------------------
+# %% DALYS by ALL CAUSES-----------------------------------------------------------------------------
 # DALYS all-cause
 
 def round_to_nearest_100(x):
@@ -309,7 +312,8 @@ daly_summary.to_csv(results_folder / (f'DALYs_by_cause {target_period()}.csv'))
 # -----------------------------------------------------------------------------
 
 
-# -----------------------------------------------------------------------------
+# %% INCIDENCE OF ASSOCIATED CONDITIONS -----------------------------------------------------------------------------
+
 # get incidence of associated disorders
 
 # diarrhoea
@@ -440,10 +444,89 @@ bladder_pc_dalys_averted = 100.0 * summarize(
     only_mean=False
 )
 
+schisto_row = (pc_dalys_averted.loc['Schisto'])
+other_row = (pc_dalys_averted.loc['Other'])
+combined_df = pd.concat([schisto_row.to_frame().T,
+                         diarrhoea_pc_dalys_averted,
+                         alri_pc_dalys_averted,
+                         hiv_pc_dalys_averted,
+                         bladder_pc_dalys_averted,
+                         other_row.to_frame().T], ignore_index=True)
+combined_df.index = ['Schisto', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer', 'Other']
+
+name_of_plot = f'Percentage reduction in incidence from baseline {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(combined_df)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Percentage reduction in incidence')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
+
+
+# %% GET COSTS FOR SCENARIOS -----------------------------------------------------------------------------
+
+#  numbers of PZQ doses - these are individual tablets
+# includes MDA and treatment
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df)
+
+    counts_of_available = defaultdict(int)
+    counts_of_not_available = defaultdict(int)
+
+    for _, row in _df.iterrows():
+        for item, num in row['Item_Available'].items():
+            counts_of_available[item] += num
+        for item, num in row['Item_NotAvailable'].items():
+            counts_of_not_available[item] += num
+
+    return pd.concat(
+        {'Item_Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        axis=1
+    ).fillna(0).astype(int).stack()
+
+cons_req = summarize(
+    extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0),
+    only_mean=True,
+    collapse_columns=True
+)
+
+cons = cons_req.unstack()
+# item 286 is Praziquantel 600mg_1000_CMST
+# todo these are showing as all unavailable, ie they've been requested and the HSI has run because they're optional
+# so use the quantities requested
+pzq_use = cons_req.loc['286']
+pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # -----------------------------------------------------------------------------
-
 
 # todo person-years infected with low/moderate/high intensity infections by district and total
 # stacked bar plot for each scenario

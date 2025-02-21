@@ -1162,7 +1162,8 @@ class SchistoSpecies:
             )
 
     def log_infection_status(self) -> None:
-        """Log the number of persons in each infection status for this species, by age-group and district."""
+        """Log the number of persons in each infection status for this species,
+        by age-group, infection level and district."""
 
         df = self.schisto_module.sim.population.props
         prop = self.prefix_species_property
@@ -1718,32 +1719,73 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         Log the numbers of people infected with any species of schisto and high-burden infections
         sum these in SchistoLoggingEvent each year to get person-years infected
         """
-        df = self.sim.population.props
-        df_alive = df.loc[df.is_alive].copy()
 
         # Precompute categories
-        df_alive['age_group'] = df_alive.age_years.map(self.module.age_group_mapper)
-        df_alive['species_prefix'] = df_alive.apply(
-            lambda row: 'sm' if row['ss_sm_infection_status'] != 'None' else 'sh', axis=1
-        )
-        df_alive['infection_level'] = df_alive.apply(
-            lambda row: row[f"ss_{row['species_prefix']}_infection_status"], axis=1
-        )
+        df = self.sim.population.props
 
-        # Exclude non-infected individuals
-        df_alive = df_alive[df_alive['infection_level'] != 'Non-infected']
+        # get infection counts for both 'sh' and 'sm'
+        def count_infection_status(df, species_prefix, infection_status):
+            # Filter by infection status and alive status
+            mask = (df[f"ss_{species_prefix}_infection_status"] == infection_status) & df.is_alive
 
-        # Group by species, age group, infection level, and district
-        grouped_counts = df_alive.groupby(
-            ['species_prefix', 'age_group', 'infection_level', 'district_of_residence']
-        ).size()
+            # Use 'map' if age_group_mapper is a dictionary (assuming it's defined as a dictionary)
+            age_groups = df.loc[mask, 'age_years'].map(self.module.age_group_mapper)
+
+            # Group by the mapped age groups and district directly, without creating a DataFrame
+            grouped = pd.Series(1, index=[age_groups, df.loc[mask, 'district_of_residence']]).groupby(
+                level=[0, 1]).sum()
+
+            return grouped
+
+        # Count people based on ss_sh_infection_status
+        sh_counts = {
+            'low-infection': count_infection_status(df, 'sh', 'Low-infection'),
+            'moderate-infection': count_infection_status(df, 'sh', 'Moderate-infection'),
+            'high-infection': count_infection_status(df, 'sh', 'High-infection')
+        }
+
+        # Count people based on ss_sm_infection_status
+        sm_counts = {
+            'low-infection': count_infection_status(df, 'sm', 'Low-infection'),
+            'moderate-infection': count_infection_status(df, 'sm', 'Moderate-infection'),
+            'high-infection': count_infection_status(df, 'sm', 'High-infection')
+        }
 
         # Update the log_person_days DataFrame
-        for idx, count in grouped_counts.items():
-            species = 'mansoni' if idx[0] == 'sm' else 'haematobium'
-            self.module.log_person_days.loc[
-                (species, idx[1], idx[2], idx[3]), 'person_days'
-            ] += count
+        for infection_status, counts in sh_counts.items():
+            for (age_group, district), count in counts.items():
+                self.module.log_person_days.loc[
+                    ('haematobium', age_group, infection_status, district), 'person_days'
+                ] += count
+
+        for infection_status, counts in sm_counts.items():
+            for (age_group, district), count in counts.items():
+                self.module.log_person_days.loc[
+                    ('mansoni', age_group, infection_status, district), 'person_days'
+                ] += count
+
+        # df_alive['age_group'] = df_alive.age_years.map(self.module.age_group_mapper)
+        # df_alive['species_prefix'] = df_alive.apply(
+        #     lambda row: 'sm' if row['ss_sm_infection_status'] != 'Non-infected' else 'sh', axis=1
+        # )
+        # df_alive['infection_level'] = df_alive.apply(
+        #     lambda row: row[f"ss_{row['species_prefix']}_infection_status"], axis=1
+        # )
+        #
+        # # Exclude non-infected individuals
+        # df_alive = df_alive[df_alive['infection_level'] != 'Non-infected']
+        #
+        # # Group by species, age group, infection level, and district
+        # grouped_counts = df_alive.groupby(
+        #     ['species_prefix', 'age_group', 'infection_level', 'district_of_residence']
+        # ).size()
+        #
+        # # Update the log_person_days DataFrame
+        # for idx, count in grouped_counts.items():
+        #     species = 'mansoni' if idx[0] == 'sm' else 'haematobium'
+        #     self.module.log_person_days.loc[
+        #         (species, idx[1], idx[2], idx[3]), 'person_days'
+        #     ] += count
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):

@@ -18,14 +18,27 @@ class ScenarioDefinitions:
         """
         return mix_scenarios(
             get_parameters_for_status_quo(),  # <-- Parameters that have been the calibration targets
-            # stop all future MDA activities
             {
-                "Schisto": {
-                    "mda_coverage": 0.0,  # default is 0.7
-                    "scaleup_WASH": 0.0,  # although this is BOOL, python changes type when reading in from Excel
-                }
+                "HealthSystem": {
+                    "mode_appt_constraints": 1,  # <-- Mode 1 prior to change to preserve calibration
+                    "cons_availability": "default",
+                    "beds_availability": "all",
+                    "ignore_priority": False,
+                    "use_funded_or_actual_staffing": "actual"
+                },
+                "Schisto": {"single_district": False},
+                "Demography": {"equal_allocation_by_district": True},
+                "Alri": {"log_indivdual": None},
             },
         )
+
+    def no_MDA(self) -> Dict:
+        return {
+            "Schisto": {
+                "mda_coverage": 0.0,  # default is 0.7
+                "scaleup_WASH": 0.0,  # although this is BOOL, python changes type when reading in from Excel
+            }
+        }
 
     def scaleup_WASH(self) -> Dict:
         return {
@@ -56,5 +69,3 @@ class ScenarioDefinitions:
                 "mda_frequency_months": 12,  # default is 6
             }
         }
-
-

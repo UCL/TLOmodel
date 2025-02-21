@@ -69,18 +69,18 @@ class SchistoScenarios(BaseScenario):
     def modules(self):
         return fullmodel(resourcefilepath=self.resources,
                          use_simplified_births=True,
-                         module_kwargs={
-                             "HealthSystem": {"disable": False,
-                                              "service_availability": ["*"],
-                                              "mode_appt_constraints": 1,
-                                              "cons_availability": "default",
-                                              "beds_availability": "all",
-                                              "ignore_priority": False,
-                                              "use_funded_or_actual_staffing": "actual"},
-                             "Schisto": {"single_district": False},
-                             "Demography": {"equal_allocation_by_district": True},
-                             "Alri": {"log_indivdual": None},
-                         }
+                         # module_kwargs={
+                         #     "HealthSystem": {"disable": False,
+                         #                      "service_availability": ["*"],
+                         #                      "mode_appt_constraints": 1,
+                         #                      "cons_availability": "default",
+                         #                      "beds_availability": "all",
+                         #                      "ignore_priority": False,
+                         #                      "use_funded_or_actual_staffing": "actual"},
+                         #     "Schisto": {"single_district": False},
+                         #     "Demography": {"equal_allocation_by_district": True},
+                         #     "Alri": {"log_indivdual": None},
+                         # }
                          )
 
     def draw_parameters(self, draw_number, rng):
@@ -94,33 +94,42 @@ class SchistoScenarios(BaseScenario):
 
         return {
             "Baseline":
+                mix_scenarios(
                     scenario_definitions.baseline(),
+                    scenario_definitions.no_MDA(),
+                ),
 
             "WASH only":
                 mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.no_MDA(),
                     scenario_definitions.scaleup_WASH(),
                 ),
 
             # - - - Modify future MDA schedules with/without WASH activities - - -
             "MDA SAC with no WASH":
                 mix_scenarios(
+                    scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
                 ),
 
             "MDA SAC with WASH":
                 mix_scenarios(
+                    scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.scaleup_WASH(),
                 ),
 
             "MDA PSAC with no WASH":
                 mix_scenarios(
+                    scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_PSAC(),
                 ),
 
             "MDA PSAC with WASH":
                 mix_scenarios(
+                    scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_PSAC(),
                     scenario_definitions.scaleup_WASH(),
@@ -128,12 +137,14 @@ class SchistoScenarios(BaseScenario):
 
             "MDA All with no WASH":
                 mix_scenarios(
+                    scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_All(),
                 ),
 
             "MDA All with WASH":
                 mix_scenarios(
+                    scenario_definitions.baseline(),
                     scenario_definitions.high_coverage_MDA(),
                     scenario_definitions.expand_MDA_to_All(),
                     scenario_definitions.scaleup_WASH(),
