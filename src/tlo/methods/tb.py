@@ -2990,7 +2990,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
 
         # Get the index of eligible people (not diagnosed with TB and alive)
         eligible = df.index[~df.tb_diagnosed & df.is_alive]
-        print(f"Debug: Eligible for Community X-ray screening: {len(eligible)}")
+        print(f"Eligible for Community X-ray screening: {len(eligible)}")
         # Select people for screening based on probability
         select_for_screening = rng.choice([True, False],
                                           size=len(eligible),
@@ -3006,7 +3006,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                 # Check if the patient has cough, fever, night sweat, or weight loss
                 if any(x in self.module.symptom_list for x in persons_symptoms):
                     print(f"Community CXR scheduled for person {person_id} due to TB symptoms.")
-                    print(f"Debug: Scheduling Community CXR for person {person_id} with TREATMENT_ID: Tb_Test_ScreeningOutreach")
+                    print(f"Scheduling Community CXR for person {person_id} with TREATMENT_ID: Tb_Test_ScreeningOutreach")
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
                         topen=now,
@@ -3035,9 +3035,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         print("STARTING COMMUNITY CHEST XRAY SCREENING")
-
         logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
-
 
         print(
             f"Executing HSI_Tb_CommunityXray.apply() for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
@@ -3064,6 +3062,10 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             )
 
         #ACTUAL_APPOINTMENT=self.make_appt_footprint({"ConWithDCSA": 1})
+        if test_result is not None:
+            self.add_equipment(self.sim.modules["HealthSystem"].equipment.from_pkg_names('X-ray'))
+            print(f"X-ray equipment added for person {person_id}", flush=True)
+            logger.info(key="equipment", data={"person_id": person_id, "equipment_added": "X-ray"})
 
         # If the test returns a positive result, refer for appropriate treatment
         if test_result:
@@ -3071,7 +3073,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
            # logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
-            logger.info({"treatment_id": self.TREATMENT_ID})
+           # logger.info({"treatment_id": self.TREATMENT_ID})
             print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
