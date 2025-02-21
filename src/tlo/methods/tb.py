@@ -1913,19 +1913,19 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         #child under 5 -> chest x-ray, but access is limited
        # if xray not available, HSI_Tb_Xray_level1b will refer
-        if person["age_years"] < 5:
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                {"Under5OPD": 1}
-            )
-
-            # this HSI will choose relevant sensitivity/specificity depending on person's smear status
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                topen=now,
-                tclose=None,
-                priority=0,
-            )
-            test_result = False  # to avoid calling a clinical diagnosis
+       #  if person["age_years"] < 5:
+       #      ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+       #          {"Under5OPD": 1}
+       #      )
+       #
+       #      # this HSI will choose relevant sensitivity/specificity depending on person's smear status
+       #      self.sim.modules["HealthSystem"].schedule_hsi_event(
+       #          hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+       #          topen=now,
+       #          tclose=None,
+       #          priority=0,
+       #      )
+       #      test_result = False  # to avoid calling a clinical diagnosis
 
         # if person["age_years"] < 5:
         #     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
@@ -1960,7 +1960,55 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         #         tclose=None,
         #         priority=0,
         #     )
+          #  return ACTUAL_APPT_FOOTPRINT
+        if person["age_years"] < 5:
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
+
+            # If currently at a Level 1a facility, schedule a referral to Level 1b for X-ray
+            if self.facility_level == "1a":
+                print(f"At Level 1a, referring person {person_id} to Level 1b for X-ray.")
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_ScreeningAndRefer(
+                        person_id=person_id,
+                        module=self.module,
+                        facility_level="1b"  # Referral to Level 1b
+                    ),
+                    topen=now + DateOffset(days=1),  # Schedule for the next day
+                    tclose=None,
+                    priority=0,
+                )
+            else:
+                # If already at a Level 1b facility, proceed with the X-ray immediately
+                print(f"Already at Level 1b, proceeding with X-ray for person {person_id}.")
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                    topen=now,
+                    tclose=None,
+                    priority=0,
+                )
+
+                # Log and track the event for consistent output
+                logger.info(
+                    key="TREATMENT_ID",
+                    data="Tb_Test_Xray"
+                )
+                print(f"Debug: Scheduled X-ray for person {person_id} at Level 1b with TREATMENT_ID: Tb_Test_Xray")
+
+            # Ensure that test_result is consistently False to avoid clinical diagnosis
+            test_result = False
+
+            # Check if test_result is still False and schedule additional events if necessary
+            if not test_result:
+                print(f"Debug: No positive result, considering additional X-ray for person {person_id}.")
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                    topen=now,
+                    tclose=None,
+                    priority=0,
+                )
+
             return ACTUAL_APPT_FOOTPRINT
+
 
         # ------------------------- select test for adults ------------------------- #
 
