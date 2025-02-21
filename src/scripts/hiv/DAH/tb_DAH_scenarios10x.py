@@ -120,7 +120,7 @@ class ImpactOfTbDaH04(BaseScenario):
             "CXR scaleup": {
                 'Tb': {
                     'scenario': 3,
-                    #'scaling_factor_WHO': 1.4,
+                    'scaling_factor_WHO': 1.4,
                 },
             },
             # introduce outreach services
@@ -128,7 +128,7 @@ class ImpactOfTbDaH04(BaseScenario):
                 'Tb': {
                     'scenario': 4,
                     'probability_community_chest_xray': 0.2,
-                   # 'scaling_factor_WHO': 1.3,
+                    'scaling_factor_WHO': 1.3,
                 }
             },
         }
