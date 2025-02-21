@@ -2395,7 +2395,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
        # logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
 
-        logger.info({"treatment_id": self.TREATMENT_ID})
+        logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
+
 
         print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
 
@@ -2491,7 +2492,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key="message", data=f"Starting IPT for person {person_id}")
         print(f"STARTING TB CXR SCREENING AT LEVEL {self.ACCEPTED_FACILITY_LEVEL} ")
 
-        logger.info(key="treatment_id", data=f"Treatment ID: {self.TREATMENT_ID}")
+        logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
 
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
@@ -3056,8 +3057,9 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         print("STARTING COMMUNITY CHEST XRAY SCREENING")
-       # logger.info(key="treatment_id", data="Treatment ID: {self.TREATMENT_ID}")
-        logger.info({"treatment_id": self.TREATMENT_ID})
+
+        logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
+
 
         print(
             f"Debug: Executing HSI_Tb_CommunityXray.apply() for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
