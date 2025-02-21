@@ -688,7 +688,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         # Find the number of individuals with currently susceptible to species and no sanitation
-        susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
+        # susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
+
+        susceptible_no_sanitation = df.query(f"{species_column} == 1 and li_unimproved_sanitation").index
 
         # Calculate the number to be reduced
         n_to_reduce = int(p['rr_WASH'] * len(susceptible_no_sanitation))
@@ -926,22 +928,43 @@ class SchistoSpecies:
             return
 
         def _get_infection_status(population: pd.DataFrame) -> pd.Series:
-            age = population["age_years"]
-            agg_wb = population[prop("aggregate_worm_burden")]
-            status = pd.Series(
-                "Non-infected",
-                index=population.index,
-                dtype=population[prop("infection_status")].dtype
-            )
-            high_group = (
-                             (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
-                         ) | (agg_wb >= params["high_intensity_threshold"])
+            # Extracting age and aggregate worm burden values as NumPy arrays
+            age = population["age_years"].values  # Convert to NumPy array for memory efficiency
+            agg_wb = population[prop("aggregate_worm_burden")].values  # Use NumPy for efficiency
+
+            # Using np.where to directly assign infection status based on conditions
+            # Initialize all to 'Non-infected' (the default status)
+            status = np.full(population.shape[0], "Non-infected", dtype="object")
+
+            high_group = ((age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])) | (
+                    agg_wb >= params["high_intensity_threshold"])
             moderate_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
             low_group = (agg_wb < params["low_intensity_threshold"]) & (agg_wb > 0)
-            status[high_group] = "High-infection"
-            status[moderate_group] = "Moderate-infection"
-            status[low_group] = "Low-infection"
-            return status
+
+            # assign status
+            np.copyto(status, "High-infection", where=high_group)
+            np.copyto(status, "Moderate-infection", where=moderate_group)
+            np.copyto(status, "Low-infection", where=low_group)
+
+            # same index as the original DataFrame
+            return pd.Series(status, index=population.index)
+
+            # age = population["age_years"]
+            # agg_wb = population[prop("aggregate_worm_burden")]
+            # status = pd.Series(
+            #     "Non-infected",
+            #     index=population.index,
+            #     dtype=population[prop("infection_status")].dtype
+            # )
+            # high_group = (
+            #                  (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
+            #              ) | (agg_wb >= params["high_intensity_threshold"])
+            # moderate_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
+            # low_group = (agg_wb < params["low_intensity_threshold"]) & (agg_wb > 0)
+            # status[high_group] = "High-infection"
+            # status[moderate_group] = "Moderate-infection"
+            # status[low_group] = "Low-infection"
+            # return status
 
         def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
             """Assign symptoms to the person with high intensity infection.
@@ -959,8 +982,12 @@ class SchistoSpecies:
                         disease_module=schisto_module
                     )
 
-        correct_status = _get_infection_status(df.loc[idx])
-        original_status = df.loc[idx, prop('infection_status')]
+        # correct_status = _get_infection_status(df.loc[idx])
+        # original_status = df.loc[idx, prop('infection_status')]
+
+        extracted_data = df.loc[idx, ['age_years', prop("aggregate_worm_burden"), prop('infection_status')]]
+        correct_status = _get_infection_status(extracted_data)
+        original_status = extracted_data[prop('infection_status')]
 
         # Impose symptoms for those newly having 'High-infection' or 'Moderate-infection' status
         newly_have_high_infection = (original_status != 'High-infection') & (correct_status == 'High-infection')
@@ -1006,12 +1033,17 @@ class SchistoSpecies:
         rng = self.schisto_module.rng
 
         for district in districts:
-            in_the_district = df.index[df['district_of_residence'] == district]  # people in the district
-            num_in_district = len(in_the_district)  # population size in district
+            # in_the_district = df.index[df['district_of_residence'] == district]  # people in the district
+            district_mask = df['district_of_residence'] == district
+
+            # num_in_district = len(in_the_district)  # population size in district
+            num_in_district = district_mask.sum()
 
             # HARBOURING RATE
             hr = params['gamma_alpha'][district]
-            df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=num_in_district)
+            # df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=num_in_district)
+
+            df.loc[district_mask, prop('harbouring_rate')] = rng.gamma(hr, size=district_mask.sum())
 
             # SUSCEPTIBILITY
             # Calculate the number of people that need to be susceptible
@@ -1168,31 +1200,48 @@ class SchistoSpecies:
         df = self.schisto_module.sim.population.props
         prop = self.prefix_species_property
 
-        age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        # age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        # #
+        # data = df.loc[df.is_alive].groupby(by=[
+        #     df.loc[df.is_alive, self.infection_status_property],
+        #     df.loc[df.is_alive, 'district_of_residence'],
+        #     age_grp
+        # ], observed=False).size()
+        # data.index.rename('infection_status', level=0, inplace=True)
 
-        data = df.loc[df.is_alive].groupby(by=[
-            df.loc[df.is_alive, self.infection_status_property],
-            df.loc[df.is_alive, 'district_of_residence'],
-            age_grp
-        ], observed=False).size()
+        # Directly filter and map values in one go without creating intermediate DataFrames
+        age_grp = df.loc[df.is_alive, 'age_years'].map(self.schisto_module.age_group_mapper)
+
+        # Perform the grouping and size computation in a single step
+        data = df.query('is_alive').groupby(
+            by=[
+                df[self.infection_status_property],
+                df['district_of_residence'],
+                age_grp
+            ],
+            observed=False
+        ).size()
+
+        # Rename the index after grouping
         data.index.rename('infection_status', level=0, inplace=True)
 
-        # logger.info(
-        #     key=f'infection_status_{self.name}',
-        #     data=flatten_multi_index_series_into_dict_for_logging(data),
-        #     description='Counts of infection status with this species by age-group and district.'
-        # )
-
-        #  Group by district and calculate counts
-        grouped_data = df.loc[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
-            total_count='count',
-            susceptible_count=lambda x: (x == 1).sum()
+        logger.info(
+            key=f'infection_status_{self.name}',
+            data=flatten_multi_index_series_into_dict_for_logging(data),
+            description='Counts of infection status with this species by age-group and district.'
         )
 
-        # Calculate the proportion of susceptible individuals in each district
-        susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
-
+        #  Susceptibility
         # todo reinstate if needed
+        # Directly filter and group in one step to avoid intermediate DataFrames
+        # grouped_data = df[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
+        #     total_count='count',
+        #     susceptible_count=lambda x: (x == 1).sum()
+        # )
+
+        # Calculate the proportion of susceptible individuals in each district
+        # susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
+
         # logger.info(
         #     key=f'susceptibility_{self.name}',
         #     data=flatten_multi_index_series_into_dict_for_logging(susceptibility_proportion),
@@ -1206,12 +1255,20 @@ class SchistoSpecies:
 
         prop = self.prefix_species_property
 
-        age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        # age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        #
+        # data = df.loc[df.is_alive].groupby(by=[
+        #     df.loc[df.is_alive, 'district_of_residence'],
+        #     age_grp
+        # ], observed=False)[prop('aggregate_worm_burden')].mean()
 
-        data = df.loc[df.is_alive].groupby(by=[
-            df.loc[df.is_alive, 'district_of_residence'],
-            age_grp
-        ], observed=False)[prop('aggregate_worm_burden')].mean()
+        # Apply the transformation and aggregation without unnecessary intermediate DataFrames
+        data = (
+            df.loc[df.is_alive, ['age_years', 'district_of_residence', prop('aggregate_worm_burden')]]
+            .assign(age_group=df.loc[df.is_alive, 'age_years'].map(self.schisto_module.age_group_mapper))
+            .groupby(['district_of_residence', 'age_group'], observed=False)[prop('aggregate_worm_burden')]
+            .mean()
+        )
 
         logger.info(
             key=f'mean_worm_burden_by_age_{self.name}',
@@ -1254,21 +1311,36 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         R0 = params['R0']
 
         where = df.is_alive
+        # age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
+        #                    include_lowest=True)
+        # age_group.name = 'age_group'
+
         age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
                            include_lowest=True)
+        age_group = age_group.astype('category')  # Convert to a categorical type for memory efficiency
         age_group.name = 'age_group'
+
         beta_by_age_group = pd.Series(betas, index=['PSAC', 'SAC', 'Adults'])
         beta_by_age_group.index.name = 'age_group'
 
         # --------------------- get the size of reservoir per district ---------------------
         # returns the mean worm burden and the total worm burden by age and district
+        # mean_count_burden_district_age_group = \
+        #     df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
+        #         prop('aggregate_worm_burden')].agg(['mean', 'size'])
+
         mean_count_burden_district_age_group = \
-            df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
-                prop('aggregate_worm_burden')].agg(['mean', 'size'])
+        df.loc[where, [prop('aggregate_worm_burden'), 'district_of_residence']].groupby(
+            [df.loc[where, 'district_of_residence'], age_group], observed=False
+        )[prop('aggregate_worm_burden')].agg(['mean', 'size'])
+
 
         # get population size by district
-        district_count = df.loc[where].groupby(by='district_of_residence', observed=False)[
-            'district_of_residence'].count()
+        # district_count = df.loc[where].groupby(by='district_of_residence', observed=False)[
+        #     'district_of_residence'].count()
+
+        district_count = df[where].groupby('district_of_residence').size()
+
         # mean worm burden by age multiplied by exposure rates of each age-gp
         beta_contribution_to_reservoir = mean_count_burden_district_age_group['mean'] * beta_by_age_group
         # weighted mean of the worm burden, considering the size of each age-gp in district
@@ -1281,8 +1353,12 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # --------------------- estimate background risk of infection ---------------------
 
-        current_prevalence = len(df[df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')]
-                         ) / len(df[df.is_alive])
+        # current_prevalence = len(df[df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')]
+        #                  ) / len(df[df.is_alive])
+        current_prevalence = (
+            (df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')).sum()
+            / df['is_alive'].sum()
+        )
         baseline_prevalence = params['baseline_prevalence']  # baseline prevalence for species in 2010
 
         # this returns positive value if current_prevalence lower than baseline_prevalence and
@@ -1366,7 +1442,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
             return
 
         # increase worm burden
-        df.loc[person_id, prop('aggregate_worm_burden')] += self.number_of_worms_that_mature
+        df.at[person_id, prop('aggregate_worm_burden')] += self.number_of_worms_that_mature
 
         # schedule the natural death of the worms
         self.sim.schedule_event(
@@ -1739,16 +1815,16 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Count people based on ss_sh_infection_status
         sh_counts = {
-            'low-infection': count_infection_status(df, 'sh', 'Low-infection'),
-            'moderate-infection': count_infection_status(df, 'sh', 'Moderate-infection'),
-            'high-infection': count_infection_status(df, 'sh', 'High-infection')
+            'Low-infection': count_infection_status(df, 'sh', 'Low-infection'),
+            'Moderate-infection': count_infection_status(df, 'sh', 'Moderate-infection'),
+            'High-infection': count_infection_status(df, 'sh', 'High-infection')
         }
 
         # Count people based on ss_sm_infection_status
         sm_counts = {
-            'low-infection': count_infection_status(df, 'sm', 'Low-infection'),
-            'moderate-infection': count_infection_status(df, 'sm', 'Moderate-infection'),
-            'high-infection': count_infection_status(df, 'sm', 'High-infection')
+            'Low-infection': count_infection_status(df, 'sm', 'Low-infection'),
+            'Moderate-infection': count_infection_status(df, 'sm', 'Moderate-infection'),
+            'High-infection': count_infection_status(df, 'sm', 'High-infection')
         }
 
         # Update the log_person_days DataFrame
@@ -1808,12 +1884,14 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # todo this is logging MDA as well as treatment
-        new_tx = len(
-            df[
-                (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
-                & (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
+        # new_tx = len(
+        #     df[
+        #         (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        new_tx = sum(df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
+
+
         # treatment logger
         treatment_episodes = {
             'treatment_episodes': new_tx,
@@ -1833,30 +1911,62 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
 
-        # extract prevalence of either infection by age-group and district
-        age_grp = df.loc[df['is_alive'], 'age_years'].map(self.module.age_group_mapper)
 
+        # extract and map age groups for those alive
+        age_grp = df['age_years'].map(self.module.age_group_mapper)
+
+        # Create the infection mask without creating new DataFrames
         infection_mask = (df['ss_sm_infection_status'] != 'Non-infected') | (
                 df['ss_sh_infection_status'] != 'Non-infected')
+        alive_mask = df['is_alive']  # Mask for people who are alive
 
-        # Step 2: Filter the DataFrame to include only those who are alive and infected
-        infected = df.loc[df['is_alive'] & infection_mask].groupby(
-            by=[
-                df.loc[df['is_alive'] & infection_mask, 'district_of_residence'],
-                age_grp
-            ],
+        # Apply mask directly in groupby and calculate infected count
+        infected = df[alive_mask & infection_mask].groupby(
+            by=['district_of_residence', age_grp],
             observed=False
         ).size()
+
+        # Rename index directly
         infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
 
-        alive = df.loc[df['is_alive']].groupby(
-            by=[
-                df.loc[df['is_alive'], 'district_of_residence'],
-                age_grp
-            ],
+        # Apply mask for just the alive individuals and calculate alive count
+        alive = df[alive_mask].groupby(
+            by=['district_of_residence', age_grp],
             observed=False
         ).size()
+
+        # Rename index directly
         alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
+
+        # # extract prevalence of either infection by age-group and district
+        # age_grp = df.loc[df['is_alive'], 'age_years'].map(self.module.age_group_mapper)
+        #
+        # infection_mask = (df['ss_sm_infection_status'] != 'Non-infected') | (
+        #         df['ss_sh_infection_status'] != 'Non-infected')
+        #
+        # # Step 2: Filter the DataFrame to include only those who are alive and infected
+        # infected = df.loc[df['is_alive'] & infection_mask].groupby(
+        #     by=[
+        #         df.loc[df['is_alive'] & infection_mask, 'district_of_residence'],
+        #         age_grp
+        #     ],
+        #     observed=False
+        # ).size()
+        # infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
+        #
+        # # alive = df.loc[df['is_alive']].groupby(
+        # #     by=[
+        # #         df.loc[df['is_alive'], 'district_of_residence'],
+        # #         age_grp
+        # #     ],
+        # #     observed=False
+        # # ).size()
+        # alive = df[df['is_alive']].groupby(
+        #     by=['district_of_residence', age_grp],
+        #     observed=False
+        # ).size()
+        # alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
+        #
 
         logger.info(
             key=f'number_infected_any_species',
@@ -1874,17 +1984,26 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # WASH properties
-        unimproved_sanitation = len(
-            df[df.li_unimproved_sanitation & df.is_alive]
-        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+        # unimproved_sanitation = len(
+        #     df[df.li_unimproved_sanitation & df.is_alive]
+        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
 
-        no_access_handwashing = len(
-            df[df.li_no_access_handwashing & df.is_alive]
-        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+        unimproved_sanitation = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
 
-        no_clean_drinking_water = len(
-            df[df.li_no_clean_drinking_water & df.is_alive]
-        ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+        # no_access_handwashing = len(
+        #     df[df.li_no_access_handwashing & df.is_alive]
+        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+        #
+        # no_clean_drinking_water = len(
+        #     df[df.li_no_clean_drinking_water & df.is_alive]
+        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+
+        no_access_handwashing = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
+
+        no_clean_drinking_water = sum(df.li_no_clean_drinking_water & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
 
         wash = {
             'unimproved_sanitation': unimproved_sanitation,
