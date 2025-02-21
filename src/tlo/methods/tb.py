@@ -2462,7 +2462,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             if self.suppress_footprint:
                 return self.make_appt_footprint({})
             else:
-                print(f"Debug: Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}",
+                print(f"Debug: Returning footprint for CXR with TREATMENT_ID: {self.TREATMENT_ID}",
                       flush=True)
                 return ACTUAL_APPT_FOOTPRINT
 
@@ -2558,6 +2558,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
+            print(f"Debug: Returning footprint for CXR with TREATMENT_ID: {self.TREATMENT_ID}",
+                  flush=True)
             return ACTUAL_APPT_FOOTPRINT
 
 
