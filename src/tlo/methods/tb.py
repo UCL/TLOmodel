@@ -2425,7 +2425,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         # if consumables not available, either refer to level 2 or use clinical diagnosis
 
         print(f"Debug: Test result after X-ray for person {person_id}: {test_result}", flush=True)
-        logger.info({"person_id": person_id, "test_result": test_result})
+        logger.info(key="test_result", data={"person_id": person_id, "test_result": test_result})
 
         if test_result is None:
             # if smear-positive, assume symptoms strongly predictive of TB
@@ -2450,7 +2450,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
-            logger.info({"treatment_id": self.TREATMENT_ID, "result": "positive"})
+            logger.info(key="test_result", data={"person_id": person_id, "test_result": test_result})
             print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}", flush=True)
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2546,7 +2546,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
-            logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
+            logger.info(key="treatment_id", data="Positive test result: {self.TREATMENT_ID}")
             print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}")
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
