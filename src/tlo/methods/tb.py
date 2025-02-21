@@ -2388,6 +2388,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.facility_level = '1b'
 
     def apply(self, person_id, squeeze_factor):
+
         print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
         df = self.sim.population.props
 
@@ -2410,11 +2411,12 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         if test_result is not None:
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
-        ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
+       # ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
 
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
         if test_result is None:
+
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2467,14 +2469,14 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         logger.debug(key="message", data=f"Starting CXR for person {person_id}")
-        print(f"STARTING TB CXR SCREENING AT LEVEL {self.ACCEPTED_FACILITY_LEVEL}", flush=True)
+        print(f"STARTING LEVEL 2 TB CXR SCREENING AT FAC LEVEL {self.ACCEPTED_FACILITY_LEVEL}", flush=True)
 
         logger.info(key="treatment_id", data={"treatment_id": self.TREATMENT_ID})
 
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        if not any(x in self.module.symptom_list for x in persons_symptoms):
-            print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.", flush=True)
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        # persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        # if not any(x in self.module.symptom_list for x in persons_symptoms):
+        #     print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.", flush=True)
+        #     return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         df = self.sim.population.props
 
@@ -2482,6 +2484,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+
         smear_status = df.at[person_id, "tb_smear"]
 
         # Select sensitivity/specificity of test based on smear status
@@ -2500,9 +2503,10 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             print(f"X-ray equipment added for person {person_id}", flush=True)
             logger.info(key="equipment", data={"person_id": person_id, "equipment_added": "X-ray"})
 
-        ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
+        #ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         # If no result, perform clinical diagnosis
         if test_result is None:
+
             print(f"No result from X-ray. Proceeding with clinical diagnosis for person {person_id}", flush=True)
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
