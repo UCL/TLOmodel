@@ -39,6 +39,7 @@ output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 # results_folder = get_scenario_outputs("schisto_calibration.py", outputpath)[-1]
 results_folder = get_scenario_outputs("schisto_scenarios.py", output_folder)[-1]
 
+
 # Declare path for output graphs from this script
 def make_graph_file_name(name):
     return results_folder / f"Schisto_{name}.png"
@@ -57,7 +58,21 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # %% FUNCTIONS ##################################################################
-TARGET_PERIOD = (Date(2025, 1, 1), Date(2040, 12, 31))
+TARGET_PERIOD = (Date(2024, 1, 1), Date(2028, 12, 31))
+
+# figure out data end for each run
+hiv_inc = extract_results(
+    results_folder,
+    module="tlo.methods.hiv",
+    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+    column="hiv_adult_inc_1549",
+    index="date",
+    do_scaling=False
+)
+
+
+# first run fails in 2030 (0/3)
+# for now, replace with another run
 
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
@@ -108,6 +123,7 @@ total_num_dalys = extract_results(
     custom_generate_series=get_total_num_dalys,
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
+
 num_dalys_summarized = summarize(total_num_dalys).loc[0].unstack().reindex(param_names)
 num_dalys_summarized.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
 
@@ -141,6 +157,7 @@ total_num_dalys_by_label = extract_results(
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
 total_num_dalys_by_label_summarized = summarize(total_num_dalys_by_label)
+
 
 # %% Deaths and DALYS averted relative to Status Quo
 def find_difference_relative_to_comparison_series(
@@ -177,9 +194,9 @@ total_num_dalys_by_label_results_averted_vs_baseline = summarize(
 
 pc_dalys_averted = 100.0 * summarize(
     -1.0 * find_difference_relative_to_comparison_dataframe(
-            total_num_dalys_by_label,
-            comparison='Baseline',
-            scaled=True
+        total_num_dalys_by_label,
+        comparison='Baseline',
+        scaled=True
     ),
     only_mean=False
 )
@@ -205,28 +222,30 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     lowers = df.xs('lower', level='stat', axis=1)
     uppers = df.xs('upper', level='stat', axis=1)
 
-    # Number of draws and groups (row index)
+    # Number of groups (categories)
     n_groups = means.shape[0]
 
     # Set up the figure and axes
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    # Calculate the positions of the bars
-    index = np.arange(n_groups)
-    bar_width = 0.15  # Reduced width to prevent overlap
+    # Bar width and spacing
+    bar_width = 0.15  # Width of each individual bar
+    cluster_gap = 0.2  # Extra space between clusters
+
+    # Calculate positions of the bars with cluster gaps
+    index = np.arange(n_groups) * (n_draws * bar_width + cluster_gap)
 
     # Plot each draw's mean with error bars
     for i, draw in enumerate(means.columns):
-        # Plot each draw's bar with error bars (yerr)
         ax.bar(index + (i * bar_width), means[draw], bar_width,
                label=draw,
                yerr=[means[draw] - lowers[draw], uppers[draw] - means[draw]],
-               color=color_list[i],  # Use the corresponding color from color_list
+               color=color_list[i],
                capsize=4)
 
-    # Add vertical dashed lines between clusters
+    # Add vertical dashed lines precisely between clusters
     for i in range(1, n_groups):
-        ax.axvline(x=i - 0.5 * bar_width, color='grey', linestyle='--')
+        ax.axvline(x=index[i] - (cluster_gap / 2), color='grey', linestyle='--')
 
     # Add horizontal line at y=0
     ax.axhline(y=0, color='grey', linestyle='-')
@@ -234,7 +253,7 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     # Labeling
     ax.set_xlabel('')
     ax.set_xticks(index + (n_draws - 1) * bar_width / 2)
-    ax.set_xticklabels(df.index, rotation=0)  # Set rotation to 0 for horizontal labels
+    ax.set_xticklabels(df.index, rotation=0)
 
     # Add a legend for the draws
     ax.legend(title='Scenario')
@@ -243,33 +262,187 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     return fig, ax
 
 
-name_of_plot = f'Percentage change in DALYs from baseline {target_period()}'
+name_of_plot = f'Percentage reduction in DALYs from baseline {target_period()}'
 fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted)
 ax.set_title(name_of_plot)
-ax.set_ylabel('Percentage change in DALYs')
+ax.set_ylabel('Percentage reduction in DALYs')
 fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
 fig.show()
 plt.close(fig)
 
 
+# -----------------------------------------------------------------------------
+# DALYS all-cause
+
+def round_to_nearest_100(x):
+    return 100 * round(x / 100)
+
+
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
+
+
+# extract dalys by cause with mean and upper/lower intervals
+# With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
+
+daly_summary = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True,
+    ),
+    only_mean=True,
+    collapse_columns=False,
+)
+
+daly_summary = round_to_nearest_100(daly_summary)
+daly_summary = daly_summary.astype(int)
+daly_summary.to_csv(results_folder / (f'DALYs_by_cause {target_period()}.csv'))
+
+# -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+# get incidence of associated disorders
+
+# diarrhoea
+diarrhoea = extract_results(
+    results_folder,
+    module="tlo.methods.diarrhoea",
+    key="diarrhoea_episodes",
+    custom_generate_series=(
+        lambda df: pd.Series(
+            df.query(f"{TARGET_PERIOD[0].year} <= date.dt.year <= {TARGET_PERIOD[1].year}")["number_episodes"].sum(),
+            index=["total"]
+        )
+    ),
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
+diarrhoea.to_csv(results_folder / (f'diarrhoea_incidence {target_period()}.csv'))
+
+
+diarrhoea_averted_vs_baseline = summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        diarrhoea,
+        comparison='Baseline'
+    ),
+    only_mean=True
+)
+
+diarrhoea_pc_dalys_averted = 100.0 * summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        diarrhoea,
+        comparison='Baseline',
+        scaled=True
+    ),
+    only_mean=False
+)
+
+
+alri = extract_results(
+    results_folder,
+    module="tlo.methods.alri",
+    key="event_counts",
+    custom_generate_series=(
+        lambda df: pd.Series(
+            df.query(f"{TARGET_PERIOD[0].year} <= date.dt.year <= {TARGET_PERIOD[1].year}")["incident_cases"].sum(),
+            index=["total"]
+        )
+    ),
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
+alri.to_csv(results_folder / (f'alri_incidence {target_period()}.csv'))
+
+alri_averted_vs_baseline = summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        alri,
+        comparison='Baseline'
+    ),
+    only_mean=True
+)
+
+alri_pc_dalys_averted = 100.0 * summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        alri,
+        comparison='Baseline',
+        scaled=True
+    ),
+    only_mean=False
+)
+
+hiv = extract_results(
+    results_folder,
+    module="tlo.methods.hiv",
+    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
+    custom_generate_series=(
+        lambda df: pd.Series(
+            df.query(f"{TARGET_PERIOD[0].year} <= date.dt.year <= {TARGET_PERIOD[1].year}")["hiv_adult_inc_1549"].sum(),
+            index=["total"]
+        )
+    ),
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
+hiv.to_csv(results_folder / (f'hiv_incidence {target_period()}.csv'))
+
+
+hiv_averted_vs_baseline = summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        hiv,
+        comparison='Baseline'
+    ),
+    only_mean=True
+)
+
+hiv_pc_dalys_averted = 100.0 * summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        hiv,
+        comparison='Baseline',
+        scaled=True
+    ),
+    only_mean=False
+)
+
+bladder = extract_results(
+    results_folder,
+    module="tlo.methods.bladder_cancer",
+    key="summary_stats",
+    custom_generate_series=(
+        lambda df: pd.Series(
+            df.query(f"{TARGET_PERIOD[0].year} <= date.dt.year <= {TARGET_PERIOD[1].year}")["total_tis_t1"].sum(),
+            index=["total"]
+        )
+    ),
+    do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
+bladder.to_csv(results_folder / (f'bladder_incidence {target_period()}.csv'))
+
+bladder_averted_vs_baseline = summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        bladder,
+        comparison='Baseline'
+    ),
+    only_mean=True
+)
+
+bladder_pc_dalys_averted = 100.0 * summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        bladder,
+        comparison='Baseline',
+        scaled=True
+    ),
+    only_mean=False
+)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# -----------------------------------------------------------------------------
 
 
 # todo person-years infected with low/moderate/high intensity infections by district and total
@@ -399,6 +572,7 @@ def plot_averted_points_with_errorbars(_df):
     # Customize ticks and labels
     ax.set_xticks(x_positions)
     ax.set_xticklabels(_df.columns.levels[0], rotation=45, ha='right')
+    ax.set_ylim(top=50)
 
     # Add legend for age groups
     handles = [plt.Line2D([0], [0], marker='o', color=color, linestyle='', label=age_group)
@@ -408,10 +582,10 @@ def plot_averted_points_with_errorbars(_df):
     return fig, ax
 
 
-name_of_plot = f'Percentage change in person-years infected with Schisto from baseline {target_period()}'
+name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis from baseline {target_period()}'
 fig, ax = plot_averted_points_with_errorbars(pc_py_averted_df)
 ax.set_title(name_of_plot)
-ax.set_ylabel('Percentage change in Person-Years')
+ax.set_ylabel('Percentage reduction in Person-Years')
 fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
 fig.show()
@@ -423,19 +597,6 @@ plt.close(fig)
 # column level0 with and without WASH:
 # classify districts into low/moderate/high burden
 # columns=[HML burden, person-years of low/moderate/high infection, # PZQ tablets]
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # todo elimination
@@ -485,10 +646,10 @@ def get_prevalence_heavy_infection(_df):
 age = 'SAC'  # SAC, adult, all
 inf = 'HM'
 prev = extract_results(
-        results_folder,
-        module="tlo.methods.schisto",
-        key="infection_status_haematobium",
-        custom_generate_series=get_prevalence_heavy_infection,
-        do_scaling=False,
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_haematobium",
+    custom_generate_series=get_prevalence_heavy_infection,
+    do_scaling=False,
 )
 prev.index = prev.index.year
