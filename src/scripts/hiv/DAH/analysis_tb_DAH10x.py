@@ -555,6 +555,7 @@ tb_inc = summarize(
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
+
 print(tb_inc)
 tb_incidence = pd.DataFrame(tb_inc)
 tb_inc.index = tb_inc.index.year

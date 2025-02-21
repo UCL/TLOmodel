@@ -2973,7 +2973,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
 
         # Get the index of eligible people (not diagnosed with TB and alive)
         eligible = df.index[~df.tb_diagnosed & df.is_alive]
-
+        print(f"Debug: Eligible for Community X-ray screening: {len(eligible)}")
         # Select people for screening based on probability
         select_for_screening = rng.choice([True, False],
                                           size=len(eligible),
@@ -2989,6 +2989,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                 # Check if the patient has cough, fever, night sweat, or weight loss
                 if any(x in self.module.symptom_list for x in persons_symptoms):
                     print(f"Community CXR scheduled for person {person_id} due to TB symptoms.")
+                    print(f"Debug: Scheduling Community CXR for person {person_id} with TREATMENT_ID: Tb_Test_ScreeningOutreach")
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
                         topen=now,
@@ -3017,7 +3018,8 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         print("STARTING COMMUNITY CHEST XRAY SCREENING")
-
+        print(
+            f"Debug: Executing HSI_Tb_CommunityXray.apply() for person {person_id} with TREATMENT_ID: {self.TREATMENT_ID}")
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
         df = self.sim.population.props  # Shortcut to the dataframe
         person = df.loc[person_id]
@@ -3057,6 +3059,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
+            print(f"Debug: Returning footprint for Community CXR with TREATMENT_ID: {self.TREATMENT_ID}")
             return ACTUAL_APPT_FOOTPRINT
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
