@@ -6,7 +6,7 @@ It can be submitted on Azure Batch by running:
 tlo batch-submit src//scripts/hiv/DAH/tb_DAH_scenarios10x.py
 
 or locally using:
- tlo scenario-run src/scripts/hiv/DAH/tb_DAH_scenarios10x.py
+ tlo scenario-run src/scripts/hiv/DAH/tb10xscenarios.py
   execute a single run:
  tlo scenario-run src/scripts/hi/DAH/tb_DAH_scenarios10x.py --draw 1 0
  check the batch configuration gets generated without error:
