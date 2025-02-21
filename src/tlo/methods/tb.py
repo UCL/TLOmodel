@@ -1533,27 +1533,11 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Introduce community Xray
         if scenario == 4:
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"]=0.9
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"]=0.5
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             #self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
            # self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
-
-# class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
-#     """ This event runs each month and calls three functions:
-#     * scheduling TB screening for the general population
-#     * ending treatment if the end of treatment regimen has been reached
-#     * determining who will relapse after a primary infection
-#     """
-#     def apply(self, population):
-#         self.module.relapse_event(population)
-#
-#         def apply(self, population):
-#             # schedule some background rates of tb testing (non-symptom-driven)
-#             self.module.send_for_screening_general(population)
-#
-#             self.module.end_treatment(population)
-#             self.module.relapse_event(population)
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
@@ -2409,6 +2393,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         logger.debug(
             key="message", data=f"Starting CXR for person {person_id}")
 
+        logger.info(key="treatment_id", data=f"Treatment ID: {self.TREATMENT_ID}")
+
         print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
 
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
@@ -2457,6 +2443,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
+            logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
+            print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}")
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
@@ -2493,6 +2481,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
 
         logger.debug(key="message", data=f"Starting IPT for person {person_id}")
         print(f"STARTING TB CXR SCREENING AT LEVEL {self.ACCEPTED_FACILITY_LEVEL} ")
+
+        logger.info(key="treatment_id", data=f"Treatment ID: {self.TREATMENT_ID}")
 
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
@@ -2545,6 +2535,9 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         if test_result:
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+
+            logger.info(key="treatment_id", data=f"Positive test result: {self.TREATMENT_ID}")
+            print(f"Positive test result. Referring for treatment with ID: {self.TREATMENT_ID}")
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
@@ -3050,7 +3043,8 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
-        logger.info(key="TREATMENT_ID",data=f"{self.TREATMENT_ID}")
+
+        logger.info(key="treatment_id", data=f"Treatment ID: {self.TREATMENT_ID}")
 
         print("STARTING COMMUNITY CHEST XRAY SCREENING")
         print(
