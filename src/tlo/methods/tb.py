@@ -1505,9 +1505,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             #Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({206: 1.0})
             #item code for MGIT960 Culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
+            #self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
 
             # self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
@@ -1520,9 +1520,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({206: 1.0})
             # item code for MGIT960 Culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
+           # self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
         # self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
         # self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
 
@@ -1532,9 +1532,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({206: 1.0})
             # item code for MGIT960 Culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
+            #self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
             # self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
             # self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
 
@@ -1543,9 +1543,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 1.0})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({206: 1.0})
             # item code for MGIT960 Culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
+           # self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
 
         # Introduce community Xray
         if scenario == 4:
@@ -1553,9 +1553,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({206: 1.0})
             # item code for MGIT960 Culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
+           # self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
