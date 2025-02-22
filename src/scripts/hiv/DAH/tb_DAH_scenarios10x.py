@@ -99,7 +99,7 @@ class ImpactOfTbDaH04(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 1.6,
+                    'scaling_factor_WHO': 1.5,
                 },
             },
             # overrides availability of Xpert to nil
@@ -129,7 +129,7 @@ class ImpactOfTbDaH04(BaseScenario):
                 'Tb': {
                     'scenario': 4,
                     'probability_community_chest_xray': 0.2,
-                    'scaling_factor_WHO': 3.0,
+                    'scaling_factor_WHO': 3.05
                 }
             },
         }
