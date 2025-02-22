@@ -1505,7 +1505,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             #Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 0.99})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             return
 
@@ -1515,7 +1515,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 0.99})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
 
         # sets availability of xray to nil
         if scenario == 2:
