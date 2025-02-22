@@ -1506,12 +1506,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             #Item code Solid culture and DST
             self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 0.99})
-            #item code for MGIT960 Culture and DST
-            #self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-
-            # self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-            # self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
             return
 
         # sets availability of xpert to nil
@@ -1521,10 +1516,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             # Item code Solid culture and DST
             self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 0.99})
-            # item code for MGIT960 Culture and DST
-           # self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
-        # self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-        # self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
 
         # sets availability of xray to nil
         if scenario == 2:
@@ -1532,20 +1523,14 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 0.99})
-            # item code for MGIT960 Culture and DST
-            #self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
-            # self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-            # self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
 
         # increases probability of accessing chest xray by 100% always available
         if scenario == 3:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 1.0})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 0.99})
-            # item code for MGIT960 Culture and DST
-           # self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
 
         # Introduce community Xray
         if scenario == 4:
@@ -1553,9 +1538,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             # Item code Solid culture and DST
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 0.99})
-            # item code for MGIT960 Culture and DST
-           # self.sim.modules['HealthSystem'].override_availability_of_consumables({188: 1.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -2176,22 +2159,18 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
         if not test_result and person_has_tb_symptoms:
-            if p['type_of_scaleup'] == 'target' and self.sim.date.year >= p['scaleup_start_year']:
+            if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
                 logger.debug(
                     key="message",
                     data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
                 )
 
-                culture_event = HSI_Tb_Culture(
-                    self.module, person_id=person_id
-                )
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    culture_event,
+                    hsi_event=HSI_Tb_Culture(self.module, person_id=person_id),
                     priority=0,
                     topen=now,
                     tclose=None,
                 )
-
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
@@ -2283,18 +2262,15 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         person_has_tb_symptoms = all(symptom in persons_symptoms for symptom in self.module.symptom_list)
 
         if not test_result and person_has_tb_symptoms:
-            if p['type_of_scaleup'] == 'Target' and self.sim.date.year >= p['scaleup_start_year']:
+            if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
 
                 logger.debug(
                     key="message",
                     data=f"HSI_Tb_ClinicalDiagnosis: scheduling culture for person {person_id}",
                 )
 
-                culture_event = HSI_Tb_Culture(
-                    self.module, person_id=person_id
-                )
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    culture_event,
+                   hsi_event=HSI_Tb_Culture(self.module, person_id=person_id),
                     priority=0,
                     topen=now,
                     tclose=None,
@@ -2338,11 +2314,11 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        # Run TB culture test
+        #Run TB culture test
         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-            dx_tests_to_run="tb_culture_test", hsi_event=self)
+                dx_tests_to_run="tb_culture_test", hsi_event=self)
 
-        # ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+        #ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
         # todo equipment required: MGIT instrument, MGIT tube, reagent kit included in consumables
         if test_result is not None:
