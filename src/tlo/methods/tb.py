@@ -2079,7 +2079,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             )
 
             test_result = None  # <-- Ensures Culture Test condition is checked
-            
+
             # If still no result, refer for TB culture testing
             if test_result is None:
                 print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
@@ -2174,18 +2174,34 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
         if not test_result and person_has_tb_symptoms:
+            print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
             if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
                 logger.debug(
                     key="message",
                     data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
                 )
 
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                # Check if no other test has been positive or performed
+                no_positive_tests = not any([
+                    df.at[person_id, "tb_xpert_positive"],
+                    df.at[person_id, "tb_sputum_positive"],
+                    df.at[person_id, "tb_clinical_diagnosis"],
+                    df.at[person_id, "tb_xray_positive"]
+                ])
+
+                # Ensure that no other positive test result was found before scheduling Culture
+                if no_positive_tests:
+                  self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Tb_Culture(self.module, person_id=person_id),
                     priority=0,
-                    topen=now,
+                    topen=self.sim.date + DateOffset(days=2),
                     tclose=None,
                 )
+                  logger.info(
+                      key="TREATMENT_ID",
+                      data="Tb_Test_Culture"
+                  )
+                  print(f"Debug: Scheduled Culture Test for person {person_id} with TREATMENT_ID: Tb_Test_Culture")
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
