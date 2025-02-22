@@ -1911,70 +1911,70 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # ------------------------- x-ray for children ------------------------- #
 
         #child under 5 -> chest x-ray, but access is limited
-       # if xray not available, HSI_Tb_Xray_level1b will refer
-       #  if person["age_years"] < 5:
-       #      ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-       #          {"Under5OPD": 1}
-       #      )
-       #
-       #      # this HSI will choose relevant sensitivity/specificity depending on person's smear status
-       #      self.sim.modules["HealthSystem"].schedule_hsi_event(
-       #          hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-       #          topen=now,
-       #          tclose=None,
-       #          priority=0,
-       #      )
-       #      test_result = False  # to avoid calling a clinical diagnosis
-       #
-       #      return ACTUAL_APPT_FOOTPRINT
-
-
-
-        # Initialize test_result to ensure it's always defined
-       # test_result = None
-
+       #if xray not available, HSI_Tb_Xray_level1b will refer
         if person["age_years"] < 5:
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
-
-            # If currently at a Level 1a facility, schedule a referral to Level 1b for X-ray
-            if self.facility_level == "1a":
-                print(f"At Level 1a, referring person {person_id} to Level 1b for X-ray.")
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Tb_ScreeningAndRefer(
-                        person_id=person_id,
-                        module=self.module,
-                        facility_level="1b"  # Referral to Level 1b
-                    ),
-                    topen=now + DateOffset(days=1),  # Schedule for the next day
-                    tclose=None,
-                    priority=0,
-                )
-            else:
-                # If already at a Level 1b facility, proceed with the X-ray
-                print(f"Already at Level 1b, proceeding with X-ray for person {person_id}.")
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                    topen=now,
-                    tclose=None,
-                    priority=0,
-                )
-            logger.info(
-                key="TREATMENT_ID",
-                data="Tb_Test_Xray"
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Under5OPD": 1}
             )
-            print(f"Scheduled X-ray for person {person_id} at Level 1b with TREATMENT_ID: Tb_Test_Xray")
 
-            test_result = False  # to avoid calling a clinical diagnosis
-
-        if not test_result:
-            print(f"No positive result, considering additional X-ray for person {person_id}.")
+            # this HSI will choose relevant sensitivity/specificity depending on person's smear status
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
                 topen=now,
                 tclose=None,
                 priority=0,
             )
+            test_result = False  # to avoid calling a clinical diagnosis
+
             return ACTUAL_APPT_FOOTPRINT
+
+
+
+        # Initialize test_result to ensure it's always defined
+        #test_result = None
+
+        # if person["age_years"] < 5:
+        #     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
+        #
+        #     # If currently at a Level 1a facility, schedule a referral to Level 1b for X-ray
+        #     if self.facility_level == "1a":
+        #         print(f"At Level 1a, referring person {person_id} to Level 1b for X-ray.")
+        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #             hsi_event=HSI_Tb_ScreeningAndRefer(
+        #                 person_id=person_id,
+        #                 module=self.module,
+        #                 facility_level="1b"  # Referral to Level 1b
+        #             ),
+        #             topen=now + DateOffset(days=1),  # Schedule for the next day
+        #             tclose=None,
+        #             priority=0,
+        #         )
+        #     else:
+        #         # If already at a Level 1b facility, proceed with the X-ray
+        #         print(f"Already at Level 1b, proceeding with X-ray for person {person_id}.")
+        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #             hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+        #             topen=now,
+        #             tclose=None,
+        #             priority=0,
+        #         )
+        #     logger.info(
+        #         key="TREATMENT_ID",
+        #         data="Tb_Test_Xray"
+        #     )
+        #     print(f"Scheduled X-ray for person {person_id} at Level 1b with TREATMENT_ID: Tb_Test_Xray")
+        #
+        #     test_result = False  # to avoid calling a clinical diagnosis
+        #
+        # if not test_result:
+        #     print(f"No positive result, considering additional X-ray for person {person_id}.")
+        #     self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #         hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+        #         topen=now,
+        #         tclose=None,
+        #         priority=0,
+        #     )
+        #     return ACTUAL_APPT_FOOTPRINT
 
         # ------------------------- select test for adults ------------------------- #
         # for all presumptive cases over 5 years of age
