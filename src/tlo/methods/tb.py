@@ -1938,6 +1938,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # If currently at a Level 1a facility, schedule a referral to Level 1b for X-ray
             if self.facility_level == "1a":
+                print(f"At Level 1a, referring person {person_id} to Level 1b for X-ray.")
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Tb_ScreeningAndRefer(
                         person_id=person_id,
@@ -1950,16 +1951,23 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 )
             else:
                 # If already at a Level 1b facility, proceed with the X-ray
+                print(f"Already at Level 1b, proceeding with X-ray for person {person_id}.")
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
                     topen=now,
                     tclose=None,
                     priority=0,
                 )
+            logger.info(
+                key="TREATMENT_ID",
+                data="Tb_Test_Xray"
+            )
+            print(f"Scheduled X-ray for person {person_id} at Level 1b with TREATMENT_ID: Tb_Test_Xray")
 
             test_result = False  # to avoid calling a clinical diagnosis
 
         if not test_result:
+            print(f"No positive result, considering additional X-ray for person {person_id}.")
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
                 topen=now,
@@ -2072,6 +2080,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # If still no result, refer for TB culture testing
             if test_result is None:
+                print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                    hsi_event=HSI_Tb_Culture(person_id=person_id, module=self.module),
                     topen=self.sim.date,
@@ -2082,6 +2091,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     key="message",
                     data=f"schedule HSI_Tb_Culture for person {person_id}",
                 )
+                # Log the culture event for tracking and output
+                logger.info(
+                    key="TREATMENT_ID",
+                    data="Tb_Test_Culture")
         # ------------------------- testing outcomes ------------------------- #
 
         # diagnosed with mdr-tb - only if xpert used
