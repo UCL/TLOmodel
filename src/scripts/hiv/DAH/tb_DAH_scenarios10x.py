@@ -128,7 +128,7 @@ class ImpactOfTbDaH04(BaseScenario):
                 'Tb': {
                     'scenario': 4,
                     'probability_community_chest_xray': 0.2,
-                    'scaling_factor_WHO': 1.76,
+                    'scaling_factor_WHO': 2.8,
                 }
             },
         }
