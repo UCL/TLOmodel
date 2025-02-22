@@ -1931,7 +1931,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
 
         # Initialize test_result to ensure it's always defined
-        test_result = None
+       # test_result = None
 
         if person["age_years"] < 5:
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
