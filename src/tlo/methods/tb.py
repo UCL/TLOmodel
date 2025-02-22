@@ -1929,7 +1929,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
        #
        #      return ACTUAL_APPT_FOOTPRINT
 
-        import pandas as pd  # Required for DateOffset
+
 
         # Initialize test_result to ensure it's always defined
         test_result = None
@@ -1945,7 +1945,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         module=self.module,
                         facility_level="1b"  # Referral to Level 1b
                     ),
-                    topen=now + pd.DateOffset(days=1),  # Schedule for the next day
+                    topen=now + DateOffset(days=1),  # Schedule for the next day
                     tclose=None,
                     priority=0,
                 )
@@ -1960,15 +1960,13 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             test_result = False  # to avoid calling a clinical diagnosis
 
-            # If no positive result, proceed with further screening at Level 1b
-            if not test_result:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                    topen=now,
-                    tclose=None,
-                    priority=0,
-                )
-
+        if not test_result:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                topen=now,
+                tclose=None,
+                priority=0,
+            )
             return ACTUAL_APPT_FOOTPRINT
 
         # ------------------------- select test for adults ------------------------- #
