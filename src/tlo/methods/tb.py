@@ -2078,6 +2078,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
+            test_result = None  # <-- Ensures Culture Test condition is checked
+            
             # If still no result, refer for TB culture testing
             if test_result is None:
                 print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
