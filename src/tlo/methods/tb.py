@@ -2597,6 +2597,11 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
+
+        if test_result is not None:
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
+        print(f" Xray equipment used at fac level {self.ACCEPTED_FACILITY_LEVEL} ")
+
         # if consumables not available, either refer to level 2 or use clinical diagnosis
         if test_result is None:
             # if smear-positive, assume symptoms strongly predictive of TB
@@ -2687,6 +2692,9 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         #     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
         #         dx_tests_to_run="tb_clinical", hsi_event=self
         #     )
+            if test_result is not None:
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
+            print(f" Xray equipment used at fac level {self.ACCEPTED_FACILITY_LEVEL} ")
 
             #if test is none then call Tb_Clinical HSI event
             if test_result is None:
