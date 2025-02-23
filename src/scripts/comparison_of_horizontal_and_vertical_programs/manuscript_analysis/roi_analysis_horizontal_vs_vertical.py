@@ -418,9 +418,6 @@ input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_s
 # Return on Invesment analysis
 # 1. Calculate incremental cost
 # -----------------------------------------------------------------------------------------------------------------------
-# Extract detailed input_costs
-input_costs.groupby(['draw', 'run', 'cost_category', 'year'])['cost'].sum().to_csv(figurespath / 'detailed_costs_2025-2035.csv')
-
 total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
 total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
 def find_difference_relative_to_comparison(_ser: pd.Series,
@@ -505,8 +502,6 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
     monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
     return monetary_value_of_incremental_health
 
-# TODO check that the above calculation is correct
-
 # 3. Estimate and plot ICERs
 # ----------------------------------------------------
 icers = incremental_scenario_cost.div(num_dalys_averted)  # Element-wise division
@@ -557,7 +552,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HSS_VSL',
-                   _plot_vertical_lines_at = [0, 1e9, 3e9],
+                   _plot_vertical_lines_at = [0],
                     _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
                     _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors)
@@ -570,7 +565,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HTM_VSL',
-                   _plot_vertical_lines_at = [0, 1e9, 3e9],
+                   _plot_vertical_lines_at = [0],
                     _year_suffix= f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors)
@@ -582,7 +577,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HSS_VSL',
-                   _plot_vertical_lines_at = [0, 1e9, 3e9],
+                   _plot_vertical_lines_at = [0],
                     _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
                     _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors)
