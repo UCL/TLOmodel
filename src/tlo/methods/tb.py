@@ -1926,7 +1926,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             )
             test_result = False  # to avoid calling a clinical diagnosis
 
-            return ACTUAL_APPT_FOOTPRINT
+          #  return ACTUAL_APPT_FOOTPRINT
 
 
 
