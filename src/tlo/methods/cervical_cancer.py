@@ -151,15 +151,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "prob_cure_stage2a": Parameter(
             Types.REAL,
-            "probability of cure if treated in stage 1 cervical cancer",
+            "probability of cure if treated in stage 2a cervical cancer",
         ),
         "prob_cure_stage2b": Parameter(
             Types.REAL,
-            "probability of cure if treated in stage 1 cervical cancer",
+            "probability of cure if treated in stage 2b cervical cancer",
         ),
         "prob_cure_stage3": Parameter(
             Types.REAL,
-            "probability of cure if treated in stage 1 cervical cancer",
+            "probability of cure if treated in stage 3 cervical cancer",
         ),
         "r_death_cervical_cancer": Parameter(
             Types.REAL,
@@ -276,7 +276,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
         "ce_ever_screened": Property(
-            Types.DATE,
+            Types.BOOL,
             "whether ever been screened"
         ),
         "ce_ever_treated": Property(
@@ -304,7 +304,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
         "ce_ever_diagnosed": Property(
-            Types.DATE,
+            Types.BOOL,
             "ever diagnosed with cervical cancer (even if now cured)"
         ),
         "ce_date_death": Property(
@@ -457,7 +457,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             .when(2, p['rr_hpv_vaccinated']),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(0,15)', 0.0)
-            .when('.between(50,110)', p['rr_hpv_age50plus']),
+            .when('>50', p['rr_hpv_age50plus']),
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
