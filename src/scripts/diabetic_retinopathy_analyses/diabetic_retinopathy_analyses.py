@@ -1,41 +1,31 @@
-"""
-* Check key outputs for reporting in the calibration table of the write-up
-* Produce representative plots for the default parameters
-
-NB. To see larger effects
-* Increase incidence of cancer (see tests)
-* Increase symptom onset (r_urinary_symptoms_prostate_ca or r_pelvic_pain_symptoms_local_ln_prostate_ca)
-* Increase progression rates (see tests)
-"""
-
 import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
+    cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
     demography,
+    depression,
+    diabetic_retinopathy,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     labour,
     newborn_outcomes,
     oesophagealcancer,
     postnatal_supervisor,
     pregnancy_supervisor,
-    prostate_cancer,
     symptommanager,
-    diabetic_retinopathy,
-    hiv, tb, epi,
-    cardio_metabolic_disorders,
-    depression,
+    tb,
 )
 
 # Where will outputs go
@@ -76,9 +66,8 @@ def run_sim(service_availability):
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 # prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 diabetic_retinopathy.Diabetic_Retinopathy(),
+                 diabetic_retinopathy.DiabeticRetinopathy(),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
                  tb.Tb(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
@@ -116,8 +105,6 @@ def get_summary_stats(logfile):
     }
     counts_by_cascade = pd.DataFrame(summary)
     counts_by_stage['year'] = counts_by_stage.index.year
-
-
 
     return {
         'total_counts_by_stage_over_time': counts_by_stage,
@@ -164,6 +151,3 @@ plt.xlabel('Numbers of those With DR by Stage in Cascade')
 plt.xlabel('Time')
 plt.legend(['Off Treatment', 'On Treatment'])
 plt.show()
-
-
-

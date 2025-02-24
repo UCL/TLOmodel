@@ -1,11 +1,11 @@
 from pathlib import Path
 from typing import List
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from tlo import DateOffset, Module, Simulation, Parameter, Types, Property, Population, logging
-from tlo.events import RegularEvent, PopulationScopeEventMixin, IndividualScopeEventMixin
+from tlo import DateOffset, Module, Parameter, Population, Property, Simulation, Types, logging
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Diabetic_Retinopathy(Module):
-    """ This is Diabetic Retinopathy module. It seeks to skeleton of blindness due to diabetes. """
+class DiabeticRetinopathy(Module):
+    """ This is Diabetic Retinopathy module. It seeks to model of blindness due to diabetes. """
 
     INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders'}
     ADDITIONAL_DEPENDENCIES = set()
@@ -29,21 +29,20 @@ class Diabetic_Retinopathy(Module):
         Metadata.USES_HEALTHBURDEN,
     }
 
-    # define a dictionary of parameters this module will use
     PARAMETERS = {
         'rate_onset_to_early_dr': Parameter(Types.REAL,
                                             'Probability of people who get diagnosed with early diabetic retinopathy'),
         'rate_progression_to_dr': Parameter(Types.REAL,
                                             'Probability of people who get diagnosed with late diabetic retinopathy'),
         'prob_fast_dr': Parameter(Types.REAL,
-                                  'Probability of people who get diagnosed from none phase to late diabetic retinopathy stage'),
+                                  'Probability of people who get diagnosed from none phase to late diabetic '
+                                  'retinopathy stage'),
         'init_prob_any_dr': Parameter(Types.REAL, 'Initial probability of anyone with diabetic retinopathy'),
         'init_prob_late_dr': Parameter(Types.REAL,
                                        'Initial probability of people with diabetic retinopathy in the late stage'),
         'p_medication': Parameter(Types.REAL, 'Diabetic retinopathy treatment/medication effectiveness'),
     }
 
-    # define a dictionary of properties this module will use
     PROPERTIES = {
         "dr_status": Property(
             Types.CATEGORICAL,
@@ -62,10 +61,10 @@ class Diabetic_Retinopathy(Module):
             'date of first receiving diabetic retinopathy treatment (pd.NaT if never started treatment)'
         ),
         'dr_early_diagnosed': Property(
-            Types.BOOL, 'Whether this person will die during a current severe exacerbation'
+            Types.BOOL, 'Whether this person has been diagnosed with early diabetic retinopathy'
         ),
         'dr_late_diagnosed': Property(
-            Types.BOOL, 'Whether this person will die during a current severe exacerbation'
+            Types.BOOL, 'Whether this person has been diagnosed with late diabetic retinopathy'
         ),
         'dr_diagnosed': Property(
             Types.BOOL, 'Whether this person has been diagnosed with any diabetic retinopathy'
@@ -74,17 +73,16 @@ class Diabetic_Retinopathy(Module):
     }
 
     def __init__(self):
-        # this method is included to define all things that should be initialised first
         super().__init__()
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """ initialise module parameters. Here we are assigning values to all parameters defined at the beginning of
-        this module. For this demo module, we will manually assign values to parameters but in the
-        Thanzi model we do this by reading from an Excel file containing parameter names and values
+        this module.
 
         :param data_folder: Path to the folder containing parameter values
 
         """
+        #TODO Read from resourcefile
         self.parameters['rate_onset_to_early_dr'] = 0.29
         self.parameters['rate_progression_to_dr'] = 0.07
         self.parameters['prob_fast_dr'] = 0.5
@@ -98,13 +96,13 @@ class Diabetic_Retinopathy(Module):
         )
 
     def initialise_population(self, population: Population) -> None:
-        """ set the initial state of the population. The state will be update over time
+        """ Set property values for the initial population
 
         :param population: all individuals in the model
 
         """
         df = population.props
-        p = self.parameters
+        # p = self.parameters
 
         alive_diabetes_idx = df.loc[df.is_alive & df.nc_diabetes].index
 
@@ -130,20 +128,21 @@ class Diabetic_Retinopathy(Module):
 
     def initialise_simulation(self, sim: Simulation) -> None:
         """ This is where you should include all things you want to be happening during simulation
-
-        :param sim: simulation object
-
+        * Schedule the main polling event
+        * Schedule the main logging event
+        * Call the LinearModels
         """
         sim.schedule_event(DrPollEvent(self), date=sim.date)
         sim.schedule_event(DiabeticRetinopathyLoggingEvent(self), sim.date + DateOffset(months=1))
-
         self.make_the_linear_models()
 
     def report_daly_values(self) -> pd.Series:
         return pd.Series(index=self.sim.population.props.index, data=0.0)
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
-        """ set properties of a child when they are born. """
+        """ set properties of a child when they are born.
+        :param child_id: the new child
+        """
         self.sim.population.props.at[child_id, 'dr_status'] = 'none'
         self.sim.population.props.at[child_id, 'dr_on_treatment'] = False
         self.sim.population.props.at[child_id, 'dr_date_treatment'] = pd.NaT
@@ -154,7 +153,7 @@ class Diabetic_Retinopathy(Module):
         pass
 
     def make_the_linear_models(self) -> None:
-        """Here is where we make and save LinearModels that will be used when the module is running"""
+        """Make and save LinearModels that will be used when the module is running"""
 
         self.lm = dict()
 
@@ -182,9 +181,6 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population: Population) -> None:
-        """
-
-        """
         df = population.props
 
         diabetes_and_alive_nodr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'none')]
@@ -192,12 +188,9 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
 
         will_progress = self.module.lm['onset_early_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
         # will_progress_idx = will_progress[will_progress].index
-        # print(f'Will Progress: {will_progress_idx}')
         # will_progress_idx = df.index[np.where(will_progress)[0]]
         will_progress_idx = df.index[np.where(will_progress)[0]]
-        print(f'New Will Progress: {will_progress_idx}')
         old_will_progress_idx = will_progress[will_progress].index
-        print(f'Old Will Progress: {old_will_progress_idx}')
         df.loc[will_progress_idx, 'dr_status'] = 'early'
 
         early_to_late = self.module.lm['onset_late_dr'].predict(diabetes_and_alive_earlydr, self.module.rng)
@@ -233,7 +226,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         schedule_hsi_event: HSIEventScheduler,
         **kwargs,
     ) -> None:
-        # Example for mockitis
+
         if "blindness_full" in symptoms or "blindness_partial" in symptoms:
             event = HSI_Dr_StartTreatment(
                 module=self,
@@ -241,18 +234,15 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             )
             schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
-
+#TODO HSI_Dr_StartTreatment should be called by HSI_Dr_TestingFollowingSymptoms
 class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for mockitiis is inititaed.
-
+    This event initiates the treatment of DR.
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Diabetic_Retinopathy)
+        assert isinstance(module, DiabeticRetinopathy)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dr_Treatment_Initiation'
@@ -275,7 +265,6 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         randomly_sampled = self.module.rng.rand()
-        print(f'Randomly sampled {randomly_sampled}')
         treatment_slows_progression_to_late = randomly_sampled < self.module.parameters['p_medication']
 
         #TODO Add consumables in codition below
@@ -285,7 +274,7 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             # Reduce probability of progression to "late" DR
             progression_chance = self.module.parameters['rate_progression_to_dr'] * (
-                    1 - self.module.parameters['p_medication'])
+                1 - self.module.parameters['p_medication'])
 
             # Determine if person will still progress
             if self.module.rng.rand() < progression_chance:
@@ -297,11 +286,6 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # If medication is not effective, progression happens as usual
             df.at[person_id, 'dr_on_treatment'] = True
             df.at[person_id, 'dr_status'] = 'late'
-
-        #     df.at[person_id, 'dr_status'] = 'early'
-        # else:
-        #     df.at[person_id, 'dr_on_treatment'] = True
-        #     df.at[person_id, 'dr_status'] = 'late'  #checkout cervical cancer on via after some years
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -333,6 +317,5 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Current counts, on treatment (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
             df.dr_date_treatment)), 'dr_status'].value_counts().items()})
-
 
         logger.info(key='summary_stats', data=out)
