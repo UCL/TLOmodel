@@ -1510,10 +1510,13 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
         # and ~df.un_am_treatment_type.isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'])
 
         def get_monitoring_frequency_days(age):
-            if age <= 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+            # TODO: 0-1 to be dealt with within epi module
+            if age < 1:
                 return p['growth_monitoring_frequency_days'][0]
-            else:
+            elif age <= 2:
                 return p['growth_monitoring_frequency_days'][1]
+            else:
+                return p['growth_monitoring_frequency_days'][2]
 
         # schedule monitoring within age-dependent frequency
         for person_id in index_under5:
@@ -1600,10 +1603,13 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         def schedule_next_monitoring():
             def get_monitoring_frequency_days(age):
-                if age <= 2:  # TODO: expecting here, that 0-1 will be excluded and dealt with within epi module
+                # TODO: 0-1 to be dealt with within epi module
+                if age < 1:
                     return p['growth_monitoring_frequency_days'][0]
-                else:
+                elif age <= 2:
                     return p['growth_monitoring_frequency_days'][1]
+                else:
+                    return p['growth_monitoring_frequency_days'][2]
 
             person_monitoring_frequency = get_monitoring_frequency_days(df.at[person_id, 'age_exact_years'])
             if do_prints:
