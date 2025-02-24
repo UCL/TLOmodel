@@ -74,18 +74,18 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'odds ratio of wasting if household wealth is middle Q3, ref group Q1'),
         'or_wasting_hhwealth_Q2': Parameter(
             Types.REAL, 'odds ratio of wasting if household wealth is richer Q2, ref group Q1'),
-        'or_wasting_preterm_and_AGA': Parameter(
-            Types.REAL, 'odds ratio of wasting if born preterm and adequate for gestational age'),
+        'or_wasting_AGA_and_preterm': Parameter(
+            Types.REAL, 'odds ratio of wasting if born adequate for gestational age and preterm'),
         'or_wasting_SGA_and_term': Parameter(
-            Types.REAL, 'odds ratio of wasting if born term and small for gestational age'),
+            Types.REAL, 'odds ratio of wasting if born small for gestational age and term'),
         'or_wasting_SGA_and_preterm': Parameter(
-            Types.REAL, 'odds ratio of wasting if born preterm and small for gestational age'),
+            Types.REAL, 'odds ratio of wasting if born small for gestational age and preterm'),
         # incidence
         'base_overall_inc_rate_wasting': Parameter(
-            Types.REAL, 'base moderate wasting incidence rate (reference age group 0-5 months old)'),
+            Types.REAL, 'base overall monthly moderate wasting incidence rate '
+                        '(ref age group <0.5 years old)'),
         'rr_inc_rate_wasting_by_agegp': Parameter(
-            Types.LIST, 'list with relative risks of moderate wasting incidence rate by age group, reference '
-                        'group 0-5 months old'),
+            Types.LIST, 'relative risk of moderate wasting incidence rate by age group'),
         'rr_wasting_preterm_and_AGA': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and adequate for gestational age'),
         'rr_wasting_SGA_and_term': Parameter(
@@ -96,17 +96,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'relative risk of wasting per 1 unit decrease in wealth level'),
         # progression
         'min_days_duration_of_wasting': Parameter(
-            Types.REAL, 'minimum duration in days of wasting (MAM and SAM)'),
+            Types.REAL, 'minimum limit for moderate and severe wasting duration episode (days)'),
         'duration_of_untreated_mod_wasting': Parameter(
             Types.REAL, 'duration of untreated moderate wasting (days)'),
         'duration_of_untreated_sev_wasting': Parameter(
             Types.REAL, 'duration of untreated severe wasting (days)'),
         'progression_severe_wasting_monthly_by_agegp': Parameter(
-            Types.LIST, 'list with progression rates to severe wasting by age group'),
+            Types.LIST, 'monthly progression rate to severe wasting by age group'),
         'prob_complications_in_SAM': Parameter(
-            Types.REAL, 'probability of medical complications in SAM '),
+            Types.REAL, 'probability of medical complications in a SAM episode'),
         'duration_sam_to_death': Parameter(
-            Types.REAL, 'duration of SAM till death if supposed to die due to SAM (days)'),
+            Types.REAL, 'duration of SAM till death if supposed to die due to untreated SAM (days)'),
         'base_death_rate_untreated_SAM': Parameter(
             Types.REAL, 'base death rate due to untreated SAM (reference age group <0.5 months old)'),
         'rr_death_rate_by_agegp': Parameter(
@@ -138,16 +138,18 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
         # nutritional oedema
         'prevalence_nutritional_oedema': Parameter(
-            Types.REAL, 'prevalence of nutritional oedema in children under 5 in Malawi'),
+            Types.REAL, 'prevalence of nutritional oedema'),
         'proportion_WHZ<-2_with_oedema': Parameter(
             Types.REAL, 'proportion of individuals with wasting (moderate or severe) who have oedema'),
         'proportion_oedema_with_WHZ<-2': Parameter(
             Types.REAL, 'proportion of individuals with oedema who are wasted (moderately or severely)'),
         # detection
-        'growth_monitoring_frequency_days': Parameter(
-            Types.LIST, 'growth monitoring frequency (days), for children [1–2, 2–5] years old'),
-        'growth_monitoring_attendance_prob': Parameter(
-            Types.LIST, 'probability to attend the growth monitoring, for children [1–2, 2–5] years old'),
+        'growth_monitoring_frequency_days_agecat': Parameter(
+            Types.LIST, 'growth monitoring frequency (days) for age categories '),
+        'growth_monitoring_attendance_prob_agecat': Parameter(
+            Types.LIST, 'probability to attend the growth monitoring for age categories'),
+        'oedema_check_prob': Parameter(
+            Types.REAL, 'probablity of oedema being checked when acute malnutrition examined'),
         # recovery due to treatment/interventions
         'recovery_rate_with_soy_RUSF': Parameter(
             Types.REAL, 'probability of recovery from wasting following treatment with soy RUSF'),
@@ -189,16 +191,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                                            'cut-offs',
                                         categories=['<115mm', '[115-125)mm', '>=125mm']),
         'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM episode'),
-        'un_sam_death_date': Property(Types.DATE, 'death date from severe acute malnutrition'),
-        'un_am_recovery_date': Property(Types.DATE, 'recovery date from last acute malnutrition episode '
-                                                    '(MAM/SAM)'),
-        'un_am_discharge_date': Property(Types.DATE, 'planned discharge date from last treatment of MAM/SAM '
-                                                     'when recovery will happen if not yet recovered'),
+        'un_sam_death_date': Property(Types.DATE, 'if alive, scheduled death date from SAM if not recovers '
+                                                  'with treatment; if not alive, date of death due to SAM'),
+        'un_am_recovery_date': Property(Types.DATE, 'recovery date from last acute malnutrition episode'),
+        # Properties related to treatment
         'un_am_tx_start_date': Property(Types.DATE, 'treatment start date, if currently on treatment'),
         'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment type for acute malnutrition the person'
                                          ' is currently on; set to not_applicable if well hence no treatment required',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
                                              'none', 'not_applicable']),
+        'un_am_discharge_date': Property(Types.DATE, 'planned discharge date from current treatment '
+                                                     'when recovery will happen if not yet recovered'),
         # Properties to help cancel events
         'un_recov_to_mam_to_cancel': Property(Types.LIST, 'list of dates of scheduled natural recovery to be '
                                                        'canceled for the person'),
@@ -283,8 +286,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         print(f"{p['base_death_rate_untreated_SAM']=}")
         print(f"mod_wast_incidence__coef={p['base_overall_inc_rate_wasting']/0.0475}")
         print(f"progression_to_sev_wast__coef={p['progression_severe_wasting_monthly_by_agegp'][0]/0.0200}")
-        print("prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam="
-              f"{p['prob_death_after_SAMcare']*(1-0.738)/p['base_death_rate_untreated_SAM']}")
+        if p['base_death_rate_untreated_SAM'] != 0:
+            print("prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam="
+                  f"{p['prob_death_after_SAMcare']*(1-0.738)/p['base_death_rate_untreated_SAM']}")
         print("-----------")
         print(f"{p['base_overall_inc_rate_wasting']=}")
         print("base inc rates by age group: "
@@ -878,7 +882,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 else:  # recovery to MAM and follow-up treatment for MAM
                     df.at[person_id, 'un_am_discharge_date'] = outcome_date
                     if do_prints:
-                        print(f"recovery to MAM with {intervention=} scheduled at {outcome_date=} and sent for follow-up MAM tx")
+                        print(f"recovery to MAM with {intervention=} scheduled at {outcome_date=} "
+                              "and sent for follow-up MAM tx")
                     self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(module=self, person_id=person_id),
                                             date=outcome_date)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1109,6 +1114,7 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1194,6 +1200,7 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1253,6 +1260,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1353,6 +1361,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Wasting)
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -1659,7 +1668,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             )
 
         complications = df.at[person_id, 'un_sam_with_complications']
-        oedema_checked = rng.random_sample() < 0.1  # TODO: find correct value & add as parameter p['']
+        oedema_checked = rng.random_sample() < p['oedema_check_prob']
 
         # DIAGNOSIS
         # based on performed measurements (depends on whether oedema is checked, and what equipment is available)
@@ -2075,7 +2084,7 @@ class WastingModels:
                                  self.params['or_wasting_SGA_and_preterm']),
                 Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
                                  '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
-                                 self.params['or_wasting_preterm_and_AGA'])
+                                 self.params['or_wasting_AGA_and_preterm'])
             )
 
         target_mean = self.module.get_odds_wasting(agegp=agegp)
@@ -2101,6 +2110,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # This event to occur every year
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, Wasting)
+
         self.date_last_run = self.sim.date
 
     def apply(self, population):
@@ -2316,6 +2327,7 @@ class Wasting_InitLoggingEvent(Event, PopulationScopeEventMixin):
     def __init__(self, module):
         # This event to occur every year
         super().__init__(module)
+        assert isinstance(module, Wasting)
 
     def apply(self, population):
         df = self.sim.population.props
