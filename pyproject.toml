@@ -87,6 +87,7 @@ include_trailing_comma = true
 line_length = 100
 known_first_party = "tlo"
 default_section = "THIRDPARTY"
+skip = ["src/tlo/_version.py"]
 
 [tool.pylint.main]
 extension-pkg-whitelist = ["numpy"]
