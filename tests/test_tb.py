@@ -25,8 +25,6 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-from tlo.methods.demography import AgeUpdateEvent
-from tlo.util import random_date
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
