@@ -810,6 +810,7 @@ class Tb(Module):
                 specificity=p["spec_xray_smear_positive"],
                 item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
+
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             tb_xray_smear_negative_community=DxTest(
