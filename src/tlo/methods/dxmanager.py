@@ -107,7 +107,8 @@ class DxManager:
         # Make dx_tests_to_run into a list if it is not already one
         if not isinstance(dx_tests_to_run, list):
             dx_tests_to_run = [dx_tests_to_run]
-
+        unrecognized_tests = [name for name in dx_tests_to_run if name not in self.dx_tests]
+        print(f"Unrecognized DxTest names: {unrecognized_tests}")
         assert all([name in self.dx_tests for name in dx_tests_to_run]), 'A DxTest name is not recognised.'
 
         # Create the dict() of results that will be returned
