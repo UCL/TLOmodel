@@ -335,6 +335,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "Probability that adolescent girls / young women will start PrEP",
         ),
         "prob_circ_after_hiv_test": Parameter(
+
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
