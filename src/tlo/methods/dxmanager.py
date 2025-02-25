@@ -108,6 +108,12 @@ class DxManager:
         if not isinstance(dx_tests_to_run, list):
             dx_tests_to_run = [dx_tests_to_run]
 
+        print(f"tb_date_tested: {df.at[person_id, 'tb_date_tested']}")
+        print(f"tb_diagnosed: {df.at[person_id, 'tb_diagnosed']}")
+        print(f"tb_smear: {df.at[person_id, 'tb_smear']}")
+        print(f"tb_inf: {df.at[person_id, 'tb_inf']}")
+        print(f"Symptoms: {sim.modules['SymptomManager'].has_what(person_id)}")
+
         print(f"Dx Tests to run: {dx_tests_to_run}")
         unrecognized_tests = [name for name in dx_tests_to_run if name not in self.dx_tests]
         print(f"Unrecognized DxTest names: {unrecognized_tests}")
