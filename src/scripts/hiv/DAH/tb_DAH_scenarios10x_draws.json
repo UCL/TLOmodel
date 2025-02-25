@@ -1,0 +1,79 @@
+{
+  "scenario_script_path": "src/scripts/hiv/DAH/tb_DAH_scenarios10x.py",
+  "scenario_seed": 2134,
+  "arguments": [],
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "probability_community_chest_xray": 0.0
+        },
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "actual",
+          "cons_availability": "default"
+        }
+      },
+      "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Tb": {
+          "scenario": 1,
+          "probability_community_chest_xray": 0.0
+        },
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "actual",
+          "cons_availability": "default"
+        }
+      },
+      "draw_name": "1"
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Tb": {
+          "scenario": 2,
+          "probability_community_chest_xray": 0.0
+        },
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "actual",
+          "cons_availability": "default"
+        }
+      },
+      "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Tb": {
+          "scenario": 3
+        },
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "actual",
+          "cons_availability": "default"
+        }
+      },
+      "draw_name": "3"
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Tb": {
+          "scenario": 4,
+          "probability_community_chest_xray": 0.1
+        },
+        "HealthSystem": {
+          "use_funded_or_actual_staffing": "actual",
+          "cons_availability": "default"
+        }
+      },
+      "draw_name": "4"
+    }
+  ],
+  "commit": "2171a46c6c0b1e1155e8328f6e8be0e1de8c3e7c",
+  "github": "https://github.com/UCL/TLOmodel/tree/2171a46c6c0b1e1155e8328f6e8be0e1de8c3e7c"
+}
