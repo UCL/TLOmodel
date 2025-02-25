@@ -11,9 +11,9 @@ import pandas as pd
 
 resourcefilepath = Path("./resources")
 
-mal_clin = pd.read_csv(Path(resourcefilepath) / "ResourceFile_malaria_ClinInc.csv")
-mal_inf = pd.read_csv(Path(resourcefilepath) / "ResourceFile_malaria_InfInc.csv")
-mal_sev = pd.read_csv(Path(resourcefilepath) / "ResourceFile_malaria_SevInc.csv")
+mal_clin = pd.read_csv(Path(resourcefilepath) / "malaria/ResourceFile_malaria_ClinInc.csv")
+mal_inf = pd.read_csv(Path(resourcefilepath) / "malaria/ResourceFile_malaria_InfInc.csv")
+mal_sev = pd.read_csv(Path(resourcefilepath) / "malaria/ResourceFile_malaria_SevInc.csv")
 
 master_district_list = pd.read_csv(Path(resourcefilepath) / "ResourceFile_District_Population_Data.csv")
 
