@@ -1957,7 +1957,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 # if negative, check for presence of all symptoms (clinical diagnosis)
                 if all(x in self.module.symptom_list for x in persons_symptoms):
                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                        dx_tests_to_run="Tb_Test_Clinical", hsi_event=self
+                        dx_tests_to_run="tb_clinical", hsi_event=self
                     )
 
                 # Add used equipment if test was conducted
