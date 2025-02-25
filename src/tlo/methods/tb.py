@@ -1814,6 +1814,353 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 #   Health System Interactions (HSI)
 # ---------------------------------------------------------------------------
 
+# class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
+#     """
+#     This is the Screening-and-Refer HSI.
+#     A positive outcome from symptom-based screening will prompt referral to tb tests (sputum/xpert/xray)
+#     no consumables are required for screening (4 clinical questions)
+#
+#     This event is scheduled by:
+#         * the main event poll,
+#         * when someone presents for care through a Generic HSI with tb-like symptoms
+#         * active screening / contact tracing programmes
+#
+#     If this event is called within another HSI, it may be desirable to limit the functionality of the HSI: do this
+#     using the arguments:
+#         * suppress_footprint=True : the HSI will not have any footprint
+#
+#     This event will:
+#     * screen individuals for TB symptoms
+#     * administer appropriate TB test
+#     * schedule treatment if needed
+#     * give IPT for paediatric contacts of diagnosed case
+#     """
+#
+#     def __init__(self, module, person_id, suppress_footprint=False, facility_level='1a'):
+#         # def __init__(self, module, person_id, suppress_footprint=False):
+#         super().__init__(module, person_id=person_id)
+#         assert isinstance(module, Tb)
+#         self.facility_level = facility_level
+#
+#         assert isinstance(suppress_footprint, bool)
+#         self.suppress_footprint = suppress_footprint
+#
+#         self.TREATMENT_ID = "Tb_Test_Screening"
+#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+#         # self.ACCEPTED_FACILITY_LEVEL = "1a" if self.facility_level == "1a" else "2"
+#         self.ACCEPTED_FACILITY_LEVEL = "1a"
+#
+#     def apply(self, person_id, squeeze_factor):
+#         """Do the screening and referring to next tests"""
+#
+#         df = self.sim.population.props
+#         now = self.sim.date
+#         p = self.module.parameters
+#         person = df.loc[person_id]
+#
+#         if not person["is_alive"] or person["tb_diagnosed"]:
+#             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#
+#         # If the person is already diagnosed, do nothing do not occupy any resources
+#         # if person["tb_diagnosed"]:
+#         #     return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#
+#         # If the person is already on treatment and not failing, do nothing do not occupy any resources
+#         if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
+#             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#
+#         # if person has tested within last 14 days, do nothing
+#         if person["tb_date_tested"] >= (self.sim.date - DateOffset(days=7)):
+#             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#
+#         logger.debug(
+#             key="message", data=f"HSI_Tb_ScreeningAndRefer: person {person_id}"
+#         )
+#
+#         smear_status = person["tb_smear"]
+#
+#         # ------------------------- screening ------------------------- #
+#
+#         # check if patient has: cough, fever, night sweat, weight loss
+#         # if none of the above conditions are present, no further action
+#         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
+#         person_has_tb_symptoms = all(symptom in persons_symptoms for symptom in self.module.symptom_list)
+#
+#         if not any(x in self.module.symptom_list for x in persons_symptoms):
+#             return self.make_appt_footprint({})
+#
+#         # ------------------------- testing ------------------------- #
+#         # if screening indicates presumptive tb
+#         test = None
+#         test_result = None
+#         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+#
+#         # refer for HIV testing: all ages
+#         # do not run if already HIV diagnosed or had test in last week
+#         if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
+#             self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                 hsi_event=hiv.HSI_Hiv_TestAndRefer(
+#                     person_id=person_id,
+#                     module=self.sim.modules["Hiv"],
+#                     referred_from="Tb",
+#                 ),
+#                 priority=1,
+#                 topen=now,
+#                 tclose=None,
+#             )
+#
+#         # ------------------------- x-ray for children ------------------------- #
+#
+#         #child under 5 -> chest x-ray, but access is limited
+#        #if xray not available, HSI_Tb_Xray_level1b will refer
+#         if person["age_years"] < 5:
+#             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+#                 {"Under5OPD": 1}
+#             )
+#
+#             # this HSI will choose relevant sensitivity/specificity depending on person's smear status
+#             self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                 hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+#                 topen=now,
+#                 tclose=None,
+#                 priority=0,
+#             )
+#             test_result = False  # to avoid calling a clinical diagnosis
+#
+#           #  return ACTUAL_APPT_FOOTPRINT
+#
+#
+#         # ------------------------- select test for adults ------------------------- #
+#         # for all presumptive cases over 5 years of age
+#         else:
+#             # this selects a test for the person
+#             # if selection is xpert, will check for availability and return sputum if xpert not available
+#             test = self.module.select_tb_test(person_id)
+#             assert test in ["sputum", "xpert"]
+#
+#             if test == "sputum":
+#                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+#                     {"Over5OPD": 1, "LabTBMicro": 1}
+#                 )
+#
+#                 # relevant test depends on smear status (changes parameters on sensitivity/specificity)
+#                 if smear_status:
+#                     test_result = self.sim.modules["HealthSystem"
+#                     ].dx_manager.run_dx_test(dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
+#                     )
+#                 else:
+#                     # if smear-negative, sputum smear should always return negative
+#                     # run the dx test to log the consumable
+#                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                         dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
+#                     )
+#
+#                 # if negative, check for presence of all symptoms (clinical diagnosis)
+#                 if all(x in self.module.symptom_list for x in persons_symptoms):
+#                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                         dx_tests_to_run="tb_clinical", hsi_event=self
+#                     )
+#
+#                 # Add used equipment if test was conducted
+#                 if test_result is not None:
+#                     self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
+#
+#             elif test == "xpert":
+#
+#                 # this can only be performed at level 1b/2, refer if necessary
+#                 if self.facility_level == "1a":
+#                     self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                         hsi_event=HSI_Tb_ScreeningAndRefer(
+#                             person_id=person_id, module=self.module, facility_level="1b"
+#                         ),
+#                         topen=self.sim.date + pd.DateOffset(days=1),
+#                         tclose=None,
+#                         priority=0,
+#                     )
+#                     return self.make_appt_footprint({"Over5OPD": 1})
+#
+#                 else:
+#                     if smear_status:
+#                         # relevant test depends on smear status (changes parameters on sensitivity/specificity)
+#                         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                             dx_tests_to_run="tb_xpert_test_smear_positive",
+#                             hsi_event=self,
+#                         )
+#                     else:
+#                         # for smear-negative people
+#                         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                             dx_tests_to_run="tb_xpert_test_smear_negative",
+#                             hsi_event=self,
+#                         )
+#
+#                     # Add used equipment if test was conducted
+#                     if test_result is not None:
+#                         self.add_equipment({'Sputum Collection box', 'Gene Expert (16 Module)'})
+#
+#         # ------------------------- testing referrals ------------------------- #
+#
+#         # if none of the tests are available, try again for sputum
+#         # requires another appointment - added in ACTUAL_APPT_FOOTPRINT
+#         if test_result is None:
+#             if smear_status:
+#                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                     dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
+#                 )
+#             else:
+#                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#                     dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
+#                 )
+#
+#             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+#                 {"Over5OPD": 2, "LabTBMicro": 1}
+#             )
+#             if test_result is not None:
+#                 # Add used equipment
+#                 self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
+#
+#         # if still no result available, rely on clinical diagnosis
+#         if test_result is None:
+#             # test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+#             #     dx_tests_to_run="tb_clinical", hsi_event=self
+#             # )
+#             self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                 hsi_event=HSI_Tb_ClinicalDiagnosis(
+#                     person_id=person_id, module=self.module
+#                 ),
+#                 topen=self.sim.date + DateOffset(days=1),
+#                 tclose=None,
+#                 priority=0,
+#             )
+#
+#             test_result = None  # <-- Ensures Culture Test condition is checked
+#
+#             # If still no result, refer for TB culture testing
+#             if test_result is None:
+#                 print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
+#                 self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                    hsi_event=HSI_Tb_Culture(person_id=person_id, module=self.module),
+#                     topen=self.sim.date,
+#                     tclose=None,  # Adjust if needed
+#                     priority=0,
+#                 )
+#                 logger.debug(
+#                     key="message",
+#                     data=f"schedule HSI_Tb_Culture for person {person_id}",
+#                 )
+#                 # Log the culture event for tracking and output
+#                 logger.info(
+#                     key="TREATMENT_ID",
+#                     data="Tb_Test_Culture")
+#         # ------------------------- testing outcomes ------------------------- #
+#
+#         # diagnosed with mdr-tb - only if xpert used
+#         if test_result and (test == "xpert") and (person["tb_strain"] == "mdr"):
+#             df.at[person_id, "tb_diagnosed_mdr"] = True
+#
+#         # if a test has been performed, update person's properties
+#         if test_result is not None:
+#             df.at[person_id, "tb_date_tested"] = now
+#
+#         # if any test returns positive result, refer for appropriate treatment
+#         if test_result:
+#             df.at[person_id, "tb_diagnosed"] = True
+#             df.at[person_id, "tb_date_diagnosed"] = now
+#
+#             logger.debug(
+#                 key="message",
+#                 data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
+#             )
+#
+#             self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                 HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+#                 topen=now,
+#                 tclose=None,
+#                 priority=0,
+#             )
+#
+#             # ------------------------- give IPT to contacts ------------------------- #
+#             # if diagnosed, trigger ipt outreach event for up to 5 contacts of case
+#             # only high-risk districts are eligible
+#             year = now.year if now.year < 2020 else 2019
+#
+#             district = person["district_of_residence"]
+#             ipt = self.module.parameters["ipt_coverage"]
+#             ipt_year = ipt.loc[ipt.year == year]
+#             ipt_coverage_paed = round(ipt_year.coverage_paediatric.values[0] / 100,)
+#
+#             if (district in p["tb_high_risk_distr"].district_name.values) & (
+#                 self.module.rng.rand() < ipt_coverage_paed
+#             ):
+#                 # randomly sample from eligible population within district
+#                 ipt_eligible = df.loc[
+#                     (df.age_years <= p["age_eligibility_for_ipt"])
+#                     & ~df.tb_diagnosed
+#                     & df.is_alive
+#                     & (df.district_of_residence == district)
+#                     ].index
+#
+#                 if ipt_eligible.any():
+#
+#                     # select persons at highest risk of tb
+#                     rr_of_tb = self.module.lm["active_tb"].predict(df.loc[ipt_eligible])
+#
+#                     # choose top 5 highest risk contacts
+#                     ipt_sample = rr_of_tb.sort_values(ascending=False).head(5).index
+#
+#                     for person_id in ipt_sample:
+#                         logger.debug(
+#                             key="message",
+#                             data=f"HSI_Tb_ScreeningAndRefer: scheduling IPT for person {person_id}",
+#                         )
+#
+#                         ipt_event = HSI_Tb_Start_or_Continue_Ipt(
+#                             self.module, person_id=person_id
+#                         )
+#                         self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                             ipt_event,
+#                             priority=1,
+#                             topen=now,
+#                             tclose=None,
+#                         )
+#
+#         # ------------------------- Culture testing if program scale-up ------------------------- #
+#         # under program scale-up, if a person tests negative but still has symptoms
+#         # indicative of TB, they are referred for culture test which has perfect sensitivity
+#         # this has the effect to reduce false negatives
+#         if not test_result and person_has_tb_symptoms:
+#             print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
+#             if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
+#                 logger.debug(
+#                     key="message",
+#                     data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
+#                 )
+#
+#                 # Check if no other test has been positive or performed
+#                 no_positive_tests = not any([
+#                     df.at[person_id, "tb_xpert_positive"],
+#                     df.at[person_id, "tb_sputum_positive"],
+#                     df.at[person_id, "tb_clinical_diagnosis"],
+#                     df.at[person_id, "tb_xray_positive"]
+#                 ])
+#
+#                 # Ensure that no other positive test result was found before scheduling Culture
+#                 if no_positive_tests:
+#                   self.sim.modules["HealthSystem"].schedule_hsi_event(
+#                     hsi_event=HSI_Tb_Culture(self.module, person_id=person_id),
+#                     priority=0,
+#                     topen=self.sim.date + DateOffset(days=2),
+#                     tclose=None,
+#                 )
+#                   logger.info(
+#                       key="TREATMENT_ID",
+#                       data="Tb_Test_Culture"
+#                   )
+#                   print(f"Debug: Scheduled Culture Test for person {person_id} with TREATMENT_ID: Tb_Test_Culture")
+#         # Return the footprint. If it should be suppressed, return a blank footprint.
+#         if self.suppress_footprint:
+#             return self.make_appt_footprint({})
+#         else:
+#             return ACTUAL_APPT_FOOTPRINT
 class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     This is the Screening-and-Refer HSI.
@@ -1837,7 +2184,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id, suppress_footprint=False, facility_level='1a'):
-        # def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
         self.facility_level = facility_level
@@ -1847,8 +2193,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        # self.ACCEPTED_FACILITY_LEVEL = "1a" if self.facility_level == "1a" else "2"
-        self.ACCEPTED_FACILITY_LEVEL = "1a"
+        self.ACCEPTED_FACILITY_LEVEL = "1a" if self.facility_level == "1a" else "2"
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1858,12 +2203,12 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         person = df.loc[person_id]
 
-        if not person["is_alive"] or person["tb_diagnosed"]:
+        if not person["is_alive"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # If the person is already diagnosed, do nothing do not occupy any resources
-        # if person["tb_diagnosed"]:
-        #     return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        if person["tb_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # If the person is already on treatment and not failing, do nothing do not occupy any resources
         if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
@@ -1911,8 +2256,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # ------------------------- x-ray for children ------------------------- #
 
-        #child under 5 -> chest x-ray, but access is limited
-       #if xray not available, HSI_Tb_Xray_level1b will refer
+        # child under 5 -> chest x-ray, but access is limited
+        # if xray not available, HSI_Tb_Xray_level1b will refer
         if person["age_years"] < 5:
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"Under5OPD": 1}
@@ -1920,17 +2265,15 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             # this HSI will choose relevant sensitivity/specificity depending on person's smear status
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+                HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
                 topen=now,
                 tclose=None,
                 priority=0,
             )
             test_result = False  # to avoid calling a clinical diagnosis
 
-          #  return ACTUAL_APPT_FOOTPRINT
-
-
         # ------------------------- select test for adults ------------------------- #
+
         # for all presumptive cases over 5 years of age
         else:
             # this selects a test for the person
@@ -1943,26 +2286,30 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     {"Over5OPD": 1, "LabTBMicro": 1}
                 )
 
-                # relevant test depends on smear status (changes parameters on sensitivity/specificity)
+                # relevant test depends on smear status (changes parameters on sensitivity/specificity
                 if smear_status:
-                    test_result = self.sim.modules["HealthSystem"
-                    ].dx_manager.run_dx_test(dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
+                    test_result = self.sim.modules[
+                        "HealthSystem"
+                    ].dx_manager.run_dx_test(
+                        dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
                     )
                 else:
                     # if smear-negative, sputum smear should always return negative
                     # run the dx test to log the consumable
-                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                    test_result = self.sim.modules[
+                        "HealthSystem"
+                    ].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                     )
-
-                # if negative, check for presence of all symptoms (clinical diagnosis)
-                if all(x in self.module.symptom_list for x in persons_symptoms):
-                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                        dx_tests_to_run="tb_clinical", hsi_event=self
-                    )
-
-                # Add used equipment if test was conducted
+                    # if negative, check for presence of all symptoms (clinical diagnosis)
+                    if all(x in self.module.symptom_list for x in persons_symptoms):
+                        test_result = self.sim.modules[
+                            "HealthSystem"
+                        ].dx_manager.run_dx_test(
+                            dx_tests_to_run="tb_clinical", hsi_event=self
+                        )
                 if test_result is not None:
+                    # Add used equipment
                     self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
             elif test == "xpert":
@@ -1973,7 +2320,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         hsi_event=HSI_Tb_ScreeningAndRefer(
                             person_id=person_id, module=self.module, facility_level="1b"
                         ),
-                        topen=self.sim.date + pd.DateOffset(days=1),
+                        topen=self.sim.date + DateOffset(days=1),
                         tclose=None,
                         priority=0,
                     )
@@ -1981,20 +2328,23 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 else:
                     if smear_status:
-                        # relevant test depends on smear status (changes parameters on sensitivity/specificity)
-                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                        test_result = self.sim.modules[
+                            "HealthSystem"
+                        ].dx_manager.run_dx_test(
                             dx_tests_to_run="tb_xpert_test_smear_positive",
                             hsi_event=self,
                         )
+                    # for smear-negative people
                     else:
-                        # for smear-negative people
-                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                        test_result = self.sim.modules[
+                            "HealthSystem"
+                        ].dx_manager.run_dx_test(
                             dx_tests_to_run="tb_xpert_test_smear_negative",
                             hsi_event=self,
                         )
-
-                    # Add used equipment if test was conducted
                     if test_result is not None:
+                        # Add used equipment
                         self.add_equipment({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # ------------------------- testing referrals ------------------------- #
@@ -2020,37 +2370,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
-            # test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-            #     dx_tests_to_run="tb_clinical", hsi_event=self
-            # )
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Tb_ClinicalDiagnosis(
-                    person_id=person_id, module=self.module
-                ),
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=None,
-                priority=0,
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_clinical", hsi_event=self
             )
 
-            test_result = None  # <-- Ensures Culture Test condition is checked
-
-            # If still no result, refer for TB culture testing
-            if test_result is None:
-                print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                   hsi_event=HSI_Tb_Culture(person_id=person_id, module=self.module),
-                    topen=self.sim.date,
-                    tclose=None,  # Adjust if needed
-                    priority=0,
-                )
-                logger.debug(
-                    key="message",
-                    data=f"schedule HSI_Tb_Culture for person {person_id}",
-                )
-                # Log the culture event for tracking and output
-                logger.info(
-                    key="TREATMENT_ID",
-                    data="Tb_Test_Culture")
         # ------------------------- testing outcomes ------------------------- #
 
         # diagnosed with mdr-tb - only if xpert used
@@ -2086,7 +2409,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             district = person["district_of_residence"]
             ipt = self.module.parameters["ipt_coverage"]
             ipt_year = ipt.loc[ipt.year == year]
-            ipt_coverage_paed = round(ipt_year.coverage_paediatric.values[0] / 100,2)
+            ipt_coverage_paed = ipt_year.coverage_paediatric.values[0] / 100
 
             if (district in p["tb_high_risk_distr"].district_name.values) & (
                 self.module.rng.rand() < ipt_coverage_paed
@@ -2128,40 +2451,27 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
         if not test_result and person_has_tb_symptoms:
-            print(f"Debug: No conclusive result, scheduling Culture Test for person {person_id}")
             if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
                 logger.debug(
                     key="message",
                     data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
                 )
 
-                # Check if no other test has been positive or performed
-                no_positive_tests = not any([
-                    df.at[person_id, "tb_xpert_positive"],
-                    df.at[person_id, "tb_sputum_positive"],
-                    df.at[person_id, "tb_clinical_diagnosis"],
-                    df.at[person_id, "tb_xray_positive"]
-                ])
-
-                # Ensure that no other positive test result was found before scheduling Culture
-                if no_positive_tests:
-                  self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Tb_Culture(self.module, person_id=person_id),
+                culture_event = HSI_Tb_Culture(
+                    self.module, person_id=person_id
+                )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    culture_event,
                     priority=0,
-                    topen=self.sim.date + DateOffset(days=2),
+                    topen=now,
                     tclose=None,
                 )
-                  logger.info(
-                      key="TREATMENT_ID",
-                      data="Tb_Test_Culture"
-                  )
-                  print(f"Debug: Scheduled Culture Test for person {person_id} with TREATMENT_ID: Tb_Test_Culture")
+
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
-
 
 class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
     """
