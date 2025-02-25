@@ -108,6 +108,7 @@ class DxManager:
         if not isinstance(dx_tests_to_run, list):
             dx_tests_to_run = [dx_tests_to_run]
 
+        print(f"Dx Tests to run: {dx_tests_to_run}")
         unrecognized_tests = [name for name in dx_tests_to_run if name not in self.dx_tests]
         print(f"Unrecognized DxTest names: {unrecognized_tests}")
 
