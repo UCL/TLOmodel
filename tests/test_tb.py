@@ -1063,6 +1063,15 @@ def test_hsi_scheduling(seed):
     hsi_event.run(squeeze_factor=0)
 
     # Check person_id has a HSI_Tb_Xray event scheduled
+    events_for_person = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    print(f"All Events for person {person_id}: {events_for_person}")
+    matching_events_xray = [ev for ev in events_for_person if isinstance(ev[1], tb.HSI_Tb_Xray_level1b)]
+    print(f"Matching HSI_Tb_Xray_level1b Events: {matching_events_xray}")
+    matching_events_hiv = [ev for ev in events_for_person if isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)]
+    print(f"Matching HSI_Hiv_TestAndRefer Events: {matching_events_hiv}")
+    matching_events_treatment = [ev for ev in events_for_person if isinstance(ev[1], tb.HSI_Tb_StartTreatment)]
+    print(f"Matching HSI_Tb_StartTreatment Events: {matching_events_treatment}")
+
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         isinstance(ev[1], tb.HSI_Tb_Xray_level1b)
