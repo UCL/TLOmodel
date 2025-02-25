@@ -469,14 +469,32 @@ def test_get_parameter_functions(seed):
                     f"{type(original)=}, {type(updated_value)=}"
                 )
 
+                # def is_df_same_size_and_dtype(df1, df2):
+                #     return (
+                #         df1.index.equals(df2.index)
+                #         and all(df1.dtypes == df2.dtypes)
+                #         and all(df1.columns == df2.columns)
+                #         if isinstance(df1, pd.DataFrame)
+                #         else True
+                #     )
                 def is_df_same_size_and_dtype(df1, df2):
-                    return (
-                        df1.index.equals(df2.index)
-                        and all(df1.dtypes == df2.dtypes)
-                        and all(df1.columns == df2.columns)
-                        if isinstance(df1, pd.DataFrame)
-                        else True
-                    )
+                    # Check if both DataFrames have the same shape and data types
+                    if df1.shape != df2.shape:
+                        return False
+                    if (df1.dtypes != df2.dtypes).any():
+                        return False
+
+                    # Check if all numeric columns are close within a tolerance
+                    numeric_cols = df1.select_dtypes(include=np.number).columns
+                    for col in numeric_cols:
+                        if not np.all(np.isclose(df1[col], df2[col], atol=0.001)):  # Allow a tolerance of 0.001
+                            print(f"Difference in column: {col}")
+                            print("Expected:", df1[col].values)
+                            print("Actual:", df2[col].values)
+                            return False
+
+                    # If all checks pass
+                    return True
 
                 def is_list_same_size_and_dtype(l1, l2):
                     return (len(l1) == len(l2)) and all(
