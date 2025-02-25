@@ -1945,10 +1945,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 # relevant test depends on smear status (changes parameters on sensitivity/specificity)
                 if smear_status:
-                    test_result = self.sim.modules[
-                        "HealthSystem"
-                    ].dx_manager.run_dx_test(
-                        dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
+                    test_result = self.sim.modules["HealthSystem"
+                    ].dx_manager.run_dx_test(dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
                     )
                 else:
                     # if smear-negative, sputum smear should always return negative
