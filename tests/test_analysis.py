@@ -383,14 +383,7 @@ def test_get_parameter_functions(seed):
                     f"{type(original)=}, {type(updated_value)=}"
                 )
 
-                # def is_df_same_size_and_dtype(df1, df2, atol=1e-4):
-                #     return (
-                #         df1.index.equals(df2.index)
-                #         and all(df1.dtypes == df2.dtypes)
-                #         and all(df1.columns == df2.columns)
-                #         if isinstance(df1, pd.DataFrame)
-                #         else True
-                #     )
+
 
 
                 def is_df_same_size_and_dtype(df1, df2, atol=1e-4):
