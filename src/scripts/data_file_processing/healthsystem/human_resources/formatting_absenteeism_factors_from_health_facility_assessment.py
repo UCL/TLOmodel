@@ -1,16 +1,18 @@
 import pandas as pd
+from tlo.util import read_csv_files
+from pathlib import Path
 
 dict = { "1a" : "L1a_Av_Mins_Per_Day", "1b":"L1b_Av_Mins_Per_Day", "2":"L2_Av_Mins_Per_Day", "0":"L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day", "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
 
 # Specify the file paths
 file_path1 = "resources/healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv"
 file_path2 = "resources/healthsystem/human_resources/definitions/ResourceFile_Officer_Types_Table.csv"
-file_path3 = "resources/healthsystem/absenteeism/HHFA_amended_ResourceFile_patient_facing_time.xlsx"
+file_path3 = "resources/healthsystem/human_resources/absenteeism/HHFA_amended_ResourceFile_patient_facing_time"
 
 # Load Excel files into DataFrames
 daily_capabilities = pd.read_csv(file_path1)
 officer_types = pd.read_csv(file_path2)
-survey_daily_capabilities = pd.read_excel(file_path3, sheet_name="Scenario 2")
+survey_daily_capabilities = read_csv_files(Path(file_path3), files="Scenario 2")
 
 # Clean survey_daily_capabilities by replacing officer codes with category, and calculating mean within category
 merged_df = pd.merge(survey_daily_capabilities, officer_types, on="Officer_Type_Code", how="left")
