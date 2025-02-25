@@ -383,14 +383,51 @@ def test_get_parameter_functions(seed):
                     f"{type(original)=}, {type(updated_value)=}"
                 )
 
-                def is_df_same_size_and_dtype(df1, df2):
-                    return (
-                        df1.index.equals(df2.index)
-                        and all(df1.dtypes == df2.dtypes)
-                        and all(df1.columns == df2.columns)
-                        if isinstance(df1, pd.DataFrame)
-                        else True
-                    )
+                # def is_df_same_size_and_dtype(df1, df2, atol=1e-4):
+                #     return (
+                #         df1.index.equals(df2.index)
+                #         and all(df1.dtypes == df2.dtypes)
+                #         and all(df1.columns == df2.columns)
+                #         if isinstance(df1, pd.DataFrame)
+                #         else True
+                #     )
+
+
+                def is_df_same_size_and_dtype(df1, df2, atol=1e-4):
+                    """
+                    Compares two DataFrames for:
+                      - Same index
+                      - Same data types
+                      - Same column names
+                      - Numerical equality within a tolerance for float values
+                      - Exact equality for non-numerical values
+                    """
+                    # Check if both are DataFrames
+                    if not (isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame)):
+                        return False
+
+                    # Check if index, dtypes, and columns are the same
+                    if not (df1.index.equals(df2.index) and all(df1.dtypes == df2.dtypes) and all(
+                        df1.columns == df2.columns)):
+                        return False
+
+                    # Check numerical columns for equality within a tolerance
+                    numeric_cols = df1.select_dtypes(include=[float, int]).columns
+                    for col in numeric_cols:
+                        if not np.allclose(df1[col].fillna(0), df2[col].fillna(0), atol=atol, equal_nan=True):
+                            print(f"Difference found in column: {col}")
+                            print(f"Original: {df1[col].values}")
+                            print(f"Updated: {df2[col].values}")
+                            return False
+
+                    # Check non-numerical columns for exact equality
+                    non_numeric_cols = df1.select_dtypes(exclude=[float, int]).columns
+                    for col in non_numeric_cols:
+                        if not (df1[col].fillna('') == df2[col].fillna('')).all():
+                            print(f"Difference found in column: {col}")
+                            return False
+
+                    return True
 
                 def is_list_same_size_and_dtype(l1, l2):
                     return (len(l1) == len(l2)) and all(
