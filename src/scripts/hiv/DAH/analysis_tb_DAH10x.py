@@ -35,7 +35,7 @@ outputfilepath = Path(r".\outputs\newton.chagoma@york.ac.uk")
 
 #outputfilepath = Path("./outputs")
 
-results_folder = get_scenario_outputs('tb_DAH_scenarios10x-2025-02-24T041803Z', outputfilepath) [-1]
+results_folder = get_scenario_outputs('tb_DAH_scenarios10x-2025-02-24T203644Z', outputfilepath) [-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -261,7 +261,52 @@ def get_quantity_of_consumables_dispensed(results_folder):
     return cons_req
 cons_req = get_quantity_of_consumables_dispensed(results_folder)
 cons_req = cons_req.reset_index()
-cons_req.to_excel(outputfilepath / "cons_summary.xlsx")
+# Check if 'Date' column exists and extract year
+if 'Date' in cons_req.columns:
+        cons_req['level_1'] = pd.to_datetime(cons_req['level_1']).dt.year
+# Group by Year and sum the quantities
+cons_summary = cons_req.groupby('level_1').sum().reset_index()
+
+cons_req.to_excel(outputfilepath / "consumables_summaryx1.xlsx")
+#
+# return cons_summary
+def get_quantity_of_consumables_dispensed(results_folder, outputfilepath):
+    """
+    Extracts and processes consumables data, grouping by year and summing quantities.
+    Saves the results to an Excel file.
+    """
+    # Extract the consumables data
+    cons_req = (
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='Consumables',
+            custom_generate_series=get_counts_of_items_requested,
+            do_scaling=True
+        ).pipe(set_param_names_as_column_index_level_0)
+    )
+
+    # Reset index to make year extraction easier
+    cons_req = cons_req.reset_index()
+
+    # Check if 'Date' column exists and extract year
+    if 'Date' in cons_req.columns:
+        cons_req['Year'] = pd.to_datetime(cons_req['Date']).dt.year
+
+        # Group by Year and sum the quantities
+        cons_summary = cons_req.groupby('Year').sum().reset_index()
+
+        # Save the grouped and summed data to Excel
+        cons_summary.to_excel(outputfilepath / "consumables_summary.xlsx", index=False)
+
+        return cons_summary
+    else:
+        print("Date column not found in the data.")
+        return cons_req
+
+
+# Usage example:
+cons_summary = get_quantity_of_consumables_dispensed(results_folder, outputfilepath)
 
 def get_staff_count_by_facid_and_officer_type(_df: pd.DataFrame) -> pd.Series:
     """Summarize the parsed logged-key results for one draw (as a dataframe) into a pd.Series."""
