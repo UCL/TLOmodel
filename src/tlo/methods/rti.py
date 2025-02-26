@@ -32,8 +32,8 @@ if TYPE_CHECKING:
 
 # Decide whether to use emulator or not
 use_emulator = True
-include_conditionality = False
-emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator.pkl'
+include_conditionality = True
+emulator_path = '/Users/mm2908/Desktop/EmuIBM/emulators/latest_synthesizer.pkl'
 #emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/RTI_emulator_VAE.pkl'
 #emulator_path = '/Users/mm2908/Desktop/CTGAN/emulators/new_synthesizer.pkl'
 
@@ -1608,8 +1608,6 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                         sim.modules['RTI'].HS_conditions[i] = True
                     else:
                         sim.modules['RTI'].HS_conditions[i] = False
-            print(sim.modules['HealthSystem'].service_availability)
-            print(sim.modules['RTI'].HS_conditions)
 
         # Look-up consumable item codes
         self.look_up_consumable_item_codes()

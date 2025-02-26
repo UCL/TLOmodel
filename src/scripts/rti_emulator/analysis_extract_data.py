@@ -30,7 +30,8 @@ from tlo.analysis.utils import (
     plot_clustered_stacked,
     summarize,
 )
-tag = 'emulated'
+tag = 'emulated_with_conditionality_Nothing'
+#tag = 'normal_Nothing'
 #tag = 'normal'
 
 # Range of years considered
@@ -226,7 +227,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
  
  
     model = get_annual_num_appts_by_level(results_folder=results_folder)
-    model.to_csv('ConvertedOutputs/Total_Appt_Footprint_' + tag + '.csv', index=True)
+    model.to_csv('ConvertedOutputs/Emulator_Files/Total_Appt_Footprint_' + tag + '.csv', index=True)
     #exit(-1)
     # Obtain parameter names for this scenario file
     param_names = get_parameter_names_from_scenario_file()
@@ -268,8 +269,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(dalys_by_year)
     dalys_by_year_summarise = summarize(dalys_by_year).unstack().astype(int)
 
-    dalys_by_year.to_csv('ConvertedOutputs/Total_DALYs_with_time_' + tag + '.csv', index=True)
-    dalys_by_year_summarise.to_csv('ConvertedOutputs/Total_DALYs_with_time_summarised_' + tag + '.csv', index=True)
+    dalys_by_year.to_csv('ConvertedOutputs/Emulator_Files/Total_DALYs_with_time_' + tag + '.csv', index=True)
+    dalys_by_year_summarise.to_csv('ConvertedOutputs/Emulator_Files/Total_DALYs_with_time_summarised_' + tag + '.csv', index=True)
 
     # ================================================================================================
     # Print population under each scenario
@@ -286,7 +287,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(pop_model)
     assert dalys_by_year.index.equals(pop_model.index)
     assert all(dalys_by_year.columns == pop_model.columns)
-    pop_model.to_csv('ConvertedOutputs/Population_with_time_' + tag + '.csv', index=True)
+    pop_model.to_csv('ConvertedOutputs/Emulator_Files/Population_with_time_' + tag + '.csv', index=True)
 
     # ================================================================================================
     # DEATHSs BROKEN DOWN BY CAUSES
@@ -346,9 +347,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(df_total)
     print(df_total.groupby('cause').cumsum())
     print(summarize(df_total.groupby('cause').sum()))
-    df_total.to_csv('ConvertedOutputs/Deaths_by_cause_with_time_' + tag + '.csv', index=True)
+    df_total.to_csv('ConvertedOutputs/Emulator_Files/Deaths_by_cause_with_time_' + tag + '.csv', index=True)
     df_total_summarise = summarize(df_total).unstack().astype(int)
-    df_total_summarise.to_csv('ConvertedOutputs/Deaths_by_cause_with_time_summarised_' + tag + '.csv', index=True)
+    df_total_summarise.to_csv('ConvertedOutputs/Emulator_Files/Deaths_by_cause_with_time_summarised_' + tag + '.csv', index=True)
 
 
     # ================================================================================================
@@ -385,12 +386,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     concatenated_df = pd.concat(ALL.values(), keys=ALL.keys())
 
     concatenated_df.index = concatenated_df.index.set_names(['date', 'cause'])
-    
-    df_total = concatenated_df
-    df_total.to_csv('ConvertedOutputs/DALYS_by_cause_with_time_' + tag + '.csv', index=True)
-    df_total_summarise = summarize(df_total).unstack().astype(int)
-    df_total_summarise.to_csv('ConvertedOutputs/DALYS_by_cause_with_time_summarised_' + tag + '.csv', index=True)
 
+    df_total = concatenated_df
+    print(df_total)
+    df_total.to_csv('ConvertedOutputs/Emulator_Files/DALYS_by_cause_with_time_' + tag + '.csv', index=True)
+    df_total_summarise = summarize(df_total).unstack().astype(int)
+    print(df_total_summarise)
+    df_total_summarise.to_csv('ConvertedOutputs/Emulator_Files/DALYS_by_cause_with_time_summarised_' + tag + '.csv', index=True)
     
     
     
@@ -439,8 +441,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     HSI_never_ran_by_year = HSI_never_ran_by_year.fillna(0) #clean_df(
     HSI_ran_by_year = HSI_ran_by_year.fillna(0)
     HSI_total_by_year = HSI_ran_by_year.add(HSI_never_ran_by_year, fill_value=0)
-    HSI_ran_by_year.to_csv('ConvertedOutputs/HSIs_ran_by_area_with_time_' + tag + '.csv', index=True)
-    HSI_never_ran_by_year.to_csv('ConvertedOutputs/HSIs_never_ran_by_area_with_time_' + tag + '.csv', index=True)
+    HSI_ran_by_year.to_csv('ConvertedOutputs/Emulator_Files/HSIs_ran_by_area_with_time_' + tag + '.csv', index=True)
+    HSI_never_ran_by_year.to_csv('ConvertedOutputs/Emulator_Files/HSIs_never_ran_by_area_with_time_' + tag + '.csv', index=True)
     print(HSI_ran_by_year)
     print(HSI_never_ran_by_year)
     print(HSI_total_by_year)
@@ -467,7 +469,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # divide by five to give the average number of deaths per year within the five year period:
     results = results.div(5.0)
     results_to_store = summarize((results.loc['2010-2014'] + results.loc['2015-2019'])/2)
-    results_to_store.to_csv('ConvertedOutputs/DALYs_by_sex_age_' + tag + '.csv', index=True)
+    results_to_store.to_csv('ConvertedOutputs/Emulator_Files/DALYs_by_sex_age_' + tag + '.csv', index=True)
 
     
     def get_total_num_dalys_by_wealth_and_label(_df):
@@ -498,7 +500,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).unstack()
     print(total_num_dalys_by_wealth_and_label)
  
-    total_num_dalys_by_wealth_and_label.to_csv('ConvertedOutputs/DALYs_by_wealth_' + tag + '.csv', index=True)
+    total_num_dalys_by_wealth_and_label.to_csv('ConvertedOutputs/Emulator_Files/DALYs_by_wealth_' + tag + '.csv', index=True)
     print(total_num_dalys_by_wealth_and_label)
  
     

@@ -731,7 +731,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                 'age_years', 'sex', 'prob_of_dying_before_next_poll']].copy()
         
         # Artificially increase risk for men under 50 by 50
-        mort_risk.loc[(mort_risk["sex"] == "M") & (mort_risk["age_years"] < 50), "prob_of_dying_before_next_poll"] *= 250
+        # mort_risk.loc[(mort_risk["sex"] == "M") & (mort_risk["age_years"] < 50), "prob_of_dying_before_next_poll"] *= 250
         
         # get the population
         alive = df.loc[df.is_alive & (df.age_years < MAX_AGE), ['sex', 'age_years']].copy()

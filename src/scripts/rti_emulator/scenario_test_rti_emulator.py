@@ -134,6 +134,7 @@ class GenerateDataChains(BaseScenario):
                     "mode_appt_constraints": 1,
                     "use_funded_or_actual_staffing": "actual",
                     "cons_availability": "all",
+                    "Service_Availability": []
                 }
             },
         )
