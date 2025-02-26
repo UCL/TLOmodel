@@ -979,15 +979,17 @@ class Tb(Module):
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
         # changed scale-up to none
-        if self.parameters["type_of_scaleup"] == 'none':
+        if self.parameters["type_of_scaleup"] != 'none':
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
             sim.schedule_event(TbScaleUpEvent(self), scaleup_start_date)
+
             # schedule outreach xrays for tb screening from 2010
             sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
         # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
+
         # 2) Scenario change
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
@@ -1012,7 +1014,7 @@ class Tb(Module):
         if p['type_of_scaleup'] == 'target':
             scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
         else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
 
         # scale-up TB program
         # use NTP treatment rates
