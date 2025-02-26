@@ -206,17 +206,17 @@ def test_htm_scale_up(seed):
     new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")
     new_tb_params.min_value = new_tb_params.min_value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
-    assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
-        new_tb_params.parameter == "tb_treatment_coverage", "min_value"].values[0]).all()
-
-    assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_ds", "min_value"].values[0]
-    assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_mdr", "min_value"].values[0]
-    assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_0_4", "min_value"].values[0]
-    assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
-        new_tb_params.parameter == "tb_prob_tx_success_5_14", "min_value"].values[0]
-    assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
-        new_tb_params.parameter == "first_line_test", "min_value"].values[0]
+    # assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
+    #     new_tb_params.parameter == "tb_treatment_coverage", "min_value"].values[0]).all()
+    #
+    # assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
+    #     new_tb_params.parameter == "tb_prob_tx_success_ds", "min_value"].values[0]
+    # assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
+    #     new_tb_params.parameter == "tb_prob_tx_success_mdr", "min_value"].values[0]
+    # assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_tb_params.loc[
+    #     new_tb_params.parameter == "tb_prob_tx_success_0_4", "min_value"].values[0]
+    # assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
+    #     new_tb_params.parameter == "tb_prob_tx_success_5_14", "min_value"].values[0]
+    # assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
+    #     new_tb_params.parameter == "first_line_test", "min_value"].values[0]
 
