@@ -336,10 +336,6 @@ def test_get_parameter_functions(seed):
     """Check that the functions that provide updated parameter values provide recognised parameter names and values
     of the appropriate type."""
 
-def test_get_parameter_functions(seed):
-    """Check that the functions that provide updated parameter values provide recognised parameter names and values
-    of the appropriate type."""
-
     # Function that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
     funcs = [
         get_parameters_for_status_quo,
