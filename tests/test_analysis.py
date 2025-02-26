@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.analysis.utils import (
     colors_in_matplotlib,
@@ -331,10 +330,6 @@ def test_colormap_cause_of_death_label(seed):
         map(lambda x: x in colors_in_matplotlib(), colors)
     )  # All colors recognised
 
-
-def test_get_parameter_functions(seed):
-    """Check that the functions that provide updated parameter values provide recognised parameter names and values
-    of the appropriate type."""
 
 def test_get_parameter_functions(seed):
     """Check that the functions that provide updated parameter values provide recognised parameter names and values
