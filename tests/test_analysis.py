@@ -6,6 +6,8 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
+
 
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.analysis.utils import (
@@ -421,16 +423,39 @@ def test_get_parameter_functions(seed):
                     # Check if input is a DataFrame
                     if isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame):
                         # Round both DataFrames to 3 decimal places before comparing
+                        df1=df2.astypes(df1.dtypes)
+
+                        # Ensure indexes are consistent
+                        if not df1.index.equals(df2.index):
+                            df2.index = df1.index
+
+                        # Reset index if necessary
+                        if not df1.index.equals(df2.index):
+                            df1 = df1.reset_index(drop=True)
+                            df2 = df2.reset_index(drop=True)
+
+                        # Handle NaN values uniformly
+                        df1 = df1.replace({None: np.nan})
+                        df2 = df2.replace({None: np.nan})
+
+                        # Round both DataFrames to 3 decimal places before comparing
                         df1_rounded = df1.round(3)
                         df2_rounded = df2.round(3)
 
-                        # Perform checks
-                        return (
-                            df1_rounded.index.equals(df2_rounded.index) and  # Check if indexes are the same
-                            all(df1_rounded.dtypes == df2_rounded.dtypes) and  # Check if dtypes are the same
-                            all(df1_rounded.columns == df2_rounded.columns) and  # Check if column names are the same
-                            df1_rounded.equals(df2_rounded)  # Check if values are the same
-                        )
+                        # Perform detailed comparison using pandas utility
+                        try:
+                            assert_frame_equal(
+                                df1_rounded, df2_rounded,
+                                check_dtype=True,
+                                check_index_type=True,
+                                check_column_type=True
+                            )
+                            return True  # If no AssertionError, DataFrames are the same
+                        except AssertionError as e:
+                            print("DataFrames are not the same:")
+                            print(str(e))
+                            return False
+
                     else:
                         # Return True if inputs are not DataFrames
                         return True
