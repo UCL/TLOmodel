@@ -193,6 +193,19 @@ total_num_dalys_by_label_results_averted_vs_baseline = summarize(
     ),
     only_mean=True
 )
+total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / f'total_num_dalys_by_label_results_averted_vs_baseline{target_period()}.csv')
+
+total_num_dalys_by_label_results_averted_vs_WASHonly = summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys_by_label,
+        comparison='WASH only'
+    ),
+    only_mean=True
+)
+total_num_dalys_by_label_results_averted_vs_WASHonly.to_csv(results_folder / f'total_num_dalys_by_label_results_averted_vs_WASHonly{target_period()}.csv')
+
+
+
 
 pc_dalys_averted = 100.0 * summarize(
     -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -202,6 +215,17 @@ pc_dalys_averted = 100.0 * summarize(
     ),
     only_mean=False
 )
+
+pc_dalys_averted_WASHonly = 100.0 * summarize(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys_by_label,
+        comparison='WASH only',
+        scaled=True
+    ),
+    only_mean=False
+)
+pc_dalys_averted_WASHonly.to_csv(results_folder / f'pc_dalys_averted_WASHonly{target_period()}.csv')
+
 
 # %% PLOTS DALYS RELATIVE TO BASELINE
 

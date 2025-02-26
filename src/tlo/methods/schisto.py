@@ -33,6 +33,12 @@ logger.setLevel(logging.INFO)
 _AGE_GROUPS = {'Infant': (0, 1), 'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
+# todo set PZQ avaibaility to 1.0
+# todo make sure baseline scenario and WASH only do not have MDA scheduled (default is 6 monthly!)
+# check how much PZQ is being given as treatment - shouldn't be huge amount
+# change HSB if needed to reduce referrals for dx and tx for schisto
+
+
 class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
@@ -1770,6 +1776,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         ))
 
         # Calculate total dosage required for all beneficiaries still alive
+        # todo this calculates dose for every person - could use a weighted average??
         total_dosage = sum(self.module._calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
 
         # Let the key consumable be "optional" in order that provision of the treatment is NOT conditional on the drugs
