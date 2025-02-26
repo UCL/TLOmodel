@@ -410,74 +410,74 @@ def test_get_parameter_functions(seed):
                     f"{type(original)=}, {type(updated_value)=}"
                 )
 
-                # def is_df_same_size_and_dtype(df1, df2):
-                #     return (
-                #         df1.index.equals(df2.index)
-                #         and all(df1.dtypes == df2.dtypes)
-                #         and all(df1.columns == df2.columns)
-                #         if isinstance(df1, pd.DataFrame)
-                #         else True
-                #     )
-
                 def is_df_same_size_and_dtype(df1, df2):
-                    # Check if input is a DataFrame
-                    if isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame):
-                        # Round both DataFrames to 3 decimal places before comparing
-                        df1=df2.astypes(df1.dtypes)
-
-                        # Ensure indexes are consistent
-                        if not df1.index.equals(df2.index):
-                            df2.index = df1.index
-
-                        # Reset index if necessary
-                        if not df1.index.equals(df2.index):
-                            df1 = df1.reset_index(drop=True)
-                            df2 = df2.reset_index(drop=True)
-
-                        # Handle NaN values uniformly
-                        df1 = df1.replace({None: np.nan})
-                        df2 = df2.replace({None: np.nan})
-
-                        # Round both DataFrames to 3 decimal places before comparing
-                        df1_rounded = df1.round(3)
-                        df2_rounded = df2.round(3)
-
-                        # Perform detailed comparison using pandas utility
-                        try:
-                            assert_frame_equal(
-                                df1_rounded, df2_rounded,
-                                check_dtype=True,
-                                check_index_type=True,
-                                check_column_type=True
-                            )
-                            return True  # If no AssertionError, DataFrames are the same
-                        except AssertionError as e:
-                            print("DataFrames are not the same:")
-                            print(str(e))
-                            return False
-
-                    else:
-                        # Return True if inputs are not DataFrames
-                        return True
-
-                def is_list_same_size_and_dtype(l1, l2):
-                    return (len(l1) == len(l2)) and all(
-                        [type(_i) is type(_j) for _i, _j in zip(l1, l2)]
+                    return (
+                        df1.index.equals(df2.index)
+                        and all(df1.dtypes == df2.dtypes)
+                        and all(df1.columns == df2.columns)
+                        if isinstance(df1, pd.DataFrame)
+                        else True
                     )
 
-                # Check that, if the updated value is a pd.DataFrame, it has the same indicies as the original
-                if isinstance(original, (pd.DataFrame, pd.Series)):
-                    assert is_df_same_size_and_dtype(original, updated_value), print(
-                        f"Dataframe or series if not of the expected size and shape:"
-                        f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
-                    )
-
-                # Check that, if the updated value is a list/tuple, it has the same dimensions as the original
-                elif isinstance(original, (list, tuple)):
-                    assert is_list_same_size_and_dtype(original, updated_value), print(
-                        f"List/tuple is not of the expected size and containing elements of expected type: "
-                        f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
-                    )
+                # def is_df_same_size_and_dtype(df1, df2):
+                #     # Check if input is a DataFrame
+                #     if isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame):
+                #         # Round both DataFrames to 3 decimal places before comparing
+                #         df1=df2.astypes(df1.dtypes)
+                #
+                #         # Ensure indexes are consistent
+                #         if not df1.index.equals(df2.index):
+                #             df2.index = df1.index
+                #
+                #         # Reset index if necessary
+                #         if not df1.index.equals(df2.index):
+                #             df1 = df1.reset_index(drop=True)
+                #             df2 = df2.reset_index(drop=True)
+                #
+                #         # Handle NaN values uniformly
+                #         df1 = df1.replace({None: np.nan})
+                #         df2 = df2.replace({None: np.nan})
+                #
+                #         # Round both DataFrames to 3 decimal places before comparing
+                #         df1_rounded = df1.round(3)
+                #         df2_rounded = df2.round(3)
+                #
+                #         # Perform detailed comparison using pandas utility
+                #         try:
+                #             assert_frame_equal(
+                #                 df1_rounded, df2_rounded,
+                #                 check_dtype=True,
+                #                 check_index_type=True,
+                #                 check_column_type=True
+                #             )
+                #             return True  # If no AssertionError, DataFrames are the same
+                #         except AssertionError as e:
+                #             print("DataFrames are not the same:")
+                #             print(str(e))
+                #             return False
+                #
+                #     else:
+                #         # Return True if inputs are not DataFrames
+                #         return True
+                #
+                # def is_list_same_size_and_dtype(l1, l2):
+                #     return (len(l1) == len(l2)) and all(
+                #         [type(_i) is type(_j) for _i, _j in zip(l1, l2)]
+                #     )
+                #
+                # # Check that, if the updated value is a pd.DataFrame, it has the same indicies as the original
+                # if isinstance(original, (pd.DataFrame, pd.Series)):
+                #     assert is_df_same_size_and_dtype(original, updated_value), print(
+                #         f"Dataframe or series if not of the expected size and shape:"
+                #         f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
+                #     )
+                #
+                # # Check that, if the updated value is a list/tuple, it has the same dimensions as the original
+                # elif isinstance(original, (list, tuple)):
+                #     assert is_list_same_size_and_dtype(original, updated_value), print(
+                #         f"List/tuple is not of the expected size and containing elements of expected type: "
+                #         f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
+                #     )
 def test_mix_scenarios():
     """Check that `mix_scenarios` works as expected."""
 
