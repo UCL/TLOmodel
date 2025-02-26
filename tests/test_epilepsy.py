@@ -22,18 +22,16 @@ popsize = 10000
 @pytest.fixture
 def simulation(seed):
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            mode_appt_constraints=0),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour. HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem( mode_appt_constraints=0),
+        healthburden.HealthBurden(),
+        healthseekingbehaviour. HealthSeekingBehaviour(),
+        symptommanager.SymptomManager(),
+        epilepsy.Epilepsy()
     )
     return sim
 

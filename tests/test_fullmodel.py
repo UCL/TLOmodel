@@ -40,8 +40,8 @@ def test_dtypes_and_checksum(seed):
     """Check that types of all properties are as expected and that the checksum can be generated."""
 
     for _use_simplified_births in (True, False):
-        sim = Simulation(start_date=start_date, seed=seed)
-        sim.register(*fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=_use_simplified_births))
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim.register(*fullmodel(use_simplified_births=_use_simplified_births))
         sim.make_initial_population(n=10_000)
         sim.simulate(end_date=start_date + pd.DateOffset(months=12))
         check_dtypes(sim)
@@ -54,5 +54,5 @@ def test_resourcefilepath(seed):
     # used to construct paths to resource files as expected
     with TemporaryDirectory() as temporary_directory:
         with temporarily_change_working_directory(temporary_directory):
-            sim = Simulation(start_date=start_date, seed=seed)
-            sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+            sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+            sim.register(*fullmodel())

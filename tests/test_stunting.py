@@ -21,13 +21,13 @@ def get_sim(seed):
     start_date = Date(2010, 1, 1)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='all'),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 stunting.Stunting(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(cons_availability='all'),
+                 simplified_births.SimplifiedBirths(),
+                 stunting.Stunting(),
                  stunting.StuntingPropertiesOfOtherModules(),
                  )
     return sim

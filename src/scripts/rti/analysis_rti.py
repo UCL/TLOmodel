@@ -49,14 +49,14 @@ resourcefilepath = Path('./resources')
 # objects. This is preferred to registering each module in multiple calls because we will be
 # able to handle dependencies if modules are registered together
 sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthsystem.HealthSystem(service_availability=['*']),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        rti.RTI(),
+        simplified_births.SimplifiedBirths()
         )
 
 # create and run the simulation

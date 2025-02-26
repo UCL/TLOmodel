@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -90,13 +91,12 @@ class ChronicSyndrome(Module, GenericFirstAppointmentsMixin):
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from file, if required.
         For now, we are going to hard code them explicity.
         Register the module with the health system and register the symptoms

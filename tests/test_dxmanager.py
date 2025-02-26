@@ -41,20 +41,17 @@ def bundle(seed):
                                      'item_code_for_consumable_that_is_not_available',
                                      'item_code_for_consumable_that_is_available'])
     # Establish the simulation object
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1),
+                     seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable_and_reject_all=True
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
 
