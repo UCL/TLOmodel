@@ -177,7 +177,7 @@ def test_htm_scale_up(seed):
 
     # check HIV parameters changed
     assert sim.modules["Hiv"].parameters["beta"] < original_hiv_params.loc[
-        original_hiv_params.parameter_name == "beta", "value"].values[0]
+        original_hiv_params.parameter_name == "beta","value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] == new_hiv_params.loc[
         new_hiv_params.parameter == "prob_prep_for_fsw_after_hiv_test", "target_value"].values[0]
     assert sim.modules["Hiv"].parameters["prob_prep_for_agyw"] == new_hiv_params.loc[
