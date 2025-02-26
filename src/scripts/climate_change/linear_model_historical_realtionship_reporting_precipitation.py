@@ -557,10 +557,11 @@ negative_mask = ~positive_mask
 
 ax.stem(data_weather_predictions_grouped['Year_Month'][positive_mask],
         data_weather_predictions_grouped['difference'][positive_mask],
-        linefmt='#1C6E8C', markerfmt='o', basefmt="black")
+        linefmt='#1C6E8C', markerfmt='o', basefmt="black", label="More appointments projected due to less precipitation")
 ax.stem(data_weather_predictions_grouped['Year_Month'][negative_mask],
         data_weather_predictions_grouped['difference'][negative_mask],
-        linefmt='#823038', markerfmt='o', basefmt="black")
+        linefmt='#823038', markerfmt='o', basefmt="black", label="Fewer appointments projected due to more precipitation")
+
 ax.set_xlabel('Year-Month')
 ax.set_ylabel(f'Difference in Predicted {service} Services (Without vs. With Precipitation)')
 january_ticks = data_weather_predictions_grouped[data_weather_predictions_grouped['Year_Month'].str.endswith('-1')]
@@ -570,6 +571,8 @@ ax.set_xticklabels(january_ticks['Year_Month'].str[:4], rotation=45, ha='right')
 ax.axvline(x='2023-3', color='#CDC6AE', linestyle='--', linewidth=1,  alpha=0.3, label="Cyclone Freddy")
 ax.axvline(x='2023-2', color='#CDC6AE', linestyle='--', linewidth=1, alpha=0.3)
 ax.axvspan('2023-2', '2023-3', color='#CDC6AE', alpha=0.3)
+ax.legend(loc='upper left')
+
 plt.tight_layout()
 plt.savefig( f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/{service}_disruptions_difference_historical_models.png')
 #plt.show()
