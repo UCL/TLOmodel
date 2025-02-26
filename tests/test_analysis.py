@@ -6,7 +6,6 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
 
 
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
@@ -336,27 +335,6 @@ def test_colormap_cause_of_death_label(seed):
 def test_get_parameter_functions(seed):
     """Check that the functions that provide updated parameter values provide recognised parameter names and values
     of the appropriate type."""
-
-    # Function that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
-    funcs = [
-        get_parameters_for_status_quo,
-        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-            resourcefilepath=resourcefilepath,
-            max_healthsystem_function=True,
-            max_healthcare_seeking=False,
-        ),
-        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-            resourcefilepath=resourcefilepath,
-            max_healthsystem_function=False,
-            max_healthcare_seeking=True,
-        ),
-        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-            resourcefilepath=resourcefilepath,
-            max_healthsystem_function=True,
-            max_healthcare_seeking=True,
-        ),
-    ]
-
 
 def test_get_parameter_functions(seed):
     """Check that the functions that provide updated parameter values provide recognised parameter names and values
