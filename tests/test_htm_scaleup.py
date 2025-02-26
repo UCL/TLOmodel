@@ -214,4 +214,4 @@ def test_htm_scale_up(seed):
     assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
         new_tb_params.parameter == "tb_prob_tx_success_5_14", "target_value"].values[0]
     assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
-        new_tb_params.parameter == "first_line_test", "target_value"].value[0]
+          new_tb_params.parameter == "first_line_test", "target_value"].values[0]
