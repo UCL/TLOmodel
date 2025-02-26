@@ -19,7 +19,6 @@ elif Inpatient:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Inpatient_Data/HMIS_Total_Number_Admissions.csv')
 else:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv') #January 2011 - January 2024
-
 # ANALYSIS DONE IN OCTOBER 2024 - so drop October, November, December 2024
 columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
 reporting_data = reporting_data.drop(columns=columns_to_drop)
@@ -38,7 +37,6 @@ else:
 months = [date.strip() for date in months] # extra spaces??
 dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist() # puts them in ascending order
-print(reporting_data)
 for month in months:
     columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[reporting_data.columns.str.endswith(month)].tolist()
     data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
@@ -156,7 +154,6 @@ for facility in facilities_with_location:
     ]
 
     unique_columns =  set(facilities_with_location) - set(included_facilities_with_lat_long)
-    print(unique_columns)
     additional_rows = ["Zonename", "Resid", "Dist", "A105", "A109__Altitude", "Ftype", 'A109__Latitude', 'A109__Longitude']
     expanded_facility_info = included_facilities_with_lat_long[["Fname"] + additional_rows]
     expanded_facility_info['Dist'] = expanded_facility_info['Dist'].replace("Blanytyre", "Blantyre")
