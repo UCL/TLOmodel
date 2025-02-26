@@ -207,7 +207,8 @@ def test_htm_scale_up(seed):
     new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
-        new_tb_params.parameter == "tb_treatment_coverage", "target_value"].values[0]).all()
+        new_tb_params.parameter == "tb_treatment_coverage", "min_value"].values[0]).all()
+
     assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
         new_tb_params.parameter == "tb_prob_tx_success_ds", "target_value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
