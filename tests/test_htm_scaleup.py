@@ -130,8 +130,8 @@ def test_hiv_scale_up(seed):
     tb_original_params.value = tb_original_params.value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
     tb_testing = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="NTP2019")
 
-    (pd.testing.assert_series_equal(sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"],
-    tb_testing["treatment_coverage"]))
+    pd.testing.assert_series_equal(sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"],
+                                   tb_testing["treatment_coverage"])
     assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == tb_original_params.loc[
         tb_original_params.parameter_name == "prob_tx_success_ds", "value"].values[0]
     assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == tb_original_params.loc[
@@ -200,19 +200,18 @@ def test_htm_scale_up(seed):
         new_mal_params.parameter == "itn", "target_value"].values[0]
 
     # check tb parameters changed
-    # new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")
-    # new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
-    #
-    # assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
-    #     new_tb_params.parameter == "tb_treatment_coverage", "target_value"].values[0]).all()
-    # assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
-    #     new_tb_params.parameter == "tb_prob_tx_success_ds", "target_value"].values[0]
-    # assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
-    #     new_tb_params.parameter == "tb_prob_tx_success_mdr", "target_value"].values[0]
-    # assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_tb_params.loc[
-    #     new_tb_params.parameter == "tb_prob_tx_success_0_4", "target_value"].values[0]
-    # assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
-    #     new_tb_params.parameter == "tb_prob_tx_success_5_14", "target_value"].values[0]
-    # assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
-    #     new_tb_params.parameter == "first_line_test", "target_value"].values[0]
+    new_tb_params = read_csv_files(resourcefilepath / 'ResourceFile_TB', files="scaleup_parameters")
+    new_tb_params.target_value = new_tb_params.target_value.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
+    assert sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"].eq(new_tb_params.loc[
+        new_tb_params.parameter == "tb_treatment_coverage", "target_value"].values[0]).all()
+    assert sim.modules["Tb"].parameters["prob_tx_success_ds"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_ds", "target_value"].values[0]
+    assert sim.modules["Tb"].parameters["prob_tx_success_mdr"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_mdr", "target_value"].values[0]
+    assert sim.modules["Tb"].parameters["prob_tx_success_0_4"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_0_4", "target_value"].values[0]
+    assert sim.modules["Tb"].parameters["prob_tx_success_5_14"] == new_tb_params.loc[
+        new_tb_params.parameter == "tb_prob_tx_success_5_14", "target_value"].values[0]
+    assert sim.modules["Tb"].parameters["first_line_test"] == new_tb_params.loc[
+        new_tb_params.parameter == "first_line_test", "target_value"].value[0]
