@@ -1009,10 +1009,10 @@ class Tb(Module):
                 parse_csv_values_for_columns_with_mixed_datatypes
             )
 
-        if p['type_of_scaleup'] == 'target':
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        if p['type_of_scaleup'] == 'none':
+            scaled_params = scaled_params_workbook.set_index('parameter')['min_value'].to_dict()
         else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
 
         # scale-up TB program
         # use NTP treatment rates
