@@ -96,7 +96,7 @@ status_quo_scenarios = ['No growth status quo', 'GDP growth fHE growth case 1 st
 PC_scenarios = ['No growth perfect consumables', 'GDP growth fHE growth case 1 perfect consumables', 'GDP growth fHE growth case 3 perfect consumables', 'GDP growth perfect consumables', 'GDP growth fHE growth case 4 perfect consumables',  'GDP growth fHE growth case 6 perfect consumables']
 
 scenarios_map = {
- #   'Status quo' : {'scenarios' : status_quo_scenarios, 'colour' : '#CC0066', 'comparison' : 'GDP growth status quo', 'title': 'Present-day Cons. Avail.'},
+  #  'Status quo' : {'scenarios' : status_quo_scenarios, 'colour' : '#CC0066', 'comparison' : 'GDP growth status quo', 'title': 'Present-day Cons. Avail.'},
     'Perfect Consumables' : {'scenarios' : PC_scenarios, 'colour' : '#0080FF', 'comparison' : 'GDP growth perfect consumables', 'title': 'Perfect Cons. Avail.'},
 }
 
@@ -545,7 +545,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_filtered = DALYs_with_time_and_cause_summarised.xs(cause, level='cause')/1e6
         use_cause = cause.replace("/", "_and_")
         plot_X_with_time(df_filtered, "Yearly DALYs (millions)", "Yearly_DALYs_" + use_cause, cause)
-    exit(-1)
+
     # ================================================================================================
     # Plot 2: DALYs incurred as a fnc of growth and total health expenditure
     
