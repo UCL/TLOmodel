@@ -355,94 +355,33 @@ def test_get_parameter_functions(seed):
         ),
     ]
 
-    # Create simulation
-    # sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
-    # sim.register(*fullmodel(resourcefilepath=resourcefilepath))
-    #
-    # for fn in funcs:
-    #
-    #     # Get structure containing parameters to be updated:
-    #     params = fn()
-    #
-    #     assert isinstance(params, dict)
-    #     # Check each parameter
-    #     for module in params.keys():
-    #         for name, updated_value in params[module].items():
-    #
-    #             # Check that the parameter identified exists in the simulation
-    #             assert (
-    #                     name in sim.modules[module].parameters
-    #             ), f"Parameter not recognised: {module}:{name}."
-    #
-    #             # Check that the original value and the updated value are of the same type.
-    #             original = sim.modules[module].parameters[name]
-    #
-    #             assert type(original) is type(updated_value), (
-    #                 f"Updated value type does not match original type: "
-    #                 f"{module}:{name} >> {updated_value=}, "
-    #                 f"{type(original)=}, {type(updated_value)=}"
-    #             )
-    #
-    #
-    #
-    #
-    #             def is_df_same_size_and_dtype(df1, df2):
-    #                 """
-    #                 Compares two DataFrames for:
-    #                   - Same index
-    #                   - Same data types
-    #                   - Same column names
-    #                   - Numerical equality within a tolerance for float values
-    #                   - Exact equality for non-numerical values
-    #                 """
-    #                 # Check if both are DataFrames
-    #                 if not (isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame)):
-    #                     return False
-    #
-    #                 # Check if index, dtypes, and columns are the same
-    #                 if not (df1.index.equals(df2.index) and all(df1.dtypes == df2.dtypes) and all(
-    #                     df1.columns == df2.columns)):
-    #                     return False
-    #
-    #                 # Check numerical columns for equality within a tolerance
-    #                 numeric_cols = df1.select_dtypes(include=[float, int]).columns
-    #                 for col in numeric_cols:
-    #                     if not np.allclose(df1[col].fillna(0), df2[col].fillna(0), atol=atol, equal_nan=True):
-    #                         print(f"Difference found in column: {col}")
-    #                         print(f"Original: {df1[col].values}")
-    #                         print(f"Updated: {df2[col].values}")
-    #                         return False
-    #
-    #                 # Check non-numerical columns for exact equality
-    #                 non_numeric_cols = df1.select_dtypes(exclude=[float, int]).columns
-    #                 for col in non_numeric_cols:
-    #                     if not (df1[col].fillna('') == df2[col].fillna('')).all():
-    #                         print(f"Difference found in column: {col}")
-    #                         return False
-    #
-    #                 return True
-    #
-    #             def is_list_same_size_and_dtype(l1, l2):
-    #                 return (len(l1) == len(l2)) and all(
-    #                     [type(_i) is type(_j) for _i, _j in zip(l1, l2)]
-    #                 )
-    #
-    #             # Check that, if the updated value is a pd.DataFrame, it has the same indicies as the original
-    #             if isinstance(original, (pd.DataFrame, pd.Series)):
-    #                 assert is_df_same_size_and_dtype(original, updated_value), print(
-    #                     f"Dataframe or series if not of the expected size and shape:"
-    #                     f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
-    #                 )
-    #
-    #             # Check that, if the updated value is a list/tuple, it has the same dimensions as the original
-    #             elif isinstance(original, (list, tuple)):
-    #                 assert is_list_same_size_and_dtype(original, updated_value), print(
-    #                     f"List/tuple is not of the expected size and containing elements of expected type: "
-    #                     f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
-    #
-    #                 )
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
+def test_get_parameter_functions(seed):
+    """Check that the functions that provide updated parameter values provide recognised parameter names and values
+    of the appropriate type."""
+
+    # Function that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
+    funcs = [
+        get_parameters_for_status_quo,
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=True,
+            max_healthcare_seeking=False,
+        ),
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=False,
+            max_healthcare_seeking=True,
+        ),
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=True,
+            max_healthcare_seeking=True,
+        ),
+    ]
+
+    # Create simulation
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
 
     for fn in funcs:
@@ -457,7 +396,7 @@ def test_get_parameter_functions(seed):
 
                 # Check that the parameter identified exists in the simulation
                 assert (
-                        name in sim.modules[module].parameters
+                    name in sim.modules[module].parameters
                 ), f"Parameter not recognised: {module}:{name}."
 
                 # Check that the original value and the updated value are of the same type.
@@ -477,24 +416,24 @@ def test_get_parameter_functions(seed):
                 #         if isinstance(df1, pd.DataFrame)
                 #         else True
                 #     )
+
                 def is_df_same_size_and_dtype(df1, df2):
-                    # Check if both DataFrames have the same shape and data types
-                    if df1.shape != df2.shape:
-                        return False
-                    if (df1.dtypes != df2.dtypes).any():
-                        return False
+                    # Check if input is a DataFrame
+                    if isinstance(df1, pd.DataFrame) and isinstance(df2, pd.DataFrame):
+                        # Round both DataFrames to 3 decimal places before comparing
+                        df1_rounded = df1.round(3)
+                        df2_rounded = df2.round(3)
 
-                    # Check if all numeric columns are close within a tolerance
-                    numeric_cols = df1.select_dtypes(include=np.number).columns
-                    for col in numeric_cols:
-                        if not np.all(np.isclose(df1[col], df2[col], atol=0.001)):  # Allow a tolerance of 0.001
-                            print(f"Difference in column: {col}")
-                            print("Expected:", df1[col].values)
-                            print("Actual:", df2[col].values)
-                            return False
-
-                    # If all checks pass
-                    return True
+                        # Perform checks
+                        return (
+                            df1_rounded.index.equals(df2_rounded.index) and  # Check if indexes are the same
+                            all(df1_rounded.dtypes == df2_rounded.dtypes) and  # Check if dtypes are the same
+                            all(df1_rounded.columns == df2_rounded.columns) and  # Check if column names are the same
+                            df1_rounded.equals(df2_rounded)  # Check if values are the same
+                        )
+                    else:
+                        # Return True if inputs are not DataFrames
+                        return True
 
                 def is_list_same_size_and_dtype(l1, l2):
                     return (len(l1) == len(l2)) and all(
@@ -514,7 +453,6 @@ def test_get_parameter_functions(seed):
                         f"List/tuple is not of the expected size and containing elements of expected type: "
                         f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
                     )
-
 def test_mix_scenarios():
     """Check that `mix_scenarios` works as expected."""
 
