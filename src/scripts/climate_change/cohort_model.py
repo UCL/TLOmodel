@@ -166,7 +166,6 @@ for scenario in scenarios:
         malawi_admin2.loc[malawi_admin2['Percentage_Difference'] > 0, 'Percentage_Difference'] = 0
         malawi_admin2['Percentage_Difference'] = malawi_admin2['Percentage_Difference'].abs() # for mapping, to show %
 
-
 for i, scenario in enumerate(scenarios):
     for j, model_type in enumerate(model_types):
         predictions_from_cmip = pd.read_csv(
@@ -202,6 +201,17 @@ for i, scenario in enumerate(scenarios):
             vmin=global_min,
             vmax=global_max
         )
+        mean_diff = malawi_admin2['Percentage_Difference'].mean()
+        std_diff = malawi_admin2['Percentage_Difference'].std()
+
+        ax.text(
+            0.01, 0.1,
+            f"Mean: {mean_diff:.2f}%\nSD: {std_diff:.2f}%",
+            transform=ax.transAxes,
+            fontsize=10,
+            verticalalignment='top',
+            bbox=None
+        )
 
         ax.set_title(f"{scenario}: {model_type}", fontsize=14)
 
@@ -214,16 +224,14 @@ for i, scenario in enumerate(scenarios):
 
         if i == 1:
             ax.set_xlabel("Longitude", fontsize=10)
-
 sm = plt.cm.ScalarMappable(
     cmap='Blues',
     norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
 )
 sm.set_array([])
-fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
-plt.suptitle("Percentage Difference Maps by Scenario and Model Type", fontsize=16, y=1.02)
+fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8, label="Potential Disruptions (%)")
+#plt.tight_layout()
 plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
-plt.show()
 
 
 
@@ -679,7 +687,6 @@ multiplied_values_df_historical.to_csv(results_folder_to_save/f'multiplied_value
 print(result_df_historical)
 result_df_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_historical.csv', index=False)
 
-###### Baseline historical disruptions #######
 
 ####### Historical disruptions ##########
 
@@ -735,7 +742,11 @@ fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Percentage Di
 plt.title("", fontsize=16)
 plt.savefig(results_folder_to_save / 'percentage_difference_map_historical.png')
 plt.show()
+mean_percentage_diff = malawi_admin2['Percentage_Difference_historical'].mean()
+sd_percentage_diff = malawi_admin2['Percentage_Difference_historical'].std()
 
+print("Mean Percentage Difference:", mean_percentage_diff)
+print("Standard Deviation of Percentage Difference:", sd_percentage_diff)
 ###### Effect of CYCLONE FREDDY #######
 
 historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
