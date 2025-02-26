@@ -231,7 +231,7 @@ sm = plt.cm.ScalarMappable(
 sm.set_array([])
 fig.colorbar(sm, ax=axes, orientation="vertical", shrink=0.8, label="Potential Disruptions (%)")
 #plt.tight_layout()
-plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png')
+plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png',dpi=600)
 
 
 
