@@ -977,7 +977,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
         # schedule outreach xrays for tb screening from 2010
         #sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
-        sim.schedule_event(TbCommunityXray(self), self.scenario_start_date)
+        sim.schedule_event(TbCommunityXray(self), self.outreach_xray_start_date)
 
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
