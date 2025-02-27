@@ -69,11 +69,20 @@ class DiabeticRetinopathy(Module):
         'dr_diagnosed': Property(
             Types.BOOL, 'Whether this person has been diagnosed with any diabetic retinopathy'
         ),
+        "dr_date_diagnosis": Property(
+            Types.DATE,
+            "the date of diagnosis of diabetic retinopathy (pd.NaT if never diagnosed)"
+        ),
+        "dr_blindness_investigated": Property(
+            Types.BOOL,
+            "whether blindness has been investigated, and diabetic retinopathy missed"
+        ),
 
     }
 
     def __init__(self):
         super().__init__()
+        self.cons_item_codes = None  # (Will store consumable item codes)
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """ initialise module parameters. Here we are assigning values to all parameters defined at the beginning of
@@ -125,6 +134,8 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_treatment"] = pd.NaT
+        df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
+        df.loc[list(alive_diabetes_idx), "dr_blindness_investigated"] = False
 
     def initialise_simulation(self, sim: Simulation) -> None:
         """ This is where you should include all things you want to be happening during simulation
@@ -135,6 +146,7 @@ class DiabeticRetinopathy(Module):
         sim.schedule_event(DrPollEvent(self), date=sim.date)
         sim.schedule_event(DiabeticRetinopathyLoggingEvent(self), sim.date + DateOffset(months=1))
         self.make_the_linear_models()
+        self.look_up_consumable_item_codes()
 
     def report_daly_values(self) -> pd.Series:
         return pd.Series(index=self.sim.population.props.index, data=0.0)
@@ -147,7 +159,8 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'dr_on_treatment'] = False
         self.sim.population.props.at[child_id, 'dr_date_treatment'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
-        self.sim.population.props.at[child_id, 'dr_diagnosis_date'] = pd.NaT
+        self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
+        self.sim.population.props.at[child_id, 'dr_blindness_investigated'] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -172,6 +185,21 @@ class DiabeticRetinopathy(Module):
             intercept=self.parameters['prob_fast_dr']
         )
 
+    def look_up_consumable_item_codes(self):
+        """Look up the item codes used in the HSI of this module"""
+        get_item_codes = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        self.cons_item_codes = dict()
+        # self.cons_item_codes['laser_photocoagulation'] = {
+        #         get_item_codes("Anesthetic Eye drops, 15ml"): 3,
+        #         get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 1,
+        #     }
+        self.cons_item_codes['eye_injection'] = {
+                get_item_codes("Anesthetic Eye drops, 15ml"): 1,
+                get_item_codes('Aflibercept, 2mg'): 3,
+            }
+
+
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the development process of Diabetes Retinopathy (DR) and logs current states. DR diagnosis
@@ -190,12 +218,16 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # will_progress_idx = will_progress[will_progress].index
         # will_progress_idx = df.index[np.where(will_progress)[0]]
         will_progress_idx = df.index[np.where(will_progress)[0]]
-        old_will_progress_idx = will_progress[will_progress].index
+        # old_will_progress_idx = will_progress[will_progress].index
+        # Count new early cases for incidence tracking
+        new_early_cases = len(will_progress_idx)
         df.loc[will_progress_idx, 'dr_status'] = 'early'
 
         early_to_late = self.module.lm['onset_late_dr'].predict(diabetes_and_alive_earlydr, self.module.rng)
         # early_to_late_idx = early_to_late[early_to_late].index
         early_to_late_idx = df.index[np.where(early_to_late)[0]]
+        # Count new late cases for incidence tracking
+        new_late_cases = len(early_to_late_idx)
         df.loc[early_to_late_idx, 'dr_status'] = 'late'
 
         fast_dr = self.module.lm['onset_fast_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
@@ -228,11 +260,79 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     ) -> None:
 
         if "blindness_full" in symptoms or "blindness_partial" in symptoms:
-            event = HSI_Dr_StartTreatment(
+            event = HSI_Dr_TestingFollowingSymptoms(
                 module=self,
                 person_id=person_id,
             )
             schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+
+
+class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
+    """
+        This event is scheduled by do_at_generic_first_appt_emergency following presentation for care with the symptoms
+        of partial and full blindness.
+        This event begins the investigation that may result in diagnosis of Diabetic Retinopathy and the scheduling of
+        treatment.
+        """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "DiabeticRetinopathy_Investigation"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ALERT_OTHER_DISEASES = []
+
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        # Check that this event has been called for someone with the symptom blindness_partial
+        assert 'blindness_partial' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+        # Check that this event has been called for someone with the symptom blindness_full
+        assert 'blindness_full' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+        # If the person is already diagnosed, then take no action:
+        if not pd.isnull(df.at[person_id, "dr_date_diagnosis"]):
+            return hs.get_blank_appt_footprint()
+
+        df.at[person_id, 'dr_blindness_investigated'] = True
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['eye_injection']
+        )
+
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='dilated_eye_exam_dr_blindness',
+            hsi_event=self
+        )
+        # TODO Those in early DR must not go to start treatment since late DR Work can be managed with good blood
+        #  sugar control to slow the progression.
+        if dx_result and is_cons_available:
+            # record date of diagnosis
+            df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
+            # If consumables are available, add equipment used and run dx_test
+            self.add_equipment({'Ophthalmoscope'})
+
+            hs.schedule_hsi_event(
+                hsi_event=HSI_Dr_StartTreatment(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+
+
 
 #TODO HSI_Dr_StartTreatment should be called by HSI_Dr_TestingFollowingSymptoms
 class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -268,6 +368,10 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         treatment_slows_progression_to_late = randomly_sampled < self.module.parameters['p_medication']
 
         #TODO Add consumables in codition below
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['eye_injection']
+        )
+
         if treatment_slows_progression_to_late:
             df.at[person_id, 'dr_on_treatment'] = True
             df.at[person_id, 'dr_date_treatment'] = self.sim.date
@@ -317,5 +421,15 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Current counts, on treatment (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
             df.dr_date_treatment)), 'dr_status'].value_counts().items()})
+
+        # Count new cases
+        new_early_cases = len(df.loc[df.is_alive & (df.dr_status == 'early') & (df.dr_date_treatment == self.sim.date)])
+        new_late_cases = len(df.loc[df.is_alive & (df.dr_status == 'late') & (df.dr_date_treatment == self.sim.date)])
+
+        # Log incidence counts
+        out.update({
+            'new_early': new_early_cases,
+            'new_late': new_late_cases
+        })
 
         logger.info(key='summary_stats', data=out)
