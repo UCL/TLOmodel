@@ -55,12 +55,11 @@ births_results = extract_results(
 
 births_results = births_results.groupby(by=births_results.index).sum()
 births_results = births_results.replace({0: np.nan})
-births_results['Model_mean'] = births_results * conversion_births_to_pregnancies / converstion_pregnancies_to_ANC
 births_model = summarize(births_results, collapse_columns=True)
 births_model.columns = ['Model_' + col for col in births_model.columns]
-births_model_subset = births_model.iloc[15:].copy() # don't want 2010-2024
+births_model['Model_mean'] = births_model['Model_mean'] * conversion_births_to_pregnancies / converstion_pregnancies_to_ANC
 
-print("historical:", births_model.iloc[2:15, 1].sum())
+births_model_subset_projections = births_model.iloc[15:].copy() # don't want 2010-2024
 births_model_subset_historical = births_model.iloc[2:15, 1]
 # Load map of Malawi for later
 file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
@@ -101,8 +100,8 @@ for scenario in scenarios:
                 predictions_from_cmip_sum['Difference_in_Expectation'] / predictions_from_cmip_sum[
                 'Predicted_No_Weather_Model'])
         # Match birth results and predictions
-        matching_rows = min(len(births_model_subset), len(predictions_from_cmip_sum))
-        multiplied_values = births_model_subset.head(matching_rows).iloc[:, 1].values * predictions_from_cmip_sum[
+        matching_rows = min(len(births_model_subset_projections), len(predictions_from_cmip_sum))
+        multiplied_values = births_model_subset_projections.head(matching_rows).iloc[:, 1].values * predictions_from_cmip_sum[
             'Percentage_Difference'].head(matching_rows).values
 
         # Check for negative values (missed cases?)
@@ -112,13 +111,13 @@ for scenario in scenarios:
         filtered_predictions = predictions_from_cmip[predictions_from_cmip['Precipitation'] >= precipitation_threshold]
         filtered_predictions_sum = filtered_predictions.groupby('Year').sum().reset_index()
         percent_due_to_extreme = filtered_predictions_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
-        multiplied_values_extreme_precip = births_model_subset.head(matching_rows).iloc[:, 1].values * percent_due_to_extreme.head(matching_rows).values
+        multiplied_values_extreme_precip = births_model_subset_projections.head(matching_rows).iloc[:, 1].values * percent_due_to_extreme.head(matching_rows).values
         negative_sum_extreme_precip = np.sum(multiplied_values_extreme_precip[multiplied_values_extreme_precip < 0])
         result_df = pd.DataFrame({
             "Scenario": [scenario],
             "Model_Type": [model_type],
             "Negative_Sum": [negative_sum],
-            "Negative_Percentage": [negative_sum / births_model_subset['Model_mean'].sum() * 100],
+            "Negative_Percentage": [negative_sum / births_model_subset_projections['Model_mean'].sum() * 100],
             "Extreme_Precip": [negative_sum_extreme_precip],
             "Extreme_Precip_Percentage": [(negative_sum_extreme_precip  / negative_sum) * 100]
         })
@@ -324,9 +323,9 @@ for i, scenario in enumerate(scenarios):
             for _, row in subset.iterrows():
                 district = row['District']
                 percentage_diff = row['Percentage_Difference']
-                row_index = births_model_subset.index.get_loc(year)
+                row_index = births_model_subset_projections.index.get_loc(year)
 
-                number_of_births = population_proportion[district] * births_model_subset.iloc[row_index]["Model_mean"]
+                number_of_births = population_proportion[district] * births_model_subset_projections.iloc[row_index]["Model_mean"]
                 if year not in percentage_diff_by_year_district:
                     percentage_diff_by_year_district[year] = {}
                 if district not in percentage_diff_by_year_district[year]:
@@ -418,9 +417,9 @@ for i, scenario in enumerate(scenarios):
             for _, row in subset.iterrows():
                 district = row['District']
                 percentage_diff = row['Percentage_Difference']
-                row_index = births_model_subset.index.get_loc(year)
+                row_index = births_model_subset_projections.index.get_loc(year)
 
-                number_of_births = population_proportion[district] * births_model_subset.iloc[row_index]["Model_mean"]
+                number_of_births = population_proportion[district] * births_model_subset_projections.iloc[row_index]["Model_mean"]
                 if year not in percentage_diff_by_year_district:
                     percentage_diff_by_year_district[year] = {}
                 if district not in percentage_diff_by_year_district[year]:
@@ -509,9 +508,9 @@ for i, scenario in enumerate(scenarios):
             for _, row in subset.iterrows():
                 zone = row['Zone']
                 percentage_diff = row['Percentage_Difference']
-                row_index = births_model_subset.index.get_loc(year)
+                row_index = births_model_subset_projections.index.get_loc(year)
 
-                number_of_births = population_data_grouped_zone[zone] * births_model_subset.iloc[row_index]["Model_mean"]
+                number_of_births = population_data_grouped_zone[zone] * births_model_subset_projections.iloc[row_index]["Model_mean"]
                 if year not in percentage_diff_by_year_zone:
                     percentage_diff_by_year_zone[year] = {}
                 if zone not in percentage_diff_by_year_zone[year]:
@@ -595,7 +594,7 @@ ax.set_xlabel("Longitude", fontsize=10)
 sm = plt.cm.ScalarMappable(cmap='Blues', norm=mcolors.Normalize(vmin=malawi_admin2['Percentage_Difference_baseline'].min(),
                                                                  vmax=malawi_admin2['Percentage_Difference_baseline'].max()))
 sm.set_array([])
-fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
+fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Potential Disruptions (%)")
 
 #plt.title("Baseline", fontsize=16)
 plt.savefig(results_folder_to_save / 'percentage_difference_map_baseline.png')
@@ -733,7 +732,7 @@ sm = plt.cm.ScalarMappable(
     norm=mcolors.Normalize(vmin=global_min, vmax=global_max)
 )
 sm.set_array([])
-fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Percentage Difference (%)")
+fig.colorbar(sm, ax=ax, orientation="vertical", shrink=0.8, label="Potential Disruptions (%)")
 
 plt.title("", fontsize=16)
 plt.savefig(results_folder_to_save / 'percentage_difference_map_historical.png')
@@ -894,7 +893,7 @@ for i, counterfactual in enumerate(counterfactuals):
     for _, row in predictions_from_model_sum.iterrows():
         district = row['District']
         percentage_diff = row['Percentage_Difference']
-        total_births = population_proportion[district] * births_model_subset["Model_mean"].sum()
+        total_births = population_proportion[district] * births_model_subset_projections["Model_mean"].sum()
 
         if district not in percentage_diff_by_district:
             percentage_diff_by_district[district] = 0
@@ -949,7 +948,7 @@ for counterfactual in counterfactuals:
     for _, row in predictions_from_model_sum.iterrows():
         district = row['District']
         percentage_diff = row['Percentage_Difference']
-        total_births = population_proportion[district] * births_model_subset["Model_mean"].sum()
+        total_births = population_proportion[district] * births_model_subset_projections["Model_mean"].sum()
 
         total_impact += (percentage_diff * total_births)
 
