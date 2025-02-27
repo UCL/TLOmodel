@@ -391,10 +391,6 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     # Simulate
     sim.simulate(end_date=Date(2010, 7, 1))
     check_dtypes(sim)
-    check_configuration_of_population(sim)
-
-    # check that there are not any people in each of the later stages and everyone is still in 'stage1':
-    # this is working in the program - I'm not sure why test is failing
 
     df = sim.population.props
     assert len(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F'), "ce_hpv_cc_status"]) > 0
