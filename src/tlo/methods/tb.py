@@ -977,7 +977,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
         # schedule outreach xrays for tb screening from 2010
         #sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
-        sim.schedule_event(TbCommunityXray(self), sim.date)
+        sim.schedule_event(TbCommunityXray(self), self.scenario_start_date)
 
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
@@ -1933,6 +1933,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+                test_result = None  # Indicate no test done yet
+                return ACTUAL_APPT_FOOTPRINT
             else:
                 # If already at a Level 1b facility, proceed with the X-ray
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1942,16 +1944,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     priority=0,
                 )
 
-            test_result = False  # to avoid calling a clinical diagnosis
-
-        if not test_result:
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                topen=now,
-                tclose=None,
-                priority=0,
-            )
-            return ACTUAL_APPT_FOOTPRINT
+            test_result = None  # to avoid calling a clinical diagnosis
 
         # ------------------------- select test for adults ------------------------- #
 
@@ -2131,40 +2124,40 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # under program scale-up, if a person tests negative but still has symptoms
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
-        # if not test_result and person_has_tb_symptoms:
-        #     if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
-        #         logger.debug(
-        #             key="message",
-        #             data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
-        #         )
-        #
-        #         culture_event = HSI_Tb_Culture(
-        #             self.module, person_id=person_id
-        #         )
-        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #             culture_event,
-        #             priority=0,
-        #             topen=now,
-        #             tclose=None,
-        #         )
+        if not test_result and person_has_tb_symptoms:
+            if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
+                logger.debug(
+                    key="message",
+                    data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
+                )
+
+                culture_event = HSI_Tb_Culture(
+                    self.module, person_id=person_id
+                )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    culture_event,
+                    priority=0,
+                    topen=now,
+                    tclose=None,
+                )
                 # indicative of TB                                                                                                                                 they are referred for culture test which has perfect sensitivity
                 #if not test_result and person_has_tb_symptoms:
-                #if test_result is None and person_has_tb_symptoms:
-                if not test_result and person_has_tb_symptoms:
-                    if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
-                        logger.debug(
-                            key="message",
-                            data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
-                        )
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        hsi_event=HSI_Tb_Culture(
-                            person_id=person_id, module=self.module
-                        ),
-                        topen=now,
-                        tclose=None,
-                        priority=0,
-                    )
-        # Return the footprint. If it should be suppressed, return a blank footprint.
+               # # if test_result is None and person_has_tb_symptoms:
+               #  if not test_result and person_has_tb_symptoms:
+               #      if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
+               #          logger.debug(
+               #              key="message",
+               #              data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
+               #          )
+               #      self.sim.modules["HealthSystem"].schedule_hsi_event(
+               #          hsi_event=HSI_Tb_Culture(
+               #              person_id=person_id, module=self.module
+               #          ),
+               #          topen=now,
+               #          tclose=None,
+               #          priority=0,
+               #      )
+
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
