@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Sequence, Optional, Union
 
 import numpy as np
 import pandas as pd
+from itertools import product
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
@@ -30,6 +31,12 @@ logger.setLevel(logging.INFO)
 #     15 <= Adults
 #     0 <= All
 _AGE_GROUPS = {'Infant': (0, 1), 'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
+
+
+# todo set PZQ avaibaility to 1.0
+# todo make sure baseline scenario and WASH only do not have MDA scheduled (default is 6 monthly!)
+# check how much PZQ is being given as treatment - shouldn't be huge amount
+# change HSB if needed to reduce referrals for dx and tx for schisto
 
 
 class Schisto(Module, GenericFirstAppointmentsMixin):
@@ -154,6 +161,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # Define districts that this module will operate in:
         self.districts = self.sim.modules['Demography'].districts  # <- all districts
 
+        # Load parameters
+        # workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
+        # self.parameters = self._load_parameters_from_workbook(workbook)
+
         workbook = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
 
@@ -225,9 +236,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
         sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
-        # over-ride availability of PZQ for MDA
+        # over-ride availability of PZQ for MDA, MDA cons is optional in HSI so will always run
         # self.sim.modules['HealthSystem'].override_availability_of_consumables(
         #     {1735: 1.0})  # this is the donated PZQ not currently in consumables availability worksheet
+        # this is the tx PZQ
+        # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+        #     {286: 1.0})
 
         # Schedule MDA events
         if self.mda_execute:
@@ -251,7 +265,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         df.at[child_id, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
 
-        # if WASH in action, update property li_unimproved_sanitation=False for all new births
+        # WASH in action, update property li_unimproved_sanitation=False for all new births
         if self.parameters['scaleup_WASH'] and (
             self.sim.date >= Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1)):
             df.at[child_id, 'li_unimproved_sanitation'] = False
@@ -353,7 +367,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             except ValueError:
                 parameters[_param_name] = value
 
-        # MDA coverage - historic ESPEN data
+        # MDA coverage - historic
+        # todo this is updated now with the EPSEN data
         historical_mda = workbook['ESPEN_MDA'].set_index(['District', 'Year'])[
             ['EpiCov_PSAC', 'EpiCov_SAC', 'EpiCov_Adults']]
         historical_mda.columns = historical_mda.columns.str.replace('EpiCov_', '')
@@ -361,6 +376,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         parameters['MDA_coverage_historical'] = historical_mda.astype(float)
         # clip upper limit of MDA coverage at 99%
         parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(upper=0.99)
+
+        # # MDA coverage - prognosed - default values
+        # prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
+        #     ['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']]
+        # prognosed_mda.columns = prognosed_mda.columns.str.replace('Cov_', '')
+        # parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
 
@@ -418,6 +439,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         unless otherwise specified."""
         generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
 
+        # self.sim.modules['SymptomManager'].register_symptom(*[
+        #     Symptom(name=_symp) for _symp in symptoms if _symp not in generic_symptoms
+        # ])
         # Iterate through DataFrame rows and register each symptom
         for _, row in symptoms.iterrows():
             if row['Symptom'] not in generic_symptoms:
@@ -601,6 +625,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Schedule MDA events, historical and prognosed."""
 
         # Schedule the  MDA that have occurred, in each district and in each year:
+        # todo this shouldn't schedule anything until 2015
         for (district, year), cov in self.parameters['MDA_coverage_historical'].iterrows():
             assert district in self.sim.modules['Demography'].districts, f'District {district} is not recognised.'
             self.sim.schedule_event(
@@ -670,7 +695,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         # Find the number of individuals with currently susceptible to species and no sanitation
-        susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
+        # susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
+
+        susceptible_no_sanitation = df.query(f"{species_column} == 1 and li_unimproved_sanitation").index
 
         # Calculate the number to be reduced
         n_to_reduce = int(p['rr_WASH'] * len(susceptible_no_sanitation))
@@ -775,8 +802,11 @@ class SchistoSpecies:
                             'baseline_prevalence',
                             ):
             parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
+            # parameters[_param_name] = float(param_list[_param_name])
 
-        # this is the updated (calibrated) data
+        # Baseline reservoir size and other district-related params (R0, proportion susceptible)
+        # schisto_initial_reservoir = workbook[f'District_Params_{self.name}'].set_index("District")
+        # todo this is the updated (calibrated) data
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
         parameters['mean_worm_burden2010'] = schisto_initial_reservoir['Mean_worm_burden']
         parameters['gamma_alpha'] = schisto_initial_reservoir['gamma_alpha']
@@ -905,22 +935,43 @@ class SchistoSpecies:
             return
 
         def _get_infection_status(population: pd.DataFrame) -> pd.Series:
-            age = population["age_years"]
-            agg_wb = population[prop("aggregate_worm_burden")]
-            status = pd.Series(
-                "Non-infected",
-                index=population.index,
-                dtype=population[prop("infection_status")].dtype
-            )
-            high_group = (
-                             (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
-                         ) | (agg_wb >= params["high_intensity_threshold"])
+            # Extracting age and aggregate worm burden values as NumPy arrays
+            age = population["age_years"].values  # Convert to NumPy array for memory efficiency
+            agg_wb = population[prop("aggregate_worm_burden")].values  # Use NumPy for efficiency
+
+            # Using np.where to directly assign infection status based on conditions
+            # Initialize all to 'Non-infected' (the default status)
+            status = np.full(population.shape[0], "Non-infected", dtype="object")
+
+            high_group = ((age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])) | (
+                    agg_wb >= params["high_intensity_threshold"])
             moderate_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
             low_group = (agg_wb < params["low_intensity_threshold"]) & (agg_wb > 0)
-            status[high_group] = "High-infection"
-            status[moderate_group] = "Moderate-infection"
-            status[low_group] = "Low-infection"
-            return status
+
+            # assign status
+            np.copyto(status, "High-infection", where=high_group)
+            np.copyto(status, "Moderate-infection", where=moderate_group)
+            np.copyto(status, "Low-infection", where=low_group)
+
+            # same index as the original DataFrame
+            return pd.Series(status, index=population.index)
+
+            # age = population["age_years"]
+            # agg_wb = population[prop("aggregate_worm_burden")]
+            # status = pd.Series(
+            #     "Non-infected",
+            #     index=population.index,
+            #     dtype=population[prop("infection_status")].dtype
+            # )
+            # high_group = (
+            #                  (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
+            #              ) | (agg_wb >= params["high_intensity_threshold"])
+            # moderate_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
+            # low_group = (agg_wb < params["low_intensity_threshold"]) & (agg_wb > 0)
+            # status[high_group] = "High-infection"
+            # status[moderate_group] = "Moderate-infection"
+            # status[low_group] = "Low-infection"
+            # return status
 
         def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
             """Assign symptoms to the person with high intensity infection.
@@ -938,8 +989,12 @@ class SchistoSpecies:
                         disease_module=schisto_module
                     )
 
-        correct_status = _get_infection_status(df.loc[idx])
-        original_status = df.loc[idx, prop('infection_status')]
+        # correct_status = _get_infection_status(df.loc[idx])
+        # original_status = df.loc[idx, prop('infection_status')]
+
+        extracted_data = df.loc[idx, ['age_years', prop("aggregate_worm_burden"), prop('infection_status')]]
+        correct_status = _get_infection_status(extracted_data)
+        original_status = extracted_data[prop('infection_status')]
 
         # Impose symptoms for those newly having 'High-infection' or 'Moderate-infection' status
         newly_have_high_infection = (original_status != 'High-infection') & (correct_status == 'High-infection')
@@ -985,14 +1040,20 @@ class SchistoSpecies:
         rng = self.schisto_module.rng
 
         for district in districts:
-            in_the_district = df.index[df['district_of_residence'] == district]  # people in the district
-            num_in_district = len(in_the_district)  # population size in district
+            # in_the_district = df.index[df['district_of_residence'] == district]  # people in the district
+            district_mask = df['district_of_residence'] == district
+
+            # num_in_district = len(in_the_district)  # population size in district
+            num_in_district = district_mask.sum()
 
             # HARBOURING RATE
             hr = params['gamma_alpha'][district]
-            df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=num_in_district)
+            # df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=num_in_district)
+
+            df.loc[district_mask, prop('harbouring_rate')] = rng.gamma(hr, size=district_mask.sum())
 
             # SUSCEPTIBILITY
+            # Calculate the number of people that need to be susceptible
             prop_susceptible = params['prop_susceptible'][district]
 
             # the total number needed to fill the proportion susceptible in district
@@ -1027,8 +1088,73 @@ class SchistoSpecies:
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
 
+        global_params = self.schisto_module.parameters
+
         for district in districts:
             in_the_district = df.index[df['district_of_residence'] == district]
+
+            # get reservoir in district
+            # for calibration, over-ride the default params to create multiple starting points
+
+            # select starting points
+            # HAEMATOBIUM CALIBRATION
+            # if global_params['calibration_scenario'] == 1:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 2.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 2:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 5.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 3:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 10.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 4:
+            #     if self.name == 'haematobium':
+            #         params['mean_worm_burden2010'][:] = 25.0
+            #     # set mansoni to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # # MANSONI CALIBRATION
+            # if global_params['calibration_scenario'] == 5:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 2.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 6:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 5.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 7:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 10.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+            #
+            # if global_params['calibration_scenario'] == 8:
+            #     if self.name == 'mansoni':
+            #         params['mean_worm_burden2010'][:] = 25.0
+            #     # set haematobium to 0
+            #     else:
+            #         params['mean_worm_burden2010'][:] = 0
+
             reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
@@ -1075,18 +1201,35 @@ class SchistoSpecies:
             )
 
     def log_infection_status(self) -> None:
-        """Log the number of persons in each infection status for this species, by age-group and district."""
+        """Log the number of persons in each infection status for this species,
+        by age-group, infection level and district."""
 
         df = self.schisto_module.sim.population.props
         prop = self.prefix_species_property
 
-        age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        # age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        # #
+        # data = df.loc[df.is_alive].groupby(by=[
+        #     df.loc[df.is_alive, self.infection_status_property],
+        #     df.loc[df.is_alive, 'district_of_residence'],
+        #     age_grp
+        # ], observed=False).size()
+        # data.index.rename('infection_status', level=0, inplace=True)
 
-        data = df.loc[df.is_alive].groupby(by=[
-            df.loc[df.is_alive, self.infection_status_property],
-            df.loc[df.is_alive, 'district_of_residence'],
-            age_grp
-        ], observed=False).size()
+        # Directly filter and map values in one go without creating intermediate DataFrames
+        age_grp = df.loc[df.is_alive, 'age_years'].map(self.schisto_module.age_group_mapper)
+
+        # Perform the grouping and size computation in a single step
+        data = df.query('is_alive').groupby(
+            by=[
+                df[self.infection_status_property],
+                df['district_of_residence'],
+                age_grp
+            ],
+            observed=False
+        ).size()
+
+        # Rename the index after grouping
         data.index.rename('infection_status', level=0, inplace=True)
 
         logger.info(
@@ -1095,13 +1238,14 @@ class SchistoSpecies:
             description='Counts of infection status with this species by age-group and district.'
         )
 
-        #  Group by district and calculate counts
-        grouped_data = df.loc[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
-            total_count='count',
-            susceptible_count=lambda x: (x == 1).sum()
-        )
+        #  Susceptibility
+        # todo reinstate if needed
+        # Directly filter and group in one step to avoid intermediate DataFrames
+        # grouped_data = df[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
+        #     total_count='count',
+        #     susceptible_count=lambda x: (x == 1).sum()
+        # )
 
-        # reinstate if need to output prop susceptible
         # Calculate the proportion of susceptible individuals in each district
         # susceptibility_proportion = pd.Series(grouped_data['susceptible_count'] / grouped_data['total_count'])
 
@@ -1118,12 +1262,20 @@ class SchistoSpecies:
 
         prop = self.prefix_species_property
 
-        age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        # age_grp = df.loc[df.is_alive].age_years.map(self.schisto_module.age_group_mapper)
+        #
+        # data = df.loc[df.is_alive].groupby(by=[
+        #     df.loc[df.is_alive, 'district_of_residence'],
+        #     age_grp
+        # ], observed=False)[prop('aggregate_worm_burden')].mean()
 
-        data = df.loc[df.is_alive].groupby(by=[
-            df.loc[df.is_alive, 'district_of_residence'],
-            age_grp
-        ], observed=False)[prop('aggregate_worm_burden')].mean()
+        # Apply the transformation and aggregation without unnecessary intermediate DataFrames
+        data = (
+            df.loc[df.is_alive, ['age_years', 'district_of_residence', prop('aggregate_worm_burden')]]
+            .assign(age_group=df.loc[df.is_alive, 'age_years'].map(self.schisto_module.age_group_mapper))
+            .groupby(['district_of_residence', 'age_group'], observed=False)[prop('aggregate_worm_burden')]
+            .mean()
+        )
 
         logger.info(
             key=f'mean_worm_burden_by_age_{self.name}',
@@ -1138,7 +1290,7 @@ class SchistoSpecies:
         logger.info(
             key=f'mean_worm_burden_by_district_{self.name}',
             data=flatten_multi_index_series_into_dict_for_logging(overall_mean),
-            description='Mean worm burden of this species by district.'
+            description='Mean worm burden of this species by age-group and district.'
         )
 
 
@@ -1166,21 +1318,36 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         R0 = params['R0']
 
         where = df.is_alive
+        # age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
+        #                    include_lowest=True)
+        # age_group.name = 'age_group'
+
         age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
                            include_lowest=True)
+        age_group = age_group.astype('category')  # Convert to a categorical type for memory efficiency
         age_group.name = 'age_group'
+
         beta_by_age_group = pd.Series(betas, index=['PSAC', 'SAC', 'Adults'])
         beta_by_age_group.index.name = 'age_group'
 
         # --------------------- get the size of reservoir per district ---------------------
         # returns the mean worm burden and the total worm burden by age and district
+        # mean_count_burden_district_age_group = \
+        #     df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
+        #         prop('aggregate_worm_burden')].agg(['mean', 'size'])
+
         mean_count_burden_district_age_group = \
-            df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
-                prop('aggregate_worm_burden')].agg(['mean', 'size'])
+        df.loc[where, [prop('aggregate_worm_burden'), 'district_of_residence']].groupby(
+            [df.loc[where, 'district_of_residence'], age_group], observed=False
+        )[prop('aggregate_worm_burden')].agg(['mean', 'size'])
+
 
         # get population size by district
-        district_count = df.loc[where].groupby(by='district_of_residence', observed=False)[
-            'district_of_residence'].count()
+        # district_count = df.loc[where].groupby(by='district_of_residence', observed=False)[
+        #     'district_of_residence'].count()
+
+        district_count = df[where].groupby('district_of_residence').size()
+
         # mean worm burden by age multiplied by exposure rates of each age-gp
         beta_contribution_to_reservoir = mean_count_burden_district_age_group['mean'] * beta_by_age_group
         # weighted mean of the worm burden, considering the size of each age-gp in district
@@ -1193,8 +1360,12 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # --------------------- estimate background risk of infection ---------------------
 
-        current_prevalence = len(df[df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')]
-                         ) / len(df[df.is_alive])
+        # current_prevalence = len(df[df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')]
+        #                  ) / len(df[df.is_alive])
+        current_prevalence = (
+            (df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')).sum()
+            / df['is_alive'].sum()
+        )
         baseline_prevalence = params['baseline_prevalence']  # baseline prevalence for species in 2010
 
         # this returns positive value if current_prevalence lower than baseline_prevalence and
@@ -1278,7 +1449,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
             return
 
         # increase worm burden
-        df.loc[person_id, prop('aggregate_worm_burden')] += self.number_of_worms_that_mature
+        df.at[person_id, prop('aggregate_worm_burden')] += self.number_of_worms_that_mature
 
         # schedule the natural death of the worms
         self.sim.schedule_event(
@@ -1351,6 +1522,7 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
          * Schedules the recurrence of this event, if the MDA is to be repeated in the future."""
 
         # Determine who receives the MDA
+        age_included = [key for key, value in self.coverage.items() if value != 0]
         idx_to_receive_mda = []
         for age_group, cov in self.coverage.items():
             idx_to_receive_mda.extend(
@@ -1366,7 +1538,8 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
                 hsi_event=HSI_Schisto_MDA(
                     self.module,
                     person_id=idx_to_receive_mda[0],
-                    beneficiaries_ids=idx_to_receive_mda
+                    beneficiaries_ids=idx_to_receive_mda,
+                    age_group_included=age_included,
                 ),
                 topen=self.sim.date,
                 tclose=self.sim.date + pd.DateOffset(months=1),
@@ -1572,12 +1745,18 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event for providing one or more persons with PZQ as part of a Mass Drug
     Administration (MDA). Note that the `person_id` declared as the `target` of this `HSI_Event` is only one of the
     beneficiaries. This is in, effect, a "batch job" of individual HSI being handled within one HSI, for the sake of
-    computational efficiency."""
+    computational efficiency.
 
-    def __init__(self, module, person_id, beneficiaries_ids: Optional[Sequence] = None):
+    This is repeated for each district every time MDA is scheduled, allowing variable coverage by district each year
+    """
+
+    def __init__(self, module, person_id, beneficiaries_ids: Optional[Sequence] = None,
+                 age_group_included: Optional[Sequence] = None):
+
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Schisto)
         self.beneficiaries_ids = beneficiaries_ids
+        self.age_group_included = age_group_included
 
         self.TREATMENT_ID = 'Schisto_MDA'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
@@ -1593,7 +1772,16 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         ))
 
         # Calculate total dosage required for all beneficiaries still alive
-        total_dosage = sum(self.module._calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
+        # if MDA includes adults, return average dose for adults for all beneficiaries
+        # if MDA includes SAC/PSAC, return average dose for SAC for all beneficiaries
+        # using total_dosage = sum(self.module._calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
+        # is very slow
+        if 'Adults' in self.age_group_included:
+            # adult, 40mg/kg, average weight 62kg
+            total_dosage = 40 * 62 * len(beneficiaries_still_alive)
+        else:
+            # child aged 5-15, 40mg/kg, use mid-point age 10: 50th percentile weight=30kg
+            total_dosage = 40 * 30 * len(beneficiaries_still_alive)
 
         # Let the key consumable be "optional" in order that provision of the treatment is NOT conditional on the drugs
         # being available.This is because we expect that special planning would be undertaken in order to ensure the
@@ -1618,32 +1806,50 @@ class SchistoPersonDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         Log the numbers of people infected with any species of schisto and high-burden infections
         sum these in SchistoLoggingEvent each year to get person-years infected
         """
-        df = self.sim.population.props
-        df_alive = df.loc[df.is_alive].copy()
 
         # Precompute categories
-        df_alive['age_group'] = df_alive.age_years.map(self.module.age_group_mapper)
-        df_alive['species_prefix'] = df_alive.apply(
-            lambda row: 'sm' if row['ss_sm_infection_status'] != 'None' else 'sh', axis=1
-        )
-        df_alive['infection_level'] = df_alive.apply(
-            lambda row: row[f"ss_{row['species_prefix']}_infection_status"], axis=1
-        )
+        df = self.sim.population.props
 
-        # Exclude non-infected individuals
-        df_alive = df_alive[df_alive['infection_level'] != 'Non-infected']
+        # get infection counts for both 'sh' and 'sm'
+        def count_infection_status(df, species_prefix, infection_status):
+            # Filter by infection status and alive status
+            mask = (df[f"ss_{species_prefix}_infection_status"] == infection_status) & df.is_alive
 
-        # Group by species, age group, infection level, and district
-        grouped_counts = df_alive.groupby(
-            ['species_prefix', 'age_group', 'infection_level', 'district_of_residence']
-        ).size()
+            # Use 'map' if age_group_mapper is a dictionary (assuming it's defined as a dictionary)
+            age_groups = df.loc[mask, 'age_years'].map(self.module.age_group_mapper)
+
+            # Group by the mapped age groups and district directly, without creating a DataFrame
+            grouped = pd.Series(1, index=[age_groups, df.loc[mask, 'district_of_residence']]).groupby(
+                level=[0, 1]).sum()
+
+            return grouped
+
+        # Count people based on ss_sh_infection_status
+        sh_counts = {
+            'Low-infection': count_infection_status(df, 'sh', 'Low-infection'),
+            'Moderate-infection': count_infection_status(df, 'sh', 'Moderate-infection'),
+            'High-infection': count_infection_status(df, 'sh', 'High-infection')
+        }
+
+        # Count people based on ss_sm_infection_status
+        sm_counts = {
+            'Low-infection': count_infection_status(df, 'sm', 'Low-infection'),
+            'Moderate-infection': count_infection_status(df, 'sm', 'Moderate-infection'),
+            'High-infection': count_infection_status(df, 'sm', 'High-infection')
+        }
 
         # Update the log_person_days DataFrame
-        for idx, count in grouped_counts.items():
-            species = 'mansoni' if idx[0] == 'sm' else 'haematobium'
-            self.module.log_person_days.loc[
-                (species, idx[1], idx[2], idx[3]), 'person_days'
-            ] += count
+        for infection_status, counts in sh_counts.items():
+            for (age_group, district), count in counts.items():
+                self.module.log_person_days.loc[
+                    ('haematobium', age_group, infection_status, district), 'person_days'
+                ] += count
+
+        for infection_status, counts in sm_counts.items():
+            for (age_group, district), count in counts.items():
+                self.module.log_person_days.loc[
+                    ('mansoni', age_group, infection_status, district), 'person_days'
+                ] += count
 
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1665,13 +1871,15 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        # this is logging MDA as well as treatment
-        new_tx = len(
-            df[
-                (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
-                & (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
+        # todo this is logging MDA as well as treatment
+        # new_tx = len(
+        #     df[
+        #         (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
+        #         ]
+        # )
+        new_tx = sum(df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
+
+
         # treatment logger
         treatment_episodes = {
             'treatment_episodes': new_tx,
@@ -1691,30 +1899,62 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
 
-        # extract prevalence of either infection by age-group and district
-        age_grp = df.loc[df['is_alive'], 'age_years'].map(self.module.age_group_mapper)
 
+        # extract and map age groups for those alive
+        age_grp = df['age_years'].map(self.module.age_group_mapper)
+
+        # Create the infection mask without creating new DataFrames
         infection_mask = (df['ss_sm_infection_status'] != 'Non-infected') | (
                 df['ss_sh_infection_status'] != 'Non-infected')
+        alive_mask = df['is_alive']  # Mask for people who are alive
 
-        # Step 2: Filter the DataFrame to include only those who are alive and infected
-        infected = df.loc[df['is_alive'] & infection_mask].groupby(
-            by=[
-                df.loc[df['is_alive'] & infection_mask, 'district_of_residence'],
-                age_grp
-            ],
+        # Apply mask directly in groupby and calculate infected count
+        infected = df[alive_mask & infection_mask].groupby(
+            by=['district_of_residence', age_grp],
             observed=False
         ).size()
+
+        # Rename index directly
         infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
 
-        alive = df.loc[df['is_alive']].groupby(
-            by=[
-                df.loc[df['is_alive'], 'district_of_residence'],
-                age_grp
-            ],
+        # Apply mask for just the alive individuals and calculate alive count
+        alive = df[alive_mask].groupby(
+            by=['district_of_residence', age_grp],
             observed=False
         ).size()
+
+        # Rename index directly
         alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
+
+        # # extract prevalence of either infection by age-group and district
+        # age_grp = df.loc[df['is_alive'], 'age_years'].map(self.module.age_group_mapper)
+        #
+        # infection_mask = (df['ss_sm_infection_status'] != 'Non-infected') | (
+        #         df['ss_sh_infection_status'] != 'Non-infected')
+        #
+        # # Step 2: Filter the DataFrame to include only those who are alive and infected
+        # infected = df.loc[df['is_alive'] & infection_mask].groupby(
+        #     by=[
+        #         df.loc[df['is_alive'] & infection_mask, 'district_of_residence'],
+        #         age_grp
+        #     ],
+        #     observed=False
+        # ).size()
+        # infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
+        #
+        # # alive = df.loc[df['is_alive']].groupby(
+        # #     by=[
+        # #         df.loc[df['is_alive'], 'district_of_residence'],
+        # #         age_grp
+        # #     ],
+        # #     observed=False
+        # # ).size()
+        # alive = df[df['is_alive']].groupby(
+        #     by=['district_of_residence', age_grp],
+        #     observed=False
+        # ).size()
+        # alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
+        #
 
         logger.info(
             key=f'number_infected_any_species',
@@ -1729,4 +1969,38 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data={
                 'number_alive': flatten_multi_index_series_into_dict_for_logging(alive),
             },
+        )
+
+        # WASH properties
+        # unimproved_sanitation = len(
+        #     df[df.li_unimproved_sanitation & df.is_alive]
+        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+
+        unimproved_sanitation = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
+
+        # no_access_handwashing = len(
+        #     df[df.li_no_access_handwashing & df.is_alive]
+        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+        #
+        # no_clean_drinking_water = len(
+        #     df[df.li_no_clean_drinking_water & df.is_alive]
+        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
+
+        no_access_handwashing = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
+
+        no_clean_drinking_water = sum(df.li_no_clean_drinking_water & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
+
+        wash = {
+            'unimproved_sanitation': unimproved_sanitation,
+            'no_access_handwashing': no_access_handwashing,
+            'no_clean_drinking_water': no_clean_drinking_water,
+        }
+
+        logger.info(
+            key='Schisto_wash_properties',
+            data=wash,
+            description='Proportion of population with each wash-related property'
         )
