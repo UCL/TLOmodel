@@ -1,5 +1,4 @@
 from pathlib import Path
-from scipy.stats import ttest_rel, wilcoxon, shapiro
 from scipy.stats import ttest_1samp
 
 import geopandas as gpd
@@ -9,7 +8,8 @@ from matplotlib import colors as mcolors
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
+import seaborn as sns
+import os
 from tlo.analysis.utils import (
     extract_results,
     make_age_grp_lookup,
@@ -29,7 +29,8 @@ global_max = 5
 ANC =True
 if ANC:
     service = 'ANC'
-
+conversion_births_to_pregnancies = 1.4
+converstion_pregnancies_to_ANC = 4.4 # average number of ANC visits
 ## Get birth results
 results_folder_to_save = Path(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions')
 results_folder_for_births = Path("/Users/rem76/PycharmProjects/TLOmodel/outputs/rm916@ic.ac.uk/longterm_trends_all_diseases-2024-09-25T110820Z")
@@ -39,6 +40,8 @@ precipitation_threshold = historical_predictions['Precipitation'].quantile(0.9)
 print(precipitation_threshold)
 agegrps, agegrplookup = make_age_grp_lookup()
 calperiods, calperiodlookup = make_calendar_period_lookup()
+
+## Organise births
 births_results = extract_results(
         results_folder_for_births,
         module="tlo.methods.demography",
@@ -49,10 +52,9 @@ births_results = extract_results(
         do_scaling=True
     )
 
-print(births_results)
 births_results = births_results.groupby(by=births_results.index).sum()
 births_results = births_results.replace({0: np.nan})
-
+births_results['Model_mean'] = births_results * conversion_births_to_pregnancies / converstion_pregnancies_to_ANC
 births_model = summarize(births_results, collapse_columns=True)
 births_model.columns = ['Model_' + col for col in births_model.columns]
 births_model_subset = births_model.iloc[15:].copy() # don't want 2010-2024
@@ -100,7 +102,7 @@ for scenario in scenarios:
         # Match birth results and predictions
         matching_rows = min(len(births_model_subset), len(predictions_from_cmip_sum))
         multiplied_values = births_model_subset.head(matching_rows).iloc[:, 1].values * predictions_from_cmip_sum[
-            'Percentage_Difference'].head(matching_rows).values * 1.4 # 1.4 is conversion from births to pregnacnies
+            'Percentage_Difference'].head(matching_rows).values
 
         # Check for negative values (missed cases?)
         negative_sum = np.sum(multiplied_values[multiplied_values < 0])
@@ -109,14 +111,13 @@ for scenario in scenarios:
         filtered_predictions = predictions_from_cmip[predictions_from_cmip['Precipitation'] >= precipitation_threshold]
         filtered_predictions_sum = filtered_predictions.groupby('Year').sum().reset_index()
         percent_due_to_extreme = filtered_predictions_sum['Difference_in_Expectation'] / predictions_from_cmip_sum['Predicted_No_Weather_Model']
-        print(percent_due_to_extreme)
-        multiplied_values_extreme_precip = births_model_subset.head(matching_rows).iloc[:, 1].values * percent_due_to_extreme.head(matching_rows).values * 1.4
+        multiplied_values_extreme_precip = births_model_subset.head(matching_rows).iloc[:, 1].values * percent_due_to_extreme.head(matching_rows).values
         negative_sum_extreme_precip = np.sum(multiplied_values_extreme_precip[multiplied_values_extreme_precip < 0])
         result_df = pd.DataFrame({
             "Scenario": [scenario],
             "Model_Type": [model_type],
             "Negative_Sum": [negative_sum],
-            "Negative_Percentage": [negative_sum / (births_model_subset['Model_mean'].sum() * 1.4) * 100],
+            "Negative_Percentage": [negative_sum / births_model_subset['Model_mean'].sum() * 100],
             "Extreme_Precip": [negative_sum_extreme_precip],
             "Extreme_Precip_Percentage": [(negative_sum_extreme_precip  / negative_sum) * 100]
         })
@@ -236,8 +237,6 @@ plt.savefig(results_folder_to_save / 'percentage_difference_maps_grid.png',dpi=6
 
 
 significant_results_year = []
-#
-# Assuming 'district' is a column in your data
 for scenario in scenarios:
     for model_type in model_types:
         predictions_from_cmip = pd.read_csv(
@@ -331,8 +330,8 @@ for i, scenario in enumerate(scenarios):
                     percentage_diff_by_year_district[year] = {}
                 if district not in percentage_diff_by_year_district[year]:
                     percentage_diff_by_year_district[year][district] = 0
-                percentage_diff_by_year_district[year][district] += (percentage_diff * number_of_births) * 1.4 # 1.4 is conversion factor between births and pregancies
-                percentage_diff_by_year_district_scenario[scenario][model_type] = (percentage_diff * number_of_births) * 1.4
+                percentage_diff_by_year_district[year][district] += (percentage_diff * number_of_births)
+                percentage_diff_by_year_district_scenario[scenario][model_type] = (percentage_diff * number_of_births)
 
         data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_district, orient='index').fillna(0)
         y_min = min(y_min, data_for_plot.min().min())
@@ -425,8 +424,8 @@ for i, scenario in enumerate(scenarios):
                     percentage_diff_by_year_district[year] = {}
                 if district not in percentage_diff_by_year_district[year]:
                     percentage_diff_by_year_district[year][district] = 0
-                percentage_diff_by_year_district[year][district] += ((percentage_diff * number_of_births) * 1.4)/(number_of_births*1.4) * 1000 # 1.4 is conversion factor between births and pregancies
-                percentage_diff_by_year_district_scenario[scenario][model_type] = (percentage_diff * number_of_births) * 1.4
+                percentage_diff_by_year_district[year][district] += ((percentage_diff * number_of_births))/(number_of_births) * 1000
+                percentage_diff_by_year_district_scenario[scenario][model_type] = (percentage_diff * number_of_births)
 
         data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_district, orient='index').fillna(0)
         y_min = min(y_min, data_for_plot.min().min())
@@ -516,8 +515,8 @@ for i, scenario in enumerate(scenarios):
                     percentage_diff_by_year_zone[year] = {}
                 if zone not in percentage_diff_by_year_zone[year]:
                     percentage_diff_by_year_zone[year][zone] = 0
-                percentage_diff_by_year_zone[year][zone] += ((percentage_diff * number_of_births) * 1.4)/(number_of_births*1.4) * 1000 # 1.4 is conversion factor between births and pregancies
-                percentage_diff_by_year_zone_scenario[scenario][model_type] = (percentage_diff * number_of_births) * 1.4
+                percentage_diff_by_year_zone[year][zone] += ((percentage_diff * number_of_births))/(number_of_births) * 1000
+                percentage_diff_by_year_zone_scenario[scenario][model_type] = (percentage_diff * number_of_births)
 
         data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_year_zone, orient='index').fillna(0)
         y_min = min(y_min, data_for_plot.min().min())
@@ -549,7 +548,7 @@ plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_
 #plt.show()
 #
 
-####### BASELINE HISTORICAL disruptions ##########
+####### BASELINE disruptions ##########
 
 
 baseline_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/weather_predictions_with_X_baseline_{service}.csv')
@@ -612,7 +611,7 @@ baseline_predictions_negative_sum['Percentage_Difference'] = (
                 'Predicted_No_Weather_Model'])
         # Match birth results and predictions
 multiplied_values_baseline = births_model_subset_historical.values * baseline_predictions_negative_sum[
-            'Percentage_Difference'].values * 1.4 # 1.4 is conversion from births to pregnacnies
+            'Percentage_Difference'].values
 
 # Check for negative values (missed cases?)
 negative_sum_baseline = np.sum(multiplied_values_baseline[multiplied_values_baseline < 0])
@@ -622,11 +621,11 @@ filtered_predictions_baseline = baseline_predictions_negative[baseline_predictio
 filtered_predictions_sum_baseline = filtered_predictions_baseline.groupby('Year').sum().reset_index()
 percent_due_to_extreme_baseline = filtered_predictions_sum_baseline['Difference_in_Expectation'] / baseline_predictions_negative_sum['Predicted_No_Weather_Model']
 print(percent_due_to_extreme_baseline)
-multiplied_values_extreme_precip_baseline = births_model_subset_historical.values * percent_due_to_extreme_baseline.values * 1.4
+multiplied_values_extreme_precip_baseline = births_model_subset_historical.values * percent_due_to_extreme_baseline.values
 negative_sum_extreme_precip_baseline = np.sum(multiplied_values_extreme_precip_baseline[multiplied_values_extreme_precip_baseline < 0])
 result_df_baseline = pd.DataFrame({
             "Negative_Sum": [negative_sum_baseline],
-            "Negative_Percentage": [negative_sum_baseline / (births_model_subset_historical.sum() * 1.4) * 100],
+            "Negative_Percentage": [negative_sum_baseline / (births_model_subset_historical.sum()) * 100],
             "Extreme_Precip": [negative_sum_extreme_precip_baseline],
             "Extreme_Precip_Percentage": [(negative_sum_extreme_precip_baseline  / negative_sum_baseline) * 100]
         })
@@ -656,7 +655,7 @@ historical_predictions_negative_sum['Percentage_Difference'] = (
                 'Predicted_No_Weather_Model'])
         # Match birth results and predictions
 multiplied_values_historical = births_model_subset_historical.values * historical_predictions_negative_sum[
-            'Percentage_Difference'].values * 1.4 # 1.4 is conversion from births to pregnacnies
+            'Percentage_Difference'].values
 
 # Check for negative values (missed cases?)
 negative_sum_historical = np.sum(multiplied_values_historical[multiplied_values_historical < 0])
@@ -666,11 +665,11 @@ filtered_predictions_historical = historical_predictions_negative[historical_pre
 filtered_predictions_sum_historical = filtered_predictions_historical.groupby('Year').sum().reset_index()
 percent_due_to_extreme_historical = filtered_predictions_sum_historical['Difference_in_Expectation'] / historical_predictions_negative_sum['Predicted_No_Weather_Model']
 print(percent_due_to_extreme_historical)
-multiplied_values_extreme_precip_historical = births_model_subset_historical.values * percent_due_to_extreme_historical.values * 1.4
+multiplied_values_extreme_precip_historical = births_model_subset_historical.values * percent_due_to_extreme_historical.values
 negative_sum_extreme_precip_historical = np.sum(multiplied_values_extreme_precip_historical[multiplied_values_extreme_precip_historical < 0])
 result_df_historical = pd.DataFrame({
             "Negative_Sum": [negative_sum_historical],
-            "Negative_Percentage": [negative_sum_historical / (births_model_subset_historical.sum() * 1.4) * 100],
+            "Negative_Percentage": [negative_sum_historical / (births_model_subset_historical.sum() ) * 100],
             "Extreme_Precip": [negative_sum_extreme_precip_historical],
             "Extreme_Precip_Percentage": [(negative_sum_extreme_precip_historical  / negative_sum_historical) * 100]
         })
@@ -683,14 +682,10 @@ multiplied_values_df_historical = pd.DataFrame({
 
         })
 multiplied_values_df_historical.to_csv(results_folder_to_save/f'multiplied_values_historical.csv', index=False)
-
-print(result_df_historical)
 result_df_historical.to_csv(f'/Users/rem76/Desktop/Climate_change_health/Results/{service}_disruptions/negative_sums_and_percentages_historical.csv', index=False)
 
 
 ####### Historical disruptions ##########
-
-
 historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
 historical_predictions = historical_predictions.loc[historical_predictions['Difference_in_Expectation'] < 0]
 
@@ -747,6 +742,8 @@ sd_percentage_diff = malawi_admin2['Percentage_Difference_historical'].std()
 
 print("Mean Percentage Difference:", mean_percentage_diff)
 print("Standard Deviation of Percentage Difference:", sd_percentage_diff)
+
+
 ###### Effect of CYCLONE FREDDY #######
 
 historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
@@ -795,73 +792,171 @@ print("March max:", historical_predictions_negative_freddy_march['Difference_in_
 
 
 ##################
-# Define file paths
-monthly_reporting_file = "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv"
-five_day_max_file = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv"
-precipitation_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL"
+# # Define file paths
+# monthly_reporting_file = "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm.csv"
+# five_day_max_file = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/historical_daily_total_by_facilities_with_ANC_five_day_cumulative.csv"
+# precipitation_path = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Downscaled_CMIP6_data_CIL"
+# services = ["ANC"]
+# def filter_top_20_percent(values):
+#     """Filter values to keep only those in the top 80th percentile."""
+#     threshold = np.percentile(values, 80)
+#     return values[values >= threshold]
+#
+# # Load and filter monthly reporting data
+# monthly_reporting_df = pd.read_csv(monthly_reporting_file)
+# monthly_reporting_values = monthly_reporting_df.iloc[:, 1:].values.flatten()
+# monthly_reporting_values = filter_top_20_percent(monthly_reporting_values)
+#
+# # Load and filter 5-day max reporting data
+# five_day_max_df = pd.read_csv(five_day_max_file)
+# five_day_max_values = five_day_max_df.iloc[:, 1:].values.flatten()
+# five_day_max_values = filter_top_20_percent(five_day_max_values)
+#
+# # Create a figure with 3 rows (one per scenario) and 2 columns (Monthly, 5-Day Max)
+# fig, axes = plt.subplots(3, 2, figsize=(14, 12))
+#
+# for i, scenario in enumerate(scenarios):
+#     # Monthly Reporting Distribution
+#     sns.kdeplot(monthly_reporting_values, label="Monthly Reporting ANC", color='black', ax=axes[i, 0], alpha=1)
+#     axes[i, 0].set_title(f"Top 20% Distribution - Monthly ({scenario})")
+#     axes[i, 0].set_xlabel("Precipitation (mm)")
+#     axes[i, 0].set_ylabel("Density")
+#
+#     # 5-Day Max Reporting Distribution
+#     sns.kdeplot(five_day_max_values, label="5-Day Max Reporting ANC", color='black', ax=axes[i, 1], alpha=1)
+#     axes[i, 1].set_title(f"Top 20% Distribution - 5 Day Max ({scenario})")
+#     axes[i, 1].set_xlabel("Precipitation (mm)")
+#     axes[i, 1].set_ylabel("Density")
+#
+#     # Loop through model types and services to plot distributions
+#     for model in model_types:
+#         for service in services:
+#             # Monthly Prediction Data
+#             monthly_file_path = os.path.join(
+#                 precipitation_path, scenario, f"{model}_monthly_prediction_weather_by_facility_{service}.csv"
+#             )
+#             if os.path.exists(monthly_file_path):
+#                 df = pd.read_csv(monthly_file_path)
+#                 values = df.iloc[:, 1:].values.flatten()
+#                 values = filter_top_20_percent(values)
+#                 if len(values) > 0:
+#                     sns.kdeplot(values, label=f"{model} - {service}", alpha=0.4, ax=axes[i, 0])
+#
+#             # 5-Day Max Prediction Data
+#             five_day_file_path = os.path.join(
+#                 precipitation_path, scenario, f"{model}_window_prediction_weather_by_facility_{service}.csv"
+#             )
+#             if os.path.exists(five_day_file_path):
+#                 df = pd.read_csv(five_day_file_path)
+#                 values = df.iloc[:, 1:].values.flatten()
+#                 values = filter_top_20_percent(values)
+#                 if len(values) > 0:
+#                     sns.kdeplot(values, label=f"{model} - {service}", alpha=0.3, ax=axes[i, 1])
+#
+#     axes[0, 0].legend()
+#     axes[0, 1].legend()
+#
+# #plt.tight_layout()
+# plt.show()
+# plt.savefig(f"/Users/rem76/Desktop/Climate_change_health/Data/historical_vs_future_precipitation_ANC.png")
+#
 
-def filter_top_20_percent(values):
-    """Filter values to keep only those in the top 80th percentile."""
-    threshold = np.percentile(values, 80)
-    return values[values >= threshold]
 
-# Load and filter monthly reporting data
-monthly_reporting_df = pd.read_csv(monthly_reporting_file)
-monthly_reporting_values = monthly_reporting_df.iloc[:, 1:].values.flatten()
-monthly_reporting_values = filter_top_20_percent(monthly_reporting_values)
+##### Compare expected differences in counterfactuals ###########
 
-# Load and filter 5-day max reporting data
-five_day_max_df = pd.read_csv(five_day_max_file)
-five_day_max_values = five_day_max_df.iloc[:, 1:].values.flatten()
-five_day_max_values = filter_top_20_percent(five_day_max_values)
+fig, axes = plt.subplots(1, 2, figsize=(18, 9), sharey=True)
+y_min, y_max = float('inf'), float('-inf')
 
-# Create a figure with 3 rows (one per scenario) and 2 columns (Monthly, 5-Day Max)
-fig, axes = plt.subplots(3, 2, figsize=(14, 12))
+percentage_diff_by_year_district_all = {}
+percentage_diff_by_year_district_scenario = {}
 
-for i, scenario in enumerate(scenarios):
-    # Monthly Reporting Distribution
-    sns.kdeplot(monthly_reporting_values, label="Monthly Reporting ANC", color='black', ax=axes[i, 0], alpha=1)
-    axes[i, 0].set_title(f"Top 20% Distribution - Monthly ({scenario})")
-    axes[i, 0].set_xlabel("Precipitation (mm)")
-    axes[i, 0].set_ylabel("Density")
+counterfactuals = ["historical", "baseline"]
 
-    # 5-Day Max Reporting Distribution
-    sns.kdeplot(five_day_max_values, label="5-Day Max Reporting ANC", color='black', ax=axes[i, 1], alpha=1)
-    axes[i, 1].set_title(f"Top 20% Distribution - 5 Day Max ({scenario})")
-    axes[i, 1].set_xlabel("Precipitation (mm)")
-    axes[i, 1].set_ylabel("Density")
+for i, counterfactual in enumerate(counterfactuals):
+    percentage_diff_by_district = {}
+    percentage_diff_by_year_district_scenario[counterfactual] = {}
 
-    # Loop through model types and services to plot distributions
-    for model in model_types:
-        for service in services:
-            # Monthly Prediction Data
-            monthly_file_path = os.path.join(
-                precipitation_path, scenario, f"{model}_monthly_prediction_weather_by_facility_{service}.csv"
-            )
-            if os.path.exists(monthly_file_path):
-                df = pd.read_csv(monthly_file_path)
-                values = df.iloc[:, 1:].values.flatten()
-                values = filter_top_20_percent(values)
-                if len(values) > 0:
-                    sns.kdeplot(values, label=f"{model} - {service}", alpha=0.4, ax=axes[i, 0])
+    predictions_from_model = historical_predictions if counterfactual == 'historical' else baseline_predictions
+    predictions_from_model = predictions_from_model.loc[predictions_from_model['Difference_in_Expectation'] < 0]
 
-            # 5-Day Max Prediction Data
-            five_day_file_path = os.path.join(
-                precipitation_path, scenario, f"{model}_window_prediction_weather_by_facility_{service}.csv"
-            )
-            if os.path.exists(five_day_file_path):
-                df = pd.read_csv(five_day_file_path)
-                values = df.iloc[:, 1:].values.flatten()
-                values = filter_top_20_percent(values)
-                if len(values) > 0:
-                    sns.kdeplot(values, label=f"{model} - {service}", alpha=0.3, ax=axes[i, 1])
+    predictions_from_model_sum = predictions_from_model.groupby('District').sum().reset_index()
 
-    axes[0, 0].legend()
-    axes[0, 1].legend()
+    predictions_from_model_sum['Percentage_Difference'] = (
+        predictions_from_model_sum['Difference_in_Expectation'] /
+        predictions_from_model_sum['Predicted_No_Weather_Model']
+    ).abs()
 
-#plt.tight_layout()
+    predictions_from_model_sum['District'] = predictions_from_model_sum['District'].replace(
+        {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+    )
+
+    for _, row in predictions_from_model_sum.iterrows():
+        district = row['District']
+        percentage_diff = row['Percentage_Difference']
+        total_births = population_proportion[district] * births_model_subset["Model_mean"].sum()
+
+        if district not in percentage_diff_by_district:
+            percentage_diff_by_district[district] = 0
+
+        percentage_diff_by_district[district] += (percentage_diff * total_births)
+        percentage_diff_by_year_district_scenario[counterfactual][district] = percentage_diff_by_district[district]
+
+    data_for_plot = pd.DataFrame.from_dict(percentage_diff_by_district, orient='index', columns=['Total Impact'])
+    data_for_plot = data_for_plot.sort_values(by='Total Impact', ascending=False)
+
+    y_min = min(y_min, data_for_plot.min().min())
+    y_max = max(y_max, data_for_plot.max().max())
+
+    ax = axes[i]
+    data_for_plot.plot(kind='bar', ax=ax, color='#1C6E8C')
+    ax.set_title(f'{counterfactual.capitalize()} Scenario')
+    ax.set_xlabel('District')
+    ax.set_ylabel(f'Total Disruption of {service} Services')
+
+for ax in axes:
+    ax.set_ylim(y_min, y_max * 1.2)
+
+plt.tight_layout()
 plt.show()
-plt.savefig(f"/Users/rem76/Desktop/Climate_change_health/Data/historical_vs_future_precipitation_ANC.png")
 
+#plt.savefig(results_folder_to_save / 'stacked_bar_percentage_difference_5_years_grid_single_legend_with_births.png')
+# #
+#
 
+fig, ax = plt.subplots(1, 1, figsize=(10, 6))
 
+counterfactuals = ["historical", "baseline"]
+total_disruption = {}
+
+for counterfactual in counterfactuals:
+    predictions_from_model = historical_predictions if counterfactual == 'historical' else baseline_predictions
+    predictions_from_model = predictions_from_model.loc[predictions_from_model['Difference_in_Expectation'] < 0]
+
+    predictions_from_model_sum = predictions_from_model.groupby('District').sum().reset_index()
+
+    predictions_from_model_sum['Percentage_Difference'] = (
+        predictions_from_model_sum['Difference_in_Expectation'] /
+        predictions_from_model_sum['Predicted_No_Weather_Model']
+    ).abs()
+
+    predictions_from_model_sum['District'] = predictions_from_model_sum['District'].replace(
+        {"Mzimba North": "Mzimba", "Mzimba South": "Mzimba"}
+    )
+
+    total_impact = 0
+
+    for _, row in predictions_from_model_sum.iterrows():
+        district = row['District']
+        percentage_diff = row['Percentage_Difference']
+        total_births = population_proportion[district] * births_model_subset["Model_mean"].sum()
+
+        total_impact += (percentage_diff * total_births)
+
+    total_disruption[counterfactual] = total_impact
+
+pd.Series(total_disruption).plot(kind='bar', ax=ax, color=['#1C6E8C', '#9AC4F8'])
+ax.set_ylabel(f'Total Disruption of {service} Services')
+ax.set_xlabel('Scenario')
+ax.set_title('Total Impact Across All Districts')
+
+plt.show()
