@@ -1,17 +1,16 @@
-from pathlib import Path
-from scipy.stats import ttest_rel, wilcoxon, shapiro
-from scipy.stats import ttest_1samp
-
-import geopandas as gpd
-from netCDF4 import Dataset
-from shapely.geometry import Polygon
-from matplotlib import colors as mcolors
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-import seaborn as sns
 import glob
 import os
+from pathlib import Path
+
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib import colors as mcolors
+from netCDF4 import Dataset
+from scipy.stats import shapiro, ttest_1samp, ttest_rel, wilcoxon
+from shapely.geometry import Polygon
 
 from tlo.analysis.utils import (
     extract_results,

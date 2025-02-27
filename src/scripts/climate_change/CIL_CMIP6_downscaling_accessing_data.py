@@ -1,35 +1,30 @@
-import planetary_computer
-import pystac_client
-
-import xarray as xr
-import numpy as np
-import pandas as pd
-from dask.diagnostics import ProgressBar
-from tqdm.auto import tqdm
-
+import difflib
+import glob
 import os
 import re
-import glob
 import shutil
 import zipfile
 from pathlib import Path
 
-import difflib
-from scipy.spatial import KDTree
-
-import matplotlib.pyplot as plt
-import geopandas as gpd
-import regionmask
 import cartopy.crs as ccrs
-
-from netCDF4 import Dataset
-
-from carbonplan import styles  # noqa: F401
-import intake
 import cmip6_downscaling
+import geopandas as gpd
+import intake
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import planetary_computer
+import pystac_client
+import regionmask
+import xarray as xr
+from carbonplan import styles  # noqa: F401
+from dask.diagnostics import ProgressBar
 from dask.distributed import Client
+from netCDF4 import Dataset
 from planetary_computer import sign_inplace
 from pystac_client import Client
+from scipy.spatial import KDTree
+from tqdm.auto import tqdm
 
 # Open the catalog
 catalog = Client.open(
