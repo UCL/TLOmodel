@@ -2504,7 +2504,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         #         )
                 # indicative of TB                                                                                                                                 they are referred for culture test which has perfect sensitivity
                 #if not test_result and person_has_tb_symptoms:
-                if test_result is None and person_has_tb_symptoms:
+                #if test_result is None and person_has_tb_symptoms:
+                if not test_result and person_has_tb_symptoms:
                     if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
                         logger.debug(
                             key="message",
