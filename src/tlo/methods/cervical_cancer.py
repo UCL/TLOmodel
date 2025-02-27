@@ -52,12 +52,12 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         self.item_codes_cervical_can = dict()
 
     INIT_DEPENDENCIES = {
-        'Demography', 'SimplifiedBirths', 'HealthSystem', 'Lifestyle', 'SymptomManager'
+        'Demography', 'SimplifiedBirths', 'HealthSystem', 'Lifestyle', 'SymptomManager', 'Hiv'
     }
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'HealthSeekingBehaviour'}
 
-    ADDITIONAL_DEPENDENCIES = {'Tb', 'Hiv'}
+    ADDITIONAL_DEPENDENCIES = {'Tb'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -382,6 +382,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     def initialise_population(self, population):
         """Set property values for the initial population."""
         df = population.props  # a shortcut to the data-frame
+        m = self.sim.modules['CervicalCancer']
+        rng = m.rng
+        p = m.parameters
 
         # defaults
         df.loc[df.is_alive, "ce_hpv_cc_status"] = "none"
@@ -409,9 +412,20 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_cured_date_cc"] = pd.NaT
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
 
-        # -------------------- ce_hpv_cc_status -----------
-        # this was not assigned here at outset because baseline value of hv_inf was not accessible - it is assigned
-        # at start of main polling event below
+        # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
+        women_over_15_nhiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & ~df["hv_inf"]]
+
+        df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+            size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
+        )
+
+        women_over_15_hiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & df["hv_inf"]]
+
+        df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+            size=len(women_over_15_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
+        )
 
         # -------------------- symptoms, diagnosis, treatment  -----------
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
@@ -768,27 +782,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
         p = self.sim.modules['CervicalCancer'].parameters
-
-        # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
-        # this was done here and not at outset because baseline value of hv_inf was not accessible
-
-        given_date = pd.to_datetime('2010-01-03')
-
-        if self.sim.date < given_date:
-
-            women_over_15_nhiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & ~df["hv_inf"]]
-
-            df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-                size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
-            )
-
-            women_over_15_hiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & df["hv_inf"]]
-
-            df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-                size=len(women_over_15_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
-            )
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -----------------------------------
 
