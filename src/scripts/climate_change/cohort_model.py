@@ -1,15 +1,16 @@
+import os
 from pathlib import Path
-from scipy.stats import ttest_1samp
 
 import geopandas as gpd
-from netCDF4 import Dataset
-from shapely.geometry import Polygon
-from matplotlib import colors as mcolors
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 import seaborn as sns
-import os
+from matplotlib import colors as mcolors
+from netCDF4 import Dataset
+from scipy.stats import ttest_1samp
+from shapely.geometry import Polygon
+
 from tlo.analysis.utils import (
     extract_results,
     make_age_grp_lookup,
