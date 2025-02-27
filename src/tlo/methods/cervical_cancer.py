@@ -1565,19 +1565,18 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.sim.date - pd.DateOffset(days=29)
 
         # Current counts, total
+        df_alive_females = df.loc[df.is_alive & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])]
+
         out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > p['min_age_hpv'])].ce_hpv_cc_status.value_counts().items()})
+            f'total_{k}': v for k, v in df_alive_females.ce_hpv_cc_status.value_counts().items()})
 
         # Current counts, total hiv negative
         out.update({
-            f'total_hivneg_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > p['min_age_hpv']) & (~df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+            f'total_hivneg_{k}': v for k, v in df_alive_females.loc[~df_alive_females['hv_inf']].ce_hpv_cc_status.value_counts().items()})
 
         # Current counts, total hiv positive
         out.update({
-            f'total_hivpos_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
-                                               (df['age_years'] > p['min_age_hpv']) & (df['hv_inf'])].ce_hpv_cc_status.value_counts().items()})
+            f'total_hivpos_{k}': v for k, v in df_alive_females.loc[df_alive_females['hv_inf']].ce_hpv_cc_status.value_counts().items()})
 
         out.update({
             'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
