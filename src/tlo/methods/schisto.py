@@ -368,7 +368,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 parameters[_param_name] = value
 
         # MDA coverage - historic
-        # todo this is updated now with the EPSEN data
+        # this is updated now with the EPSEN data
         historical_mda = workbook['ESPEN_MDA'].set_index(['District', 'Year'])[
             ['EpiCov_PSAC', 'EpiCov_SAC', 'EpiCov_Adults']]
         historical_mda.columns = historical_mda.columns.str.replace('EpiCov_', '')
@@ -376,12 +376,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         parameters['MDA_coverage_historical'] = historical_mda.astype(float)
         # clip upper limit of MDA coverage at 99%
         parameters['MDA_coverage_historical'] = parameters['MDA_coverage_historical'].clip(upper=0.99)
-
-        # # MDA coverage - prognosed - default values
-        # prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
-        #     ['Cov_PSAC', 'Cov_SAC', 'Cov_Adults']]
-        # prognosed_mda.columns = prognosed_mda.columns.str.replace('Cov_', '')
-        # parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
 
@@ -439,9 +433,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         unless otherwise specified."""
         generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
 
-        # self.sim.modules['SymptomManager'].register_symptom(*[
-        #     Symptom(name=_symp) for _symp in symptoms if _symp not in generic_symptoms
-        # ])
         # Iterate through DataFrame rows and register each symptom
         for _, row in symptoms.iterrows():
             if row['Symptom'] not in generic_symptoms:
@@ -625,8 +616,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Schedule MDA events, historical and prognosed."""
 
         # Schedule the  MDA that have occurred, in each district and in each year:
-        # todo this shouldn't schedule anything until 2015
         for (district, year), cov in self.parameters['MDA_coverage_historical'].iterrows():
+            print(year)
             assert district in self.sim.modules['Demography'].districts, f'District {district} is not recognised.'
             self.sim.schedule_event(
                 SchistoMDAEvent(self,
@@ -760,6 +751,8 @@ class SchistoSpecies:
                 categories=['Non-infected', 'Low-infection', 'Moderate-infection', 'High-infection']),
             'aggregate_worm_burden': Property(
                 Types.INT, 'Number of mature worms of this species in the individual'),
+            'juvenile_worm_burden': Property(
+                Types.INT, 'Number of juvenile worms of this species in the individual'),
             'susceptibility': Property(
                 Types.INT, 'Binary value 0,1 denoting whether person is susceptible or not'),
             'harbouring_rate': Property(
@@ -835,6 +828,7 @@ class SchistoSpecies:
 
         # assign aggregate_worm_burden (zero for everyone initially)
         df.loc[df.is_alive, prop('aggregate_worm_burden')] = 0
+        df.loc[df.is_alive, prop('juvenile_worm_burden')] = 0
 
         # assign a harbouring rate
         self._assign_initial_properties(population)
@@ -876,6 +870,7 @@ class SchistoSpecies:
         # Assign the default for a newly born child
         df.at[child_id, prop('infection_status')] = 'Non-infected'
         df.at[child_id, prop('aggregate_worm_burden')] = 0
+        df.at[child_id, prop('juvenile_worm_burden')] = 0
 
         # Generate the harbouring rate depending on a district of residence.
         district = df.at[child_id, 'district_of_residence']
@@ -955,23 +950,6 @@ class SchistoSpecies:
 
             # same index as the original DataFrame
             return pd.Series(status, index=population.index)
-
-            # age = population["age_years"]
-            # agg_wb = population[prop("aggregate_worm_burden")]
-            # status = pd.Series(
-            #     "Non-infected",
-            #     index=population.index,
-            #     dtype=population[prop("infection_status")].dtype
-            # )
-            # high_group = (
-            #                  (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
-            #              ) | (agg_wb >= params["high_intensity_threshold"])
-            # moderate_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
-            # low_group = (agg_wb < params["low_intensity_threshold"]) & (agg_wb > 0)
-            # status[high_group] = "High-infection"
-            # status[moderate_group] = "Moderate-infection"
-            # status[low_group] = "Low-infection"
-            # return status
 
         def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
             """Assign symptoms to the person with high intensity infection.
@@ -1318,10 +1296,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         R0 = params['R0']
 
         where = df.is_alive
-        # age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
-        #                    include_lowest=True)
-        # age_group.name = 'age_group'
-
         age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
                            include_lowest=True)
         age_group = age_group.astype('category')  # Convert to a categorical type for memory efficiency
@@ -1332,20 +1306,12 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # --------------------- get the size of reservoir per district ---------------------
         # returns the mean worm burden and the total worm burden by age and district
-        # mean_count_burden_district_age_group = \
-        #     df.loc[where].groupby(['district_of_residence', age_group], observed=False)[
-        #         prop('aggregate_worm_burden')].agg(['mean', 'size'])
-
         mean_count_burden_district_age_group = \
-        df.loc[where, [prop('aggregate_worm_burden'), 'district_of_residence']].groupby(
-            [df.loc[where, 'district_of_residence'], age_group], observed=False
-        )[prop('aggregate_worm_burden')].agg(['mean', 'size'])
-
+            df.loc[where, [prop('aggregate_worm_burden'), 'district_of_residence']].groupby(
+                [df.loc[where, 'district_of_residence'], age_group], observed=False
+            )[prop('aggregate_worm_burden')].agg(['mean', 'size'])
 
         # get population size by district
-        # district_count = df.loc[where].groupby(by='district_of_residence', observed=False)[
-        #     'district_of_residence'].count()
-
         district_count = df[where].groupby('district_of_residence').size()
 
         # mean worm burden by age multiplied by exposure rates of each age-gp
@@ -1360,8 +1326,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # --------------------- estimate background risk of infection ---------------------
 
-        # current_prevalence = len(df[df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')]
-        #                  ) / len(df[df.is_alive])
         current_prevalence = (
             (df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')).sum()
             / df['is_alive'].sum()
@@ -1410,6 +1374,9 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         )
         to_establish = draw_worms[(draw_worms > 0) & established].to_dict()
 
+        # todo record the new juvenile worms to df
+        df.loc[to_establish.keys(), prop('juvenile_worm_burden')] = pd.Series(to_establish)
+
         # schedule maturation of the established worms
         # at this point, the person has become infected but this is not recorded until the worms mature
         # no indicator for person harbouring only juvenile worms
@@ -1425,6 +1392,32 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date_of_maturation
             )
+
+
+# todo replacing SchistoMatureWorms and SchistoWormsNatDeath Individual-level events
+# needs to be species-specific
+class SchistoWormMatureAndDeathEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This regular event schedules:
+     1. the maturation of newly acquired worms
+     2. the onset of symptoms if person now has moderate/high worm burden
+     3. the natural death of existing worms
+    """
+
+    def __init__(self, module: Module, species: SchistoSpecies):
+        super().__init__(module, frequency=DateOffset(months=1))
+        self.species = species
+
+    def apply(self, population):
+        df = population.props
+        params = self.species.params
+        global_params = self.module.parameters
+        rng = self.module.rng
+        # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
+        prop = self.species.prefix_species_property
+
+
+
+
 
 
 class SchistoMatureWorms(Event, IndividualScopeEventMixin):
@@ -1443,9 +1436,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
         prop = self.species.prefix_species_property
         params = self.species.params
 
-        person = df.loc[person_id]
-
-        if not person.is_alive:
+        if not df.at[person_id, 'is_alive']:
             return
 
         # increase worm burden
@@ -1466,7 +1457,7 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
 class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
     """Represents the death of adult worms.
      * Decreases the aggregate worm burden of an individual upon natural death of the adult worm.
-     * Updates the infection status and the symtoms of the person accordingly.
+     * Updates the infection status and the symptoms of the person accordingly.
     Nb. This event checks the last day of PZQ treatment and if has been less than the lifespan of the worm it doesn't
     do anything (because the worms for which this event was raised will since have been killed by the PZQ)."""
 
@@ -1485,12 +1476,12 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
             return
 
         worms_now = person[prop('aggregate_worm_burden')]
+        if worms_now == 0:
+            return  # Do nothing if there are currently no worms
+
         date_last_pzq = person[f'{self.module.module_prefix}_last_PZQ_date']
         date_worm_acquisition = self.sim.date - pd.DateOffset(years=params['worm_lifespan'])
         has_had_treatment_since_worm_acquisition = date_last_pzq >= date_worm_acquisition
-
-        if worms_now == 0:
-            return  # Do nothing if there are currently no worms
 
         if not has_had_treatment_since_worm_acquisition:
             # This event is for worms that have matured since the last treatment.
