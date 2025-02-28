@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, List, Sequence, Optional, Union
 
 import numpy as np
 import pandas as pd
-from itertools import product
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
@@ -15,7 +14,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import random_date, read_csv_files
+from tlo.util import read_csv_files
 from tlo.methods.dxmanager import DxTest
 
 if TYPE_CHECKING:
@@ -31,12 +30,6 @@ logger.setLevel(logging.INFO)
 #     15 <= Adults
 #     0 <= All
 _AGE_GROUPS = {'Infant': (0, 1), 'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
-
-
-# todo set PZQ avaibaility to 1.0
-# todo make sure baseline scenario and WASH only do not have MDA scheduled (default is 6 monthly!)
-# check how much PZQ is being given as treatment - shouldn't be huge amount
-# change HSB if needed to reduce referrals for dx and tx for schisto
 
 
 class Schisto(Module, GenericFirstAppointmentsMixin):
@@ -113,8 +106,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                                   'infection is adjusted based on the deviation of current prevalence '
                                                   'from baseline prevalence'),
         'baseline_risk': Parameter(Types.REAL,
-                                  'number of worms applied as a baseline risk across districts to prevent '
-                                  'fadeout, number is scaled by scaling_factor_baseline_risk'),
+                                   'number of worms applied as a baseline risk across districts to prevent '
+                                   'fadeout, number is scaled by scaling_factor_baseline_risk'),
         'MDA_coverage_historical': Parameter(Types.DATA_FRAME,
                                              'Probability of getting PZQ in the MDA for PSAC, SAC and Adults '
                                              'in historic rounds'),
@@ -328,9 +321,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
             pzq_efficacy = self.parameters[f'{spec_prefix}_PZQ_efficacy']
 
-            df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
-                                                                                                 person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] * (
-                                                                                                 1 - pzq_efficacy)
+            df.loc[
+                person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
+                    person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] * (1 - pzq_efficacy)
+
             # if worm burden >=1, still infected
             mask = df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] < 1
             df.loc[mask.index[mask], f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
@@ -484,7 +478,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         else:
             return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
-    def _calculate_praziquantel_dosage(self, person_id):
+    def calculate_praziquantel_dosage(self, person_id):
         age = self.sim.population.props.at[person_id, "age_years"]
 
         # 40mg per kg, as single dose (MSTG)
@@ -519,15 +513,13 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             "Paper filter Whatman no.1 size 10cm_100_CMST")
 
         # KATO-KATZ TEST
-        # todo update quantities
-        # e.g. item_codes = {self.module.item_codes_for_consumables_required['item']: 63}
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             KK_schisto_test_lowWB=DxTest(
                 property='ss_sm_infection_status',
                 target_categories=["Non-infected", "Low-infection"],
                 sensitivity=0.0,
                 specificity=0.0,
-                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['malachite_stain'],
                     self.item_codes_for_consumables_required['iodine_stain']]
@@ -541,7 +533,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 target_categories=["Moderate-infection"],
                 sensitivity=p["kato_katz_sensitivity_moderateWB"],
                 specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['malachite_stain'],
                     self.item_codes_for_consumables_required['iodine_stain']]
@@ -554,7 +546,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 target_categories=["High-infection"],
                 sensitivity=p["kato_katz_sensitivity_highWB"],
                 specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['malachite_stain'],
                     self.item_codes_for_consumables_required['iodine_stain']]
@@ -568,7 +560,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 target_categories=["Non-infected"],
                 sensitivity=0.0,
                 specificity=0.0,
-                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
                     self.item_codes_for_consumables_required['iodine_stain']]
@@ -581,7 +573,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 target_categories=["Low-infection"],
                 sensitivity=p["urine_filtration_sensitivity_lowWB"],
                 specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
                     self.item_codes_for_consumables_required['iodine_stain']]
@@ -595,7 +587,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 target_categories=["Moderate-infection"],
                 sensitivity=p["urine_filtration_sensitivity_moderateWB"],
                 specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
                     self.item_codes_for_consumables_required['iodine_stain']]
@@ -608,7 +600,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 target_categories=["High-infection"],
                 sensitivity=p["urine_filtration_sensitivity_highWB"],
                 specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['microscope_slide'],
+                item_codes={self.item_codes_for_consumables_required['microscope_slide']: 2},
                 optional_item_codes=[
                     self.item_codes_for_consumables_required['filter_paper'],
                     self.item_codes_for_consumables_required['iodine_stain']]
@@ -737,15 +729,14 @@ class SchistoSpecies:
                                       'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
-             'prop_susceptible': Parameter(Types.DATA_FRAME,
-                                          'Proportion of population in each district susceptible to schisto infection'),
+            'prop_susceptible': Parameter(Types.DATA_FRAME,
+                    'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
         }
         return {self._prefix_species_parameter(k): v for k, v in params.items()}
 
     def get_properties(self):
         """The species-specific properties for this species."""
-        # todo check properties of infection_status always one of these categories
         properties = {
             'infection_status': Property(
                 Types.CATEGORICAL, 'Current status of schistosomiasis infection for this species',
@@ -851,7 +842,7 @@ class SchistoSpecies:
 
     def on_birth(self, mother_id, child_id):
         """Initialise the species-specific properties for a newborn individual.
-        :param mother_id: the ID for the mother for this child (redundant)
+        :param mother_id: the ID for the mother for this child
         :param child_id: the new child"""
 
         df = self.schisto_module.sim.population.props
@@ -876,7 +867,7 @@ class SchistoSpecies:
 
         # WASH in action
         if global_params['scaleup_WASH'] and (
-            self.schisto_module.sim.date >= Date(int(global_params['scaleup_WASH_start_year']), 1, 1)):
+                self.schisto_module.sim.date >= Date(int(global_params['scaleup_WASH_start_year']), 1, 1)):
 
             # if the child has sanitation, apply risk mitigated by rr_WASH
             if not df.at[child_id, 'li_unimproved_sanitation']:
@@ -900,9 +891,10 @@ class SchistoSpecies:
                 susceptibility_probability = p_with_san
             else:
                 susceptibility_probability = p_no_san
+
             df.at[child_id, prop('susceptibility')] = 1 if rng.random_sample() < susceptibility_probability else 0
 
-       def update_parameters_from_schisto_module(self) -> None:
+    def update_parameters_from_schisto_module(self) -> None:
         """Update the internally-held parameters from the `Schisto` module that are specific to this species."""
 
         def remove_prefix(text, prefix):
@@ -931,7 +923,6 @@ class SchistoSpecies:
 
             # HARBOURING RATE
             hr = params['gamma_alpha'][district]
-            # df.loc[in_the_district, prop('harbouring_rate')] = rng.gamma(hr, size=num_in_district)
 
             df.loc[district_mask, prop('harbouring_rate')] = rng.gamma(hr, size=district_mask.sum())
 
@@ -943,7 +934,7 @@ class SchistoSpecies:
             n_susceptible = int(np.ceil(prop_susceptible * num_in_district))
 
             # Select people with li_unimproved_sanitation=True
-            no_sanitation = df.loc[(df['district_of_residence'] == district) & (df['li_unimproved_sanitation'] == True)]
+            no_sanitation = df.loc[(df['district_of_residence'] == district) & df['li_unimproved_sanitation']]
 
             # Determine the number of people to select from those with no sanitation
             n_no_sanitation = min(n_susceptible, len(no_sanitation))
@@ -958,7 +949,7 @@ class SchistoSpecies:
             if n_susceptible_remaining > 0:
                 # Select additional people from those with li_unimproved_sanitation=False if needed
                 with_sanitation = df.loc[
-                    (df['district_of_residence'] == district) & (df['li_unimproved_sanitation'] == False)]
+                    (df['district_of_residence'] == district) & ~df['li_unimproved_sanitation']]
                 susceptible_additional_idx = rng.choice(with_sanitation.index, size=n_susceptible_remaining,
                                                         replace=False)
                 df.loc[susceptible_additional_idx, prop('susceptibility')] = 1
@@ -1006,7 +997,6 @@ class SchistoSpecies:
         by age-group, infection level and district."""
 
         df = self.schisto_module.sim.population.props
-        prop = self.prefix_species_property
 
         # Directly filter and map values in one go without creating intermediate DataFrames
         age_grp = df.loc[df.is_alive, 'age_years'].map(self.schisto_module.age_group_mapper)
@@ -1199,8 +1189,6 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         df = population.props
-        params = self.module.parameters
-        rng = self.module.rng
         mansoni_params = self.sim.modules['Schisto'].species['mansoni'].params
         haematobium_params = self.sim.modules['Schisto'].species['haematobium'].params
 
@@ -1264,7 +1252,7 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             original_status = df[f"{species_prefix}_infection_status"].loc[idx]
 
             # Impose new symptoms for those newly having 'High-infection' or 'Moderate-infection' status
-            # moving from low or no infection. If moving moderate -> high or vice versa, symptoms will already be applied
+            # moving from low or no infection. moderate -> high or vice versa, symptoms will already be applied
             newly_have_high_infection = (correct_status == 'High-infection') & (
                 original_status.isin(['Low-infection', 'Non-infected']))
 
@@ -1302,14 +1290,16 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
                                  species='haematobium')
 
         # --------------------- kill proportion of existing adult worms ---------------------
-        def clear_symptoms(species) -> None:
+        def clear_species_symptoms(species) -> None:
             """ Removes the symptoms if a person no longer has a moderate/high intensity infection"""
 
             # Clear the symptoms (if any) of those who currently have 'Low-infection' or 'Non-infected'
             species_prefix = 'ss_sm' if species == 'mansoni' else 'ss_sh'
-            clear_idx = df[df[f"{species_prefix}_infection_status"].isin(['Low-infection', 'Non-infected'])].index
+            clear_idx = df.loc[
+                df["is_alive"] & df[f"{species_prefix}_infection_status"].isin(['Low-infection', 'Non-infected'])].index
 
-            self.sim.modules['SymptomManager'].clear_symptoms(person_id=clear_idx, disease_module=self.sim.modules['Schisto'])
+            self.sim.modules['SymptomManager'].clear_symptoms(person_id=clear_idx,
+                                                              disease_module=self.sim.modules['Schisto'])
 
         def death_of_adult_worms(df, species_column_aggregate, worm_lifespan):
             """
@@ -1321,7 +1311,7 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0)
 
             species = 'mansoni' if species_column_aggregate.startswith('ss_sm') else 'haematobium'
-            clear_symptoms(species)
+            clear_species_symptoms(species)
 
         death_of_adult_worms(df, 'ss_sm_aggregate_worm_burden',
                              mansoni_params['worm_lifespan'])
@@ -1499,7 +1489,6 @@ class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin)
 
         # otherwise perform Kato-Katz
         else:
-
             # sensitivity of test depends worm burden
             if df.at[person_id, 'ss_sm_infection_status'] in ['Non-infected', 'Low-infection']:
 
@@ -1566,7 +1555,7 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
 
     def apply(self, person_id, squeeze_factor):
         """Do the treatment for this person."""
-        dosage = self.module._calculate_praziquantel_dosage(person_id)
+        dosage = self.module.calculate_praziquantel_dosage(person_id)
 
         if self.get_consumables(item_codes={self.module.item_code_for_praziquantel: dosage}):
             self.module.do_effect_of_treatment(person_id=person_id)
@@ -1605,7 +1594,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         # Calculate total dosage required for all beneficiaries still alive
         # if MDA includes adults, return average dose for adults for all beneficiaries
         # if MDA includes SAC/PSAC, return average dose for SAC for all beneficiaries
-        # using total_dosage = sum(self.module._calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
+        # using total_dosage = sum(self.module.calculate_praziquantel_dosage(pid) for pid in beneficiaries_still_alive)
         # is very slow
         if 'Adults' in self.age_group_included:
             # adult, 40mg/kg, average weight 62kg
@@ -1620,7 +1609,6 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         if self.get_consumables(
             optional_item_codes={self.module.item_code_for_praziquantel_MDA: total_dosage}
         ):
-            # todo this is working separately for every person
             self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
 
         # Return the update appointment that reflects the actual number of beneficiaries.
@@ -1703,14 +1691,8 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        # todo this is logging MDA as well as treatment
-        # new_tx = len(
-        #     df[
-        #         (df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
-        #         ]
-        # )
+        # this is logging MDA as well as treatment
         new_tx = sum(df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
-
 
         # treatment logger
         treatment_episodes = {
@@ -1730,7 +1712,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
-
 
         # extract and map age groups for those alive
         age_grp = df['age_years'].map(self.module.age_group_mapper)
@@ -1758,36 +1739,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Rename index directly
         alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
 
-        # # extract prevalence of either infection by age-group and district
-        # age_grp = df.loc[df['is_alive'], 'age_years'].map(self.module.age_group_mapper)
-        #
-        # infection_mask = (df['ss_sm_infection_status'] != 'Non-infected') | (
-        #         df['ss_sh_infection_status'] != 'Non-infected')
-        #
-        # # Step 2: Filter the DataFrame to include only those who are alive and infected
-        # infected = df.loc[df['is_alive'] & infection_mask].groupby(
-        #     by=[
-        #         df.loc[df['is_alive'] & infection_mask, 'district_of_residence'],
-        #         age_grp
-        #     ],
-        #     observed=False
-        # ).size()
-        # infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
-        #
-        # # alive = df.loc[df['is_alive']].groupby(
-        # #     by=[
-        # #         df.loc[df['is_alive'], 'district_of_residence'],
-        # #         age_grp
-        # #     ],
-        # #     observed=False
-        # # ).size()
-        # alive = df[df['is_alive']].groupby(
-        #     by=['district_of_residence', age_grp],
-        #     observed=False
-        # ).size()
-        # alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
-        #
-
         logger.info(
             key=f'number_infected_any_species',
             description='Counts of infection status with this species by age-group and district.',
@@ -1804,20 +1755,8 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # WASH properties
-        # unimproved_sanitation = len(
-        #     df[df.li_unimproved_sanitation & df.is_alive]
-        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
-
         unimproved_sanitation = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive) if sum(
             df.is_alive) else 0
-
-        # no_access_handwashing = len(
-        #     df[df.li_no_access_handwashing & df.is_alive]
-        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
-        #
-        # no_clean_drinking_water = len(
-        #     df[df.li_no_clean_drinking_water & df.is_alive]
-        # ) / len(df[df.is_alive]) if len(df[df.is_alive]) else 0
 
         no_access_handwashing = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive) if sum(
             df.is_alive) else 0

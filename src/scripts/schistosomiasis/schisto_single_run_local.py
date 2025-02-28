@@ -51,7 +51,7 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 12, 31)
+    end_date = Date(2020, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
@@ -110,7 +110,7 @@ sim, output = run_simulation(popsize=1_000,
                              use_really_simplified_births=False,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
-                             mda_execute=True,
+                             mda_execute=False,
                              single_district=False)
 
 # %% Extract and process the `pd.DataFrame`s needed
