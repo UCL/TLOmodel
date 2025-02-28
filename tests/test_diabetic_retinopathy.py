@@ -123,8 +123,6 @@ def test_basic_run(seed):
     sim.make_initial_population(n=popsize)
 
     check_dtypes(sim)
-    #TODO Add check params when resourcefile has been created
-    # check_params_read(sim)
     sim.simulate(end_date=Date(2010, 5, 1))
     check_dtypes(sim)
 
