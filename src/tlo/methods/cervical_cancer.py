@@ -307,10 +307,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "ever diagnosed with cervical cancer (even if now cured)"
         ),
-        "ce_date_death": Property(
-            Types.DATE,
-            "date of cervical cancer death"
-        ),
         "ce_new_stage_this_month": Property(
             Types.BOOL,
             "new_stage_this month"
@@ -392,7 +388,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_date_treatment"] = pd.NaT
         df.loc[df.is_alive, "ce_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "ce_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "ce_date_death"] = pd.NaT
         df.loc[df.is_alive, "ce_new_stage_this_month"] = False
         df.loc[df.is_alive, "ce_stage_at_diagnosis"] = "none"
         df.loc[df.is_alive, "ce_ever_treated"] = False
@@ -411,6 +406,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
         df.loc[df.is_alive, "ce_cured_date_cc"] = pd.NaT
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
+        df['ce_hiv_unsuppressed'] = ((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not')) & (df['hv_inf'])
+
 
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
         women_over_15_nhiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & ~df["hv_inf"]]
@@ -599,7 +596,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing screening and the use of a biopsy
-
         # in future could add different sensitivity according to target category
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -657,13 +653,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- HSI FOR PALLIATIVE CARE -----
         on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.ce_date_palliative_care)]
-        for person_id in on_palliative_care_at_initiation:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_PalliativeCare(module=self, person_id=person_id),
-                priority=0,
-                topen=self.sim.date + DateOffset(months=1),
-                tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
-            )
+
+        self.sim.modules['HealthSystem'].schedule_batch_of_individual_hsi_events(
+            hsi_event_class=HSI_CervicalCancer_PalliativeCare,
+            person_ids=sorted(on_palliative_care_at_initiation),
+            priority=0,
+            topen=self.sim.date + DateOffset(months=1),
+            tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1),
+            module=self.sim.modules["HealthSystem"]
+        )
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -677,7 +675,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_date_diagnosis"] = pd.NaT
         df.at[child_id, "ce_new_stage_this_month"] = False
         df.at[child_id, "ce_date_palliative_care"] = pd.NaT
-        df.at[child_id, "ce_date_death"] = pd.NaT
         df.at[child_id, "ce_date_cin_removal"] = pd.NaT
         df.at[child_id, "ce_stage_at_diagnosis"] = 'none'
         df.at[child_id, "ce_ever_treated"] = False
@@ -827,12 +824,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.ce_selected_for_xpert_this_month = False
 
         days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
-        # days_since_last_thermoabl = (self.sim.date - df.ce_date_thermoabl).dt.days
-        # days_since_last_cryotherapy = (self.sim.date - df.ce_date_cryotherapy).dt.days
-        # days_since_last_cin_treatment = pd.DataFrame({
-        #     'thermoabl': days_since_last_thermoabl,
-        #     'cryotherapy': days_since_last_cryotherapy
-        # }).min(axis=1)
 
         # Define screening age and interval criteria based on HIV status
         # Individuals with HIV are recommended for screening earlier (age 25 v. 30) and with more frequency (3yrs v. 5yrs)
@@ -912,18 +903,18 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- DEATH FROM cervical CANCER ---------------------------------------
         # There is a risk of death for those in stage4 only. Death date is spread across 90d interval.
         stage4_idx = df.index[df.is_alive & (df.ce_hpv_cc_status == "stage4")]
+
         selected_to_die = stage4_idx[
             rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_cervical_cancer']]
 
+        days_spread = 90
+        date_min = self.sim.date
+        date_max = self.sim.date + pd.DateOffset(days=days_spread)
         for person_id in selected_to_die:
+            random_death_date = pd.Timestamp(rng.uniform(date_min.value, date_max.value), unit='ns')
             self.sim.schedule_event(
-                InstantaneousDeath(self.module, person_id, "CervicalCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "CervicalCancer"), random_death_date
             )
-            days_spread = 90
-            date_min = self.sim.date
-            date_max = self.sim.date + pd.DateOffset(days=days_spread)
-            df.loc[person_id, 'ce_date_death'] = pd.to_datetime(rng.uniform(date_min.value, date_max.value), unit='ns')
-
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -949,7 +940,8 @@ class PerformCINProcedureMixin:
         selected_method = 'Thermoablation' if year >= p['transition_testing_year'] else 'Cryotherapy'
         method_info = treatment_methods[selected_method]
 
-        # To do: Change 'LLETZ Machines' to Thermoablation device when registered in equipment
+        # todo TLO team to review addition of equipment Thermoablation Device currently usisng LLETZ machine
+        self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
         self.add_equipment({'LLETZ Machines'} if selected_method == 'Thermoablation' else {'Cryotherapy unit'})
 
         # Schedule HSI event
@@ -1144,8 +1136,6 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
             optional_item_codes= self.module.item_codes_cervical_can['cervical_cancer_cryotherapy_optional'])
 
         if cons_avail:
-            self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
-
             # Record date and stage of starting treatment
             df.at[person_id, "ce_date_cryotherapy"] = self.sim.date
 
@@ -1190,12 +1180,6 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
             optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_thermoablation_optional'])
 
         if cons_avail:
-            self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
-            # self.add_equipment({'Thermoablation Device', 'Thermoablation Probes'})
-
-            # todo TLO team to review addition of equipment Thermoablation Device and Thermoablation Probes; A consideration
-            #  may be that this treatment is a newer recommendation (2024+), so it may not be listed in historic CMST stock lists
-
            # Reference: (msyamboza et al 2016)
 
             # Record date and stage of starting treatment
@@ -1354,7 +1338,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                     item_codes=self.module.item_codes_cervical_can['cervical_cancer_treatment_chemotherapy_fluorouracil'],
                     optional_item_codes=self.module.item_codes_cervical_can['iv_drug_cons']
                 )
-
 
             # Record date and stage of starting treatment
             df.at[person_id, "ce_date_treatment"] = self.sim.date
