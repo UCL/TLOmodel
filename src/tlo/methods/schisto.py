@@ -232,6 +232,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # define the Dx tests and consumables required
         self._get_consumables_for_dx()
 
+        # schedule regular events
+        sim.schedule_event(SchistoUpdateWormBurdenEvent(self), sim.date + pd.DateOffset(months=1))
+
         # Schedule the logging event
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
         sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
@@ -617,7 +620,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Schedule the  MDA that have occurred, in each district and in each year:
         for (district, year), cov in self.parameters['MDA_coverage_historical'].iterrows():
-            print(year)
             assert district in self.sim.modules['Demography'].districts, f'District {district} is not recognised.'
             self.sim.schedule_event(
                 SchistoMDAEvent(self,
@@ -698,6 +700,116 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                                               replace=False)
             df.loc[selected_change_susceptibility, species_column] = 0
 
+    # def juvenile_worms_to_adults(self, df, species_column_juvenile, species_column_aggregate):
+    #     """
+    #     called by the regular event SchistoInfectionWormBurdenEvent
+    #     moves the juveniles worms into the aggregate_worm_burden property
+    #     indicating that they are now mature and will contribute to the disability threshold
+    #     then clears the column containing juvenile worm numbers ready for next infection event
+    #     this is called separately for each species
+    #     """
+    #     df[species_column_aggregate] += df[species_column_juvenile]
+    #
+    #     # Set 'juvenile' column to zeros
+    #     df[species_column_juvenile] = 0
+    #
+    #     # todo need to add symptoms if worm burden increasing
+    #     species = 'mansoni' if species_column_aggregate.startswith('ss_sm') else 'haematobium'
+    #
+    #     self.update_infectious_status_and_symptoms(df.index[df.is_alive], species=species)
+
+        # self.species.update_infectious_status_and_symptoms(idx=pd.Index([person_id]))
+
+    # def death_of_adult_worms(self, df, species_column_aggregate, worm_lifespan):
+    #     """
+    #     called by the regular event SchistoInfectionWormBurdenEvent
+    #     this kills a proportion of the adult worms according to the average lifespan in years
+    #     which varies by species
+    #     """
+    #     df[species_column_aggregate] -= df[species_column_aggregate] * (1 / (worm_lifespan / 12))
+    #     df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0)
+    #
+    #     # todo need to remove symptoms if worm burden low
+    #     # self.species.update_infectious_status_and_symptoms(df.index[df.is_alive])
+    #
+    #     # self.species.update_infectious_status_and_symptoms(idx=pd.Index([person_id]))
+
+    # def update_infectious_status_and_symptoms(self, idx: pd.Index, species: str) -> None:
+    #     """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
+    #      * Assigns the 'infection status' (High-infection, Moderate-infection, Low-infection, Non-infected) to the
+    #      persons with ids given in the `idx` argument, according their age (in years)
+    #      and their aggregate worm burden (of worms of this species).
+    #      * Causes the onset symptoms to the persons newly with moderate or high intensity infection.
+    #      * Removes the symptoms if a person no longer has a moderate/high intensity infection (from any species)"""
+    #
+    #     # schisto_module = self.schisto_module
+    #     # df = schisto_module.sim.population.props
+    #     df = self.sim.population.props
+    #     species_prefix = 'ss_sm' if species == 'mansoni' else 'ss_sh'
+    #     # return f"{self.schisto_module.module_prefix}_{self.prefix}_{generic_property_name}"
+    #
+    #     params = self.params
+    #     rng = self.rng
+    #     possible_symptoms = params["symptoms"]
+    #     sm = self.sim.modules['SymptomManager']
+    #     cols_of_infection_status = self.cols_of_infection_status
+    #
+    #     if not len(idx) > 0:
+    #         return
+    #
+    #     def _get_infection_status(age, aggregate_worm_burden):
+    #         """Find the correct infection intensity status given the age and aggregate worm burden """
+    #
+    #         status = pd.Series("Non-infected", index=age.index, dtype="object")
+    #
+    #         high_group = ((age < 5) & (aggregate_worm_burden >= params["high_intensity_threshold_PSAC"])) | (
+    #             aggregate_worm_burden >= params["high_intensity_threshold"])
+    #         moderate_group = ~high_group & (aggregate_worm_burden >= params["low_intensity_threshold"])
+    #         low_group = (aggregate_worm_burden < params["low_intensity_threshold"]) & (aggregate_worm_burden > 0)
+    #
+    #         # assign status
+    #         status[high_group] = "High-infection"
+    #         status[moderate_group] = "Moderate-infection"
+    #         status[low_group] = "Low-infection"
+    #
+    #         # same index as the original DataFrame
+    #         return pd.Series(status)
+    #
+    #     def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
+    #         """Assign symptoms to the person with high intensity infection.
+    #         :param idx: indices of individuals"""
+    #         if not len(idx) > 0:
+    #             return
+    #
+    #         for symptom, prev in possible_symptoms.items():
+    #             will_onset_this_symptom = idx[rng.random_sample(len(idx)) < prev]
+    #             if not will_onset_this_symptom.empty:
+    #                 sm.change_symptom(
+    #                     person_id=will_onset_this_symptom,
+    #                     symptom_string=symptom,
+    #                     add_or_remove='+',
+    #                     disease_module=self
+    #                 )
+    #
+    #     correct_status = _get_infection_status(df['age_years'].loc[idx], df[species_prefix("aggregate_worm_burden")].loc[idx])
+    #     original_status = df[prop('infection_status')]
+    #
+    #     # Impose new symptoms for those newly having 'High-infection' or 'Moderate-infection' status
+    #     # moving from low or no infection. If moving moderate -> high or vice versa, symptoms will already be applied
+    #     newly_have_high_infection = (correct_status == 'High-infection') & (
+    #         original_status.iloc[idx].isin(['Low-infection', 'Non-infected']))
+    #
+    #     newly_have_moderate_infection = (correct_status == 'Moderate-infection') & (
+    #         original_status.iloc[idx].isin(['Low-infection', 'Non-infected']))
+    #
+    #     idx_newly_high_or_moderate_infection = idx[newly_have_high_infection | newly_have_moderate_infection]
+    #
+    #     _impose_symptoms_of_high_intensity_infection(idx=idx_newly_high_or_moderate_infection)
+    #
+    #     # Update status for those whose status is changing
+    #     idx_changing = correct_status.index[original_status != correct_status]
+    #     df.loc[idx_changing, prop('infection_status')] = correct_status.loc[idx_changing]
+
 
 class SchistoSpecies:
     """Helper Class to hold the information specific to a particular species (either S. mansoni or S. haematobium)."""
@@ -745,6 +857,7 @@ class SchistoSpecies:
 
     def get_properties(self):
         """The species-specific properties for this species."""
+        # todo check properties of infection_status always one of these categories
         properties = {
             'infection_status': Property(
                 Types.CATEGORICAL, 'Current status of schistosomiasis infection for this species',
@@ -829,6 +942,7 @@ class SchistoSpecies:
         # assign aggregate_worm_burden (zero for everyone initially)
         df.loc[df.is_alive, prop('aggregate_worm_burden')] = 0
         df.loc[df.is_alive, prop('juvenile_worm_burden')] = 0
+        df.loc[df.is_alive, prop('infection_status')] = 'Non-infected'
 
         # assign a harbouring rate
         self._assign_initial_properties(population)
@@ -846,8 +960,9 @@ class SchistoSpecies:
 
         # Assign infection statuses and symptoms and schedule natural history events for those with worm burden
         # initially.
-        self.update_infectious_status_and_symptoms(df.index[df.is_alive])
-        self._schedule_death_of_worms_in_initial_population()
+        # self.schisto_module.update_infectious_status_and_symptoms(df.index[df.is_alive], species=self.name)
+        # todo update this
+        # self._schedule_death_of_worms_in_initial_population()
 
         sim.schedule_event(
             SchistoInfectionWormBurdenEvent(
@@ -909,93 +1024,125 @@ class SchistoSpecies:
                 susceptibility_probability = p_no_san
             df.at[child_id, prop('susceptibility')] = 1 if rng.random_sample() < susceptibility_probability else 0
 
-    def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
-        """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
-         * Assigns the 'infection status' (High-infection, Moderate-infection, Low-infection, Non-infected) to the persons with ids given
-         in the `idx` argument, according their age (in years) and their aggregate worm burden (of worms of this
-         species).
-         * Causes the onset symptoms to the persons newly with high intensity infection.
-         * Removes the symptoms if a person no longer has a high intensity infection (from any species)"""
+    # def update_infectious_status_and_symptoms(self, idx: pd.Index) -> None:
+    #     """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
+    #      * Assigns the 'infection status' (High-infection, Moderate-infection, Low-infection, Non-infected) to the
+    #      persons with ids given in the `idx` argument, according their age (in years)
+    #      and their aggregate worm burden (of worms of this species).
+    #      * Causes the onset symptoms to the persons newly with moderate or high intensity infection.
+    #      * Removes the symptoms if a person no longer has a moderate/high intensity infection (from any species)"""
+    #
+    #     schisto_module = self.schisto_module
+    #     df = schisto_module.sim.population.props
+    #     prop = self.prefix_species_property
+    #     params = self.params
+    #     rng = schisto_module.rng
+    #     possible_symptoms = params["symptoms"]
+    #     sm = schisto_module.sim.modules['SymptomManager']
+    #     cols_of_infection_status = schisto_module.cols_of_infection_status
+    #
+    #     if not len(idx) > 0:
+    #         return
+    #
+    #     def _get_infection_status(age, aggregate_worm_burden):
+    #         """Find the correct infection intensity status given the age and aggregate worm burden """
+    #
+    #         # age = population["age_years"].values
+    #         # agg_wb = population[prop("aggregate_worm_burden")].values
+    #
+    #         # Initialize all to 'Non-infected' (the default status)
+    #         # status = np.full(population.shape[0], "Non-infected", dtype="object")
+    #         status = pd.Series("Non-infected", index=age.index, dtype="object")
+    #
+    #         high_group = ((age < 5) & (aggregate_worm_burden >= params["high_intensity_threshold_PSAC"])) | (
+    #                 aggregate_worm_burden >= params["high_intensity_threshold"])
+    #         moderate_group = ~high_group & (aggregate_worm_burden >= params["low_intensity_threshold"])
+    #         low_group = (aggregate_worm_burden < params["low_intensity_threshold"]) & (aggregate_worm_burden > 0)
+    #
+    #         # assign status
+    #         status[high_group] = "High-infection"
+    #         status[moderate_group] = "Moderate-infection"
+    #         status[low_group] = "Low-infection"
+    #
+    #         # same index as the original DataFrame
+    #         return pd.Series(status)
+    #
+    #     def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
+    #         """Assign symptoms to the person with high intensity infection.
+    #         :param idx: indices of individuals"""
+    #         if not len(idx) > 0:
+    #             return
+    #
+    #         for symptom, prev in possible_symptoms.items():
+    #             will_onset_this_symptom = idx[rng.random_sample(len(idx)) < prev]
+    #             if not will_onset_this_symptom.empty:
+    #                 sm.change_symptom(
+    #                     person_id=will_onset_this_symptom,
+    #                     symptom_string=symptom,
+    #                     add_or_remove='+',
+    #                     disease_module=schisto_module
+    #                 )
+    #
+    #     # correct_status = _get_infection_status(df.loc[idx])
+    #     # original_status = df.loc[idx, prop('infection_status')]
+    #
+    #     # extracted_data = df.loc[idx, ['age_years', prop("aggregate_worm_burden"), prop('infection_status')]]
+    #     # correct_status = _get_infection_status(extracted_data)
+    #     # original_status = extracted_data[prop('infection_status')]
+    #
+    #     correct_status = _get_infection_status(df['age_years'].loc[idx], df[prop("aggregate_worm_burden")].loc[idx])
+    #     # original_status = df[prop('infection_status')].loc[idx]
+    #     original_status = df[prop('infection_status')]
+    #
+    #     # Impose new symptoms for those newly having 'High-infection' or 'Moderate-infection' status
+    #     # moving from low or no infection. If moving moderate -> high or vice versa, symptoms will already be applied
+    #
+    #     # newly_have_high_infection = (original_status != 'High-infection') & (correct_status == 'High-infection')
+    #     # newly_have_moderate_infection = (original_status != 'Moderate-infection') & (correct_status == 'Moderate-infection')
+    #
+    #     newly_have_high_infection = (correct_status == 'High-infection') & (
+    #         original_status.iloc[idx].isin(['Low-infection', 'Non-infected']))
+    #
+    #     newly_have_moderate_infection = (correct_status == 'Moderate-infection') & (
+    #         original_status.iloc[idx].isin(['Low-infection', 'Non-infected']))
+    #
+    #     idx_newly_high_or_moderate_infection = idx[newly_have_high_infection | newly_have_moderate_infection]
+    #     #
+    #     # idx_newly_high_or_moderate_infection = newly_have_high_infection.index[
+    #     #     newly_have_high_infection | newly_have_moderate_infection]
+    #
+    #     _impose_symptoms_of_high_intensity_infection(idx=idx_newly_high_or_moderate_infection)
+    #
+    #     # Update status for those whose status is changing
+    #     idx_changing = correct_status.index[original_status != correct_status]
+    #     df.loc[idx_changing, prop('infection_status')] = correct_status.loc[idx_changing]
+    #
+    #     # Remove symptoms if there is no Moderate or High-infection status caused by either species
+    #     # # this can occur through PZQ treatment
+    #     # cols_of_infection_status_for_other_species = [
+    #     #     col for col in cols_of_infection_status if col != prop('infection_status')
+    #     # ]
+    #     # # high_infection_any_other_species = (
+    #     # #     df.loc[idx, cols_of_infection_status_for_other_species] == 'High-infection').any(axis=1)
+    #     # #
+    #     # # no_longer_high_infection = idx[
+    #     # #     (original_status == 'High-infection') & (
+    #     # #         correct_status != 'High-infection') & ~high_infection_any_other_species
+    #     # #     ]
+    #     #
+    #     # # Check if any other species has 'Low-infection' or 'Non-infected'
+    #     # low_or_non_infected_any_other_species = (
+    #     #     df.loc[idx, cols_of_infection_status_for_other_species].isin(['Low-infection', 'Non-infected']).any(axis=1)
+    #     # )
+    #     #
+    #     # # Clear the symptoms (if any) of those who currently have 'Low-infection' or 'Non-infected'
+    #     # clear_symptoms_idx = idx[
+    #     #     correct_status.isin(['Low-infection', 'Non-infected']) &  # Current status is low or non-infected
+    #     #     low_or_non_infected_any_other_species  # No other species has low or non-infected status
+    #     #     ]
+    #     #
+    #     # sm.clear_symptoms(person_id=clear_symptoms_idx, disease_module=schisto_module)
 
-        schisto_module = self.schisto_module
-        df = schisto_module.sim.population.props
-        prop = self.prefix_species_property
-        params = self.params
-        rng = schisto_module.rng
-        possible_symptoms = params["symptoms"]
-        sm = schisto_module.sim.modules['SymptomManager']
-        cols_of_infection_status = schisto_module.cols_of_infection_status
-
-        if not len(idx) > 0:
-            return
-
-        def _get_infection_status(population: pd.DataFrame) -> pd.Series:
-            # Extracting age and aggregate worm burden values as NumPy arrays
-            age = population["age_years"].values  # Convert to NumPy array for memory efficiency
-            agg_wb = population[prop("aggregate_worm_burden")].values  # Use NumPy for efficiency
-
-            # Using np.where to directly assign infection status based on conditions
-            # Initialize all to 'Non-infected' (the default status)
-            status = np.full(population.shape[0], "Non-infected", dtype="object")
-
-            high_group = ((age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])) | (
-                    agg_wb >= params["high_intensity_threshold"])
-            moderate_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
-            low_group = (agg_wb < params["low_intensity_threshold"]) & (agg_wb > 0)
-
-            # assign status
-            np.copyto(status, "High-infection", where=high_group)
-            np.copyto(status, "Moderate-infection", where=moderate_group)
-            np.copyto(status, "Low-infection", where=low_group)
-
-            # same index as the original DataFrame
-            return pd.Series(status, index=population.index)
-
-        def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
-            """Assign symptoms to the person with high intensity infection.
-            :param idx: indices of individuals"""
-            if not len(idx) > 0:
-                return
-
-            for symptom, prev in possible_symptoms.items():
-                will_onset_this_symptom = idx[rng.random_sample(len(idx)) < prev]
-                if not will_onset_this_symptom.empty:
-                    sm.change_symptom(
-                        person_id=will_onset_this_symptom,
-                        symptom_string=symptom,
-                        add_or_remove='+',
-                        disease_module=schisto_module
-                    )
-
-        # correct_status = _get_infection_status(df.loc[idx])
-        # original_status = df.loc[idx, prop('infection_status')]
-
-        extracted_data = df.loc[idx, ['age_years', prop("aggregate_worm_burden"), prop('infection_status')]]
-        correct_status = _get_infection_status(extracted_data)
-        original_status = extracted_data[prop('infection_status')]
-
-        # Impose symptoms for those newly having 'High-infection' or 'Moderate-infection' status
-        newly_have_high_infection = (original_status != 'High-infection') & (correct_status == 'High-infection')
-        newly_have_moderate_infection = (original_status != 'Moderate-infection') & (correct_status == 'Moderate-infection')
-        idx_newly_high_or_moderate_infection = newly_have_high_infection.index[
-            newly_have_high_infection | newly_have_moderate_infection]
-        _impose_symptoms_of_high_intensity_infection(idx=idx_newly_high_or_moderate_infection)
-
-        # Update status for those whose status is changing
-        idx_changing = correct_status.index[original_status != correct_status]
-        df.loc[idx_changing, prop('infection_status')] = correct_status.loc[idx_changing]
-
-        # Remove symptoms if there is no cause High-infection status caused by either species
-        cols_of_infection_status_for_other_species = [
-            col for col in cols_of_infection_status if col != prop('infection_status')
-        ]
-        high_infection_any_other_species = (
-            df.loc[idx, cols_of_infection_status_for_other_species] == 'High-infection').any(axis=1)
-        no_longer_high_infection = idx[
-            (original_status == 'High-infection') & (
-                correct_status != 'High-infection') & ~high_infection_any_other_species
-            ]
-        sm.clear_symptoms(person_id=no_longer_high_infection, disease_module=schisto_module)
 
     def update_parameters_from_schisto_module(self) -> None:
         """Update the internally-held parameters from the `Schisto` module that are specific to this species."""
@@ -1167,16 +1314,17 @@ class SchistoSpecies:
         rng = self.schisto_module.rng
         date = self.schisto_module.sim.date
 
+        # todo remove this
         people_with_worms = df.index[df[prop('aggregate_worm_burden')] > 0]
-        for person_id in people_with_worms:
-            months_till_death = int(rng.uniform(1, params['worm_lifespan'] * 12 / 2))
-            self.schisto_module.sim.schedule_event(
-                SchistoWormsNatDeath(module=self.schisto_module,
-                                     species=self,
-                                     person_id=person_id,
-                                     number_of_worms_that_die=df.at[person_id, prop('aggregate_worm_burden')]),
-                date + DateOffset(months=months_till_death)
-            )
+        # for person_id in people_with_worms:
+        #     months_till_death = int(rng.uniform(1, params['worm_lifespan'] * 12 / 2))
+        #     self.schisto_module.sim.schedule_event(
+        #         SchistoWormsNatDeath(module=self.schisto_module,
+        #                              species=self,
+        #                              person_id=person_id,
+        #                              number_of_worms_that_die=df.at[person_id, prop('aggregate_worm_burden')]),
+        #         date + DateOffset(months=months_till_death)
+        #     )
 
     def log_infection_status(self) -> None:
         """Log the number of persons in each infection status for this species,
@@ -1289,6 +1437,8 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
         prop = self.species.prefix_species_property
 
+        # --------------------- get exposure rates for each age-group ---------------------
+
         # betas (exposure rates) are fixed for each age-group
         # exposure rates determine contribution to transmission and acquisition risk
         betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
@@ -1377,116 +1527,237 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # todo record the new juvenile worms to df
         df.loc[to_establish.keys(), prop('juvenile_worm_burden')] = pd.Series(to_establish)
 
+        # --------------------- deaths of adult worms ---------------------
+        # haematobium worm lifespan 6yrs, mansoni 4yrs
+        # self.module.death_of_adult_worms(df, prop('aggregate_worm_burden'), params['worm_lifespan'])
+
         # schedule maturation of the established worms
         # at this point, the person has become infected but this is not recorded until the worms mature
         # no indicator for person harbouring only juvenile worms
-        for person_id, num_new_worms in to_establish.items():
-            date_of_maturation = random_date(self.sim.date + pd.DateOffset(days=30),
-                                             self.sim.date + pd.DateOffset(days=55), rng)
-            self.sim.schedule_event(
-                SchistoMatureWorms(
-                    module=self.module,
-                    species=self.species,
-                    person_id=person_id,
-                    number_of_worms_that_mature=num_new_worms,
-                ),
-                date_of_maturation
-            )
+        # for person_id, num_new_worms in to_establish.items():
+        #     date_of_maturation = random_date(self.sim.date + pd.DateOffset(days=30),
+        #                                      self.sim.date + pd.DateOffset(days=55), rng)
+        #     self.sim.schedule_event(
+        #         SchistoMatureWorms(
+        #             module=self.module,
+        #             species=self.species,
+        #             person_id=person_id,
+        #             number_of_worms_that_mature=num_new_worms,
+        #         ),
+        #         date_of_maturation
+        #     )
 
 
-# todo replacing SchistoMatureWorms and SchistoWormsNatDeath Individual-level events
-# needs to be species-specific
-class SchistoWormMatureAndDeathEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This regular event schedules:
-     1. the maturation of newly acquired worms
-     2. the onset of symptoms if person now has moderate/high worm burden
-     3. the natural death of existing worms
-    """
-
-    def __init__(self, module: Module, species: SchistoSpecies):
-        super().__init__(module, frequency=DateOffset(months=1))
-        self.species = species
-
-    def apply(self, population):
-        df = population.props
-        params = self.species.params
-        global_params = self.module.parameters
-        rng = self.module.rng
-        # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
-        prop = self.species.prefix_species_property
-
-
-
-
-
-
-class SchistoMatureWorms(Event, IndividualScopeEventMixin):
-    """Represents the maturation of worms to adult worms.
-    * Increases the aggregate worm burden of an individual upon maturation of the worms
-    * Schedules the natural death of worms and symptoms development if High-infection
-    * Updates the infection status and symptoms of the person accordingly."""
-
-    def __init__(self, module: Module, species: SchistoSpecies, person_id: int, number_of_worms_that_mature: int):
-        super().__init__(module, person_id=person_id)
-        self.species = species
-        self.number_of_worms_that_mature = number_of_worms_that_mature
-
-    def apply(self, person_id):
-        df = self.sim.population.props
-        prop = self.species.prefix_species_property
-        params = self.species.params
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # increase worm burden
-        df.at[person_id, prop('aggregate_worm_burden')] += self.number_of_worms_that_mature
-
-        # schedule the natural death of the worms
-        self.sim.schedule_event(
-            SchistoWormsNatDeath(module=self.module,
-                                 person_id=person_id,
-                                 number_of_worms_that_die=self.number_of_worms_that_mature,
-                                 species=self.species),
-            self.sim.date + DateOffset(years=params['worm_lifespan'])
+class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
+    """A recurring event that:
+     * Matures the juvenile worms into adult worms
+     * Kills any adult worms according to species-specific lifespan
+     """
+    def __init__(self, module):
+        super().__init__(
+            module, frequency=DateOffset(months=1)
         )
 
-        self.species.update_infectious_status_and_symptoms(idx=pd.Index([person_id]))
+    def apply(self, population):
+
+        df = population.props
+        params = self.module.parameters
+        rng = self.module.rng
+        mansoni_params = self.sim.modules['Schisto'].species['mansoni'].params
+        haematobium_params = self.sim.modules['Schisto'].species['haematobium'].params
+
+        # --------------------- move juvenile worms to aggregate column (maturation) ---------------------
+        def update_infectious_status_and_symptoms(idx: pd.Index, species: str) -> None:
+            """Updates the infection status and symptoms based on the current aggregate worm burden of this species.
+             * Assigns the 'infection status' (High-infection, Moderate-infection, Low-infection, Non-infected) to the
+             persons with ids given in the `idx` argument, according their age (in years)
+             and their aggregate worm burden (of worms of this species).
+             * Causes the onset symptoms to the persons newly with moderate or high intensity infection.
+             * Removes the symptoms if a person no longer has a moderate/high intensity infection (from any species)"""
+
+            df = self.sim.population.props
+            species_prefix = 'ss_sm' if species == 'mansoni' else 'ss_sh'
+
+            if species == 'mansoni':
+                params = mansoni_params
+            else:
+                params = haematobium_params
+
+            possible_symptoms = params["symptoms"]
+
+            def _get_infection_status(age, aggregate_worm_burden):
+                """Find the correct infection intensity status given the age and aggregate worm burden """
+
+                status = pd.Series("Non-infected", index=age.index, dtype="object")
+
+                high_group = ((age < 5) & (aggregate_worm_burden >= params["high_intensity_threshold_PSAC"])) | (
+                    aggregate_worm_burden >= params["high_intensity_threshold"])
+                moderate_group = ~high_group & (aggregate_worm_burden >= params["low_intensity_threshold"])
+                low_group = (aggregate_worm_burden < params["low_intensity_threshold"]) & (aggregate_worm_burden > 0)
+
+                # assign status
+                status[high_group] = "High-infection"
+                status[moderate_group] = "Moderate-infection"
+                status[low_group] = "Low-infection"
+
+                # same index as the original DataFrame
+                return pd.Series(status)
+
+            def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
+                """Assign symptoms to the person with high intensity infection.
+                :param idx: indices of individuals"""
+                if not len(idx) > 0:
+                    return
+
+                for symptom, prev in possible_symptoms.items():
+                    will_onset_this_symptom = idx[self.module.rng.random_sample(len(idx)) < prev]
+                    if not will_onset_this_symptom.empty:
+                        self.sim.modules['SymptomManager'].change_symptom(
+                            person_id=will_onset_this_symptom,
+                            symptom_string=symptom,
+                            add_or_remove='+',
+                            disease_module=self.sim.modules['Schisto']
+                        )
+
+            correct_status = _get_infection_status(
+                df['age_years'].loc[idx],
+                df[f"{species_prefix}_aggregate_worm_burden"].loc[idx]
+            )
+            original_status = df[f"{species_prefix}_infection_status"].loc[idx]
+
+            # Impose new symptoms for those newly having 'High-infection' or 'Moderate-infection' status
+            # moving from low or no infection. If moving moderate -> high or vice versa, symptoms will already be applied
+            newly_have_high_infection = (correct_status == 'High-infection') & (
+                original_status.isin(['Low-infection', 'Non-infected']))
+
+            newly_have_moderate_infection = (correct_status == 'Moderate-infection') & (
+                original_status.isin(['Low-infection', 'Non-infected']))
+
+            idx_newly_high_or_moderate_infection = idx[newly_have_high_infection | newly_have_moderate_infection]
+
+            _impose_symptoms_of_high_intensity_infection(idx=idx_newly_high_or_moderate_infection)
+
+            # Update status for those whose status is changing
+            idx_changing = correct_status.index[original_status != correct_status]
+            df.loc[idx_changing, f"{species_prefix}_infection_status"] = correct_status.loc[idx_changing]
+
+        def juvenile_worms_to_adults(df, species_column_juvenile, species_column_aggregate, species):
+            """
+            called by the regular event SchistoInfectionWormBurdenEvent
+            moves the juveniles worms into the aggregate_worm_burden property
+            indicating that they are now mature and will contribute to the disability threshold
+            then clears the column containing juvenile worm numbers ready for next infection event
+            this is called separately for each species
+            """
+            df[species_column_aggregate] += df[species_column_juvenile]
+
+            # Set 'juvenile' column to zeros
+            df[species_column_juvenile] = 0
+
+            update_infectious_status_and_symptoms(df.index[df.is_alive], species=species)
+
+        juvenile_worms_to_adults(df, 'ss_sm_juvenile_worm_burden',
+                                 'ss_sm_aggregate_worm_burden',
+                                 species='mansoni')
+        juvenile_worms_to_adults(df, 'ss_sh_juvenile_worm_burden',
+                                 'ss_sh_aggregate_worm_burden',
+                                 species='haematobium')
+
+        # --------------------- kill proportion of existing adult worms ---------------------
+        def clear_symptoms(species) -> None:
+            """ Removes the symptoms if a person no longer has a moderate/high intensity infection"""
+
+            # Clear the symptoms (if any) of those who currently have 'Low-infection' or 'Non-infected'
+            species_prefix = 'ss_sm' if species == 'mansoni' else 'ss_sh'
+            clear_idx = df[df[f"{species_prefix}_infection_status"].isin(['Low-infection', 'Non-infected'])].index
+
+            self.sim.modules['SymptomManager'].clear_symptoms(person_id=clear_idx, disease_module=self.sim.modules['Schisto'])
+
+        def death_of_adult_worms(df, species_column_aggregate, worm_lifespan):
+            """
+            called by the regular event SchistoInfectionWormBurdenEvent
+            this kills a proportion of the adult worms according to the average lifespan in years
+            which varies by species
+            """
+            df[species_column_aggregate] -= df[species_column_aggregate] * (worm_lifespan / 12)
+            df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0)
+
+            species = 'mansoni' if species_column_aggregate.startswith('ss_sm') else 'haematobium'
+            clear_symptoms(species)
+
+        death_of_adult_worms(df, 'ss_sm_aggregate_worm_burden',
+                             mansoni_params['worm_lifespan'])
+        death_of_adult_worms(df, 'ss_sh_aggregate_worm_burden',
+                             haematobium_params['worm_lifespan'])
 
 
-class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
-    """Represents the death of adult worms.
-     * Decreases the aggregate worm burden of an individual upon natural death of the adult worm.
-     * Updates the infection status and the symptoms of the person accordingly.
-    Nb. This event checks the last day of PZQ treatment and if has been less than the lifespan of the worm it doesn't
-    do anything (because the worms for which this event was raised will since have been killed by the PZQ)."""
+# class SchistoMatureWorms(Event, IndividualScopeEventMixin):
+#     """Represents the maturation of worms to adult worms.
+#     * Increases the aggregate worm burden of an individual upon maturation of the worms
+#     * Schedules the natural death of worms and symptoms development if High-infection
+#     * Updates the infection status and symptoms of the person accordingly."""
+#
+#     def __init__(self, module: Module, species: SchistoSpecies, person_id: int, number_of_worms_that_mature: int):
+#         super().__init__(module, person_id=person_id)
+#         self.species = species
+#         self.number_of_worms_that_mature = number_of_worms_that_mature
+#
+#     def apply(self, person_id):
+#         df = self.sim.population.props
+#         prop = self.species.prefix_species_property
+#         params = self.species.params
+#
+#         if not df.at[person_id, 'is_alive']:
+#             return
+#
+#         # increase worm burden
+#         df.at[person_id, prop('aggregate_worm_burden')] += self.number_of_worms_that_mature
+#
+#         # schedule the natural death of the worms
+#         self.sim.schedule_event(
+#             SchistoWormsNatDeath(module=self.module,
+#                                  person_id=person_id,
+#                                  number_of_worms_that_die=self.number_of_worms_that_mature,
+#                                  species=self.species),
+#             self.sim.date + DateOffset(years=params['worm_lifespan'])
+#         )
+#
+#         self.species.update_infectious_status_and_symptoms(idx=pd.Index([person_id]))
 
-    def __init__(self, module: Module, species: SchistoSpecies, person_id: int, number_of_worms_that_die: int):
-        super().__init__(module, person_id=person_id)
-        self.species = species
-        self.number_of_worms_that_die = number_of_worms_that_die
 
-    def apply(self, person_id):
-        df = self.sim.population.props
-        prop = self.species.prefix_species_property
-        params = self.species.params
-        person = df.loc[person_id]
-
-        if not person.is_alive:
-            return
-
-        worms_now = person[prop('aggregate_worm_burden')]
-        if worms_now == 0:
-            return  # Do nothing if there are currently no worms
-
-        date_last_pzq = person[f'{self.module.module_prefix}_last_PZQ_date']
-        date_worm_acquisition = self.sim.date - pd.DateOffset(years=params['worm_lifespan'])
-        has_had_treatment_since_worm_acquisition = date_last_pzq >= date_worm_acquisition
-
-        if not has_had_treatment_since_worm_acquisition:
-            # This event is for worms that have matured since the last treatment.
-            df.loc[person_id, prop('aggregate_worm_burden')] = max(0, worms_now - self.number_of_worms_that_die)
-            self.species.update_infectious_status_and_symptoms(idx=pd.Index([person_id]))
+# class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
+#     """Represents the death of adult worms.
+#      * Decreases the aggregate worm burden of an individual upon natural death of the adult worm.
+#      * Updates the infection status and the symptoms of the person accordingly.
+#     Nb. This event checks the last day of PZQ treatment and if has been less than the lifespan of the worm it doesn't
+#     do anything (because the worms for which this event was raised will since have been killed by the PZQ)."""
+#
+#     def __init__(self, module: Module, species: SchistoSpecies, person_id: int, number_of_worms_that_die: int):
+#         super().__init__(module, person_id=person_id)
+#         self.species = species
+#         self.number_of_worms_that_die = number_of_worms_that_die
+#
+#     def apply(self, person_id):
+#         df = self.sim.population.props
+#         prop = self.species.prefix_species_property
+#         params = self.species.params
+#         person = df.loc[person_id]
+#
+#         if not person.is_alive:
+#             return
+#
+#         worms_now = person[prop('aggregate_worm_burden')]
+#         if worms_now == 0:
+#             return  # Do nothing if there are currently no worms
+#
+#         date_last_pzq = person[f'{self.module.module_prefix}_last_PZQ_date']
+#         date_worm_acquisition = self.sim.date - pd.DateOffset(years=params['worm_lifespan'])
+#         has_had_treatment_since_worm_acquisition = date_last_pzq >= date_worm_acquisition
+#
+#         if not has_had_treatment_since_worm_acquisition:
+#             # This event is for worms that have matured since the last treatment.
+#             df.loc[person_id, prop('aggregate_worm_burden')] = max(0, worms_now - self.number_of_worms_that_die)
+#             self.species.update_infectious_status_and_symptoms(idx=pd.Index([person_id]))
 
 
 class SchistoMDAEvent(Event, PopulationScopeEventMixin):
@@ -1780,6 +2051,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         if self.get_consumables(
             optional_item_codes={self.module.item_code_for_praziquantel_MDA: total_dosage}
         ):
+            # todo this is working separately for every person
             self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
 
         # Return the update appointment that reflects the actual number of beneficiaries.
