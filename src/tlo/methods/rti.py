@@ -2440,6 +2440,24 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         disability_series_for_alive_persons = df.loc[df.is_alive, "rt_disability"]
         return disability_series_for_alive_persons
 
+    def report_prevalence(self):
+        # This returns dataframe that reports on the prevalence of RTIs for all individuals
+        df = self.sim.population.props
+        df_valid_dates = df[df['rt_date_inj'].notna()]
+        if df_valid_dates.empty:
+            total_prev = 0  # or you could use np.nan if you prefer
+        else:
+            # Calculate total prevalence for individuals with non-NaT injury dates
+            total_prev = len(
+                df_valid_dates[
+                    (df_valid_dates['is_alive']) &
+                    (df_valid_dates['rt_inj_severity'] != 'none') &
+                    (df_valid_dates['rt_date_inj'] >= (self.sim.date - DateOffset(months=1)))
+                    ]
+            ) / len(df[df['is_alive']])
+
+        return {'RTI': total_prev}
+
     def rti_assign_injuries(self, number):
         """
         A function that can be called specifying the number of people affected by RTI injuries
