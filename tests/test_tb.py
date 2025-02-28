@@ -136,6 +136,27 @@ def test_basic_run(seed):
                          ]).all().all()
 
 
+# def test_tb_screening(seed):
+#
+#     popsize=50000
+#     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+#     sim.make_initial_population(n=popsize)
+#     sim.modules['Tb'].parameters['rate_testing_general_pop'] =1
+#     sim.modules['Tb'].parameters['incidence_active_tb_2010'] = 1
+#     sim.modules['Tb'].parameters['rr_tb_child'] = 1
+#     sim.population.props.date_of_birth = sim.population.props['is_alive'].apply(
+#         lambda _: random_date(sim.date - pd.DateOffset(years=5), sim.date - pd.DateOffset(days=1), sim.rng)
+#     )
+#     age_update_event = AgeUpdateEvent(sim.modules['Demography'], sim.modules['Demography'].AGE_RANGE_LOOKUP)
+#     age_update_event.apply(sim.population)
+#     sim.modules['Tb'].initialise_population(sim.population)
+#
+#     # simulate for 0 days, just get everything set up (dxtests etc)
+#     sim.simulate(end_date=sim.date + pd.DateOffset(months=3))
+
+
+
+
 # check natural history of TB infection
 def test_natural_history(seed):
     """
@@ -1041,7 +1062,6 @@ def test_hsi_scheduling(seed):
     hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
     hsi_event.run(squeeze_factor=0)
 
-    # Check person_id has a HSI_Tb_Xray event scheduled
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         isinstance(ev[1], tb.HSI_Tb_Xray_level1b)

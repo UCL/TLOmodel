@@ -273,6 +273,12 @@ class Tb(Module):
         "rr_ipt_art_child": Parameter(
             Types.REAL, "relative risk of active TB with IPT and ART in children"
         ),
+        "probability_community_chest_xray": Parameter(
+            Types.REAL, "probability of being selected for outreach xray"
+        ),
+        "probability_access_to_xray": Parameter(
+            Types.REAL, "probability of accessing xray"
+        ),
         # ------------------ diagnostic tests ------------------ #
         "sens_xpert_smear_negative": Parameter(
             Types.REAL, "sensitivity of Xpert test in smear negative TB cases"),
@@ -308,6 +314,7 @@ class Tb(Module):
         "spec_xray_smear_positive": Parameter(
             Types.REAL, "specificity of x-ray diagnosis in smear positive TB cases"
         ),
+
         # ------------------ treatment success rates ------------------ #
         "prob_tx_success_ds": Parameter(
             Types.REAL, "Probability of treatment success for new and relapse TB cases"
@@ -354,6 +361,14 @@ class Tb(Module):
             Types.INT,
             "year from which IPT is available for paediatric contacts of diagnosed active TB cases",
         ),
+        "scenario": Parameter(
+            Types.INT,
+            "integer value labelling the scenario to be run: default is 0"
+        ),
+        "scenario_start_date": Parameter(
+            Types.DATE,
+            "date from which different scenarios are run"
+        ),
         "first_line_test": Parameter(
             Types.STRING,
             "name of first test to be used for TB diagnosis"
@@ -374,14 +389,26 @@ class Tb(Module):
             Types.LIST,
             "length of inpatient stay for end-of-life TB patients",
         ),
+        "prob_tb_referral_in_generic_hsi": Parameter(
+            Types.REAL,
+            "probability of referral to TB screening HSI if presenting with TB-related symptoms"
+        ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "type_of_scaleup": Parameter(
             Types.STRING, "argument to determine type scale-up of program which will be implemented, "
                           "can be 'none', 'target' or 'max'",
         ),
+        "scenario_SI": Parameter(
+            Types.STRING,
+            "sub-set of scenarios used for sensitivity analysis"
+        ),
         "scaleup_start_year": Parameter(
             Types.INT,
             "the year when the scale-up starts (it will occur on 1st January of that year)"
+        ),
+        "outreach_xray_start_date": Parameter(
+            Types.DATE,
+            "date from which outreach xray starts"
         ),
         "scaleup_parameters": Parameter(
             Types.DATA_FRAME,
@@ -397,7 +424,7 @@ class Tb(Module):
         """
 
         # 1) Read the ResourceFiles
-        workbook = read_csv_files(self.resourcefilepath/"ResourceFile_TB", files=None)
+        workbook = read_csv_files(self.resourcefilepath / "ResourceFile_TB", files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
@@ -449,21 +476,23 @@ class Tb(Module):
 
         # 3) Declare the Symptoms
         # additional healthcare-seeking behaviour with these symptoms
-        self.sim.modules["SymptomManager"].register_symptom(
-            Symptom(
-                name="fatigue",
-                odds_ratio_health_seeking_in_adults=5.0,
-                odds_ratio_health_seeking_in_children=5.0,
-            )
-        )
 
-        self.sim.modules["SymptomManager"].register_symptom(
-            Symptom(
-                name="night_sweats",
-                odds_ratio_health_seeking_in_adults=5.0,
-                odds_ratio_health_seeking_in_children=5.0,
+        if "SymptomManager" in self.sim.modules.keys():
+            self.sim.modules["SymptomManager"].register_symptom(
+                Symptom(
+                    name="fatigue",
+                    odds_ratio_health_seeking_in_adults=5.0,
+                    odds_ratio_health_seeking_in_children=5.0,
+                )
             )
-        )
+
+            self.sim.modules["SymptomManager"].register_symptom(
+                Symptom(
+                    name="night_sweats",
+                    odds_ratio_health_seeking_in_adults=5.0,
+                    odds_ratio_health_seeking_in_children=5.0,
+                )
+            )
 
     def pre_initialise_population(self):
         """Do things required before the population is created
@@ -568,9 +597,11 @@ class Tb(Module):
                 p["rr_ipt_adult"]),
         ]
 
-        conditional_predictors = [
-            Predictor("nc_diabetes").when(True, p['rr_relapse_diabetes']),
-        ] if "CardioMetabolicDisorders" in self.sim.modules else []
+        conditional_predictors = (
+            [Predictor("nc_diabetes").when(True, p['rr_relapse_diabetes'])]
+            if "CardioMetabolicDisorders" in self.sim.modules
+            else []
+        )
 
         self.lm["risk_relapse_2yrs"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -741,9 +772,12 @@ class Tb(Module):
         )
 
         # TB Chest x-ray
-        self.item_codes_for_consumables_required['chest_xray'] = hs.get_item_code_from_item_name("X-ray")
-        self.item_codes_for_consumables_required['lead_apron'] = hs.get_item_code_from_item_name(
-            "Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST")
+        # self.item_codes_for_consumables_required['chest_xray'] = hs.get_item_code_from_item_name("X-ray")
+        # self.item_codes_for_consumables_required['lead_apron'] = hs.get_item_code_from_item_name(
+        #     "Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST")
+        # TB Chest x-ray++++++++++++++++++++++++
+        self.item_codes_for_consumables_required['chest_xray'] = {
+            hs.get_item_code_from_item_name("X-ray"): 1}
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -752,8 +786,9 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_positive"],
                 specificity=p["spec_xray_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray'],
-                optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
+                # item_codes=self.item_codes_for_consumables_required['chest_xray'],
+                # optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -762,8 +797,48 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_negative"],
                 specificity=p["spec_xray_smear_negative"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray'],
-                optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
+                # item_codes=self.item_codes_for_consumables_required['chest_xray'],
+                # optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            tb_xray_smear_positive_community=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_positive"],
+                specificity=p["spec_xray_smear_positive"],
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
+            )
+
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            tb_xray_smear_negative_community=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_negative"],
+                specificity=p["spec_xray_smear_negative"],
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
+            )
+        )
+
+        # add two further chest xray tests which don't require consumables
+        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+            tb_xray_smear_positive_outreach=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_positive"],
+                specificity=p["spec_xray_smear_positive"],
+                item_codes=[]
+            )
+        )
+        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+            tb_xray_smear_negative_outreach=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_negative"],
+                specificity=p["spec_xray_smear_negative"],
+                item_codes=[]
             )
         )
 
@@ -812,16 +887,16 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
         # mdr treatment
-        self.item_codes_for_consumables_required['tb_mdrtx'] = \
-            hs.get_item_code_from_item_name("Treatment: second-line drugs")
+        self.item_codes_for_consumables_required['tb_mdrtx'] = {
+            hs.get_item_code_from_item_name("Treatment: second-line drugs"): 1}
 
         # ipt
         self.item_codes_for_consumables_required['tb_ipt'] = \
             hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg")
 
         # 3hp
-        self.item_codes_for_consumables_required['tb_3HP'] = \
-            hs.get_item_code_from_item_name("Isoniazid/Rifapentine")
+        self.item_codes_for_consumables_required['tb_3HP'] = {
+            hs.get_item_code_from_item_name("Isoniazid/Rifapentine"): 1}
 
     def initialise_population(self, population):
 
@@ -897,11 +972,16 @@ class Tb(Module):
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date)
         sim.schedule_event(TbRegularEvents(self), sim.date)
+        # sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+        # schedule outreach xrays for tb screening from 2010
+        #sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
+        sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
         # 2) log at the end of the year
         # Optional: Schedule the scale-up of programs
+        # changed scale-up to none
         if self.parameters["type_of_scaleup"] != 'none':
             scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
             assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
@@ -909,6 +989,9 @@ class Tb(Module):
 
         # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
+
+        # 2) Scenario change
+        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
         # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
@@ -1400,7 +1483,62 @@ class Tb(Module):
 # # ---------------------------------------------------------------------------
 # #   TB infection event
 # # ---------------------------------------------------------------------------
+class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    * scenario 0 is the default which uses baseline parameters
+    * scenario 1 constrains availablity of Xpert by setting probability of expert  to zero
+    It only occurs once at param: scenario_start_date,
+    called by initialise_simulation
+    """
 
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+        p = self.module.parameters
+        scenario = p["scenario"]
+
+        logger.debug(
+            key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
+        )
+
+        # baseline scenario--no change to parameters
+        if scenario == 0:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+            #Item code Solid culture and DST
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
+            return
+
+        # sets availability of xpert to nil
+        if scenario == 1:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
+
+        # sets availability of xray to nil
+        if scenario == 2:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
+
+        # increases probability of accessing chest xray by 100% always available
+        if scenario == 3:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.9})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
+
+        # Introduce community Xray
+        if scenario == 4:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({184: 1.0})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.15
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -1471,7 +1609,6 @@ class TbScaleUpEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-
         self.module.update_parameters_for_program_scaleup()
         # note also culture test used in target/max scale-up in place of clinical dx
 
@@ -1671,12 +1808,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             person_id=self_cure_art, disease_module=self.sim.modules["Hiv"]
         )
 
-
-# ---------------------------------------------------------------------------
-#   Health System Interactions (HSI)
-# ---------------------------------------------------------------------------
-
-
 class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
     This is the Screening-and-Refer HSI.
@@ -1787,6 +1918,34 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
             test_result = False  # to avoid calling a clinical diagnosis
+
+        # if person["age_years"] < 5:
+        #     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1})
+        #
+        #     # If currently at a Level 1a facility, schedule a referral to Level 1b for X-ray
+        #     if self.facility_level == "1a":
+        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #             hsi_event=HSI_Tb_ScreeningAndRefer(
+        #                 person_id=person_id,
+        #                 module=self.module,
+        #                 facility_level="1b"  # Referral to Level 1b
+        #             ),
+        #             topen=now + DateOffset(days=1),  # Schedule for the next day
+        #             tclose=None,
+        #             priority=0,
+        #         )
+        #         test_result = None  # Indicate no test done yet
+        #         return ACTUAL_APPT_FOOTPRINT
+        #     else:
+        #         # If already at a Level 1b facility, proceed with the X-ray
+        #         self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #             hsi_event=HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
+        #             topen=now,
+        #             tclose=None,
+        #             priority=0,
+        #         )
+
+            #test_result = None  # to avoid calling a clinical diagnosis
 
         # ------------------------- select test for adults ------------------------- #
 
@@ -1925,10 +2084,10 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             district = person["district_of_residence"]
             ipt = self.module.parameters["ipt_coverage"]
             ipt_year = ipt.loc[ipt.year == year]
-            ipt_coverage_paed = ipt_year.coverage_paediatric.values[0] / 100
+            ipt_coverage_paed = round(ipt_year.coverage_paediatric.values[0] / 100,3)
 
             if (district in p["tb_high_risk_distr"].district_name.values) & (
-                self.module.rng.rand() < ipt_coverage_paed
+                self.module.rng.rand() <ipt_coverage_paed
             ):
                 # randomly sample from eligible population within district
                 ipt_eligible = df.loc[
@@ -1982,13 +2141,28 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     topen=now,
                     tclose=None,
                 )
+                # indicative of TB                                                                                                                                 they are referred for culture test which has perfect sensitivity
+                #if not test_result and person_has_tb_symptoms:
+               # # if test_result is None and person_has_tb_symptoms:
+               #  if not test_result and person_has_tb_symptoms:
+               #      if p['type_of_scaleup'] != 'none' and self.sim.date.year >= p['scaleup_start_year']:
+               #          logger.debug(
+               #              key="message",
+               #              data=f"HSI_Tb_ScreeningAndRefer: scheduling culture for person {person_id}",
+               #          )
+               #      self.sim.modules["HealthSystem"].schedule_hsi_event(
+               #          hsi_event=HSI_Tb_Culture(
+               #              person_id=person_id, module=self.module
+               #          ),
+               #          topen=now,
+               #          tclose=None,
+               #          priority=0,
+               #      )
 
-        # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
-
 
 class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2014,11 +2188,13 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """ Do the screening and referring process """
+        print(f"STARTING TB clinical screening {self.ACCEPTED_FACILITY_LEVEL} ")
 
         df = self.sim.population.props
         now = self.sim.date
         person = df.loc[person_id]
         p = self.module.parameters
+
         test_result = None
 
         # If the person is dead or already diagnosed, do nothing do not occupy any resources
@@ -2042,6 +2218,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 0.5})
 
             # if clinical diagnosis returns positive result, refer for appropriate treatment
             if test_result:
@@ -2061,10 +2238,13 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+
+        #
         # ------------------------- Culture testing if program scale-up ------------------------- #
         # under program scale-up, if a person tests negative but still has all symptoms
         # indicative of TB, they are referred for culture test which has perfect sensitivity
         # this has the effect to reduce false negatives
+
         person_has_tb_symptoms = all(symptom in persons_symptoms for symptom in self.module.symptom_list)
 
         if not test_result and person_has_tb_symptoms:
@@ -2075,15 +2255,18 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                     data=f"HSI_Tb_ClinicalDiagnosis: scheduling culture for person {person_id}",
                 )
 
-                culture_event = HSI_Tb_Culture(
-                    self.module, person_id=person_id
-                )
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    culture_event,
+                   hsi_event=HSI_Tb_Culture(self.module, person_id=person_id),
                     priority=0,
                     topen=now,
                     tclose=None,
                 )
+
+                # Return the footprint. If it should be suppressed, return a blank footprint.
+                if self.suppress_footprint:
+                    return self.make_appt_footprint({})
+                else:
+                    return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
@@ -2097,9 +2280,12 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
     already preceded by a sequence of tests
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
+
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Culture"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"LabTBMicro": 1})
@@ -2107,19 +2293,26 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
+        print(f"STARTING TB Culture testing {self.ACCEPTED_FACILITY_LEVEL} ")
+
         df = self.sim.population.props
 
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        #Run TB culture test
         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_culture_test", hsi_event=self)
+
+        #ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
         # todo equipment required: MGIT instrument, MGIT tube, reagent kit included in consumables
         if test_result is not None:
             self.add_equipment({'Autoclave', 'Blood culture incubator', 'Vortex mixer',
                                 'Dispensing pumps for culture media preparation', 'Biosafety Cabinet (Class II)',
                                 'Centrifuge'})
+
+        ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"LabTBMicro": 1})
 
         # if test returns positive result, refer for appropriate treatment
         if test_result:
@@ -2135,17 +2328,22 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
+            # Return the footprint. If it should be suppressed, return a blank footprint.
+            if self.suppress_footprint:
+                return self.make_appt_footprint({})
+            else:
+                return ACTUAL_APPT_FOOTPRINT
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
-    The is the x-ray HSI
+    This is the x-ray HSI
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
-
     """
 
     def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
+
         assert isinstance(module, Tb)
 
         assert isinstance(suppress_footprint, bool)
@@ -2154,9 +2352,20 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.facility_level = '1b'
+
 
     def apply(self, person_id, squeeze_factor):
 
+        logger.debug(
+            key="message", data=f"Starting CXR for person {person_id}")
+
+        print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
+
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if not any(x in self.module.symptom_list for x in persons_symptoms):
+            print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.")
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         df = self.sim.population.props
 
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
@@ -2164,7 +2373,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
-        smear_status = df.at[person_id, "tb_smear"]
+        smear_status = df.loc[person_id, "tb_smear"]
 
         # select sensitivity/specificity of test based on smear status
         if smear_status:
@@ -2175,46 +2384,51 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
+
         if test_result is not None:
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
+        print(f" Xray equipment used at fac level {self.ACCEPTED_FACILITY_LEVEL} ")
 
-        # if consumables not available, refer to level 2
-        # return blank footprint as xray did not occur
+        # if consumables not available, either refer to level 2 or use clinical diagnosis
         if test_result is None:
+            # if smear-positive, assume symptoms strongly predictive of TB
+            if smear_status:
+                test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                    dx_tests_to_run="tb_clinical", hsi_event=self
+                )
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                    {"Under5OPD": 1, "DiagRadio": 1}
+                )
+            # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
+            else:
 
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
-
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
-                topen=self.sim.date + pd.DateOffset(weeks=1),
-                tclose=None,
-                priority=0,
-            )
-
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
+                    topen=self.sim.date + pd.DateOffset(weeks=1),
+                    tclose=None,
+                    priority=0,
+                )
         # if test returns positive result, refer for appropriate treatment
         if test_result:
             df.at[person_id, "tb_diagnosed"] = True
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(
-                    person_id=person_id, module=self.module, facility_level="1a"
-                ),
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
             )
-
-        # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return ACTUAL_APPT_FOOTPRINT
+            # Return the footprint. If it should be suppressed, return a blank footprint.
+            if self.suppress_footprint:
+                return self.make_appt_footprint({})
+            else:
+                return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     """
-    This is the x-ray HSI performed at level 2
+    The is the x-ray HSI performed at level 2
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
     """
@@ -2227,10 +2441,19 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Xray"
+        # try to include "Under5OPD": 1, to appreciate behaviour in the outputs
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
 
     def apply(self, person_id, squeeze_factor):
+
+        logger.debug(key="message", data=f"Starting IPT for person {person_id}")
+        print(f"STARTING TB CXR SCREENING AT LEVEL {self.ACCEPTED_FACILITY_LEVEL} ")
+
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if not any(x in self.module.symptom_list for x in persons_symptoms):
+            print(f"facility CXR scheduled for person {person_id} due to TB symptoms.")
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         df = self.sim.population.props
 
@@ -2250,20 +2473,31 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
-        if test_result is not None:
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
         # if consumables not available, rely on clinical diagnosis
-        # return blank footprint as xray was not available
-        if test_result is None:
+        # if test_result is None:
+        #     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+        #         dx_tests_to_run="tb_clinical", hsi_event=self
+        #     )
+            if test_result is not None:
+                self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
+            print(f" Xray equipment used at fac level {self.ACCEPTED_FACILITY_LEVEL} ")
 
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+            #if test is none then call Tb_Clinical HSI event
+            if test_result is None:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Tb_ClinicalDiagnosis(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0,
+                )
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_ClinicalDiagnosis(person_id=person_id, module=self.module),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0,
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_clinical", hsi_event=self
+            )
+            # add another clinic appointment
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Under5OPD": 1, "DiagRadio": 1}
             )
 
         # if test returns positive result, refer for appropriate treatment
@@ -2272,22 +2506,18 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(
-                    person_id=person_id, module=self.module, facility_level="1a"
-                ),
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
             )
-
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
 
-
-# # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
 # #   Treatment
 # # ---------------------------------------------------------------------------
 # # the consumables at treatment initiation include the cost for the full course of treatment
@@ -2335,7 +2565,8 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         treatment_regimen = self.select_treatment(person_id)
         # treatment supplied in kits, one kit per treatment course
         treatment_available = self.get_consumables(
-            item_codes={self.module.item_codes_for_consumables_required[treatment_regimen]: 1}
+            # item_codes={self.module.item_codes_for_consumables_required[treatment_regimen]: 1}
+            item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
         )
 
         # if require MDR treatment, and not currently at level 2, refer to level 2
@@ -2364,7 +2595,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(
                 key="message",
                 data=f"HSI_Tb_StartTreatment: scheduling first follow-up "
-                f"for person {person_id}",
+                     f"for person {person_id}",
             )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2382,7 +2613,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.number_of_occurrences
                 <= self.module.parameters["tb_healthseekingbehaviour_cap"]
             ):
-
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     self,
                     topen=self.sim.date + DateOffset(weeks=1),
@@ -2486,7 +2716,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-                (person["tb_treatment_regimen"] == "tb_retx_child")):
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
@@ -2635,23 +2865,26 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         else:
             # Check/log use of consumables, and give IPT if available
 
-            # if child and HIV+ or child under 2 yrs
-            if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
-
-                # 6 months dispensation, once daily
-                drugs_available = self.get_consumables(
-                    item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
-
-            # for all others
-            else:
-                # 12 weeks dispensation, once weekly
-                drugs_available = self.get_consumables(
-                    item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12}
-                )
+            # # if child and HIV+ or child under 2 yrs
+            # if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
+            #
+            #     # 6 months dispensation, once daily
+            #     drugs_available = self.get_consumables(
+            #         item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
+            #
+            # # for all others
+            # else:
+            #     # 12 weeks dispensation, once weekly
+            #     drugs_available = self.get_consumables(
+            #         item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12}
+            #     )
 
             # if available, schedule IPT decision
-            if drugs_available:
-                # Update properties
+            # if drugs_available:
+            # Update properties
+            if self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
+            ):
                 df.at[person_id, "tb_on_ipt"] = True
                 df.at[person_id, "tb_date_ipt"] = self.sim.date
 
@@ -2708,6 +2941,114 @@ class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
         )
 
 
+class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
+    """
+    * Run a regular event which selects people to be screened in the community
+    * Occurs randomly across all districts
+    * Everyone equally likely to be selected (independent of symptoms)
+    * Excludes people with a current diagnosis of TB
+    """
+
+    def __init__(self, module):
+        self.repeat = 3
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+        p = self.module.parameters
+        rng = self.module.rng
+
+        logger.debug(key="message", data="Selecting persons for community chest x-ray screening")
+
+        prob_screening = p['probability_community_chest_xray']
+
+        # Get the index of eligible people (not diagnosed with TB and alive)
+        eligible = df.index[~df.tb_diagnosed & df.is_alive]
+
+        # Select people for screening based on probability
+        select_for_screening = rng.choice([True, False],
+                                          size=len(eligible),
+                                          p=[prob_screening, 1 - prob_screening])
+
+        if select_for_screening.sum():
+            screen_idx = eligible[select_for_screening]
+
+            # Send individuals for community x-ray screening based on their symptoms
+            for person_id in screen_idx:
+                persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+
+                # Check if the patient has cough, fever, night sweat, or weight loss
+                if any(x in self.module.symptom_list for x in persons_symptoms):
+                    print(f"Community CXR scheduled for person {person_id} due to TB symptoms.")
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
+                        topen=now,
+                        tclose=None,
+                        priority=0,
+                    )
+
+
+class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event for community chest X-ray screening.
+    Perform a chest X-ray for an individual.
+    This event relies on community health workers and radiographer time.
+    The footprint is set to ConWithDCSA as it occurs outside of the main health system.
+    """
+
+    def __init__(self, module, person_id, suppress_footprint=False):
+        super().__init__(module, person_id=person_id)
+
+        assert isinstance(module, Tb)
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
+
+        self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '0'
+
+    def apply(self, person_id, squeeze_factor):
+
+        print("STARTING COMMUNITY CHEST XRAY SCREENING")
+
+        logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
+        df = self.sim.population.props  # Shortcut to the dataframe
+        person = df.loc[person_id]
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+        smear_status = person['tb_smear']
+
+        # Perform the X-ray and decide the result
+        #test_result = False
+
+        # Select sensitivity/specificity of the test based on smear status
+        if smear_status:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_xray_smear_positive", hsi_event=self
+            )
+        else:
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
+            )
+
+        # If the test returns a positive result, refer for appropriate treatment
+        if test_result:
+            df.at[person_id, "tb_diagnosed"] = True
+            df.at[person_id, "tb_date_diagnosed"] = self.sim.date
+
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0,
+            )
+
+        # Return the footprint. If it should be suppressed, return a blank footprint.
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+            return ACTUAL_APPT_FOOTPRINT
+
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end
     This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' after 6 months
@@ -2749,7 +3090,6 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 #   Deaths
 # ---------------------------------------------------------------------------
 
-
 class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
     """
     The scheduled hospitalisation and subsequent death for a tb case
@@ -2789,20 +3129,20 @@ class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
                 low=p['length_of_inpatient_stay_if_terminal'][0],
                 high=p['length_of_inpatient_stay_if_terminal'][1])
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Tb_EndOfLifeCare(
-                    person_id=person_id, module=self.sim.modules["Tb"], beddays=beddays
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None,
-            )
+            # self.sim.modules["HealthSystem"].schedule_hsi_event(
+            #     hsi_event=HSI_Tb_EndOfLifeCare(
+            #         person_id=person_id, module=self.sim.modules["Tb"], beddays=beddays
+            #     ),
+            #     priority=0,
+            #     topen=self.sim.date,
+            #     tclose=None,
+            # )
 
             # schedule death for this person after hospital stay
             self.sim.schedule_event(
                 event=TbDeathEvent(person_id=person_id, module=self.module),
                 date=self.sim.date + pd.DateOffset(days=beddays),
-            )
+            ),
 
 
 class TbDeathEvent(Event, IndividualScopeEventMixin):
@@ -2898,7 +3238,12 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ACTIVE
         num_active_tb_cases = len(df[(df.tb_inf == "active") & df.is_alive])
-        prev_active = num_active_tb_cases / len(df[df.is_alive])
+        # prev_active = num_active_tb_cases / len(df[df.is_alive])
+        denominator = len(df[df.is_alive])
+        if denominator != 0:
+            prev_active = num_active_tb_cases / denominator
+        else:
+            prev_active = 0  # or another appropriate default value
 
         assert prev_active <= 1
 
@@ -2927,7 +3272,16 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # LATENT
         # proportion of population with latent TB - all pop
         num_latent = len(df[(df.tb_inf == "latent") & df.is_alive])
-        prev_latent = num_latent / len(df[df.is_alive])
+        # prev_latent = num_latent / len(df[df.is_alive])
+        # Calculate the number of alive individuals
+        denominator = len(df[df.is_alive])
+
+        # Check if the denominator is not zero before performing the division
+        if denominator != 0:
+            prev_latent = num_latent / denominator
+        else:
+            prev_latent = 0  # or another appropriate default value, depending on your context
+
         assert prev_latent <= 1
 
         # proportion of population with latent TB - adults
