@@ -167,7 +167,6 @@ class DiabeticRetinopathy(Module):
 
     def make_the_linear_models(self) -> None:
         """Make and save LinearModels that will be used when the module is running"""
-
         self.lm = dict()
 
         self.lm['onset_early_dr'] = LinearModel(
@@ -195,10 +194,9 @@ class DiabeticRetinopathy(Module):
         #         get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 1,
         #     }
         self.cons_item_codes['eye_injection'] = {
-                get_item_codes("Anesthetic Eye drops, 15ml"): 1,
-                get_item_codes('Aflibercept, 2mg'): 3,
-            }
-
+            get_item_codes("Anesthetic Eye drops, 15ml"): 1,
+            get_item_codes('Aflibercept, 2mg'): 3,
+        }
 
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
@@ -216,18 +214,12 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
 
         will_progress = self.module.lm['onset_early_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
         # will_progress_idx = will_progress[will_progress].index
-        # will_progress_idx = df.index[np.where(will_progress)[0]]
         will_progress_idx = df.index[np.where(will_progress)[0]]
-        # old_will_progress_idx = will_progress[will_progress].index
-        # Count new early cases for incidence tracking
-        new_early_cases = len(will_progress_idx)
         df.loc[will_progress_idx, 'dr_status'] = 'early'
 
         early_to_late = self.module.lm['onset_late_dr'].predict(diabetes_and_alive_earlydr, self.module.rng)
         # early_to_late_idx = early_to_late[early_to_late].index
         early_to_late_idx = df.index[np.where(early_to_late)[0]]
-        # Count new late cases for incidence tracking
-        new_late_cases = len(early_to_late_idx)
         df.loc[early_to_late_idx, 'dr_status'] = 'late'
 
         fast_dr = self.module.lm['onset_fast_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
@@ -267,7 +259,6 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 
-
 class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
         This event is scheduled by do_at_generic_first_appt_emergency following presentation for care with the symptoms
@@ -283,7 +274,6 @@ class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
-
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -332,9 +322,6 @@ class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
             )
 
 
-
-
-#TODO HSI_Dr_StartTreatment should be called by HSI_Dr_TestingFollowingSymptoms
 class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This event initiates the treatment of DR.
@@ -368,9 +355,10 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         treatment_slows_progression_to_late = randomly_sampled < self.module.parameters['p_medication']
 
         #TODO Add consumables in codition below
-        is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['eye_injection']
-        )
+
+        # is_cons_available = self.get_consumables(
+        #     self.module.cons_item_codes['eye_injection']
+        # )
 
         if treatment_slows_progression_to_late:
             df.at[person_id, 'dr_on_treatment'] = True

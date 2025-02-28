@@ -130,7 +130,7 @@ def test_basic_run(seed):
 
 
 def test_initial_config_of_pop_zero_prevalence(seed):
-    """Tests of the the way the population is configured: with zero initial prevalence values """
+    """Tests of the way the population is configured: with zero initial prevalence values """
     sim = get_simulation_healthsystemdisabled(seed=seed)
     sim = zero_out_init_prev(sim)
     sim.make_initial_population(n=popsize)
@@ -138,5 +138,4 @@ def test_initial_config_of_pop_zero_prevalence(seed):
     check_configuration_of_population(sim)
     df = sim.population.props
     assert (df.loc[df.is_alive].dr_status == 'none').all()
-
 
