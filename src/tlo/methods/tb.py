@@ -3082,7 +3082,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-        print(f"STARTING COMMUNITY CHEST XRAY SCREENING")
+        print("STARTING COMMUNITY CHEST XRAY SCREENING")
 
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
         df = self.sim.population.props  # Shortcut to the dataframe
