@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-#python src/scripts/hiv/DAH/analysis_tb_DAH10x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
+#python src/scripts/hiv/DAH/analysis_tb_DAH11x.py --scenario-outputs-folder outputs/newton.chagoma@york.ac.uk
 # to parse files use: tlo parse-log outputs/filename/x/y where and the x and y rep number of draws and runs
 #from matplotlib.ticker import FuncFormatter
 #import squarify
