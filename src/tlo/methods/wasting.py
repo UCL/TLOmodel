@@ -1811,9 +1811,12 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                 print("------------------------------")
             return
 
-        # Do here whatever happens to an individual during this health system interaction event
+        # Do here whatever happens to an individual during the admission for the treatment
         # ~~~~~~~~~~~~~~~~~~~~~~
-        # Make request for some consumables
+        # Perform measurements (height/length), weight, MUAC
+        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
+
+        # Make request for consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
         # individual items
         item_code1 = pd.unique(consumables.loc[consumables['Items'] ==
@@ -1878,10 +1881,12 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                 print("--------------OTP end1-------------------")
             return
 
-        # Do here whatever happens to an individual during this health
-        # system interaction event
+        # Do here whatever happens to an individual during the admission for the treatment
         # ~~~~~~~~~~~~~~~~~~~~~~
-        # Make request for some consumables
+        # Perform measurements (height/length), weight, MUAC
+        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
+
+        # Make request for consumables
         consumables = self.sim.modules['HealthSystem'].parameters[
             'item_and_package_code_lookups']
 
@@ -1946,7 +1951,12 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                 print("----------------------------------")
             return
 
-        # Make request for some consumables
+        # Do here whatever happens to an individual during the admission for the treatment
+        # ~~~~~~~~~~~~~~~~~~~~~~
+        # Perform measurements (height/length, weight, MUAC)
+        self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
+
+        # Make request for consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
 
         # individual items
@@ -1954,7 +1964,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
             consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
 
-        # # check availability of consumables
+        # check availability of consumables
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables available, so use it.')
             # Log that the treatment is provided:
