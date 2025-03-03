@@ -70,7 +70,7 @@ class Extreme_Weather_Events:
         """
         assert value in self._options_for_affected_services, f"Argument `cons_availability` is not recognised: {value}."
         self._affected_services = value
-        self._update_prob_item_codes_affected_services(self._affected_services)
+        self._update_prob_affected_services(self._affected_services)
 
     def on_start_of_month(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new month.
@@ -94,14 +94,3 @@ class Extreme_Weather_Events:
         average_affected_services_by_facility_id = disruptions_this_month.groupby(level=0).mean()
         self._is_unknown_disruption = average_affected_services_by_facility_id.to_dict()
 
-
-def _process_services_affected_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.Series]:
-    """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
-    the HealthSystem.
-    Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
-    each consumable at each facility_id during each month.
-    """
-    return (
-        set(availability_data.item_code),
-        availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
-    )
