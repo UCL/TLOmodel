@@ -1783,7 +1783,6 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Wasting)
 
         # Get a blank footprint and then edit to define call on resources
         # of this treatment event
@@ -1797,6 +1796,8 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
+        assert isinstance(self.module, Wasting)
+
         df = self.sim.population.props
         # p = self.module.parameters
 
@@ -1853,7 +1854,6 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Wasting)
 
         # Get a blank footprint and then edit to define call on resources
         # of this treatment event
@@ -1867,6 +1867,8 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
+        assert isinstance(self.module, Wasting)
+
         df = self.sim.population.props
         # p = self.module.parameters
 
@@ -1926,7 +1928,6 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Wasting)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Undernutrition_Feeding_Inpatient'
@@ -1936,6 +1937,8 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
 
     def apply(self, person_id, squeeze_factor):
+        assert isinstance(self.module, Wasting)
+
         df = self.sim.population.props
         # p = self.module.parameters
 
