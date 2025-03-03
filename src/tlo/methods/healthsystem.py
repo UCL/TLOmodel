@@ -2254,6 +2254,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # For each individual level event, check whether the equipment it has already declared is available. If it
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
+            # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
+            # Must do this by first assigni
             list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment = list()
             for item in list_of_individual_hsi_event_tuples_due_today:
                 if not item.hsi_event.is_all_declared_equipment_available:
