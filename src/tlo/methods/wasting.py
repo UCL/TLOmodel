@@ -826,15 +826,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
         if intervention == 'SFP':
-            df.at[person_id, 'un_am_discharge_date'] = \
-                self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
+            outcome_date = self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
 
             mam_full_recovery = self.wasting_models.acute_malnutrition_recovery_mam_lm.predict(
                 df.loc[[person_id]], self.rng
             )
 
             if mam_full_recovery:
-                # schedule recovery date
+                # set discharge date and schedule recovery
+                df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 if do_prints:
                     print(f"scheduled full recovery from MAM with SFP at {df.at[person_id, 'un_am_discharge_date']=}")
                 self.sim.schedule_event(
@@ -843,7 +843,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
                 # cancel progression date (in ProgressionEvent)
             else:
-                # remained MAM
+                # remained MAM, send for another SFP
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
+                    priority=0, topen=outcome_date)
                 if do_prints:
                     print("remained MAM with SFP")
                     print("------------------MAM tx -> remained MAM end---------------------------------")
@@ -861,12 +864,18 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             if sam_full_recovery:
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 # schedule full recovery
-                if do_prints:
-                    print(f"scheduled full recovery from SAM with {intervention=} at {outcome_date=}")
                 self.sim.schedule_event(
                     event=Wasting_FullRecovery_Event(module=self, person_id=person_id),
                     date=outcome_date
                 )
+                # send for follow-up treatment for MAM
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
+                    priority=0, topen=outcome_date
+                )
+                if do_prints:
+                    print(f"scheduled full recovery from SAM with {intervention=} at {outcome_date=} and sent for"
+                          "follow-up MAM tx")
 
             else:
                 outcome = self.rng.choice(['recovery_to_mam', 'death'],
@@ -882,11 +891,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         date=outcome_date
                     )
                     df.at[person_id, 'un_sam_death_date'] = outcome_date
-                else:  # recovery to MAM and follow-up treatment for MAM
+                else:  # recovery to MAM and send for treatment for MAM
                     df.at[person_id, 'un_am_discharge_date'] = outcome_date
                     if do_prints:
                         print(f"recovery to MAM with {intervention=} scheduled at {outcome_date=} "
-                              "and sent for follow-up MAM tx")
+                              "and sent for MAM tx")
                     self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(module=self, person_id=person_id),
                                             date=outcome_date)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
