@@ -1532,7 +1532,8 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
 
         # schedule monitoring within age-dependent frequency
         for person_id in index_under5:
-            next_event_days = rng.randint(0, (get_monitoring_frequency_days(df.at[person_id, 'age_exact_years']) - 2))
+            next_event_days = \
+                rng.randint(0, max(0, (get_monitoring_frequency_days(df.at[person_id, 'age_exact_years']) - 2)))
             if (df.at[person_id, 'age_exact_years'] + (next_event_days / 365.25)) < 5:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module, person_id=person_id),
