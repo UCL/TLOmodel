@@ -198,7 +198,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # reset all to one district if doing calibration or test runs
         # choose Zomba as it has ~10% prev of both species
         if self.single_district:
-            df['district_num_of_residence'] = 19
+            df['district_num_of_residence'] = pd.Categorical([19] * len(df),
+                                                             categories=df['district_num_of_residence'].cat.categories)
+
             df['district_of_residence'] = pd.Categorical(['Zomba'] * len(df),
                                                          categories=df['district_of_residence'].cat.categories)
             df['region_of_residence'] = pd.Categorical(['Southern'] * len(df),
@@ -1308,7 +1310,7 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             which varies by species
             """
             df[species_column_aggregate] -= df[species_column_aggregate] * (worm_lifespan / 12)
-            df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0)
+            df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0).astype(int)
 
             species = 'mansoni' if species_column_aggregate.startswith('ss_sm') else 'haematobium'
             clear_species_symptoms(species)

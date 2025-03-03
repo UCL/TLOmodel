@@ -111,7 +111,7 @@ sim, output = run_simulation(popsize=1_000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=False,
-                             single_district=False)
+                             single_district=True)
 
 # %% Extract and process the `pd.DataFrame`s needed
 
