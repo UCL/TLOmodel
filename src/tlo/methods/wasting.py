@@ -86,14 +86,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         '(ref age group <0.5 years old)'),
         'rr_inc_rate_wasting_by_agegp': Parameter(
             Types.LIST, 'relative risk of moderate wasting incidence rate by age group'),
-        'rr_wasting_preterm_and_AGA': Parameter(
-            Types.REAL, 'relative risk of wasting if born preterm and adequate for gestational age'),
+        'rr_wasting_AGA_and_preterm': Parameter(
+            Types.REAL, 'relative risk of moderate wasting incidence if born adequate for gestational age '
+                        'and preterm'),
         'rr_wasting_SGA_and_term': Parameter(
-            Types.REAL, 'relative risk of wasting if born term and small for gestational age'),
+            Types.REAL, 'relative risk of moderate wasting incidence if born small for gestational age '
+                        'and term'),
         'rr_wasting_SGA_and_preterm': Parameter(
-            Types.REAL, 'relative risk of wasting if born preterm and small for gestational age'),
+            Types.REAL, 'relative risk of moderate wasting incidence if born small for gestational age '
+                        'and preterm'),
         'rr_wasting_wealth_level': Parameter(
-            Types.REAL, 'relative risk of wasting per 1 unit decrease in wealth level'),
+            Types.REAL, 'relative risk of moderate wasting incidence per 1 unit decrease in wealth level'),
         # progression
         'min_days_duration_of_wasting': Parameter(
             Types.REAL, 'minimum limit for moderate and severe wasting duration episode (days)'),
@@ -2048,7 +2051,7 @@ class WastingModels:
                                  self.params['rr_wasting_SGA_and_preterm']),
                 Predictor().when('(nb_size_for_gestational_age == "average_for_gestational_age") '
                                  '& ((nb_late_preterm == True) | (nb_early_preterm == True))',
-                                 self.params['rr_wasting_preterm_and_AGA']),
+                                 self.params['rr_wasting_AGA_and_preterm']),
                 Predictor('li_wealth').apply(
                     lambda x: 1 if x == 1 else (x - 1) ** (self.params['rr_wasting_wealth_level'])),
             )
