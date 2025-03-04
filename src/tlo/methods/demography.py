@@ -134,7 +134,7 @@ class Demography(Module):
         ),
 
         'district_num_of_residence': Property(
-            Types.CATEGORICAL, 
+            Types.CATEGORICAL,
             'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
@@ -150,6 +150,10 @@ class Demography(Module):
             'The region of residence (mapped from district_num_of_residence).',
             categories=['SET_AT_RUNTIME']
         ),
+
+        'facility_used_level_1': Property(Types.CATEGORICAL,
+                                  'Which level 1 facility is "used" by individual.',
+                                          categories = ['SET_AT_RUNTIME']),
 
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
