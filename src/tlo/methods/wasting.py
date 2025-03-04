@@ -401,6 +401,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, 'un_progression_to_cancel'] = []
         # df.at[child_id, 'un_last_nonemergency_appt_date']= pd.NaT
 
+        # initiate growth monitoring from day 1
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi_event=HSI_Wasting_GrowthMonitoring(module=self, person_id=child_id),
+            priority=2, topen=self.sim.date + pd.DateOffset(days=1)
+        )
+
     def get_prob_severe_wasting_among_wasted(self, agegp: str) -> Union[float, int]:
         """
         This function will return the probability of severe wasting for those with wasting status within the agegp
