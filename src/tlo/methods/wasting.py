@@ -151,8 +151,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
         'growth_monitoring_attendance_prob_agecat': Parameter(
             Types.LIST, 'probability to attend the growth monitoring for age categories'),
-        'oedema_check_prob': Parameter(
-            Types.REAL, 'probablity of oedema being checked when acute malnutrition examined'),
         # recovery due to treatment/interventions
         'recovery_rate_with_soy_RUSF': Parameter(
             Types.REAL, 'probability of recovery from wasting following treatment with soy RUSF'),
@@ -1693,66 +1691,53 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             )
 
         complications = df.at[person_id, 'un_sam_with_complications']
-        oedema_checked = rng.random_sample() < p['oedema_check_prob']
 
         # DIAGNOSIS
-        # based on performed measurements (depends on whether oedema is checked, and what equipment is available)
-        if oedema_checked and df.at[person_id, 'un_am_nutritional_oedema']:
+        # oedema is assumed to be quite obvious if present
+        # in addition, based on performed measurements (depending on what equipment is available)
+        if df.at[person_id, 'un_am_nutritional_oedema']:
             diagnosis = 'SAM'
             if do_prints:
-                print(f"oedema checked and observed its presence => {diagnosis=}")
+                print(f"oedema present => {diagnosis=}")
         else:
-            if 'MUAC tape' in available_equipment:
-                # all equip available and used
-                if all(item in available_equipment for item in
-                       ['Height Pole (Stadiometer)', 'Weighing scale']):
-                    if oedema_checked:
-                        diagnosis = df.at[person_id, 'un_clinical_acute_malnutrition']
-                        if do_prints:
-                            print(f"oedema checked and all equip available, hence {diagnosis=} in line with actual "
-                                  f"state {df.at[person_id, 'un_clinical_acute_malnutrition']=}")
-                    else:
-                        whz = df.at[person_id, 'un_WHZ_category']
-                        muac = df.at[person_id, 'un_am_MUAC_category']
-                        if whz == 'WHZ>=-2' and muac == '>=125mm':
-                            diagnosis = 'well'
-                        elif whz == 'WHZ<-3' or muac == '<115mm':
-                            diagnosis = 'SAM'
-                        else:
-                            diagnosis = 'MAM'
-                        if do_prints:
-                            print(f"oedema not checked but all equip available, hence {diagnosis=} based on {whz=} and "
-                                  f"{muac=},\n"
-                                  f" not on actual state {df.at[person_id, 'un_clinical_acute_malnutrition']=}")
-                # MUAC measurement is solely used for diagnosis
+            # all equip available and used for diagnosis
+            if all(item in available_equipment for item in
+                   ['Height Pole (Stadiometer)', 'Weighing scale']):
+                diagnosis = df.at[person_id, 'un_clinical_acute_malnutrition']
+                if do_prints:
+                    print(f"oedema not present, all equip available, hence {diagnosis=} is the actual am state: "
+                          f"{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
+            # MUAC measurement is solely used for diagnosis, as Height Pole and/or Weighing scale not available
+            elif 'MUAC tape' in available_equipment:
+                # TODO: rm print
+                print("debugging-WARNING: full availability of equip assumed, we should have never get here")
+                muac = df.at[person_id, 'un_am_MUAC_category']
+                if muac == '>=125mm':
+                    diagnosis = 'well'
+                elif muac == '<115mm':
+                    diagnosis = 'SAM'
                 else:
-                    print("WARNING: full availability of equip assumed, we should have never get here")
-                    muac = df.at[person_id, 'un_am_MUAC_category']
-                    if muac == '>=125mm':
-                        diagnosis = 'well'
-                    elif muac == '<115mm':
-                        diagnosis = 'SAM'
-                    else:
-                        diagnosis = 'MAM'
-
-            else:  # MUAC tape not available
-                print("WARNING: full availability of equip assumed, we should have never get here")
-                # WHZ score is solely used for diagnosis
-                if all(item in available_equipment for item in
+                    diagnosis = 'MAM'
+                if do_prints:
+                    print("oedema not present, MUAC tape available but heigh pole and/pr weighing scale not, hence "
+                          f"{diagnosis=} based on {muac=}, not on actual state "
+                          f"{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
+            # WHZ score is solely used for diagnosis
+            elif all(item in available_equipment for item in
                        ['Height Pole (Stadiometer)', 'Weighing scale']):
-                    whz = df.at[person_id, 'un_WHZ_category']
-                    if whz == 'WHZ>=-2':
-                        diagnosis = 'well'
-                    elif whz == 'WHZ<-3':
-                        diagnosis = 'SAM'
-                    else:
-                        diagnosis = 'MAM'
-                # WHZ score nor MUAC measurement available, hence diagnosis based solely on presence of oedema
+                # TODO: rm print
+                print("debugging-WARNING: full availability of equip assumed, we should have never get here")
+                whz = df.at[person_id, 'un_WHZ_category']
+                if whz == 'WHZ>=-2':
+                    diagnosis = 'well'
+                elif whz == 'WHZ<-3':
+                    diagnosis = 'SAM'
                 else:
-                    if df.at[person_id, 'un_am_nutritional_oedema']:
-                        diagnosis = 'SAM'
-                    else:
-                        diagnosis = 'well'
+                    diagnosis = 'MAM'
+            # WHZ score nor MUAC measurement available, hence diagnosis based solely on presence of oedema and oedema is
+            # not present
+            else:
+                diagnosis = 'well'
 
         if diagnosis == 'well':
             if do_prints:
