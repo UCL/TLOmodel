@@ -1,5 +1,5 @@
 """
-This script runs the generates results for the Horizontal versus Vertical investments paper.
+This script generates results for the Horizontal versus Vertical investments paper.
 The latest job_ID used for the analysis is -
 Completed in Jan 2025:
 htm_and_hss_runs-2025-01-16T135243Z
@@ -74,6 +74,7 @@ relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 
 # Scenarios
+# Subset of scenarios used for TGF and FCDO reports
 htm_scenarios = {0:"Baseline", 8: "HSS Expansion Package",
                  9: "HIV Program Scale-up Without HSS Expansion", 17: "HIV Programs Scale-up With HSS Expansion Package",
                  18: "TB Program Scale-up Without HSS Expansion", 26: "TB Programs Scale-up With HSS Expansion Package",
@@ -81,6 +82,7 @@ htm_scenarios = {0:"Baseline", 8: "HSS Expansion Package",
                  36: "HTM Program Scale-up Without HSS Expansion",39: "HTM Program Scale-up With HRH Scale-up (6%)",
                  41: "HTM Program Scale-up With Consumables at 75th Percentile", 44: "HTM Programs Scale-up With HSS Expansion Package"}
 
+# Full list of scenarios used in the manuscript
 all_manuscript_scenarios = {0:"Baseline", 1: "HRH Scale-up (1%)", 2:"HRH Scale-up (4%)", 3:"HRH Scale-up (6%)",
                             4: "Increase Capacity at Primary Care Levels", 5: "Consumables Increased to 75th Percentile",
                             6: "Consumables Available at HIV levels", 7: "Consumables Available at EPI levels",
@@ -113,71 +115,17 @@ color_map = {
 }
 
 # Cost-effectiveness threshold
-chosen_cet = 199.620811947318 # This is based on the estimate from Lomas et al (2023)- $160.595987085533 in 2019 USD coverted to 2023 USD
+chosen_cet = 191.4304166 # This is based on the estimate from Lomas et al (2023)- $160.595987085533 in 2019 USD coverted to 2023 USD
 # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is $77.4 in 2023 USD terms
 chosen_value_of_statistical_life = 834 # This is based on Munthali et al (2020) National Planning Commission Report on
 #"Medium and long-term impacts of a moderate lockdown (social restrictions) in response to the COVID-19 pandemic in Malawi"
-lomas_consumption_value_of_health = 230
+lomas_consumption_value_of_health = 257.472 # this value is for 2025 (converted to 2023 USD)
+# and assumed income elasticity of consumption value of health to be 1.
 
 # Discount rate
 discount_rate = 0.03
 
 # Define a function to create bar plots
-def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
-    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-    extent of the error bar."""
-
-    # Calculate y-error bars
-    yerr = np.array([
-        (_df['mean'] - _df['lower']).values,
-        (_df['upper'] - _df['mean']).values,
-    ])
-
-    # Map xticks based on the hss_scenarios dictionary
-    xticks = {index: htm_scenarios.get(index, f"Scenario {index}") for index in _df.index}
-
-    # Retrieve colors from color_map based on the xticks labels
-    colors = [color_map.get(label, '#333333') for label in xticks.values()]  # default to grey if not found
-
-    # Generate consecutive x positions for the bars, ensuring no gaps
-    x_positions = np.arange(len(xticks))  # Consecutive integers for each bar position
-
-    fig, ax = plt.subplots()
-    ax.bar(
-        x_positions,
-        _df['mean'].values,
-        yerr=yerr,
-        color=colors,  # Set bar colors
-        alpha=1,
-        ecolor='black',
-        capsize=10,
-    )
-
-    # Add optional annotations above each bar
-    if annotations:
-        for xpos, ypos, text in zip(x_positions, _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=8)
-
-    # Set x-tick labels with wrapped text if required
-    wrapped_labs = ["\n".join(textwrap.wrap(label,30)) for label in xticks.values()]
-    ax.set_xticks(x_positions)  # Set x-ticks to consecutive positions
-    ax.set_xticklabels(wrapped_labs, rotation=45 if not xticklabels_horizontal_and_wrapped else 0, ha='right',
-                       fontsize=7)
-
-    # Set y-axis limit to upper max + 500
-    ax.set_ylim(_df['lower'].min()*1.25, _df['upper'].max()*1.25)
-
-    # Set font size for y-tick labels and grid
-    ax.tick_params(axis='y', labelsize=9)
-    ax.tick_params(axis='x', labelsize=9)
-
-    ax.grid(axis="y")
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    fig.tight_layout()
-
-    return fig, ax
-
 def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
                         xticklabels_horizontal_and_wrapped=False,
                         put_labels_in_legend=True,
@@ -307,7 +255,6 @@ def get_total_population_by_year(_df):
     # Filter for relevant years and return the total population as a Series
     return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
         'total']
-
 
 # Extract results with custom function
 total_population_by_year = extract_results(
