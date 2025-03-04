@@ -285,8 +285,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         print("\nPARAMETERS:")
         print(f"{p['base_death_rate_untreated_SAM']=}")
-        print(f"mod_wast_incidence__coef={p['base_overall_inc_rate_wasting']/0.0475}")
-        print(f"progression_to_sev_wast__coef={p['progression_severe_wasting_monthly_by_agegp'][0]/0.0200}")
+        print(f"mod_wast_incidence__coef={p['base_overall_inc_rate_wasting']/0.019}")
+        print(f"progression_to_sev_wast__coef={p['progression_severe_wasting_monthly_by_agegp'][0]/0.0144}")
         if p['base_death_rate_untreated_SAM'] != 0:
             print("prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam="
                   f"{p['prob_death_after_SAMcare']*(1-0.738)/p['base_death_rate_untreated_SAM']}")
