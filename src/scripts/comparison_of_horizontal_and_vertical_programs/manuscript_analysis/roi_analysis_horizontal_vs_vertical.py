@@ -216,164 +216,180 @@ input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
 
 # Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
 #-----------------------------------------------------------------------------------------------------------------------
-# Extract supply chain cost as a proportion of consumable costs to apply to malaria scale-up commodities
-# Load primary costing resourcefile
-workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                              sheet_name=None)
-# Read parameters for consumables costs
-# Load consumables cost data
-unit_price_consumable = workbook_cost["consumables"]
-unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
-unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
-    drop=True).iloc[1:]
-unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
+    # Extract supply chain cost as a proportion of consumable costs to apply to malaria scale-up commodities
+    # Load primary costing resourcefile
+    workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                  sheet_name=None)
+    # Read parameters for consumables costs
+    # Load consumables cost data
+    unit_price_consumable = workbook_cost["consumables"]
+    unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+    unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
+        drop=True).iloc[1:]
+    unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
 
-# In this case malaria intervention scale-up costs were not included in the standard estimate_input_cost_of_scenarios function
-list_of_draws_with_malaria_scaleup_parameters = params[(params.module_param == 'Malaria:scaleup_start_year')]
-list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'] = pd.to_numeric(list_of_draws_with_malaria_scaleup_parameters['value'])
-list_of_draws_with_malaria_scaleup_implemented_in_costing_period = list_of_draws_with_malaria_scaleup_parameters[(list_of_draws_with_malaria_scaleup_parameters['value'] < max(relevant_period_for_costing))].index.to_list()
+    # In this case malaria intervention scale-up costs were not included in the standard estimate_input_cost_of_scenarios function
+    list_of_draws_with_malaria_scaleup_parameters = _params[(_params.module_param == 'Malaria:scaleup_start_year')]
+    list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'] = pd.to_numeric(list_of_draws_with_malaria_scaleup_parameters['value'])
+    list_of_draws_with_malaria_scaleup_implemented_in_costing_period = list_of_draws_with_malaria_scaleup_parameters[(list_of_draws_with_malaria_scaleup_parameters['value'] < max(_relevant_period_for_costing))].index.to_list()
 
-# 1. IRS costs
-irs_coverage_rate = 0.8
-districts_with_irs_scaleup = ['Kasungu', 'Mchinji', 'Lilongwe', 'Lilongwe City', 'Dowa', 'Ntchisi', 'Salima', 'Mangochi',
-                              'Mwanza', 'Likoma', 'Nkhotakota']
-# Convert above list of district names to numeric district identifiers
-district_keys_with_irs_scaleup = [key for key, name in district_dict.items() if name in districts_with_irs_scaleup]
-year_of_malaria_scaleup_start = list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'].reset_index()['value'][0]
-final_year_for_costing = max(list_of_relevant_years_for_costing)
-TARGET_PERIOD_MALARIA_SCALEUP = (Date(year_of_malaria_scaleup_start, 1, 1), Date(final_year_for_costing, 12, 31))
+    # 1. IRS costs
+    irs_coverage_rate = 0.8
+    districts_with_irs_scaleup = ['Kasungu', 'Mchinji', 'Lilongwe', 'Lilongwe City', 'Dowa', 'Ntchisi', 'Salima', 'Mangochi',
+                                  'Mwanza', 'Likoma', 'Nkhotakota']
+    # Convert above list of district names to numeric district identifiers
+    district_keys_with_irs_scaleup = [key for key, name in district_dict.items() if name in districts_with_irs_scaleup]
+    year_of_malaria_scaleup_start = list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'].reset_index()['value'][0]
+    final_year_for_costing = max(list_of_relevant_years_for_costing)
+    TARGET_PERIOD_MALARIA_SCALEUP = (Date(year_of_malaria_scaleup_start, 1, 1), Date(final_year_for_costing, 12, 31))
 
-# Get population by district
-def get_total_population_by_year(_df):
-    years_needed = [i.year for i in TARGET_PERIOD_MALARIA_SCALEUP]  # Malaria scale-up period years
-    _df['year'] = pd.to_datetime(_df['date']).dt.year
+    # Get population by district
+    def get_total_population_by_year(_df):
+        years_needed = [i.year for i in TARGET_PERIOD_MALARIA_SCALEUP]  # Malaria scale-up period years
+        _df['year'] = pd.to_datetime(_df['date']).dt.year
 
-    # Validate that all necessary years are in the DataFrame
-    if not set(years_needed).issubset(_df['year'].unique()):
-        raise ValueError("Some years are not recorded in the dataset.")
+        # Validate that all necessary years are in the DataFrame
+        if not set(years_needed).issubset(_df['year'].unique()):
+            raise ValueError("Some years are not recorded in the dataset.")
 
-    # Filter for relevant years and return the total population as a Series
-    return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
-        'total']
+        # Filter for relevant years and return the total population as a Series
+        return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+            'total']
 
-# Extract results with custom function
-total_population_by_year = extract_results(
-    results_folder,
-    module='tlo.methods.demography',
-    key='population',
-    custom_generate_series=get_total_population_by_year,
-    do_scaling=True
-)
-def estimate_district_population_from_total(_df):
-    """ Generate district population by year from national population by year estimates"""
-    # Replicate population estimates for each district
-    district_ids = list(range(32))
-    df_replicated_for_each_district = pd.concat([_df] * 32, axis=0)
-    df_replicated_for_each_district['District_Num'] = np.array(
-        sorted(district_ids * (final_year_for_costing - year_of_malaria_scaleup_start + 1)),
-        dtype=np.int64) # attach district number to each replicate
-    df_replicated_for_each_district = df_replicated_for_each_district.reset_index()
-
-    # Load proportional population distribution by district
-    population_2010 = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')
-    population_proportion_by_district_2010 = (
-        population_2010.groupby('District_Num')['Count']
-        .sum()
-        .pipe(lambda x: x / x.sum())  # Compute proportions
+    # Get total population by year
+    total_population_by_year = extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='population',
+        custom_generate_series=get_total_population_by_year,
+        do_scaling=True
     )
-    assert (population_proportion_by_district_2010.sum() == 1)
+    def estimate_district_population_from_total(_df):
+        """ Generate district population by year from national population by year estimates"""
+        # Replicate population estimates for each district
+        district_ids = list(range(32))
+        df_replicated_for_each_district = pd.concat([_df] * 32, axis=0)
+        df_replicated_for_each_district['District_Num'] = np.array(
+            sorted(district_ids * (final_year_for_costing - year_of_malaria_scaleup_start + 1)),
+            dtype=np.int64) # attach district number to each replicate
+        df_replicated_for_each_district = df_replicated_for_each_district.reset_index()
 
-    # Merge and compute district-level population by year
-    df_by_district = df_replicated_for_each_district.merge(population_proportion_by_district_2010,
-                                                                      on='District_Num', how='left', validate='m:1')
-    df_by_district[_df.columns] = df_by_district[
-        _df.columns].multiply(df_by_district['Count'], axis=0)
-    df_by_district = df_by_district.drop(columns=['District_Num', 'Count'])
+        # Load proportional population distribution by district
+        population_2010 = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')
+        population_proportion_by_district_2010 = (
+            population_2010.groupby('District_Num')['Count']
+            .sum()
+            .pipe(lambda x: x / x.sum())  # Compute proportions
+        )
+        assert (population_proportion_by_district_2010.sum() == 1)
 
-    # Set multi-level columns and final formatting
-    df_by_district = (
-        df_by_district
-        .set_axis(pd.MultiIndex.from_tuples(df_by_district.columns, names=['draw', 'run']), axis=1)
-        .rename(columns={'District_Num': 'district'})
-        .set_index(['year', 'district'])
-    )
-    df_by_district.columns = pd.MultiIndex.from_tuples(df_by_district.columns)
-    df_by_district.columns.names = ['draw', 'run']
-    return df_by_district
+        # Merge and compute district-level population by year
+        df_by_district = df_replicated_for_each_district.merge(population_proportion_by_district_2010,
+                                                                          on='District_Num', how='left', validate='m:1')
+        df_by_district[_df.columns] = df_by_district[
+            _df.columns].multiply(df_by_district['Count'], axis=0)
+        df_by_district = df_by_district.drop(columns=['District_Num', 'Count'])
 
-district_population_by_year = estimate_district_population_from_total(total_population_by_year)
+        # Set multi-level columns and final formatting
+        df_by_district = (
+            df_by_district
+            .set_axis(pd.MultiIndex.from_tuples(df_by_district.columns, names=['draw', 'run']), axis=1)
+            .rename(columns={'District_Num': 'district'})
+            .set_index(['year', 'district'])
+        )
+        df_by_district.columns = pd.MultiIndex.from_tuples(df_by_district.columns)
+        df_by_district.columns.names = ['draw', 'run']
+        return df_by_district
 
-def get_number_of_people_covered_by_malaria_scaleup(_df, list_of_districts_covered = None, draws_included = None):
-    _df = pd.DataFrame(_df)
-    # Reset the index to make 'district' a column
-    _df = _df.reset_index()
-    # Convert the 'district' column to numeric values
-    _df['district'] = pd.to_numeric(_df['district'], errors='coerce')
-    _df = _df.set_index(['year', 'district'])
-    # Zero out rows for districts not in the specified list
-    if list_of_districts_covered is not None:
-        mask = _df.index.get_level_values('district').isin(list_of_districts_covered)
-        _df.loc[~mask, :] = 0  # Use mask to zero out unwanted rows
+    # Get population by district by year
+    district_population_by_year = estimate_district_population_from_total(total_population_by_year)
 
-    # Zero out columns for draws not in the specified list
-    if draws_included is not None:
-        mask = _df.columns.get_level_values('draw').isin(draws_included)
-        _df.loc[:, ~mask] = 0  # Use mask to zero out unwanted columns
-    return _df
+    def get_number_of_people_covered_by_malaria_scaleup(_df, list_of_districts_covered = None, draws_included = None):
+        _df = pd.DataFrame(_df)
+        # Reset the index to make 'district' a column
+        _df = _df.reset_index()
+        # Convert the 'district' column to numeric values
+        _df['district'] = pd.to_numeric(_df['district'], errors='coerce')
+        _df = _df.set_index(['year', 'district'])
+        # Zero out rows for districts not in the specified list
+        if list_of_districts_covered is not None:
+            mask = _df.index.get_level_values('district').isin(list_of_districts_covered)
+            _df.loc[~mask, :] = 0  # Use mask to zero out unwanted rows
 
-district_population_covered_by_irs_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
-                                                                                                 list_of_districts_covered=district_keys_with_irs_scaleup,
-                                                                                                 draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period)
+        # Zero out columns for draws not in the specified list
+        if draws_included is not None:
+            mask = _df.columns.get_level_values('draw').isin(draws_included)
+            _df.loc[:, ~mask] = 0  # Use mask to zero out unwanted columns
+        return _df
 
-irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
-# This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping, PPE. The cost is measured per person protected. Based on Stelmach et al (2018)
-irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate
-total_irs_cost = irs_multiplication_factor.iloc[0] * district_population_covered_by_irs_scaleup_by_year # for districts and scenarios included
-total_irs_cost = total_irs_cost.groupby(level='year').sum()
+    # Get population by district by year covered by IRS
+    district_population_covered_by_irs_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
+                                                                                                     list_of_districts_covered=district_keys_with_irs_scaleup,
+                                                                                                     draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period)
 
-# 2. Bednet costs
-bednet_coverage_rate = 0.7
-# We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
-inflation_2011_to_2023 = 1.35
-unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] + (8.27 - 3.36) * inflation_2011_to_2023
-# Stelmach et al Tanzania https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_ (Price in 2011 USD) - This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping. The cost is measured per net distributed
-# Note that the cost per net of $3.36 has been replaced with a cost of Malawi Kwacha 667 (2023) as per the Central Medical Stores Trust sales catalogue
+    # Get annual cost of IRS under malaria scale-up assumptions
+    irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
+    # This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping, PPE. The cost is measured per person protected. Based on Stelmach et al (2018)
+    irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate
+    total_irs_cost = irs_multiplication_factor.iloc[0] * district_population_covered_by_irs_scaleup_by_year # for districts and scenarios included
+    total_irs_cost = total_irs_cost.groupby(level='year').sum()
 
-# We add supply chain costs (procurement + distribution + warehousing) because the unit_cost does not include this
-annual_bednet_cost_per_person = unit_cost_of_bednet / 1.8 / 3
-bednet_multiplication_factor = bednet_coverage_rate * annual_bednet_cost_per_person
+    # 2. Bednet costs
+    bednet_coverage_rate = 0.7
+    # We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
+    inflation_2011_to_2023 = 1.35
+    unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] + (8.27 - 3.36) * inflation_2011_to_2023
+    # Stelmach et al Tanzania https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_ (Price in 2011 USD) - This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping. The cost is measured per net distributed
+    # Note that the cost per net of $3.36 has been replaced with a cost of Malawi Kwacha 667 (2023) as per the Central Medical Stores Trust sales catalogue
 
-district_population_covered_by_bednet_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
-                                                                                                 draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period) # All districts covered
+    # We add supply chain costs (procurement + distribution + warehousing) because the unit_cost does not include this
+    annual_bednet_cost_per_person = unit_cost_of_bednet / 1.8 / 3
+    bednet_multiplication_factor = bednet_coverage_rate * annual_bednet_cost_per_person
 
-total_bednet_cost = bednet_multiplication_factor.iloc[0] * district_population_covered_by_bednet_scaleup_by_year  # for scenarios included
-total_bednet_cost = total_bednet_cost.groupby(level='year').sum()
+    district_population_covered_by_bednet_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
+                                                                                                     draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period) # All districts covered
 
-# Malaria scale-up costs - TOTAL
-malaria_scaleup_costs = [
-    (total_irs_cost.reset_index(), 'cost_of_IRS_scaleup'),
-    (total_bednet_cost.reset_index(), 'cost_of_bednet_scaleup'),
-]
-def melt_and_label_malaria_scaleup_cost(_df, label):
-    multi_index = pd.MultiIndex.from_tuples(_df.columns)
-    _df.columns = multi_index
+    total_bednet_cost = bednet_multiplication_factor.iloc[0] * district_population_covered_by_bednet_scaleup_by_year  # for scenarios included
+    total_bednet_cost = total_bednet_cost.groupby(level='year').sum()
 
-    # reshape dataframe and assign 'draw' and 'run' as the correct column headers
-    melted_df = pd.melt(_df, id_vars=['year']).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
-    # Replace item_code with consumable_name_tlo
-    melted_df['cost_subcategory'] = label
-    melted_df['cost_category'] = 'malaria scale-up'
-    melted_df['cost_subgroup'] = 'NA'
-    melted_df['Facility_Level'] = 'all'
-    melted_df = melted_df.rename(columns={'value': 'cost'})
-    return melted_df
+    # Malaria scale-up costs - TOTAL
+    malaria_scaleup_costs = [
+        (total_irs_cost.reset_index(), 'cost_of_IRS_scaleup'),
+        (total_bednet_cost.reset_index(), 'cost_of_bednet_scaleup'),
+    ]
+    return malaria_scaleup_costs
 
-# Iterate through additional costs, melt and concatenate
-for df, label in malaria_scaleup_costs:
-    new_df = melt_and_label_malaria_scaleup_cost(df, label)
-    new_df = new_df[new_df['year'].isin(list_of_relevant_years_for_costing)]
-    new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate, _year = relevant_period_for_costing[0])
-    input_costs = pd.concat([input_costs, new_df], ignore_index=True)
+malaria_scaleup_costs = estimate_malaria_scale_up_costs(_params = params,
+                                                        _relevant_period_for_costing = relevant_period_for_costing)
+
+def append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs, _total_input_costs, _relevant_period_for_costing):
+    # Re-format malaria scale-up costs to append to the rest of the input_costs
+    def melt_and_label_malaria_scaleup_cost(_df, label):
+        multi_index = pd.MultiIndex.from_tuples(_df.columns)
+        _df.columns = multi_index
+
+        # reshape dataframe and assign 'draw' and 'run' as the correct column headers
+        melted_df = pd.melt(_df, id_vars=['year']).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
+        # Replace item_code with consumable_name_tlo
+        melted_df['cost_subcategory'] = label
+        melted_df['cost_category'] = 'malaria scale-up'
+        melted_df['cost_subgroup'] = 'NA'
+        melted_df['Facility_Level'] = 'all'
+        melted_df = melted_df.rename(columns={'value': 'cost'})
+        return melted_df
+
+    # Iterate through additional costs, melt and concatenate
+    for df, label in _malaria_scale_up_costs:
+        new_df = melt_and_label_malaria_scaleup_cost(df, label)
+        list_of_relevant_years_for_costing = list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1))
+        new_df = new_df[new_df['year'].isin(list_of_relevant_years_for_costing)]
+        new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate, _year = _relevant_period_for_costing[0])
+        _total_input_costs = pd.concat([_total_input_costs, new_df], ignore_index=True)
+
+input_costs = append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs = malaria_scaleup_costs,
+                                                                 _total_input_costs = input_costs,
+                                                                 _relevant_period_for_costing = relevant_period_for_costing)
 
 # Extract input_costs for browsing
 input_costs = input_costs[input_costs['draw'].isin(list(all_manuscript_scenarios.keys()))]
