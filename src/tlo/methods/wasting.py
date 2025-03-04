@@ -1526,11 +1526,11 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
         def get_monitoring_frequency_days(age):
             # TODO: maybe in future 0-1 to be dealt with within epi module
             if age < 1:
-                return p['growth_monitoring_frequency_days'][0]
+                return p['growth_monitoring_frequency_days_agecat'][0]
             elif age <= 2:
-                return p['growth_monitoring_frequency_days'][1]
+                return p['growth_monitoring_frequency_days_agecat'][1]
             else:
-                return p['growth_monitoring_frequency_days'][2]
+                return p['growth_monitoring_frequency_days_agecat'][2]
 
         # schedule monitoring within age-dependent frequency
         for person_id in index_under5:
@@ -1570,11 +1570,11 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         #  later may be excluded from here and be dealt with within epi module
         def get_attendance_prob(age):
             if age < 1:
-                return p['growth_monitoring_attendance_prob'][0]
+                return p['growth_monitoring_attendance_prob_agecat'][0]
             if age <= 2:
-                return p['growth_monitoring_attendance_prob'][1]
+                return p['growth_monitoring_attendance_prob_agecat'][1]
             else:
-                return p['growth_monitoring_attendance_prob'][2]
+                return p['growth_monitoring_attendance_prob_agecat'][2]
 
         # perform growth monitoring if attending
         self.attendance = rng.random_sample() < get_attendance_prob(person_age)
@@ -1620,11 +1620,11 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             def get_monitoring_frequency_days(age):
                 # TODO: in future maybe 0-1 to be dealt with within epi module
                 if age < 1:
-                    return p['growth_monitoring_frequency_days'][0]
+                    return p['growth_monitoring_frequency_days_agecat'][0]
                 elif age <= 2:
-                    return p['growth_monitoring_frequency_days'][1]
+                    return p['growth_monitoring_frequency_days_agecat'][1]
                 else:
-                    return p['growth_monitoring_frequency_days'][2]
+                    return p['growth_monitoring_frequency_days_agecat'][2]
 
             person_monitoring_frequency = get_monitoring_frequency_days(df.at[person_id, 'age_exact_years'])
             if do_prints:
