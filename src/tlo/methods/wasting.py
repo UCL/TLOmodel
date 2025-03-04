@@ -1496,10 +1496,8 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
 
 
 class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
-    # TODO: will be updated for children 1-5 (monitoring for 0-1 will be integrated in epi module)
-    #  For now, children are only monitored if in population when sim. initiated, but when new child born, it is not
-    #  scheduled for monitoring at all yet, it needs to be done in the epi module, or if better, done in epi for 0-1,
-    #  and scheduled to be done in here from when they are 1y old
+    # TODO: maybe will be updated to integrate monitoring of < 1y old in epi module, and on birth schedule to be
+    #  monitored within wasting module only when > 1y old
     """
     Event that schedules HSI_Wasting_GrowthMonitoring for all under-5 children for a random day within the age-dependent
     frequency.
@@ -1521,12 +1519,12 @@ class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
         rng = self.module.rng
         p = self.module.parameters
 
-        # TODO: including treated children?
+        # TODO: including treated children? (until there is growth monitoring with tx and scheduled post-tx, yes)
         index_under5 = df.index[df.is_alive & (df.age_exact_years < 5)]
         # and ~df.un_am_treatment_type.isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'])
 
         def get_monitoring_frequency_days(age):
-            # TODO: 0-1 to be dealt with within epi module
+            # TODO: maybe in future 0-1 to be dealt with within epi module
             if age < 1:
                 return p['growth_monitoring_frequency_days'][0]
             elif age <= 2:
@@ -1568,8 +1566,8 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         person_age = self.sim.population.props.loc[self.target].age_exact_years
 
-        # TODO: for now assumed general attendence prob for <1 y old,
-        #  later will be excluded and dealt with within epi module
+        # TODO: for now assumed general attendance prob for <1 y old,
+        #  later may be excluded from here and be dealt with within epi module
         def get_attendance_prob(age):
             if age < 1:
                 return p['growth_monitoring_attendance_prob'][0]
@@ -1603,8 +1601,8 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         #  after treatment monitoring, where the assumed "treatment outcome" will be determined and follow-up treatment
         #  based on that? - The easiest way (currently coded) is assuming that after treatment all measurements are
         #  done, hence correctly diagnosed. The growth monitoring is scheduled for them as usual, ie, for instance, for
-        #  a child 2-5 old, if they were sent for treatment via growth monitoring, they will be on treatment 3 or 4
-        #  weeks, but next monitoring will be done in ~5 months after the treatment. - Or we could schedule for the
+        #  a child 2-5 old, if they were sent for treatment via growth monitoring, they will be on tx for adequate nmb
+        #  of weeks, but next monitoring will be done in ~5 months after the treatment. - Or we could schedule for the
         #  treated children a monitoring sooner after the treatment.
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
             # or
@@ -1620,7 +1618,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         def schedule_next_monitoring():
             def get_monitoring_frequency_days(age):
-                # TODO: 0-1 to be dealt with within epi module
+                # TODO: in future maybe 0-1 to be dealt with within epi module
                 if age < 1:
                     return p['growth_monitoring_frequency_days'][0]
                 elif age <= 2:
@@ -1650,7 +1648,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         schedule_next_monitoring()
 
         # but if they are currently treated, the growth monitoring will not go through
-        # TODO: later will be scheduled for monitoring within the tx to use the resources
+        # TODO: later could be scheduled for monitoring within the tx to use the resources
         if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
                 self.sim.date):
             if do_prints:
