@@ -264,36 +264,44 @@ total_population_by_year = extract_results(
     custom_generate_series=get_total_population_by_year,
     do_scaling=True
 )
+def estimate_district_population_from_total(_df):
+    """ Generate district population by year from national population by year estimates"""
+    # Replicate population estimates for each district
+    district_ids = list(range(32))
+    df_replicated_for_each_district = pd.concat([_df] * 32, axis=0)
+    df_replicated_for_each_district['District_Num'] = np.array(
+        sorted(district_ids * (final_year_for_costing - year_of_malaria_scaleup_start + 1)),
+        dtype=np.int64) # attach district number to each replicate
+    df_replicated_for_each_district = df_replicated_for_each_district.reset_index()
 
-# Replicate population estimates for each district
-district_ids = list(range(32))
-replicated_population_by_year = pd.concat([total_population_by_year] * 32, axis=0)
-replicated_population_by_year['District_Num'] = np.array(sorted(district_ids * (final_year_for_costing - year_of_malaria_scaleup_start + 1)), dtype=np.int64) # attach district number to each replicate
-replicated_population_by_year = replicated_population_by_year.reset_index()
+    # Load proportional population distribution by district
+    population_2010 = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')
+    population_proportion_by_district_2010 = (
+        population_2010.groupby('District_Num')['Count']
+        .sum()
+        .pipe(lambda x: x / x.sum())  # Compute proportions
+    )
+    assert (population_proportion_by_district_2010.sum() == 1)
 
-# Load proportional population distribution
-population_2010 = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')
-population_proportion_by_district_2010 = (
-    population_2010.groupby('District_Num')['Count']
-    .sum()
-    .pipe(lambda x: x / x.sum())  # Compute proportions
-)
-assert (population_proportion_by_district_2010.sum() == 1)
+    # Merge and compute district-level population by year
+    df_by_district = df_replicated_for_each_district.merge(population_proportion_by_district_2010,
+                                                                      on='District_Num', how='left', validate='m:1')
+    df_by_district[_df.columns] = df_by_district[
+        _df.columns].multiply(df_by_district['Count'], axis=0)
+    df_by_district = df_by_district.drop(columns=['District_Num', 'Count'])
 
-# Merge and compute district-level population by year
-district_population_by_year = replicated_population_by_year.merge(population_proportion_by_district_2010, on='District_Num', how='left', validate='m:1')
-district_population_by_year[total_population_by_year.columns]= district_population_by_year[total_population_by_year.columns].multiply(district_population_by_year['Count'], axis=0)
-district_population_by_year = district_population_by_year.drop(columns = ['District_Num', 'Count'])
+    # Set multi-level columns and final formatting
+    df_by_district = (
+        df_by_district
+        .set_axis(pd.MultiIndex.from_tuples(df_by_district.columns, names=['draw', 'run']), axis=1)
+        .rename(columns={'District_Num': 'district'})
+        .set_index(['year', 'district'])
+    )
+    df_by_district.columns = pd.MultiIndex.from_tuples(df_by_district.columns)
+    df_by_district.columns.names = ['draw', 'run']
+    return df_by_district
 
-# Set multi-level columns and final formatting
-district_population_by_year = (
-    district_population_by_year
-    .set_axis(pd.MultiIndex.from_tuples(district_population_by_year.columns, names=['draw', 'run']), axis=1)
-    .rename(columns={'District_Num': 'district'})
-    .set_index(['year', 'district'])
-)
-district_population_by_year.columns = pd.MultiIndex.from_tuples(district_population_by_year.columns)
-district_population_by_year.columns.names = ['draw', 'run']
+district_population_by_year = estimate_district_population_from_total(total_population_by_year)
 
 def get_number_of_people_covered_by_malaria_scaleup(_df, list_of_districts_covered = None, draws_included = None):
     _df = pd.DataFrame(_df)
