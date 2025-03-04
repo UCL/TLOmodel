@@ -130,11 +130,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Updated color logic
         if set_colors:
+            # def match_color(index_name):
+            #     for key, colour in color_map.items():
+            #         if key in index_name:
+            #             return colour
+            #     return 'grey'  # Default colour if no match found
             def match_color(index_name):
-                for key, colour in color_map.items():
-                    if key in index_name:
-                        return colour
-                return 'grey'  # Default colour if no match found
+                return color_map.get(index_name, 'grey')  # Ensure exact name matching
 
             colors = [match_color(series) for series in _df.index]
         else:
@@ -582,12 +584,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             annotations=[
                 f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
                 for _, row in group_data_percent.clip(lower=0.0).iterrows()
-            ], set_colors=None, offset=3
+            ], set_colors=None, offset=3,
         )
         ax.set_title(name_of_plot)
         ax.set_ylim(0, 40)
         ax.set_ylabel('DALYS Averted vs Baseline \n(Millions)')
-        # if want to add horizontal gridlines:
         # ax.grid(axis='y', linestyle='--', linewidth=0.5)  # Optional: horizontal lines if needed, adjust style
         ax.grid(axis='x', visible=False)  # Turn off vertical gridlines
         fig.tight_layout()
@@ -595,6 +596,43 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
+
+
+    # todo plot DALYs averted vs baseline for HSS vs HTM - for paper figure
+    include_scenarios = ['HSS Expansion Package',
+                         'HTM Program Scale-up Without HSS Expansion',
+                         'HTM Programs Scale-up With HSS Expansion Package']
+    color_map = {
+        'HSS Expansion Package': '#9e0142',
+        'HTM Program Scale-up Without HSS Expansion': '#fdae61',
+        'HTM Programs Scale-up With HSS Expansion Package': '#66c2a5',
+    }
+    # Extract data for the valid scenarios
+    group_data = num_dalys_averted.loc[include_scenarios]
+    group_data_percent = pc_dalys_averted.loc[include_scenarios]
+
+    # Define the plot name
+    name_of_plot = f'DALYS Averted vs Baseline, {group_name}, {target_period()}'
+
+    fig, ax = do_bar_plot_with_ci(
+        (group_data / 1e6).clip(lower=0.0),
+        annotations=[
+            f"{round(row['mean'], 0)}% ({round(row['lower'], 1)}-{round(row['upper'], 1)})"
+            for _, row in group_data_percent.clip(lower=0.0).iterrows()
+        ], set_colors=True, offset=1.5
+    )
+    ax.set_title('')
+    ax.set_ylim(0, 40)
+    ax.set_ylabel('DALYS Averted vs Baseline \n(Millions)')
+    ax.grid(axis='y', visible=False)
+    # ax.grid(axis='y', linestyle='--', linewidth=0.5)  # Optional: horizontal lines if needed, adjust style
+    ax.grid(axis='x', visible=False)  # Turn off vertical gridlines
+    fig.tight_layout()
+    plt.subplots_adjust(right=0.55)  # Increase the right margin
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
 
     # %% DALYS averted relative to Baseline - broken down by major cause (HIV, TB, MALARIA)
 
@@ -1046,7 +1084,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                 central_measure='median'
                                                 )
     mal_tx_coverage.to_csv(results_folder / 'mal_tx_coverage.csv')
-
+    mal_tx_coverage.to_csv(results_folder / 'mal_tx_coverage.csv')
 
 
 if __name__ == "__main__":
