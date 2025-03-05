@@ -21,6 +21,9 @@ from tlo import Date
 from tlo.analysis.utils import extract_results, summarize
 from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 
+format = 'eps'
+format_extension = '.eps'
+
 index_HTM_plot = ['AIDS', 'TB (non-AIDS)', 'Malaria']
 index_NeoChild_plot = ['Lower respiratory infections','Childhood Diarrhoea', 'Maternal Disorders', 'Measles', 'Neonatal Disorders', 'Schistosomiasis'] #'Congenital birth defects',
 index_NCDs_plot = ['COPD', 'Cancer (Bladder)', 'Cancer (Breast)', 'Cancer (Oesophagus)', 'Cancer (Other)', 'Cancer (Prostate)','Depression / Self-harm', 'Diabetes', 'Epilepsy', 'Heart Disease', 'Kidney Disease', 'Stroke', 'Transport Injuries']
@@ -523,7 +526,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 else:
                     title_comp = title #+ " (perf. cons. avail.)"
                 plt.title(title_comp)
-            name_fig = 'plots/' + subfolder + plot_name + '_' + str(case) + '.png'
+            name_fig = 'plots/' + subfolder + plot_name + '_' + str(case) + format_extension
             plt.ylabel(ylabel)
 
             name_fig = name_fig.replace(" ", "_")
@@ -533,7 +536,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 plt.legend(loc='upper right')
             plt.tight_layout()
 
-            plt.savefig(name_fig, dpi=400)
+            plt.savefig(name_fig, dpi=400, format=format)
             plt.close()
     
     df = LifeExpectancy.copy()
@@ -725,7 +728,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         
 
         # Save or show the plot
-        plt.savefig(str(output_path) + '/' + plot_name + '_n_scenarios_' + str(len(scenarios_map)) + '.png', dpi=400)
+        plt.savefig(str(output_path) + '/' + plot_name + '_n_scenarios_' + str(len(scenarios_map)) + format_extension, dpi=400, format=format)
         plt.close()
 
         
@@ -850,10 +853,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             if scaled:
                 ax.set_ylabel('% ' + ylabel + ' compared to GDP growth scenario')
-                plt.savefig(str(output_path) + '/' + plot_name + '_frac_diff_with_GDP_growth_vs_THE_n_scenarios_' + str(len(scenarios_map)) + '.png', dpi=400)
+                plt.savefig(str(output_path) + '/' + plot_name + '_frac_diff_with_GDP_growth_vs_THE_n_scenarios_' + str(len(scenarios_map)) + format_extension, dpi=400,format=format)
             else:
                 ax.set_ylabel(ylabel + ' compared GDP growth scenario (millions)')
-                plt.savefig(str(output_path) + '/' + plot_name + '_diff_with_GDP_growth_vs_THE_n_scenarios_' + str(len(scenarios_map)) + '.png', dpi=400)
+                plt.savefig(str(output_path) + '/' + plot_name + '_diff_with_GDP_growth_vs_THE_n_scenarios_' + str(len(scenarios_map)) + format_extension, dpi=400, format=format)
 
             plt.close()
             
@@ -1136,7 +1139,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.xticks(xtick_positions, xtick_labels)  # Rotate labels for better visibility
         plt.xlim(-0.1,7.5)
         plt.title(title)
-        plt.savefig(str(output_path) + '/' + plot_name + '_n_scenarios_' + str(len(scenarios_map)) + '.png', dpi=400)
+        plt.savefig(str(output_path) + '/' + plot_name + '_n_scenarios_' + str(len(scenarios_map)) + format_extension, dpi=400, format=format)
         plt.close()
 
     plot_burden_by_area_vs_THE(df_total_time_average/1e6,df_total_time_average_2018/1e6, index_HTM, "DALYs per year (millions)", "HTM_evolution", False, "HTM", True)
