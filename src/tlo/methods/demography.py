@@ -433,11 +433,8 @@ class Demography(Module):
                 return None  # Handle cases where the district isn't found, which shouldn't happen
 
         # Assign unique coordinates to each individual based on their district
-        self.sim.population.props["coordinate_of_residence"] = df = self.sim.population.props["district_of_residence"].apply(
+        self.sim.population.props["coordinate_of_residence"] = self.sim.population.props["district_of_residence"].apply(
             assign_random_coordinates)
-
-        # self.parameters['Master_Facilities_List'] = pd.read_csv(
-        #     Path(self.resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'))
 
         facility_info  =pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
 
@@ -465,8 +462,8 @@ class Demography(Module):
         distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
 
         # Assign the closest facility to each individual
-        self.sim.population.props["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Facility_Name"]
-
+        self.sim.population.props["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"]
+        self.sim.population.props = self.sim.population.props.drop(columns=["coordinate_of_residence"]) # issues with json
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
