@@ -30,6 +30,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import read_csv_files
+import csv
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler

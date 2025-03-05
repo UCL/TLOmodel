@@ -7,7 +7,6 @@ NB. To see larger effects
 * Increase symptom onset
 * Increase progression rates (see tests)
 """
-
 import datetime
 from pathlib import Path
 
@@ -30,12 +29,8 @@ from tlo.methods import (
     tb,
 )
 
-# Where outputs will go
-output_csv_file = Path("outputs/output7_data.csv")
-if output_csv_file.exists():
-    output_csv_file.unlink()
-else:
-    output_csv_file.touch()
+
+
 seed = 7
 
 # Date-stamp to label log files and any other outputs
@@ -43,7 +38,6 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
-
 
 log_config = {
     "filename": "cervical_cancer_analysis",   # The name of the output file (a timestamp will be appended).
@@ -83,29 +77,32 @@ def run_sim(service_availability):
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
                  )
 
-    sim._configure_logging(filename="LogFile")
-
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    log_df = parse_log_file(sim.log_filepath)
+    return sim
 
-    return log_df
+# Create df from simulation
+sim  = run_sim(service_availability=['*'])
+log_df = parse_log_file(sim.log_filepath)
+log_df_plot = log_df["tlo.methods.cervical_cancer"]["all"]
 
-
+# Create output csv file to support plot generation from csv file
+output_csv_file = Path("outputs/output7_data.csv")
 if output_csv_file.exists():
     output_csv_file.unlink()
+else:
+    output_csv_file.touch()
+log_df_plot.to_csv(output_csv_file)
 
-log_df  = run_sim(service_availability=['*'])
-
+# Scale factor
 scale_factor = malawi_country_pop / popsize
-print(scale_factor)
 
-# todo: remove plotting with CSV file and replace with log df
-#
+# ---------------------------------------------------------------------------------------------------------
+#   PLOTTING FOR CALIBRATION AND RESULTS
+# ---------------------------------------------------------------------------------------------------------
 # plot number of cervical cancer deaths in past year
 out_df = pd.read_csv(output_csv_file)
-# out_df = pd.read_csv('C:/Users/User/PycharmProjects/TLOmodel/outputs/output_data.csv', encoding='ISO-8859-1')
 out_df = out_df[['n_deaths_past_year', 'rounded_decimal_year']].dropna()
 out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
 out_df['n_deaths_past_year'] = out_df['n_deaths_past_year'] * scale_factor
