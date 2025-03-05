@@ -233,11 +233,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         self.wasting_incident_case_tracker = copy.deepcopy(self.wasting_incident_case_tracker_blank)
 
         self.recovery_options = ['mod_MAM_nat_full_recov',
-                                 'mod_SAM_nat_full_recov', 'mod_SAM_nat_recov_to_MAM',
-                                 'sev_SAM_nat_full_recov', 'sev_SAM_nat_recov_to_MAM',
-                                 'mod_MAM_tx/nat_full_recov',
-                                 'mod_SAM_tx_full_recov', 'mod_SAM_tx/nat_recov_to_MAM',
-                                 'sev_SAM_tx_full_recov', 'sev_SAM_tx/nat_recov_to_MAM',
+                                 'mod_SAM_nat_recov_to_MAM',
+                                 'sev_SAM_nat_recov_to_MAM',
+                                 'mod_MAM_tx_full_recov',
+                                 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
+                                 'sev_SAM_tx_full_recov', 'sev_SAM_tx_recov_to_MAM',
                                  'mod_not_yet_recovered',
                                  'sev_not_yet_recovered']
         blank_length_counter = dict(
@@ -819,9 +819,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             do_prints = True
             print(f"{self.person_of_interest_id=} RECEIVING TX on {self.sim.date=}")
 
-        # Progression to severe wasting is cancelled due to the tx
-        self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event,
-                                 due_to='tx', do_prints=do_prints)
+        # natural progression or recovery is cancelled with the tx and the outcome is fully driven by tx
+        self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event, do_prints=do_prints)
+        self.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event, do_prints=do_prints)
+        self.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event, do_prints=do_prints)
+
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
         # Reset tx discharge date
@@ -845,7 +847,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     event=Wasting_FullRecovery_Event(module=self, person_id=person_id),
                     date=(df.at[person_id, 'un_am_discharge_date'])
                 )
-                # cancel progression date (in ProgressionEvent)
             else:
                 # remained MAM, send for another SFP
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -853,7 +854,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     priority=0, topen=outcome_date)
                 if do_prints:
                     print("remained MAM with SFP")
-                    print("------------------MAM tx -> remained MAM end---------------------------------")
+                    print(f"sent for another SFP on {outcome_date=}")
                 return
 
         elif intervention in ['OTP', 'ITC']:
@@ -906,15 +907,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
 
-        if do_prints:
-            print("---------------------------tx end------------------------")
-
-    def cancel_future_event(self, person_id, event_type, due_to, do_prints: bool) -> None:
+    def cancel_future_event(self, person_id, event_type, do_prints: bool) -> None:
         """
         This function will add dates of recovery and/or progression events that need to be canceled.
         :param person_id:
         :param event_type: which event type to cancel
-        :param due_to: due to what event are they cancelled
         :param do_prints: prints for person_of_interest only
         """
 
@@ -924,59 +921,23 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                         if isinstance(event_tuple[1], event_type)]
         if event_tuples:
             dates = [event_tuple[0] for event_tuple in event_tuples]
+            event_type_map = {
+                Wasting_RecoveryToMAM_Event: 'un_recov_to_mam_to_cancel',
+                Wasting_FullRecovery_Event: 'un_full_recov_to_cancel',
+                Wasting_ProgressionToSevere_Event: 'un_progression_to_cancel'
+            }
+
             for date in dates:
-                if event_type == Wasting_RecoveryToMAM_Event:
-                    df.at[person_id, 'un_recov_to_mam_to_cancel'].append(date)
-                elif event_type == Wasting_FullRecovery_Event:
-                    df.at[person_id, 'un_full_recov_to_cancel'].append(date)
-                elif event_type == Wasting_ProgressionToSevere_Event:
-                    df.at[person_id, 'un_progression_to_cancel'].append(date)
+                df.at[person_id, event_type_map[event_type]].append(date)
                 if do_prints:
-                    print(f"an event {event_type} for "
+                    print(f"a natural history {event_type=} for "
                           f"clinical_am={df.at[person_id, 'un_clinical_acute_malnutrition']}, "
                           f"complications={df.at[person_id, 'un_sam_with_complications']} on {date=}\n"
-                          f" is cancelled {due_to=} event")
-            today_rm = False
-            if event_type == due_to:
-                if due_to == Wasting_RecoveryToMAM_Event:
-                    if self.sim.date in df.at[person_id, 'un_recov_to_mam_to_cancel']:
-                    # TODO: why smt it is there, smt it is not?
-                        df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
-                        today_rm = True
-                elif due_to == Wasting_FullRecovery_Event:
-                    if self.sim.date in df.at[person_id, 'un_full_recov_to_cancel']:
-                        df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
-                        today_rm = True
-                if do_prints:
-                    print(f"{event_type=}; {due_to=};\n"
-                          f" {dates=}; {self.sim.date=}")
-                    if today_rm:
-                        print(f"{self.sim.date=} removed from to_cancel dates")
-                    else:
-                        print(f"{self.sim.date=} not included in to_cancel dates, hence no need to remove it")
-            elif (event_type == Wasting_ProgressionToSevere_Event) and (due_to == 'tx'):
-                    if self.sim.date in df.at[person_id, 'un_progression_to_cancel']:
-                        df.at[person_id, 'un_progression_to_cancel'].remove(self.sim.date)
-                        today_rm = True
-                    if do_prints:
-                        print(f"{event_type=}; {due_to=};\n"
-                              f" {dates=}; {self.sim.date=}")
-                        if today_rm:
-                            print(f"{self.sim.date=} removed from to_cancel dates")
-                        else:
-                            print(f"{self.sim.date=} not included in to_cancel dates, hence no need to remove it")
-
+                          " is cancelled due to tx, the health outcome will be driven by the tx")
+                    print(f"the {event_type_map[event_type]}: {df.at[person_id, event_type_map[event_type]]}")
         else:
             if do_prints:
-                print(f"no {event_type} scheduled, hence no need to cancel any")
-
-        if do_prints:
-            if event_type == Wasting_RecoveryToMAM_Event:
-                print(f"{df.at[person_id, 'un_recov_to_mam_to_cancel']=}")
-            elif event_type == Wasting_FullRecovery_Event:
-                print(f"{df.at[person_id, 'un_full_recov_to_cancel']=}")
-            elif event_type == Wasting_ProgressionToSevere_Event:
-                print(f"{df.at[person_id, 'un_progression_to_cancel']=}")
+                print(f"{event_type=} not scheduled, hence no need to cancel any")
 
 
 class PrintPersonPropertiesEventIfUpdated(RegularEvent, PopulationScopeEventMixin):
@@ -1164,8 +1125,7 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
         if self.sim.date in df.at[person_id, 'un_progression_to_cancel']:
             df.at[person_id, 'un_progression_to_cancel'].remove(self.sim.date)
             if do_prints:
-                print("Progression to severe wasting canceled as person received tx and recovered (fully or to MAM) "
-                      "before this day.")
+                print("Natural progression to severe wasting cancelled as person received tx.")
                 print("----------------------------------")
             return
 
@@ -1285,10 +1245,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         if pd.isnull(df.at[person_id, 'un_am_tx_start_date']):
             recov_how = 'nat'
         else:
-            if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
-                recov_how = 'tx'
-            else:
-                recov_how = 'tx/nat'
+            recov_how = 'tx'
 
         do_prints = False
         if person_id == self.module.person_of_interest_id:
@@ -1305,15 +1262,9 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         if self.sim.date in df.at[person_id, 'un_full_recov_to_cancel']:
             df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
             if do_prints:
-                print("not going through, because the recovery was cancelled")
+                print("not going through, because the natural recovery was cancelled, the outcome will be driven by tx")
                 print("----------------------------------")
             return
-
-        # as person fully recovers from acute malnutrition, any other scheduled recovery events will be cancelled
-        self.module.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event,
-                                        due_to=Wasting_FullRecovery_Event, do_prints=do_prints)
-        self.module.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event,
-                                        due_to=Wasting_FullRecovery_Event, do_prints=do_prints)
 
         # if not well (i.e. NOT already fully recovered with SAM tx, and send here from follow-up MAM tx)
         if df.at[person_id, 'un_WHZ_category'] != 'WHZ>=-2':
@@ -1328,7 +1279,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
                 if in_whz == '-3<=WHZ<-2':
                     min_length_nat = p['duration_of_untreated_mod_wasting']
                 else:  # in_whz == 'WHZ<=-3'
-                    min_length_nat = p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting']
+                    min_length_nat = p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 1
 
                 # MAM
                 if df.at[in_person_id, 'un_clinical_acute_malnutrition'] == 'MAM':
@@ -1340,9 +1291,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
                 else:
                     min_length_tx = p['tx_length_weeks_OutpatientSAM'] * 7
 
-                if in_recov_how == 'tx/nat':
-                    min_length = min(min_length_tx, min_length_nat)
-                elif in_recov_how == 'tx':
+                if in_recov_how == 'tx':
                     min_length = min_length_tx
                 else:  # in_recov_how == 'nat'
                     min_length = min_length_nat
@@ -1394,7 +1343,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         if pd.isnull(df.at[person_id, 'un_am_tx_start_date']):
             recov_how = 'nat'
         else:
-            recov_how = 'tx/nat'
+            recov_how = 'tx'
 
         do_prints = False
         if person_id == self.module.person_of_interest_id:
@@ -1415,13 +1364,9 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         if self.sim.date in df.at[person_id, 'un_recov_to_mam_to_cancel']:
             df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
             if do_prints:
-                print("not going through, because the recovery was cancelled")
+                print("not going through, because the natural recovery was cancelled, the outcome will be driven by tx")
                 print("----------------------------------")
             return
-
-        # as person recovered from SAM to MAM, any other scheduled recovery to MAM events will be cancelled
-        self.module.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event,
-                                        due_to=Wasting_RecoveryToMAM_Event, do_prints=do_prints)
 
         # For cases with normal WHZ and other acute malnutrition signs:
         # oedema, or low MUAC - do not change the WHZ
@@ -1447,20 +1392,16 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
                 wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
 
                 def get_min_length(in_recov_how, in_person_id, in_whz):
-                    if in_whz == '-3<=WHZ<-2':
-                        min_length_nat = p['duration_of_untreated_mod_wasting']
-                    else:  # in_whz == 'WHZ<=-3'
-                        min_length_nat = p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting']
-                    if in_recov_how == 'tx/nat':
+                    if in_recov_how == 'tx':
                         if df.at[in_person_id, 'un_sam_with_complications']:
-                            min_length_tx = p['tx_length_weeks_InpatientSAM'] * 7
+                            return (p['tx_length_weeks_InpatientSAM'] * 7) - 1
                         else:  # SAM without complications
-                            min_length_tx = p['tx_length_weeks_OutpatientSAM'] * 7
-                        min_length = min(min_length_tx, min_length_nat)
+                            return (p['tx_length_weeks_OutpatientSAM'] * 7) - 1
                     else: # in_recov_how == 'nat'
-                        min_length = min_length_nat
-                    return min_length - 1
-
+                        if in_whz == '-3<=WHZ<-2':
+                            return p['duration_of_untreated_mod_wasting'] - 1
+                        else:  # in_whz == 'WHZ<=-3'
+                            return p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2
 
                 assert wasted_days >= get_min_length(recov_how, person_id, whz), \
                     (f" The {person_id=} is wasted {wasted_days=} < minimal expected length= "
@@ -1486,7 +1427,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
         df.at[person_id, 'un_am_nutritional_oedema'] = False
         df.at[person_id, 'un_sam_with_complications'] = False
-        df.at[person_id, 'un_sam_death_date'] = pd.NaT # death is canceled if was scheduled
+        df.at[person_id, 'un_sam_death_date'] = pd.NaT # death is cancelled if was scheduled
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         # Start without treatment, treatment will be applied with HSI if care sought
         df.at[person_id, 'un_am_treatment_type'] = 'none'
@@ -1660,6 +1601,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                 self.sim.date):
             if do_prints:
                 print("not going through because is currently treated")
+                print("-----------------------------------------")
             return
         # or if HSI was already scheduled due to care-seeking, no need to attend the growth monitoring
         hsi_event_scheduled = [
@@ -2179,12 +2121,13 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     length_df.loc[age_grp, recov_opt] = 0
                 assert not np.isnan(length_df.loc[age_grp, recov_opt]),\
                     f'There is an empty length for {age_grp=}, {recov_opt=}.'
-                if recov_opt in ['mod_MAM_nat_full_recov', 'mod_SAM_nat_full_recov', 'mod_SAM_nat_recov_to_MAM']:
+
+                if recov_opt in ['mod_MAM_nat_full_recov', 'mod_SAM_nat_recov_to_MAM']:
                     assert all(length >= (p['duration_of_untreated_mod_wasting'] - 1) for length in
                            self.module.wasting_length_tracker[age_grp][recov_opt]),\
                         f"{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < "\
                         f"{(p['duration_of_untreated_mod_wasting'] - 1)=}; {age_grp=}, {recov_opt=}"
-                elif recov_opt in ['sev_SAM_nat_full_recov', 'sev_SAM_nat_recov_to_MAM']:
+                elif recov_opt in ['sev_SAM_nat_recov_to_MAM']:
                     assert all(length >=
                                (p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2) for
                                length in self.module.wasting_length_tracker[age_grp][recov_opt]),\
@@ -2192,25 +2135,14 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                          "(mod + sev wast - 2): "
                          f"{(p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2)=} "
                          f"days; {age_grp=}, {recov_opt=}")
-                elif recov_opt in ['mod_MAM_tx/nat_full_recov', 'mod_SAM_tx_full_recov', 'mod_SAM_tx/nat_recov_to_MAM',
-                                   'sev_SAM_tx_full_recov', 'sev_SAM_tx/nat_recov_to_MAM']:
-                    if recov_opt == 'mod_MAM_tx/nat_full_recov':
-                        min_length = min(
-                            (p['tx_length_weeks_SuppFeedingMAM'] * 7), p['duration_of_untreated_mod_wasting']
-                        ) - 1
-                    elif recov_opt in ['mod_SAM_tx_full_recov', 'sev_SAM_tx_full_recov']:
+                elif recov_opt in ['mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
+                                   'sev_SAM_tx_full_recov', 'sev_SAM_tx_recov_to_MAM']:
+                    if recov_opt == 'mod_MAM_tx_full_recov':
+                        min_length = (p['tx_length_weeks_SuppFeedingMAM'] * 7) - 1
+                    else:
                         min_length = \
                             (min(p['tx_length_weeks_OutpatientSAM'], p['tx_length_weeks_InpatientSAM']) * 7) - 1
-                    elif recov_opt == 'mod_SAM_tx/nat_recov_to_MAM':
-                        min_length = min(
-                            (p['tx_length_weeks_OutpatientSAM'] * 7), (p['tx_length_weeks_InpatientSAM'] * 7),
-                            p['duration_of_untreated_mod_wasting']
-                        ) - 1
-                    else:  # recov_opt == 'sev_SAM_tx/nat_recov_to_MAM'
-                        min_length = min(
-                            (p['tx_length_weeks_OutpatientSAM'] * 7), (p['tx_length_weeks_InpatientSAM'] * 7),
-                            (p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'])
-                        ) - 1
+
                     assert all(length >= min_length for length in
                                self.module.wasting_length_tracker[age_grp][recov_opt]), \
                         f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < ' \
