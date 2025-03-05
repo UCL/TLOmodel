@@ -298,7 +298,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
-        df.loc[df.is_alive, 'facility_used_level_1a'] = self.assign_closest_clinic_level_1a(df.loc[df.is_alive, 'district_of_residence'] )
+        df.loc[df.is_alive, 'facility_used_level_1a'] = self.assign_closest_facility_level_1a( )
 
         df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
