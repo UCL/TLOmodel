@@ -1561,7 +1561,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
         out.update({
-            'total_dead': len(~df['is_alive'])})
+            'total_dead': (~df['is_alive']).sum()})
         out.update({
             'total_overall': len(df)})
 
