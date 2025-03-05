@@ -76,8 +76,6 @@ def test_diagnosis_and_treatment(seed):
     diagnosed correctly, referred for treatment, and treatment effectively reduces
     worm burden in individual """
 
-    infecting_worms = 500
-
     sim = get_simulation(seed=seed, start_date=start_date, mda_execute=True)
     # set symptoms to high probability
     sim.modules['Schisto'].parameters["sm_symptoms"] = {key: 1 for key in
@@ -89,19 +87,21 @@ def test_diagnosis_and_treatment(seed):
     df = sim.population.props
     person_id = 0
 
-    # give person high S. mansoni worm burden
-    df.at[person_id, "ss_sm_infection_status"] = 'Non-infected'
+    # give person high juvenile S. mansoni worm burden
+    infecting_worms = 500
+    df.at[person_id, "ss_sm_juvenile_worm_burden"] = infecting_worms
+
+    df.at[person_id, "ss_sm_infection_status"] = 'Non-infected'  # this is their initial status
     df.at[person_id, "ss_sm_aggregate_worm_burden"] = 0
     df.at[person_id, "ss_sm_susceptibility"] = 1
     df.at[person_id, "ss_sm_harbouring_rate"] = 0.5
 
-    mature_worms = schisto.SchistoMatureWorms(
-            module=sim.modules['Schisto'],
-            species=sim.modules['Schisto'].species['mansoni'],
-            person_id=0,
-            number_of_worms_that_mature=infecting_worms,
-        )
-    mature_worms.apply(person_id)
+    # schedule the event to mature the worms and assign symptoms
+    mature_worms = schisto.SchistoUpdateWormBurdenEvent(module=sim.modules['Schisto'])
+    mature_worms.apply(sim.population)
+
+    assert df.at[person_id, "ss_sm_infection_status"] == 'High-infection'
+    assert df.at[person_id, "ss_sm_aggregate_worm_burden"] == infecting_worms
 
     # check symptoms assigned
     symptom_list = {'anemia', 'fever', 'ascites', 'diarrhoea', 'vomiting', 'hepatomegaly'}
@@ -117,7 +117,7 @@ def test_diagnosis_and_treatment(seed):
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         isinstance(ev[1], schisto.HSI_Schisto_TreatmentFollowingDiagnosis)
     ][0]
-    assert date_event > sim.date
+    assert date_event >= sim.date
 
     # check tx administered
     tx_appt = schisto.HSI_Schisto_TreatmentFollowingDiagnosis(person_id=person_id,
