@@ -433,7 +433,7 @@ class Demography(Module):
                 return None  # Handle cases where the district isn't found, which shouldn't happen
 
         # Assign unique coordinates to each individual based on their district
-        self.population["coordinate_of_residence"] = self.population["district_of_residence"].apply(
+        self.sim.population.props["coordinate_of_residence"] = df = self.sim.population.props["district_of_residence"].apply(
             assign_random_coordinates)
 
         # self.parameters['Master_Facilities_List'] = pd.read_csv(
@@ -450,7 +450,7 @@ class Demography(Module):
         ]
 
         # Extract coordinates of facilities
-        facility_coords = list(zip(relevant_facilities["longitude"], relevant_facilities["latitude"]))
+        facility_coords = list(zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"]))
 
         # Build a spatial KDTree for fast nearest neighbor search
         facility_tree = cKDTree(facility_coords)
