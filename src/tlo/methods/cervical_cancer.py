@@ -840,8 +840,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 (df.is_alive) &
                 (df.sex == 'F') &
                 (~df.ce_current_cc_diagnosed) &
-                (df.age_years >= age_min) &
-                (df.age_years < age_max) &
+                (df.age_years.between(age_min, age_max, inclusive="left"))  &
                 (
                         pd.isna(df.ce_date_last_screened) |
                         (days_since_last_screen > screening_interval) |
