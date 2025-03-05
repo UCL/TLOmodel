@@ -1534,8 +1534,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """
-        self.repeat = 30
-        super().__init__(module, frequency=DateOffset(days=self.repeat))
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         """Compute statistics regarding the current status of persons and output to the logger
