@@ -88,9 +88,9 @@ class WastingAnalysis(BaseScenario):
         base_death_rate_untreated_sam__draws = [0.05, 0.05]
         mod_wast_incidence__coef = [1.0]
         base_overall_mod_wast_inc_rate = 0.019
-        progression_to_sev_wast__coef = [3]
+        progression_to_sev_wast__coef = [1]
         progression_severe_wasting_monthly_props_by_agegp =  [0.0144, 0.0510, 0.0331, 0.0061, 0.0047, 0.0041]
-        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.3]
+        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.9]
 
         pars_combinations = list(itertools.product(
             base_death_rate_untreated_sam__draws,
