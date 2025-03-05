@@ -2001,7 +2001,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ) / len(df[df.is_alive]
                 ) if len(df[df.is_alive]) else 0
 
-
         # no access hand-washing
         # NOTE: True = no access hand-washing
         no_handwashing_PSAC = len(
@@ -2018,7 +2017,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.li_no_access_handwashing & df.is_alive]
         ) / len(df[df.is_alive]
                 ) if len(df[df.is_alive]) else 0
-
 
         # no clean drinking water
         # NOTE: True = no clean drinking water
