@@ -724,57 +724,21 @@ projected_health_spending = estimate_projected_health_spending(resourcefilepath,
 projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0]['mean'][0]
 
 # Combined ROI plot of relevant scenarios
-# HTM with HSS versus HSS alone
-draw_colors = {8: '#438FBA', 44:'#5E4FA2'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [8, 44],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'HSS_VSL',
-                   _plot_vertical_lines_at = [0],
-                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                    _projected_health_spending = projected_health_spending_baseline,
-                   _draw_colors = draw_colors)
-
-# HTM scenarios with and without HSS
-draw_colors = {36: '#438FBA', 44:'#5E4FA2'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [36, 44],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'HTM_VSL',
-                   _plot_vertical_lines_at = [0],
-                    _year_suffix= f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
-                   _projected_health_spending = projected_health_spending_baseline,
-                   _draw_colors = draw_colors)
-
-draw_colors = {36: '#438FBA', 44:'#5E4FA2'}
+# ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS
+draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [8, 36, 44],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HSS_VSL',
-                   _plot_vertical_lines_at = [0],
                     _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
                     _projected_health_spending = projected_health_spending_baseline,
-                   _draw_colors = draw_colors)
-
-draw_colors = {36: '#438FBA', 44:'#5E4FA2'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = lomas_consumption_value_of_health),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [8, 36, 44],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = '_Lomas_CVH',
-                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                    _projected_health_spending = projected_health_spending_baseline,
-                   _draw_colors = draw_colors)
+                   _draw_colors = draw_colors,
+                   show_title_and_legend = False)
 
 # HIV scenarios with and without HSS
-draw_colors = {9: '#438FBA', 17:'#5E4FA2'}
+draw_colors = {9: '#fdae61', 17:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [9,17],
@@ -785,7 +749,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draw_colors = draw_colors)
 
 # TB scenarios with and without HSS
-draw_colors = {18: '#438FBA', 26:'#5E4FA2'}
+draw_colors = {18: '#fdae61', 26:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [18,26],
@@ -797,7 +761,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _y_axis_lim = 30)
 
 # Malaria scenarios with and without HSS
-draw_colors = {27: '#438FBA', 35:'#5E4FA2'}
+draw_colors = {27: '#fdae61', 35:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [27,35],

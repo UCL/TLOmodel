@@ -1342,7 +1342,8 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                       _plot_vertical_lines_at: list = None,
                       _year_suffix = '',
                       _projected_health_spending = None,
-                      _draw_colors = None):
+                      _draw_colors = None,
+                      show_title_and_legend = None):
     # Default color mapping if not provided
     if _draw_colors is None:
         _draw_colors = {draw: color for draw, color in zip(_draws, plt.cm.tab10.colors[:len(_draws)])}
@@ -1458,21 +1459,21 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                 ratio = max(roi_at_costs[cost]) / min(roi_at_costs[cost])
                 ax.axvline(x=cost / 1e6, color='black', linestyle='--', linewidth=1)
                 ax.text(cost / 1e6 + ax.get_xlim()[1] * 0.011, ax.get_ylim()[1] * 0.75,
-                        f'At {cost / 1e6:.0f}M, ratio of ROI curves = {round(ratio, 2)}',
+                        f'At ${cost / 1e6:.0f}M, ratio of ROI curves = {round(ratio, 2)}',
                         color='black', fontsize=10, rotation=90, verticalalignment='top')
 
     # Define fixed x-tick positions with a gap of 2000
     step_size = (ax.get_xlim()[1] - 0)/5
     xticks = np.arange(0, ax.get_xlim()[1] + 1, int(round(step_size, -3)))  # From 0 to max x-limit with 5 steps
     # Get labels
-    xtick_labels = [f'{tick:.0f}M' for tick in xticks]  # Default labels for all ticks
+    xtick_labels = [f'{tick:,.0f}' for tick in xticks]  # Default labels for all ticks
 
     # Replace specific x-ticks with % of health spending values
     if _projected_health_spending:
-        xtick_labels[1] = f'{xticks[1]:.0f}M\n({xticks[1] / (_projected_health_spending / 1e6) :.2%} of \n projected total \n health spend)'
+        xtick_labels[1] = f'{xticks[1]:,.0f}\n({xticks[1] / (_projected_health_spending / 1e6) :.2%} of \n projected total \n health spend)'
         for i, tick in enumerate(xticks):
             if (i != 0) & (i != 1):  # Replace for 4000
-                xtick_labels[i] = f'{tick:.0f}M\n({tick / (_projected_health_spending/1e6) :.2%})'
+                xtick_labels[i] = f'{tick:,.0f}\n({tick / (_projected_health_spending/1e6) :.2%})'
 
         # Update the x-ticks and labels
         ax.set_xticks(xticks)
@@ -1487,10 +1488,12 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
 
     plt.xlabel('Implementation cost, millions')
     plt.ylabel('Return on Investment')
-    plt.title(f'Return on Investment at different levels of implementation cost{_year_suffix}')
 
-    # Show legend
-    plt.legend()
+    # Show legend and title
+    if (show_title_and_legend != False):
+        plt.title(f'Return on Investment at different levels of implementation cost{_year_suffix}')
+        plt.legend()
+
     # Save
     plt.savefig(_outputfilepath / f'draws_{_draws}_ROI_at_{_value_of_life_suffix}_{_year_suffix}.png', dpi=100,
                 bbox_inches='tight')
