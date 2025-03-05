@@ -155,9 +155,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         self.districts = self.sim.modules['Demography'].districts  # <- all districts
 
         # Load parameters
-        # workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
-        # self.parameters = self._load_parameters_from_workbook(workbook)
-
         workbook = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
 
@@ -167,7 +164,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Register symptoms
         symptoms_df = workbook['Symptoms']
-        # self._register_symptoms(symptoms_df.set_index('Symptom')['HSB_mapped_symptom'].to_dict())
         self._register_symptoms(symptoms_df)
 
         # create container for logging person-days infected
@@ -792,7 +788,6 @@ class SchistoSpecies:
                             'baseline_prevalence',
                             ):
             parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
-            # parameters[_param_name] = float(param_list[_param_name])
 
         # Baseline reservoir size and other district-related params (R0, proportion susceptible)
         schisto_initial_reservoir = workbook[f'LatestData_{self.name}'].set_index("District")
@@ -1026,7 +1021,7 @@ class SchistoSpecies:
         )
 
         #  Susceptibility
-        # todo reinstate if needed
+        # reinstate if wanting to check susceptibility across districts
         # Directly filter and group in one step to avoid intermediate DataFrames
         # grouped_data = df[df.is_alive].groupby('district_of_residence')[prop('susceptibility')].agg(
         #     total_count='count',
@@ -1691,7 +1686,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         for _spec in self.module.species.values():
             _spec.log_infection_status()
-            # _spec.log_mean_worm_burden()  # todo revert this if needed
+            # _spec.log_mean_worm_burden()  # revert this if needed
 
         # PZQ treatment episodes
         df = population.props
