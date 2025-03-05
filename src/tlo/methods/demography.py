@@ -458,14 +458,14 @@ class Demography(Module):
         # Extract individual coordinates
         individual_coords = np.array([
             (point.x, point.y) if point else (np.nan, np.nan)
-            for point in self.population["coordinate_of_residence"]
+            for point in self.sim.population.props["coordinate_of_residence"]
         ])
 
         # Find the nearest facility for each individual
         distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
 
         # Assign the closest facility to each individual
-        self.population["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Facility_Name"]
+        self.sim.population.props["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Facility_Name"]
 
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
