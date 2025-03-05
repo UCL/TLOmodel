@@ -29,8 +29,6 @@ from tlo.methods import (
     tb,
 )
 
-
-
 seed = 7
 
 # Date-stamp to label log files and any other outputs
