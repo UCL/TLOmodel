@@ -1,4 +1,3 @@
-
 """
 Cervical Cancer Disease Module
 
@@ -779,7 +778,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         year = self.sim.date.year
         m = self.module
         rng = m.rng
-        p = self.sim.modules['CervicalCancer'].parameters
+        p = m.parameters
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -----------------------------------
 
@@ -1545,9 +1544,6 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # CURRENT STATUS COUNTS
         # Create dictionary for each subset, adding prefix to key name, and adding to make a flat dict for logging.
         out = {}
-
-        self.sim.date - pd.DateOffset(days=29)
-
         # Current counts, total
         df_alive_females = df.loc[df.is_alive & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])]
 
@@ -1565,7 +1561,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             'total_males': len(df[df.is_alive & (df['sex'] == 'M')])})
         out.update({
-            'total_dead': len(df[df['is_alive'].eq(False)])})
+            'total_dead': len(~df['is_alive'])})
         out.update({
             'total_overall': len(df)})
 
@@ -1575,14 +1571,23 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Calculate the decimal year
         decimal_year = self.sim.date.year + (day_of_year - 1) / 365.25
         rounded_decimal_year = round(decimal_year, 2)
+        date_1_year_ago = self.sim.date - pd.DateOffset(years=1)
+        n_deaths_past_year = (
+            df.date_of_death.between(date_1_year_ago, self.sim.date) &
+            (df.cause_of_death == "CervicalCancer")
+        ).sum()
 
-        df['rounded_decimal_year'] = rounded_decimal_year
+        n_deaths_cc_hivneg_past_year = (
+            (~df['hv_inf']) &
+            df.date_of_death.between(date_1_year_ago, self.sim.date) &
+            (df.cause_of_death == "CervicalCancer")
+        ).sum()
 
-        date_1_year_ago = self.sim.date - pd.DateOffset(days=365)
-        n_deaths_past_year = df.ce_date_death.between(date_1_year_ago, self.sim.date).sum()
-        n_deaths_cc_hivneg_past_year = ((~df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
-        n_deaths_cc_hivpos_past_year = ((df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
-        n_deaths_cc_hiv_past_year = ((df['hv_inf']) & df.ce_date_death.between(date_1_year_ago, self.sim.date)).sum()
+        n_deaths_cc_hivpos_past_year = (
+            (df['hv_inf']) &
+            df.date_of_death.between(date_1_year_ago, self.sim.date) &
+            (df.cause_of_death == "CervicalCancer")
+        ).sum()
         n_treated_past_year = df.ce_date_treatment.between(date_1_year_ago, self.sim.date).sum()
         n_cured_past_year = df.ce_cured_date_cc.between(date_1_year_ago, self.sim.date).sum()
         n_thermoabl_past_year = df.ce_date_thermoabl.between(date_1_year_ago, self.sim.date).sum()
@@ -1624,11 +1629,6 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 )
             )
         ).sum()
-
-        # n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month & df.ce_date_via.between(date_30_days_ago, self.sim.date)).sum()
-        # n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month & df.ce_date_xpert.between(date_30_days_ago, self.sim.date)).sum()
-        # n_ever_screened = (
-        #         (df['is_alive']) & (df['ce_ever_screened']) & (df['age_years'] > 15) & (df['age_years'] < 50)).sum()
 
         n_vaginal_bleeding_stage1 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage1')).sum()
@@ -1701,7 +1701,6 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_deaths_past_year": n_deaths_past_year})
         out.update({"n_deaths_cc_hivneg_past_year": n_deaths_cc_hivneg_past_year})
         out.update({"n_deaths_cc_hivpos_past_year": n_deaths_cc_hivpos_past_year})
-        out.update({"n_deaths_cc_hiv_past_year": n_deaths_cc_hiv_past_year})
         out.update({"n_treated_past_year": n_treated_past_year})
         out.update({"n_cured_past_year": n_cured_past_year})
         out.update({"prop_cc_hiv": prop_cc_hiv})
@@ -1740,8 +1739,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_via_past_year": n_via_past_year})
         out.update({"n_xpert_past_year": n_xpert_past_year})
 
-
-        pop = len(df[df.is_alive])
+        pop = len(df.is_alive)
         count_summary = {
             "population": pop,
             "n_deaths_past_year": n_deaths_past_year,
@@ -1756,135 +1754,3 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key="all",
                     data=out,
                     description="all_data")
-        # todo:
-        # ? move to using the logger:
-        # i.e. logger.info(key='cervical_cancer_stats_every_month', description='XX', data=out)
-
-#       print(self.sim.date, 'total_none:', out['total_none'], 'total_hpv:', out['total_hpv'], 'total_cin1:',out['total_cin1'],
-#             'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
-#             'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
-#             'total_stage3:', out['total_stage3'],'total_stage4:', out['total_stage4'],
-#             'total_hivneg_none:', out['total_hivneg_none'], 'total_hivneg_hpv:', out['total_hivneg_hpv'], 'total_hivneg_cin1:', out['total_hivneg_cin1'],
-#             'total_hivneg_cin2:', out['total_hivneg_cin2'], 'total_hivneg_cin3:', out['total_hivneg_cin3'], 'total_hivneg_stage1:', out['total_hivneg_stage1'],
-#             'total_hivneg_stage2a:', out['total_hivneg_stage2a'], 'total_hivneg_stage2b:', out['total_hivneg_stage2b'],
-#             'total_hivneg_stage3:', out['total_hivneg_stage3'], 'total_hivneg_stage4:', out['total_hivneg_stage4'],
-#             'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],out['n_via_past_year'],out['n_xpert_past_year'],
-#             'n_deaths_cc_hivneg_past_year:', out['n_deaths_cc_hivneg_past_year'],
-#             'n_deaths_cc_hivpos_past_year:', out['n_deaths_cc_hivpos_past_year'],
-#             'n_deaths_cc_hiv_past_year:', out['n_deaths_cc_hiv_past_year'],
-#             'treated past year:', out['n_treated_past_year'], 'prop cc hiv:', out['prop_cc_hiv'],
-#             'n_vaginal_bleeding_stage1:', out['n_vaginal_bleeding_stage1'],
-#             'n_vaginal_bleeding_stage2a:', out['n_vaginal_bleeding_stage2a'],
-#             'n_vaginal_bleeding_stage2b:', out['n_vaginal_bleeding_stage2b'],
-#             'n_vaginal_bleeding_stage3:', out['n_vaginal_bleeding_stage3'],
-#             'n_vaginal_bleeding_stage4:', out['n_vaginal_bleeding_stage4'],
-#             'diagnosed_past_year_stage1:', out['n_diagnosed_past_year_stage1'],
-#             'diagnosed_past_year_stage2a:', out['n_diagnosed_past_year_stage2a'],
-#             'diagnosed_past_year_stage2b:', out['n_diagnosed_past_year_stage2b'],
-#             'diagnosed_past_year_stage3:', out['n_diagnosed_past_year_stage3'],
-#             'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'],
-#             'n_ever_diagnosed', out['n_ever_diagnosed'],
-#             'n_screened_xpert_this_month:', out['n_screened_xpert_this_month'],
-#             'n_screened_via_this_month:', out['n_screened_via_this_month'],
-#             'n_women_alive', out['n_women_alive'],
-#             'n_women_alive_1549', out['n_women_alive_1549'],
-#             'n_women_vaccinated', out['n_women_vaccinated'],
-#             'n_ever_screened', out['n_ever_screened'],
-#             'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
-#             'n_cured_past_year:', out['n_cured_past_year'],
-#             'n_thermoabl_past_year:', out['n_thermoabl_past_year'],
-#             'n_cryotherapy_past_year:', out['n_cryotherapy_past_year'],
-#             'n_women_alive:', out['n_women_alive'],
-#             'rate_diagnosed_cc:', out['rate_diagnosed_cc'],
-#             'n_women_with_cc:', out['cc'],
-#             'n_women_living_with_diagnosed_cc:', out['n_women_living_with_diagnosed_cc'],
-#             'n_women_living_with_diagnosed_cc_age_lt_30:', out['n_women_living_with_diagnosed_cc_age_lt_30'],
-#             'n_women_living_with_diagnosed_cc_age_3050:', out['n_women_living_with_diagnosed_cc_age_3050'],
-#             'n_women_living_with_diagnosed_cc_age_gt_50:', out['n_women_living_with_diagnosed_cc_age_gt_50'],
-#             'n_diagnosed_1_year_ago_died:', out['n_diagnosed_1_year_ago_died'],
-#             'n_diagnosed_1_year_ago:', out['n_diagnosed_1_year_ago'],
-#             'n_women_hiv_unsuppressed:', out['n_women_hiv_unsuppressed'],
-#             'n_women_hivneg', out['n_women_hivneg'],
-#             'n_women_hivpos', out['n_women_hivpos'])
-
-        # comment out this below when running tests
-
-        # Specify the file path for the CSV file
-        # out_csv = Path("./outputs/output7_data.csv")
-
-# comment out this code below only when running tests
-
-        # with open(out_csv, "a", newline="") as csv_file:
-        #     # Create a CSV writer
-        #     csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
-        #
-        #     # If the file is empty, write the header
-        #     if csv_file.tell() == 0:
-        #         csv_writer.writeheader()
-        #
-        #     # Write the data to the CSV file
-        #     csv_writer.writerow(out)
-
-#       print(out)
-
-        # Disable column truncation
-        pd.set_option('display.max_columns', None)
-
-        # Set the display width to a large value to fit all columns in one row
-        pd.set_option('display.width', 1000)
-
-        selected_columns = ["ce_hpv_cc_status",
-        "ce_date_treatment",
-        "ce_stage_at_which_treatment_given",
-        "ce_date_diagnosis",
-        "ce_new_stage_this_month",
-        "ce_date_palliative_care",
-        "ce_date_death",
-        "ce_date_cin_removal",
-        "ce_date_treatment",
-        "ce_stage_at_diagnosis",
-        "ce_ever_treated",
-        "ce_cc_ever",
-        "ce_xpert_hpv_ever_pos",
-        "ce_via_cin_ever_detected",
-        "ce_date_thermoabl",
-        "ce_date_cryotherapy",
-        "ce_current_cc_diagnosed",
-        "ce_selected_for_via_this_month",
-        "ce_selected_for_xpert_this_month",
-        "ce_biopsy"]
-
-
-        selected_columns = ['ce_hpv_cc_status', 'sy_vaginal_bleeding', 'ce_biopsy','ce_current_cc_diagnosed',
-        'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
-        'ce_xpert_hpv_ever_pos', 'ce_date_thermoabl','ce_date_cryotherapy',
-        'ce_date_diagnosis', 'ce_date_treatment','ce_cured_date_cc',
-        'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
-        'ce_via_cin_ever_detected']
-
-#       selected_columns = ["hv_inf", "ce_hiv_unsuppressed", "hv_art", "ce_hpv_cc_status",'ce_cured_date_cc']
-
-        selected_columns = ["rounded_decimal_year","ce_hpv_cc_status","ce_selected_for_via_this_month", "ce_selected_for_xpert_this_month",
-                            "ce_ever_screened", "ce_date_last_screened", "ce_date_cin_removal",
-                            "ce_xpert_hpv_ever_pos", "ce_via_cin_ever_detected",  "ce_date_thermoabl","ce_date_cryotherapy",
-                            "ce_biopsy"]
-
-        # selected_columns = ["ce_hpv_cc_status"]
-
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & (df['hv_inf'])
-                           & df['ce_ever_screened']]
-
-#       pd.set_option('display.max_rows', None)
-        print(selected_rows[selected_columns])
-
-#       selected_columns = ['sex', 'age_years', 'is_alive']
-#       pd.set_option('display.max_rows', None)
-#       print(df[selected_columns])
-
-
-
-
-
-
-
-
