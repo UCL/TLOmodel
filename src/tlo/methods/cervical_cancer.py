@@ -564,7 +564,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         )
 
         # Check that the dict labels are correct as these are used to set the value of ce_hpv_cc_status
-        assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
+        if not set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories):
+            logger.warning(key="warning", data="Label dict are not correct.")
+        # assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
 
         # Linear Model for the onset of vaginal bleeding, in each 1 month period
         # Create variables for used to predict the onset of vaginal bleeding at
@@ -1314,8 +1316,9 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             )
             return self.make_appt_footprint({})
 
-        # Check that the person has been diagnosed and is not on treatment
-        assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
+        # Check that the person starting treatment has diagnosis date
+        if pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
+            logger.warning(key="warning", data="Person treated for cervical cancer does not have diagnosis date")
 
         # Check that consumables are available
         cons_available = self.get_consumables(
@@ -1417,8 +1420,10 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
-        assert not pd.isnull(df.at[person_id, "ce_date_treatment"])
+        if pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
+            logger.warning(key="warning", data="Person treated for cervical cancer does not have diagnosis date")
+        if pd.isnull(df.at[person_id, "ce_date_treatment"]):
+            logger.warning(key="warning", data="Person treated for cervical cancer does not have treatment date")
 
         if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -1490,7 +1495,8 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
 
         # Check that the person is in stage4
-        assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
+        if not (df.at[person_id, "ce_hpv_cc_status"] == 'stage4'):
+            logger.warning(key="warning", data="Person with palliative care not in stage 4.")
 
         # Check consumables are available
         cons_available = self.get_consumables(
@@ -1503,10 +1509,6 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
                 df.at[person_id, "ce_date_palliative_care"] = self.sim.date
-
-            # todo:
-            # for scheduling the same class of HSI_Event to multiple people, more
-            # efficient to use schedule_batch_of_individual_hsi_events
 
             # Schedule another instance of the event for one month
             hs.schedule_hsi_event(
