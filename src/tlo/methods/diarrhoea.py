@@ -565,7 +565,6 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
 
         # Schedule the main polling event (to first occur immediately)
         sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date)
-        sim.schedule_event(Diarrhoea_Incident_Tracker(self), sim.date)
 
         if self.do_checks:
             # Schedule the event that does checking every day (with time-offset to ensure it's the last event done):
@@ -804,17 +803,16 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # todo remove unneeded logger
-        # # Log that the episode has ended
-        # logger.info(
-        #     key='end_of_case',
-        #     data={
-        #         'person_id': person_id,
-        #         'date_of_onset': person.gi_date_of_onset,
-        #         'outcome': outcome
-        #     },
-        #     description='information when a case is ended by recovery, cure or death.'
-        # )
+        # Log that the episode has ended
+        logger.info(
+            key='end_of_case',
+            data={
+                'person_id': person_id,
+                'date_of_onset': person.gi_date_of_onset,
+                'outcome': outcome
+            },
+            description='information when a case is ended by recovery, cure or death.'
+        )
 
         # Store the totals of days * daly_weight incurred during the episode
         if 'HealthBurden' in self.sim.modules:
@@ -1401,22 +1399,21 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             disease_module=self.module
         )
 
-        # todo remove unneeded logger
         # Log this incident case:
-        # logger.info(
-        #     key='incident_case',
-        #     data={
-        #         'person_id': person_id,
-        #         'age_years': person.age_years,
-        #         'pathogen': props_new['gi_pathogen'],
-        #         'type': props_new['gi_type'],
-        #         'dehydration': props_new['gi_dehydration'],
-        #         'duration_longer_than_13days': props_new['gi_duration_longer_than_13days'],
-        #         'date_of_outcome': date_of_outcome,
-        #         'will_die': pd.isnull(props_new['gi_scheduled_date_recovery'])
-        #     },
-        #     description='each incicdent case of diarrhoea'
-        # )
+        logger.info(
+            key='incident_case',
+            data={
+                'person_id': person_id,
+                'age_years': person.age_years,
+                'pathogen': props_new['gi_pathogen'],
+                'type': props_new['gi_type'],
+                'dehydration': props_new['gi_dehydration'],
+                'duration_longer_than_13days': props_new['gi_duration_longer_than_13days'],
+                'date_of_outcome': date_of_outcome,
+                'will_die': pd.isnull(props_new['gi_scheduled_date_recovery'])
+            },
+            description='each incicdent case of diarrhoea'
+        )
 
         # Increment the counter for the number of cases of diarrhoea had
         df.at[person_id, 'gi_number_of_episodes'] += 1
@@ -1524,33 +1521,6 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
 
         # Resolve all the symptoms and reset the properties
         self.module.end_episode(person_id=person_id, outcome='cure')
-
-
-class Diarrhoea_Incident_Tracker(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        # get some summary statistics
-        df = population.props
-
-        # ------------------------------------ TRACK NEW CASES ------------------------------------
-        # prop clinical episodes which had treatment, all ages
-
-        # sum all the counters for previous year
-        incident = df['gi_number_of_episodes'].sum()
-
-        to_log = {
-            'number_episodes': incident,
-        }
-
-        logger.info(key='diarrhoea_episodes',
-                    data=to_log,
-                    description='Number of diarrhoea episodes occurring in timeperiod')
-
-        # reset counters
-        df['gi_number_of_episodes'] = 0
 
 
 # ---------------------------------------------------------------------------------------------------------

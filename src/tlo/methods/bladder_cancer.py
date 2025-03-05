@@ -1031,7 +1031,7 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """
-        self.repeat = 12
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):

@@ -600,7 +600,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         # add together dalys reported by different modules that have the same cause (i.e., add together columns with
         # the same name).
         disease_specific_daly_values_this_month = pd.concat(
-            dalys_from_each_disease_module, axis=1).groupby(axis=1, level=0, observed=False).sum()
+            dalys_from_each_disease_module, axis=1).groupby(axis=1, level=0).sum()
 
         # 3) Rescale the DALY weights
         # Create a scaling-factor (if total DALYS for one person is more than 1, all DALYS weights are scaled so that
@@ -622,7 +622,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # - sum of daly_weight, by sex/age/wealth
         disability_monthly_summary = pd.DataFrame(
-            disease_specific_daly_values_this_month.groupby(['sex', 'age_range', 'li_wealth'], observed=False).sum().fillna(0))
+            disease_specific_daly_values_this_month.groupby(['sex', 'age_range', 'li_wealth']).sum().fillna(0))
 
         # - add the year into the multi-index
         disability_monthly_summary['year'] = self.sim.date.year

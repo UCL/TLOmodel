@@ -2018,14 +2018,9 @@ class RTI(Module, GenericFirstAppointmentsMixin):
                (sum(df.loc[injured_index, 'rt_imm_death']) == 0)
         selected_for_rti_inj = df.loc[injured_index, RTI.INJURY_COLUMNS]
 
-        # todo remove
-        # daly_change = selected_for_rti_inj.applymap(
-        #     lambda code: self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][1]
-        # ).sum(axis=1, numeric_only=True)
         daly_change = selected_for_rti_inj.applymap(
-            lambda code: self.ASSIGN_INJURIES_AND_DALY_CHANGES.get(code, [None, 0])[1]
+            lambda code: self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][1]
         ).sum(axis=1, numeric_only=True)
-
         df.loc[injured_index, 'rt_disability'] += daly_change
 
         # Store the true sum of DALY weights in the df
