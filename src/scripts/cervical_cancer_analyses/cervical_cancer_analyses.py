@@ -51,9 +51,9 @@ log_config = {
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2010, 5, 1)
 malawi_country_pop = 17000000
-popsize = 1700
+popsize = 17000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
