@@ -246,7 +246,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             _agrp: copy.deepcopy(blank_length_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
         self.wasting_length_tracker = copy.deepcopy(self.wasting_length_tracker_blank)
 
-        self.person_of_interest_id = 28304 # debugging
+        self.person_of_interest_id = 4118 # debugging
 
         # define age groups
         self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
