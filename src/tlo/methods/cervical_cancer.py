@@ -1195,7 +1195,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
                     df.at[person_id, "ce_hpv_cc_status"] = 'none'
 
             # If individual has ce_hpv_cc_status stage1+, CIN treatment cannot be successful and individual will be sent for biopsy if biopsy has not been performed previously
-            elif (df.at[person_id, "ce_hpv_cc_status"] in p['hpv_stage_options']) & (~df.at[person_id, "ce_biopsy"].eq(True)):
+            elif (df.at[person_id, "ce_hpv_cc_status"] in p['hpv_stage_options']) & ~df.at[person_id, "ce_biopsy"]:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_CervicalCancer_Biopsy(
                         module=self.module,
