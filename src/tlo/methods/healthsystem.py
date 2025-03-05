@@ -2245,6 +2245,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
+            year = sim.datetime.year
+            month = sim.datetime.month
             # Get the events that are due today:
             list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
@@ -2254,14 +2256,28 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # For each individual level event, check whether the equipment it has already declared is available. If it
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
-            # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-            # Must do this by first assigni
+
             list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment = list()
             for item in list_of_individual_hsi_event_tuples_due_today:
                 if not item.hsi_event.is_all_declared_equipment_available:
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                 else:
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
+
+            # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
+            for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
+                prob_disruption = self.projected_precip_disruptions.loc[
+                    (self.projected_precip_disruptions['Facility_ID'] == item.hsi_event.facility_id) &
+                    (self.projected_precip_disruptions['year'] == year) &
+                    (self.projected_precip_disruptions['month'] == month) &
+                    (self.projected_precip_disruptions['service'] == self.services_affected), # need to fix?
+                    'disruption'
+                ].values
+                if len(prob_disruption) > 0:
+                    prob_disruption = prob_disruption[0]
+                    if np.random.rand() < prob_disruption:
+                        list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
+                            item)  # Remove item from list? Should I create a seperate list?
 
             # Try to run the list of individual-level events that have their essential equipment
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(

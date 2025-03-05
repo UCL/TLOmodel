@@ -10,9 +10,12 @@ from collections import defaultdict
 from pathlib import Path
 from types import MappingProxyType
 from typing import Union
-
+from shapely.geometry import Point
+import random
 import numpy as np
 import pandas as pd
+import geopandas as gpd
+from scipy.spatial import cKDTree
 
 from tlo import (
     DAYS_IN_MONTH,
@@ -67,7 +70,6 @@ def age_at_date(
     """Compute exact age in years given a date of birth `dob` and date `date`."""
     # Assume a fixed number of days in all years, ignoring variations due to leap years
     return (date - date_of_birth) / pd.Timedelta(days=DAYS_IN_YEAR)
-
 
 class Demography(Module):
     """
@@ -246,6 +248,12 @@ class Demography(Module):
             categories=self.parameters['pop_2010']['Region'].unique().tolist()
         )
 
+        self.PROPERTIES['facility_used_level_1'] = Property(
+            Types.CATEGORICAL,
+            'Which level 1 facility is "used" by individual.',
+            categories=self.parameters['pop_2010']['Region'].unique().tolist()
+        )
+
     def initialise_population(self, population):
         """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
@@ -290,6 +298,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
+        df.loc[df.is_alive, 'facility_used_level_1a'] = self.assign_closest_clinic_level_1a(df.loc[df.is_alive, 'district_of_residence'] )
 
         df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
@@ -398,6 +407,65 @@ class Demography(Module):
         _df = df.drop(df.index[df.Age > max_age])  # Remove characteristics with age greater than max_age
         _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
         return _df.reset_index(drop=True)
+
+    def assign_closest_facility_level_1a(self):
+        """Function that assigns an individual coordinates,
+         and then the facilities at which they recieve care at each level."""
+        # Load district polygons from shapefile
+        malawi_admin2 = gpd.read_file(Path(self.resourcefilepath/'mapping'/'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp'))
+
+        # Create a lookup from district name to its polygon
+        district_to_geometry = {row["ADM2_EN"]: row["geometry"] for _, row in malawi_admin2.iterrows()}
+        def sample_point_within_polygon(polygon):
+            """Randomly sample a point within a given polygon."""
+            minx, miny, maxx, maxy = polygon.bounds
+            while True:
+                random_point = Point(random.uniform(minx, maxx), random.uniform(miny, maxy))
+                if polygon.contains(random_point):
+                    return random_point
+
+        def assign_random_coordinates(district_name):
+            """Returns a randomly sampled coordinate within the given district."""
+            polygon = district_to_geometry.get(district_name)
+            if polygon:
+                return sample_point_within_polygon(polygon)
+            else:
+                return None  # Handle cases where the district isn't found, which shouldn't happen
+
+        # Assign unique coordinates to each individual based on their district
+        self.population["coordinate_of_residence"] = self.population["district_of_residence"].apply(
+            assign_random_coordinates)
+
+        # self.parameters['Master_Facilities_List'] = pd.read_csv(
+        #     Path(self.resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv'))
+
+        facility_info  =pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
+
+        # Filter for relevant facility types that are Facility 1a according to https://www.tlomodel.org/writeups.html
+        relevant_facilities = facility_info[
+            facility_info["Ftype"].isin([
+                "Dispensary", "Rural/Urban Health Centre",
+                "Private/Special/Antenatal Clinic", "Maternity Clinic/Facility"
+            ])
+        ]
+
+        # Extract coordinates of facilities
+        facility_coords = list(zip(relevant_facilities["longitude"], relevant_facilities["latitude"]))
+
+        # Build a spatial KDTree for fast nearest neighbor search
+        facility_tree = cKDTree(facility_coords)
+
+        # Extract individual coordinates
+        individual_coords = np.array([
+            (point.x, point.y) if point else (np.nan, np.nan)
+            for point in self.population["coordinate_of_residence"]
+        ])
+
+        # Find the nearest facility for each individual
+        distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
+
+        # Assign the closest facility to each individual
+        self.population["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Facility_Name"]
 
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
