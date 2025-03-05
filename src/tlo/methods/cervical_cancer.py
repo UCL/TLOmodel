@@ -29,7 +29,6 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import read_csv_files
-import csv
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -758,6 +757,38 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 topen=self.sim.date,
                 tclose=None)
 
+    def perform_cin_procedure(self, person_id):
+        """Function to decide treatment for individuals with CIN based on year. If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
+        :param person_id: person of interest
+        """
+        module = self.sim.modules['CervicalCancer']
+        year = self.sim.date.year
+        p = module.parameters
+        hs = self.sim.modules["HealthSystem"]
+        treatment_methods = {
+            'Thermoablation': {
+                'event_class': HSI_CervicalCancer_Thermoablation_CIN
+            },
+            'Cryotherapy': {
+                'event_class': HSI_CervicalCancer_Cryotherapy_CIN
+            }
+        }
+
+        selected_method = 'Thermoablation' if year >= p['transition_testing_year'] else 'Cryotherapy'
+        method_info = treatment_methods[selected_method]
+
+        # todo Ensure equipment added and review addition of equipment Thermoablation Device
+        # self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
+        # self.add_equipment({'LLETZ Machines'} if selected_method == 'Thermoablation' else {'Cryotherapy unit'})
+
+        # Schedule HSI event
+        hs.schedule_hsi_event(
+            hsi_event=method_info['event_class'](module=module, person_id=person_id),
+            priority=0,
+            topen=self.sim.date,
+            tclose=None
+        )
+
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -920,40 +951,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class PerformCINProcedureMixin:
-    def perform_cin_procedure(self, person_id):
-        """Function to decide treatment for individuals with CIN based on year. If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
-        :param person_id: person of interest
-        """
-        module = self.module
-        year = self.sim.date.year
-        p = self.sim.modules['CervicalCancer'].parameters
-        hs = self.sim.modules["HealthSystem"]
-        treatment_methods = {
-            'Thermoablation': {
-                'event_class': HSI_CervicalCancer_Thermoablation_CIN
-            },
-            'Cryotherapy': {
-                'event_class': HSI_CervicalCancer_Cryotherapy_CIN
-            }
-        }
-
-        selected_method = 'Thermoablation' if year >= p['transition_testing_year'] else 'Cryotherapy'
-        method_info = treatment_methods[selected_method]
-
-        # todo TLO team to review addition of equipment Thermoablation Device currently usisng LLETZ machine
-        self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
-        self.add_equipment({'LLETZ Machines'} if selected_method == 'Thermoablation' else {'Cryotherapy unit'})
-
-        # Schedule HSI event
-        hs.schedule_hsi_event(
-            hsi_event=method_info['event_class'](module=module, person_id=person_id),
-            priority=0,
-            topen= self.sim.date,
-            tclose=None
-        )
-
-class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin, PerformCINProcedureMixin):
+class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual in eligible population is selected for screening based on via screening probability
     Acetic Acid screening is recommended prior to year 2024
@@ -999,8 +997,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
                             ):
-                    self.perform_cin_procedure(person_id)
-
+                    self.module.perform_cin_procedure(person_id)
                 # Biopsy if suspected Stage 1 to Stage 4
                 elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
                             or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
@@ -1017,7 +1014,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                         tclose=None
                 )
 
-class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin, PerformCINProcedureMixin):
+class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual in eligible population is selected for screening based on xpert screening probability
     Xpert screening is recommended from the year 2024 onwards
@@ -1078,7 +1075,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin,
             if person['hv_diagnosed']:
                 if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (p['hpv_cin_options'] + p['hpv_stage_options'])
                                 ):
-                    self.perform_cin_procedure(person_id)
+                    self.module.perform_cin_procedure(person_id)
 
 class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1206,7 +1203,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
                     tclose=None
                 )
 
-class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin, PerformCINProcedureMixin):
+class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_CervicalCancer_AceticAcidScreening, HSI_CervicalCancerPresentationVaginalBleeding, HSI_CervicalCancer_Cryotherapy_CIN, or HSI_CervicalCancer_Thermoablation_CIN
 
@@ -1240,7 +1237,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin, PerformCIN
 
             # If biopsy confirms that individual does not have cervical cancer but CIN is detected, then individual is sent for CIN treatment
             if (not dx_result) and (df.at[person_id, 'ce_hpv_cc_status'] in (p['hpv_cin_options']) ):
-                self.perform_cin_procedure(person_id)
+                self.module.perform_cin_procedure(person_id)
 
             # If biopsy confirms that individual has cervical cancer, register diagnosis and either refer to treatment or palliative care
             elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
