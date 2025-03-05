@@ -265,7 +265,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # WASH in action, update property li_unimproved_sanitation=False for all new births
         if self.parameters['scaleup_WASH'] and (
-            self.sim.date >= Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1)):
+                self.sim.date >= Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1)):
             df.at[child_id, 'li_unimproved_sanitation'] = False
             df.at[child_id, 'li_no_clean_drinking_water'] = False
             df.at[child_id, 'li_no_access_handwashing'] = False
@@ -731,11 +731,11 @@ class SchistoSpecies:
             'PZQ_efficacy': Parameter(Types.REAL,
                                       'Efficacy of praziquantel in reducing worm burden'),
             'baseline_prevalence': Parameter(Types.REAL,
-                                      'Baseline prevalence of species across all districts in 2010'),
+                                             'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
-                    'Proportion of population in each district susceptible to schisto infection'),
+                                          'Proportion of population in each district susceptible to schisto infection'),
             'gamma_alpha': Parameter(Types.DATA_FRAME, 'Parameter alpha for Gamma distribution for harbouring rates'),
         }
         return {self._prefix_species_parameter(k): v for k, v in params.items()}
@@ -1140,7 +1140,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # increases baseline_risk value
         # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
         background_risk = max(0, global_params['baseline_risk'] * (1 + global_params['scaling_factor_baseline_risk'] *
-                                                           (current_prevalence - baseline_prevalence)))
+                                                                   (current_prevalence - baseline_prevalence)))
 
         reservoir += background_risk  # add the background reservoir to every district
 
@@ -1746,14 +1746,14 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         alive.index.rename(['district_of_residence', 'age_group'], inplace=True)
 
         logger.info(
-            key=f'number_infected_any_species',
+            key='number_infected_any_species',
             description='Counts of infection status with this species by age-group and district.',
             data={
                 'number_infected': flatten_multi_index_series_into_dict_for_logging(infected),
             },
         )
         logger.info(
-            key=f'number_in_subgroup',
+            key='number_in_subgroup',
             description='Counts of infection status with this species by age-group and district.',
             data={
                 'number_alive': flatten_multi_index_series_into_dict_for_logging(alive),
