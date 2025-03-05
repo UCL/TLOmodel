@@ -25,6 +25,7 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize
 )
+from collections import defaultdict
 
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              summarize_cost_data,
@@ -208,6 +209,7 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
 
     return fig, ax
 
+# %%
 # Estimate standard input costs of scenario
 #-----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
@@ -217,7 +219,6 @@ input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
 # Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
 #-----------------------------------------------------------------------------------------------------------------------
 def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
-    # Extract supply chain cost as a proportion of consumable costs to apply to malaria scale-up commodities
     # Load primary costing resourcefile
     workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
                                   sheet_name=None)
@@ -360,9 +361,9 @@ def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
     ]
     return malaria_scaleup_costs
 
+print("Appending malaria scale-up costs")
 malaria_scaleup_costs = estimate_malaria_scale_up_costs(_params = params,
                                                         _relevant_period_for_costing = relevant_period_for_costing)
-
 def append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs, _total_input_costs, _relevant_period_for_costing):
     # Re-format malaria scale-up costs to append to the rest of the input_costs
     def melt_and_label_malaria_scaleup_cost(_df, label):
@@ -387,12 +388,139 @@ def append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs, 
         new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate, _year = _relevant_period_for_costing[0])
         _total_input_costs = pd.concat([_total_input_costs, new_df], ignore_index=True)
 
+    return _total_input_costs
+
+# Update input costs to include malaria scale up costs
 input_costs = append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs = malaria_scaleup_costs,
                                                                  _total_input_costs = input_costs,
                                                                  _relevant_period_for_costing = relevant_period_for_costing)
 
-# Extract input_costs for browsing
+def estimate_xpert_costs(_results_folder, _relevant_period_for_costing):
+    # Load primary costing resourcefile
+    workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                  sheet_name=None)
+    # Read parameters for consumables costs
+    # Load consumables cost data
+    unit_price_consumable = workbook_cost["consumables"]
+    unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+    unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
+        drop=True).iloc[1:]
+    unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+
+    # Add cost of Xpert consumables which was missed in the current analysis
+    def get_counts_of_items_requested(_df):
+        counts_of_used = defaultdict(lambda: defaultdict(int))
+        counts_of_available = defaultdict(lambda: defaultdict(int))
+        counts_of_not_available = defaultdict(lambda: defaultdict(int))
+
+        for _, row in _df.iterrows():
+            date = row['date']
+            for item, num in row['Item_Used'].items():
+                counts_of_used[date][item] += num
+            for item, num in row['Item_Available'].items():
+                counts_of_available[date][item] += num
+            for item, num in row['Item_NotAvailable'].items():
+                counts_of_not_available[date][item] += num
+
+        used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
+        available_df = pd.DataFrame(counts_of_available).fillna(0).astype(int).stack().rename('Available')
+        not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename('Not_Available')
+
+        # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
+        combined_df = pd.concat([used_df, available_df, not_available_df], axis=1).fillna(0).astype(int)
+
+        # Convert to a pd.Series, as expected by the custom_generate_series function
+        return combined_df.stack()
+
+    cons_req = extract_results(
+        _results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True)
+    keep_xpert = cons_req.index.get_level_values(0) == '187'
+    keep_instances_logged_as_not_available = cons_req.index.get_level_values(2) == 'Not_Available'
+    cons_req = cons_req[keep_xpert & keep_instances_logged_as_not_available]
+    cons_req = cons_req.reset_index()
+
+    # Keep only relevant draws
+    # Filter columns based on keys from all_manuscript_scenarios
+    col_subset = [col for col in cons_req.columns if
+                  ((col[0] in all_manuscript_scenarios.keys()) | (col[0] == 'level_1'))]
+    # Keep only the relevant columns
+    cons_req = cons_req[col_subset]
+
+    def transform_cons_requested_for_costing(_df, date_column):
+        _df['year'] = pd.to_datetime(_df[date_column]).dt.year
+
+        # Validate that all necessary years are in the DataFrame
+        if not set(_relevant_period_for_costing).issubset(_df['year'].unique()):
+            raise ValueError("Some years are not recorded in the dataset.")
+
+        # Filter for relevant years and return the total population as a Series
+        return _df.loc[_df['year'].between(min(_relevant_period_for_costing), max(_relevant_period_for_costing))].drop(columns=date_column).set_index(
+            'year')
+
+    xpert_cost_per_cartridge = unit_price_consumable[unit_price_consumable.Item_Code == 187][
+        'Final_price_per_chosen_unit (USD, 2023)']
+    xpert_availability_adjustment = 0.31
+
+    xpert_dispensed_cost = (transform_cons_requested_for_costing(_df=cons_req,
+                                                                 date_column=('level_1', ''))
+                            * xpert_availability_adjustment
+                            * xpert_cost_per_cartridge.iloc[0])
+    draws_with_positive_xpert_costs = (
+        input_costs[(input_costs.cost_subgroup == 'Xpert') & (input_costs.cost > 0)].groupby('draw')[
+            'cost'].sum().reset_index()['draw']
+        .unique()).tolist()
+
+    def melt_and_label_xpert_cost(_df):
+        multi_index = pd.MultiIndex.from_tuples(_df.columns)
+        _df.columns = multi_index
+
+        # reshape dataframe and assign 'draw' and 'run' as the correct column headers
+        melted_df = pd.melt(_df.reset_index(), id_vars=['year']).rename(
+            columns={'variable_0': 'draw', 'variable_1': 'run'})
+        # For draws where the costing is already correct, set additional costs to 0
+        melted_df.loc[melted_df.draw.isin(draws_with_positive_xpert_costs), 'value'] = 0
+        # Replace item_code with consumable_name_tlo
+        melted_df['cost_category'] = 'medical consumables'
+        melted_df['cost_subgroup'] = 'Xpert'
+        melted_df['Facility_Level'] = 'all'
+        melted_df = melted_df.rename(columns={'value': 'cost'})
+
+        # Replicate and estimate cost of consumables stocked and supply chain costs
+        df_with_all_cost_subcategories = pd.concat([melted_df] * 3, axis=0, ignore_index=True)
+        # Define cost subcategory values
+        cost_categories = ['cost_of_consumables_dispensed', 'cost_of_excess_consumables_stocked', 'supply_chain']
+        # Assign values to the new 'cost_subcategory' column
+        df_with_all_cost_subcategories['cost_subcategory'] = np.tile(cost_categories, len(melted_df))
+        # The excess stock ratio of Xpert as per 2018 LMIS data is 0.125833
+        df_with_all_cost_subcategories.loc[df_with_all_cost_subcategories[
+                                               'cost_subcategory'] == 'cost_of_excess_consumables_stocked', 'cost'] *= 0.125833
+        # Supply chain costs are 0.12938884672119721 of the cost of dispensed + stocked
+        df_with_all_cost_subcategories.loc[
+            df_with_all_cost_subcategories['cost_subcategory'] == 'supply_chain', 'cost'] *= (
+                0.12938884672119721 * (1 + 0.125833))
+        return df_with_all_cost_subcategories
+
+    xpert_total_cost = melt_and_label_xpert_cost(xpert_dispensed_cost)
+    xpert_total_cost.to_csv('./outputs/horizontal_v_vertical/xpert_cost.csv')
+    return xpert_total_cost
+
+print("Appending Xpert costs")
+xpert_total_cost = estimate_xpert_costs(_results_folder = results_folder,
+                                        _relevant_period_for_costing = relevant_period_for_costing)
+
+# Update input costs to include Xpert costs
+input_costs = pd.concat([input_costs, xpert_total_cost], ignore_index=True)
+input_costs = input_costs.groupby(['draw', 'run', 'year', 'cost_subcategory', 'Facility_Level',
+                                               'cost_subgroup', 'cost_category'])['cost'].sum().reset_index()
+
+
+# Keep costs for relevant draws
 input_costs = input_costs[input_costs['draw'].isin(list(all_manuscript_scenarios.keys()))]
+# Extract input_costs for browsing
 input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_subgroup','year'])['cost'].sum().to_csv(figurespath / 'cost_detailed.csv')
 
 # %%
