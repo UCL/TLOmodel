@@ -670,7 +670,7 @@ fig, ax = do_standard_bar_plot_with_ci(
     (icers_summarized_subset_for_figure),
     annotations=[
         f"{row['mean']:.2f} ({row['lower'] :.2f}- \n {row['upper'] :.2f})"
-        for _, row in icers_summarized.iterrows()
+        for _, row in icers_summarized_subset_for_figure.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
     put_labels_in_legend=True,
