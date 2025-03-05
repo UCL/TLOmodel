@@ -1096,8 +1096,9 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         hs = self.sim.modules["HealthSystem"]
-        p = self.sim.modules['CervicalCancer'].parameters
-        m = self.module
+        m = self.sim.modules['CervicalCancer']
+        p = m.parameters
+
         rng = m.rng
         random_value = rng.random()
 
@@ -1128,8 +1129,9 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        p = self.sim.modules['CervicalCancer'].parameters
-        random_value = self.module.rng.random()
+        m = self.module
+        p = m.parameters
+        random_value = m.rng.random()
 
         # Reference: (msyamboza et al 2016)
 
