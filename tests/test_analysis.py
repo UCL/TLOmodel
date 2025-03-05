@@ -397,7 +397,7 @@ def test_get_parameter_functions(seed):
                         [type(_i) is type(_j) for _i, _j in zip(l1, l2)]
                     )
 
-                # Check that, if the updated value is a pd.DataFrame, it has the same indicies as the original
+                # Check that, if the updated value is a pd.DataFrame, it has the same indices as the original
                 if isinstance(original, (pd.DataFrame, pd.Series)):
                     assert is_df_same_size_and_dtype(original, updated_value), print(
                         f"Dataframe or series if not of the expected size and shape:"

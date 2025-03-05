@@ -99,7 +99,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         'mda_target_group': Parameter(Types.STRING,
                                       'Target group for future MDA activities, '
                                       'one of [PSAC_SAC, SAC, ALL]'),
-        'mda_frequency_months': Parameter(Types.INT,
+        'mda_frequency_months': Parameter(Types.REAL,
                                           'Number of months between MDA activities'),
         'scaling_factor_baseline_risk': Parameter(Types.REAL,
                                                   'scaling factor controls how the background risk of '
