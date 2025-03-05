@@ -153,7 +153,7 @@ class Demography(Module):
             categories=['SET_AT_RUNTIME']
         ),
 
-        'facility_used_level_1': Property(Types.CATEGORICAL,
+        'facility_used_level_1a': Property(Types.CATEGORICAL,
                                   'Which level 1 facility is "used" by individual.',
                                           categories = ['SET_AT_RUNTIME']),
 
@@ -248,7 +248,7 @@ class Demography(Module):
             categories=self.parameters['pop_2010']['Region'].unique().tolist()
         )
 
-        self.PROPERTIES['facility_used_level_1'] = Property(
+        self.PROPERTIES['facility_used_level_1a'] = Property(
             Types.CATEGORICAL,
             'Which level 1 facility is "used" by individual.',
             categories=self.parameters['pop_2010']['Region'].unique().tolist()
@@ -299,7 +299,6 @@ class Demography(Module):
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
         df.loc[df.is_alive, 'facility_used_level_1a'] = self.assign_closest_facility_level_1a( )
-
         df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
@@ -433,8 +432,11 @@ class Demography(Module):
                 return None  # Handle cases where the district isn't found, which shouldn't happen
 
         # Assign unique coordinates to each individual based on their district
-        self.sim.population.props["coordinate_of_residence"] = self.sim.population.props["district_of_residence"].apply(
+        df = self.sim.population.props.copy() # take copy of dataframe
+        df["coordinate_of_residence"] = df["district_of_residence"].apply(
             assign_random_coordinates)
+        # self.sim.population.props["coordinate_of_residence"] = self.sim.population.props["district_of_residence"].apply(
+        #     assign_random_coordinates)
 
         facility_info  =pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
 
@@ -455,7 +457,7 @@ class Demography(Module):
         # Extract individual coordinates
         individual_coords = np.array([
             (point.x, point.y) if point else (np.nan, np.nan)
-            for point in self.sim.population.props["coordinate_of_residence"]
+            for point in df["coordinate_of_residence"]
         ])
 
         # Find the nearest facility for each individual
@@ -463,7 +465,8 @@ class Demography(Module):
 
         # Assign the closest facility to each individual
         self.sim.population.props["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"]
-        self.sim.population.props = self.sim.population.props.drop(columns=["coordinate_of_residence"]) # issues with json
+        #self.sim.population.props = self.sim.population.props.drop(columns=["coordinate_of_residence"]) # issues with json
+        #print(self.sim.population.props)
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
