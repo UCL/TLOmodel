@@ -30,6 +30,8 @@ if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
     from tlo.population import IndividualProperties
 
+# Include emulator option
+
 # Decide whether to use emulator or not
 use_emulator = True
 include_conditionality = True
