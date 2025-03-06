@@ -1,11 +1,11 @@
 import itertools
-from pathlib import Path
-from PyPDF2 import PdfReader, PdfWriter
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from io import BytesIO
-import sys
 import re
+import sys
+from io import BytesIO
+from pathlib import Path
+
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
 
 # Define the parameter values in a dictionary
 parameters = {
