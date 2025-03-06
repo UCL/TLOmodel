@@ -1486,7 +1486,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         ax.set_ylim(0, _y_axis_lim)
     ax.set_xlim(left = 0)
 
-    plt.xlabel('Implementation cost, millions')
+    plt.xlabel('Implementation cost, USD millions')
     plt.ylabel('Return on Investment')
 
     # Show legend and title
