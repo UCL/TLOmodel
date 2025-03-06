@@ -626,8 +626,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         p = self.parameters
 
-        duration_sam_to_death = int(min(p['duration_of_untreated_mod_wasting'], p['duration_of_untreated_sev_wasting'],
-                                    p['duration_sam_to_death']))
+        duration_sam_to_death = int(min(p['duration_of_untreated_mod_wasting'] - 1,
+                                        p['duration_of_untreated_sev_wasting'] - 1,
+                                        p['duration_sam_to_death']))
         date_of_death = self.sim.date + DateOffset(days=duration_sam_to_death)
         return date_of_death
 
