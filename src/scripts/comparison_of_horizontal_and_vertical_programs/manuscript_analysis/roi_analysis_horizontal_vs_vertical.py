@@ -33,7 +33,8 @@ from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              do_line_plot_of_cost,
                                              generate_multiple_scenarios_roi_plot,
                                              estimate_projected_health_spending,
-                                             apply_discounting_to_cost_data)
+                                             apply_discounting_to_cost_data,
+                                             tabulated_roi_estimates)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -748,9 +749,9 @@ print(f"At no additional implementation costs, combined investments in HTM and H
       f"{(roi_result[44]['mean']- roi_result[36]['mean'])/roi_result[36]['mean'] * 100: .2f}% "
       f"higher ROI than HTM expansion alone. In fact, combined investments with HSS yield greater returns on investment "
       f"as long as additional implementation costs of this scenario do not exceed "
-      f"{breakeven_implementation_cost/10e6: .2f} "
+      f"${breakeven_implementation_cost/10e6: .2f} million "
       f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
-      f"of the total projected health spending between 2025 and 2035)."
+      f"of the total projected health spending) between 2025 and 2035."
       f"At non-zero implementation costs of HTM expansion, the relative ROI is even higher.")
 
 # HIV scenarios with and without HSS
