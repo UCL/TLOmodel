@@ -150,7 +150,7 @@ class WastingAnalyses:
 
             ax = plotting.plot(kind='bar', stacked=True,
                                ax=axes[_row_counter, _col_counter],
-                               title=f"incidence of wasting in {age} old")#,
+                               title=f"{age} old")#,
                                #ylim=[0, 1])
             show_legend = (_row_counter == 1 and _col_counter == 2)
             # show_x_axis_label = (_row_counter == 0 and _col_counter == 2)
@@ -168,6 +168,7 @@ class WastingAnalyses:
                 _row_counter += 1
                 _col_counter = -1
             _col_counter += 1  # increment column counter
+            fig.suptitle('Annual incidence of wasting among the age group', fontsize=12, weight='bold')
             fig.tight_layout()
         fig_output_name = ('wasting_incidence__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
