@@ -30,18 +30,18 @@ class WastingAnalyses:
     This class looks at plotting all important outputs from the wasting module
     """
 
-    def __init__(self, in_sim_results_folder_path, in_datestamp, in_draw_nmb, in_run_nmb,in_png=False):
-        self.outcomes_folder_path = in_sim_results_folder_path
+    def __init__(self, sim_results_folder_path_str, in_datestamp, in_draw_nmb, in_run_nmb, in_png=False):
+        self.outcomes_folder_path = sim_results_folder_path_str
         self.datestamp = in_datestamp
         self.draw_nmb = in_draw_nmb
         self.run_nmb = in_run_nmb
         self.png = in_png, """bool indicating whether we want to save all figures not only as pdf, but also as png"""
 
-        sim_results_folder_path_draw_x_run_0 = in_sim_results_folder_path + f'/{draw_nmb}/{run_nmb}/'
+        sim_results_folder_draw_x_run_0_path_str = sim_results_folder_path_str + f'/{draw_nmb}/{run_nmb}/'
         sim_results_file_name_prefix = scenario_filename
         sim_results_file_name_extension = '.log.gz'
         gz_results_file_path = \
-            Path(glob.glob(os.path.join(sim_results_folder_path_draw_x_run_0,
+            Path(glob.glob(os.path.join(sim_results_folder_draw_x_run_0_path_str,
                                         f"{sim_results_file_name_prefix}*{sim_results_file_name_extension}"))[0])
 
         # Path to the decompressed .log file
@@ -626,17 +626,14 @@ if __name__ == "__main__":
     # Path to the resource files used by the disease and intervention methods
     resources_path = Path("./resources")
 
-    # Find sim_results_folder associated with a given batch_file (and get most recent [-1])
-    sim_results_folder = get_scenario_outputs(scenario_filename, outputs_path)[-1]
-    sim_results_parent_folder_name = str(sim_results_folder.parent)
-    sim_results_folder_name = sim_results_folder.name
+    # Find sim_results_folder_path associated with a given batch_file (and get most recent [-1])
+    sim_results_folder_path = get_scenario_outputs(scenario_filename, outputs_path)[-1]
+    sim_results_folder_name = sim_results_folder_path.name
     # Get the datestamp
     assert sim_results_folder_name.startswith(scenario_filename + '-'),\
         "The scenario output name does not correspond with the set scenario_filename."
     datestamp = sim_results_folder_name[(len(scenario_filename) + 1):]
 
-    # Path to the results folder
-    sim_results_folder_path =  sim_results_parent_folder_name + '/' + sim_results_folder_name
     folders = [name for name in os.listdir(sim_results_folder_path) if \
                os.path.isdir(os.path.join(sim_results_folder_path, name))]
 
@@ -648,7 +645,7 @@ if __name__ == "__main__":
         time_start = time.time()
 
         # initialise the wasting class
-        wasting_analyses = WastingAnalyses(sim_results_folder_path, datestamp, draw_nmb, run_nmb)
+        wasting_analyses = WastingAnalyses(str(sim_results_folder_path), datestamp, draw_nmb, run_nmb)
 
         # plot wasting incidence
         wasting_analyses.plot_wasting_incidence()
@@ -672,7 +669,7 @@ if __name__ == "__main__":
         wasting_analyses.plot_model_gbd_deaths()
 
         # save all figures in one pdf
-        outcome_figs_folder = Path(sim_results_folder_path + '/_outcome_figures')
+        outcome_figs_folder = sim_results_folder_path / '_outcome_figures'
         outcome_figs_folder.mkdir(parents=True, exist_ok=True)
         wasting_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
 
