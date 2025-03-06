@@ -38,7 +38,7 @@ class ReallySimplifiedBirths(Module):
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
                               'period'),
         'months_between_pregnancy_and_delivery': Parameter(
-            Types.INT, 'number of whole months that elapase betweeen pregnancy and delivery'),
+            Types.INT, 'number of whole months that elapse between pregnancy and delivery'),
         'prob_breastfeeding_type': Parameter(
             Types.LIST, 'probabilities that a woman is: 1) not breastfeeding (none); 2) non-exclusively breastfeeding '
                         '(non_exclusive); 3)exclusively breastfeeding at birth (until 6 months) (exclusive)')
