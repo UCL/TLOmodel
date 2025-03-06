@@ -76,8 +76,8 @@ class WastingAnalyses:
         self.__colors_model = {
             'severe wasting': cycle[0],  # #1f77b4
             'moderate wasting': cycle[1],  # #ff7f0e
-            'SAM': cycle[2],  # #2ca02c
-            'MAM': cycle[3],  # #d62728
+            'SAM': '#B372B7',
+            'MAM': '#D1BCD2',
         }
         self.__colors_data = {
             'severe wasting': '#82C1EC',
@@ -566,7 +566,7 @@ class WastingAnalyses:
     def add_wasting_initial_prevalence_by_age_group(self):
         self.fig_files.append('wasting_initial_prevalence_per_each_age_group__' + self.datestamp + '.pdf')
 
-    def plot_modal_gbd_deaths_by_gender(self):
+    def plot_model_gbd_deaths(self):
         """ compare model and GBD deaths 2010-2014 & 2015-2019 """
         death_compare = \
             compare_number_of_deaths(self.__log_file_path, resources_path)
@@ -669,7 +669,7 @@ if __name__ == "__main__":
         wasting_analyses.plot_wasting_prevalence_by_age_group()
 
         # plot wasting deaths by gender as compared to GBD deaths
-        wasting_analyses.plot_modal_gbd_deaths_by_gender()
+        wasting_analyses.plot_model_gbd_deaths()
 
         # save all figures in one pdf
         outcome_figs_folder = Path(sim_results_folder_path + '/_outcome_figures')
