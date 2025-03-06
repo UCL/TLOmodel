@@ -737,6 +737,21 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draw_colors = draw_colors,
                    show_title_and_legend = False)
 
+# Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
+health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life)))
+incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost))
+breakeven_implementation_cost = (health_benefit_summarised[44]['mean'] - incremental_scenario_cost_summarised[44]['mean'] * (roi_result[36]['mean'] + 1))/((roi_result[36]['mean'] + 1))
+print(breakeven_implementation_cost/projected_health_spending_baseline
+
+print(f"At no additional implementation costs, combined investments in HTM and HSS had a "
+      f"{(roi_result[44]['mean']- roi_result[36]['mean'])/roi_result[36]['mean'] * 100: .2f}% "
+      f"higher ROI than HTM expansion alone. In fact, combined investments with HSS yield greater returns on investment "
+      f"as long as additional implementation costs of this scenario do not exceed "
+      f"{breakeven_implementation_cost/10e6: .2f} "
+      f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
+      f"of the total projected health spending between 2025 and 2035). "
+      f"At non-zero implementation costs of HTM expansion, the relative ROI is even higher.")
+
 # HIV scenarios with and without HSS
 draw_colors = {9: '#fdae61', 17:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
