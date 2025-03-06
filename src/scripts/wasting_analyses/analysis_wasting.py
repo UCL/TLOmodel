@@ -139,10 +139,14 @@ class WastingAnalyses:
                 plotting[state] = \
                     w_inc_df.apply(lambda row: row[state][age], axis=1)
             # remove sev cases from mod cases (all sev cases went through mod state)
-            plotting["-3<=WHZ<-2"] = plotting["-3<=WHZ<-2"] - plotting["WHZ<-3"]
+            plotting["-3<=WHZ<-2"] = plotting.apply(lambda row: max(row["-3<=WHZ<-2"] - row["WHZ<-3"], 0), axis=1)
             # calculate props within the age group
             plotting = plotting.div(age_gps_total_pop_sizes_df[age], axis=0)
             plotting = plotting.rename(columns=self.__wasting_types_desc)
+            # check for invalid values
+            if (plotting < 0).any().any() or (plotting > 1).any().any():
+                print(f"Warning plot_wasting_incidence: Invalid values detected in plotting data for age group {age}:")
+                print(plotting)
 
             ax = plotting.plot(kind='bar', stacked=True,
                                ax=axes[_row_counter, _col_counter],
