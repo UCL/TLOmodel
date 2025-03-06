@@ -764,12 +764,19 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
 draw_colors = {27: '#fdae61', 35:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [27,35],
+                   _draws = [8, 36, 44],
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'Malaria_VSL',
                    _draw_colors = draw_colors)
+
+# ROI estimates in a table
+roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = list(all_manuscript_scenarios.keys()),
+                   _scenario_dict = all_manuscript_scenarios)
+roi_table.to_csv(roi_outputs_folder / 'tabulated_roi.csv', index = False)
 
 # 5. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------

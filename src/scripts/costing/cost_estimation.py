@@ -1499,6 +1499,83 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                 bbox_inches='tight')
     plt.close()
 
+def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
+                       _incremental_input_cost: pd.DataFrame,
+                       _draws:None,
+                       _scenario_dict: dict):
+    # Calculate maximum ability to pay for implementation
+    _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
+    _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
+    max_ability_to_pay_for_implementation = (_monetary_value_of_incremental_health - _incremental_input_cost).clip(lower=0.0)  # monetary value - change in costs
+
+    roi_df = pd.DataFrame()
+
+    # Create an array of implementation costs ranging from 0 to the max value of max ability to pay for the current draw
+    max_ability_to_pay_for_implementation_rounded_value = math.ceil(max_ability_to_pay_for_implementation.max().max() / 1_000_000_000) * 1_000_000_000
+    implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation_rounded_value, 20)
+    implementation_costs = np.ceil(implementation_costs / 1_000_000_000) * 1_000_000_000  # Round each to nearest billion
+
+    # Iterate over each draw in monetary_value_of_incremental_health
+    for draw_index, row in _monetary_value_of_incremental_health.iterrows():
+        print("Tablulating ROI for draw ", draw_index)
+        # Initialize an empty DataFrame to store values for each 'run'
+        all_run_values = pd.DataFrame()
+
+        # Retrieve the corresponding row from incremental_scenario_cost for the same draw
+        incremental_scenario_cost_row = _incremental_input_cost.loc[draw_index]
+
+        # Calculate the values for each individual run
+        for run in incremental_scenario_cost_row.index:  # Assuming 'run' columns are labeled by numbers
+            # Calculate the total costs for the current run
+            total_costs = implementation_costs + incremental_scenario_cost_row[run]
+
+            # Initialize run_values as an empty series with the same index as total_costs
+            run_values = pd.Series(index=total_costs, dtype=float)
+
+            # For negative total_costs, set corresponding run_values to infinity
+            run_values[total_costs < 0] = np.inf
+
+            # For non-negative total_costs, calculate the metric and clip at 0
+            non_negative_mask = total_costs >= 0
+            run_values[non_negative_mask] = np.clip(
+                (row[run] - total_costs[non_negative_mask]) / total_costs[non_negative_mask],
+                0,
+                None
+            )
+
+            # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
+            run_values = run_values.values # remove index and convert to array
+            run_df = pd.DataFrame([run_values], index=pd.MultiIndex.from_tuples([(draw_index, run)], names=['draw', 'run']),
+                                  columns=implementation_costs)
+
+            # Append the run DataFrame to all_run_values
+            all_run_values = pd.concat([all_run_values, run_df])
+
+        # Replace inf with NaN temporarily to handle quantile calculation correctly
+        temp_data = all_run_values.replace([np.inf, -np.inf], np.nan)
+
+        collapsed_data = temp_data.groupby(level='draw').agg([
+            'mean',
+            ('lower', lambda x: x.quantile(0.025)),
+            ('upper', lambda x: x.quantile(0.975))
+        ])
+
+        # Revert the NaNs back to inf
+        collapsed_data = collapsed_data.replace([np.nan], np.inf)
+
+        collapsed_data = collapsed_data.unstack()
+        collapsed_data.index = collapsed_data.index.set_names('implementation_cost', level=0)
+        collapsed_data.index = collapsed_data.index.set_names('stat', level=1)
+        collapsed_data = collapsed_data.reset_index().rename(columns = {0: 'roi'})
+
+        if roi_df.empty:
+            roi_df = collapsed_data
+        else:
+            roi_df =  pd.concat([roi_df, collapsed_data], ignore_index=True)
+    return roi_df
+
+
+
 '''
 # Scratch pad
 # TODO all these HR plots need to be looked at
