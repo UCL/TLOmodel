@@ -636,6 +636,10 @@ icers = icers.mask(num_dalys_averted < 0)
 icers_summarized = summarize_cost_data(icers)
 icers_summarized_subset_for_figure = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
 icer_result = convert_results_to_dict(icers_summarized)
+hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k]['mean'])
+hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k]['mean'])
+cons_scenario_with_lowest_icer = min([5,6,7], key=lambda k: icer_result[k]['mean'])
+cons_scenario_with_highest_icer = max([5,6,7], key=lambda k: icer_result[k]['mean'])
 
 # Extract for manuscript
 print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario,"
@@ -694,6 +698,19 @@ roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_
 roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost)
 roi_result = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
 
+# Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
+health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life)))
+incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost))
+breakeven_implementation_cost = (health_benefit_summarised[44]['mean'] - incremental_scenario_cost_summarised[44]['mean'] * (roi_result[36]['mean'] + 1))/((roi_result[36]['mean'] + 1))
+
+# Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
+breakeven_implementation_cost_tb = ((health_benefit_summarised[26]['mean'] * incremental_scenario_cost_summarised[18]['mean']) - (health_benefit_summarised[18]['mean'] * incremental_scenario_cost_summarised[26]['mean']))/(health_benefit_summarised[18]['mean'] - health_benefit_summarised[26]['mean'])
+breakeven_implementation_cost_malaria = ((health_benefit_summarised[35]['mean'] * incremental_scenario_cost_summarised[27]['mean']) - (health_benefit_summarised[27]['mean'] * incremental_scenario_cost_summarised[35]['mean']))/(health_benefit_summarised[27]['mean'] - health_benefit_summarised[35]['mean'])
+assert(round((health_benefit_summarised[26]['mean'] - incremental_scenario_cost_summarised[26]['mean'] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26]['mean'] + breakeven_implementation_cost_tb),6) ==
+       round((health_benefit_summarised[18]['mean'] - incremental_scenario_cost_summarised[18]['mean'] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18]['mean'] + breakeven_implementation_cost_tb),6))
+assert(round((health_benefit_summarised[35]['mean'] - incremental_scenario_cost_summarised[35]['mean'] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35]['mean'] + breakeven_implementation_cost_malaria),6) ==
+       round((health_benefit_summarised[27]['mean'] - incremental_scenario_cost_summarised[27]['mean'] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27]['mean'] + breakeven_implementation_cost_malaria), 6))
+
 print(f"The corresponding ROI of scaling the health workforce by 1%, 4% and 6% annually was "
       f"{roi_result[1]['mean']:.2f} [{roi_result[1]['lower']:.2f} - {roi_result[1]['upper']:.2f}], "
       f"{roi_result[2]['mean']:.2f} [{roi_result[2]['lower']:.2f} - {roi_result[2]['upper']:.2f}] and "
@@ -718,6 +735,64 @@ print(f"Importantly, not only did the integrated approach yield greater health b
       f"$190 per DALY averted, and yielded a high ROI of "
       f"{roi_result[44]['mean']:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}]. ")
 
+# Extract for manuscript
+print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario, the "
+      f"incremental cost-effectiveness ratio (ICER) of these horizontal investments remained consistently below "
+      f"the projected cost-effectiveness threshold of $190 per DALY averted. The ICER for health workforce expansion "
+      f"scenarios ranged from "
+      f"${icer_result[hr_scenario_with_lowest_icer]['mean']:.2f} (${icer_result[hr_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_lowest_icer]['upper']:.2f})"
+      f" per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_lowest_icer]} scenario to "
+      f"${icer_result[hr_scenario_with_highest_icer]['mean']:.2f} (${icer_result[hr_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_highest_icer]['upper']:.2f}) "
+      f"per DALY aveted in the {all_manuscript_scenarios[hr_scenario_with_highest_icer]} scenario, while for the consumable availability scenarios, it ranged from "
+      f"${icer_result[cons_scenario_with_lowest_icer]['mean']:.2f} (${icer_result[cons_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_lowest_icer]['upper']:.2f}) "
+      f"per DALY averted in {all_manuscript_scenarios[cons_scenario_with_lowest_icer]} to "
+      f"${icer_result[cons_scenario_with_highest_icer]['mean']:.2f} (${icer_result[cons_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_highest_icer]['upper']:.2f}) "
+      f"per DALY averted in "
+      f"{all_manuscript_scenarios[cons_scenario_with_highest_icer]}. "
+      f"The combined health system strengthening (HSS) expansion scenario, which integrated workforce expansion with "
+      f"increased consumable availability, had an ICER of "
+      f"${icer_result[36]['mean']:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) "
+      f"per DALY averted. At a value of a statistical life year of $834, the return on investment (ROI) for the HSS expansion package was "
+      f"{roi_result[36]['mean']:.2f}.")
+
+print(f"With an ICER of "
+      f"${icer_result[44]['mean']:.2f} (${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}) per DALY averted, "
+      f"the joint expansion of HTM programmes combined with HSS investments was more cost-effective than the vertical "
+      f"expansion counterpart which had an ICER of "
+      f"${icer_result[36]['mean']:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) per DALY averted, "
+      f"assuming no additional implementation costs. Similarly, ROI of the joint HSS and HTM scale-up was "
+      f"{(roi_result[44]['mean']/roi_result[36]['mean']-1)*100:.2f}% higher at "
+      f"{roi_result[44]['mean']:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}), "
+      f"outperforming its vertical expansion counterpart which had an ROI of "
+      f"{roi_result[36]['mean']:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f})."
+      f"In fact, combined investments with HSS yielded a greater ROI "
+      f"as long as additional implementation costs of this scenario did not exceed "
+      f"${breakeven_implementation_cost/10e6: .2f} million "
+      f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
+      f"of the total projected health spending) between 2025 and 2035.")
+
+print(f"Simultaneous HSS investments also increased the cost-effectiveness of the HIV scale-up from "
+      f"${icer_result[9]['mean']:.2f} (${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}) per DALY averted to "
+      f"${icer_result[17]['mean']:.2f} (${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}) per DALY averted, and of malaria scale-up from "
+      f"${icer_result[27]['mean']:.2f} (${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f}) per DALY averted to "
+      f"${icer_result[35]['mean']:.2f} (${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}) per DALY averted. "
+      f"However, due to very low additional consumables costs, the ICER of TB programme scale-up alone without HSS was much "
+      f"lower at than that with HSS, with ICERs of "
+      f"${icer_result[18]['mean']:.2f} (${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}) per DALY averted and "
+      f"${icer_result[26]['mean']:.2f} (${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}) per DALY averted respectively. ")
+
+print(f"At no additional implementation costs, simultaneous HSS increased the ROI of the HIV programme substantially to "
+      f"{roi_result[17]['mean']:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) over a near zero "
+      f"ROI of HIV investments without HSS. "
+      f"The ROI of malaria and TB programs was higher without simultaneous HSS investments at zero implementation costs "
+      f"but these rapidly declined if the scenarios required any additional implementation costs. More specifically, "
+      f"at an additional implementation cost of "
+      f"${breakeven_implementation_cost_tb/10e6: .2f} million "
+      f"({breakeven_implementation_cost_tb/projected_health_spending_baseline * 100:.2f}% of the projected health spending)  and "
+      f"${breakeven_implementation_cost_malaria/10e6: .2f} million "
+      f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% of the projected health spending) respectively, "
+      f"the ROI of the HSS combined with TB and malaria expansion programs overtook that of vertical investments alone.")
+
 # Plot ROI at variable implementation costs
 projected_health_spending = estimate_projected_health_spending(resourcefilepath,
                                   results_folder,
@@ -739,20 +814,6 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                     _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors,
                    show_title_and_legend = False)
-
-# Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
-health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life)))
-incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost))
-breakeven_implementation_cost = (health_benefit_summarised[44]['mean'] - incremental_scenario_cost_summarised[44]['mean'] * (roi_result[36]['mean'] + 1))/((roi_result[36]['mean'] + 1))
-
-print(f"At no additional implementation costs, combined investments in HTM and HSS had a "
-      f"{(roi_result[44]['mean']- roi_result[36]['mean'])/roi_result[36]['mean'] * 100: .2f}% "
-      f"higher ROI than HTM expansion alone. In fact, combined investments with HSS yield greater returns on investment "
-      f"as long as additional implementation costs of this scenario do not exceed "
-      f"${breakeven_implementation_cost/10e6: .2f} million "
-      f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
-      f"of the total projected health spending) between 2025 and 2035."
-      f"At non-zero implementation costs of HTM expansion, the relative ROI is even higher.")
 
 # HIV scenarios with and without HSS
 draw_colors = {9: '#fdae61', 17:'#66c2a5'}
