@@ -183,36 +183,11 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
         #     dat=self.module.parameters['age_specific_fertility_rates'], months_exposure=self.months_between_polls)
 
     def apply(self, population):
-        # Set new pregnancies:
-        # self.set_new_pregnancies()
-
         # Do the delivery
         self.do_deliveries()
 
         # Update breastfeeding status at six months
         self.update_breastfed_status()
-
-    # def set_new_pregnancies(self):
-    #     """Making women pregnant. Rate of doing so is based on age-specific fertility rates under assumption that every
-    #     pregnancy results in a birth."""
-    #
-    #     df = self.sim.population.props  # get the population dataframe
-    #
-    #     # find probability of becoming pregnant (using asfr for the year, limiting to alive, non-pregnant females)
-    #     prob_preg = df.loc[
-    #         (df.sex == 'F') & df.is_alive & ~df.is_pregnant
-    #         ]['age_range'].map(self.asfr[self.sim.date.year]).fillna(0)
-    #
-    #     # determine which woman will get pregnant
-    #     pregnant_women_ids = prob_preg.index[
-    #         (self.module.rng.random_sample(size=len(prob_preg)) < prob_preg)
-    #     ]
-    #
-    #     # updating properties for women who will get pregnant
-    #     df.loc[pregnant_women_ids, 'is_pregnant'] = True
-    #     df.loc[pregnant_women_ids, 'date_of_last_pregnancy'] = self.sim.date
-    #     df.loc[pregnant_women_ids, 'si_date_of_last_delivery'] = \
-    #         self.sim.date + pd.DateOffset(months=self.module.parameters['months_between_pregnancy_and_delivery'])
 
     def do_deliveries(self):
         """Checks to see if the date-of-delivery for pregnant women has been reached and implement births where
