@@ -465,8 +465,6 @@ class Demography(Module):
 
         # Assign the closest facility to each individual
         self.sim.population.props["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"]
-        #self.sim.population.props = self.sim.population.props.drop(columns=["coordinate_of_residence"]) # issues with json
-        #print(self.sim.population.props)
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
