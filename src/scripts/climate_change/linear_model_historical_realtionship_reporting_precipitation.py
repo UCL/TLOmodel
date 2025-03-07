@@ -700,7 +700,9 @@ for ssp_scenario in ssp_scenarios:
         month_repeated_prediction = [m for _ in year_range_prediction for m in range(1, 13)]
         year_flattened_prediction = np.repeat(year_range_prediction, 12 * num_facilities)
         month_flattened_prediction = month_repeated_prediction * num_facilities
-        facility_flattened_prediction = np.tile(range(num_facilities), len(year_flattened_prediction) // num_facilities)
+        facility_flattened_prediction = np.tile(monthly_reporting_by_facility.columns,
+                                                len(year_flattened_prediction) // len(
+                                                    monthly_reporting_by_facility.columns))
         # Encode facilities and create above/below average weather data
         facility_encoded_prediction = pd.get_dummies(facility_flattened_prediction, drop_first=True)
 
