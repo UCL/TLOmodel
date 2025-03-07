@@ -9,21 +9,10 @@ climatefilepath = '/Users/rem76/Desktop/Climate_change_health/Data'
 services = ["ANC"]
 scenarios = ['ssp126', 'ssp245', 'ssp585']
 ensemble_types = ['lowest', 'mean', 'highest']
-# read in reference files
-Master_Facilities_List = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
-
 # read in climate files - all will have the same facilities
 sample_climate_file = Path(climatefilepath)/'weather_predictions_with_X_ssp585_mean_ANC.csv'
 
 Climate_Projection_Facilities_List = pd.read_csv(sample_climate_file)
-
-# Calculate proportion
-matched_facilities = Master_Facilities_List['Facility_ID'].isin(Climate_Projection_Facilities_List['Facility_ID']).mean()
-
-print(f"Proportion of Facility_IDs in Master_Facilities_List that are in Climate_Projection_Facilities_List: {matched_facilities:.2%}")
-
-# all facilities are represented
 
 ## So create a dataframe/files of disruptions
 for scenario in scenarios:
