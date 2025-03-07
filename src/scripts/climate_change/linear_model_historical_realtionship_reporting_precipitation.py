@@ -235,7 +235,6 @@ month = month_repeated[:-4]
 month_flattened = month*len(monthly_reporting_by_facility.columns)
 
 facility_flattened = list(monthly_reporting_by_facility.columns) * len(month)
-print(facility_flattened)
 # Flatten data
 y = monthly_reporting_by_facility.values.flatten()
 if np.nanmin(y) < 1:
