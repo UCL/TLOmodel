@@ -364,7 +364,7 @@ class HealthSystem(Module):
         hsi_event_count_log_period: Optional[str] = "month",
         climate_ssp: Optional[str] = 'ssp245',
         climate_model_ensemble_model: Optional[str] = 'mean',
-        services_affected_precip: Optional[str] = 'none'
+        services_affected_precip: Optional[str] = None
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -517,9 +517,14 @@ class HealthSystem(Module):
         self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
 
         # Set default climate disruption paramters
-        self.climate_ssp = 'ssp245'
-        self.climate_model_ensemble_model = 'mean'
-        self.services_affected_precip = 'none'
+        assert climate_ssp in ('ssp126', 'ssp245', 'ssp585')
+        self.climate_ssp = climate_ssp
+
+        assert climate_model_ensemble_model in ('lowest', 'mean', 'highest')
+        self.climate_model_ensemble_model = climate_model_ensemble_model
+
+        assert services_affected_precip in (None, 'none', 'ANC', 'all')
+        self.services_affected_precip = services_affected_precip
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
