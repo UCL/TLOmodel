@@ -332,6 +332,7 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+
     }
 
     PROPERTIES = {
@@ -2245,8 +2246,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
-            year = sim.datetime.year
-            month = sim.datetime.month
+            year = self.sim.date.year
+            month = self.sim.date.month
             # Get the events that are due today:
             list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
@@ -2267,7 +2268,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
             for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
                 prob_disruption = self.projected_precip_disruptions.loc[
-                    (self.projected_precip_disruptions['Facility_ID'] == item.hsi_event.facility_id) &
+                    (self.projected_precip_disruptions['Facility_ID'] == self.hsi_event.module.sim.population.props.target) &
                     (self.projected_precip_disruptions['year'] == year) &
                     (self.projected_precip_disruptions['month'] == month) &
                     (self.projected_precip_disruptions['service'] == self.services_affected), # need to fix?
