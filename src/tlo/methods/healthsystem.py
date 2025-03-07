@@ -333,6 +333,9 @@ class HealthSystem(Module):
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
 
+        # Climate disruptions
+        'projected_precip_disruptions': Parameter(Types.REAL, 'Probabilities of precipitation-mediated '
+                                                              'disruptions to services by month, year, and clinic.'),
     }
 
     PROPERTIES = {
@@ -359,6 +362,9 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        climate_ssp: Optional[str] = 'ssp245',
+        climate_model_ensemble_model: Optional[str] = 'mean',
+        services_affected_precip: Optional[str] = 'all'
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -400,6 +406,11 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
+        :param climate_ssp: Which future shared socioeconomic pathway (determines degree of warming) is under consideration.
+                Options are ssp126, ssp245, and ssp585, in terms of increasing severity.
+        :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
+                Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
+        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'ANC' and 'all'
         """
 
         super().__init__(name)
@@ -504,6 +515,11 @@ class HealthSystem(Module):
         # A reusable store for holding squeeze factors in get_squeeze_factors()
         self._get_squeeze_factors_store_grow = 500
         self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
+
+        # Set default climate disruption paramters
+        self.climate_ssp = 'ssp245'
+        self.climate_model_ensemble_model = 'mean'
+        self.services_affected_precip = 'all'
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -633,6 +649,10 @@ class HealthSystem(Module):
             f"Value of `yearly_HR_scaling` not recognised: {self.parameters['yearly_HR_scaling_mode']}"
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
+
+        # Parameters for climate-mediated disruptions
+        path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'ResourceFile_Climate'
+        self.parameters['projected_precip_disruptions']= pd.read_csv(path_to_resourcefiles_for_climate/ f'ResourceFile_Precipitation_Disruptions_{self.climate_ssp}_{self.climate_model_ensemble_model}.csv')
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
