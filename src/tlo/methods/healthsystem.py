@@ -2291,18 +2291,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
 
             # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-            if self.services_affected_precip != 'none' and year > 2025:
+            if self.module.services_affected_precip != 'none' and year > 2025:
                 for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
-                    prob_disruption = self.projected_precip_disruptions.loc[
-                        (self.projected_precip_disruptions['Facility_ID'] == self.hsi_event.module.sim.population.props.target) &
-                        (self.projected_precip_disruptions['year'] == year) &
-                        (self.projected_precip_disruptions['month'] == month) &
-                        (self.projected_precip_disruptions['service'] == self.services_affected_precip), # need to fix?
+                    prob_disruption = self.module.services_affected_precip.loc[
+                        (self.module.services_affected_precip['Facility_ID'] == item.hsi_event.module.sim.population.props.target) &
+                        (self.module.services_affected_precip['year'] == year) &
+                        (self.module.services_affected_precip['month'] == month) &
+                        (self.module.services_affected_precip['service'] == self.module.services_affected_precip), # need to fix?
                         'disruption'
                     ].values
                     if len(prob_disruption) > 0:
                         prob_disruption = prob_disruption[0]
                         if np.random.rand() < prob_disruption:
+                            print('cancelled')
                             list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
                                 item)  # Remove item from list? Should I create a seperate list?
 
