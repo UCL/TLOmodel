@@ -364,7 +364,7 @@ class HealthSystem(Module):
         hsi_event_count_log_period: Optional[str] = "month",
         climate_ssp: Optional[str] = 'ssp245',
         climate_model_ensemble_model: Optional[str] = 'mean',
-        services_affected_precip: Optional[str] = 'all'
+        services_affected_precip: Optional[str] = 'none'
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -410,7 +410,7 @@ class HealthSystem(Module):
                 Options are ssp126, ssp245, and ssp585, in terms of increasing severity.
         :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
                 Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
-        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'ANC' and 'all'
+        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'ANC' and 'all', 'none'
         """
 
         super().__init__(name)
@@ -519,7 +519,7 @@ class HealthSystem(Module):
         # Set default climate disruption paramters
         self.climate_ssp = 'ssp245'
         self.climate_model_ensemble_model = 'mean'
-        self.services_affected_precip = 'all'
+        self.services_affected_precip = 'none'
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -2286,19 +2286,20 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
 
             # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-            for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
-                prob_disruption = self.projected_precip_disruptions.loc[
-                    (self.projected_precip_disruptions['Facility_ID'] == self.hsi_event.module.sim.population.props.target) &
-                    (self.projected_precip_disruptions['year'] == year) &
-                    (self.projected_precip_disruptions['month'] == month) &
-                    (self.projected_precip_disruptions['service'] == self.services_affected), # need to fix?
-                    'disruption'
-                ].values
-                if len(prob_disruption) > 0:
-                    prob_disruption = prob_disruption[0]
-                    if np.random.rand() < prob_disruption:
-                        list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
-                            item)  # Remove item from list? Should I create a seperate list?
+            if self.services_affected_precip != 'none':
+                for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
+                    prob_disruption = self.projected_precip_disruptions.loc[
+                        (self.projected_precip_disruptions['Facility_ID'] == self.hsi_event.module.sim.population.props.target) &
+                        (self.projected_precip_disruptions['year'] == year) &
+                        (self.projected_precip_disruptions['month'] == month) &
+                        (self.projected_precip_disruptions['service'] == self.services_affected_precip), # need to fix?
+                        'disruption'
+                    ].values
+                    if len(prob_disruption) > 0:
+                        prob_disruption = prob_disruption[0]
+                        if np.random.rand() < prob_disruption:
+                            list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
+                                item)  # Remove item from list? Should I create a seperate list?
 
             # Try to run the list of individual-level events that have their essential equipment
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
