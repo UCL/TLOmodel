@@ -299,7 +299,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         # Adjust monthly severe wasting incidence to the duration of untreated moderate wasting
         p['progression_severe_wasting_by_agegp'] = \
-            [s/30*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
+            [s/30.4375*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
         print(f"{p['progression_severe_wasting_by_agegp']=}")
 
         # Set initial properties
