@@ -14,8 +14,8 @@ from tlo.methods import (
     symptommanager,
 )
 start_date = Date(2026, 1, 1)
-end_date = Date(2030, 1, 1)
-popsize = 5000
+end_date = Date(2027, 1, 12)
+popsize = 10000
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 def get_dataframe_of_run_events_count(_sim):
@@ -105,10 +105,11 @@ def test_number_services(seed, tmpdir):
     )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
+    assert sim.modules['HealthSystem'].services_affected_precip == 'ANC'
     #output_climate = parse_log_file(sim.log_filepath)
     hsi_event_count_df_climate = get_dataframe_of_run_events_count(sim)
 
-    sim = Simulation(start_date=start_date,
+    sim_no_climate = Simulation(start_date=start_date,
                      seed=seed,
                      log_config={
                      "filename": "log",
@@ -116,7 +117,7 @@ def test_number_services(seed, tmpdir):
                      "custom_levels": {
                      "tlo.methods.healthsystem": logging.DEBUG,
             }})
-    sim.register(
+    sim_no_climate.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
 
@@ -130,10 +131,12 @@ def test_number_services(seed, tmpdir):
         chronicsyndrome.ChronicSyndrome(),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     )
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    sim_no_climate.make_initial_population(n=popsize)
+    sim_no_climate.simulate(end_date=end_date)
     #output_no_climate = parse_log_file(sim.log_filepath)
-    hsi_event_count_df_no_climate = get_dataframe_of_run_events_count(sim)
+    df = sim.population.props
+    assert sim_no_climate.modules['HealthSystem'].services_affected_precip == 'none'
+    hsi_event_count_df_no_climate = get_dataframe_of_run_events_count(sim_no_climate)
 
 
-    assert sum(hsi_event_count_df_climate['count']) > sum(hsi_event_count_df_no_climate['count'])
+    assert sum(hsi_event_count_df_climate['count']) < sum(hsi_event_count_df_no_climate['count'])
