@@ -2307,7 +2307,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             prob_disruption = float(prob_disruption.iloc[0,0])
                             assert isinstance(prob_disruption, (int, float)), "prob_disruption must be an int or float"
 
-                            if np.random.binomial(1, prob_disruption):  # success is delayed appointment
+                            if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
                                 list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
                                                 item)  # Remove item from list? Should I create a seperate list?
                                 self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
