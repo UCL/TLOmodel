@@ -55,7 +55,9 @@ def apply_discounting_to_cost_data(_df, _discount_rate=0, _year = None):
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path = None,
                                      _draws = None, _runs = None,
-                                     summarize: bool = False, _years = None,
+                                     summarize: bool = False,
+                                     _metric: str = 'mean',
+                                     _years = None,
                                      cost_only_used_staff: bool = True,
                                      _discount_rate = 0):
     # Useful common functions
@@ -703,21 +705,32 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     scenario_cost['cost'] = pd.to_numeric(scenario_cost['cost'], errors='coerce')
 
     # Summarize costs
-    if summarize == True:
-        groupby_cols = [col for col in scenario_cost.columns if ((col != 'run') & (col != 'cost'))]
-        scenario_cost = pd.concat(
-            {
-                'mean': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].mean(),
-                'lower': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.025),
-                'upper': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.975),
-            },
-            axis=1
-        )
-        scenario_cost =  pd.melt(scenario_cost.reset_index(),
-                  id_vars=groupby_cols,  # Columns to keep
-                  value_vars=['mean', 'lower', 'upper'],  # Columns to unpivot
-                  var_name='stat',  # New column name for the 'sub-category' of cost
-                  value_name='cost')
+    if summarize:
+        groupby_cols = [col for col in scenario_cost.columns if col not in ['run', 'cost']]
+        # Use the summary metric specific in the inputs
+        if _metric not in ['mean', 'median']:
+            raise ValueError(f"Invalid input for _metric: '{_metric}'. "
+                             f"Values need to be one of 'mean' or 'median'")
+        else:
+            # Define aggregation function based on _metric input (mean or median)
+            agg_func = np.mean if _metric == 'mean' else np.median
+
+            scenario_cost = pd.concat(
+                {
+                    _metric: scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].agg(agg_func),
+                    'lower': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.025),
+                    'upper': scenario_cost.groupby(by=groupby_cols, sort=False)['cost'].quantile(0.975),
+                },
+                axis=1
+            )
+
+            scenario_cost = pd.melt(
+                scenario_cost.reset_index(),
+                id_vars=groupby_cols,  # Columns to keep
+                value_vars=[_metric, 'lower', 'upper'],  # Columns to unpivot
+                var_name='stat',  # New column name for the 'sub-category' of cost
+                value_name='cost'
+            )
 
     if _years is None:
         return apply_discounting_to_cost_data(scenario_cost,_discount_rate)
@@ -727,10 +740,14 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 # Define a function to summarize cost data from
 # Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as index, then
 # first unstack the dataframe and subsequently apply the summarize function
-def summarize_cost_data(_df):
+def summarize_cost_data(_df, _metric = 'mean'):
+    if _metric not in ['mean', 'median']:
+        raise ValueError(f"Invalid input for _metric: '{_metric}'. "
+                         f"Values need to be one of 'mean' or 'median'")
+
     _df = _df.stack()
     collapsed_df = _df.groupby(level='draw').agg([
-            'mean',
+            _metric,
             ('lower', lambda x: x.quantile(0.025)),
             ('upper', lambda x: x.quantile(0.975))
         ])
@@ -747,7 +764,8 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
                                      _draws = None, _runs = None,
                                      _years = None,
                                      _discount_rate = 0,
-                                     _summarize = False):
+                                     _summarize = False,
+                                    _metric = 'mean'):
     # %% Gathering basic information
     # Load basic simulation parameters
     #-------------------------------------
@@ -816,12 +834,25 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
     projected_health_spending.index = pd.MultiIndex.from_tuples(projected_health_spending.index, names=["draw", "run"])
 
     if _summarize == True:
-        # Calculate the mean and 95% confidence intervals for each group
-        projected_health_spending = projected_health_spending.groupby(level="draw").agg(
-            mean=np.mean,
-            lower=lambda x: np.percentile(x, 2.5),
-            upper=lambda x: np.percentile(x, 97.5)
-        )
+        if _metric == 'mean':
+            # Calculate the mean and 95% confidence intervals for each group
+            projected_health_spending = projected_health_spending.groupby(level="draw").agg(
+                mean=np.mean,
+                lower=lambda x: np.percentile(x, 2.5),
+                upper=lambda x: np.percentile(x, 97.5)
+            )
+
+        elif _metric == 'median':
+            # Calculate the mean and 95% confidence intervals for each group
+            projected_health_spending = projected_health_spending.groupby(level="draw").agg(
+                median=np.median,
+                lower=lambda x: np.percentile(x, 2.5),
+                upper=lambda x: np.percentile(x, 97.5)
+            )
+
+        else:
+            raise ValueError(f"Invalid input for _metric: '{_metric}'. "
+                             f"Values need to be one of 'mean' or 'median'")
         # Flatten the resulting DataFrame into a single-level MultiIndex Series
         projected_health_spending = projected_health_spending.stack().rename_axis(["draw", "stat"]).rename("value")
 
@@ -838,13 +869,16 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
                                             _outputfilepath: Path = None,
                                             _add_figname_suffix = ''):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
+    # Check what's the correct central metric to use (either 'mean' or 'median')
+    central_metric = [stat for stat in _df.stat.unique() if stat not in ['lower', 'upper']][0]
+
     # Make a copy of the dataframe to avoid modifying the original
-    _df_mean = _df[_df.stat == 'mean'].copy()
+    _df_central = _df[_df.stat == central_metric].copy()
     _df_lower = _df[_df.stat == 'lower'].copy()
     _df_upper = _df[_df.stat == 'upper'].copy()
 
     # Subset the dataframes to keep the s=relevant categories for the plot
-    dfs = {"_df_mean": _df_mean, "_df_lower": _df_lower, "_df_upper": _df_upper} # create a dict of dataframes
+    dfs = {"_df_central": _df_central, "_df_lower": _df_lower, "_df_upper": _df_upper} # create a dict of dataframes
     for name, df in dfs.items():
         dfs[name] = df.copy()  # Choose the dataframe to modify
         # Convert 'cost' to millions
@@ -858,14 +892,14 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
             dfs[name] = dfs[name][dfs[name]['cost_category'] == _cost_category]
 
     # Extract the updated DataFrames back from the dictionary
-    _df_mean, _df_lower, _df_upper = dfs["_df_mean"], dfs["_df_lower"], dfs["_df_upper"]
+    _df_central, _df_lower, _df_upper = dfs["_df_central"], dfs["_df_lower"], dfs["_df_upper"]
 
     if _cost_category == 'all':
         if (_disaggregate_by_subgroup == True):
             raise ValueError(f"Invalid input for _disaggregate_by_subgroup: '{_disaggregate_by_subgroup}'. "
                              f"Value can be True only when plotting a specific _cost_category")
         else:
-            pivot_mean = _df_mean.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
+            pivot_central = _df_central.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
             pivot_lower = _df_lower.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
             pivot_upper = _df_upper.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
     else:
@@ -884,9 +918,9 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
                     )
 
             # Extract the updated DataFrames back from the dictionary
-            _df_mean, _df_lower, _df_upper = dfs["_df_mean"], dfs["_df_lower"], dfs["_df_upper"]
+            _df_central, _df_lower, _df_upper = dfs["_df_central"], dfs["_df_lower"], dfs["_df_upper"]
 
-            pivot_mean = _df_mean.pivot_table(index='draw', columns='cost_subgroup',
+            pivot_central = _df_central.pivot_table(index='draw', columns='cost_subgroup',
                                              values='cost', aggfunc='sum')
             pivot_lower = _df_lower.pivot_table(index='draw', columns='cost_subgroup',
                                         values='cost', aggfunc='sum')
@@ -895,21 +929,21 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 
             plt_name_suffix = '_by_subgroup'
         else:
-            pivot_mean = _df_mean.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
+            pivot_central = _df_central.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
             pivot_lower = _df_lower.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
             pivot_upper = _df_upper.pivot_table(index='draw', columns='cost_subcategory', values='cost', aggfunc='sum')
             plt_name_suffix = ''
 
     # Sort pivot_df columns in ascending order by total cost
-    sorted_columns = pivot_mean.sum(axis=0).sort_values().index
-    pivot_mean = pivot_mean[sorted_columns]
+    sorted_columns = pivot_central.sum(axis=0).sort_values().index
+    pivot_central = pivot_central[sorted_columns]
     pivot_lower = pivot_lower[sorted_columns]
     pivot_upper = pivot_upper[sorted_columns]
 
     # Error bars
-    lower_bounds = pivot_mean.sum(axis=1) - pivot_lower.sum(axis=1)
+    lower_bounds = pivot_central.sum(axis=1) - pivot_lower.sum(axis=1)
     lower_bounds[lower_bounds<0] = 0
-    upper_bounds = pivot_upper.sum(axis=1) - pivot_mean.sum(axis=1)
+    upper_bounds = pivot_upper.sum(axis=1) - pivot_central.sum(axis=1)
 
     if _cost_category == 'all':
         # Predefined color mapping for cost categories
@@ -928,7 +962,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
     if _cost_category == 'all':
         column_colors = [color_mapping.get(col, default_color) for col in sorted_columns]
         # Plot the stacked bar chart with set colours
-        ax = pivot_mean.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
+        ax = pivot_central.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
 
         # Add data labels
         for c in ax.containers:
@@ -939,14 +973,14 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
             ax.bar_label(c, labels=labels, label_type='center', fontsize='small')
 
         # Add error bars
-        x_pos = np.arange(len(pivot_mean.index))
-        total_means = pivot_mean.sum(axis=1)
+        x_pos = np.arange(len(pivot_central.index))
+        total_central = pivot_central.sum(axis=1)
         error_bars = [lower_bounds, upper_bounds]
-        ax.errorbar(x_pos, total_means, yerr=error_bars, fmt='o', color='black', capsize=5)
+        ax.errorbar(x_pos, total_central, yerr=error_bars, fmt='o', color='black', capsize=5)
 
     else:
         # Plot the stacked bar chart without set colours
-        ax = pivot_mean.plot(kind='bar', stacked=True, figsize=(10, 6))
+        ax = pivot_central.plot(kind='bar', stacked=True, figsize=(10, 6))
 
         # Add data labels
         for c in ax.containers:
@@ -957,16 +991,16 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
             ax.bar_label(c, labels=labels, label_type='center', fontsize='small')
 
         # Add error bars
-        x_pos = np.arange(len(pivot_mean.index))
-        total_means = pivot_mean.sum(axis=1)
+        x_pos = np.arange(len(pivot_central.index))
+        total_central = pivot_central.sum(axis=1)
         error_bars = [lower_bounds, upper_bounds]
-        ax.errorbar(x_pos, total_means, yerr=error_bars, fmt='o', color='black', capsize=5)
+        ax.errorbar(x_pos, total_central, yerr=error_bars, fmt='o', color='black', capsize=5)
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
-        labels = [_scenario_dict.get(label, label) for label in pivot_mean.index]
+        labels = [_scenario_dict.get(label, label) for label in pivot_central.index]
     else:
-        labels = pivot_mean.index.astype(str)
+        labels = pivot_central.index.astype(str)
 
     # Wrap x-tick labels for readability
     wrapped_labels = [textwrap.fill(str(label), 20) for label in labels]
@@ -974,7 +1008,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 
     # Period included for plot title and name
     if _year == 'all':
-        period = (f"{min(_df_mean['year'].unique())} - {max(_df_mean['year'].unique())}")
+        period = (f"{min(_df_central['year'].unique())} - {max(_df_central['year'].unique())}")
     elif (len(_year) == 1):
         period = (f"{_year[0]}")
     else:
@@ -1014,6 +1048,9 @@ def do_line_plot_of_cost(_df, _cost_category='all',
                          _year='all', _draws=None,
                          disaggregate_by=None,
                          _outputfilepath: Path = None):
+    # Check what's the correct central metric to use (either 'mean' or 'median')
+    central_metric = [stat for stat in _df.stat.unique() if stat not in ['lower', 'upper']][0]
+
     # Validate disaggregation options
     valid_disaggregations = ['cost_category', 'cost_subcategory', 'cost_subgroup']
     if disaggregate_by not in valid_disaggregations and disaggregate_by is not None:
@@ -1047,7 +1084,7 @@ def do_line_plot_of_cost(_df, _cost_category='all',
         # If disaggregating by 'cost_subgroup' and there are more than 10 subgroups, limit to the top 10 + "Other"
         if len(subset_df['cost_subgroup'].unique()) > 10:
             # Calculate total cost per subgroup
-            subgroup_totals = subset_df[subset_df.stat == 'mean'].groupby('cost_subgroup')['cost'].sum()
+            subgroup_totals = subset_df[subset_df.stat == central_metric].groupby('cost_subgroup')['cost'].sum()
             # Identify the top 10 subgroups by cost
             top_10_subgroups = subgroup_totals.nlargest(10).index.tolist()
             # Reassign smaller subgroups to an "Other" category
@@ -1058,8 +1095,8 @@ def do_line_plot_of_cost(_df, _cost_category='all',
     else:
         groupby_columns = ['year']
 
-    # Extract mean, lower, and upper values for the plot
-    mean_values = subset_df[subset_df.stat == 'mean'].groupby(groupby_columns)['cost'].sum() / 1e6
+    # Extract central, lower, and upper values for the plot
+    central_values = subset_df[subset_df.stat == central_metric].groupby(groupby_columns)['cost'].sum() / 1e6
     lower_values = subset_df[subset_df.stat == 'lower'].groupby(groupby_columns)['cost'].sum() / 1e6
     upper_values = subset_df[subset_df.stat == 'upper'].groupby(groupby_columns)['cost'].sum() / 1e6
 
@@ -1085,9 +1122,9 @@ def do_line_plot_of_cost(_df, _cost_category='all',
 
     # Plot each line for the disaggregated values
     if disaggregate_by:
-        for disaggregate_value in mean_values.index.get_level_values(disaggregate_by).unique():
-            # Get mean, lower, and upper values for each disaggregated group
-            value_mean = mean_values.xs(disaggregate_value, level=disaggregate_by)
+        for disaggregate_value in central_values.index.get_level_values(disaggregate_by).unique():
+            # Get central, lower, and upper values for each disaggregated group
+            value_central = central_values.xs(disaggregate_value, level=disaggregate_by)
             value_lower = lower_values.xs(disaggregate_value, level=disaggregate_by)
             value_upper = upper_values.xs(disaggregate_value, level=disaggregate_by)
 
@@ -1097,23 +1134,23 @@ def do_line_plot_of_cost(_df, _cost_category='all',
                 # Get the next color from the cycle
                 color = next(color_cycle)
 
-            # Plot line for mean and shaded region for 95% CI
-            line, = plt.plot(value_mean.index, value_mean, marker='o', linestyle='-', color=color, label=f'{disaggregate_value} - Mean')
-            plt.fill_between(value_mean.index, value_lower, value_upper, color=color, alpha=0.2)
+            # Plot line for central and shaded region for 95% CI
+            line, = plt.plot(value_central.index, value_central, marker='o', linestyle='-', color=color, label=f'{disaggregate_value} - {central_metric}')
+            plt.fill_between(value_central.index, value_lower, value_upper, color=color, alpha=0.2)
 
             # Append to lines and labels for sorting later
             lines.append(line)
             labels.append(disaggregate_value)
     else:
-        line, = plt.plot(mean_values.index, mean_values, marker='o', linestyle='-', color='b', label='Mean')
-        plt.fill_between(mean_values.index, lower_values, upper_values, color='b', alpha=0.2)
+        line, = plt.plot(central_values.index, central_values, marker='o', linestyle='-', color='b', label=central_metric)
+        plt.fill_between(central_values.index, lower_values, upper_values, color='b', alpha=0.2)
 
         # Append to lines and labels for sorting later
         lines.append(line)
-        labels.append('Mean')
+        labels.append(central_metric)
 
     # Sort the legend based on total costs
-    total_costs = {label: mean_values.xs(label, level=disaggregate_by).sum() for label in labels}
+    total_costs = {label: central_values.xs(label, level=disaggregate_by).sum() for label in labels}
     sorted_labels = sorted(total_costs.keys(), key=lambda x: total_costs[x])
 
     # Reorder lines based on sorted labels
@@ -1338,12 +1375,17 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                        _scenario_dict: dict,
                        _outputfilepath: Path,
                        _value_of_life_suffix = '',
+                       _metric: str = 'mean',
                        _y_axis_lim = None,
                       _plot_vertical_lines_at: list = None,
                       _year_suffix = '',
                       _projected_health_spending = None,
                       _draw_colors = None,
                       show_title_and_legend = None):
+    if _metric not in ['mean', 'median']:
+        raise ValueError(f"Invalid input for _metric: '{_metric}'. "
+                         f"Values need to be one of 'mean' or 'median'")
+
     # Default color mapping if not provided
     if _draw_colors is None:
         _draw_colors = {draw: color for draw, color in zip(_draws, plt.cm.tab10.colors[:len(_draws)])}
@@ -1406,7 +1448,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         temp_data = all_run_values.replace([np.inf, -np.inf], np.nan)
 
         collapsed_data = temp_data.groupby(level='draw').agg([
-            'mean',
+            _metric,
             ('lower', lambda x: x.quantile(0.025)),
             ('upper', lambda x: x.quantile(0.975))
         ])
@@ -1420,14 +1462,14 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         collapsed_data = collapsed_data.reset_index().rename(columns = {0: 'roi'})
 
         # Divide rows by the sum of implementation costs and incremental input cost
-        mean_values = collapsed_data[collapsed_data['stat'] == 'mean'][['implementation_cost', 'roi']]
+        central_values = collapsed_data[collapsed_data['stat'] == _metric][['implementation_cost', 'roi']]
         lower_values = collapsed_data[collapsed_data['stat'] == 'lower'][['implementation_cost', 'roi']]
         upper_values = collapsed_data[collapsed_data['stat']  == 'upper'][['implementation_cost', 'roi']]
 
-        # Plot mean line and confidence interval
+        # Plot central line and confidence interval
         ax.plot(
             implementation_costs / 1e6,
-            mean_values['roi'],
+            central_values['roi'],
             label=f'{_scenario_dict[draw_index]}',
             color=_draw_colors.get(draw_index, 'black'),
         )
@@ -1439,7 +1481,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
             color=_draw_colors.get(draw_index, 'black'),
         )
 
-        max_val = mean_values[~np.isinf(mean_values['roi'])]['roi'].max()
+        max_val = central_values[~np.isinf(central_values['roi'])]['roi'].max()
         max_roi.append(max_val)
 
         # Capture ROI at specific costs
@@ -1447,7 +1489,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
             for cost in _plot_vertical_lines_at:
                 roi_value = collapsed_data[
                     (collapsed_data.implementation_cost == cost) &
-                    (collapsed_data.stat == 'mean')
+                    (collapsed_data.stat == _metric)
                     ]['roi']
                 if not roi_value.empty:
                     roi_at_costs[cost].append(roi_value.iloc[0])
@@ -1494,6 +1536,10 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
         plt.title(f'Return on Investment at different levels of implementation cost{_year_suffix}')
         plt.legend()
 
+    # Add gridlines and border
+    plt.grid(False)
+    fig.patch.set_facecolor("white")  # White background for the entire figure
+
     # Save
     plt.savefig(_outputfilepath / f'draws_{_draws}_ROI_at_{_value_of_life_suffix}_{_year_suffix}.png', dpi=100,
                 bbox_inches='tight')
@@ -1502,7 +1548,8 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
 def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
                        _incremental_input_cost: pd.DataFrame,
                        _draws:None,
-                       _scenario_dict: dict):
+                       _scenario_dict: dict,
+                       _metric = 'mean'):
     # Calculate maximum ability to pay for implementation
     _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
     _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
@@ -1555,7 +1602,7 @@ def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
         temp_data = all_run_values.replace([np.inf, -np.inf], np.nan)
 
         collapsed_data = temp_data.groupby(level='draw').agg([
-            'mean',
+            _metric,
             ('lower', lambda x: x.quantile(0.025)),
             ('upper', lambda x: x.quantile(0.975))
         ])
@@ -1573,463 +1620,3 @@ def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
         else:
             roi_df =  pd.concat([roi_df, collapsed_data], ignore_index=True)
     return roi_df
-
-
-
-'''
-# Scratch pad
-# TODO all these HR plots need to be looked at
-# 1. HR
-# Stacked bar chart of salaries by cadre
-def get_level_and_cadre_from_concatenated_value(_df, varname):
-    _df['Cadre'] = _df[varname].str.extract(r'=(.*?)\|')
-    _df['Facility_Level'] = _df[varname].str.extract(r'^[^=]*=[^|]*\|[^=]*=([^|]*)')
-    return _df
-def plot_cost_by_cadre_and_level(_df, figname_prefix, figname_suffix, draw):
-    if ('Facility_Level' in _df.columns) & ('Cadre' in _df.columns):
-        pass
-    else:
-        _df = get_level_and_cadre_from_concatenated_value(_df, 'OfficerType_FacilityLevel')
-
-    _df = _df[_df.draw == draw]
-    pivot_df = _df.pivot_table(index='Cadre', columns='Facility_Level', values='Cost',
-                               aggfunc='sum', fill_value=0)
-    total_salary = round(_df['Cost'].sum(), 0)
-    total_salary = f"{total_salary:,.0f}"
-    ax  = pivot_df.plot(kind='bar', stacked=True, title='Stacked Bar Graph by Cadre and Facility Level')
-    plt.ylabel(f'US Dollars')
-    plt.title(f"Annual {figname_prefix} cost by cadre and facility level")
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=0)
-    plt.text(x=0.3, y=-0.5, s=f"Total {figname_prefix} cost = USD {total_salary}", transform=ax.transAxes,
-             horizontalalignment='center', fontsize=12, weight='bold', color='black')
-    plt.savefig(figurespath / f'{figname_prefix}_by_cadre_and_level_{figname_suffix}{draw}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-plot_cost_by_cadre_and_level(salary_for_all_staff,figname_prefix = "salary", figname_suffix= f"all_staff_draw", draw = 0)
-plot_cost_by_cadre_and_level(salary_for_staff_used_in_scenario.reset_index(),figname_prefix = "salary", figname_suffix= "staff_used_in_scenario_draw", draw = 0)
-plot_cost_by_cadre_and_level(recruitment_cost, figname_prefix = "recruitment", figname_suffix= "all_staff")
-plot_cost_by_cadre_and_level(preservice_training_cost, figname_prefix = "pre-service training", figname_suffix= "all_staff")
-plot_cost_by_cadre_and_level(inservice_training_cost, figname_prefix = "in-service training", figname_suffix= "all_staff")
-
-def plot_components_of_cost_category(_df, cost_category, figname_suffix):
-    pivot_df = _df[_df['Cost_Category'] == cost_category].pivot_table(index='Cost_Sub-category', values='Cost',
-                               aggfunc='sum', fill_value=0)
-    ax = pivot_df.plot(kind='bar', stacked=False, title='Scenario Cost by Category')
-    plt.ylabel(f'US Dollars')
-    plt.title(f"Annual {cost_category} cost")
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=0)
-
-    # Add text labels on the bars
-    total_cost = pivot_df['Cost'].sum()
-    rects = ax.patches
-    for rect, cost in zip(rects, pivot_df['Cost']):
-        cost_millions = cost / 1e6
-        percentage = (cost / total_cost) * 100
-        label_text = f"{cost_millions:.1f}M ({percentage:.1f}%)"
-        # Place text at the top of the bar
-        x = rect.get_x() + rect.get_width() / 2
-        y = rect.get_height()
-        ax.text(x, y, label_text, ha='center', va='bottom', fontsize=8, rotation=0)
-
-    total_cost = f"{total_cost:,.0f}"
-    plt.text(x=0.3, y=-0.5, s=f"Total {cost_category} cost = USD {total_cost}", transform=ax.transAxes,
-             horizontalalignment='center', fontsize=12, weight='bold', color='black')
-
-    plt.savefig(figurespath / f'{cost_category}_by_cadre_and_level_{figname_suffix}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-plot_components_of_cost_category(_df = scenario_cost, cost_category = 'Human Resources for Health', figname_suffix = "all_staff")
-
-
-# Compare financial costs with actual budget data
-####################################################
-# Import budget data
-budget_data = workbook_cost["budget_validation"]
-list_of_costs_for_comparison = ['total_salary_for_all_staff', 'total_cost_of_consumables_dispensed', 'total_cost_of_consumables_stocked']
-real_budget = [budget_data[budget_data['Category'] == list_of_costs_for_comparison[0]]['Budget_in_2023USD'].values[0],
-               budget_data[budget_data['Category'] == list_of_costs_for_comparison[1]]['Budget_in_2023USD'].values[0],
-               budget_data[budget_data['Category'] == list_of_costs_for_comparison[1]]['Budget_in_2023USD'].values[0]]
-model_cost = [scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[0]]['Value_2023USD'].values[0],
-              scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[1]]['Value_2023USD'].values[0],
-              scenario_cost_financial[scenario_cost_financial['Cost_Sub-category'] == list_of_costs_for_comparison[2]]['Value_2023USD'].values[0]]
-
-plt.clf()
-plt.scatter(real_budget, model_cost)
-# Plot a line representing a 45-degree angle
-min_val = min(min(real_budget), min(model_cost))
-max_val = max(max(real_budget), max(model_cost))
-plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='45-degree line')
-
-# Format x and y axis labels to display in millions
-formatter = FuncFormatter(lambda x, _: '{:,.0f}M'.format(x / 1e6))
-plt.gca().xaxis.set_major_formatter(formatter)
-plt.gca().yaxis.set_major_formatter(formatter)
-# Add labels for each point
-hr_label = 'HR_salary ' + f'{round(model_cost[0] / real_budget[0], 2)}'
-consumables_label1= 'Consumables dispensed ' + f'{round(model_cost[1] / real_budget[1], 2)}'
-consumables_label2 = 'Consumables stocked ' + f'{round(model_cost[2] / real_budget[2], 2)}'
-plotlabels = [hr_label, consumables_label1, consumables_label2]
-for i, txt in enumerate(plotlabels):
-    plt.text(real_budget[i], model_cost[i], txt, ha='right')
-
-plt.xlabel('Real Budget')
-plt.ylabel('Model Cost')
-plt.title('Real Budget vs Model Cost')
-plt.savefig(costing_outputs_folder /  'Cost_validation.png')
-
-# Explore the ratio of consumable inflows to outflows
-######################################################
-# TODO: Only consider the months for which original OpenLMIS data was available for closing_stock and dispensed
-def plot_inflow_to_outflow_ratio(_dict, groupby_var):
-    # Convert Dict to dataframe
-    flattened_data = [(level1, level2, level3, level4, value) for (level1, level2, level3, level4), value in
-                      inflow_to_outflow_ratio.items()] # Flatten dictionary into a list of tuples
-    _df = pd.DataFrame(flattened_data, columns=['category', 'item_code', 'district', 'fac_type_tlo', 'inflow_to_outflow_ratio']) # Convert flattened data to DataFrame
-
-    # Plot the bar plot
-    plt.figure(figsize=(10, 6))
-    sns.barplot(data=_df , x=groupby_var, y= 'inflow_to_outflow_ratio', errorbar=None)
-
-    # Add points representing the distribution of individual values
-    sns.stripplot(data=_df, x=groupby_var, y='inflow_to_outflow_ratio', color='black', size=5, alpha=0.2)
-
-    # Set labels and title
-    plt.xlabel(groupby_var)
-    plt.ylabel('Inflow to Outflow Ratio')
-    plt.title('Average Inflow to Outflow Ratio by ' + f'{groupby_var}')
-    plt.xticks(rotation=45)
-
-    # Show plot
-    plt.tight_layout()
-    plt.savefig(costing_outputs_folder / 'inflow_to_outflow_ratio_by' f'{groupby_var}' )
-
-plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'fac_type_tlo')
-plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district')
-plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'item_code')
-plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'category')
-
-# Plot fraction staff time used
-fraction_stafftime_average = salary_staffneeded_df.groupby('Officer_Category')['Value'].sum()
-fraction_stafftime_average. plot(kind = "bar")
-plt.xlabel('Cadre')
-plt.ylabel('Fraction time needed')
-plt.savefig(costing_outputs_folder /  'hr_time_need_economic_cost.png')
-
-# Plot salary costs by cadre and facility level
-# Group by cadre and level
-salary_for_all_staff[['Officer_Type', 'Facility_Level']] = salary_for_all_staff['OfficerType_FacilityLevel'].str.split('|', expand=True)
-salary_for_all_staff['Officer_Type'] = salary_for_all_staff['Officer_Type'].str.replace('Officer_Type=', '')
-salary_for_all_staff['Facility_Level'] = salary_for_all_staff['Facility_Level'].str.replace('Facility_Level=', '')
-total_salary_by_cadre = salary_for_all_staff.groupby('Officer_Type')['Total_salary_by_cadre_and_level'].sum()
-total_salary_by_level = salary_for_all_staff.groupby('Facility_Level')['Total_salary_by_cadre_and_level'].sum()
-
-# Plot by cadre
-plt.clf()
-total_salary_by_cadre.plot(kind='bar')
-plt.xlabel('Officer_category')
-plt.ylabel('Total Salary')
-plt.title('Total Salary by Cadre')
-plt.savefig(costing_outputs_folder /  'total_salary_by_cadre.png')
-
-# Plot by level
-plt.clf()
-total_salary_by_level.plot(kind='bar')
-plt.xlabel('Facility_Level')
-plt.ylabel('Total Salary')
-plt.title('Total Salary by Facility_Level')
-plt.savefig(costing_outputs_folder /  'total_salary_by_level.png')
-
-
-log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_By_Facility_ID'] # for district disaggregation
-
-# Aggregate Daily capabilities to total used by cadre and facility level
-
-# log['tlo.methods.healthsystem.summary']['Capacity']['Frac_Time_Used_By_OfficerType']
-# 1.2 HR cost by Treatment_ID
-# For HR cost by Treatment_ID, multiply total cost by Officer type by fraction of time used for treatment_ID
-log['tlo.methods.healthsystem.summary']['HSI_Event']['TREATMENT_ID'] # what does this represent? why are there 3 rows (2 scenarios)
-# But what we need is the HR use by Treatment_ID  - Leave this for later?
-
-# log['tlo.scenario']
-log['tlo.methods.healthsystem.summary']['HSI_Event']['Number_By_Appt_Type_Code']
-
-
-df = pd.DataFrame(log['tlo.methods.healthsystem.summary'])
-df.to_csv(outputfilepath / 'temp.csv')
-
-def read_parameters(self, data_folder):
-    """
-    1. Reads the costing resource file
-    2. Declares the costing parameters
-    """
-    # Read the resourcefile
-    # Short cut to parameters dict
-    p = self.parameters
-
-    workbook = pd.read_excel((resourcefilepath / "ResourceFile_Costing.xlsx"),
-                                    sheet_name = None)
-
-    p["human_resources"] = workbook["human_resources"]
-
-workbook = pd.read_excel((resourcefilepath / "ResourceFile_Costing.xlsx"),
-                                    sheet_name = None)
-human_resources = workbook["human_resources"]
-
-'''
-
-'''
-consumables_dispensed_under_perfect_availability = get_quantity_of_consumables_dispensed(consumables_results_folder)[9]
-consumables_dispensed_under_perfect_availability = consumables_dispensed_under_perfect_availability['mean'].to_dict() # TODO incorporate uncertainty in estimates
-consumables_dispensed_under_perfect_availability = defaultdict(int, {int(key): value for key, value in
-                                   consumables_dispensed_under_perfect_availability.items()})  # Convert string keys to integer
-consumables_dispensed_under_default_availability = get_quantity_of_consumables_dispensed(consumables_results_folder)[0]
-consumables_dispensed_under_default_availability = consumables_dispensed_under_default_availability['mean'].to_dict()
-consumables_dispensed_under_default_availability = defaultdict(int, {int(key): value for key, value in
-                                   consumables_dispensed_under_default_availability.items()})  # Convert string keys to integer
-
-# Load consumables cost data
-unit_price_consumable = workbook_cost["consumables"]
-unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
-unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(drop=True).iloc[1:]
-unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
-unit_price_consumable = unit_price_consumable.set_index('Item_Code').to_dict(orient='index')
-
-# 2.1 Cost of consumables dispensed
-#---------------------------------------------------------------------------------------------------------------
-# Multiply number of items needed by cost of consumable
-cost_of_consumables_dispensed_under_perfect_availability = {key: unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] * consumables_dispensed_under_perfect_availability[key] for
-                                                            key in unit_price_consumable if key in consumables_dispensed_under_perfect_availability}
-total_cost_of_consumables_dispensed_under_perfect_availability = sum(value for value in cost_of_consumables_dispensed_under_perfect_availability.values() if not np.isnan(value))
-
-cost_of_consumables_dispensed_under_default_availability = {key: unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] * consumables_dispensed_under_default_availability[key] for
-                                                            key in unit_price_consumable if key in consumables_dispensed_under_default_availability}
-total_cost_of_consumables_dispensed_under_default_availability = sum(value for value in cost_of_consumables_dispensed_under_default_availability.values() if not np.isnan(value))
-def convert_dict_to_dataframe(_dict):
-    data = {key: [value] for key, value in _dict.items()}
-    _df = pd.DataFrame(data)
-    return _df
-
-cost_perfect_df = convert_dict_to_dataframe(cost_of_consumables_dispensed_under_perfect_availability).T.rename(columns = {0:"cost_dispensed_stock_perfect_availability"}).round(2)
-cost_default_df = convert_dict_to_dataframe(cost_of_consumables_dispensed_under_default_availability).T.rename(columns = {0:"cost_dispensed_stock_default_availability"}).round(2)
-unit_cost_df = convert_dict_to_dataframe(unit_price_consumable).T.rename(columns = {0:"unit_cost"})
-dispensed_default_df = convert_dict_to_dataframe(consumables_dispensed_under_default_availability).T.rename(columns = {0:"dispensed_default_availability"}).round(2)
-dispensed_perfect_df = convert_dict_to_dataframe(consumables_dispensed_under_perfect_availability).T.rename(columns = {0:"dispensed_perfect_availability"}).round(2)
-
-full_cons_cost_df = pd.merge(cost_perfect_df, cost_default_df, left_index=True, right_index=True)
-full_cons_cost_df = pd.merge(full_cons_cost_df, unit_cost_df, left_index=True, right_index=True)
-full_cons_cost_df = pd.merge(full_cons_cost_df, dispensed_default_df, left_index=True, right_index=True)
-full_cons_cost_df = pd.merge(full_cons_cost_df, dispensed_perfect_df, left_index=True, right_index=True)
-
-# 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
-#---------------------------------------------------------------------------------------------------------------
-# Stocked amount should be higher than dispensed because of i. excess capacity, ii. theft, iii. expiry
-# While there are estimates in the literature of what % these might be, we agreed that it is better to rely upon
-# an empirical estimate based on OpenLMIS data
-# Estimate the stock to dispensed ratio from OpenLMIS data
-lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
-# Collapse individual facilities
-lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
-df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
-df = df.loc[df.index.get_level_values('month') != "Aggregate"]
-opening_bal_january = df.loc[df.index.get_level_values('month') == 'January', 'closing_bal'] + \
-                      df.loc[df.index.get_level_values('month') == 'January', 'dispensed'] - \
-                      df.loc[df.index.get_level_values('month') == 'January', 'received']
-closing_bal_december = df.loc[df.index.get_level_values('month') == 'December', 'closing_bal']
-total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
-                                         opening_bal_january.reset_index(level='month', drop=True) -\
-                                         closing_bal_december.reset_index(level='month', drop=True)
-total_consumables_outflow_during_the_year  = df['dispensed'].groupby(level=[0,1,2,3]).sum()
-inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
-
-# Edit outlier ratios
-inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
-inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
-average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
-#inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio.isna()] = average_inflow_to_outflow_ratio_ratio # replace missing with average
-
-# Multiply number of items needed by cost of consumable
-inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='item_code').mean()
-excess_stock_ratio = inflow_to_outflow_ratio_by_consumable - 1
-excess_stock_ratio = excess_stock_ratio.to_dict()
-# TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
-cost_of_excess_consumables_stocked_under_perfect_availability = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
-                                                consumables_dispensed_under_perfect_availability[key] *
-                                                excess_stock_ratio.get(key, average_inflow_to_outflow_ratio_ratio - 1)
-                                                for key in consumables_dispensed_under_perfect_availability)))
-cost_of_excess_consumables_stocked_under_default_availability = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Final_price_per_chosen_unit (USD, 2023)'] *
-                                                consumables_dispensed_under_default_availability[key] *
-                                                excess_stock_ratio.get(key, average_inflow_to_outflow_ratio_ratio - 1)
-                                                for key in consumables_dispensed_under_default_availability)))
-cost_excess_stock_perfect_df = convert_dict_to_dataframe(cost_of_excess_consumables_stocked_under_perfect_availability).T.rename(columns = {0:"cost_excess_stock_perfect_availability"}).round(2)
-cost_excess_stock_default_df = convert_dict_to_dataframe(cost_of_excess_consumables_stocked_under_default_availability).T.rename(columns = {0:"cost_excess_stock_default_availability"}).round(2)
-full_cons_cost_df = pd.merge(full_cons_cost_df, cost_excess_stock_perfect_df, left_index=True, right_index=True)
-full_cons_cost_df = pd.merge(full_cons_cost_df, cost_excess_stock_default_df, left_index=True, right_index=True)
-
-total_cost_of_excess_consumables_stocked_under_perfect_availability = sum(value for value in cost_of_excess_consumables_stocked_under_perfect_availability.values() if not np.isnan(value))
-total_cost_of_excess_consumables_stocked_under_default_availability = sum(value for value in cost_of_excess_consumables_stocked_under_default_availability.values() if not np.isnan(value))
-
-full_cons_cost_df = full_cons_cost_df.reset_index().rename(columns = {'index' : 'item_code'})
-full_cons_cost_df.to_csv(figurespath / 'consumables_cost_220824.csv')
-
-# Import data for plotting
-tlo_lmis_mapping = pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False, encoding="ISO-8859-1")[['item_code', 'module_name', 'consumable_name_tlo']]
-tlo_lmis_mapping = tlo_lmis_mapping[~tlo_lmis_mapping['item_code'].duplicated(keep='first')]
-full_cons_cost_df = pd.merge(full_cons_cost_df, tlo_lmis_mapping, on = 'item_code', how = 'left', validate = "1:1")
-full_cons_cost_df['total_cost_perfect_availability'] = full_cons_cost_df['cost_dispensed_stock_perfect_availability'] + full_cons_cost_df['cost_excess_stock_perfect_availability']
-full_cons_cost_df['total_cost_default_availability'] = full_cons_cost_df['cost_dispensed_stock_default_availability'] + full_cons_cost_df['cost_excess_stock_default_availability']
-
-def recategorize_modules_into_consumable_categories(_df):
-    _df['category'] = _df['module_name'].str.lower()
-    cond_RH = (_df['category'].str.contains('care_of_women_during_pregnancy')) | \
-              (_df['category'].str.contains('labour'))
-    cond_newborn = (_df['category'].str.contains('newborn'))
-    cond_newborn[cond_newborn.isna()] = False
-    cond_childhood = (_df['category'] == 'acute lower respiratory infections') | \
-                     (_df['category'] == 'measles') | \
-                     (_df['category'] == 'diarrhoea')
-    cond_rti = _df['category'] == 'road traffic injuries'
-    cond_cancer = _df['category'].str.contains('cancer')
-    cond_cancer[cond_cancer.isna()] = False
-    cond_ncds = (_df['category'] == 'epilepsy') | \
-                (_df['category'] == 'depression')
-    _df.loc[cond_RH, 'category'] = 'reproductive_health'
-    _df.loc[cond_cancer, 'category'] = 'cancer'
-    _df.loc[cond_newborn, 'category'] = 'neonatal_health'
-    _df.loc[cond_childhood, 'category'] = 'other_childhood_illnesses'
-    _df.loc[cond_rti, 'category'] = 'road_traffic_injuries'
-    _df.loc[cond_ncds, 'category'] = 'ncds'
-    cond_condom = _df['item_code'] == 2
-    _df.loc[cond_condom, 'category'] = 'contraception'
-
-    # Create a general consumables category
-    general_cons_list = [300, 33, 57, 58, 141, 5, 6, 10, 21, 23, 127, 24, 80, 93, 144, 149, 154, 40, 67, 73, 76,
-                         82, 101, 103, 88, 126, 135, 71, 98, 171, 133, 134, 244, 247, 49, 112, 1933, 1960]
-    cond_general = _df['item_code'].isin(general_cons_list)
-    _df.loc[cond_general, 'category'] = 'general'
-
-    return _df
-
-full_cons_cost_df = recategorize_modules_into_consumable_categories(full_cons_cost_df)
-# Fill gaps in categories
-dict_for_missing_categories =  {292: 'acute lower respiratory infections',  293: 'acute lower respiratory infections',
-                                307: 'reproductive_health', 2019: 'reproductive_health',
-                                2678: 'tb', 1171: 'other_childhood_illnesses', 1237: 'cancer', 1239: 'cancer'}
-# Use map to create a new series from item_code to fill missing values in category
-mapped_categories = full_cons_cost_df['item_code'].map(dict_for_missing_categories)
-# Use fillna on the 'category' column to fill missing values using the mapped_categories
-full_cons_cost_df['category'] = full_cons_cost_df['category'].fillna(mapped_categories)
-
-# Bar plot of cost of dispensed consumables
-def plot_consumable_cost(_df, suffix, groupby_var, top_x_values =  float('nan')):
-    pivot_df = _df.groupby(groupby_var)['cost_' + suffix].sum().reset_index()
-    pivot_df['cost_' + suffix] = pivot_df['cost_' + suffix]/1e6
-    if math.isnan(top_x_values):
-        pass
-    else:
-        pivot_df = pivot_df.sort_values('cost_' + suffix, ascending = False)[1:top_x_values]
-    total_cost = round(_df['cost_' + suffix].sum(), 0)
-    total_cost = f"{total_cost:,.0f}"
-    ax  = pivot_df['cost_' + suffix].plot(kind='bar', stacked=False, title=f'Consumables cost by {groupby_var}')
-    # Setting x-ticks explicitly
-    #ax.set_xticks(range(len(pivot_df['category'])))
-    ax.set_xticklabels(pivot_df[groupby_var], rotation=45)
-    plt.ylabel(f'US Dollars (millions)')
-    plt.title(f"Annual consumables cost by {groupby_var} (assuming {suffix})")
-    plt.xticks(rotation=90)
-    plt.yticks(rotation=0)
-    plt.text(x=0.5, y=-0.8, s=f"Total consumables cost =\n USD {total_cost}", transform=ax.transAxes,
-             horizontalalignment='center', fontsize=12, weight='bold', color='black')
-    plt.savefig(figurespath / f'consumables_cost_by_{groupby_var}_{suffix}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-plot_consumable_cost(_df = full_cons_cost_df,suffix =  'dispensed_stock_perfect_availability', groupby_var = 'category')
-plot_consumable_cost(_df = full_cons_cost_df, suffix =  'dispensed_stock_default_availability', groupby_var = 'category')
-
-# Plot the 10 consumables with the highest cost
-plot_consumable_cost(_df = full_cons_cost_df,suffix =  'dispensed_stock_perfect_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
-plot_consumable_cost(_df = full_cons_cost_df,suffix =  'dispensed_stock_default_availability', groupby_var = 'consumable_name_tlo', top_x_values = 10)
-
-def plot_cost_by_category(_df, suffix , figname_prefix = 'Consumables'):
-    pivot_df = full_cons_cost_df[['category', 'cost_dispensed_stock_' + suffix, 'cost_excess_stock_' + suffix]]
-    pivot_df = pivot_df.groupby('category')[['cost_dispensed_stock_' + suffix, 'cost_excess_stock_' + suffix]].sum()
-    total_cost = round(_df['total_cost_' + suffix].sum(), 0)
-    total_cost = f"{total_cost:,.0f}"
-    ax  = pivot_df.plot(kind='bar', stacked=True, title='Stacked Bar Graph by Category')
-    plt.ylabel(f'US Dollars')
-    plt.title(f"Annual {figname_prefix} cost by category")
-    plt.xticks(rotation=90, size = 9)
-    plt.yticks(rotation=0)
-    plt.text(x=0.3, y=-0.5, s=f"Total {figname_prefix} cost = USD {total_cost}", transform=ax.transAxes,
-             horizontalalignment='center', fontsize=12, weight='bold', color='black')
-    plt.savefig(figurespath / f'{figname_prefix}_by_category_{suffix}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-plot_cost_by_category(full_cons_cost_df, suffix = 'perfect_availability' , figname_prefix = 'Consumables')
-plot_cost_by_category(full_cons_cost_df, suffix = 'default_availability' , figname_prefix = 'Consumables')
-'''
-
-'''
-# Plot equipment cost
-# Plot different categories of cost by level of care
-def plot_components_of_cost_category(_df, cost_category, figname_suffix):
-    pivot_df = _df[_df['Cost_Category'] == cost_category].pivot_table(index='Cost_Sub-category', values='Cost',
-                               aggfunc='sum', fill_value=0)
-    ax = pivot_df.plot(kind='bar', stacked=False, title='Scenario Cost by Category')
-    plt.ylabel(f'US Dollars')
-    plt.title(f"Annual {cost_category} cost")
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=0)
-
-    # Add text labels on the bars
-    total_cost = pivot_df['Cost'].sum()
-    rects = ax.patches
-    for rect, cost in zip(rects, pivot_df['Cost']):
-        cost_millions = cost / 1e6
-        percentage = (cost / total_cost) * 100
-        label_text = f"{cost_millions:.1f}M ({percentage:.1f}%)"
-        # Place text at the top of the bar
-        x = rect.get_x() + rect.get_width() / 2
-        y = rect.get_height()
-        ax.text(x, y, label_text, ha='center', va='bottom', fontsize=8, rotation=0)
-
-    total_cost = f"{total_cost:,.0f}"
-    plt.text(x=0.3, y=-0.5, s=f"Total {cost_category} cost = USD {total_cost}", transform=ax.transAxes,
-             horizontalalignment='center', fontsize=12, weight='bold', color='black')
-
-    plt.savefig(figurespath / f'{cost_category}_{figname_suffix}.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-plot_components_of_cost_category(_df = scenario_cost, cost_category = 'Equipment', figname_suffix = "")
-
-# Plot top 10 most expensive items
-def plot_most_expensive_equipment(_df, top_x_values = 10, figname_prefix = "Equipment"):
-    top_x_items = _df.groupby('Item_code')['annual_cost'].sum().sort_values(ascending = False)[0:top_x_values-1].index
-    _df_subset = _df[_df.Item_code.isin(top_x_items)]
-
-    pivot_df = _df_subset.pivot_table(index='Equipment_tlo', columns='Facility_Level', values='annual_cost',
-                               aggfunc='sum', fill_value=0)
-    ax = pivot_df.plot(kind='bar', stacked=True, title='Stacked Bar Graph by Item and Facility Level')
-    plt.ylabel(f'US Dollars')
-    plt.title(f"Annual {figname_prefix} cost by item and facility level")
-    plt.xticks(rotation=90, size = 8)
-    plt.yticks(rotation=0)
-    plt.savefig(figurespath / f'{figname_prefix}_by_item_and_level.png', dpi=100,
-                bbox_inches='tight')
-    plt.close()
-
-
-plot_most_expensive_equipment(equipment_cost)
-
-# TODO PLot which equipment is used by district and facility or a heatmap of the number of facilities at which an equipment is used
-# TODO Collapse facility IDs by level of care to get the total number of facilities at each level using an item
-# TODO Multiply number of facilities by level with the quantity needed of each equipment and collapse to get total number of equipment (nationally)
-# TODO Which equipment needs to be newly purchased (currently no assumption made for equipment with cost > $250,000)
-
-'''

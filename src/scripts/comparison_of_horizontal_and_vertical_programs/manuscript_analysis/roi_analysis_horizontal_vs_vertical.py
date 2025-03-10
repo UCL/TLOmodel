@@ -22,8 +22,7 @@ from tlo.analysis.utils import (
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
-    load_pickled_dataframes,
-    summarize
+    load_pickled_dataframes
 )
 from collections import defaultdict
 
@@ -74,6 +73,9 @@ district_dict = dict(zip(district_dict['District_Num'], district_dict['District'
 TARGET_PERIOD= (Date(2025, 1, 1), Date(2035, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
+
+# Choose central metric used - mean or median
+chosen_metric = 'median'
 
 # Scenarios
 # Subset of scenarios used for TGF and FCDO reports
@@ -138,10 +140,10 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
     substitute_labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
     yerr = np.array([
-        (_df['mean'] - _df['lower']).values,
-        (_df['upper'] - _df['mean']).values,
+        (_df[chosen_metric] - _df['lower']).values,
+        (_df['upper'] - _df[chosen_metric]).values,
     ])
-# TODO should be above be 'median'
+
     xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
     if set_colors:
@@ -154,7 +156,7 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.bar(
         xticks.keys(),
-        _df['mean'].values,
+        _df[chosen_metric].values,
         yerr=yerr,
         ecolor='black',
         color=colors,
@@ -533,7 +535,7 @@ def convert_results_to_dict(_df):
     draws = list(all_manuscript_scenarios.keys())[1:]
     values = {
         draw: {
-            "mean": _df.loc[_df.index.get_level_values('draw') == draw, 'mean'].iloc[0],
+            chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
             "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
             "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
         }
@@ -544,7 +546,7 @@ def convert_results_to_dict(_df):
 # 1. Calculate incremental cost
 # -----------------------------------------------------------------------------------------------------------------------
 total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
-total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'))
+total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'), _metric = chosen_metric)
 def find_difference_relative_to_comparison(_ser: pd.Series,
                                            comparison: str,
                                            scaled: bool = False,
@@ -558,7 +560,6 @@ def find_difference_relative_to_comparison(_ser: pd.Series,
         .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
         .drop(columns=([comparison] if drop_comparison else [])) \
         .stack()
-
 
 incremental_scenario_cost = (pd.DataFrame(
     find_difference_relative_to_comparison(
@@ -605,12 +606,12 @@ num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values('
 
 # Plot DALYs
 num_dalys_averted_subset_for_figure = num_dalys_averted[num_dalys_averted.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
-num_dalys_averted_summarised = summarize_cost_data(num_dalys_averted_subset_for_figure)
+num_dalys_averted_summarised = summarize_cost_data(num_dalys_averted_subset_for_figure, _metric = chosen_metric)
 name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
     (num_dalys_averted_summarised / 1e6),
     annotations=[
-        f"{row['mean']/ 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
+        f"{row['median']/ 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
         for _, row in num_dalys_averted_summarised.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -633,50 +634,50 @@ def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_o
 # ----------------------------------------------------
 icers = incremental_scenario_cost.div(num_dalys_averted)  # Element-wise division
 icers = icers.mask(num_dalys_averted < 0)
-icers_summarized = summarize_cost_data(icers)
+icers_summarized = summarize_cost_data(icers, _metric = chosen_metric)
 icers_summarized_subset_for_figure = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
 icer_result = convert_results_to_dict(icers_summarized)
-hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k]['mean'])
-hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k]['mean'])
-cons_scenario_with_lowest_icer = min([5,6,7], key=lambda k: icer_result[k]['mean'])
-cons_scenario_with_highest_icer = max([5,6,7], key=lambda k: icer_result[k]['mean'])
+hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
+hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
+cons_scenario_with_lowest_icer = min([5,6,7], key=lambda k: icer_result[k][chosen_metric])
+cons_scenario_with_highest_icer = max([5,6,7], key=lambda k: icer_result[k][chosen_metric])
 
 # Extract for manuscript
 print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario,"
       f" the Incremental Cost Effectiveness Ratio (ICER) of scaling the health workforce by 1%, 4% and 6% annually was "
-      f"${icer_result[1]['mean']:.2f} [${icer_result[1]['lower']:.2f} - ${icer_result[1]['upper']:.2f}], "
-      f"${icer_result[2]['mean']:.2f} [${icer_result[2]['lower']:.2f} - ${icer_result[2]['upper']:.2f}] "
-      f"and ${icer_result[3]['mean']:.2f} [${icer_result[3]['lower']:.2f} - ${icer_result[3]['upper']:.2f}] "
+      f"${icer_result[1][chosen_metric]:.2f} [${icer_result[1]['lower']:.2f} - ${icer_result[1]['upper']:.2f}], "
+      f"${icer_result[2][chosen_metric]:.2f} [${icer_result[2]['lower']:.2f} - ${icer_result[2]['upper']:.2f}] "
+      f"and ${icer_result[3][chosen_metric]:.2f} [${icer_result[3]['lower']:.2f} - ${icer_result[3]['upper']:.2f}] "
       f"per DALY averted, lower than the minimum projected cost effectiveness threshold for 2025-2035 of "
       f"$190 per DALY averted (Lomas et al, 2021). Aligning consumable availability to levels observed in top-performing "
-      f"programmes produced an ICER of ${icer_result[6]['mean']:.2f} [${icer_result[6]['lower']:.2f} - ${icer_result[6]['upper']:.2f}]"
+      f"programmes produced an ICER of ${icer_result[6][chosen_metric]:.2f} [${icer_result[6]['lower']:.2f} - ${icer_result[6]['upper']:.2f}]"
       f" per DALY averted, and the full HSS package had an ICER of "
-      f"${icer_result[8]['mean']:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}]"
+      f"${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}]"
       f" per DALY averted.")
 
 print(f"High incremental costs of vertical expansion programs for HIV and malaria result in cost-ineffective ICER values of "
-      f"${icer_result[9]['mean']:.2f} [${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}] per DALY averted and "
-      f"${icer_result[27]['mean']:.2f} [${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f} per DALY averted, "
+      f"${icer_result[9][chosen_metric]:.2f} [${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}] per DALY averted and "
+      f"${icer_result[27][chosen_metric]:.2f} [${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f} per DALY averted, "
       f"respectively. The ICER of the vertical TB expansion program is "
-      f"${icer_result[18]['mean']:.2f} [${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}] per DALY averted. "
+      f"${icer_result[18][chosen_metric]:.2f} [${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}] per DALY averted. "
       f"When all these vertical expansion programmes are combined, the resulting ICER is "
-      f"${icer_result[36]['mean']:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}] per DALY averted.")
+      f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}] per DALY averted.")
 
 print(f"Combining HSS with vertical program expansion was more cost-effective for malaria and HIV programmes, whereas this was not the case for TB. "
       f"The ICERs for the HIV, malaria and TB programmes with HSS were "
-      f"${icer_result[17]['mean']:.2f} [${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}] per DALY averted, "
-      f"${icer_result[35]['mean']:.2f} [${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}] per DALY averted and "
-      f"${icer_result[26]['mean']:.2f} [${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}] per DALY averted, "
+      f"${icer_result[17][chosen_metric]:.2f} [${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}] per DALY averted, "
+      f"${icer_result[35][chosen_metric]:.2f} [${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}] per DALY averted and "
+      f"${icer_result[26][chosen_metric]:.2f} [${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}] per DALY averted, "
       f"respectively. The joint expansion of HTM programmes was also made more cost effective through combined HSS investments"
       f"in comparison with its vertical expansion counterpart, with an ICER of "
-      f"${icer_result[44]['mean']:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted.")
+      f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted.")
 
 # Plot ICERs
 name_of_plot = f'Incremental cost-effectiveness ratios (ICERs), {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
     (icers_summarized_subset_for_figure),
     annotations=[
-        f"{row['mean']:.2f} ({row['lower'] :.2f}- \n {row['upper'] :.2f})"
+        f"{row[chosen_metric]:.2f} ({row['lower'] :.2f}- \n {row['upper'] :.2f})"
         for _, row in icers_summarized_subset_for_figure.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -692,79 +693,88 @@ plt.close(fig)
 
 # 4. Return on Investment
 # ----------------------------------------------------
+# Estimate projected health spending
+projected_health_spending = estimate_projected_health_spending(resourcefilepath,
+                                  results_folder,
+                                 _years = list_of_relevant_years_for_costing,
+                                 _discount_rate = discount_rate,
+                                 _summarize = True,
+                                 _metric = chosen_metric)
+projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0][chosen_metric][0]
+
 # ROI at 0 implementation costs
 benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life) - incremental_scenario_cost
 roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
-roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost)
+roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric = chosen_metric)
 roi_result = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
 
 # Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
-health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life)))
-incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost))
-breakeven_implementation_cost = (health_benefit_summarised[44]['mean'] - incremental_scenario_cost_summarised[44]['mean'] * (roi_result[36]['mean'] + 1))/((roi_result[36]['mean'] + 1))
+health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life), _metric = chosen_metric))
+incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost, _metric = chosen_metric))
+breakeven_implementation_cost = (health_benefit_summarised[44][chosen_metric] - incremental_scenario_cost_summarised[44][chosen_metric] * (roi_result[36][chosen_metric] + 1))/((roi_result[36][chosen_metric] + 1))
 
 # Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
-breakeven_implementation_cost_tb = ((health_benefit_summarised[26]['mean'] * incremental_scenario_cost_summarised[18]['mean']) - (health_benefit_summarised[18]['mean'] * incremental_scenario_cost_summarised[26]['mean']))/(health_benefit_summarised[18]['mean'] - health_benefit_summarised[26]['mean'])
-breakeven_implementation_cost_malaria = ((health_benefit_summarised[35]['mean'] * incremental_scenario_cost_summarised[27]['mean']) - (health_benefit_summarised[27]['mean'] * incremental_scenario_cost_summarised[35]['mean']))/(health_benefit_summarised[27]['mean'] - health_benefit_summarised[35]['mean'])
-assert(round((health_benefit_summarised[26]['mean'] - incremental_scenario_cost_summarised[26]['mean'] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26]['mean'] + breakeven_implementation_cost_tb),6) ==
-       round((health_benefit_summarised[18]['mean'] - incremental_scenario_cost_summarised[18]['mean'] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18]['mean'] + breakeven_implementation_cost_tb),6))
-assert(round((health_benefit_summarised[35]['mean'] - incremental_scenario_cost_summarised[35]['mean'] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35]['mean'] + breakeven_implementation_cost_malaria),6) ==
-       round((health_benefit_summarised[27]['mean'] - incremental_scenario_cost_summarised[27]['mean'] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27]['mean'] + breakeven_implementation_cost_malaria), 6))
+breakeven_implementation_cost_tb = ((health_benefit_summarised[26][chosen_metric] * incremental_scenario_cost_summarised[18][chosen_metric]) - (health_benefit_summarised[18][chosen_metric] * incremental_scenario_cost_summarised[26][chosen_metric]))/(health_benefit_summarised[18][chosen_metric] - health_benefit_summarised[26][chosen_metric])
+breakeven_implementation_cost_malaria = ((health_benefit_summarised[35][chosen_metric] * incremental_scenario_cost_summarised[27][chosen_metric]) - (health_benefit_summarised[27][chosen_metric] * incremental_scenario_cost_summarised[35][chosen_metric]))/(health_benefit_summarised[27][chosen_metric] - health_benefit_summarised[35][chosen_metric])
+assert(round((health_benefit_summarised[26][chosen_metric] - incremental_scenario_cost_summarised[26][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26][chosen_metric] + breakeven_implementation_cost_tb),6) ==
+       round((health_benefit_summarised[18][chosen_metric] - incremental_scenario_cost_summarised[18][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18][chosen_metric] + breakeven_implementation_cost_tb),6))
+assert(round((health_benefit_summarised[35][chosen_metric] - incremental_scenario_cost_summarised[35][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35][chosen_metric] + breakeven_implementation_cost_malaria),6) ==
+       round((health_benefit_summarised[27][chosen_metric] - incremental_scenario_cost_summarised[27][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27][chosen_metric] + breakeven_implementation_cost_malaria), 6))
 
 print(f"The corresponding ROI of scaling the health workforce by 1%, 4% and 6% annually was "
-      f"{roi_result[1]['mean']:.2f} [{roi_result[1]['lower']:.2f} - {roi_result[1]['upper']:.2f}], "
-      f"{roi_result[2]['mean']:.2f} [{roi_result[2]['lower']:.2f} - {roi_result[2]['upper']:.2f}] and "
-      f"{roi_result[3]['mean']:.2f} [{roi_result[3]['lower']:.2f} - {roi_result[3]['upper']:.2f}]. "
+      f"{roi_result[1][chosen_metric]:.2f} [{roi_result[1]['lower']:.2f} - {roi_result[1]['upper']:.2f}], "
+      f"{roi_result[2][chosen_metric]:.2f} [{roi_result[2]['lower']:.2f} - {roi_result[2]['upper']:.2f}] and "
+      f"{roi_result[3][chosen_metric]:.2f} [{roi_result[3]['lower']:.2f} - {roi_result[3]['upper']:.2f}]. "
       f"The ROI of increasing consumable availability to the top-performing programmes was "
-      f"{roi_result[6]['mean']:.2f} [{roi_result[6]['lower']:.2f} - {roi_result[6]['upper']:.2f}],"
+      f"{roi_result[6][chosen_metric]:.2f} [{roi_result[6]['lower']:.2f} - {roi_result[6]['upper']:.2f}],"
       f" and finally the ROI of the full HSS package was "
-      f"{roi_result[8]['mean']:.2f} [{roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}].")
+      f"{roi_result[8][chosen_metric]:.2f} [{roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}].")
 
-print(f"ROI: HIV {roi_result[9]['mean']:.2f} [{roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}], "
-      f"TB {roi_result[18]['mean']:.2f} [{roi_result[18]['lower']:.2f} - {roi_result[18]['upper']:.2f}] and "
-      f"Malaria {roi_result[27]['mean']:.2f} [{roi_result[27]['lower']:.2f} - {roi_result[27]['upper']:.2f}] "
-      f"HTM {roi_result[36]['mean']:.2f} [{roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f}]. ")
+print(f"ROI: HIV {roi_result[9][chosen_metric]:.2f} [{roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}], "
+      f"TB {roi_result[18][chosen_metric]:.2f} [{roi_result[18]['lower']:.2f} - {roi_result[18]['upper']:.2f}] and "
+      f"Malaria {roi_result[27][chosen_metric]:.2f} [{roi_result[27]['lower']:.2f} - {roi_result[27]['upper']:.2f}] "
+      f"HTM {roi_result[36][chosen_metric]:.2f} [{roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f}]. ")
 
 print(f"In a similar vein, ROI of the joint HSS and HTM scale-up was "
-      f"{roi_result[44]['mean']:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}], "
+      f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}], "
       f"and outperformed all other scale-up options.")
 
 print(f"Importantly, not only did the integrated approach yield greater health benefits, at "
-      f"${icer_result[44]['mean']:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted, "
+      f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted, "
       f"it was also cost-effective compared to Malawi’s projected cost-effectiveness threshold of "
       f"$190 per DALY averted, and yielded a high ROI of "
-      f"{roi_result[44]['mean']:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}]. ")
+      f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}]. ")
 
 # Extract for manuscript
 print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario, the "
       f"incremental cost-effectiveness ratio (ICER) of these horizontal investments remained consistently below "
       f"the projected cost-effectiveness threshold of $190 per DALY averted. The ICER for health workforce expansion "
       f"scenarios ranged from "
-      f"${icer_result[hr_scenario_with_lowest_icer]['mean']:.2f} (${icer_result[hr_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_lowest_icer]['upper']:.2f})"
+      f"${icer_result[hr_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_lowest_icer]['upper']:.2f})"
       f" per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_lowest_icer]} scenario to "
-      f"${icer_result[hr_scenario_with_highest_icer]['mean']:.2f} (${icer_result[hr_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_highest_icer]['upper']:.2f}) "
-      f"per DALY aveted in the {all_manuscript_scenarios[hr_scenario_with_highest_icer]} scenario, while for the consumable availability scenarios, it ranged from "
-      f"${icer_result[cons_scenario_with_lowest_icer]['mean']:.2f} (${icer_result[cons_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_lowest_icer]['upper']:.2f}) "
+      f"${icer_result[hr_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_highest_icer]['upper']:.2f}) "
+      f"per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_highest_icer]} scenario, while for the consumable availability scenarios, it ranged from "
+      f"${icer_result[cons_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_lowest_icer]['upper']:.2f}) "
       f"per DALY averted in {all_manuscript_scenarios[cons_scenario_with_lowest_icer]} to "
-      f"${icer_result[cons_scenario_with_highest_icer]['mean']:.2f} (${icer_result[cons_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_highest_icer]['upper']:.2f}) "
+      f"${icer_result[cons_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_highest_icer]['upper']:.2f}) "
       f"per DALY averted in "
       f"{all_manuscript_scenarios[cons_scenario_with_highest_icer]}. "
       f"The combined health system strengthening (HSS) expansion scenario, which integrated workforce expansion with "
       f"increased consumable availability, had an ICER of "
-      f"${icer_result[36]['mean']:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) "
+      f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) "
       f"per DALY averted. At a value of a statistical life year of $834, the return on investment (ROI) for the HSS expansion package was "
-      f"{roi_result[36]['mean']:.2f}.")
+      f"{roi_result[8][chosen_metric]:.2f} ({roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}).")
 
 print(f"With an ICER of "
-      f"${icer_result[44]['mean']:.2f} (${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}) per DALY averted, "
+      f"${icer_result[44][chosen_metric]:.2f} (${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}) per DALY averted, "
       f"the joint expansion of HTM programmes combined with HSS investments was more cost-effective than the vertical "
       f"expansion counterpart which had an ICER of "
-      f"${icer_result[36]['mean']:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) per DALY averted, "
+      f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) per DALY averted, "
       f"assuming no additional implementation costs. Similarly, ROI of the joint HSS and HTM scale-up was "
-      f"{(roi_result[44]['mean']/roi_result[36]['mean']-1)*100:.2f}% higher at "
-      f"{roi_result[44]['mean']:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}), "
+      f"{(roi_result[44][chosen_metric]/roi_result[36][chosen_metric]-1)*100:.2f}% higher at "
+      f"{roi_result[44][chosen_metric]:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}), "
       f"outperforming its vertical expansion counterpart which had an ROI of "
-      f"{roi_result[36]['mean']:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f})."
+      f"{roi_result[36][chosen_metric]:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f})."
       f"In fact, combined investments with HSS yielded a greater ROI "
       f"as long as additional implementation costs of this scenario did not exceed "
       f"${breakeven_implementation_cost/10e6: .2f} million "
@@ -772,18 +782,23 @@ print(f"With an ICER of "
       f"of the total projected health spending) between 2025 and 2035.")
 
 print(f"Simultaneous HSS investments also increased the cost-effectiveness of the HIV scale-up from "
-      f"${icer_result[9]['mean']:.2f} (${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}) per DALY averted to "
-      f"${icer_result[17]['mean']:.2f} (${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}) per DALY averted, and of malaria scale-up from "
-      f"${icer_result[27]['mean']:.2f} (${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f}) per DALY averted to "
-      f"${icer_result[35]['mean']:.2f} (${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}) per DALY averted. "
-      f"However, due to very low additional consumables costs, the ICER of TB programme scale-up alone without HSS was much "
+      f"${icer_result[9][chosen_metric]:.2f} (${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}) per DALY averted to "
+      f"${icer_result[17][chosen_metric]:.2f} (${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}) per DALY averted."
+      f" However, due to very low additional consumables costs, the ICER of TB programme scale-up alone without HSS was much "
       f"lower at than that with HSS, with ICERs of "
-      f"${icer_result[18]['mean']:.2f} (${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}) per DALY averted and "
-      f"${icer_result[26]['mean']:.2f} (${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}) per DALY averted respectively. ")
+      f"${icer_result[18][chosen_metric]:.2f} (${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}) per DALY averted and "
+      f"${icer_result[26][chosen_metric]:.2f} (${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}) per DALY averted respectively. "
+      f"Similarly, due to the large costs of scale up of indoor residual spraying (IRS) and bednet distribution, the ICER of malaria scale-up alone was "
+      f"${icer_result[27][chosen_metric]:.2f} (${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f}) "
+      f"per DALY averted compared to "
+      f"${icer_result[35][chosen_metric]:.2f} (${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}) "
+      f"per DALY averted for malaria scale-up with HSS.")
+
 
 print(f"At no additional implementation costs, simultaneous HSS increased the ROI of the HIV programme substantially to "
-      f"{roi_result[17]['mean']:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) over a near zero "
-      f"ROI of HIV investments without HSS. "
+      f"{roi_result[17][chosen_metric]:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) over a negative ROI of "
+      f"{roi_result[9][chosen_metric]:.2f} ({roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}) "
+      f"for HIV investments without HSS. "
       f"The ROI of malaria and TB programs was higher without simultaneous HSS investments at zero implementation costs "
       f"but these rapidly declined if the scenarios required any additional implementation costs. More specifically, "
       f"at an additional implementation cost of "
@@ -792,14 +807,6 @@ print(f"At no additional implementation costs, simultaneous HSS increased the RO
       f"${breakeven_implementation_cost_malaria/10e6: .2f} million "
       f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% of the projected health spending) respectively, "
       f"the ROI of the HSS combined with TB and malaria expansion programs overtook that of vertical investments alone.")
-
-# Plot ROI at variable implementation costs
-projected_health_spending = estimate_projected_health_spending(resourcefilepath,
-                                  results_folder,
-                                 _years = list_of_relevant_years_for_costing,
-                                 _discount_rate = discount_rate,
-                                 _summarize = True)
-projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0]['mean'][0]
 
 # Combined ROI plot of relevant scenarios
 # ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS
@@ -810,6 +817,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _scenario_dict = htm_scenarios,
                    _outputfilepath=roi_outputs_folder,
                    _value_of_life_suffix = 'HSS_VSL',
+                    _metric = chosen_metric,
                     _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
                     _projected_health_spending = projected_health_spending_baseline,
                    _draw_colors = draw_colors,
@@ -821,6 +829,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [9,17],
                    _scenario_dict = htm_scenarios,
+                   _metric=chosen_metric,
                    _outputfilepath=roi_outputs_folder,
                    _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'HIV_VSL',
@@ -832,6 +841,7 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = [18,26],
                    _scenario_dict = htm_scenarios,
+                   _metric=chosen_metric,
                    _outputfilepath=roi_outputs_folder,
                    _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'TB_VSL',
@@ -842,8 +852,9 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
 draw_colors = {27: '#fdae61', 35:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [8, 36, 44],
+                   _draws = [27,35],
                    _scenario_dict = htm_scenarios,
+                   _metric=chosen_metric,
                    _outputfilepath=roi_outputs_folder,
                    _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
                    _value_of_life_suffix = 'Malaria_VSL',
@@ -853,7 +864,8 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
 roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
                    _incremental_input_cost=incremental_scenario_cost,
                    _draws = list(all_manuscript_scenarios.keys()),
-                   _scenario_dict = all_manuscript_scenarios)
+                   _scenario_dict = all_manuscript_scenarios,
+                   _metric = 'median')
 roi_table.to_csv(roi_outputs_folder / 'tabulated_roi.csv', index = False)
 
 # 5. Plot Maximum ability-to-pay at CET
@@ -861,14 +873,14 @@ roi_table.to_csv(roi_outputs_folder / 'tabulated_roi.csv', index = False)
 max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
     lower=0.0)  # monetary value - change in costs
 max_ability_to_pay_for_implementation_subset_for_figure = max_ability_to_pay_for_implementation[max_ability_to_pay_for_implementation.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
-max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation_subset_for_figure)
+max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation_subset_for_figure, _metric = chosen_metric)
 
 # Plot Maximum ability to pay
 name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
     (max_ability_to_pay_for_implementation_summarized / 1e6),
     annotations=[
-        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- \n {row['upper'] / projected_health_spending_baseline:.2%})"
+        f"{row[chosen_metric] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- \n {row['upper'] / projected_health_spending_baseline:.2%})"
         for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -883,12 +895,12 @@ fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', '')
 plt.close(fig)
 
 # Plot incremental costs
-incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost_subset_for_figure)
+incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost_subset_for_figure, _metric = chosen_metric)
 name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
 fig, ax = do_standard_bar_plot_with_ci(
     (incremental_scenario_cost_summarized / 1e6),
     annotations=[
-        f"{row['mean'] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- {row['upper'] / projected_health_spending_baseline:.2%})"
+        f"{row[chosen_metric] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- {row['upper'] / projected_health_spending_baseline:.2%})"
         for _, row in incremental_scenario_cost_summarized.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -905,17 +917,25 @@ plt.close(fig)
 # 6. Plot costs
 # ----------------------------------------------------
 # First summarize all input costs
+
 input_costs_subset_for_figure = input_costs[input_costs['draw'].isin(list(htm_scenarios.keys()))]
-input_costs_for_plot_summarized = input_costs_subset_for_figure.groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category']).agg(
-    mean=('cost', 'mean'),
-    lower=('cost', lambda x: x.quantile(0.025)),
-    upper=('cost', lambda x: x.quantile(0.975))
-).reset_index()
-input_costs_for_plot_summarized = input_costs_for_plot_summarized.melt(
-    id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
-    value_vars=['mean', 'lower', 'upper'],
-    var_name='stat',
-    value_name='cost'
+agg_funcs = {
+    chosen_metric: ('cost', chosen_metric),
+    'lower': ('cost', lambda x: x.quantile(0.025)),
+    'upper': ('cost', lambda x: x.quantile(0.975))
+}
+
+input_costs_for_plot_summarized = (
+    input_costs_subset_for_figure
+    .groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'])
+    .agg(**agg_funcs)
+    .reset_index()
+    .melt(
+        id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
+        value_vars=[chosen_metric, 'lower', 'upper'],
+        var_name='stat',
+        value_name='cost'
+    )
 )
 
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
