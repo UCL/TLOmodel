@@ -2289,25 +2289,30 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                 else:
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
-
             # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
             if self.module.services_affected_precip != 'none' and year > 2025:
                 for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
-                    prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
-                        (self.module.parameters['projected_precip_disruptions']['Facility_ID'] ==
-                         self.sim.population.props.at[item.hsi_event.target, 'facility_used_level_1a']) &
-                        (self.module.parameters['projected_precip_disruptions']['year'] == year) &
-                        (self.module.parameters['projected_precip_disruptions']['month'] == month) &
-                        (self.module.parameters['projected_precip_disruptions']['service'] == self.module.services_affected_precip), # don't specify by HSI event first
-                        'disruption'
-                    ].values
-                    if len(prob_disruption) > 0:
-                        prob_disruption = prob_disruption[0]/100
-                        if np.random.rand() < prob_disruption:
-                            list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
-                                item)  # Remove item from list? Should I create a seperate list?
+                    facility_used = self.sim.population.props.at[item.hsi_event.target, 'level_1a']
+                    if facility_used in self.module.parameters['projected_precip_disruptions']['Facility_ID'].values:
+                        prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
+                            (self.module.parameters['projected_precip_disruptions']['Facility_ID'] == facility_used) &
+                            (self.module.parameters['projected_precip_disruptions']['year'] == year) &
+                            (self.module.parameters['projected_precip_disruptions']['month'] == month) &
+                            (self.module.parameters['projected_precip_disruptions'][
+                                 'service'] == self.module.services_affected_precip),
+                            'disruption'
+                        ]
+                        if len(prob_disruption) > 0:
+                            prob_disruption = pd.DataFrame(prob_disruption)
+                            prob_disruption = float(prob_disruption.iloc[0,0])
+                            assert isinstance(prob_disruption, (int, float)), "prob_disruption must be an int or float"
 
-            # Try to run the list of individual-level events that have their essential equipment
+                            if np.random.binomial(1, prob_disruption):  # success is delayed appointment
+                                list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
+                                                item)  # Remove item from list? Should I create a seperate list?
+                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
+                                                                                            priority=item.priority)
+                # Try to run the list of individual-level events that have their essential equipment
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
                 list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
             )
