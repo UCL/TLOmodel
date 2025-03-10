@@ -33,6 +33,7 @@ for scenario in scenarios:
                 projected_precip_disruptions['disruption'],
                 0
             )
+            projected_precip_disruptions['disruption'] = abs(projected_precip_disruptions['disruption']) # for sampling later
         projected_precip_disruptions['mean_all_service'] = \
         projected_precip_disruptions.groupby(['Facility_ID', 'month', 'year'])['disruption'].transform('mean')
         projected_precip_disruptions.to_csv(f'/Users/rem76/PycharmProjects/TLOmodel/resources/ResourceFile_Climate/ResourceFile_Precipitation_Disruptions_{scenario}_{model}.csv')
