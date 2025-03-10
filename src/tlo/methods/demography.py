@@ -116,6 +116,8 @@ class Demography(Module):
         'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
                                               'Proportion of deaths in each age/sex group attributable to each possible'
                                               ' cause of death in the GBD dataset.'),
+        'possible_level1a_facilities':Parameter(Types.DATA_FRAME,
+                                              'Possible Level 1a facilities for individuals to be assigned'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -211,6 +213,9 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
         ).set_index(['Sex', 'Age_Grp'])
 
+        # possible facilities for level 1a
+        self.parameters['possible_level1a_facilities'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Climate'/'facilities_with_lat_long_region.csv')['Fname']
+
     def pre_initialise_population(self):
         """
         1) Store all the cause of death represented in the imported GBD data
@@ -251,7 +256,7 @@ class Demography(Module):
         self.PROPERTIES['facility_used_level_1a'] = Property(
             Types.CATEGORICAL,
             'Which level 1 facility is "used" by individual.',
-            categories=self.parameters['pop_2010']['Region'].unique().tolist()
+            categories= self.parameters['possible_level1a_facilities'].unique().tolist()
         )
 
     def initialise_population(self, population):
