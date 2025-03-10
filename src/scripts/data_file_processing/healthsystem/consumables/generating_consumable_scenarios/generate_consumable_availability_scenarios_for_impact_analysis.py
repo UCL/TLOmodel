@@ -870,6 +870,78 @@ plt.tight_layout()
 plt.tight_layout()
 plt.savefig(figurespath / 'scenarios_average_availability.png', dpi=300, bbox_inches='tight')
 
+
+# Create the directory if it doesn't exist
+roi_plots_path = './outputs/horizontal_v_vertical/roi/'
+if not os.path.exists(roi_plots_path):
+    os.makedirs(roi_plots_path)
+
+# Create a combined plot of heatmaps of average availability for levels 1a and 1b under actual, 75th percentile, HIV and EPI scenarios
+# Scenario list
+scenarios_for_roi_paper = ['Actual', '75th percentile\n  facility', 'HIV supply \n chain', 'EPI supply \n chain']
+# Define facility levels
+chosen_levels = ['1a', '1b']
+
+# Create a figure with subplots for each level
+fig, axes = plt.subplots(nrows=1, ncols=len(chosen_levels), figsize=(20, 8), sharex=True, sharey=True)
+# Create a single colorbar axis
+cbar_ax = fig.add_axes([.91, .3, .02, .4])  # Position of the colorbar
+
+for ax, level in zip(axes, chosen_levels):
+    # Filter data for the current facility level
+    aggregated_df = df_for_plots[df_for_plots.Facility_Level.isin([level])]
+    aggregated_df = aggregated_df.groupby(['item_category'])[scenarios_for_roi_paper].mean().reset_index()
+    heatmap_data = aggregated_df.set_index('item_category')
+
+    # Calculate the aggregate row
+    aggregate_col = df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), scenarios_for_roi_paper].mean()
+    heatmap_data.loc['Average'] = aggregate_col
+
+    # Generate the heatmap on the current subplot
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', ax=ax, cbar=(ax == axes[-1]), cbar_ax=(cbar_ax if ax == axes[-1] else None))
+
+    # Set labels
+    ax.set_title(f'Level {level}')
+    ax.set_xlabel('Scenarios')
+    ax.set_ylabel('Program' if ax == axes[0] else "")
+
+cbar_ax.set_ylabel('Proportion of days consumable is available')
+# Save the combined heatmap
+plt.savefig(roi_plots_path / f'combined_consumable_availability_heatmap_1a_1b.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# Create a combined plot of heatmaps of average availability for all levels under actual, 75th percentile, HIV and EPI scenarios
+chosen_levels = ['0', '1a', '1b', '2', '3']
+# Create a figure with subplots
+fig, axes = plt.subplots(nrows=1, ncols=len(chosen_levels), figsize=(20, 8), sharex=True, sharey=True)
+
+# Create a single colorbar axis
+cbar_ax = fig.add_axes([.91, .3, .02, .4])  # Position of the colorbar
+
+for ax, level in zip(axes, chosen_levels):
+    # Filter data for the current facility level
+    aggregated_df = df_for_plots[df_for_plots.Facility_Level.isin([level])]
+    aggregated_df = aggregated_df.groupby(['item_category'])[scenarios_for_roi_paper].mean().reset_index()
+    heatmap_data = aggregated_df.set_index('item_category')
+
+    # Calculate the aggregate row
+    aggregate_col = df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), scenarios_for_roi_paper].mean()
+    heatmap_data.loc['Average'] = aggregate_col
+
+    # Generate the heatmap on the current subplot
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', ax=ax, cbar=(ax == axes[-1]), cbar_ax=(cbar_ax if ax == axes[-1] else None))
+
+    # Set labels
+    ax.set_title(f'Level {level}')
+    ax.set_xlabel('Scenarios')
+    ax.set_ylabel('Program' if ax == axes[0] else "")
+
+# Adjust layout
+cbar_ax.set_ylabel('Proportion of days consumable is available')
+# Save the combined heatmap
+plt.savefig(roi_plots_path / f'combined_consumable_availability_heatmap_all_levels.png', dpi=300, bbox_inches='tight')
+plt.close()
+
 '''
 # Create heatmap of average availability by Facility_Level just showing scenario 12
 scenario_list = [12]
