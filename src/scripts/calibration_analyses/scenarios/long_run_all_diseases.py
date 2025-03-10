@@ -13,24 +13,14 @@ from pathlib import Path
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods import (
-    care_of_women_during_pregnancy,
-    contraception,
+    chronicsyndrome,
     demography,
-    depression,
     enhanced_lifestyle,
-    epi,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    hiv,
-    labour,
-    malaria,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_helper_functions,
-    pregnancy_supervisor,
+    mockitis,
+    simplified_births,
     symptommanager,
-    tb,
 )
 from tlo.scenario import BaseScenario
 
@@ -39,9 +29,9 @@ class LongRun(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
-        self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)  # The simulation will stop before reaching this date.
-        self.pop_size = 20_000
+        self.start_date = Date(2026, 1, 1)
+        self.end_date = Date(2026, 1, 12)  # The simulation will stop before reaching this date.
+        self.pop_size = 5000
         self.number_of_draws = 1
         self.runs_per_draw = 1
 
@@ -62,21 +52,17 @@ class LongRun(BaseScenario):
 
     def modules(self):
         return [demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
-                                           cons_availability='all'),  # went set disable=true, cant check HSI queue,
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
 
-                 hiv.DummyHivModule()]
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  climate_ssp = 'ssp585',
+                                  climate_model_ensemble_model='mean',
+                                  services_affected_precip = 'none'),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),]
 
     def draw_parameters(self, draw_number, rng):
         return get_parameters_for_status_quo()
