@@ -873,8 +873,8 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
             total_runs = scenario_info["number_of_draws"] * scenario_info["runs_per_draw"]
 
             # Loop through all draws and runs
-            for draw in range(scenario_info["number_of_draws"]):
-                for run in range(scenario_info["runs_per_draw"]):
+
+            for run in range(scenario_info["runs_per_draw"]):
                     hsi_event_key_to_event_details = load_pickled_dataframes(
                         results_folder, draw, run, "tlo.methods.healthsystem.summary"
                     )["tlo.methods.healthsystem.summary"]["hsi_event_details"]
