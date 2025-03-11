@@ -1052,7 +1052,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
                 df.at[person_id, 'ce_xpert_hpv_ever_pos'] = True
 
             # If HIV negative, do VIA to confirm diagnosis and next steps
-            if not person['hv_diagnosed']:
+            if not df.loc[person_id, 'hv_diagnosed']:
                 if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (p['hpv_cin_options'] + p['hpv_stage_options'])
                                 ):
                         hs.schedule_hsi_event(
@@ -1066,7 +1066,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
                                    )
 
             # IF HIV positive, send for CIN treatment; Biopsy will occur within CIN treatment if required based on severity of cancer
-            if person['hv_diagnosed']:
+            else:
                 if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (p['hpv_cin_options'] + p['hpv_stage_options'])
                                 ):
                     self.module.perform_cin_procedure(self,person_id)
@@ -1086,7 +1086,7 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         hs = self.sim.modules["HealthSystem"]
-        m = self.sim.modules['CervicalCancer']
+        m = self.module
         p = m.parameters
 
         rng = m.rng
@@ -1095,7 +1095,7 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
         if random_value <= p['prob_referral_biopsy_given_vaginal_bleeding']:
             hs.schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_Biopsy(
-                    module=self.module,
+                    module=m,
                     person_id=person_id
                 ),
                 priority=0,
@@ -1128,6 +1128,8 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         cons_avail = self.get_consumables(
             item_codes=self.module.item_codes_cervical_can['cervical_cancer_cryotherapy'],
             optional_item_codes= self.module.item_codes_cervical_can['cervical_cancer_cryotherapy_optional'])
+
+        random_value = rng.random()
 
         if cons_avail:
             # Record date and stage of starting treatment
@@ -1166,13 +1168,14 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        p = self.sim.modules['CervicalCancer'].parameters
-        random_value = self.module.rng.random()
+        p = self.module.parameters
+        rng = self.module.rng
 
         # Check consumables are available
         cons_avail = self.get_consumables(
             optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_thermoablation_optional'])
 
+        random_value = rng.random()
         if cons_avail:
            # Reference: (msyamboza et al 2016)
 
@@ -1214,7 +1217,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        p = self.sim.modules['CervicalCancer'].parameters
+        p = self.module.parameters
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_cervical_can['screening_biopsy_core'],
                                           optional_item_codes=
                                           self.module.item_codes_cervical_can[
@@ -1290,7 +1293,8 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        p = self.sim.modules['CervicalCancer'].parameters
+        p = self.module.parameters
+        rng = self.module.rng
 
         # If the status is already in `stage4`, start palliative care (instead of treatment)
         if df.at[person_id, "ce_hpv_cc_status"] == 'stage4':
@@ -1348,7 +1352,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
             # cure individual based on corresponding probabilities
-            random_value = self.module.rng.random()
+            random_value = rng.random()
 
             if (random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_hpv_cc_status"] == "stage1"
                 and df.at[person_id, "ce_date_treatment"] == self.sim.date):
@@ -1476,7 +1480,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        p = self.sim.modules['CervicalCancer'].parameters
+        p = self.module.parameters
         self.TREATMENT_ID = "CervicalCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
@@ -1532,7 +1536,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Compute statistics regarding the current status of persons and output to the logger
         """
         df = population.props
-        p = self.sim.modules['CervicalCancer'].parameters
+        p = self.module.parameters
 
 
         # CURRENT STATUS COUNTS
@@ -1614,12 +1618,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 (
                     (df['age_years'] > p['screening_min_age_hv_neg']) &
                     (df['age_years'] < p['screening_max_age_hv_neg']) &
-                    (df['hv_diagnosed'].eq(False))
+                    (~df['hv_diagnosed'])
                 ) |
                 (
                     (df['age_years'] > p['screening_min_age_hv_pos']) &
                     (df['age_years'] < p['screening_max_age_hv_pos']) &
-                    (df['hv_diagnosed'].eq(False))
+                    (~df['hv_diagnosed'])
                 )
             )
         ).sum()
