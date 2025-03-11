@@ -1027,8 +1027,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        p = self.sim.modules['CervicalCancer'].parameters
-        person = df.loc[person_id]
+        p = self.module.parameters
         hs = self.sim.modules["HealthSystem"]
 
         # Check consumables are available
@@ -1121,7 +1120,8 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
         m = self.module
         p = m.parameters
-        random_value = m.rng.random()
+        rng = m.rng
+
 
         # Reference: (msyamboza et al 2016)
 
