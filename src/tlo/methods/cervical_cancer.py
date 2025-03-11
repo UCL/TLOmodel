@@ -2,11 +2,9 @@
 Cervical Cancer Disease Module
 
 Limitations to note:
-* Footprints of HSI -- pending input from expert on resources required.
-at some point we may need to specify the treatment eg total hysterectomy plus or minus chemotherapy
+At some point we may need to specify the treatment eg total hysterectomy plus or minus chemotherapy
 but we agree not now
-
-consider in future making hpv acquisition risk depend on current prevalence of hpv
+Consider in future making hpv acquisition risk depend on current prevalence of hpv
 
 """
 
@@ -376,7 +374,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
-        df = population.props  # a shortcut to the data-frame
+        df = population.props
         m = self.sim.modules['CervicalCancer']
         rng = m.rng
         p = m.parameters
@@ -407,7 +405,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
         df['ce_hiv_unsuppressed'] = ((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not')) & (df['hv_inf'])
 
-
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
         women_over_15_nhiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & ~df["hv_inf"]]
 
@@ -427,7 +424,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
         # status in the present to any significant degree
 
-
     def initialise_simulation(self, sim):
         """
         * Schedule the main polling event
@@ -437,7 +433,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
-
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
@@ -565,7 +560,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         # Check that the dict labels are correct as these are used to set the value of ce_hpv_cc_status
         if not set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories):
             logger.warning(key="warning", data="Label dict are not correct.")
-        # assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
 
         # Linear Model for the onset of vaginal bleeding, in each 1 month period
         # Create variables for used to predict the onset of vaginal bleeding at
@@ -759,6 +753,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
     def perform_cin_procedure(self, hsi_event, person_id):
         """Function to decide treatment for individuals with CIN based on year. If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
+        :param hsi_event: HSI Event (required to pass in order to register equipment)
         :param person_id: person of interest
         """
         module = self.sim.modules['CervicalCancer']
@@ -912,7 +907,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 topen=self.sim.date,
                 tclose=None
             )
-
 
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
         # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
