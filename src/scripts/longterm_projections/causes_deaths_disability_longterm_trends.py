@@ -72,6 +72,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return population_sum
 
     target_year_sequence = range(min_year, max_year, spacing_of_years)
+    all_draws_deaths = []
+    all_draws_dalys = []
+
     for draw in range(5):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
@@ -161,8 +164,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         df_death_normalized = df_all_years_deaths.div(df_all_years_deaths.iloc[:, 0], axis=0)
         df_DALY_normalized = df_all_years_DALYS.div(df_all_years_DALYS.iloc[:, 0], axis=0)
-        df_death_normalized.to_csv(output_folder / "cause_of_death_normalized_2020.csv")
-        df_DALY_normalized.to_csv(output_folder / "cause_of_dalys_normalized_2020.csv")
+        df_death_normalized.to_csv(output_folder / f"cause_of_death_normalized_2020_{draw}.csv")
+        df_DALY_normalized.to_csv(output_folder / f"cause_of_dalys_normalized_2020_{draw}.csv")
 
         for i, condition in enumerate(df_death_normalized.index):
             axes[0].plot(df_death_normalized.columns, df_death_normalized.loc[condition], marker='o',
@@ -284,6 +287,46 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked_Rate'))
+        data_dalys = pd.DataFrame(data_dalys)
+        data_dalys.to_csv(output_folder/f"dalys_by_cause_rate_2020_{draw}.csv")
+        data_deaths = pd.DataFrame(data_deaths)
+        data_deaths.to_csv(output_folder/f"deaths_by_cause_rate_2020_{draw}.csv")
+        all_years_data_dalys = data_dalys.sum()
+        all_years_data_deaths = data_deaths.sum()
+        all_draws_deaths.append(pd.Series(all_years_data_deaths, name=f'Draw {draw}'))
+        all_draws_dalys.append(pd.Series(all_years_data_dalys, name=f'Draw {draw}'))
+
+    df_deaths_all_draws = pd.concat(all_draws_deaths, axis=1)
+    df_dalys_all_draws = pd.concat(all_draws_dalys, axis=1)
+
+    # Save to CSV
+    df_deaths_all_draws.to_csv(output_folder / "total_deaths_all_draws.csv")
+    df_dalys_all_draws.to_csv(output_folder / "total_dalys_all_draws.csv")
+
+    # Plotting
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+
+    # Panel A: Deaths across draws
+    for draw in df_deaths_all_draws.columns:
+        axes[0].plot(df_deaths_all_draws.index, df_deaths_all_draws[draw], marker='o', label=draw)
+    axes[0].set_title('Total Deaths Across Draws')
+    axes[0].set_xlabel('Year')
+    axes[0].set_ylabel('Total Deaths')
+    axes[0].legend(title='Draw', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[0].grid(True)
+
+    # Panel B: DALYs across draws
+    for draw in df_dalys_all_draws.columns:
+        axes[1].plot(df_dalys_all_draws.index, df_dalys_all_draws[draw], marker='o', label=draw)
+    axes[1].set_title('Total DALYs Across Draws')
+    axes[1].set_xlabel('Year')
+    axes[1].set_ylabel('Total DALYs')
+    axes[1].legend(title='Draw', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].grid(True)
+
+    fig.tight_layout()
+    fig.savefig(output_folder / "total_deaths_and_dalys_all_draws.png")
+    plt.close(fig)
 
 
 if __name__ == "__main__":
