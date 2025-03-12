@@ -21,7 +21,7 @@ max_year = 2059
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
-
+scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
@@ -307,8 +307,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
 
     # Panel A: Deaths across draws
-    for draw in df_deaths_all_draws.columns:
-        axes[0].plot(df_deaths_all_draws.index, df_deaths_all_draws[draw], marker='o', label=draw)
+    for i, draw in enumerate(df_deaths_all_draws.columns):
+        axes[0].plot(df_deaths_all_draws.index, df_deaths_all_draws[draw], marker='o', label=scenario_names[i + 1])
     axes[0].set_title('Total Deaths Across Draws')
     axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Total Deaths')
@@ -316,8 +316,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].grid(True)
 
     # Panel B: DALYs across draws
-    for draw in df_dalys_all_draws.columns:
-        axes[1].plot(df_dalys_all_draws.index, df_dalys_all_draws[draw], marker='o', label=draw)
+    for i, draw in enumerate(df_dalys_all_draws.columns):
+        axes[1].plot(df_dalys_all_draws.index, df_dalys_all_draws[draw], marker='o', label=scenario_names[i])
     axes[1].set_title('Total DALYs Across Draws')
     axes[1].set_xlabel('Year')
     axes[1].set_ylabel('Total DALYs')
