@@ -277,7 +277,7 @@ class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        person = df.loc[person_id]
+        # person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
 
         # Ignore this event if the person is no longer alive:
@@ -410,14 +410,13 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
             df.dr_date_treatment)), 'dr_status'].value_counts().items()})
 
-        # Count new cases
-        new_early_cases = len(df.loc[df.is_alive & (df.dr_status == 'early') & (df.dr_date_treatment == self.sim.date)])
-        new_late_cases = len(df.loc[df.is_alive & (df.dr_status == 'late') & (df.dr_date_treatment == self.sim.date)])
 
-        # Log incidence counts
+        date_now = self.sim.date
+        date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
+
         out.update({
-            'new_early': new_early_cases,
-            'new_late': new_late_cases
+            'diagnosed_since_last_log': df.dr_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.dr_date_treatment.between(date_lastlog, date_now).sum(),
         })
 
         logger.info(key='summary_stats', data=out)
