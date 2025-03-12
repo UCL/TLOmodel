@@ -190,13 +190,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # NORMALIZED DEATHS AND DALYS - TO 2020
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
-        df_death_normalized = df_all_years_deaths_mean.div(df_all_years_deaths_mean.iloc[:, 0], axis=0)
-        df_DALY_normalized = df_all_years_DALYS_mean.div(df_all_years_DALYS_mean.iloc[:, 0], axis=0)
-        df_death_normalized.to_csv(output_folder / f"cause_of_death_normalized_2020_{draw}.csv")
-        df_DALY_normalized.to_csv(output_folder / f"cause_of_dalys_normalized_2020_{draw}.csv")
+        df_death_normalized_mean = df_all_years_deaths_mean.div(df_all_years_deaths_mean.iloc[:, 0], axis=0)
+        df_DALY_normalized_mean = df_all_years_DALYS_mean.div(df_all_years_DALYS_mean.iloc[:, 0], axis=0)
+        df_death_normalized_mean.to_csv(output_folder / f"cause_of_death_normalized_2020_{draw}.csv")
+        df_DALY_normalized_mean.to_csv(output_folder / f"cause_of_dalys_normalized_2020_{draw}.csv")
 
-        for i, condition in enumerate(df_death_normalized.index):
-            axes[0].plot(df_death_normalized.columns, df_death_normalized.loc[condition], marker='o',
+        for i, condition in enumerate(df_death_normalized_mean.index):
+            axes[0].plot(df_death_normalized_mean.columns, df_death_normalized_mean.loc[condition], marker='o',
                          label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                                  df_all_years_deaths_mean.index][i])
         axes[0].set_title('Panel A: Deaths by Cause')
@@ -205,10 +205,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].grid(True)
 
         # Panel B: DALYs
-        for i, condition in enumerate(df_DALY_normalized.index):
-            axes[1].plot(df_DALY_normalized.columns, df_DALY_normalized.loc[condition], marker='o', label=condition,
+        for i, condition in enumerate(df_DALY_normalized_mean.index):
+            axes[1].plot(df_DALY_normalized_mean.columns, df_DALY_normalized_mean.loc[condition], marker='o', label=condition,
                          color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                df_DALY_normalized.index][i])
+                                df_DALY_normalized_mean.index][i])
         axes[1].set_title('Panel B: DALYs by cause')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Fold change in DALYs compared to 2020')
@@ -289,12 +289,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ## BARPLOTS STACKED PER 1000
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
-        df_death_per_1000 = df_all_years_deaths_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
-        df_daly_per_1000 = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
+        df_death_per_1000_mean = df_all_years_deaths_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
+        df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
+        df_death_per_1000_lower = df_all_years_deaths_lower.div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
+        df_daly_per_1000_lower = df_all_years_DALYS_lower.div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
+        df_death_per_1000_upper = df_all_years_deaths_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
+        df_daly_per_1000_upper = df_all_years_DALYS_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
+
+        data_deaths_1000_mean = df_death_per_1000_mean.values
+        data_deaths_1000_lower = df_death_per_1000_lower.values
+        data_deaths_1000_upper = df_death_per_1000_upper.values
+
+        data_dalys_1000_mean = df_daly_per_1000_mean.values
+        data_dalys_1000_lower = df_daly_per_1000_lower.values
+        data_dalys_1000_upper = df_daly_per_1000_upper.values
         # Panel A: Deaths (Stacked bar plot)
-        df_death_per_1000.T.plot.bar(stacked=True, ax=axes[0],
+        df_death_per_1000_mean.T.plot.bar(stacked=True, ax=axes[0],
                                      color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                            df_death_per_1000.index])
+                                            df_death_per_1000_mean.index])
         axes[0].set_title('Panel A: Deaths by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of deaths per 1000 people')
@@ -304,9 +316,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].legend().set_visible(False)
 
         # Panel B: DALYs (Stacked bar plot)
-        df_daly_per_1000.T.plot.bar(stacked=True, ax=axes[1],
+        df_daly_per_1000_mean.T.plot.bar(stacked=True, ax=axes[1],
                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                           df_daly_per_1000.index])
+                                           df_daly_per_1000_mean.index])
         axes[1].axhline(0.0, color='black')
         axes[1].set_title('Panel B: DALYs')
         axes[1].set_ylabel('Number of DALYs per 1000 people')
@@ -319,14 +331,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked_Rate'))
-        data_dalys_mean = pd.DataFrame(data_dalys_mean)
-        data_dalys_lower = pd.DataFrame(data_dalys_lower)
-        data_dalys_upper = pd.DataFrame(data_dalys_upper)
+        data_dalys_mean = pd.DataFrame(data_dalys_1000_mean)
+        data_dalys_lower = pd.DataFrame(data_dalys_1000_lower)
+        data_dalys_upper = pd.DataFrame(data_dalys_1000_upper)
 
         #data_dalys_mean.to_csv(output_folder/f"dalys_by_cause_rate_2020_{draw}.csv")
-        data_deaths_mean = pd.DataFrame(data_deaths_mean)
-        data_deaths_lower = pd.DataFrame(data_deaths_lower)
-        data_deaths_upper = pd.DataFrame(data_deaths_upper)
+        data_deaths_mean = pd.DataFrame(data_deaths_1000_mean)
+        data_deaths_lower = pd.DataFrame(data_deaths_1000_lower)
+        data_deaths_upper = pd.DataFrame(data_deaths_1000_upper)
 
         #data_deaths.to_csv(output_folder/f"deaths_by_cause_rate_2020_{draw}.csv")
         all_years_data_dalys_mean = data_dalys_mean.sum()
@@ -377,7 +389,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].bar(deaths_totals_mean.index, deaths_totals_mean.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
     axes[0].set_title('Total Deaths (2020-2070)')
     axes[0].set_xlabel('Scenario')
-    axes[0].set_ylabel('Total Deaths')
+    axes[0].set_ylabel('Total Deaths per 1,000 population')
     axes[0].set_xticklabels(scenario_names, rotation=45)
     axes[0].grid(axis='y')
 
@@ -385,7 +397,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].bar(dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
     axes[1].set_title('Total DALYs (2020-2070)')
     axes[1].set_xlabel('Scenario')
-    axes[1].set_ylabel('Total DALYs')
+    axes[1].set_ylabel('DALYS per 1,000 population')
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].grid(axis='y')
     fig.tight_layout()
