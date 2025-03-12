@@ -331,14 +331,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked_Rate'))
-        data_dalys_mean = pd.DataFrame(data_dalys_1000_mean)
-        data_dalys_lower = pd.DataFrame(data_dalys_1000_lower)
-        data_dalys_upper = pd.DataFrame(data_dalys_1000_upper)
+        data_dalys_mean = pd.DataFrame(data_dalys_mean)
+        data_dalys_lower = pd.DataFrame(data_dalys_lower)
+        data_dalys_upper = pd.DataFrame(data_dalys_upper)
 
         #data_dalys_mean.to_csv(output_folder/f"dalys_by_cause_rate_2020_{draw}.csv")
-        data_deaths_mean = pd.DataFrame(data_deaths_1000_mean)
-        data_deaths_lower = pd.DataFrame(data_deaths_1000_lower)
-        data_deaths_upper = pd.DataFrame(data_deaths_1000_upper)
+        data_deaths_mean = pd.DataFrame(data_deaths_mean)
+        data_deaths_lower = pd.DataFrame(data_deaths_lower)
+        data_deaths_upper = pd.DataFrame(data_deaths_upper)
 
         #data_deaths.to_csv(output_folder/f"deaths_by_cause_rate_2020_{draw}.csv")
         all_years_data_dalys_mean = data_dalys_mean.sum()
@@ -389,7 +389,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].bar(deaths_totals_mean.index, deaths_totals_mean.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
     axes[0].set_title('Total Deaths (2020-2070)')
     axes[0].set_xlabel('Scenario')
-    axes[0].set_ylabel('Total Deaths per 1,000 population')
+    axes[0].set_ylabel('Total Deaths')
     axes[0].set_xticklabels(scenario_names, rotation=45)
     axes[0].grid(axis='y')
 
@@ -397,7 +397,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].bar(dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
     axes[1].set_title('Total DALYs (2020-2070)')
     axes[1].set_xlabel('Scenario')
-    axes[1].set_ylabel('DALYS per 1,000 population')
+    axes[1].set_ylabel('Total DALYs')
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].grid(axis='y')
     fig.tight_layout()
