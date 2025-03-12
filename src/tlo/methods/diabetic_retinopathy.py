@@ -30,17 +30,18 @@ class DiabeticRetinopathy(Module):
     }
 
     PARAMETERS = {
-        'rate_onset_to_early_dr': Parameter(Types.REAL,
-                                            'Probability of people who get diagnosed with early diabetic retinopathy'),
-        'rate_progression_to_dr': Parameter(Types.REAL,
-                                            'Probability of people who get diagnosed with late diabetic retinopathy'),
+        "rate_onset_to_early_dr": Parameter(Types.REAL,
+                                            "Probability of people who get diagnosed with early diabetic retinopathy"),
+        "rate_progression_to_dr": Parameter(Types.REAL,
+                                            "Probability of people who get diagnosed with late diabetic retinopathy"),
         'prob_fast_dr': Parameter(Types.REAL,
-                                  'Probability of people who get diagnosed from none phase to late diabetic '
-                                  'retinopathy stage'),
-        'init_prob_any_dr': Parameter(Types.REAL, 'Initial probability of anyone with diabetic retinopathy'),
-        'init_prob_late_dr': Parameter(Types.REAL,
-                                       'Initial probability of people with diabetic retinopathy in the late stage'),
-        'p_medication': Parameter(Types.REAL, 'Diabetic retinopathy treatment/medication effectiveness'),
+                                  "Probability of people who get diagnosed from none phase to late diabetic "
+                                  "retinopathy stage"),
+        #TODO Change init_prob_any_dr to LIST
+        "init_prob_any_dr": Parameter(Types.REAL, "Initial probability of anyone with diabetic retinopathy"),
+        "init_prob_late_dr": Parameter(Types.REAL,
+                                       "Initial probability of people with diabetic retinopathy in the late stage"),
+        "p_medication": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
     }
 
     PROPERTIES = {
@@ -53,21 +54,21 @@ class DiabeticRetinopathy(Module):
             ],
             description="dr status",
         ),
-        'dr_on_treatment': Property(
-            Types.BOOL, 'Whether this person is on diabetic retinopathy treatment',
+        "dr_on_treatment": Property(
+            Types.BOOL, "Whether this person is on diabetic retinopathy treatment",
         ),
-        'dr_date_treatment': Property(
+        "dr_date_treatment": Property(
             Types.DATE,
-            'date of first receiving diabetic retinopathy treatment (pd.NaT if never started treatment)'
+            "date of first receiving diabetic retinopathy treatment (pd.NaT if never started treatment)"
         ),
-        'dr_early_diagnosed': Property(
-            Types.BOOL, 'Whether this person has been diagnosed with early diabetic retinopathy'
+        "dr_early_diagnosed": Property(
+            Types.BOOL, "Whether this person has been diagnosed with early diabetic retinopathy"
         ),
-        'dr_late_diagnosed': Property(
-            Types.BOOL, 'Whether this person has been diagnosed with late diabetic retinopathy'
+        "dr_late_diagnosed": Property(
+            Types.BOOL, "Whether this person has been diagnosed with late diabetic retinopathy"
         ),
-        'dr_diagnosed': Property(
-            Types.BOOL, 'Whether this person has been diagnosed with any diabetic retinopathy'
+        "dr_diagnosed": Property(
+            Types.BOOL, "Whether this person has been diagnosed with any diabetic retinopathy"
         ),
         "dr_date_diagnosis": Property(
             Types.DATE,
@@ -77,6 +78,9 @@ class DiabeticRetinopathy(Module):
             Types.BOOL,
             "whether blindness has been investigated, and diabetic retinopathy missed"
         ),
+        "dr_ever_diet_mgmt": Property(Types.BOOL,
+                                      "whether this person has ever had a diabetic retinopathy management"
+                                      "session in the diabetic clinic"),
 
     }
 
@@ -319,6 +323,40 @@ class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
                 topen=self.sim.date,
                 tclose=None
+            )
+
+
+
+class HSI_Dr_DietManagement(HSI_Event, IndividualScopeEventMixin):
+    """This is a Health System Interaction Event in which a person receives a session of diet management in the
+    diabetes clinic. It is one of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen
+    then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is
+    reflects ever having had one session of talking therapy."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'Dr_DietManagement'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.num_of_sessions_had = 0  # A counter for the number of diet management sessions had
+
+    def apply(self, person_id, squeeze_factor):
+        """Set the property `dr_ever_diet_mgmt` to be True and schedule the next session in the course if the person
+        has not yet had 5 sessions."""
+
+        self.num_of_sessions_had += 1
+
+        df = self.sim.population.props
+        if not df.at[person_id, 'dr_ever_diet_mgmt']:
+            df.at[person_id, 'dr_ever_diet_mgmt'] = True
+
+        if self.num_of_sessions_had < 5:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=self,
+                topen=self.sim.date + pd.DateOffset(months=6),
+                tclose=None,
+                priority=1
             )
 
 

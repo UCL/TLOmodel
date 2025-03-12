@@ -90,8 +90,22 @@ def check_dtypes(sim):
 
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
+    # Change to [0.0] * 2 (or num of stages) after getting all stages from Shaffi and changing TYPE to LIST
     sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = 0.0
     sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.0
+    return sim
+
+def make_high_init_prev(sim):
+    # Set initial prevalence to a high value:
+    sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = 0.1
+    sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.1
+    return sim
+
+def incr_rates_of_progression(sim):
+    # Rates of DR progression:
+    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_early_dr'] *= 5
+    sim.modules['DiabeticRetinopathy'].parameters['rate_progression_to_dr'] *= 5
+    sim.modules['DiabeticRetinopathy'].parameters['prob_fast_dr'] *= 5
     return sim
 
 
@@ -137,3 +151,25 @@ def test_initial_config_of_pop_zero_prevalence(seed):
     df = sim.population.props
     assert (df.loc[df.is_alive].dr_status == 'none').all()
 
+
+def test_initial_config_of_pop_high_prevalence(seed):
+    """Tests the way the population is configured: with high initial prevalence values """
+    sim = get_simulation_healthsystemdisabled(seed=seed)
+    sim = make_high_init_prev(sim)
+    sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+@pytest.mark.slow
+def test_run_sim_from_high_prevalence(seed):
+    """Run the simulation from the usual prevalence values and high rates of incidence and check configuration of
+    properties at the end"""
+    sim = get_simulation_healthsystemdisabled(seed=seed)
+    sim = make_high_init_prev(sim)
+    sim = incr_rates_of_progression(sim)
+    sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+    sim.simulate(end_date=Date(2010, 4, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
