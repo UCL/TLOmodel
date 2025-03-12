@@ -691,6 +691,17 @@ fig.tight_layout()
 fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
 plt.close(fig)
 
+# Extract ICERs into a table for manuscript
+icers_summarized_subset_for_table = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+icers_summarized_subset_for_table = icers_summarized_subset_for_table.reset_index()
+icers_summarized_subset_for_table['scenario'] = icers_summarized_subset_for_table['draw'].map(all_manuscript_scenarios)
+icers_summarized_subset_for_table['ICER (2023 USD)'] = icers_summarized_subset_for_table.apply(
+    lambda row: f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
+    if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
+    axis=1
+)
+icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(roi_outputs_folder / 'tabulated_icers.csv', index = False)
+
 # 4. Return on Investment
 # ----------------------------------------------------
 # Estimate projected health spending
@@ -868,6 +879,24 @@ roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_mo
                    _metric = 'median')
 roi_table.to_csv(roi_outputs_folder / 'tabulated_roi.csv', index = False)
 
+# Extract ROIs into a table for manuscript
+roi_table['scenario'] = roi_table['draw'].map(all_manuscript_scenarios)
+# Pivot the DataFrame to make 'stat' values columns
+roi_table = roi_table.drop_duplicates(['scenario', 'implementation_cost', 'stat', 'roi'])
+roi_pivot_table = roi_table.pivot(index=['draw', 'scenario', 'implementation_cost'], columns='stat', values='roi')
+roi_pivot_table = roi_pivot_table.sort_index(level='draw')
+# Format the values as "median [lower - upper]"
+roi_pivot_table['ROI at VSLY = $834'] = roi_pivot_table.apply(
+    lambda row: f"{row['median']:.2f} [{row['lower']:.2f} - {row['upper']:.2f}]"
+    if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
+    axis=1
+)
+# Reset index to move 'implementation_cost' to columns and reshape for the manuscript
+roi_pivot_table = roi_pivot_table['ROI at VSLY = $834'].unstack(level='implementation_cost')
+roi_pivot_table.columns.name = None  # Remove multi-index column name
+roi_pivot_table.index.name = 'Scenario'
+roi_pivot_table.reset_index().drop(columns = 'draw').to_csv(roi_outputs_folder / f'tabulated_roi_for_manscript.csv', index = False)
+
 # 5. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------
 max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
@@ -984,3 +1013,14 @@ do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all'
                          _year=list_of_relevant_years_for_costing, _draws= [44],
                          disaggregate_by= 'cost_category',
                          _outputfilepath = figurespath)
+
+'''
+# Extract TB costs for inspection
+tb_consumables = ['Cat. I & III Patient Kit A', 'Cat. I & III Patient Kit B', 'Cat. II Patient Kit A1',
+'Cat. II Patient Kit A2', 'Isoniazid/Pyridoxine, tablet 300 mg', 'Isoniazid/Rifapentine', 'Xpert', 'ZN Stain']
+tb_consumables_costs = input_costs_for_plot_summarized[input_costs_for_plot_summarized.cost_subgroup.isin(tb_consumables)]
+tb_consumables_costs = tb_consumables_costs.groupby(['draw', 'stat', 'cost_subgroup'])['cost'].sum().reset_index()
+tb_consumables_costs.to_csv(figurespath / 'tb_consumables_costs_detailed.csv')
+
+input_costs_for_plot_summarized.to_csv(figurespath / 'cost_detailed_summarised.csv')
+'''
