@@ -5,6 +5,8 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy import stats
+
 import seaborn as sns
 from matplotlib import colors as mcolors
 from netCDF4 import Dataset
@@ -743,7 +745,15 @@ sd_percentage_diff = malawi_admin2['Percentage_Difference_historical'].std()
 print("Mean Percentage Difference:", mean_percentage_diff)
 print("Standard Deviation of Percentage Difference:", sd_percentage_diff)
 
+n = malawi_admin2['Percentage_Difference_historical'].count()
 
+t_critical = stats.t.ppf(0.975, df=n-1)  # two-tailed t critical value for 95% CI
+margin_of_error = t_critical * (sd_percentage_diff / np.sqrt(n))
+
+lower_bound = mean_percentage_diff - margin_of_error
+upper_bound = mean_percentage_diff + margin_of_error
+
+print(f"95% CI: ({lower_bound:.2f}, {upper_bound:.2f})")
 ###### Effect of CYCLONE FREDDY #######
 
 historical_predictions = pd.read_csv(f'/Users/rem76/Desktop/Climate_change_health/Data/results_of_model_historical_predictions_{service}.csv')
