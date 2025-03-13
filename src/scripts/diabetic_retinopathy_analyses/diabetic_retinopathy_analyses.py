@@ -43,10 +43,10 @@ end_date = Date(2012, 1, 1)
 popsize = 5000
 
 def run_sim(service_availability):
-    log_config = {
-        'filename': 'LogFile',
-        'directory': outputpath
-    }
+    # log_config = {
+    #     'filename': 'LogFile',
+    #     'directory': outputpath
+    # }
     sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "LogFile"})
 
     # Register the appropriate modules
