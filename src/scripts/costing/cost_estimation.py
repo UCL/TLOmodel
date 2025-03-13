@@ -792,6 +792,7 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
     health_spending_per_capita = health_spending_per_capita[
         health_spending_per_capita.year.isin(list(range(2015, 2041)))]
     total_health_spending_per_capita_mean = health_spending_per_capita[['year', 'total_mean']].set_index('year')
+    total_health_spending_per_capita_mean.columns = pd.MultiIndex.from_tuples([('total_mean', '')])
 
     # Load population projections
     # ----------------------------------------

@@ -278,6 +278,7 @@ def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
             sorted(district_ids * (final_year_for_costing - year_of_malaria_scaleup_start + 1)),
             dtype=np.int64) # attach district number to each replicate
         df_replicated_for_each_district = df_replicated_for_each_district.reset_index()
+        df_replicated_for_each_district = df_replicated_for_each_district.sort_index(axis=1)
 
         # Load proportional population distribution by district
         population_2010 = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')
@@ -287,13 +288,18 @@ def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
             .pipe(lambda x: x / x.sum())  # Compute proportions
         )
         assert (population_proportion_by_district_2010.sum() == 1)
+        population_proportion_by_district_2010 = population_proportion_by_district_2010.reset_index()
+        population_proportion_by_district_2010.columns = pd.MultiIndex.from_tuples(
+            [('District_Num', ''), ('Count', '')]
+        )
+        population_proportion_by_district_2010 = population_proportion_by_district_2010.sort_index(axis=1)
 
         # Merge and compute district-level population by year
         df_by_district = df_replicated_for_each_district.merge(population_proportion_by_district_2010,
                                                                           on='District_Num', how='left', validate='m:1')
         df_by_district[_df.columns] = df_by_district[
             _df.columns].multiply(df_by_district['Count'], axis=0)
-        df_by_district = df_by_district.drop(columns=['District_Num', 'Count'])
+        df_by_district = df_by_district.sort_index(axis=1).drop(columns=['Count'])
 
         # Set multi-level columns and final formatting
         df_by_district = (
