@@ -70,6 +70,8 @@ assert abs(staff_cost.cost_frac.sum() - 1) < 1/1e8
 staff_cost.set_index('Officer_Category', inplace=True)
 staff_cost = staff_cost.reindex(index=cadre_all)
 
+# Prepare extra budget allocation scenarios
+
 # No expansion scenario, or zero-extra-budget-fraction scenario, "s_0"
 # Define the current cost fractions among all cadres as extra-budget-fraction scenario "s_1" \
 # to be matched with Margherita's 4.2% scenario.
@@ -306,18 +308,73 @@ avg_increase_rate_exp = pd.DataFrame(integrated_scale_up_factor**(1/10) - 1.0)
 # extra_budget_fracs_sample.drop(columns=other_group, inplace=True)
 
 
-def func_of_avg_increase_rate(cadre, scenario='s_2', r=R):
+def func_of_avg_increase_rate(cadre, scenario='s_2', r=R, sample=extra_budget_fracs):
     """
     This return the average growth rate of the staff of a cadre from 2025 to 2034.
     The total HRH cost growth rate is r.
     """
     overall_scale_up = 1 + (staff_cost.annual_cost.sum()
-                            * extra_budget_fracs.loc[cadre, scenario]
+                            * sample.loc[cadre, scenario]
                             / staff_cost.loc[cadre, 'annual_cost']
                             * ((1+r)**10 - 1)
                             )
 
     return overall_scale_up ** (1/10) - 1.0
+
+
+# get the avg increase rate of the designed scenarios
+avg_increase_rate_scenarios = pd.DataFrame(
+    index=extra_budget_fracs.index, columns=extra_budget_fracs.columns
+)
+for c in avg_increase_rate_scenarios.index:
+    for s in avg_increase_rate_scenarios.columns:
+        avg_increase_rate_scenarios.loc[c, s] = func_of_avg_increase_rate(
+            cadre=c, scenario=s, r=R, sample=extra_budget_fracs
+        )
+
+
+# prepare a random sample of strategies
+
+# the sort and difference method
+def generate_proportions(n_var):
+    random_numbers = np.random.uniform(0, 1, n_var-1)
+    sorted_numbers = np.sort(random_numbers)
+    sorted_numbers = np.concatenate(([0], sorted_numbers, [1]))
+    diffs = np.diff(sorted_numbers)
+
+    return diffs
+
+
+random_samples = np.array([generate_proportions(n_var=5) for _ in range(100)])
+extra_budget_fracs_sample = pd.DataFrame(columns=cadre_group, data=random_samples)
+assert (extra_budget_fracs_sample.sum(axis=1) == 1.0).all()
+
+# format the sample like "extra_budget_fracs"
+for c in other_group:
+    for i in extra_budget_fracs_sample.index:
+        extra_budget_fracs_sample.loc[i, c] = extra_budget_fracs_sample.loc[i, 'Other'] * (
+                staff_cost.loc[c, 'cost_frac'] / staff_cost.loc[staff_cost.index.isin(other_group), 'cost_frac'].sum()
+            )
+extra_budget_fracs_sample = extra_budget_fracs_sample.T
+extra_budget_fracs_sample = extra_budget_fracs_sample.add_prefix('rs_')
+assert (
+    abs(
+        extra_budget_fracs_sample.loc['Other', :]
+        - extra_budget_fracs_sample.loc[extra_budget_fracs_sample.index.isin(other_group), :].sum(axis=0)
+    ) < 1e-10
+).all()
+extra_budget_fracs_sample.drop(index='Other', inplace=True)
+assert (abs(extra_budget_fracs_sample.sum(axis=0) - 1.0) < 1e-10).all()
+
+# get the avg increase rate
+avg_increase_rate_sample = pd.DataFrame(
+    index=extra_budget_fracs_sample.index, columns=extra_budget_fracs_sample.columns
+)
+for c in avg_increase_rate_sample.index:
+    for s in avg_increase_rate_sample.columns:
+        avg_increase_rate_sample.loc[c, s] = func_of_avg_increase_rate(
+            cadre=c, scenario=s, r=R, sample=extra_budget_fracs_sample
+        )
 
 
 # prepare 2024 cost info for Other cadre and Total
