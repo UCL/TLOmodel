@@ -45,9 +45,7 @@ def make_simulation_healthsystemdisabled(seed):
                  cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
-                                           cons_availability='all'),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -72,6 +70,7 @@ def make_simulation_nohsi(seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=False,
+                                           service_availability=[],
                                            cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -323,9 +322,8 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     # make initial population
     sim.make_initial_population(n=popsize)
 
-    # population_of_interest = get_population_of_interest(sim)
-#   sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
-    check_configuration_of_population(sim)
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
 
     # Simulate
     sim.simulate(end_date=Date(2010, 7, 1))
@@ -336,9 +334,8 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert len(df.loc[df.is_alive & (df.ce_hpv_cc_status != 'none')]) > 0
 
     # check that some people have died of cervical cancer
-    # yll = sim.modules['HealthBurden'].years_life_lost
-#   todo: find out why this assert fails - I don't think it is a problem in cervical_cancer.py
-#   assert yll['CervicalCancer'].sum() > 0
+    yll = sim.modules['HealthBurden'].years_life_lost
+    assert yll['CervicalCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
     assert not (df.ce_date_diagnosis > start_date).any()
