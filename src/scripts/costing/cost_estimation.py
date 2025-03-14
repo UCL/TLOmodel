@@ -1,5 +1,7 @@
 import argparse
 from pathlib import Path
+from pyexpat.errors import XML_ERROR_RESERVED_PREFIX_XML
+
 from tlo import Date
 from collections import Counter, defaultdict
 
@@ -123,7 +125,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     unit_cost_equipment = unit_cost_equipment.rename(columns=unit_cost_equipment.iloc[7]).reset_index(drop=True).iloc[8:]
     unit_cost_equipment = unit_cost_equipment[unit_cost_equipment['Item_code'].notna()] # drop empty row
     # Calculate necessary costs based on HSSP-III assumptions
-    unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost']/(1+(1-(1+discount_rate)**(-row['Life span']+1))/discount_rate), axis=1) # Annuitised over the life span of the equipment assuming outlay at the beginning of the year
+    if discount_rate == 0:
+        unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] / row['Life span'], axis=1)  # straight line depreciation is discount rate is 0
+    else:
+        unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost']/(1+(1-(1+discount_rate)**(-row['Life span']+1))/discount_rate), axis=1) # Annuitised over the life span of the equipment assuming outlay at the beginning of the year
     unit_cost_equipment['service_fee_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.8 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 80% of the value of the item over 8 years
     unit_cost_equipment['spare_parts_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 20% of the value of the item over 8 years
     unit_cost_equipment['major_corrective_maintenance_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 * 0.2 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 20% of the value of 20% of the items over 8 years
@@ -300,7 +305,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit'] = preservice_training_cost['npv_of_training_and_recruitment_cost'] *\
                                                     (1/(preservice_training_cost['absorption_rate_of_students_into_public_workforce'] + preservice_training_cost['proportion_of_workforce_recruited_from_abroad'])) *\
                                                     (1/preservice_training_cost['graduation_rate']) * (1/preservice_training_cost['licensure_exam_passing_rate'])
-    preservice_training_cost['annuitisation_rate']  = 1 + (1 - (1 + discount_rate) ** (-preservice_training_cost['average_length_of_tenure_in_the_public_sector'] + 1)) / discount_rate
+    if discount_rate == 0: # if the discount rate is 0, then the pre-service + recruitment cost simply needs to be divided by the number of years in tenure
+        preservice_training_cost['annuitisation_rate'] = preservice_training_cost['average_length_of_tenure_in_the_public_sector']
+    else:
+        preservice_training_cost['annuitisation_rate']  = 1 + (1 - (1 + discount_rate) ** (-preservice_training_cost['average_length_of_tenure_in_the_public_sector'] + 1)) / discount_rate
     preservice_training_cost['annuitised_training_and_recruitment_cost_per_recruit'] = preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit']/preservice_training_cost['annuitisation_rate']
 
     # Cost per student trained * 1/Rate of absorption from the local and foreign graduates * 1/Graduation rate * attrition rate
