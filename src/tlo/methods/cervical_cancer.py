@@ -375,9 +375,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     def initialise_population(self, population):
         """Set property values for the initial population."""
         df = population.props
-        m = self.sim.modules['CervicalCancer']
-        rng = m.rng
-        p = m.parameters
+        rng = self.rng
+        p = self.parameters
 
         # defaults
         df.loc[df.is_alive, "ce_hpv_cc_status"] = "none"
@@ -440,7 +439,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
-        sim.schedule_event(CervicalCancerLoggingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(CervicalCancerLoggingEvent(self), sim.date)
 
         # Look-up consumable item codes
         self.item_codes_cervical_can = get_consumable_item_codes_cancers(self)
@@ -758,7 +757,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         """
         module = self.sim.modules['CervicalCancer']
         year = self.sim.date.year
-        p = module.parameters
+        p = self.parameters
         hs = self.sim.modules["HealthSystem"]
         treatment_methods = {
             'Thermoablation': {
@@ -778,7 +777,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         # Schedule HSI event
         hs.schedule_hsi_event(
-            hsi_event=method_info['event_class'](module=module, person_id=person_id),
+            hsi_event=method_info['event_class'](module=self, person_id=person_id),
             priority=0,
             topen=self.sim.date,
             tclose=None
