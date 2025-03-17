@@ -139,6 +139,10 @@ def make_cin_treatment_perfect(sim):
     sim.modules['CervicalCancer'].parameters['prob_thermoabl_successful'] = 1.0
     return sim
 
+def make_vaginal_bleeding_referral_perfect(sim):
+    sim.modules['CervicalCancer'].parameters['prob_referral_biopsy_given_vaginal_bleeding']  = 1.0
+    return sim
+
 def make_treamtment_perfectly_effective(sim):
     # All get symptoms and treatment effect of 1.0 will stop progression
     sim.modules['CervicalCancer'].parameters['r_vaginal_bleeding_cc_stage1'] = 1.0
@@ -186,12 +190,6 @@ def check_configuration_of_population(sim):
     # check that treatment is never done for those with stage 4
     assert 0 == (df.ce_stage_at_which_treatment_given == 'stage4').sum()
     assert 0 == (df.loc[~pd.isnull(df.ce_date_treatment)].ce_stage_at_which_treatment_given == 'none').sum()
-
-    # check that those with symptom are a subset of those with cancer:
-# todo: not sure what is wrong with this assert as I am fairly certain the intended assert is true, review vaginal bleeding
-
-#   assert set(sim.modules['SymptomManager'].who_has('vaginal_bleeding')).issubset(
-#       df.index[df.ce_cc_ever])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.ce_date_diagnosis)]).issubset(df.index[df.ce_cc_ever])
@@ -378,11 +376,6 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
         disease_module=sim.modules['CervicalCancer']
     )
 
-    # note: This will make all >15 yrs females be on stage 1 and have cancer symptoms yes
-    # BUT it will not automatically make everyone deemed as ever had cervical cancer in the code Hence check
-    # assert set(sim.modules['SymptomManager'].who_has('vaginal_bleeding')).issubset( df.index[df.ce_cc_ever])
-    # is likely to fail
-
     check_configuration_of_population(sim)
 
     # Simulate
@@ -490,3 +483,25 @@ def test_transition_year_logic(seed):
         )
     )
     assert condition_via.all(), "Some rows violate the VIA/Xpert date conditions."
+
+def test_vaginal_bleeding(seed):
+    """Ensure that have vaginal bleeding are subset of those diagnosed (given perfect referral)"""
+    sim = make_simulation_healthsystemdisabled(seed=123)
+    sim = make_screening_mandatory(sim)
+    sim = make_cin_treatment_perfect(sim)
+    sim = make_vaginal_bleeding_referral_perfect(sim)
+
+    # Simulate
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2010, 6, 1))
+
+    df = sim.population.props
+
+    # check that those with symptom are a subset of those with cancer:
+    vaginal_bleeding_symptom = set(sim.modules['SymptomManager'].who_has('vaginal_bleeding'))
+    df_ce_cc_ever_true = set(df.index[df.ce_cc_ever])
+
+    if not vaginal_bleeding_symptom and not df_ce_cc_ever_true:
+        pass
+    else:
+        assert vaginal_bleeding_symptom.issubset(df_ce_cc_ever_true)
