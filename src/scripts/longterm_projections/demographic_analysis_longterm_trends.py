@@ -23,7 +23,7 @@ from tlo.analysis.utils import (
 PREFIX_ON_FILENAME = '1'
 min_year = "2020"
 max_year = "2069"
-scenario_colours = ['#0081a7', '#00afb9', '#fdfcdc', '#fed9b7', '#f07167']
+scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167']
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
