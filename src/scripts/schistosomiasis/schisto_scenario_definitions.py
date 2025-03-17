@@ -36,7 +36,6 @@ class ScenarioDefinitions:
         return {
             "Schisto": {
                 "mda_coverage": 0.0,  # default is 0.7
-                "scaleup_WASH": 0.0,  # although this is BOOL, python changes type when reading in from Excel
             }
         }
 

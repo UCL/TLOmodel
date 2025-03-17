@@ -1208,8 +1208,8 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # this returns positive value if current_prevalence lower than baseline_prevalence and
         # increases baseline_risk value
         # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
-        background_risk = max(0, global_params['baseline_risk'] * (1 + global_params['scaling_factor_baseline_risk'] *
-                                                                   (current_mean_worm_burden - baseline_mean_worm_burden)))
+        background_risk = max(0, global_params['baseline_risk'] * (
+            1 + global_params['scaling_factor_baseline_risk'] * (current_mean_worm_burden - baseline_mean_worm_burden)))
 
         reservoir += background_risk  # add the background reservoir to every district
 

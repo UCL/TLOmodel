@@ -69,18 +69,6 @@ class SchistoScenarios(BaseScenario):
     def modules(self):
         return fullmodel(resourcefilepath=self.resources,
                          use_simplified_births=True,
-                         # module_kwargs={
-                         #     "HealthSystem": {"disable": False,
-                         #                      "service_availability": ["*"],
-                         #                      "mode_appt_constraints": 1,
-                         #                      "cons_availability": "default",
-                         #                      "beds_availability": "all",
-                         #                      "ignore_priority": False,
-                         #                      "use_funded_or_actual_staffing": "actual"},
-                         #     "Schisto": {"single_district": False},
-                         #     "Demography": {"equal_allocation_by_district": True},
-                         #     "Alri": {"log_indivdual": None},
-                         # }
                          )
 
     def draw_parameters(self, draw_number, rng):
