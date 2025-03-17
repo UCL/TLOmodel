@@ -2818,12 +2818,11 @@ class AlriLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         # 1) Number of new cases, by age-group and by pathogen, since the last logging event
-        # todo comment out for easier logging
-        # logger.info(
-        #     key='incidence_count_by_age_and_pathogen',
-        #     data=self.trackers['incident_cases'].report_current_counts(),
-        #     description='Pathogens incident case counts since last logging event'
-        # )
+        logger.info(
+            key='incidence_count_by_age_and_pathogen',
+            data=self.trackers['incident_cases'].report_current_counts(),
+            description='Pathogens incident case counts since last logging event'
+        )
 
         # 2) Total number of in all the trackers since the last logging event
         logger.info(

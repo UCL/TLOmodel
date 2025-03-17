@@ -13,7 +13,7 @@ from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.logging.helpers import grouped_counts_with_all_combinations
-from tlo.util import get_person_id_to_inherit_from
+from tlo.util import get_person_id_to_inherit_from, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -343,9 +343,9 @@ class Lifestyle(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        dataframes = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
-            sheet_name=["parameter_values", "urban_rural_by_district"],
+        dataframes = read_csv_files(
+            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced',
+            files=["parameter_values", "urban_rural_by_district"],
         )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
         p['init_p_urban'] = (
@@ -661,13 +661,13 @@ class LifestyleModels:
         :param df: The population dataframe """
         # get months since last poll
         now = self.module.sim.date
-        days_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "D"))
+        months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "M"))
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
             if _model['update'] is not None:
                 df.loc[df.is_alive, _property_name] = _model['update'].predict(
                     df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
-                    months_since_last_poll=days_since_last_poll/30.5)
+                    months_since_last_poll=months_since_last_poll)
         # update date last event run
         self.date_last_run = now
 
@@ -1982,7 +1982,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 data=flatten_multi_index_series_into_dict_for_logging(data)
             )
 
-
         # ---------------------- log properties associated with WASH
 
         # unimproved sanitation
@@ -2002,7 +2001,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ) / len(df[df.is_alive]
                 ) if len(df[df.is_alive]) else 0
 
-
         # no access hand-washing
         # NOTE: True = no access hand-washing
         no_handwashing_PSAC = len(
@@ -2019,7 +2017,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.li_no_access_handwashing & df.is_alive]
         ) / len(df[df.is_alive]
                 ) if len(df[df.is_alive]) else 0
-
 
         # no clean drinking water
         # NOTE: True = no clean drinking water

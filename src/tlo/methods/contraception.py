@@ -1175,14 +1175,14 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
 
-        person = self.sim.population.props.loc[person_id]
-        current_method = person.co_contraception
-
-        if not (person.is_alive and not person.is_pregnant):
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'is_pregnant']:
             return
 
+        current_method = df.at[person_id, 'co_contraception']
+
         # Record the date that Family Planning Appointment happened for this person
-        self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
+        df.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Measure weight, height and BP even if contraception not administrated
         self.add_equipment({

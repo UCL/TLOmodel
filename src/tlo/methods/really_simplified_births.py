@@ -12,7 +12,6 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods.contraception import get_medium_variant_asfr_from_wpp_resourcefile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -35,11 +34,8 @@ class ReallySimplifiedBirths(Module):
     METADATA = {}
 
     PARAMETERS = {
-        'age_specific_fertility_rates': Parameter(
-            Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
-                              'period'),
         'months_between_pregnancy_and_delivery': Parameter(
-            Types.INT, 'number of whole months that elapase betweeen pregnancy and delivery'),
+            Types.INT, 'number of whole months that elapse between pregnancy and delivery'),
         'prob_breastfeeding_type': Parameter(
             Types.LIST, 'probabilities that a woman is: 1) not breastfeeding (none); 2) non-exclusively breastfeeding '
                         '(non_exclusive); 3)exclusively breastfeeding at birth (until 6 months) (exclusive)')
@@ -107,13 +103,10 @@ class ReallySimplifiedBirths(Module):
     def read_parameters(self, data_folder):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
-        self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
-
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
-        rf = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx')
+        rf = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes/parameter_values.csv')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter
@@ -179,10 +172,9 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.months_between_polls = 1
         super().__init__(module, frequency=DateOffset(months=self.months_between_polls))
-        # self.asfr = get_medium_variant_asfr_from_wpp_resourcefile(
-        #     dat=self.module.parameters['age_specific_fertility_rates'], months_exposure=self.months_between_polls)
 
     def apply(self, population):
+
         # Do the delivery
         self.do_deliveries()
 
