@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import DateOffset, DAYS_IN_YEAR, Date, Simulation
+from tlo import DAYS_IN_YEAR, Date, DateOffset, Simulation
 from tlo.methods import (
     cervical_cancer,
     demography,
