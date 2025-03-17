@@ -473,9 +473,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin1_hpv'],
             Predictor('ce_hpv_cc_status').when('hpv', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -484,9 +484,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin2_cin1'],
             Predictor('ce_hpv_cc_status').when('cin1', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -495,9 +495,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin3_cin2'],
             Predictor('ce_hpv_cc_status').when('cin2', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -506,9 +506,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage1_cin3'],
             Predictor('ce_hpv_cc_status').when('cin3', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -517,9 +517,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2a_stage1'],
             Predictor('ce_hpv_cc_status').when('stage1', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -528,9 +528,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2b_stage2a'],
             Predictor('ce_hpv_cc_status').when('stage2a', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -539,9 +539,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage3_stage2b'],
             Predictor('ce_hpv_cc_status').when('stage2b', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -550,9 +550,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage4_stage3'],
             Predictor('ce_hpv_cc_status').when('stage3', 1.0).otherwise(0.0),
-          Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-          .when(False, 0.0)
-          .when(True, 1.0),
+#         Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+#         .when(False, 0.0)
+#         .when(True, 1.0),
             Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
@@ -1628,6 +1628,10 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
         ).sum()
 
+
+        n_w_1549_ever_screened = ((df['is_alive']) & (df['ce_ever_screened'] &
+                                                      (df['age_years'] > 15) & (df['age_years'] < 50)).sum())
+
         n_vaginal_bleeding_stage1 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage1')).sum()
         n_vaginal_bleeding_stage2a = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
@@ -1661,11 +1665,18 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_diagnosed_past_year = (df['ce_date_diagnosis'].between(date_1_year_ago, self.sim.date)).sum()
 
+        n_hivneg_diagnosed_past_year = \
+            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
+             (~df.hiv_inf)).sum()
+
+
         n_ever_diagnosed = ((df['is_alive']) & (df['ce_ever_diagnosed'])).sum()
 
         n_women_alive = ((df['is_alive']) & (df['sex'] == 'F')).sum()
         n_women_alive_1549 = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])
                               & (df['age_years'] < 50)).sum()
+
+        prop_women_screened = n_w_1549_ever_screened / n_women_alive_1549
 
         n_women_vaccinated = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])
                               & df['va_hpv']).sum()
@@ -1687,6 +1698,9 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_women_living_with_diagnosed_cc = \
             (df['ce_date_diagnosis'].notnull()).sum()
+
+        n_women_hivneg_living_with_diagnosed_cc = \
+            (df['ce_date_diagnosis'].notnull() & (~df['hv_inf'])).sum()
 
         n_women_living_with_diagnosed_cc_age_lt_30 = \
             (df['ce_date_diagnosis'].notnull() & (df['age_years'] < 30)).sum()
@@ -1720,10 +1734,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_vaginal_bleeding_stage3": n_vaginal_bleeding_stage3})
         out.update({"n_vaginal_bleeding_stage4": n_vaginal_bleeding_stage4})
         out.update({"n_diagnosed_past_year": n_diagnosed_past_year})
+        out.update({"n_hivneg_diagnosed_past_year": n_hivneg_diagnosed_past_year})
         out.update({"n_women_alive": n_women_alive})
         out.update({"rate_diagnosed_cc": rate_diagnosed_cc})
         out.update({"cc": cc})
         out.update({"n_women_living_with_diagnosed_cc": n_women_living_with_diagnosed_cc })
+        out.update({"n_women_hivneg_living_with_diagnosed_cc": n_women_hivneg_living_with_diagnosed_cc})
         out.update({"n_women_living_with_diagnosed_cc_age_lt_30": n_women_living_with_diagnosed_cc_age_lt_30})
         out.update({"n_women_living_with_diagnosed_cc_age_3050": n_women_living_with_diagnosed_cc_age_3050})
         out.update({"n_women_living_with_diagnosed_cc_age_gt_50": n_women_living_with_diagnosed_cc_age_gt_50})
@@ -1736,6 +1752,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_cryotherapy_past_year": n_cryotherapy_past_year})
         out.update({"n_via_past_year": n_via_past_year})
         out.update({"n_xpert_past_year": n_xpert_past_year})
+        out.update({"prop_women_screened": prop_women_screened})
 
         pop = len(df.is_alive)
         count_summary = {
