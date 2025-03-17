@@ -47,7 +47,7 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 12, 31)
+    end_date = Date(2016, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
@@ -85,9 +85,9 @@ def run_simulation(popsize,
                  )
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
-    sim.modules["Schisto"].parameters["scaleup_WASH"] = 0.0  # 1.0=True
+    sim.modules["Schisto"].parameters["scaleup_WASH"] = 1.0  # 1.0=True
     sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
-    sim.modules["Schisto"].parameters['mda_coverage'] = 0
+    sim.modules["Schisto"].parameters['mda_coverage'] = 0.8
     sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
     sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
 
@@ -106,8 +106,8 @@ sim, output = run_simulation(popsize=1_000,
                              use_really_simplified_births=False,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
-                             mda_execute=False,
-                             single_district=True)
+                             mda_execute=True,
+                             single_district=False)
 
 # %% Extract and process the `pd.DataFrame`s needed
 
@@ -144,10 +144,14 @@ def get_model_prevalence_by_district(spec: str, year: int):
 
 def get_expected_prevalence_by_district(species: str):
     """Get the prevalence of a particular species from the data (which is for year 2010/2011)."""
-    expected_district_prevalence = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx',
-                                                 sheet_name='OLDDistrict_Params_' + species.lower())
+    expected_district_prevalence = pd.read_csv(
+        resourcefilepath / f"ResourceFile_Schisto/InitialData_{species.lower()}.csv"
+    )
+
     expected_district_prevalence.set_index("District", inplace=True)
-    expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
+    expected_district_prevalence["mean_prevalence"] /= 100
+
+    expected_district_prevalence = expected_district_prevalence.loc[:, 'mean_prevalence'].to_dict()
     return expected_district_prevalence
 
 

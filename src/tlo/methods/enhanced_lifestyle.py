@@ -661,7 +661,9 @@ class LifestyleModels:
         :param df: The population dataframe """
         # get months since last poll
         now = self.module.sim.date
-        months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "M"))
+        # months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "M"))
+        # todo revert back if merging
+        months_since_last_poll = (now.year - self.date_last_run.year) * 12 + (now.month - self.date_last_run.month)
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
             if _model['update'] is not None:
