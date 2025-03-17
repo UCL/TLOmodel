@@ -785,7 +785,7 @@ class SchistoSpecies:
                             'low_intensity_threshold',
                             'high_intensity_threshold_PSAC',
                             'PZQ_efficacy',
-                            'baseline_prevalence',
+                            'baseline_mean_worm_burden',
                             ):
             parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
 
@@ -1129,9 +1129,9 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
 
-        # this returns positive value if current_prevalence lower than baseline_prevalence and
+        # this returns positive value if current_MWB lower than baseline_MWB and
         # increases baseline_risk value
-        # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
+        # if current_MWB > baseline_MWB value returned is 0 and no additional risk applied
         background_risk = max(0, global_params['baseline_risk'] * (
             1 + global_params['scaling_factor_baseline_risk'] * (current_mean_worm_burden - baseline_mean_worm_burden)))
 
