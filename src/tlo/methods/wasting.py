@@ -2231,6 +2231,9 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             high_bound_age_in_years = (1 + high_bound_mos) / 12.0
             total_per_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
                                                                     inclusive='left')).sum()
+            # add total pop size of the age group to the dataframe
+            pop_sizes_dict[f'total__{low_bound_mos}_{high_bound_mos}mo'] = total_per_agegrp_nmb
+
             if total_per_agegrp_nmb > 0:
                 # get those children who are wasted
                 mod_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
@@ -2244,15 +2247,17 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     mod_wasted_agegrp_nmb / total_per_agegrp_nmb
                 wasting_prev_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = \
                     sev_wasted_agegrp_nmb / total_per_agegrp_nmb
+                # add pop sizes to the dataframe
+                pop_sizes_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = mod_wasted_agegrp_nmb
+                pop_sizes_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = sev_wasted_agegrp_nmb
             else:
                 # add zero moderate and severe wasting prevalence to the dictionary
                 wasting_prev_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = 0
                 wasting_prev_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = 0
+                # add zero pop sizes to the dataframe
+                pop_sizes_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = 0
+                pop_sizes_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = 0
 
-            # add pop sizes to the dataframe
-            pop_sizes_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = mod_wasted_agegrp_nmb
-            pop_sizes_dict[f'sev__{low_bound_mos}_{high_bound_mos}mo'] = sev_wasted_agegrp_nmb
-            pop_sizes_dict[f'total__{low_bound_mos}_{high_bound_mos}mo'] = total_per_agegrp_nmb
         # log prevalence & pop size for children above 5y
         above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
         assert (len(under5s) + len(above5s)) == len(df.loc[df.is_alive]), \
