@@ -791,7 +791,7 @@ class SchistoSpecies:
                             'low_intensity_threshold',
                             'high_intensity_threshold_PSAC',
                             'PZQ_efficacy',
-                            'baseline_prevalence',
+                            'baseline_mean_worm_burden',
                             ):
             parameters[_param_name] = float(param_list[f'{_param_name}_{self.name}'])
 
