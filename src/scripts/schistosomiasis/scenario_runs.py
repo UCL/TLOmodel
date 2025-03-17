@@ -79,6 +79,7 @@ class SchistoScenarios(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         # Load helper class containing the definitions of the elements of all the scenarios
         scenario_definitions = ScenarioDefinitions()
+        # default is no WASH scale-up, MDA 0.7 every 12 months in SAC
 
         return {
             "Baseline":

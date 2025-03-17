@@ -85,7 +85,7 @@ def run_simulation(popsize,
                  )
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
-    sim.modules["Schisto"].parameters["scaleup_WASH"] = 1.0  # 1.0=True
+    sim.modules["Schisto"].parameters["scaleup_WASH"] = 0.0  # 1.0=True
     sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
     sim.modules["Schisto"].parameters['mda_coverage'] = 0.8
     sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
@@ -106,7 +106,7 @@ sim, output = run_simulation(popsize=1_000,
                              use_really_simplified_births=False,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
-                             mda_execute=True,
+                             mda_execute=False,
                              single_district=False)
 
 # %% Extract and process the `pd.DataFrame`s needed

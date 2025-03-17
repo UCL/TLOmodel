@@ -32,12 +32,6 @@ logger.setLevel(logging.INFO)
 _AGE_GROUPS = {'Infant': (0, 1), 'PSAC': (2, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
 
 
-# todo set PZQ avaibaility to 1.0
-# todo make sure baseline scenario and WASH only do not have MDA scheduled (default is 6 monthly!)
-# check how much PZQ is being given as treatment - shouldn't be huge amount
-# change HSB if needed to reduce referrals for dx and tx for schisto
-
-
 class Schisto(Module, GenericFirstAppointmentsMixin):
     """Schistosomiasis module.
     Two species of worm that cause Schistosomiasis are modelled independently. Worms are acquired by persons via the
@@ -240,8 +234,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # self.sim.modules['HealthSystem'].override_availability_of_consumables(
         #     {1735: 1.0})  # this is the donated PZQ not currently in consumables availability worksheet
         # this is the tx PZQ
-        # self.sim.modules['HealthSystem'].override_availability_of_consumables(
-        #     {286: 1.0})
+        self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            {286: 1.0})
 
         # Schedule MDA events
         if self.mda_execute:
