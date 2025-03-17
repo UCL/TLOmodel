@@ -1201,7 +1201,6 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
         # --------------------- estimate background risk of infection ---------------------
-        # todo this should use the mean worm burden
         current_mean_worm_burden = df[prop('aggregate_worm_burden')].mean()
 
         baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
