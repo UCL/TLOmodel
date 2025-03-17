@@ -70,8 +70,7 @@ def make_simulation_nohsi(seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=False,
-                                           service_availability=[],
-                                           cons_availability='all'),
+                                           service_availability=[]),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -164,15 +163,16 @@ def get_population_of_interest_30_to_50(sim):
     # Function to make filtering the simulation population for the population of interest easier
     # Population of interest for this function is 30 to 50 as it encompasses both HIV and non-HIV individuals eligible for screening
     population_of_interest = \
-        sim.population.props.is_alive & (sim.population.props.age_years >= 30) & (sim.population.props.age_years < 50) & (sim.population.props.sex == 'F')
+        sim.population.props.is_alive & (
+                sim.population.props.age_years.between(30, 50, inclusive='left') & (sim.population.props.sex == 'F'))
     return population_of_interest
 
 # %% Checks:
 def check_dtypes(sim):
     # check types of columns
-    pass
-# this assert was failing but I have checked all properties and they maintain the expected type
-#   assert (df.dtypes == orig.dtypes).all()
+    df = sim.population.props
+    orig = sim.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
 
 def check_configuration_of_population(sim):
     # get df for alive persons:
@@ -185,7 +185,7 @@ def check_configuration_of_population(sim):
     assert not df.loc[df.age_years < 15].ce_cc_ever.any()
 
     # check that diagnosis and treatment is never applied to someone who has never had cancer:
-    assert df.loc[df['ce_cc_ever'].eq(False), 'ce_date_palliative_care'].isna().all()
+    assert df.loc[~df.ce_cc_ever, 'ce_date_palliative_care'].isna().all()
 
     # check that treatment is never done for those with stage 4
     assert 0 == (df.ce_stage_at_which_treatment_given == 'stage4').sum()
@@ -210,11 +210,12 @@ def check_configuration_of_population(sim):
 
 
 # %% Tests:
-def test_initial_config_of_pop_high_prevalence(seed):
+def test_config_of_pop_high_prevalence(seed):
     """Tests of the way the population is configured: with high initial prevalence values """
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_high_init_prev(sim)
     sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=100))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -230,7 +231,7 @@ def test_initial_config_of_pop_zero_prevalence(seed):
     assert (df.loc[df.is_alive].ce_hpv_cc_status == 'none').all()
 
 
-def test_initial_config_of_pop_usual_prevalence(seed):
+def test_config_of_pop_usual_prevalence(seed):
     """Tests of the way the population is configured: with usual initial prevalence values"""
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim.make_initial_population(n=popsize)
