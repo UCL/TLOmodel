@@ -1061,7 +1061,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         ax[1].legend(loc='lower right')
         ax[1].set_xlabel('Year')
-        ax[1].set_ylim(0, 80)
+        ax[1].set_ylim(50, 80)
         ax[1].set_ylabel('Life Expectancy (Years)')
         ax[1].set_title('Panel B: Life Expectancy')
         fig.tight_layout()
