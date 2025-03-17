@@ -333,49 +333,57 @@ for c in avg_increase_rate_scenarios.index:
         )
 
 
-# prepare a random sample of strategies
-
-# the sort and difference method
-def generate_proportions(n_var):
-    random_numbers = np.random.uniform(0, 1, n_var-1)
-    sorted_numbers = np.sort(random_numbers)
-    sorted_numbers = np.concatenate(([0], sorted_numbers, [1]))
-    diffs = np.diff(sorted_numbers)
-
-    return diffs
-
-
-random_samples = np.array([generate_proportions(n_var=5) for _ in range(100)])
-extra_budget_fracs_sample = pd.DataFrame(columns=cadre_group, data=random_samples)
-assert (extra_budget_fracs_sample.sum(axis=1) == 1.0).all()
-
-# format the sample like "extra_budget_fracs"
-for c in other_group:
-    for i in extra_budget_fracs_sample.index:
-        extra_budget_fracs_sample.loc[i, c] = extra_budget_fracs_sample.loc[i, 'Other'] * (
-                staff_cost.loc[c, 'cost_frac'] / staff_cost.loc[staff_cost.index.isin(other_group), 'cost_frac'].sum()
-            )
-extra_budget_fracs_sample = extra_budget_fracs_sample.T
-extra_budget_fracs_sample = extra_budget_fracs_sample.add_prefix('rs_')
-assert (
-    abs(
-        extra_budget_fracs_sample.loc['Other', :]
-        - extra_budget_fracs_sample.loc[extra_budget_fracs_sample.index.isin(other_group), :].sum(axis=0)
-    ) < 1e-10
-).all()
-extra_budget_fracs_sample.drop(index='Other', inplace=True)
-assert (abs(extra_budget_fracs_sample.sum(axis=0) - 1.0) < 1e-10).all()
-
-# get the avg increase rate
-avg_increase_rate_sample = pd.DataFrame(
-    index=extra_budget_fracs_sample.index, columns=extra_budget_fracs_sample.columns
-)
-for c in avg_increase_rate_sample.index:
-    for s in avg_increase_rate_sample.columns:
-        avg_increase_rate_sample.loc[c, s] = func_of_avg_increase_rate(
-            cadre=c, scenario=s, r=R, sample=extra_budget_fracs_sample
-        )
-
+# # prepare a random sample of strategies
+#
+# # the sort and difference method
+# def generate_proportions(n_var):
+#     random_numbers = np.random.uniform(0, 1, n_var-1)
+#     sorted_numbers = np.sort(random_numbers)
+#     sorted_numbers = np.concatenate(([0], sorted_numbers, [1]))
+#     diffs = np.diff(sorted_numbers)
+#
+#     return diffs
+#
+#
+# random_samples = np.array([generate_proportions(n_var=5) for _ in range(100)])
+# # random_samples = np.random.dirichlet(alpha=[1, 1, 1, 1, 1], size=100)  # the dirichlet method
+# extra_budget_fracs_sample = pd.DataFrame(columns=cadre_group, data=random_samples)
+# assert (extra_budget_fracs_sample.sum(axis=1) == 1.0).all()
+#
+# # format the sample like "extra_budget_fracs"
+# for c in other_group:
+#     for i in extra_budget_fracs_sample.index:
+#         extra_budget_fracs_sample.loc[i, c] = extra_budget_fracs_sample.loc[i, 'Other'] * (
+#                 staff_cost.loc[c, 'cost_frac'] / staff_cost.loc[staff_cost.index.isin(other_group), 'cost_frac'].sum()
+#             )
+# extra_budget_fracs_sample = extra_budget_fracs_sample.T
+# extra_budget_fracs_sample = extra_budget_fracs_sample.add_prefix('rs_')
+# assert (
+#     abs(
+#         extra_budget_fracs_sample.loc['Other', :]
+#         - extra_budget_fracs_sample.loc[extra_budget_fracs_sample.index.isin(other_group), :].sum(axis=0)
+#     ) < 1e-10
+# ).all()
+# extra_budget_fracs_sample.drop(index='Other', inplace=True)
+# assert (abs(extra_budget_fracs_sample.sum(axis=0) - 1.0) < 1e-10).all()
+#
+# # get the avg increase rate
+# avg_increase_rate_sample = pd.DataFrame(
+#     index=extra_budget_fracs_sample.index, columns=extra_budget_fracs_sample.columns
+# )
+# for c in avg_increase_rate_sample.index:
+#     for s in avg_increase_rate_sample.columns:
+#         avg_increase_rate_sample.loc[c, s] = func_of_avg_increase_rate(
+#             cadre=c, scenario=s, r=R, sample=extra_budget_fracs_sample
+#         )
+#
+# # save samples
+# extra_budget_fracs_sample.to_csv(
+#     resourcefilepath/'healthsystem'/'human_resources'/'scaling_capabilities'/'extra_budget_proportions_sample.csv',
+#     index=True)
+# avg_increase_rate_sample.to_csv(
+#     resourcefilepath/'healthsystem'/'human_resources'/'scaling_capabilities'/'ave_increase_rates_sample.csv',
+#     index=True)
 
 # prepare 2024 cost info for Other cadre and Total
 extra_rows = pd.DataFrame(columns=staff_cost.columns, index=['Other', 'Total'])
