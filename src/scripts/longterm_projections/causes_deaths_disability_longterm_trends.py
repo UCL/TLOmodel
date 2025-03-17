@@ -23,7 +23,7 @@ spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
-scenario_colours = ['#0081a7', '#00afb9', '#fdfcdc', '#fed9b7', '#f07167']
+scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167']
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
@@ -391,7 +391,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('Total Deaths')
     axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].grid(axis='y')
 
     # Panel B: Total DALYs
     axes[1].bar(dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
@@ -399,7 +398,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('Total DALYs')
     axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].grid(axis='y')
     fig.tight_layout()
     fig.savefig(output_folder / "total_deaths_and_dalys_all_draws.png")
     plt.close(fig)
