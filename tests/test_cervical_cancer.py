@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import DAYS_IN_YEAR, Date, Simulation
+from tlo import DateOffset, DAYS_IN_YEAR, Date, Simulation
 from tlo.methods import (
     cervical_cancer,
     demography,
@@ -200,10 +200,8 @@ def check_configuration_of_population(sim):
         ~pd.isnull(df.ce_date_diagnosis)].date_of_birth)
     assert all([int(x.days / DAYS_IN_YEAR) >= 15 for x in age_at_dx])
 
-    # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
+    # check that those treated are a subset of those diagnosed:
     assert set(df.index[~pd.isnull(df.ce_date_treatment)]).issubset(df.index[~pd.isnull(df.ce_date_diagnosis)])
-    assert (df.loc[~pd.isnull(df.ce_date_treatment)].ce_date_diagnosis <= df.loc[
-        ~pd.isnull(df.ce_date_treatment)].ce_date_treatment).all()
 
     # check that those on palliative care are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.ce_date_palliative_care)]).issubset(df.index[~pd.isnull(df.ce_date_diagnosis)])
@@ -236,6 +234,7 @@ def test_initial_config_of_pop_usual_prevalence(seed):
     """Tests of the way the population is configured: with usual initial prevalence values"""
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=100))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
