@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Dict
 
 from scripts.healthsystem.impact_of_hcw_capabilities_expansion.prepare_minute_salary_and_extra_budget_frac_data import (
-    extra_budget_fracs_sample,
+    extra_budget_fracs,
 )
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
@@ -35,7 +35,7 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -67,8 +67,8 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         self.YEAR_OF_HRH_EXPANSION = 2025
         # The start year to expand HRH by cadre given the extra budget, which is after the historical HRH scaling
 
-        self.scenarios = extra_budget_fracs_sample
-        # Run the sample
+        self.scenarios = extra_budget_fracs['s_*'].to_frame()
+        # Run 'optimal' scenario for main analysis
 
         # Baseline settings for change
         self.cons_availability = ['all', 'default']
