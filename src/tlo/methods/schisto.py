@@ -733,7 +733,7 @@ class SchistoSpecies:
             'PZQ_efficacy': Parameter(Types.REAL,
                                       'Efficacy of praziquantel in reducing worm burden'),
             'baseline_mean_worm_burden': Parameter(Types.REAL,
-                                             'Baseline prevalence of species across all districts in 2010'),
+                                             'Baseline mean worm burden of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
             'prop_susceptible': Parameter(Types.DATA_FRAME,
