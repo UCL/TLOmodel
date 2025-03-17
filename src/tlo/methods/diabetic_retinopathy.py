@@ -42,6 +42,10 @@ class DiabeticRetinopathy(Module):
         "init_prob_late_dr": Parameter(Types.REAL,
                                        "Initial probability of people with diabetic retinopathy in the late stage"),
         "p_medication": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
+        "init_prob_ever_diet_mgmt_if_diagnosed": Parameter(
+            Types.REAL, "Initial probability of ever having had a diet management session if ever diagnosed "
+                        "with diabetic retinopathy"
+        ),
     }
 
     PROPERTIES = {
@@ -79,7 +83,7 @@ class DiabeticRetinopathy(Module):
             "whether blindness has been investigated, and diabetic retinopathy missed"
         ),
         "dr_ever_diet_mgmt": Property(Types.BOOL,
-                                      "whether this person has ever had a diabetic retinopathy management"
+                                      "whether this person has ever had a diabetic retinopathy diet management"
                                       "session in the diabetic clinic"),
 
     }
@@ -102,6 +106,7 @@ class DiabeticRetinopathy(Module):
         self.parameters['init_prob_any_dr'] = 0.36
         self.parameters['init_prob_late_dr'] = 0.09
         self.parameters['p_medication'] = 0.8
+        self.parameters['init_prob_ever_diet_mgmt_if_diagnosed'] = 0.1
 
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='blindness_partial'),
@@ -140,6 +145,7 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_date_treatment"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_blindness_investigated"] = False
+        df.loc[list(alive_diabetes_idx), "dr_ever_diet_mgmt"] = False
 
     def initialise_simulation(self, sim: Simulation) -> None:
         """ This is where you should include all things you want to be happening during simulation
@@ -165,6 +171,7 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_blindness_investigated'] = False
+        self.sim.population.props.at[child_id, 'dr_ever_diet_mgmt'] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -186,6 +193,11 @@ class DiabeticRetinopathy(Module):
         self.lm['onset_fast_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             intercept=self.parameters['prob_fast_dr']
+        )
+
+        self.lm['ever_diet_mgmt_initialisation'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            intercept=self.parameters['init_prob_ever_diet_mgmt_if_diagnosed']
         )
 
     def look_up_consumable_item_codes(self):
@@ -247,7 +259,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 disease_module=self.module,
             )
 
-    def do_at_generic_first_appt_emergency(
+    def do_at_generic_first_appt(
         self,
         person_id: int,
         symptoms: List[str],
@@ -274,9 +286,9 @@ class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "DiabeticRetinopathy_Investigation"
+        self.TREATMENT_ID = "Dr_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '2'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -338,7 +350,7 @@ class HSI_Dr_DietManagement(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'Dr_DietManagement'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = '2'
         self.num_of_sessions_had = 0  # A counter for the number of diet management sessions had
 
     def apply(self, person_id, squeeze_factor):
@@ -372,7 +384,7 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dr_Treatment_Initiation'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '3'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -452,9 +464,21 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_now = self.sim.date
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
+        n_any_dr = (df.is_alive & ((df.dr_status == "late") | (df.dr_status == "early"))).sum()
+        n_ever_diet_mgmt = (
+                df.dr_ever_diet_mgmt & df.is_alive & ((df.dr_status == "late") | (df.dr_status == "early"))).sum()
+
+        def zero_out_nan(x):
+            return x if not np.isnan(x) else 0.0
+
+        def safe_divide(x, y):
+            return float(x / y) if y > 0.0 else 0.0
+
+
         out.update({
             'diagnosed_since_last_log': df.dr_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.dr_date_treatment.between(date_lastlog, date_now).sum(),
+            'prop_ever_diet_mgmt_if_any_dr': zero_out_nan(safe_divide(n_ever_diet_mgmt, n_any_dr)),
         })
 
         logger.info(key='summary_stats', data=out)
