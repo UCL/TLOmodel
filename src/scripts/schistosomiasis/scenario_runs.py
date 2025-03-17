@@ -13,7 +13,7 @@ or execute a single run:
 tlo scenario-run src/scripts/schistosomiasis/scenario_runs.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit --more-memory src/scripts/schistosomiasis/scenario_runs.py
+tlo batch-submit src/scripts/schistosomiasis/scenario_runs.py
 
 latest runs:
 Job ID: schisto_scenarios-2024-12-04T124318Z
@@ -72,7 +72,8 @@ class SchistoScenarios(BaseScenario):
                          module_kwargs={
                              "Schisto": {"single_district": False},
                              "Demography": {"equal_allocation_by_district": True},
-                             "Alri": {"log_indivdual": None}, }
+                             "Alri": {"log_indivdual": None},
+                         }
                          )
 
     def draw_parameters(self, draw_number, rng):
