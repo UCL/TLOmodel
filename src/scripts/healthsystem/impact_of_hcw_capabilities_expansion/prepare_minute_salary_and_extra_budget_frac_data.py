@@ -203,6 +203,12 @@ for s in total_cost.columns[1:]:
 # get the staff increase rate: 2034 vs 2025
 hr_increase_rates_2034 = pd.DataFrame(integrated_scale_up_factor - 1.0)
 
+# read in the random samples of extra budget allocation
+extra_budget_fracs_sample = pd.read_csv(
+    resourcefilepath/'healthsystem'/'human_resources'/'scaling_capabilities'/'extra_budget_proportions_sample.csv'
+)
+extra_budget_fracs_sample.set_index(extra_budget_fracs_sample.columns[0], inplace=True)
+
 # Checked that for s_2, the integrated scale up factors of C/N/P cadres are comparable with shortage estimates from \
 # She et al 2024: https://human-resources-health.biomedcentral.com/articles/10.1186/s12960-024-00949-2
 # C: 2.21, N: 1.44, P: 4.14 vs C: 2.83, N: 1.57, P:6.37
