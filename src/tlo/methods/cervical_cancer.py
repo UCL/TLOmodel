@@ -328,6 +328,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.DATE,
             "date of cryotherapy for CIN"
         ),
+        "ce_date_via": Property(
+            Types.DATE,
+            "date of VIA screening"
+        ),
+        "ce_date_xpert": Property(
+            Types.DATE,
+            "date of XPERT screening"
+        ),
         "ce_current_cc_diagnosed": Property(
             Types.BOOL,
             "currently has diagnosed cervical cancer (which until now has not been cured)"
@@ -343,6 +351,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         "ce_biopsy": Property(
             Types.BOOL,
             "ce biopsy done"
+        ),
+        "ce_hiv_unsuppressed": Property(
+            Types.BOOL,
+            "ce HIV unsupressed"
         )
     }
 
@@ -677,6 +689,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_via_cin_ever_detected"] = False
         df.at[child_id, "ce_date_thermoabl"] = pd.NaT
         df.loc[child_id, "ce_date_cryotherapy"] = pd.NaT
+        df.loc[child_id, "ce_date_via"] = pd.NaT
+        df.loc[child_id, "ce_date_xpert"] = pd.NaT
         df.at[child_id, "ce_current_cc_diagnosed"] = False
         df.at[child_id, "ce_selected_for_via_this_month"] = False
         df.at[child_id, "ce_selected_for_xpert_this_month"] = False
@@ -685,6 +699,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_ever_diagnosed"] = False
         df.at[child_id, "ce_cured_date_cc"] = pd.NaT
         df.at[child_id, "ce_date_last_screened"] = pd.NaT
+        df.at[child_id, "ce_hiv_unsuppressed"] = False
 
     def report_daly_values(self):
 
