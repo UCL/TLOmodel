@@ -23,12 +23,11 @@ class ScenarioDefinitions:
                     "mode_appt_constraints": 1,  # <-- Mode 1 prior to change to preserve calibration
                     "cons_availability": "default",
                     "beds_availability": "all",
-                    "ignore_priority": False,
                     "use_funded_or_actual_staffing": "actual"
                 },
-                "Schisto": {"single_district": False},
-                "Demography": {"equal_allocation_by_district": True},
-                "Alri": {"log_indivdual": None},
+                # "Schisto": {"single_district": False},
+                # "Demography": {"equal_allocation_by_district": True},
+                # "Alri": {"log_indivdual": None},
             },
         )
 
