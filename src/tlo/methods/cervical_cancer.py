@@ -755,7 +755,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         :param hsi_event: HSI Event (required to pass in order to register equipment)
         :param person_id: person of interest
         """
-        module = self.sim.modules['CervicalCancer']
         year = self.sim.date.year
         p = self.parameters
         hs = self.sim.modules["HealthSystem"]
