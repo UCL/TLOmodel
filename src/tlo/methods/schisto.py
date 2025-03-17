@@ -732,7 +732,7 @@ class SchistoSpecies:
                                                        'Worm burden threshold for high intensity infection in PSAC'),
             'PZQ_efficacy': Parameter(Types.REAL,
                                       'Efficacy of praziquantel in reducing worm burden'),
-            'baseline_prevalence': Parameter(Types.REAL,
+            'baseline_mean_worm_burden': Parameter(Types.REAL,
                                              'Baseline prevalence of species across all districts in 2010'),
             'mean_worm_burden2010': Parameter(Types.DATA_FRAME,
                                               'Mean worm burden per infected person per district in 2010'),
@@ -1201,18 +1201,16 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         reservoir = age_worm_burden.groupby(['district_of_residence'], observed=False).sum()
 
         # --------------------- estimate background risk of infection ---------------------
+        # todo this should use the mean worm burden
+        current_mean_worm_burden = df[prop('aggregate_worm_burden')].mean()
 
-        current_prevalence = (
-            (df['is_alive'] & (df[prop('infection_status')] != 'Non-infected')).sum()
-            / df['is_alive'].sum()
-        )
-        baseline_prevalence = params['baseline_prevalence']  # baseline prevalence for species in 2010
+        baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
 
         # this returns positive value if current_prevalence lower than baseline_prevalence and
         # increases baseline_risk value
         # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
         background_risk = max(0, global_params['baseline_risk'] * (1 + global_params['scaling_factor_baseline_risk'] *
-                                                                   (current_prevalence - baseline_prevalence)))
+                                                                   (current_mean_worm_burden - baseline_mean_worm_burden)))
 
         reservoir += background_risk  # add the background reservoir to every district
 
