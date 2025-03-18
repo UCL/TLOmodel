@@ -86,7 +86,7 @@ log_df = parse_log_file(sim.log_filepath)
 log_df_plot = log_df["tlo.methods.cervical_cancer"]["all"]
 
 # Create output csv file to support plot generation from csv file
-output_csv_file = Path("outputs/output7_data.csv")
+output_csv_file = Path("outputs/output_graphing_data.csv")
 if output_csv_file.exists():
     output_csv_file.unlink()
 else:
