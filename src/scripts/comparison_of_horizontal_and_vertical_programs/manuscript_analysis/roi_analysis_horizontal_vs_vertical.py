@@ -123,7 +123,9 @@ chosen_cet = 191.4304166 # This is based on the estimate from Lomas et al (2023)
 # based on Ochalek et al (2018) - the paper provided the value $61 in 2016 USD terms, this value is $77.4 in 2023 USD terms
 chosen_value_of_statistical_life = 834 # This is based on Munthali et al (2020) National Planning Commission Report on
 #"Medium and long-term impacts of a moderate lockdown (social restrictions) in response to the COVID-19 pandemic in Malawi"
-lomas_consumption_value_of_health = 257.472 # this value is for 2025 (converted to 2023 USD)
+chosen_value_of_statistical_life_upper = 2427.31 # upper bound estimated using Robinson et al method (income elasticity of VSL = 1)
+chosen_value_of_statistical_life_lower = 425.96 # lower bound estimated using Robinson et al method (income elasticity of VSL = 1.5)
+# lomas_consumption_value_of_health = 257.472 # this value is for 2025 (converted to 2023 USD)
 # and assumed income elasticity of consumption value of health to be 1.
 
 # Discount rate
@@ -840,6 +842,35 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draw_colors = draw_colors,
                    show_title_and_legend = False)
 
+
+# ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS - UPPER BOUND
+draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_upper),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [8, 36, 44],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'UPPER',
+                    _metric = chosen_metric,
+                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                    _projected_health_spending = projected_health_spending_baseline,
+                   _draw_colors = draw_colors,
+                   show_title_and_legend = True)
+
+# ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS -  LOWER BOUND
+draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
+generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_lower),
+                   _incremental_input_cost=incremental_scenario_cost,
+                   _draws = [8, 36, 44],
+                   _scenario_dict = htm_scenarios,
+                   _outputfilepath=roi_outputs_folder,
+                   _value_of_life_suffix = 'LOWER',
+                    _metric = chosen_metric,
+                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                    _projected_health_spending = projected_health_spending_baseline,
+                   _draw_colors = draw_colors,
+                   show_title_and_legend = True)
+
 # HIV scenarios with and without HSS
 draw_colors = {9: '#fdae61', 17:'#66c2a5'}
 generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
@@ -878,30 +909,34 @@ generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_m
                    _draw_colors = draw_colors)
 
 # ROI estimates in a table
-roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = list(all_manuscript_scenarios.keys()),
-                   _scenario_dict = all_manuscript_scenarios,
-                   _metric = 'median')
-roi_table.to_csv(roi_outputs_folder / 'tabulated_roi.csv', index = False)
+roi_table_label = ['MAIN', 'LOWER', 'UPPER']
+i = 0
+for vsly in [chosen_value_of_statistical_life, chosen_value_of_statistical_life_lower, chosen_value_of_statistical_life_upper]:
+    roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
+                       _incremental_input_cost=incremental_scenario_cost,
+                       _draws = list(all_manuscript_scenarios.keys()),
+                       _scenario_dict = all_manuscript_scenarios,
+                       _metric = 'median')
+    roi_table.to_csv(roi_outputs_folder / f'tabulated_roi_{roi_table_label[i]}.csv', index = False)
 
-# Extract ROIs into a table for manuscript
-roi_table['scenario'] = roi_table['draw'].map(all_manuscript_scenarios)
-# Pivot the DataFrame to make 'stat' values columns
-roi_table = roi_table.drop_duplicates(['scenario', 'implementation_cost', 'stat', 'roi'])
-roi_pivot_table = roi_table.pivot(index=['draw', 'scenario', 'implementation_cost'], columns='stat', values='roi')
-roi_pivot_table = roi_pivot_table.sort_index(level='draw')
-# Format the values as "median [lower - upper]"
-roi_pivot_table['ROI at VSLY = $834'] = roi_pivot_table.apply(
-    lambda row: f"{row['median']:.2f} [{row['lower']:.2f} - {row['upper']:.2f}]"
-    if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
-    axis=1
-)
-# Reset index to move 'implementation_cost' to columns and reshape for the manuscript
-roi_pivot_table = roi_pivot_table['ROI at VSLY = $834'].unstack(level='implementation_cost')
-roi_pivot_table.columns.name = None  # Remove multi-index column name
-roi_pivot_table.index.name = 'Scenario'
-roi_pivot_table.reset_index().drop(columns = 'draw').to_csv(roi_outputs_folder / f'tabulated_roi_for_manscript.csv', index = False)
+    # Extract ROIs into a table for manuscript
+    roi_table['scenario'] = roi_table['draw'].map(all_manuscript_scenarios)
+    # Pivot the DataFrame to make 'stat' values columns
+    roi_table = roi_table.drop_duplicates(['scenario', 'implementation_cost', 'stat', 'roi'])
+    roi_pivot_table = roi_table.pivot(index=['draw', 'scenario', 'implementation_cost'], columns='stat', values='roi')
+    roi_pivot_table = roi_pivot_table.sort_index(level='draw')
+    # Format the values as "median [lower - upper]"
+    roi_pivot_table['ROI at VSLY = $834'] = roi_pivot_table.apply(
+        lambda row: f"{row['median']:.2f} [{row['lower']:.2f} - {row['upper']:.2f}]"
+        if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
+        axis=1
+    )
+    # Reset index to move 'implementation_cost' to columns and reshape for the manuscript
+    roi_pivot_table = roi_pivot_table['ROI at VSLY = $834'].unstack(level='implementation_cost')
+    roi_pivot_table.columns.name = None  # Remove multi-index column name
+    roi_pivot_table.index.name = 'Scenario'
+    roi_pivot_table.reset_index().drop(columns = 'draw').to_csv(roi_outputs_folder / f'tabulated_roi_for_manscript_{roi_table_label[i]}.csv', index = False)
+    i += 1
 
 # 5. Plot Maximum ability-to-pay at CET
 # ----------------------------------------------------
