@@ -84,7 +84,6 @@ class WastingAnalysis(BaseScenario):
     #     return {}
 
     def draw_parameters(self, draw_number, rng):
-        # Setting up just one combination to be used
         base_death_rate_untreated_sam__draws = [0.1, 0.05, 0.03, 0.01]
         mod_wast_incidence__coef = [1.0, 0.6, 0.4, 0.2]
         base_overall_mod_wast_inc_rate = 0.019
