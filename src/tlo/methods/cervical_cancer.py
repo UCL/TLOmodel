@@ -351,10 +351,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         "ce_biopsy": Property(
             Types.BOOL,
             "ce biopsy done"
-        ),
-        "ce_hiv_unsuppressed": Property(
-            Types.BOOL,
-            "ce HIV unsupressed"
         )
     }
 
@@ -414,7 +410,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
         df.loc[df.is_alive, "ce_cured_date_cc"] = pd.NaT
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
-        df['ce_hiv_unsuppressed'] = ((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not')) & (df['hv_inf'])
 
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
         women_over_15_nhiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & ~df["hv_inf"]]
@@ -476,7 +471,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             .when('>50', p['rr_hpv_age50plus']),
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -484,7 +486,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin1_hpv'],
             Predictor('ce_hpv_cc_status').when('hpv', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -492,7 +501,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin2_cin1'],
             Predictor('ce_hpv_cc_status').when('cin1', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -500,7 +516,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin3_cin2'],
             Predictor('ce_hpv_cc_status').when('cin2', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -508,7 +531,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage1_cin3'],
             Predictor('ce_hpv_cc_status').when('cin3', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -516,7 +546,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2a_stage1'],
             Predictor('ce_hpv_cc_status').when('stage1', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -524,7 +561,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2b_stage2a'],
             Predictor('ce_hpv_cc_status').when('stage2a', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -532,7 +576,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage3_stage2b'],
             Predictor('ce_hpv_cc_status').when('stage2b', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -540,7 +591,14 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage4_stage3'],
             Predictor('ce_hpv_cc_status').when('stage3', 1.0).otherwise(0.0),
-            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "on_not_vl_suppressed")',
+                (p['rr_progress_cc_hiv'])),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art == "not")',
+                (p['rr_progress_cc_hiv'])),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -675,7 +733,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_ever_diagnosed"] = False
         df.at[child_id, "ce_cured_date_cc"] = pd.NaT
         df.at[child_id, "ce_date_last_screened"] = pd.NaT
-        df.at[child_id, "ce_hiv_unsuppressed"] = False
 
     def report_daly_values(self):
 
@@ -798,8 +855,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         p = m.parameters
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -----------------------------------
-
-        df['ce_hiv_unsuppressed'] = ((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not')) & (df['hv_inf'])
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
@@ -1660,7 +1715,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                               & df['va_hpv']).sum()
 
         n_women_hiv_unsuppressed = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > p['min_age_hpv'])
-                                    & df['ce_hiv_unsuppressed']).sum()
+                                    & (((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not'))
+                                       & (df['hv_inf']))).sum()
 
         n_women_hivneg = ((df['is_alive']) &
                           (df['sex'] == 'F') &
