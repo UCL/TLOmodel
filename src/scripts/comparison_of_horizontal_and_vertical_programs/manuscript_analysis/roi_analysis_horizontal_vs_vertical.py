@@ -721,6 +721,47 @@ projected_health_spending = estimate_projected_health_spending(resourcefilepath,
                                  _metric = chosen_metric)
 projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0][chosen_metric][0]
 
+# Extract projected health spending table for appendix
+def get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing):
+    def get_total_population_by_year(_df):
+        years_needed = _relevant_period_for_costing  # Malaria scale-up period years
+        _df['year'] = pd.to_datetime(_df['date']).dt.year
+
+        # Validate that all necessary years are in the DataFrame
+        if not set(years_needed).issubset(_df['year'].unique()):
+            raise ValueError("Some years are not recorded in the dataset.")
+
+        # Filter for relevant years and return the total population as a Series
+        return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+            'total']
+
+    # Get total population by year
+    total_population_by_year = extract_results(
+        results_folder,
+        module='tlo.methods.demography',
+        key='population',
+        custom_generate_series=get_total_population_by_year,
+        do_scaling=True
+    ).unstack().reset_index().rename(columns = {0: 'population'})
+    total_population_summary = total_population_by_year[total_population_by_year.draw == 0].groupby("year")["population"].agg(
+        population="median"
+    ).reset_index()
+    workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                      sheet_name=None)
+    health_spending_per_capita = workbook_cost["health_spending_projections"]
+    # Assign the fourth row as column names
+    health_spending_per_capita.columns = health_spending_per_capita.iloc[1]
+    health_spending_per_capita = health_spending_per_capita.iloc[2:].reset_index(drop=True)
+    health_spending_per_capita = health_spending_per_capita[health_spending_per_capita.year.isin(list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1)))]
+    health_spending_per_capita = health_spending_per_capita[['year', 'total_mean']]
+    health_spending_per_capita_table = health_spending_per_capita.merge(total_population_summary, on = "year", how = "left", validate = "1:1")
+    health_spending_per_capita_table["total_health_spending"] = health_spending_per_capita_table['total_mean'] * health_spending_per_capita_table['population']
+    return health_spending_per_capita_table
+
+health_spending_per_capita_table = get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing = relevant_period_for_costing)
+total_health_spend_discounted =
+health_spending_per_capita_table.to_csv(figurespath / 'projected_health_spending.csv', index = False)
+
 # ROI at 0 implementation costs
 benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life) - incremental_scenario_cost
 roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
