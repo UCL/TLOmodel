@@ -3344,7 +3344,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
-        if 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+        if 'Tomography' in self.EXPECTED_APPT_FOOTPRINT:
             self.ACCEPTED_FACILITY_LEVEL = '3'
             self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
 
