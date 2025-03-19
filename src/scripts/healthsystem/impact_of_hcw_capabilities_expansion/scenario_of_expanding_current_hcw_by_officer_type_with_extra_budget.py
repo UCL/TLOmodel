@@ -31,8 +31,8 @@ class HRHExpansionByCadreWithExtraBudget(BaseScenario):
         super().__init__()
         self.seed = 0  # change seed to 1 if to do another 5 runs per draw
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2010, 1, 5)
-        self.pop_size = 100
+        self.end_date = Date(2035, 1, 1)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
