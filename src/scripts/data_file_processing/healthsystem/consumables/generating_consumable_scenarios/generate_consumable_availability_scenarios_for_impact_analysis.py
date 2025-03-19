@@ -872,7 +872,7 @@ plt.savefig(figurespath / 'scenarios_average_availability.png', dpi=300, bbox_in
 
 
 # Create the directory if it doesn't exist
-roi_plots_path = './outputs/horizontal_v_vertical/roi/'
+roi_plots_path = outputfilepath / 'horizontal_v_vertical/roi/'
 if not os.path.exists(roi_plots_path):
     os.makedirs(roi_plots_path)
 
@@ -898,7 +898,9 @@ for ax, level in zip(axes, chosen_levels):
     heatmap_data.loc['Average'] = aggregate_col
 
     # Generate the heatmap on the current subplot
-    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', ax=ax, cbar=(ax == axes[-1]), cbar_ax=(cbar_ax if ax == axes[-1] else None))
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', vmin = 0, vmax = 1,
+                ax=ax, cbar=(ax == axes[-1]), cbar_ax=(cbar_ax if ax == axes[-1] else None),
+                annot_kws={"size": 14})
 
     # Set labels
     ax.set_title(f'Level {level}')
