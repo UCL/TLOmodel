@@ -1593,11 +1593,7 @@ def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
 
             # For non-negative total_costs, calculate the metric and clip at 0
             non_negative_mask = total_costs >= 0
-            run_values[non_negative_mask] = np.clip(
-                (row[run] - total_costs[non_negative_mask]) / total_costs[non_negative_mask],
-                0,
-                None
-            )
+            run_values[non_negative_mask] = (row[run] - total_costs[non_negative_mask]) / total_costs[non_negative_mask]
 
             # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
             run_values = run_values.values # remove index and convert to array
