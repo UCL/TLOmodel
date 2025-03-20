@@ -338,11 +338,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         print(f"\n{self.person_of_interest_id=}")
         print("###########")
-        print(f"initial wasting: {df.loc[self.person_of_interest_id, 'un_WHZ_category']}")
-        print(f"initial MUAC: {df.loc[self.person_of_interest_id, 'un_am_MUAC_category']}")
-        print(f"initial oedema: {df.loc[self.person_of_interest_id, 'un_am_nutritional_oedema']}")
-        print(f"initial complicaions: {df.loc[self.person_of_interest_id, 'un_sam_with_complications']}")
-        print(f"initial am status: {df.loc[self.person_of_interest_id, 'un_clinical_acute_malnutrition']}")
+        if self.person_of_interest_id in df.index:
+            print(f"initial wasting: {df.loc[self.person_of_interest_id, 'un_WHZ_category']}")
+            print(f"initial MUAC: {df.loc[self.person_of_interest_id, 'un_am_MUAC_category']}")
+            print(f"initial oedema: {df.loc[self.person_of_interest_id, 'un_am_nutritional_oedema']}")
+            print(f"initial complicaions: {df.loc[self.person_of_interest_id, 'un_sam_with_complications']}")
+            print(f"initial am status: {df.loc[self.person_of_interest_id, 'un_clinical_acute_malnutrition']}")
+        else:
+            print("person_of_interest not born yet")
         print("--------------------------------------")
 
     def initialise_simulation(self, sim):
@@ -389,6 +392,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             hsi_event=HSI_Wasting_GrowthMonitoring(module=self, person_id=child_id),
             priority=2, topen=self.sim.date + pd.DateOffset(days=1)
         )
+
+        if child_id == self.person_of_interest_id:
+            print(f"person_of_interest born {self.sim.date=}")
+            print("-------")
 
     def muac_cutoff_by_WHZ(self, idx, whz):
         """
