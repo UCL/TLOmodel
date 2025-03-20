@@ -336,21 +336,21 @@ def test_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
     sim = Simulation(start_date=start_date, seed=seed)
     register_modules(sim)
     sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     # set risk of comps very high and force care seeking
-    params = sim.modules['NewbornOutcomes'].parameters
+    params = sim.modules['NewbornOutcomes'].current_parameters
     params['prob_encephalopathy'] = 1.0
-    params['prob_enceph_severity'] = [[0, 0, 1], [0, 0, 1]]
+    params['prob_enceph_severity'] = [0, 0, 1]
     params['treatment_effect_resuscitation'] = 0.0
     params['cfr_enceph'] = 1.0
     params['prob_pnc_check_newborn'] = 0.0
 
-    la_params = sim.modules['Labour'].parameters
+    la_params = sim.modules['Labour'].current_parameters
     la_params['prob_hcw_avail_neo_resus'] = 1.0
-    la_params['mean_hcw_competence_hc'] = [[1.0, 1.0], [1.0, 1.0]]
-    la_params['mean_hcw_competence_hp'] = [[1.0, 1.0], [1.0, 1.0]]
+    la_params['mean_hcw_competence_hc'] = 1.0
+    la_params['mean_hcw_competence_hp'] = 1.0
 
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props
     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
