@@ -406,11 +406,11 @@ sex_ratio = sex_ratio.melt(id_vars=['Variant'], var_name='Period', value_name='M
 # copy the medium variant sex ratio project for the low and high variants (in order to merge with the total births)
 copy_high = sex_ratio.loc[sex_ratio['Variant'] == 'Medium variant', ['Period', 'M_to_F_Sex_Ratio']].copy()
 copy_high['Variant'] = 'High variant'
-sex_ratio = sex_ratio.append(copy_high, sort=False)
-
+sex_ratio = pd.concat([sex_ratio, copy_high], ignore_index=True)
 copy_low = sex_ratio.loc[sex_ratio['Variant'] == 'Medium variant', ['Period', 'M_to_F_Sex_Ratio']].copy()
 copy_low['Variant'] = 'Low variant'
-sex_ratio = sex_ratio.append(copy_low, sort=False)
+# sex_ratio = sex_ratio.append(copy_low, sort=False)
+sex_ratio = pd.concat([sex_ratio, copy_low], ignore_index=True)
 
 # Combine these together
 births = tot_births.merge(sex_ratio, on=['Variant', 'Period'], validate='1:1')
@@ -418,14 +418,10 @@ births = tot_births.merge(sex_ratio, on=['Variant', 'Period'], validate='1:1')
 
 def reformat_date_period_for_wpp(wpp_import):
     # Relabel the calendar periods to be the inclusive year range (2010-2014 instead of 2010-2015)
-    wpp_import['t_lo'], wpp_import['t_hi'] = wpp_import['Period'].str.split('-', 1).str
-    wpp_import['t_hi'] = wpp_import['t_hi'].astype(int) - 1
-    wpp_import['Period'] = wpp_import['t_lo'].astype(str) + '-' + wpp_import['t_hi'].astype(str)
-    wpp_import.drop(columns=['t_lo', 't_hi'], inplace=True)
-
+    wpp_import['Period'] = wpp_import['Period'].str.replace(r'(\d+)-(\d+)',
+                                                            lambda m: f"{m.group(1)}-{int(m.group(2)) - 1}", regex=True)
 
 reformat_date_period_for_wpp(births)
-
 births.to_csv(path_for_saved_files / 'ResourceFile_TotalBirths_WPP.csv', index=False)
 
 # Give Fraction of births that are male for each year for easy importing to demography module
@@ -434,7 +430,7 @@ frac_birth_male['frac_births_male'] = frac_birth_male['M_to_F_Sex_Ratio'] / (1 +
 frac_birth_male.drop(frac_birth_male.index[frac_birth_male['Variant'] == 'Low variant'], axis=0, inplace=True)
 frac_birth_male.drop(frac_birth_male.index[frac_birth_male['Variant'] == 'High variant'], axis=0, inplace=True)
 frac_birth_male.drop(['Variant', 'Total_Births', 'M_to_F_Sex_Ratio'], axis=1, inplace=True)
-frac_birth_male['low_year'], frac_birth_male['high_year'] = frac_birth_male['Period'].str.split('-', 1).str
+frac_birth_male[['low_year', 'high_year']] = frac_birth_male['Period'].str.split('-', n=1, expand=True)
 frac_birth_male['low_year'] = frac_birth_male['low_year'].astype(int)
 frac_birth_male['high_year'] = frac_birth_male['high_year'].astype(int)
 
@@ -563,7 +559,7 @@ lt[['Variant', 'Period', 'Sex', 'Age_Grp', 'death_rate']].to_csv(
 # Expand the life-table to create a row for each age year, for ease of indexing in the simulation
 mort_sched = lt.copy()
 
-mort_sched['low_age'], mort_sched['high_age'] = mort_sched['Age_Grp'].str.split('-', 1).str
+mort_sched[['low_age', 'high_age']] = mort_sched['Age_Grp'].str.split('-', n=1, expand=True)
 mort_sched['low_age'] = mort_sched['low_age'].astype(int)
 mort_sched['high_age'] = mort_sched['high_age'].astype(int)
 
@@ -610,7 +606,7 @@ dhs_asfr[dhs_asfr.columns[1:]] = dhs_asfr[dhs_asfr.columns[1:]] / 1000  # to mak
 dhs_asfr.to_csv(path_for_saved_files / 'ResourceFile_ASFR_DHS.csv', index=False)
 
 
-dhs_u5 = pd.read_excel(dhs_working_file, sheet_name='UNDER_5_MORT', header=1, index=False)
+dhs_u5 = pd.read_excel(dhs_working_file, sheet_name='UNDER_5_MORT', header=1)
 dhs_u5['Year'] = dhs_u5.index
 dhs_u5 = dhs_u5.reset_index(drop=True)
 dhs_u5 = dhs_u5[dhs_u5.columns[[3, 0, 1, 2]]]
