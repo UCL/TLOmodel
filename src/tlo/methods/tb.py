@@ -895,8 +895,11 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg")
 
         # 3hp
-        self.item_codes_for_consumables_required['tb_3HP'] = {
-            hs.get_item_code_from_item_name("Isoniazid/Rifapentine"): 1}
+        # self.item_codes_for_consumables_required['tb_3HP'] = {
+        #     hs.get_item_code_from_item_name("Isoniazid/Rifapentine"): 1}
+
+        self.item_codes_for_consumables_required['tb_3HP'] = \
+            hs.get_item_code_from_item_name("Isoniazid/Rifapentine")
 
     def initialise_population(self, population):
 
@@ -2945,7 +2948,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
-        #self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 0})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
