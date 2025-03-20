@@ -129,7 +129,8 @@ chosen_value_of_statistical_life_lower = 425.96 # lower bound estimated using Ro
 # and assumed income elasticity of consumption value of health to be 1.
 
 # Discount rate
-discount_rate = 0.03
+discount_rate_health = 0.03
+discount_rate_cost = 0.03
 
 # Define a function to create bar plots
 def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
@@ -219,7 +220,7 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
 #-----------------------------------------------------------------------------------------------------------------------
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
                                                _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
-                                               _discount_rate = discount_rate, _draws = list(all_manuscript_scenarios.keys()))
+                                               _discount_rate = discount_rate_cost, _draws = list(all_manuscript_scenarios.keys()))
 
 # Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
 #-----------------------------------------------------------------------------------------------------------------------
@@ -396,7 +397,7 @@ def append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs, 
         new_df = melt_and_label_malaria_scaleup_cost(df, label)
         list_of_relevant_years_for_costing = list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1))
         new_df = new_df[new_df['year'].isin(list_of_relevant_years_for_costing)]
-        new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate, _year = _relevant_period_for_costing[0])
+        new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate_cost, _initial_year = _relevant_period_for_costing[0])
         _total_input_costs = pd.concat([_total_input_costs, new_df], ignore_index=True)
 
     return _total_input_costs
@@ -519,7 +520,9 @@ def estimate_xpert_costs(_results_folder, _relevant_period_for_costing):
 
     xpert_total_cost = melt_and_label_xpert_cost(xpert_dispensed_cost)
     xpert_total_cost.to_csv('./outputs/horizontal_v_vertical/xpert_cost.csv')
-    return xpert_total_cost
+    xpert_total_cost_discounted = apply_discounting_to_cost_data(xpert_total_cost, _discount_rate=discount_rate_cost,
+                                            _initial_year=_relevant_period_for_costing[0])
+    return xpert_total_cost_discounted
 
 print("Appending Xpert costs")
 xpert_total_cost = estimate_xpert_costs(_results_folder = results_folder,
@@ -591,7 +594,7 @@ def get_num_dalys(_df):
     initial_year = min(_df.index.unique())
 
     # Calculate the discounted values
-    discounted_values = _df / (1 + discount_rate) ** (_df.index - initial_year)
+    discounted_values = _df / (1 + discount_rate_health) ** (_df.index - initial_year)
 
     return pd.Series(discounted_values.sum())
 
@@ -716,7 +719,7 @@ icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(roi_ou
 projected_health_spending = estimate_projected_health_spending(resourcefilepath,
                                   results_folder,
                                  _years = list_of_relevant_years_for_costing,
-                                 _discount_rate = discount_rate,
+                                 _discount_rate = discount_rate_cost,
                                  _summarize = True,
                                  _metric = chosen_metric)
 projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0][chosen_metric][0]
@@ -759,7 +762,6 @@ def get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for
     return health_spending_per_capita_table
 
 health_spending_per_capita_table = get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing = relevant_period_for_costing)
-total_health_spend_discounted =
 health_spending_per_capita_table.to_csv(figurespath / 'projected_health_spending.csv', index = False)
 
 # ROI at 0 implementation costs
@@ -1069,7 +1071,7 @@ def remove_discounting(_df, _discount_rate=0, _year = None):
     _df.loc[:, 'cost'] = _df['cost'] * ((1 + _discount_rate) ** (_df['year'] - initial_year))
     return _df
 input_costs_for_plot_summarized_undiscounted = remove_discounting(input_costs_for_plot_summarized,
-                                                                  _discount_rate = discount_rate)
+                                                                  _discount_rate = discount_rate_cost)
 
 
 # Baseline
@@ -1096,6 +1098,16 @@ do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all'
                          disaggregate_by= 'cost_category',
                          _outputfilepath = figurespath)
 
+# 7. Sensitivity analysis - discount rate
+# ----------------------------------------------------
+# Recalculate costs and health with the new discount rate
+
+# Recalculate and extract ICERs as a figure and table
+
+# Recalculate and extract ROI as a figure and table
+
+
+
 '''
 # Extract TB costs for inspection
 tb_consumables = ['Cat. I & III Patient Kit A', 'Cat. I & III Patient Kit B', 'Cat. II Patient Kit A1',
@@ -1105,4 +1117,27 @@ tb_consumables_costs = tb_consumables_costs.groupby(['draw', 'stat', 'cost_subgr
 tb_consumables_costs.to_csv(figurespath / 'tb_consumables_costs_detailed.csv')
 
 input_costs_for_plot_summarized.to_csv(figurespath / 'cost_detailed_summarised.csv')
+
+
+input_costs_standard = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
+                                               _discount_rate = 0.03, _draws = [0], _runs = [0])
+
+input_costs_0 = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
+                                               _discount_rate = 0, _draws = [0], _runs = [0])
+
+variable_dr = {2025: 0.0039, 2026: 0.0042, 2027: 0.0042, 2028: 0.0041, 2029: 0.0041, 2030: 0.004, 2031: 0.004, 2032: 0.004, 2033: 0.0041, 2034: 0.0043, 2035: 0.0042}
+
+input_costs_variable = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
+                                               _discount_rate = variable_dr, _draws = [0], _runs = [0])
+
+input_costs_standard.groupby(['cost_category','year'])['cost'].sum()
+input_costs_0.groupby(['cost_category','year'])['cost'].sum()
+input_costs_variable.groupby(['cost_category','year'])['cost'].sum()
+
+input_costs_v_test.groupby(['cost_category','year'])['cost'].sum()
+input_costs_v_test = apply_discounting_to_cost_data(input_costs_standard, _discount_rate=variable_dr, _initial_year=None, _column_for_discounting = 'cost')
+
 '''

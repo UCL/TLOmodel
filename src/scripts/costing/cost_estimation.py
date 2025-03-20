@@ -43,15 +43,26 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 #%%
 
 # Define a function to discount and summarise costs by cost_category
-def apply_discounting_to_cost_data(_df, _discount_rate=0, _year = None):
-    if _year == None:
-        # Initial year and discount rate
-        initial_year = min(_df['year'].unique())
-    else:
-        initial_year = _year
+def apply_discounting_to_cost_data(_df, _discount_rate=0, _initial_year=None, _column_for_discounting = 'cost'):
+    if _initial_year is None:
+        # Determine the initial year from the dataframe
+        _initial_year = min(_df['year'].unique())
 
-    # Calculate the discounted values
-    _df.loc[:, 'cost'] = _df['cost'] / ((1 + _discount_rate) ** (_df['year'] - initial_year))
+    def get_discount_factor(year):
+        """Compute the cumulative discount factor for a given year."""
+        if isinstance(_discount_rate, dict):
+            # Compute the cumulative discount factor as the product of (1 + discount_rate) for all previous years
+            discount_factor = 1
+            for y in range(_initial_year + 1, year + 1): # only starting from initial year + 1 as the discount factor for initial year should be 1
+                discount_factor *= (1 + _discount_rate.get(y, 0))  # Default to 0 if year not in dictionary
+            return discount_factor
+        else:
+            # If a single value is provided, use standard discounting
+            return (1 + _discount_rate) ** (year - _initial_year)
+
+    # Apply discounting to each row
+    _df.loc[:, _column_for_discounting] = _df[_column_for_discounting] / _df['year'].apply(get_discount_factor)
+
     return _df
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
@@ -87,7 +98,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         _runs = range(0, info['runs_per_draw'])
     final_year_of_simulation = max(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
     first_year_of_simulation = min(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
-    years = list(range(first_year_of_simulation, final_year_of_simulation + 1))
+    years = list(range(first_year_of_simulation, final_year_of_simulation + 1)) # this is the full period of the simulation but at the end of the function, years not needed for the final cost estimate are dropped
 
     # Load cost input files
     #------------------------
@@ -104,7 +115,20 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # Overall cost assumptions
     TARGET_PERIOD = (Date(first_year_of_simulation, 1, 1), Date(final_year_of_simulation, 12, 31)) # Declare period for which the results will be generated (defined inclusively)
-    discount_rate = 0.03 # this is the discount rate for annuitization
+
+    # If variable discount rate is provided, use the average across the relevant years for the purpose of annuitization of HR and equipment costs
+    def calculate_annuitization_rate(_discount_rate, _years):
+        if isinstance(_discount_rate, (int, float)):
+            # Single discount rate, return as is
+            return _discount_rate
+        elif isinstance(_discount_rate, dict):
+            # Extract rates for the specified years (default to 0 if year is missing)
+            rates = [_discount_rate.get(year, 0) for year in _years]
+            return sum(rates) / len(rates)  # Average discount rate
+        else:
+            raise ValueError("`_discount_rate` must be either a number (single rate) or a dictionary {year: rate}.")
+
+    annuitization_rate = calculate_annuitization_rate(_discount_rate, _years)
 
     # Read all cost parameters
     #---------------------------------------
@@ -125,10 +149,10 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     unit_cost_equipment = unit_cost_equipment.rename(columns=unit_cost_equipment.iloc[7]).reset_index(drop=True).iloc[8:]
     unit_cost_equipment = unit_cost_equipment[unit_cost_equipment['Item_code'].notna()] # drop empty row
     # Calculate necessary costs based on HSSP-III assumptions
-    if discount_rate == 0:
+    if _discount_rate == 0:
         unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] / row['Life span'], axis=1)  # straight line depreciation is discount rate is 0
     else:
-        unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost']/(1+(1-(1+discount_rate)**(-row['Life span']+1))/discount_rate), axis=1) # Annuitised over the life span of the equipment assuming outlay at the beginning of the year
+        unit_cost_equipment['replacement_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost']/(1+(1-(1+annuitization_rate)**(-row['Life span']+1))/annuitization_rate), axis=1) # Annuitised over the life span of the equipment assuming outlay at the beginning of the year
     unit_cost_equipment['service_fee_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.8 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 80% of the value of the item over 8 years
     unit_cost_equipment['spare_parts_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 / 8 if row['unit_purchase_cost'] > 1000 else 0, axis=1) # 20% of the value of the item over 8 years
     unit_cost_equipment['major_corrective_maintenance_cost_annual'] = unit_cost_equipment.apply(lambda row: row['unit_purchase_cost'] * 0.2 * 0.2 / 8 if row['unit_purchase_cost'] < 250000 else 0, axis=1) # 20% of the value of 20% of the items over 8 years
@@ -274,7 +298,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                                                      'average_annual_preservice_training_cost_for_cadre', 'preservice_training_duration', 'recruitment_cost_per_person_recruited_usd',
                                                                      'average_length_of_tenure_in_the_public_sector'])
 
-    def calculate_npv_past_training_expenses_by_row(row, r = discount_rate):
+    def calculate_npv_past_training_expenses_by_row(row, r = _discount_rate):
         # Initialize the NPV for the row
         npv = 0
         annual_cost = row['average_annual_preservice_training_cost_for_cadre']
@@ -298,17 +322,17 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # Calculate NPV for each row using iterrows and store in a new column
     npv_values = []
     for index, row in preservice_training_cost.iterrows():
-        npv = calculate_npv_past_training_expenses_by_row(row, r=discount_rate)
+        npv = calculate_npv_past_training_expenses_by_row(row, r=annuitization_rate)
         npv_values.append(npv)
 
     preservice_training_cost['npv_of_training_and_recruitment_cost'] = npv_values
     preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit'] = preservice_training_cost['npv_of_training_and_recruitment_cost'] *\
                                                     (1/(preservice_training_cost['absorption_rate_of_students_into_public_workforce'] + preservice_training_cost['proportion_of_workforce_recruited_from_abroad'])) *\
                                                     (1/preservice_training_cost['graduation_rate']) * (1/preservice_training_cost['licensure_exam_passing_rate'])
-    if discount_rate == 0: # if the discount rate is 0, then the pre-service + recruitment cost simply needs to be divided by the number of years in tenure
+    if _discount_rate == 0: # if the discount rate is 0, then the pre-service + recruitment cost simply needs to be divided by the number of years in tenure
         preservice_training_cost['annuitisation_rate'] = preservice_training_cost['average_length_of_tenure_in_the_public_sector']
     else:
-        preservice_training_cost['annuitisation_rate']  = 1 + (1 - (1 + discount_rate) ** (-preservice_training_cost['average_length_of_tenure_in_the_public_sector'] + 1)) / discount_rate
+        preservice_training_cost['annuitisation_rate']  = 1 + (1 - (1 + annuitization_rate) ** (-preservice_training_cost['average_length_of_tenure_in_the_public_sector'] + 1)) / annuitization_rate
     preservice_training_cost['annuitised_training_and_recruitment_cost_per_recruit'] = preservice_training_cost['npv_of_training_and_recruitment_cost_per_recruit']/preservice_training_cost['annuitisation_rate']
 
     # Cost per student trained * 1/Rate of absorption from the local and foreign graduates * 1/Graduation rate * attrition rate
@@ -741,9 +765,12 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             )
 
     if _years is None:
-        return apply_discounting_to_cost_data(scenario_cost,_discount_rate)
+        return apply_discounting_to_cost_data(_df = scenario_cost,
+                                              _discount_rate = _discount_rate, _column_for_discounting = 'cost')
     else:
-        return apply_discounting_to_cost_data(scenario_cost[scenario_cost.year.isin(_years)],_discount_rate)
+        return apply_discounting_to_cost_data(_df = scenario_cost[scenario_cost.year.isin(_years)],
+                                              _discount_rate = _discount_rate,
+                                              _column_for_discounting = 'cost')
 
 # Define a function to summarize cost data from
 # Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as index, then
@@ -831,21 +858,22 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
     projected_health_spending = projected_health_spending[population_columns]
 
     # Apply discount rate
+    # Reformat dataframe to apply discounting function
+    projected_health_spending.columns.names = ['draw', 'run']
+    projected_health_spending = projected_health_spending.stack(level=['draw', 'run']).reset_index()
+    projected_health_spending.columns = ['year', 'draw', 'run', 'total_spending']
+
     # Initial year and discount rate
-    initial_year = min(projected_health_spending.index.get_level_values('year').unique())
-    # Discount factor calculation
-    discount_factors = (1 + _discount_rate) ** (projected_health_spending.index.get_level_values('year') - initial_year)
-    # Apply the discount to the specified columns
-    projected_health_spending.loc[:, population_columns] = (
-        projected_health_spending[population_columns].div(discount_factors, axis=0))
-    # add across years
-    projected_health_spending = projected_health_spending.sum(axis = 0)
-    projected_health_spending.index = pd.MultiIndex.from_tuples(projected_health_spending.index, names=["draw", "run"])
+    initial_year = min(projected_health_spending['year'].unique())
+    projected_health_spending_discounted = apply_discounting_to_cost_data(
+        projected_health_spending, _discount_rate= _discount_rate,
+        _column_for_discounting='total_spending', _initial_year = initial_year)
+    projected_health_spending_discounted = projected_health_spending_discounted.groupby(['draw', 'run'])['total_spending'].sum()
 
     if _summarize == True:
         if _metric == 'mean':
             # Calculate the mean and 95% confidence intervals for each group
-            projected_health_spending = projected_health_spending.groupby(level="draw").agg(
+            projected_health_spending_discounted = projected_health_spending_discounted.groupby(level="draw").agg(
                 mean=np.mean,
                 lower=lambda x: np.percentile(x, 2.5),
                 upper=lambda x: np.percentile(x, 97.5)
@@ -853,7 +881,7 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
 
         elif _metric == 'median':
             # Calculate the mean and 95% confidence intervals for each group
-            projected_health_spending = projected_health_spending.groupby(level="draw").agg(
+            projected_health_spending_discounted = projected_health_spending_discounted.groupby(level="draw").agg(
                 median=np.median,
                 lower=lambda x: np.percentile(x, 2.5),
                 upper=lambda x: np.percentile(x, 97.5)
@@ -863,9 +891,9 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
             raise ValueError(f"Invalid input for _metric: '{_metric}'. "
                              f"Values need to be one of 'mean' or 'median'")
         # Flatten the resulting DataFrame into a single-level MultiIndex Series
-        projected_health_spending = projected_health_spending.stack().rename_axis(["draw", "stat"]).rename("value")
+        projected_health_spending_discounted = projected_health_spending_discounted.stack().rename_axis(["draw", "stat"]).rename("value")
 
-    return projected_health_spending.unstack()
+    return projected_health_spending_discounted.unstack()
 
 # Plot costs
 ####################################################
