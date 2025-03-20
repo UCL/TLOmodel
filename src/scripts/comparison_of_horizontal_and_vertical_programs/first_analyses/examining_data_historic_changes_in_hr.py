@@ -235,7 +235,7 @@ for xlim in (datetime.date(2025, 1, 1), datetime.date(2035, 1, 1)):
 
     # Tight layout and show figure
     fig.tight_layout()
-    fig.savefig('src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/changes_in_HRH.png')
+    # fig.savefig('src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/changes_in_HRH.png')
     fig.show()
 
 
