@@ -808,6 +808,18 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
 
         return dw
 
+    def report_prevalence(self):
+        """Report prevalence of disease to the HealthBurden module"""
+        df = self.sim.population.props
+        prevalence_dict = {}
+
+        for condition in self.conditions:
+            prevalence = df[f'nc_{condition}'].sum() / len(df)
+            prevalence_dict[condition] = prevalence
+
+        # Create a DataFrame from the prevalence dictionary
+        return prevalence_dict
+
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
