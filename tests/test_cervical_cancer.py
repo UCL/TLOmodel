@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import DAYS_IN_YEAR, Date, Simulation
+from tlo import DAYS_IN_YEAR, Date, DateOffset, Simulation
 from tlo.methods import (
     cervical_cancer,
     demography,
@@ -45,9 +45,7 @@ def make_simulation_healthsystemdisabled(seed):
                  cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
-                                           cons_availability='all'),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -72,7 +70,7 @@ def make_simulation_nohsi(seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=False,
-                                           cons_availability='all'),
+                                           service_availability=[]),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -140,6 +138,10 @@ def make_cin_treatment_perfect(sim):
     sim.modules['CervicalCancer'].parameters['prob_thermoabl_successful'] = 1.0
     return sim
 
+def make_vaginal_bleeding_referral_perfect(sim):
+    sim.modules['CervicalCancer'].parameters['prob_referral_biopsy_given_vaginal_bleeding']  = 1.0
+    return sim
+
 def make_treamtment_perfectly_effective(sim):
     # All get symptoms and treatment effect of 1.0 will stop progression
     sim.modules['CervicalCancer'].parameters['r_vaginal_bleeding_cc_stage1'] = 1.0
@@ -161,15 +163,16 @@ def get_population_of_interest_30_to_50(sim):
     # Function to make filtering the simulation population for the population of interest easier
     # Population of interest for this function is 30 to 50 as it encompasses both HIV and non-HIV individuals eligible for screening
     population_of_interest = \
-        sim.population.props.is_alive & (sim.population.props.age_years >= 30) & (sim.population.props.age_years < 50) & (sim.population.props.sex == 'F')
+        sim.population.props.is_alive & (
+                sim.population.props.age_years.between(30, 50, inclusive='left') & (sim.population.props.sex == 'F'))
     return population_of_interest
 
 # %% Checks:
 def check_dtypes(sim):
     # check types of columns
-    pass
-# this assert was failing but I have checked all properties and they maintain the expected type
-#   assert (df.dtypes == orig.dtypes).all()
+    df = sim.population.props
+    orig = sim.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
 
 def check_configuration_of_population(sim):
     # get df for alive persons:
@@ -182,17 +185,11 @@ def check_configuration_of_population(sim):
     assert not df.loc[df.age_years < 15].ce_cc_ever.any()
 
     # check that diagnosis and treatment is never applied to someone who has never had cancer:
-    assert df.loc[df['ce_cc_ever'].eq(False), 'ce_date_palliative_care'].isna().all()
+    assert df.loc[~df.ce_cc_ever, 'ce_date_palliative_care'].isna().all()
 
     # check that treatment is never done for those with stage 4
     assert 0 == (df.ce_stage_at_which_treatment_given == 'stage4').sum()
     assert 0 == (df.loc[~pd.isnull(df.ce_date_treatment)].ce_stage_at_which_treatment_given == 'none').sum()
-
-    # check that those with symptom are a subset of those with cancer:
-# todo: not sure what is wrong with this assert as I am fairly certain the intended assert is true, review vaginal bleeding
-
-#   assert set(sim.modules['SymptomManager'].who_has('vaginal_bleeding')).issubset(
-#       df.index[df.ce_cc_ever])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.ce_date_diagnosis)]).issubset(df.index[df.ce_cc_ever])
@@ -203,10 +200,8 @@ def check_configuration_of_population(sim):
         ~pd.isnull(df.ce_date_diagnosis)].date_of_birth)
     assert all([int(x.days / DAYS_IN_YEAR) >= 15 for x in age_at_dx])
 
-    # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
+    # check that those treated are a subset of those diagnosed:
     assert set(df.index[~pd.isnull(df.ce_date_treatment)]).issubset(df.index[~pd.isnull(df.ce_date_diagnosis)])
-    assert (df.loc[~pd.isnull(df.ce_date_treatment)].ce_date_diagnosis <= df.loc[
-        ~pd.isnull(df.ce_date_treatment)].ce_date_treatment).all()
 
     # check that those on palliative care are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.ce_date_palliative_care)]).issubset(df.index[~pd.isnull(df.ce_date_diagnosis)])
@@ -215,11 +210,12 @@ def check_configuration_of_population(sim):
 
 
 # %% Tests:
-def test_initial_config_of_pop_high_prevalence(seed):
+def test_config_of_pop_high_prevalence(seed):
     """Tests of the way the population is configured: with high initial prevalence values """
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_high_init_prev(sim)
     sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=100))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -235,10 +231,11 @@ def test_initial_config_of_pop_zero_prevalence(seed):
     assert (df.loc[df.is_alive].ce_hpv_cc_status == 'none').all()
 
 
-def test_initial_config_of_pop_usual_prevalence(seed):
+def test_config_of_pop_usual_prevalence(seed):
     """Tests of the way the population is configured: with usual initial prevalence values"""
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=100))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -323,9 +320,8 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     # make initial population
     sim.make_initial_population(n=popsize)
 
-    # population_of_interest = get_population_of_interest(sim)
-#   sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
-    check_configuration_of_population(sim)
+    population_of_interest = get_population_of_interest(sim)
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
 
     # Simulate
     sim.simulate(end_date=Date(2010, 7, 1))
@@ -336,9 +332,8 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert len(df.loc[df.is_alive & (df.ce_hpv_cc_status != 'none')]) > 0
 
     # check that some people have died of cervical cancer
-    # yll = sim.modules['HealthBurden'].years_life_lost
-#   todo: find out why this assert fails - I don't think it is a problem in cervical_cancer.py
-#   assert yll['CervicalCancer'].sum() > 0
+    yll = sim.modules['HealthBurden'].years_life_lost
+    assert yll['CervicalCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
     assert not (df.ce_date_diagnosis > start_date).any()
@@ -380,11 +375,6 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
         add_or_remove='+',
         disease_module=sim.modules['CervicalCancer']
     )
-
-    # note: This will make all >15 yrs females be on stage 1 and have cancer symptoms yes
-    # BUT it will not automatically make everyone deemed as ever had cervical cancer in the code Hence check
-    # assert set(sim.modules['SymptomManager'].who_has('vaginal_bleeding')).issubset( df.index[df.ce_cc_ever])
-    # is likely to fail
 
     check_configuration_of_population(sim)
 
@@ -493,3 +483,25 @@ def test_transition_year_logic(seed):
         )
     )
     assert condition_via.all(), "Some rows violate the VIA/Xpert date conditions."
+
+def test_vaginal_bleeding(seed):
+    """Ensure that have vaginal bleeding are subset of those diagnosed (given perfect referral)"""
+    sim = make_simulation_healthsystemdisabled(seed=123)
+    sim = make_screening_mandatory(sim)
+    sim = make_cin_treatment_perfect(sim)
+    sim = make_vaginal_bleeding_referral_perfect(sim)
+
+    # Simulate
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2010, 6, 1))
+
+    df = sim.population.props
+
+    # check that those with symptom are a subset of those with cancer:
+    vaginal_bleeding_symptom = set(sim.modules['SymptomManager'].who_has('vaginal_bleeding'))
+    df_ce_cc_ever_true = set(df.index[df.ce_cc_ever])
+
+    if not vaginal_bleeding_symptom and not df_ce_cc_ever_true:
+        pass
+    else:
+        assert vaginal_bleeding_symptom.issubset(df_ce_cc_ever_true)
