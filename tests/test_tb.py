@@ -46,46 +46,40 @@ def get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constr
     """
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
     if use_simplified_birth:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         disable=disable_HS,
-                         cons_availability="all",
+        sim.register(demography.Demography(),
+                     simplified_births.SimplifiedBirths(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(disable=disable_HS,cons_availability="all",
                          # mode for consumable constraints (if ignored, all consumables available)
                      ),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                     tb.Tb(resourcefilepath=resourcefilepath),
+                     healthburden.HealthBurden(),
+                     symptommanager.SymptomManager(),
+                     healthseekingbehaviour.HealthSeekingBehaviour(),
+                     epi.Epi(),
+                     hiv.Hiv(run_with_checks=False),
+                     tb.Tb(),
                      )
     else:
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                     labour.Labour(resourcefilepath=resourcefilepath),
-                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(
-                         resourcefilepath=resourcefilepath,
-                         disable=True,
-                         cons_availability="all",
+        sim.register(demography.Demography(),
+                     pregnancy_supervisor.PregnancySupervisor(),
+                     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                     labour.Labour(),
+                     newborn_outcomes.NewbornOutcomes(),
+                     postnatal_supervisor.PostnatalSupervisor(),
+                     enhanced_lifestyle.Lifestyle(),
+                     healthsystem.HealthSystem(disable=True, cons_availability="all",
                          # mode for consumable constraints (if ignored, all consumables available)
                      ),
-                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                     tb.Tb(resourcefilepath=resourcefilepath),
+                     healthburden.HealthBurden(),
+                     symptommanager.SymptomManager(),
+                     healthseekingbehaviour.HealthSeekingBehaviour(),
+                     epi.Epi(),
+                     hiv.Hiv(run_with_checks=False),
+                     tb.Tb(),
                      )
 
     return sim
@@ -323,46 +317,40 @@ def test_record_of_appt_of_tb_start_treatment_hsi(tmpdir, seed):
             }
         }
 
-        sim = Simulation(start_date=start_date, log_config=log_config, seed=seed)
+        sim = Simulation(start_date=start_date, log_config=log_config, seed=seed, resourcefilepath=resourcefilepath)
 
         # Register the appropriate modules
         if use_simplified_birth:
-            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                         healthsystem.HealthSystem(
-                             resourcefilepath=resourcefilepath,
-                             disable=disable_HS,
-                             cons_availability=consumables_availability,
+            sim.register(demography.Demography(),
+                         simplified_births.SimplifiedBirths(),
+                         enhanced_lifestyle.Lifestyle(),
+                         healthsystem.HealthSystem(disable=disable_HS,cons_availability=consumables_availability,
                              # mode for consumable constraints (if ignored, all consumables available)
                          ),
-                         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                         epi.Epi(resourcefilepath=resourcefilepath),
-                         hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                         tb.Tb(resourcefilepath=resourcefilepath),
+                         healthburden.HealthBurden(),
+                         symptommanager.SymptomManager(),
+                         healthseekingbehaviour.HealthSeekingBehaviour(),
+                         epi.Epi(),
+                         hiv.Hiv(run_with_checks=False),
+                         tb.Tb(),
                          )
         else:
-            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                         labour.Labour(resourcefilepath=resourcefilepath),
-                         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                         postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                         healthsystem.HealthSystem(
-                             resourcefilepath=resourcefilepath,
-                             disable=True,
-                             cons_availability=consumables_availability,
+            sim.register(demography.Demography(),
+                         pregnancy_supervisor.PregnancySupervisor(),
+                         care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                         labour.Labour(),
+                         newborn_outcomes.NewbornOutcomes(),
+                         postnatal_supervisor.PostnatalSupervisor(),
+                         enhanced_lifestyle.Lifestyle(),
+                         healthsystem.HealthSystem(disable=True, cons_availability=consumables_availability,
                              # mode for consumable constraints (if ignored, all consumables available)
                          ),
-                         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                         epi.Epi(resourcefilepath=resourcefilepath),
-                         hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                         tb.Tb(resourcefilepath=resourcefilepath),
+                         healthburden.HealthBurden(),
+                         symptommanager.SymptomManager(),
+                         healthseekingbehaviour.HealthSeekingBehaviour(),
+                         epi.Epi(),
+                         hiv.Hiv(run_with_checks=False),
+                         tb.Tb(),
                          )
 
         return sim
@@ -973,16 +961,16 @@ def test_use_dummy_version(seed):
     """
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(),
+                 epi.Epi(),
                  hiv.DummyHivModule(hiv_prev=1.0),
                  tb.DummyTbModule(active_tb_prev=0.01),
                  )

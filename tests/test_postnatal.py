@@ -72,21 +72,18 @@ def get_mother_id_from_dataframe(sim):
 
 
 def register_core_modules(sim):
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
-                                           cons_availability='all'),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 healthsystem.HealthSystem(service_availability=['*'], cons_availability='all'),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 symptommanager.SymptomManager(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  hiv.DummyHivModule(),
                  )
 
@@ -95,7 +92,8 @@ def register_core_modules(sim):
 
 @pytest.mark.slow
 def test_run_and_check_dtypes(tmpdir, seed):
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={"filename": "log", "directory": tmpdir}, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
@@ -109,7 +107,7 @@ def test_run_and_check_dtypes(tmpdir, seed):
 def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birth(seed):
     """Test that complications which may continue from the antenatal period to the postnatal period transition as
     expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -138,7 +136,7 @@ def test_antenatal_disease_is_correctly_carried_over_to_postnatal_period_on_birt
 def test_application_of_maternal_complications_and_care_seeking_postnatal_week_one_event(seed):
     """Test that risk of complications is correctly applied in the first week postnatal and that women seek care as
     expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -196,7 +194,7 @@ def test_application_of_maternal_complications_and_care_seeking_postnatal_week_o
 def test_application_of_neonatal_complications_and_care_seeking_postnatal_week_one_event(seed):
     """Test that risk of complications is correctly applied in the first week postnatal and that women seek care as
     expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -249,7 +247,7 @@ def test_all_appropriate_pregnancy_variables_are_reset_at_then_end_of_postnatal(
 def test_application_of_risk_of_death_to_mothers_postnatal_week_one_event(seed):
     """Test that risk of death is applied to women in the first week postnatal in the context of complications, as
     expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -285,7 +283,7 @@ def test_application_of_risk_of_death_to_mothers_postnatal_week_one_event(seed):
 def test_application_of_risk_of_death_to_neonates_postnatal_week_one_event(seed):
     """Test that risk of death is applied to neonates in the first week postnatal in the context of complications, as
     expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -318,7 +316,7 @@ def test_application_of_risk_of_death_to_neonates_postnatal_week_one_event(seed)
 def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(seed):
     """Test that risk of maternal infection is applied within the population level postnatal event as expected,
      including care seeking and application of risk of death"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -378,7 +376,7 @@ def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(
 def test_application_of_risk_of_spph_postnatal_supervisor_event(seed):
     """Test that risk of maternal haemorrhage is applied within the population level postnatal event as expected,
     including care seeking and application of risk of death"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -429,7 +427,7 @@ def test_application_of_risk_of_spph_postnatal_supervisor_event(seed):
 
 def test_application_of_risk_of_anaemia_postnatal_supervisor_event(seed):
     """Test that risk of maternal anaemia is applied within the population level postnatal event as expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -455,7 +453,7 @@ def test_application_of_risk_of_anaemia_postnatal_supervisor_event(seed):
 def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_event(seed):
     """Test that risk of maternal hypertensive disorders is applied within the population level postnatal event as
      expected, including care seeking and application of risk of death"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -527,7 +525,7 @@ def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_even
 def test_application_of_risk_of_late_onset_neonatal_sepsis(seed):
     """Test that risk of neonatal sepsis is applied within the population level postnatal event as
     expected, including care seeking and application of risk of death"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 

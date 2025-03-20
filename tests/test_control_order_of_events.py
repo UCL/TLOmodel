@@ -80,7 +80,8 @@ def test_control_of_ordering_in_the_day(seed, tmpdir):
             "tlo.simulation": logging.INFO,
         }
     }
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed,
+                     log_config=log_config, resourcefilepath=resourcefilepath)
     sim.register(DummyModule())
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=10))
@@ -111,8 +112,8 @@ def test_control_of_ordering_in_full_model(seed, tmpdir):
         "filename": "log",
         "directory": tmpdir,
     }
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
     sim.make_initial_population(n=100)
 
     # Replace the `fire_single_event_function` in simulation to a version that include a logging line.

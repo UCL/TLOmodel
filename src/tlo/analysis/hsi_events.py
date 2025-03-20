@@ -126,7 +126,8 @@ def get_details_of_defined_hsi_events(
         excluded_modules, zero_module_class_map, multiple_module_class_map
     )
     # Setting show_progress_bar=True hacky way to disable all log output to stdout
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=1, show_progress_bar=True)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1,
+                     show_progress_bar=True, resourcefilepath=resource_file_path)
     # Register modules and their dependencies
     sim.register(
         *get_dependencies_and_initialise(
@@ -134,9 +135,7 @@ def get_details_of_defined_hsi_events(
             module_class_map=get_module_class_map(set()),
             # Only select initialisation dependencies as we will not actually run
             # simulation
-            get_dependencies=get_init_dependencies,
-            resourcefilepath=resource_file_path
-        ),
+            get_dependencies=get_init_dependencies),
         # As we only select initialisation dependencies, disable check that additional
         # dependencies are present
         check_all_dependencies=False

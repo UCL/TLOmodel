@@ -54,23 +54,22 @@ class Scenario(BaseScenario):
 
     def modules(self):
         return [
-            demography.Demography(resourcefilepath=self.resources),
-            symptommanager.SymptomManager(resourcefilepath=self.resources),
-            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources),
-            epi.Epi(resourcefilepath=self.resources),
-            hiv.Hiv(resourcefilepath=self.resources),
-            contraception.Contraception(resourcefilepath=self.resources),
-            labour.Labour(resourcefilepath=self.resources),
-            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
-            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
-            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
-
-            diarrhoea.Diarrhoea(resourcefilepath=self.resources),
-            wasting.Wasting(resourcefilepath=self.resources),
-            alri.Alri(resourcefilepath=self.resources),
-            stunting.Stunting(resourcefilepath=self.resources)
+            demography.Demography(),
+            symptommanager.SymptomManager(),
+            enhanced_lifestyle.Lifestyle(),
+            healthsystem.HealthSystem(),
+            epi.Epi(),
+            hiv.Hiv(),
+            contraception.Contraception(),
+            labour.Labour(),
+            pregnancy_supervisor.PregnancySupervisor(),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+            postnatal_supervisor.PostnatalSupervisor(),
+            newborn_outcomes.NewbornOutcomes(),
+            diarrhoea.Diarrhoea(),
+            wasting.Wasting(),
+            alri.Alri(),
+            stunting.Stunting()
         ]
 
     def draw_parameters(self, draw_number, rng):

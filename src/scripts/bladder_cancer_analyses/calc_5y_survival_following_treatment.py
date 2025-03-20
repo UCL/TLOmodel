@@ -49,17 +49,16 @@ log_config = {
 }
 
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       disable=True),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+sim.register(demography.Demography(),
+             enhanced_lifestyle.Lifestyle(),
+             healthsystem.HealthSystem(disable=True),
+             symptommanager.SymptomManager(),
+             healthseekingbehaviour.HealthSeekingBehaviour(),
+             healthburden.HealthBurden(),
+             bladder_cancer.BladderCancer(),
              )
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to

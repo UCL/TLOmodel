@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Dict, List, Optional
 
 from tlo import Module
@@ -40,7 +39,6 @@ from tlo.methods import (
 
 
 def fullmodel(
-    resourcefilepath: Path,
     use_simplified_births: bool = False,
     module_kwargs: Optional[Dict[str, Dict]] = {},
 ) -> List[Module]:
@@ -63,9 +61,7 @@ def fullmodel(
     argument to the ``HealthSystem`` module set to ``True``
 
     >>> from tlo.methods.fullmodel import fullmodel
-    >>> resourcefilepath = ...
     >>> modules = fullmodel(
-    >>>     resourcefilepath,
     >>>     module_kwargs={"HealthSystem": {"disable": True}},
     >>> )
     """
@@ -121,7 +117,6 @@ def fullmodel(
     ]
     return [
         module_class(
-            resourcefilepath=resourcefilepath,
             **module_kwargs.get(module_class.__name__, {})
         )
         for module_class in module_classes

@@ -17,7 +17,7 @@ from tlo.methods import (
 )
 
 # The resource files
-resources = Path("./resources")
+resourcefilepath = Path("./resources")
 
 # store output files
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -38,24 +38,23 @@ def run_sim(healthsystem_on: bool):
                      log_config={"filename": "LogFile",
                                  'custom_levels': {"*": logging.WARNING, "tlo.methods.measles": logging.DEBUG,
                                                    "tlo.methods.demography": logging.INFO}
-                                 }
+                                 },resourcefilepath=resourcefilepath
                      )
 
     # Register the appropriate modules
     sim.register(
-        demography.Demography(resourcefilepath=resources),
-        simplified_births.SimplifiedBirths(resourcefilepath=resources),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        symptommanager.SymptomManager(resourcefilepath=resources),
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
 
-        healthsystem.HealthSystem(resourcefilepath=resources,
-                                  disable=healthsystem_on,
+        healthsystem.HealthSystem(disable=healthsystem_on,
                                   disable_and_reject_all=not healthsystem_on,
                                   ),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
 
-        epi.Epi(resourcefilepath=resources),
-        measles.Measles(resourcefilepath=resources),
+        epi.Epi(),
+        measles.Measles(),
     )
 
     # Run the simulation and flush the logger
