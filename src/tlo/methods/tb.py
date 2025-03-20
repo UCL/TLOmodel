@@ -772,9 +772,9 @@ class Tb(Module):
         )
 
         # TB Chest x-ray
-        # self.item_codes_for_consumables_required['chest_xray'] = hs.get_item_code_from_item_name("X-ray")
-        # self.item_codes_for_consumables_required['lead_apron'] = hs.get_item_code_from_item_name(
-        # "Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST")
+        self.item_codes_for_consumables_required['chest_xray'] = hs.get_item_code_from_item_name("X-ray")
+        self.item_codes_for_consumables_required['lead_apron'] = hs.get_item_code_from_item_name(
+        "Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST")
         # TB Chest x-ray++++++++++++++++++++++++
         self.item_codes_for_consumables_required['chest_xray'] = {
             hs.get_item_code_from_item_name("X-ray"): 1}
@@ -812,15 +812,6 @@ class Tb(Module):
             )
 
         )
-        # self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-        #     tb_xray_smear_negative_community=DxTest(
-        #         property="tb_inf",
-        #         target_categories=["active"],
-        #         sensitivity=p["sens_xray_smear_negative"],
-        #         specificity=p["spec_xray_smear_negative"],
-        #         item_codes=self.item_codes_for_consumables_required['chest_xray']
-        #     )
-        # )
 
         # add two further chest xray tests which don't require consumables
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
