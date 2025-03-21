@@ -225,6 +225,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # schedule regular events
         sim.schedule_event(SchistoUpdateWormBurdenEvent(self), sim.date + pd.DateOffset(days=0))
+        sim.schedule_event(SchistoWormDeathEvent(self), sim.date + pd.DateOffset(years=1))
 
         # Schedule the logging event
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
@@ -767,6 +768,8 @@ class SchistoSpecies:
                 Types.INT, 'Number of mature worms of this species in the individual'),
             'juvenile_worm_burden': Property(
                 Types.INT, 'Number of juvenile worms of this species in the individual'),
+            'juvenile_worm_infection_date': Property(
+                Types.DATE, 'Date at which infection with juvenile worms occurred'),
             'susceptibility': Property(
                 Types.INT, 'Binary value 0,1 denoting whether person is susceptible or not'),
             'harbouring_rate': Property(
@@ -840,6 +843,7 @@ class SchistoSpecies:
         # assign aggregate_worm_burden (zero for everyone initially)
         df.loc[df.is_alive, prop('aggregate_worm_burden')] = 0
         df.loc[df.is_alive, prop('juvenile_worm_burden')] = 0
+        df.loc[df.is_alive, prop('juvenile_worm_infection_date')] = pd.NaT
         df.loc[df.is_alive, prop('infection_status')] = 'Non-infected'
 
         # assign a harbouring rate
@@ -876,6 +880,7 @@ class SchistoSpecies:
         df.at[child_id, prop('infection_status')] = 'Non-infected'
         df.at[child_id, prop('aggregate_worm_burden')] = 0
         df.at[child_id, prop('juvenile_worm_burden')] = 0
+        df.at[child_id, prop('juvenile_worm_infection_date')] = pd.NaT
 
         # Generate the harbouring rate depending on a district of residence.
         district = df.at[child_id, 'district_of_residence']
@@ -1263,6 +1268,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         to_establish = draw_worms[(draw_worms > 0) & established].to_dict()
 
         df.loc[to_establish.keys(), prop('juvenile_worm_burden')] = pd.Series(to_establish)
+        df.loc[to_establish.keys(), prop('juvenile_worm_infection_date')] = self.sim.date
 
 
 class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1356,20 +1362,48 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             idx_changing = correct_status.index[original_status != correct_status]
             df.loc[idx_changing, f"{species_prefix}_infection_status"] = correct_status.loc[idx_changing]
 
-        def juvenile_worms_to_adults(df, species_column_juvenile, species_column_aggregate, species):
+        def juvenile_worms_to_adults(df, species_column_juvenile, species_column_aggregate, juvenile_infection_date, species):
             """
-            called by the regular event SchistoInfectionWormBurdenEvent
             moves the juveniles worms into the aggregate_worm_burden property
             indicating that they are now mature and will contribute to the disability threshold
             then clears the column containing juvenile worm numbers ready for next infection event
             this is called separately for each species
             """
-            df[species_column_aggregate] += df[species_column_juvenile]
+            # all new juvenile infections will have same infection date
+            if df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=1):
+                df[species_column_aggregate] += df[species_column_juvenile]
 
-            # Set 'juvenile' column to zeros
-            df[species_column_juvenile] = 0
+                # Set 'juvenile' column to zeros
+                df[species_column_juvenile] = 0
+                df[juvenile_infection_date] = pd.NaT  # clear the infection date
 
-            update_infectious_status_and_symptoms(df.index[df.is_alive], species=species)
+                update_infectious_status_and_symptoms(df.index[df.is_alive], species=species)
+
+        juvenile_worms_to_adults(df, 'ss_sm_juvenile_worm_burden',
+                                 'ss_sm_aggregate_worm_burden',
+                                 'ss_sm_juvenile_infection_date',
+                                 species='mansoni')
+        juvenile_worms_to_adults(df, 'ss_sh_juvenile_worm_burden',
+                                 'ss_sh_aggregate_worm_burden',
+                                 'ss_sh_juvenile_infection_date',
+                                 species='haematobium')
+
+
+class SchistoWormDeathEvent(RegularEvent, PopulationScopeEventMixin):
+    """A recurring event that:
+     * Kills any adult worms according to species-specific lifespan
+     """
+
+    def __init__(self, module):
+        super().__init__(
+            module, frequency=DateOffset(years=1)
+        )
+
+    def apply(self, population):
+
+        df = population.props
+        mansoni_params = self.sim.modules['Schisto'].species['mansoni'].params
+        haematobium_params = self.sim.modules['Schisto'].species['haematobium'].params
 
         # --------------------- kill proportion of existing adult worms ---------------------
         def clear_species_symptoms(species) -> None:
@@ -1389,24 +1423,17 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             this kills a proportion of the adult worms according to the average lifespan in years
             which varies by species
             """
-            df[species_column_aggregate] -= df[species_column_aggregate] * (worm_lifespan / 12)
+            df[species_column_aggregate] -= df[species_column_aggregate] * worm_lifespan
             df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0).astype(int)
 
             species = 'mansoni' if species_column_aggregate.startswith('ss_sm') else 'haematobium'
             clear_species_symptoms(species)
 
-        # do the processes - kill existing adult worms, then mature the juveniles
+        # kill existing adult worms
         death_of_adult_worms(df, 'ss_sm_aggregate_worm_burden',
                              mansoni_params['worm_lifespan'])
         death_of_adult_worms(df, 'ss_sh_aggregate_worm_burden',
                              haematobium_params['worm_lifespan'])
-
-        juvenile_worms_to_adults(df, 'ss_sm_juvenile_worm_burden',
-                                 'ss_sm_aggregate_worm_burden',
-                                 species='mansoni')
-        juvenile_worms_to_adults(df, 'ss_sh_juvenile_worm_burden',
-                                 'ss_sh_aggregate_worm_burden',
-                                 species='haematobium')
 
 
 class SchistoMDAEvent(Event, PopulationScopeEventMixin):
