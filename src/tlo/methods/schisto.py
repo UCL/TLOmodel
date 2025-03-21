@@ -224,7 +224,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         self._get_consumables_for_dx()
 
         # schedule regular events
-        sim.schedule_event(SchistoUpdateWormBurdenEvent(self), sim.date + pd.DateOffset(days=0))
+        sim.schedule_event(SchistoMatureJuvenileWormsEvent(self), sim.date + pd.DateOffset(months=1))
         sim.schedule_event(SchistoWormDeathEvent(self), sim.date + pd.DateOffset(years=1))
 
         # Schedule the logging event
@@ -1271,10 +1271,9 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[to_establish.keys(), prop('juvenile_worm_infection_date')] = self.sim.date
 
 
-class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
+class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
     """A recurring event that:
      * Matures the juvenile worms into adult worms
-     * Kills any adult worms according to species-specific lifespan
      """
     def __init__(self, module):
         super().__init__(
@@ -1370,7 +1369,7 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             this is called separately for each species
             """
             # all new juvenile infections will have same infection date
-            if df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=1):
+            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=2)).any():
                 df[species_column_aggregate] += df[species_column_juvenile]
 
                 # Set 'juvenile' column to zeros
@@ -1381,11 +1380,11 @@ class SchistoUpdateWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         juvenile_worms_to_adults(df, 'ss_sm_juvenile_worm_burden',
                                  'ss_sm_aggregate_worm_burden',
-                                 'ss_sm_juvenile_infection_date',
+                                 'ss_sm_juvenile_worm_infection_date',
                                  species='mansoni')
         juvenile_worms_to_adults(df, 'ss_sh_juvenile_worm_burden',
                                  'ss_sh_aggregate_worm_burden',
-                                 'ss_sh_juvenile_infection_date',
+                                 'ss_sh_juvenile_worm_infection_date',
                                  species='haematobium')
 
 
@@ -1419,7 +1418,6 @@ class SchistoWormDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         def death_of_adult_worms(df, species_column_aggregate, worm_lifespan):
             """
-            called by the regular event SchistoInfectionWormBurdenEvent
             this kills a proportion of the adult worms according to the average lifespan in years
             which varies by species
             """

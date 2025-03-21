@@ -14,7 +14,7 @@ class ScenarioDefinitions:
 
     def baseline(self) -> Dict:
         """ Return the Dict with values for the parameter changes that define the baseline scenario.
-        The default settings are mda_coverage=0.7, target_group=SAC, mda_frequency=6 months
+        The default settings are mda_coverage=0.7, target_group=SAC, mda_frequency=12 months
         """
         return mix_scenarios(
             get_parameters_for_status_quo(),  # <-- Parameters that have been the calibration targets
@@ -61,6 +61,6 @@ class ScenarioDefinitions:
         return {
             'Schisto': {
                 'mda_coverage': 0.8,
-                "mda_frequency_months": 12.0,  # default is 6
+                "mda_frequency_months": 12.0,  # default is 12
             }
         }
