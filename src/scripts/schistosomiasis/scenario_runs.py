@@ -44,7 +44,7 @@ class SchistoScenarios(BaseScenario):
 
         # todo reset
         self.end_date = Date(2030, 1, 1)  # todo 2041 = 15 years of projections
-        self.pop_size = 1_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.pop_size = 10_000  # todo if equal_allocation_by_district, 64,000=2k per district
         self.runs_per_draw = 1
 
         self._scenarios = self._get_scenarios()
@@ -92,13 +92,13 @@ class SchistoScenarios(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.no_MDA(),
                 ),
-            #
-            # "WASH only":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.no_MDA(),
-            #         scenario_definitions.scaleup_WASH(),
-            #     ),
+
+            "WASH only":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.no_MDA(),
+                    scenario_definitions.scaleup_WASH(),
+                ),
 
             # - - - Modify future MDA schedules with/without WASH activities - - -
             "MDA SAC with no WASH":
@@ -107,13 +107,13 @@ class SchistoScenarios(BaseScenario):
                     scenario_definitions.high_coverage_MDA(),
                 ),
 
-            # "MDA SAC with WASH":
-            #     mix_scenarios(
-            #         scenario_definitions.baseline(),
-            #         scenario_definitions.high_coverage_MDA(),
-            #         scenario_definitions.scaleup_WASH(),
-            #     ),
-            #
+            "MDA SAC with WASH":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.scaleup_WASH(),
+                ),
+
             # "MDA PSAC with no WASH":
             #     mix_scenarios(
             #         scenario_definitions.baseline(),
