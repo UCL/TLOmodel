@@ -46,6 +46,9 @@ class DiabeticRetinopathy(Module):
             Types.REAL, "Initial probability of ever having had a diet management session if ever diagnosed "
                         "with diabetic retinopathy"
         ),
+        "prob_reg_eye_exam": Parameter(
+            Types.REAL, "Probability of people with Diabetes Mellitus selected for regular eye exam"
+        ),
     }
 
     PROPERTIES = {
@@ -107,6 +110,7 @@ class DiabeticRetinopathy(Module):
         self.parameters['init_prob_late_dr'] = 0.09
         self.parameters['p_medication'] = 0.8
         self.parameters['init_prob_ever_diet_mgmt_if_diagnosed'] = 0.1
+        self.parameters['prob_reg_eye_exam'] = 0.05
 
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='blindness_partial'),
@@ -242,6 +246,24 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # fast_dr_idx = fast_dr[fast_dr].index
         fast_dr_idx = df.index[np.where(fast_dr)[0]]
         df.loc[fast_dr_idx, 'dr_status'] = 'late'
+
+        eligible_for_ns_threatening = df.loc[df.is_alive & df.nc_diabetes & (df.age_years >= 40)
+                                             & (df.dr_status == 'none')]
+
+        df.loc[eligible_for_ns_threatening, 'selected_for_regular_eye_exam'] = (
+            np.random.random_sample(size=len(df[eligible_for_ns_threatening]))
+            < self.module.parameters['prob_reg_eye_exam'])
+
+        # Schedule HSI event for selected individuals
+        selected_for_exam = df.index[df['selected_for_regular_eye_exam']]
+        for person_id in selected_for_exam:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Regular_Eye_Exam(module=self.module, person_id=person_id),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
 
         if len(will_progress_idx):
             self.sim.modules['SymptomManager'].change_symptom(
