@@ -44,12 +44,9 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 # Create folders to store results
 resourcefilepath = Path("./resources")
 outputfilepath = Path('./outputs/t.mangal@imperial.ac.uk')
-figurespath = Path('./outputs/horizontal_v_vertical')
-if not os.path.exists(figurespath):
-    os.makedirs(figurespath)
-roi_outputs_folder = Path(figurespath / 'roi')
-if not os.path.exists(roi_outputs_folder):
-    os.makedirs(roi_outputs_folder)
+main_figurespath = Path('./outputs/horizontal_v_vertical')
+if not os.path.exists(main_figurespath):
+    os.makedirs(main_figurespath)
 
 # Load result files
 #------------------------------------------------------------------------------------------------------------------
@@ -78,14 +75,6 @@ list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], 
 chosen_metric = 'median'
 
 # Scenarios
-# Subset of scenarios used for TGF and FCDO reports
-htm_scenarios = {0:"Baseline", 8: "HSS Expansion Package",
-                 9: "HIV Program Scale-up Without HSS Expansion", 17: "HIV Programs Scale-up With HSS Expansion Package",
-                 18: "TB Program Scale-up Without HSS Expansion", 26: "TB Programs Scale-up With HSS Expansion Package",
-                 27: "Malaria Program Scale-up Without HSS Expansion", 35: "Malaria Programs Scale-up With HSS Expansion Package",
-                 36: "HTM Program Scale-up Without HSS Expansion",39: "HTM Program Scale-up With HRH Scale-up (6%)",
-                 41: "HTM Program Scale-up With Consumables at 75th Percentile", 44: "HTM Programs Scale-up With HSS Expansion Package"}
-
 # Full list of scenarios used in the manuscript
 all_manuscript_scenarios = {0:"Baseline", 1: "HRH Scale-up (1%)", 2:"HRH Scale-up (4%)", 3:"HRH Scale-up (6%)",
                             4: "Increase Capacity at Primary Care Levels", 5: "Consumables Increased to 75th Percentile",
@@ -94,28 +83,39 @@ all_manuscript_scenarios = {0:"Baseline", 1: "HRH Scale-up (1%)", 2:"HRH Scale-u
                             9: "HIV Program Scale-up Without HSS Expansion", 17: "HIV Programs Scale-up With HSS Expansion Package",
                             18: "TB Program Scale-up Without HSS Expansion", 26: "TB Programs Scale-up With HSS Expansion Package",
                             27: "Malaria Program Scale-up Without HSS Expansion", 35: "Malaria Programs Scale-up With HSS Expansion Package",
-                            36: "HTM Program Scale-up Without HSS Expansion",39: "HTM Program Scale-up With HRH Scale-up (6%)",
-                            41: "HTM Program Scale-up With Consumables at 75th Percentile", 44: "HTM Programs Scale-up With HSS Expansion Package"}
+                            36: "HTM Program Scale-up Without HSS Expansion", 44: "HTM Programs Scale-up With HSS Expansion Package"}
+# 39: "HTM Program Scale-up With HRH Scale-up (6%)", 41: "HTM Program Scale-up With Consumables at 75th Percentile",
 
 # Use letters instead of full scenario name for figures
-htm_scenarios_substitutedict = {0:"0", 8: "A", 9: "B", 17: "C",
-18: "D", 26: "E", 27: "F",
-35: "G", 36: "H", 39: "I",
-41: "J", 44: "K"}
+all_manuscript_scenarios_substitutedict = {0:"0", 1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F", 7: "G", 8: "H",
+                                           9: "I", 17: "J", 18: "K", 26: "L", 27: "M", 35: "N", 36: "O", 44: "P"}
 
 color_map = {
+    # Baseline (single color)
     'Baseline': '#9e0142',
-    'HSS Expansion Package': '#d8434e',
-    'HIV Program Scale-up Without HSS Expansion': '#f36b48',
-    'HIV Programs Scale-up With HSS Expansion Package': '#fca45c',
-    'TB Program Scale-up Without HSS Expansion': '#fddc89',
-    'TB Programs Scale-up With HSS Expansion Package': '#e7f7a0',
+    # HR scenarios (shades of red)
+    "HRH Scale-up (1%)": "#c71f49",
+    "HRH Scale-up (4%)": "#d8434e",
+    "HRH Scale-up (6%)": "#e65a55",
+    "Increase Capacity at Primary Care Levels": "#f1745c",
+    # Consumables scenarios (shades of orange)
+    "Consumables Increased to 75th Percentile": "#f36b48",
+    "Consumables Available at HIV levels": "#f58a50",
+    "Consumables Available at EPI levels": "#fca45c",
+    # HIV scenarios (shades of yellow-orange)
+    'HIV Program Scale-up Without HSS Expansion': '#fddc89',
+    'HIV Programs Scale-up With HSS Expansion Package': '#fbd977',
+    # TB scenarios (shades of green-yellow)
+    'TB Program Scale-up Without HSS Expansion': '#e7f7a0',
+    'TB Programs Scale-up With HSS Expansion Package': '#cbe88c',
+    # Malaria scenarios (shades of green)
     'Malaria Program Scale-up Without HSS Expansion': '#a5dc97',
     'Malaria Programs Scale-up With HSS Expansion Package': '#6dc0a6',
-    'HTM Program Scale-up Without HSS Expansion': '#438fba',
-    'HTM Programs Scale-up With HSS Expansion Package': '#5e4fa2',
-    'HTM Program Scale-up With Consumables at 75th Percentile': '#3c71aa',
-    'HTM Program Scale-up With HRH Scale-up (6%)': '#2f6094',
+    # HSS scenarios (shades of blue-green)
+    'HSS Expansion Package': '#439fba',
+    # HTM scenarios (shades of blue)
+    'HTM Program Scale-up Without HSS Expansion': '#5e4fa2',
+    'HTM Programs Scale-up With HSS Expansion Package': '#4a368f',
 }
 
 # Cost-effectiveness threshold
@@ -127,10 +127,6 @@ chosen_value_of_statistical_life_upper = 2427.31 # upper bound estimated using R
 chosen_value_of_statistical_life_lower = 425.96 # lower bound estimated using Robinson et al method (income elasticity of VSL = 1.5)
 # lomas_consumption_value_of_health = 257.472 # this value is for 2025 (converted to 2023 USD)
 # and assumed income elasticity of consumption value of health to be 1.
-
-# Discount rate
-discount_rate_health = 0.03
-discount_rate_cost = 0.03
 
 # Define a function to create bar plots
 def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
@@ -186,8 +182,8 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
     if put_labels_in_legend:
         # Update xticks label with substitute labels
         # Insert legend with updated labels that shows correspondence between substitute label and original label
-        # Use htm_scenarios for the legend
-        xtick_legend = [f'{letter}: {htm_scenarios.get(label, label)}' for letter, label in zip(substitute_labels, xticks.values())]
+        # Use all_manuscript_scenarios for the legend
+        xtick_legend = [f'{letter}: {all_manuscript_scenarios.get(label, label)}' for letter, label in zip(substitute_labels, xticks.values())]
         xtick_values = [letter for letter, label in zip(substitute_labels, xticks.values())]
 
         h, legs = ax.get_legend_handles_labels()
@@ -215,848 +211,933 @@ def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
 
     return fig, ax
 
-# %%
-# Estimate standard input costs of scenario
-#-----------------------------------------------------------------------------------------------------------------------
-input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
-                                               _discount_rate = discount_rate_cost, _draws = list(all_manuscript_scenarios.keys()))
+# Define alternative discount rate sets as a list of dictionaries
+alternative_discount_rates = [
+    {"discount_rate_cost": 0.03, "discount_rate_health": 0, "discounting_scenario": 'WHO-CHOICE (0.03,0)'},
+    {"discount_rate_cost": 0.05, "discount_rate_health": 0.05, "discounting_scenario": 'HAACKER (0.05,0.05)'},
+    {"discount_rate_cost": 0.03, "discount_rate_health": 0.03, "discounting_scenario": 'MAIN (0.03,0.03)'}
+]
 
-# Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
-#-----------------------------------------------------------------------------------------------------------------------
-def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
-    # Load primary costing resourcefile
-    workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                  sheet_name=None)
-    # Read parameters for consumables costs
-    # Load consumables cost data
-    unit_price_consumable = workbook_cost["consumables"]
-    unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
-    unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
-        drop=True).iloc[1:]
-    unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+for rates in alternative_discount_rates:
+    discount_rate_cost = rates["discount_rate_cost"]
+    discount_rate_health = rates["discount_rate_health"]
+    # Set figuresoath specific to discounting scenario
+    figurespath = main_figurespath / rates["discounting_scenario"]
+    if not os.path.exists(figurespath):
+        os.makedirs(figurespath)
 
-    # In this case malaria intervention scale-up costs were not included in the standard estimate_input_cost_of_scenarios function
-    list_of_draws_with_malaria_scaleup_parameters = _params[(_params.module_param == 'Malaria:scaleup_start_year')]
-    list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'] = pd.to_numeric(list_of_draws_with_malaria_scaleup_parameters['value'])
-    list_of_draws_with_malaria_scaleup_implemented_in_costing_period = list_of_draws_with_malaria_scaleup_parameters[(list_of_draws_with_malaria_scaleup_parameters['value'] < max(_relevant_period_for_costing))].index.to_list()
+    print(f"NOW RUNNING SCENARIO {rates['discounting_scenario']}...")
 
-    # 1. IRS costs
-    irs_coverage_rate = 0.8
-    districts_with_irs_scaleup = ['Kasungu', 'Mchinji', 'Lilongwe', 'Lilongwe City', 'Dowa', 'Ntchisi', 'Salima', 'Mangochi',
-                                  'Mwanza', 'Likoma', 'Nkhotakota']
-    # Convert above list of district names to numeric district identifiers
-    district_keys_with_irs_scaleup = [key for key, name in district_dict.items() if name in districts_with_irs_scaleup]
-    year_of_malaria_scaleup_start = list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'].reset_index()['value'][0]
-    final_year_for_costing = max(list_of_relevant_years_for_costing)
-    TARGET_PERIOD_MALARIA_SCALEUP = (Date(year_of_malaria_scaleup_start, 1, 1), Date(final_year_for_costing, 12, 31))
+    # %%
+    # Estimate standard input costs of scenario
+    #-----------------------------------------------------------------------------------------------------------------------
+    input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+                                                   _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
+                                                   _discount_rate = discount_rate_cost, _draws = list(all_manuscript_scenarios.keys()))
 
-    # Get population by district
-    def get_total_population_by_year(_df):
-        years_needed = [i.year for i in TARGET_PERIOD_MALARIA_SCALEUP]  # Malaria scale-up period years
-        _df['year'] = pd.to_datetime(_df['date']).dt.year
+    # Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
+    #-----------------------------------------------------------------------------------------------------------------------
+    def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
+        # Load primary costing resourcefile
+        workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                      sheet_name=None)
+        # Read parameters for consumables costs
+        # Load consumables cost data
+        unit_price_consumable = workbook_cost["consumables"]
+        unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+        unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
+            drop=True).iloc[1:]
+        unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
 
-        # Validate that all necessary years are in the DataFrame
-        if not set(years_needed).issubset(_df['year'].unique()):
-            raise ValueError("Some years are not recorded in the dataset.")
+        # In this case malaria intervention scale-up costs were not included in the standard estimate_input_cost_of_scenarios function
+        list_of_draws_with_malaria_scaleup_parameters = _params[(_params.module_param == 'Malaria:scaleup_start_year')]
+        list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'] = pd.to_numeric(list_of_draws_with_malaria_scaleup_parameters['value'])
+        list_of_draws_with_malaria_scaleup_implemented_in_costing_period = list_of_draws_with_malaria_scaleup_parameters[(list_of_draws_with_malaria_scaleup_parameters['value'] < max(_relevant_period_for_costing))].index.to_list()
 
-        # Filter for relevant years and return the total population as a Series
-        return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
-            'total']
+        # 1. IRS costs
+        irs_coverage_rate = 0.8
+        districts_with_irs_scaleup = ['Kasungu', 'Mchinji', 'Lilongwe', 'Lilongwe City', 'Dowa', 'Ntchisi', 'Salima', 'Mangochi',
+                                      'Mwanza', 'Likoma', 'Nkhotakota']
+        # Convert above list of district names to numeric district identifiers
+        district_keys_with_irs_scaleup = [key for key, name in district_dict.items() if name in districts_with_irs_scaleup]
+        year_of_malaria_scaleup_start = list_of_draws_with_malaria_scaleup_parameters.loc[:,'value'].reset_index()['value'][0]
+        final_year_for_costing = max(list_of_relevant_years_for_costing)
+        TARGET_PERIOD_MALARIA_SCALEUP = (Date(year_of_malaria_scaleup_start, 1, 1), Date(final_year_for_costing, 12, 31))
 
-    # Get total population by year
-    total_population_by_year = extract_results(
+        # Get population by district
+        def get_total_population_by_year(_df):
+            years_needed = [i.year for i in TARGET_PERIOD_MALARIA_SCALEUP]  # Malaria scale-up period years
+            _df['year'] = pd.to_datetime(_df['date']).dt.year
+
+            # Validate that all necessary years are in the DataFrame
+            if not set(years_needed).issubset(_df['year'].unique()):
+                raise ValueError("Some years are not recorded in the dataset.")
+
+            # Filter for relevant years and return the total population as a Series
+            return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+                'total']
+
+        # Get total population by year
+        total_population_by_year = extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=get_total_population_by_year,
+            do_scaling=True
+        )
+        def estimate_district_population_from_total(_df):
+            """ Generate district population by year from national population by year estimates"""
+            # Replicate population estimates for each district
+            district_ids = list(range(32))
+            df_replicated_for_each_district = pd.concat([_df] * 32, axis=0)
+            df_replicated_for_each_district['District_Num'] = np.array(
+                sorted(district_ids * (final_year_for_costing - year_of_malaria_scaleup_start + 1)),
+                dtype=np.int64) # attach district number to each replicate
+            df_replicated_for_each_district = df_replicated_for_each_district.reset_index()
+            df_replicated_for_each_district = df_replicated_for_each_district.sort_index(axis=1)
+
+            # Load proportional population distribution by district
+            population_2010 = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')
+            population_proportion_by_district_2010 = (
+                population_2010.groupby('District_Num')['Count']
+                .sum()
+                .pipe(lambda x: x / x.sum())  # Compute proportions
+            )
+            assert (population_proportion_by_district_2010.sum() == 1)
+            population_proportion_by_district_2010 = population_proportion_by_district_2010.reset_index()
+            population_proportion_by_district_2010.columns = pd.MultiIndex.from_tuples(
+                [('District_Num', ''), ('Count', '')]
+            )
+            population_proportion_by_district_2010 = population_proportion_by_district_2010.sort_index(axis=1)
+
+            # Merge and compute district-level population by year
+            df_by_district = df_replicated_for_each_district.merge(population_proportion_by_district_2010,
+                                                                              on='District_Num', how='left', validate='m:1')
+            df_by_district[_df.columns] = df_by_district[
+                _df.columns].multiply(df_by_district['Count'], axis=0)
+            df_by_district = df_by_district.sort_index(axis=1).drop(columns=['Count'])
+
+            # Set multi-level columns and final formatting
+            df_by_district = (
+                df_by_district
+                .set_axis(pd.MultiIndex.from_tuples(df_by_district.columns, names=['draw', 'run']), axis=1)
+                .rename(columns={'District_Num': 'district'})
+                .set_index(['year', 'district'])
+            )
+            df_by_district.columns = pd.MultiIndex.from_tuples(df_by_district.columns)
+            df_by_district.columns.names = ['draw', 'run']
+            return df_by_district
+
+        # Get population by district by year
+        district_population_by_year = estimate_district_population_from_total(total_population_by_year)
+
+        def get_number_of_people_covered_by_malaria_scaleup(_df, list_of_districts_covered = None, draws_included = None):
+            _df = pd.DataFrame(_df)
+            # Reset the index to make 'district' a column
+            _df = _df.reset_index()
+            # Convert the 'district' column to numeric values
+            _df['district'] = pd.to_numeric(_df['district'], errors='coerce')
+            _df = _df.set_index(['year', 'district'])
+            # Zero out rows for districts not in the specified list
+            if list_of_districts_covered is not None:
+                mask = _df.index.get_level_values('district').isin(list_of_districts_covered)
+                _df.loc[~mask, :] = 0  # Use mask to zero out unwanted rows
+
+            # Zero out columns for draws not in the specified list
+            if draws_included is not None:
+                mask = _df.columns.get_level_values('draw').isin(draws_included)
+                _df.loc[:, ~mask] = 0  # Use mask to zero out unwanted columns
+            return _df
+
+        # Get population by district by year covered by IRS
+        district_population_covered_by_irs_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
+                                                                                                         list_of_districts_covered=district_keys_with_irs_scaleup,
+                                                                                                         draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period)
+
+        # Get annual cost of IRS under malaria scale-up assumptions
+        irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
+        # This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping, PPE. The cost is measured per person protected. Based on Stelmach et al (2018)
+        irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate
+        total_irs_cost = irs_multiplication_factor.iloc[0] * district_population_covered_by_irs_scaleup_by_year # for districts and scenarios included
+        total_irs_cost = total_irs_cost.groupby(level='year').sum()
+
+        # 2. Bednet costs
+        bednet_coverage_rate = 0.7
+        # We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
+        inflation_2011_to_2023 = 1.35
+        unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] + (8.27 - 3.36) * inflation_2011_to_2023
+        # Stelmach et al Tanzania https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_ (Price in 2011 USD) - This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping. The cost is measured per net distributed
+        # Note that the cost per net of $3.36 has been replaced with a cost of Malawi Kwacha 667 (2023) as per the Central Medical Stores Trust sales catalogue
+
+        # We add supply chain costs (procurement + distribution + warehousing) because the unit_cost does not include this
+        annual_bednet_cost_per_person = unit_cost_of_bednet / 1.8 / 3
+        bednet_multiplication_factor = bednet_coverage_rate * annual_bednet_cost_per_person
+
+        district_population_covered_by_bednet_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
+                                                                                                         draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period) # All districts covered
+
+        total_bednet_cost = bednet_multiplication_factor.iloc[0] * district_population_covered_by_bednet_scaleup_by_year  # for scenarios included
+        total_bednet_cost = total_bednet_cost.groupby(level='year').sum()
+
+        # Malaria scale-up costs - TOTAL
+        malaria_scaleup_costs = [
+            (total_irs_cost.reset_index(), 'cost_of_IRS_scaleup'),
+            (total_bednet_cost.reset_index(), 'cost_of_bednet_scaleup'),
+        ]
+        return malaria_scaleup_costs
+
+    print("Appending malaria scale-up costs")
+    malaria_scaleup_costs = estimate_malaria_scale_up_costs(_params = params,
+                                                            _relevant_period_for_costing = relevant_period_for_costing)
+    def append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs, _total_input_costs, _relevant_period_for_costing):
+        # Re-format malaria scale-up costs to append to the rest of the input_costs
+        def melt_and_label_malaria_scaleup_cost(_df, label):
+            multi_index = pd.MultiIndex.from_tuples(_df.columns)
+            _df.columns = multi_index
+
+            # reshape dataframe and assign 'draw' and 'run' as the correct column headers
+            melted_df = pd.melt(_df, id_vars=['year']).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
+            # Replace item_code with consumable_name_tlo
+            melted_df['cost_subcategory'] = label
+            melted_df['cost_category'] = 'malaria scale-up'
+            melted_df['cost_subgroup'] = 'NA'
+            melted_df['Facility_Level'] = 'all'
+            melted_df = melted_df.rename(columns={'value': 'cost'})
+            return melted_df
+
+        # Iterate through additional costs, melt and concatenate
+        for df, label in _malaria_scale_up_costs:
+            new_df = melt_and_label_malaria_scaleup_cost(df, label)
+            list_of_relevant_years_for_costing = list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1))
+            new_df = new_df[new_df['year'].isin(list_of_relevant_years_for_costing)]
+            new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate_cost, _initial_year = _relevant_period_for_costing[0])
+            _total_input_costs = pd.concat([_total_input_costs, new_df], ignore_index=True)
+
+        return _total_input_costs
+
+    # Update input costs to include malaria scale up costs
+    input_costs = append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs = malaria_scaleup_costs,
+                                                                     _total_input_costs = input_costs,
+                                                                     _relevant_period_for_costing = relevant_period_for_costing)
+
+    def estimate_xpert_costs(_results_folder, _relevant_period_for_costing):
+        # Load primary costing resourcefile
+        workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                      sheet_name=None)
+        # Read parameters for consumables costs
+        # Load consumables cost data
+        unit_price_consumable = workbook_cost["consumables"]
+        unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
+        unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
+            drop=True).iloc[1:]
+        unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
+
+        # Add cost of Xpert consumables which was missed in the current analysis
+        def get_counts_of_items_requested(_df):
+            counts_of_used = defaultdict(lambda: defaultdict(int))
+            counts_of_available = defaultdict(lambda: defaultdict(int))
+            counts_of_not_available = defaultdict(lambda: defaultdict(int))
+
+            for _, row in _df.iterrows():
+                date = row['date']
+                for item, num in row['Item_Used'].items():
+                    counts_of_used[date][item] += num
+                for item, num in row['Item_Available'].items():
+                    counts_of_available[date][item] += num
+                for item, num in row['Item_NotAvailable'].items():
+                    counts_of_not_available[date][item] += num
+
+            used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
+            available_df = pd.DataFrame(counts_of_available).fillna(0).astype(int).stack().rename('Available')
+            not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename('Not_Available')
+
+            # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
+            combined_df = pd.concat([used_df, available_df, not_available_df], axis=1).fillna(0).astype(int)
+
+            # Convert to a pd.Series, as expected by the custom_generate_series function
+            return combined_df.stack()
+
+        cons_req = extract_results(
+            _results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='Consumables',
+            custom_generate_series=get_counts_of_items_requested,
+            do_scaling=True)
+        keep_xpert = cons_req.index.get_level_values(0) == '187'
+        keep_instances_logged_as_not_available = cons_req.index.get_level_values(2) == 'Not_Available'
+        cons_req = cons_req[keep_xpert & keep_instances_logged_as_not_available]
+        cons_req = cons_req.reset_index()
+
+        # Keep only relevant draws
+        # Filter columns based on keys from all_manuscript_scenarios
+        col_subset = [col for col in cons_req.columns if
+                      ((col[0] in all_manuscript_scenarios.keys()) | (col[0] == 'level_1'))]
+        # Keep only the relevant columns
+        cons_req = cons_req[col_subset]
+
+        def transform_cons_requested_for_costing(_df, date_column):
+            _df['year'] = pd.to_datetime(_df[date_column]).dt.year
+
+            # Validate that all necessary years are in the DataFrame
+            if not set(_relevant_period_for_costing).issubset(_df['year'].unique()):
+                raise ValueError("Some years are not recorded in the dataset.")
+
+            # Filter for relevant years and return the total population as a Series
+            return _df.loc[_df['year'].between(min(_relevant_period_for_costing), max(_relevant_period_for_costing))].drop(columns=date_column).set_index(
+                'year')
+
+        xpert_cost_per_cartridge = unit_price_consumable[unit_price_consumable.Item_Code == 187][
+            'Final_price_per_chosen_unit (USD, 2023)']
+        xpert_availability_adjustment = 0.77
+        # note that as per 2018 Openlmis mean availability was 0.5, 0.77, 0.809, 0.861, 0.744 during Jul, Sep - Dec.
+        # The median value is 0.77 - for the rest of the months availability was close to 0
+
+        xpert_dispensed_cost = (transform_cons_requested_for_costing(_df=cons_req,
+                                                                     date_column=('level_1', ''))
+                                * xpert_availability_adjustment
+                                * xpert_cost_per_cartridge.iloc[0])
+        draws_with_positive_xpert_costs = (
+            input_costs[(input_costs.cost_subgroup == 'Xpert') & (input_costs.cost > 0)].groupby('draw')[
+                'cost'].sum().reset_index()['draw']
+            .unique()).tolist()
+
+        def melt_and_label_xpert_cost(_df):
+            multi_index = pd.MultiIndex.from_tuples(_df.columns)
+            _df.columns = multi_index
+
+            # reshape dataframe and assign 'draw' and 'run' as the correct column headers
+            melted_df = pd.melt(_df.reset_index(), id_vars=['year']).rename(
+                columns={'variable_0': 'draw', 'variable_1': 'run'})
+            # For draws where the costing is already correct, set additional costs to 0
+            melted_df.loc[melted_df.draw.isin(draws_with_positive_xpert_costs), 'value'] = 0
+            # Replace item_code with consumable_name_tlo
+            melted_df['cost_category'] = 'medical consumables'
+            melted_df['cost_subgroup'] = 'Xpert'
+            melted_df['Facility_Level'] = 'all'
+            melted_df = melted_df.rename(columns={'value': 'cost'})
+
+            # Replicate and estimate cost of consumables stocked and supply chain costs
+            df_with_all_cost_subcategories = pd.concat([melted_df] * 3, axis=0, ignore_index=True)
+            # Define cost subcategory values
+            cost_categories = ['cost_of_consumables_dispensed', 'cost_of_excess_consumables_stocked', 'supply_chain']
+            # Assign values to the new 'cost_subcategory' column
+            df_with_all_cost_subcategories['cost_subcategory'] = np.tile(cost_categories, len(melted_df))
+            # The excess stock ratio of Xpert as per 2018 LMIS data is 0.125833
+            df_with_all_cost_subcategories.loc[df_with_all_cost_subcategories[
+                                                   'cost_subcategory'] == 'cost_of_excess_consumables_stocked', 'cost'] *= 0.125833
+            # Supply chain costs are 0.12938884672119721 of the cost of dispensed + stocked
+            df_with_all_cost_subcategories.loc[
+                df_with_all_cost_subcategories['cost_subcategory'] == 'supply_chain', 'cost'] *= (
+                    0.12938884672119721 * (1 + 0.125833))
+            return df_with_all_cost_subcategories
+
+        xpert_total_cost = melt_and_label_xpert_cost(xpert_dispensed_cost)
+        xpert_total_cost.to_csv('./outputs/horizontal_v_vertical/xpert_cost.csv')
+        xpert_total_cost_discounted = apply_discounting_to_cost_data(xpert_total_cost, _discount_rate=discount_rate_cost,
+                                                _initial_year=_relevant_period_for_costing[0])
+        return xpert_total_cost_discounted
+
+    print("Appending Xpert costs")
+    xpert_total_cost = estimate_xpert_costs(_results_folder = results_folder,
+                                            _relevant_period_for_costing = relevant_period_for_costing)
+
+    # Update input costs to include Xpert costs
+    input_costs = pd.concat([input_costs, xpert_total_cost], ignore_index=True)
+    input_costs = input_costs.groupby(['draw', 'run', 'year', 'cost_subcategory', 'Facility_Level',
+                                                   'cost_subgroup', 'cost_category'])['cost'].sum().reset_index()
+
+
+    # Keep costs for relevant draws
+    input_costs = input_costs[input_costs['draw'].isin(list(all_manuscript_scenarios.keys()))]
+    # Extract input_costs for browsing
+    #input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_subgroup','year'])['cost'].sum().to_csv(figurespath / 'cost_detailed.csv')
+
+    # %%
+    # Return on Invesment analysis
+    # Convert results to dictionary to write text extracts for manuscript
+    def convert_results_to_dict(_df):
+        draws = list(all_manuscript_scenarios.keys())[1:]
+        values = {
+            draw: {
+                chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
+                "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
+                "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
+            }
+            for draw in draws
+        }
+        return values
+
+    # 1. Calculate incremental cost
+    # -----------------------------------------------------------------------------------------------------------------------
+    total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
+    total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'), _metric = chosen_metric)
+    def find_difference_relative_to_comparison(_ser: pd.Series,
+                                               comparison: str,
+                                               scaled: bool = False,
+                                               drop_comparison: bool = True,
+                                               ):
+        """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+        within the runs (level 1), relative to where draw = `comparison`.
+        The comparison is `X - COMPARISON`."""
+        return _ser \
+            .unstack(level=0) \
+            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+            .drop(columns=([comparison] if drop_comparison else [])) \
+            .stack()
+
+    incremental_scenario_cost = (pd.DataFrame(
+        find_difference_relative_to_comparison(
+            total_input_cost,
+            comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
+    ).T.iloc[0].unstack()).T
+    incremental_scenario_cost_subset_for_figure = incremental_scenario_cost[incremental_scenario_cost.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+
+    # 2. Monetary value of health impact
+    # -----------------------------------------------------------------------------------------------------------------------
+    def get_num_dalys(_df):
+        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+        results from runs that crashed mid-way through the simulation.
+        """
+        years_needed = relevant_period_for_costing
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
+        _df = _df.loc[_df.year.between(*years_needed)].drop(columns=['date', 'sex', 'age_range']).groupby('year').sum().sum(axis = 1)
+
+        # Initial year and discount rate
+        initial_year = min(_df.index.unique())
+
+        # Calculate the discounted values
+        discounted_values = _df / (1 + discount_rate_health) ** (_df.index - initial_year)
+
+        return pd.Series(discounted_values.sum())
+
+    num_dalys = extract_results(
         results_folder,
-        module='tlo.methods.demography',
-        key='population',
-        custom_generate_series=get_total_population_by_year,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys,
         do_scaling=True
     )
-    def estimate_district_population_from_total(_df):
-        """ Generate district population by year from national population by year estimates"""
-        # Replicate population estimates for each district
-        district_ids = list(range(32))
-        df_replicated_for_each_district = pd.concat([_df] * 32, axis=0)
-        df_replicated_for_each_district['District_Num'] = np.array(
-            sorted(district_ids * (final_year_for_costing - year_of_malaria_scaleup_start + 1)),
-            dtype=np.int64) # attach district number to each replicate
-        df_replicated_for_each_district = df_replicated_for_each_district.reset_index()
-        df_replicated_for_each_district = df_replicated_for_each_district.sort_index(axis=1)
 
-        # Load proportional population distribution by district
-        population_2010 = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')
-        population_proportion_by_district_2010 = (
-            population_2010.groupby('District_Num')['Count']
-            .sum()
-            .pipe(lambda x: x / x.sum())  # Compute proportions
-        )
-        assert (population_proportion_by_district_2010.sum() == 1)
-        population_proportion_by_district_2010 = population_proportion_by_district_2010.reset_index()
-        population_proportion_by_district_2010.columns = pd.MultiIndex.from_tuples(
-            [('District_Num', ''), ('Count', '')]
-        )
-        population_proportion_by_district_2010 = population_proportion_by_district_2010.sort_index(axis=1)
-
-        # Merge and compute district-level population by year
-        df_by_district = df_replicated_for_each_district.merge(population_proportion_by_district_2010,
-                                                                          on='District_Num', how='left', validate='m:1')
-        df_by_district[_df.columns] = df_by_district[
-            _df.columns].multiply(df_by_district['Count'], axis=0)
-        df_by_district = df_by_district.sort_index(axis=1).drop(columns=['Count'])
-
-        # Set multi-level columns and final formatting
-        df_by_district = (
-            df_by_district
-            .set_axis(pd.MultiIndex.from_tuples(df_by_district.columns, names=['draw', 'run']), axis=1)
-            .rename(columns={'District_Num': 'district'})
-            .set_index(['year', 'district'])
-        )
-        df_by_district.columns = pd.MultiIndex.from_tuples(df_by_district.columns)
-        df_by_district.columns.names = ['draw', 'run']
-        return df_by_district
-
-    # Get population by district by year
-    district_population_by_year = estimate_district_population_from_total(total_population_by_year)
-
-    def get_number_of_people_covered_by_malaria_scaleup(_df, list_of_districts_covered = None, draws_included = None):
-        _df = pd.DataFrame(_df)
-        # Reset the index to make 'district' a column
-        _df = _df.reset_index()
-        # Convert the 'district' column to numeric values
-        _df['district'] = pd.to_numeric(_df['district'], errors='coerce')
-        _df = _df.set_index(['year', 'district'])
-        # Zero out rows for districts not in the specified list
-        if list_of_districts_covered is not None:
-            mask = _df.index.get_level_values('district').isin(list_of_districts_covered)
-            _df.loc[~mask, :] = 0  # Use mask to zero out unwanted rows
-
-        # Zero out columns for draws not in the specified list
-        if draws_included is not None:
-            mask = _df.columns.get_level_values('draw').isin(draws_included)
-            _df.loc[:, ~mask] = 0  # Use mask to zero out unwanted columns
-        return _df
-
-    # Get population by district by year covered by IRS
-    district_population_covered_by_irs_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
-                                                                                                     list_of_districts_covered=district_keys_with_irs_scaleup,
-                                                                                                     draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period)
-
-    # Get annual cost of IRS under malaria scale-up assumptions
-    irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
-    # This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping, PPE. The cost is measured per person protected. Based on Stelmach et al (2018)
-    irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate
-    total_irs_cost = irs_multiplication_factor.iloc[0] * district_population_covered_by_irs_scaleup_by_year # for districts and scenarios included
-    total_irs_cost = total_irs_cost.groupby(level='year').sum()
-
-    # 2. Bednet costs
-    bednet_coverage_rate = 0.7
-    # We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
-    inflation_2011_to_2023 = 1.35
-    unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] + (8.27 - 3.36) * inflation_2011_to_2023
-    # Stelmach et al Tanzania https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_ (Price in 2011 USD) - This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping. The cost is measured per net distributed
-    # Note that the cost per net of $3.36 has been replaced with a cost of Malawi Kwacha 667 (2023) as per the Central Medical Stores Trust sales catalogue
-
-    # We add supply chain costs (procurement + distribution + warehousing) because the unit_cost does not include this
-    annual_bednet_cost_per_person = unit_cost_of_bednet / 1.8 / 3
-    bednet_multiplication_factor = bednet_coverage_rate * annual_bednet_cost_per_person
-
-    district_population_covered_by_bednet_scaleup_by_year = get_number_of_people_covered_by_malaria_scaleup(district_population_by_year,
-                                                                                                     draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period) # All districts covered
-
-    total_bednet_cost = bednet_multiplication_factor.iloc[0] * district_population_covered_by_bednet_scaleup_by_year  # for scenarios included
-    total_bednet_cost = total_bednet_cost.groupby(level='year').sum()
-
-    # Malaria scale-up costs - TOTAL
-    malaria_scaleup_costs = [
-        (total_irs_cost.reset_index(), 'cost_of_IRS_scaleup'),
-        (total_bednet_cost.reset_index(), 'cost_of_bednet_scaleup'),
-    ]
-    return malaria_scaleup_costs
-
-print("Appending malaria scale-up costs")
-malaria_scaleup_costs = estimate_malaria_scale_up_costs(_params = params,
-                                                        _relevant_period_for_costing = relevant_period_for_costing)
-def append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs, _total_input_costs, _relevant_period_for_costing):
-    # Re-format malaria scale-up costs to append to the rest of the input_costs
-    def melt_and_label_malaria_scaleup_cost(_df, label):
-        multi_index = pd.MultiIndex.from_tuples(_df.columns)
-        _df.columns = multi_index
-
-        # reshape dataframe and assign 'draw' and 'run' as the correct column headers
-        melted_df = pd.melt(_df, id_vars=['year']).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
-        # Replace item_code with consumable_name_tlo
-        melted_df['cost_subcategory'] = label
-        melted_df['cost_category'] = 'malaria scale-up'
-        melted_df['cost_subgroup'] = 'NA'
-        melted_df['Facility_Level'] = 'all'
-        melted_df = melted_df.rename(columns={'value': 'cost'})
-        return melted_df
-
-    # Iterate through additional costs, melt and concatenate
-    for df, label in _malaria_scale_up_costs:
-        new_df = melt_and_label_malaria_scaleup_cost(df, label)
-        list_of_relevant_years_for_costing = list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1))
-        new_df = new_df[new_df['year'].isin(list_of_relevant_years_for_costing)]
-        new_df = apply_discounting_to_cost_data(new_df, _discount_rate= discount_rate_cost, _initial_year = _relevant_period_for_costing[0])
-        _total_input_costs = pd.concat([_total_input_costs, new_df], ignore_index=True)
-
-    return _total_input_costs
-
-# Update input costs to include malaria scale up costs
-input_costs = append_malaria_scale_up_costs_to_total_input_costs(_malaria_scale_up_costs = malaria_scaleup_costs,
-                                                                 _total_input_costs = input_costs,
-                                                                 _relevant_period_for_costing = relevant_period_for_costing)
-
-def estimate_xpert_costs(_results_folder, _relevant_period_for_costing):
-    # Load primary costing resourcefile
-    workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                  sheet_name=None)
-    # Read parameters for consumables costs
-    # Load consumables cost data
-    unit_price_consumable = workbook_cost["consumables"]
-    unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
-    unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
-        drop=True).iloc[1:]
-    unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
-
-    # Add cost of Xpert consumables which was missed in the current analysis
-    def get_counts_of_items_requested(_df):
-        counts_of_used = defaultdict(lambda: defaultdict(int))
-        counts_of_available = defaultdict(lambda: defaultdict(int))
-        counts_of_not_available = defaultdict(lambda: defaultdict(int))
-
-        for _, row in _df.iterrows():
-            date = row['date']
-            for item, num in row['Item_Used'].items():
-                counts_of_used[date][item] += num
-            for item, num in row['Item_Available'].items():
-                counts_of_available[date][item] += num
-            for item, num in row['Item_NotAvailable'].items():
-                counts_of_not_available[date][item] += num
-
-        used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
-        available_df = pd.DataFrame(counts_of_available).fillna(0).astype(int).stack().rename('Available')
-        not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename('Not_Available')
-
-        # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
-        combined_df = pd.concat([used_df, available_df, not_available_df], axis=1).fillna(0).astype(int)
-
-        # Convert to a pd.Series, as expected by the custom_generate_series function
-        return combined_df.stack()
-
-    cons_req = extract_results(
-        _results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='Consumables',
-        custom_generate_series=get_counts_of_items_requested,
-        do_scaling=True)
-    keep_xpert = cons_req.index.get_level_values(0) == '187'
-    keep_instances_logged_as_not_available = cons_req.index.get_level_values(2) == 'Not_Available'
-    cons_req = cons_req[keep_xpert & keep_instances_logged_as_not_available]
-    cons_req = cons_req.reset_index()
-
-    # Keep only relevant draws
-    # Filter columns based on keys from all_manuscript_scenarios
-    col_subset = [col for col in cons_req.columns if
-                  ((col[0] in all_manuscript_scenarios.keys()) | (col[0] == 'level_1'))]
-    # Keep only the relevant columns
-    cons_req = cons_req[col_subset]
-
-    def transform_cons_requested_for_costing(_df, date_column):
-        _df['year'] = pd.to_datetime(_df[date_column]).dt.year
-
-        # Validate that all necessary years are in the DataFrame
-        if not set(_relevant_period_for_costing).issubset(_df['year'].unique()):
-            raise ValueError("Some years are not recorded in the dataset.")
-
-        # Filter for relevant years and return the total population as a Series
-        return _df.loc[_df['year'].between(min(_relevant_period_for_costing), max(_relevant_period_for_costing))].drop(columns=date_column).set_index(
-            'year')
-
-    xpert_cost_per_cartridge = unit_price_consumable[unit_price_consumable.Item_Code == 187][
-        'Final_price_per_chosen_unit (USD, 2023)']
-    xpert_availability_adjustment = 0.77
-    # note that as per 2018 Openlmis mean availability was 0.5, 0.77, 0.809, 0.861, 0.744 during Jul, Sep - Dec.
-    # The median value is 0.77 - for the rest of the months availability was close to 0
-
-    xpert_dispensed_cost = (transform_cons_requested_for_costing(_df=cons_req,
-                                                                 date_column=('level_1', ''))
-                            * xpert_availability_adjustment
-                            * xpert_cost_per_cartridge.iloc[0])
-    draws_with_positive_xpert_costs = (
-        input_costs[(input_costs.cost_subgroup == 'Xpert') & (input_costs.cost > 0)].groupby('draw')[
-            'cost'].sum().reset_index()['draw']
-        .unique()).tolist()
-
-    def melt_and_label_xpert_cost(_df):
-        multi_index = pd.MultiIndex.from_tuples(_df.columns)
-        _df.columns = multi_index
-
-        # reshape dataframe and assign 'draw' and 'run' as the correct column headers
-        melted_df = pd.melt(_df.reset_index(), id_vars=['year']).rename(
-            columns={'variable_0': 'draw', 'variable_1': 'run'})
-        # For draws where the costing is already correct, set additional costs to 0
-        melted_df.loc[melted_df.draw.isin(draws_with_positive_xpert_costs), 'value'] = 0
-        # Replace item_code with consumable_name_tlo
-        melted_df['cost_category'] = 'medical consumables'
-        melted_df['cost_subgroup'] = 'Xpert'
-        melted_df['Facility_Level'] = 'all'
-        melted_df = melted_df.rename(columns={'value': 'cost'})
-
-        # Replicate and estimate cost of consumables stocked and supply chain costs
-        df_with_all_cost_subcategories = pd.concat([melted_df] * 3, axis=0, ignore_index=True)
-        # Define cost subcategory values
-        cost_categories = ['cost_of_consumables_dispensed', 'cost_of_excess_consumables_stocked', 'supply_chain']
-        # Assign values to the new 'cost_subcategory' column
-        df_with_all_cost_subcategories['cost_subcategory'] = np.tile(cost_categories, len(melted_df))
-        # The excess stock ratio of Xpert as per 2018 LMIS data is 0.125833
-        df_with_all_cost_subcategories.loc[df_with_all_cost_subcategories[
-                                               'cost_subcategory'] == 'cost_of_excess_consumables_stocked', 'cost'] *= 0.125833
-        # Supply chain costs are 0.12938884672119721 of the cost of dispensed + stocked
-        df_with_all_cost_subcategories.loc[
-            df_with_all_cost_subcategories['cost_subcategory'] == 'supply_chain', 'cost'] *= (
-                0.12938884672119721 * (1 + 0.125833))
-        return df_with_all_cost_subcategories
-
-    xpert_total_cost = melt_and_label_xpert_cost(xpert_dispensed_cost)
-    xpert_total_cost.to_csv('./outputs/horizontal_v_vertical/xpert_cost.csv')
-    xpert_total_cost_discounted = apply_discounting_to_cost_data(xpert_total_cost, _discount_rate=discount_rate_cost,
-                                            _initial_year=_relevant_period_for_costing[0])
-    return xpert_total_cost_discounted
-
-print("Appending Xpert costs")
-xpert_total_cost = estimate_xpert_costs(_results_folder = results_folder,
-                                        _relevant_period_for_costing = relevant_period_for_costing)
-
-# Update input costs to include Xpert costs
-input_costs = pd.concat([input_costs, xpert_total_cost], ignore_index=True)
-input_costs = input_costs.groupby(['draw', 'run', 'year', 'cost_subcategory', 'Facility_Level',
-                                               'cost_subgroup', 'cost_category'])['cost'].sum().reset_index()
-
-
-# Keep costs for relevant draws
-input_costs = input_costs[input_costs['draw'].isin(list(all_manuscript_scenarios.keys()))]
-# Extract input_costs for browsing
-input_costs.groupby(['draw', 'run', 'cost_category', 'cost_subcategory', 'cost_subgroup','year'])['cost'].sum().to_csv(figurespath / 'cost_detailed.csv')
-
-# %%
-# Return on Invesment analysis
-# Convert results to dictionary to write text extracts for manuscript
-def convert_results_to_dict(_df):
-    draws = list(all_manuscript_scenarios.keys())[1:]
-    values = {
-        draw: {
-            chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
-            "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
-            "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
-        }
-        for draw in draws
-    }
-    return values
-
-# 1. Calculate incremental cost
-# -----------------------------------------------------------------------------------------------------------------------
-total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
-total_input_cost_summarized = summarize_cost_data(total_input_cost.unstack(level='run'), _metric = chosen_metric)
-def find_difference_relative_to_comparison(_ser: pd.Series,
-                                           comparison: str,
-                                           scaled: bool = False,
-                                           drop_comparison: bool = True,
-                                           ):
-    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
-    within the runs (level 1), relative to where draw = `comparison`.
-    The comparison is `X - COMPARISON`."""
-    return _ser \
-        .unstack(level=0) \
-        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-        .drop(columns=([comparison] if drop_comparison else [])) \
-        .stack()
-
-incremental_scenario_cost = (pd.DataFrame(
-    find_difference_relative_to_comparison(
-        total_input_cost,
-        comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
-).T.iloc[0].unstack()).T
-incremental_scenario_cost_subset_for_figure = incremental_scenario_cost[incremental_scenario_cost.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
-
-# 2. Monetary value of health impact
-# -----------------------------------------------------------------------------------------------------------------------
-def get_num_dalys(_df):
-    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
-    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
-    results from runs that crashed mid-way through the simulation.
-    """
-    years_needed = relevant_period_for_costing
-    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
-    _df = _df.loc[_df.year.between(*years_needed)].drop(columns=['date', 'sex', 'age_range']).groupby('year').sum().sum(axis = 1)
-
-    # Initial year and discount rate
-    initial_year = min(_df.index.unique())
-
-    # Calculate the discounted values
-    discounted_values = _df / (1 + discount_rate_health) ** (_df.index - initial_year)
-
-    return pd.Series(discounted_values.sum())
-
-num_dalys = extract_results(
-    results_folder,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=get_num_dalys,
-    do_scaling=True
-)
-
-# Get absolute DALYs averted
-num_dalys_averted = (-1.0 *
-                     pd.DataFrame(
-                         find_difference_relative_to_comparison(
-                             num_dalys.loc[0],
-                             comparison=0)  # sets the comparator to 0 which is the Actual scenario
-                     ).T.iloc[0].unstack(level='run'))
-num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))] # keep only relevant draws
-
-# Plot DALYs
-num_dalys_averted_subset_for_figure = num_dalys_averted[num_dalys_averted.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
-num_dalys_averted_summarised = summarize_cost_data(num_dalys_averted_subset_for_figure, _metric = chosen_metric)
-name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (num_dalys_averted_summarised / 1e6),
-    annotations=[
-        f"{row['median']/ 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
-        for _, row in num_dalys_averted_summarised.iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-    put_labels_in_legend=True,
-    offset=2,
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('DALYs \n(Millions)')
-ax.set_ylim(bottom=0)
-fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
-plt.close(fig)
-
-# The monetary value of the health benefit is delta health times CET (negative values are set to 0)
-def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
-    monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
-    return monetary_value_of_incremental_health
-
-# 3. Estimate and plot ICERs
-# ----------------------------------------------------
-icers = incremental_scenario_cost.div(num_dalys_averted)  # Element-wise division
-icers = icers.mask(num_dalys_averted < 0)
-icers_summarized = summarize_cost_data(icers, _metric = chosen_metric)
-icers_summarized_subset_for_figure = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
-icer_result = convert_results_to_dict(icers_summarized)
-hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
-hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
-cons_scenario_with_lowest_icer = min([5,6,7], key=lambda k: icer_result[k][chosen_metric])
-cons_scenario_with_highest_icer = max([5,6,7], key=lambda k: icer_result[k][chosen_metric])
-
-# Extract for manuscript
-print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario,"
-      f" the Incremental Cost Effectiveness Ratio (ICER) of scaling the health workforce by 1%, 4% and 6% annually was "
-      f"${icer_result[1][chosen_metric]:.2f} [${icer_result[1]['lower']:.2f} - ${icer_result[1]['upper']:.2f}], "
-      f"${icer_result[2][chosen_metric]:.2f} [${icer_result[2]['lower']:.2f} - ${icer_result[2]['upper']:.2f}] "
-      f"and ${icer_result[3][chosen_metric]:.2f} [${icer_result[3]['lower']:.2f} - ${icer_result[3]['upper']:.2f}] "
-      f"per DALY averted, lower than the minimum projected cost effectiveness threshold for 2025-2035 of "
-      f"$190 per DALY averted (Lomas et al, 2021). Aligning consumable availability to levels observed in top-performing "
-      f"programmes produced an ICER of ${icer_result[6][chosen_metric]:.2f} [${icer_result[6]['lower']:.2f} - ${icer_result[6]['upper']:.2f}]"
-      f" per DALY averted, and the full HSS package had an ICER of "
-      f"${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}]"
-      f" per DALY averted.")
-
-print(f"High incremental costs of vertical expansion programs for HIV and malaria result in cost-ineffective ICER values of "
-      f"${icer_result[9][chosen_metric]:.2f} [${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}] per DALY averted and "
-      f"${icer_result[27][chosen_metric]:.2f} [${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f} per DALY averted, "
-      f"respectively. The ICER of the vertical TB expansion program is "
-      f"${icer_result[18][chosen_metric]:.2f} [${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}] per DALY averted. "
-      f"When all these vertical expansion programmes are combined, the resulting ICER is "
-      f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}] per DALY averted.")
-
-print(f"Combining HSS with vertical program expansion was more cost-effective for malaria and HIV programmes, whereas this was not the case for TB. "
-      f"The ICERs for the HIV, malaria and TB programmes with HSS were "
-      f"${icer_result[17][chosen_metric]:.2f} [${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}] per DALY averted, "
-      f"${icer_result[35][chosen_metric]:.2f} [${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}] per DALY averted and "
-      f"${icer_result[26][chosen_metric]:.2f} [${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}] per DALY averted, "
-      f"respectively. The joint expansion of HTM programmes was also made more cost effective through combined HSS investments"
-      f"in comparison with its vertical expansion counterpart, with an ICER of "
-      f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted.")
-
-# Plot ICERs
-name_of_plot = f'Incremental cost-effectiveness ratios (ICERs), {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (icers_summarized_subset_for_figure),
-    annotations=[
-        f"{row[chosen_metric]:.2f} ({row['lower'] :.2f}- \n {row['upper'] :.2f})"
-        for _, row in icers_summarized_subset_for_figure.iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-    put_labels_in_legend=True,
-    offset=10,
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('ICERs \n($/DALY averted)')
-ax.set_ylim(bottom=0)
-fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
-plt.close(fig)
-
-# Extract ICERs into a table for manuscript
-icers_summarized_subset_for_table = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
-icers_summarized_subset_for_table = icers_summarized_subset_for_table.reset_index()
-icers_summarized_subset_for_table['scenario'] = icers_summarized_subset_for_table['draw'].map(all_manuscript_scenarios)
-icers_summarized_subset_for_table['ICER (2023 USD)'] = icers_summarized_subset_for_table.apply(
-    lambda row: f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
-    if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
-    axis=1
-)
-icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(roi_outputs_folder / 'tabulated_icers.csv', index = False)
-
-# 4. Return on Investment
-# ----------------------------------------------------
-# Estimate projected health spending
-projected_health_spending = estimate_projected_health_spending(resourcefilepath,
-                                  results_folder,
-                                 _years = list_of_relevant_years_for_costing,
-                                 _discount_rate = discount_rate_cost,
-                                 _summarize = True,
-                                 _metric = chosen_metric)
-projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0][chosen_metric][0]
-
-# Extract projected health spending table for appendix
-def get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing):
-    def get_total_population_by_year(_df):
-        years_needed = _relevant_period_for_costing  # Malaria scale-up period years
-        _df['year'] = pd.to_datetime(_df['date']).dt.year
-
-        # Validate that all necessary years are in the DataFrame
-        if not set(years_needed).issubset(_df['year'].unique()):
-            raise ValueError("Some years are not recorded in the dataset.")
-
-        # Filter for relevant years and return the total population as a Series
-        return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
-            'total']
-
-    # Get total population by year
-    total_population_by_year = extract_results(
-        results_folder,
-        module='tlo.methods.demography',
-        key='population',
-        custom_generate_series=get_total_population_by_year,
-        do_scaling=True
-    ).unstack().reset_index().rename(columns = {0: 'population'})
-    total_population_summary = total_population_by_year[total_population_by_year.draw == 0].groupby("year")["population"].agg(
-        population="median"
-    ).reset_index()
-    workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                      sheet_name=None)
-    health_spending_per_capita = workbook_cost["health_spending_projections"]
-    # Assign the fourth row as column names
-    health_spending_per_capita.columns = health_spending_per_capita.iloc[1]
-    health_spending_per_capita = health_spending_per_capita.iloc[2:].reset_index(drop=True)
-    health_spending_per_capita = health_spending_per_capita[health_spending_per_capita.year.isin(list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1)))]
-    health_spending_per_capita = health_spending_per_capita[['year', 'total_mean']]
-    health_spending_per_capita_table = health_spending_per_capita.merge(total_population_summary, on = "year", how = "left", validate = "1:1")
-    health_spending_per_capita_table["total_health_spending"] = health_spending_per_capita_table['total_mean'] * health_spending_per_capita_table['population']
-    return health_spending_per_capita_table
-
-health_spending_per_capita_table = get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing = relevant_period_for_costing)
-health_spending_per_capita_table.to_csv(figurespath / 'projected_health_spending.csv', index = False)
-
-# ROI at 0 implementation costs
-benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life) - incremental_scenario_cost
-roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
-roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric = chosen_metric)
-roi_result = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
-
-# Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
-health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life), _metric = chosen_metric))
-incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost, _metric = chosen_metric))
-breakeven_implementation_cost = (health_benefit_summarised[44][chosen_metric] - incremental_scenario_cost_summarised[44][chosen_metric] * (roi_result[36][chosen_metric] + 1))/((roi_result[36][chosen_metric] + 1))
-
-# Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
-breakeven_implementation_cost_tb = ((health_benefit_summarised[26][chosen_metric] * incremental_scenario_cost_summarised[18][chosen_metric]) - (health_benefit_summarised[18][chosen_metric] * incremental_scenario_cost_summarised[26][chosen_metric]))/(health_benefit_summarised[18][chosen_metric] - health_benefit_summarised[26][chosen_metric])
-breakeven_implementation_cost_malaria = ((health_benefit_summarised[35][chosen_metric] * incremental_scenario_cost_summarised[27][chosen_metric]) - (health_benefit_summarised[27][chosen_metric] * incremental_scenario_cost_summarised[35][chosen_metric]))/(health_benefit_summarised[27][chosen_metric] - health_benefit_summarised[35][chosen_metric])
-assert(round((health_benefit_summarised[26][chosen_metric] - incremental_scenario_cost_summarised[26][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26][chosen_metric] + breakeven_implementation_cost_tb),6) ==
-       round((health_benefit_summarised[18][chosen_metric] - incremental_scenario_cost_summarised[18][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18][chosen_metric] + breakeven_implementation_cost_tb),6))
-assert(round((health_benefit_summarised[35][chosen_metric] - incremental_scenario_cost_summarised[35][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35][chosen_metric] + breakeven_implementation_cost_malaria),6) ==
-       round((health_benefit_summarised[27][chosen_metric] - incremental_scenario_cost_summarised[27][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27][chosen_metric] + breakeven_implementation_cost_malaria), 6))
-
-print(f"The corresponding ROI of scaling the health workforce by 1%, 4% and 6% annually was "
-      f"{roi_result[1][chosen_metric]:.2f} [{roi_result[1]['lower']:.2f} - {roi_result[1]['upper']:.2f}], "
-      f"{roi_result[2][chosen_metric]:.2f} [{roi_result[2]['lower']:.2f} - {roi_result[2]['upper']:.2f}] and "
-      f"{roi_result[3][chosen_metric]:.2f} [{roi_result[3]['lower']:.2f} - {roi_result[3]['upper']:.2f}]. "
-      f"The ROI of increasing consumable availability to the top-performing programmes was "
-      f"{roi_result[6][chosen_metric]:.2f} [{roi_result[6]['lower']:.2f} - {roi_result[6]['upper']:.2f}],"
-      f" and finally the ROI of the full HSS package was "
-      f"{roi_result[8][chosen_metric]:.2f} [{roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}].")
-
-print(f"ROI: HIV {roi_result[9][chosen_metric]:.2f} [{roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}], "
-      f"TB {roi_result[18][chosen_metric]:.2f} [{roi_result[18]['lower']:.2f} - {roi_result[18]['upper']:.2f}] and "
-      f"Malaria {roi_result[27][chosen_metric]:.2f} [{roi_result[27]['lower']:.2f} - {roi_result[27]['upper']:.2f}] "
-      f"HTM {roi_result[36][chosen_metric]:.2f} [{roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f}]. ")
-
-print(f"In a similar vein, ROI of the joint HSS and HTM scale-up was "
-      f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}], "
-      f"and outperformed all other scale-up options.")
-
-print(f"Importantly, not only did the integrated approach yield greater health benefits, at "
-      f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted, "
-      f"it was also cost-effective compared to Malawi’s projected cost-effectiveness threshold of "
-      f"$190 per DALY averted, and yielded a high ROI of "
-      f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}]. ")
-
-# Extract for manuscript
-print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario, the "
-      f"incremental cost-effectiveness ratio (ICER) of these horizontal investments remained consistently below "
-      f"the projected cost-effectiveness threshold of $190 per DALY averted. The ICER for health workforce expansion "
-      f"scenarios ranged from "
-      f"${icer_result[hr_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_lowest_icer]['upper']:.2f})"
-      f" per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_lowest_icer]} scenario to "
-      f"${icer_result[hr_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_highest_icer]['upper']:.2f}) "
-      f"per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_highest_icer]} scenario, while for the consumable availability scenarios, it ranged from "
-      f"${icer_result[cons_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_lowest_icer]['upper']:.2f}) "
-      f"per DALY averted in {all_manuscript_scenarios[cons_scenario_with_lowest_icer]} to "
-      f"${icer_result[cons_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_highest_icer]['upper']:.2f}) "
-      f"per DALY averted in "
-      f"{all_manuscript_scenarios[cons_scenario_with_highest_icer]}. "
-      f"The combined health system strengthening (HSS) expansion scenario, which integrated workforce expansion with "
-      f"increased consumable availability, had an ICER of "
-      f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) "
-      f"per DALY averted. At a value of a statistical life year of $834, the return on investment (ROI) for the HSS expansion package was "
-      f"{roi_result[8][chosen_metric]:.2f} ({roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}).")
-
-print(f"With an ICER of "
-      f"${icer_result[44][chosen_metric]:.2f} (${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}) per DALY averted, "
-      f"the joint expansion of HTM programmes combined with HSS investments was more cost-effective than the vertical "
-      f"expansion counterpart which had an ICER of "
-      f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) per DALY averted, "
-      f"assuming no additional implementation costs. Similarly, ROI of the joint HSS and HTM scale-up was "
-      f"{(roi_result[44][chosen_metric]/roi_result[36][chosen_metric]-1)*100:.2f}% higher at "
-      f"{roi_result[44][chosen_metric]:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}), "
-      f"outperforming its vertical expansion counterpart which had an ROI of "
-      f"{roi_result[36][chosen_metric]:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f})."
-      f"In fact, combined investments with HSS yielded a greater ROI "
-      f"as long as additional implementation costs of this scenario did not exceed "
-      f"${breakeven_implementation_cost/10e6: .2f} million "
-      f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
-      f"of the total projected health spending) between 2025 and 2035.")
-
-print(f"Simultaneous HSS investments also increased the cost-effectiveness of the HIV scale-up from "
-      f"${icer_result[9][chosen_metric]:.2f} (${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}) per DALY averted to "
-      f"${icer_result[17][chosen_metric]:.2f} (${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}) per DALY averted."
-      f" However, due to very low additional consumables costs, the ICER of TB programme scale-up alone without HSS was much "
-      f"lower at than that with HSS, with ICERs of "
-      f"${icer_result[18][chosen_metric]:.2f} (${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}) per DALY averted and "
-      f"${icer_result[26][chosen_metric]:.2f} (${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}) per DALY averted respectively. "
-      f"Similarly, due to the large costs of scale up of indoor residual spraying (IRS) and bednet distribution, the ICER of malaria scale-up alone was "
-      f"${icer_result[27][chosen_metric]:.2f} (${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f}) "
-      f"per DALY averted compared to "
-      f"${icer_result[35][chosen_metric]:.2f} (${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}) "
-      f"per DALY averted for malaria scale-up with HSS.")
-
-
-print(f"At no additional implementation costs, simultaneous HSS increased the ROI of the HIV programme substantially to "
-      f"{roi_result[17][chosen_metric]:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) over a negative ROI of "
-      f"{roi_result[9][chosen_metric]:.2f} ({roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}) "
-      f"for HIV investments without HSS. "
-      f"The ROI of malaria and TB programs was higher without simultaneous HSS investments at zero implementation costs "
-      f"but these rapidly declined if the scenarios required any additional implementation costs. More specifically, "
-      f"at an additional implementation cost of "
-      f"${breakeven_implementation_cost_tb/10e6: .2f} million "
-      f"({breakeven_implementation_cost_tb/projected_health_spending_baseline * 100:.2f}% of the projected health spending)  and "
-      f"${breakeven_implementation_cost_malaria/10e6: .2f} million "
-      f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% of the projected health spending) respectively, "
-      f"the ROI of the HSS combined with TB and malaria expansion programs overtook that of vertical investments alone.")
-
-# Combined ROI plot of relevant scenarios
-# ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS
-draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [8, 36, 44],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'HSS_VSL',
-                    _metric = chosen_metric,
-                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                    _projected_health_spending = projected_health_spending_baseline,
-                   _draw_colors = draw_colors,
-                   show_title_and_legend = False)
-
-
-# ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS - UPPER BOUND
-draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_upper),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [8, 36, 44],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'UPPER',
-                    _metric = chosen_metric,
-                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                    _projected_health_spending = projected_health_spending_baseline,
-                   _draw_colors = draw_colors,
-                   show_title_and_legend = True)
-
-# ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS -  LOWER BOUND
-draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_lower),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [8, 36, 44],
-                   _scenario_dict = htm_scenarios,
-                   _outputfilepath=roi_outputs_folder,
-                   _value_of_life_suffix = 'LOWER',
-                    _metric = chosen_metric,
-                    _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                    _projected_health_spending = projected_health_spending_baseline,
-                   _draw_colors = draw_colors,
-                   show_title_and_legend = True)
-
-# HIV scenarios with and without HSS
-draw_colors = {9: '#fdae61', 17:'#66c2a5'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [9,17],
-                   _scenario_dict = htm_scenarios,
-                   _metric=chosen_metric,
-                   _outputfilepath=roi_outputs_folder,
-                   _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
-                   _value_of_life_suffix = 'HIV_VSL',
-                   _draw_colors = draw_colors)
-
-# TB scenarios with and without HSS
-draw_colors = {18: '#fdae61', 26:'#66c2a5'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [18,26],
-                   _scenario_dict = htm_scenarios,
-                   _metric=chosen_metric,
-                   _outputfilepath=roi_outputs_folder,
-                   _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
-                   _value_of_life_suffix = 'TB_VSL',
-                   _draw_colors = draw_colors,
-                   _y_axis_lim = 30)
-
-# Malaria scenarios with and without HSS
-draw_colors = {27: '#fdae61', 35:'#66c2a5'}
-generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                   _incremental_input_cost=incremental_scenario_cost,
-                   _draws = [27,35],
-                   _scenario_dict = htm_scenarios,
-                   _metric=chosen_metric,
-                   _outputfilepath=roi_outputs_folder,
-                   _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
-                   _value_of_life_suffix = 'Malaria_VSL',
-                   _draw_colors = draw_colors)
-
-# ROI estimates in a table
-roi_table_label = ['MAIN', 'LOWER', 'UPPER']
-i = 0
-for vsly in [chosen_value_of_statistical_life, chosen_value_of_statistical_life_lower, chosen_value_of_statistical_life_upper]:
-    roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
-                       _incremental_input_cost=incremental_scenario_cost,
-                       _draws = list(all_manuscript_scenarios.keys()),
-                       _scenario_dict = all_manuscript_scenarios,
-                       _metric = 'median')
-    roi_table.to_csv(roi_outputs_folder / f'tabulated_roi_{roi_table_label[i]}.csv', index = False)
-
-    # Extract ROIs into a table for manuscript
-    roi_table['scenario'] = roi_table['draw'].map(all_manuscript_scenarios)
-    # Pivot the DataFrame to make 'stat' values columns
-    roi_table = roi_table.drop_duplicates(['scenario', 'implementation_cost', 'stat', 'roi'])
-    roi_pivot_table = roi_table.pivot(index=['draw', 'scenario', 'implementation_cost'], columns='stat', values='roi')
-    roi_pivot_table = roi_pivot_table.sort_index(level='draw')
-    # Format the values as "median [lower - upper]"
-    roi_pivot_table['ROI at VSLY = $834'] = roi_pivot_table.apply(
-        lambda row: f"{row['median']:.2f} [{row['lower']:.2f} - {row['upper']:.2f}]"
+    # Get absolute DALYs averted
+    num_dalys_averted = (-1.0 *
+                         pd.DataFrame(
+                             find_difference_relative_to_comparison(
+                                 num_dalys.loc[0],
+                                 comparison=0)  # sets the comparator to 0 which is the Actual scenario
+                         ).T.iloc[0].unstack(level='run'))
+    num_dalys_averted = num_dalys_averted[num_dalys_averted.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))] # keep only relevant draws
+
+    # Plot DALYs
+    num_dalys_averted_subset_for_figure = num_dalys_averted[num_dalys_averted.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+    num_dalys_averted_summarised = summarize_cost_data(num_dalys_averted_subset_for_figure, _metric = chosen_metric)
+    name_of_plot = f'Incremental DALYs averted compared to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+    fig, ax = do_standard_bar_plot_with_ci(
+        (num_dalys_averted_summarised / 1e6),
+        annotations=[
+            f"{row['median']/ 1e6:.2f} ({row['lower'] / 1e6 :.2f}- {row['upper'] / 1e6:.2f})"
+            for _, row in num_dalys_averted_summarised.iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+        put_labels_in_legend=True,
+        offset=2,
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('DALYs \n(Millions)')
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+    plt.close(fig)
+
+    # The monetary value of the health benefit is delta health times CET (negative values are set to 0)
+    def get_monetary_value_of_incremental_health(_num_dalys_averted, _chosen_value_of_life_year):
+        monetary_value_of_incremental_health = (_num_dalys_averted * _chosen_value_of_life_year).clip(lower=0.0)
+        return monetary_value_of_incremental_health
+
+    # 3. Estimate and plot ICERs
+    # ----------------------------------------------------
+    icers = incremental_scenario_cost.div(num_dalys_averted)  # Element-wise division
+    icers = icers.mask(num_dalys_averted < 0)
+    icers_summarized = summarize_cost_data(icers, _metric = chosen_metric)
+    icers_summarized_subset_for_figure = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+    icer_result = convert_results_to_dict(icers_summarized)
+    hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
+    hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
+    cons_scenario_with_lowest_icer = min([5,6,7], key=lambda k: icer_result[k][chosen_metric])
+    cons_scenario_with_highest_icer = max([5,6,7], key=lambda k: icer_result[k][chosen_metric])
+
+    # Extract for manuscript
+    print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario,"
+          f" the Incremental Cost Effectiveness Ratio (ICER) of scaling the health workforce by 1%, 4% and 6% annually was "
+          f"${icer_result[1][chosen_metric]:.2f} [${icer_result[1]['lower']:.2f} - ${icer_result[1]['upper']:.2f}], "
+          f"${icer_result[2][chosen_metric]:.2f} [${icer_result[2]['lower']:.2f} - ${icer_result[2]['upper']:.2f}] "
+          f"and ${icer_result[3][chosen_metric]:.2f} [${icer_result[3]['lower']:.2f} - ${icer_result[3]['upper']:.2f}] "
+          f"per DALY averted, lower than the minimum projected cost effectiveness threshold for 2025-2035 of "
+          f"$190 per DALY averted (Lomas et al, 2021). Aligning consumable availability to levels observed in top-performing "
+          f"programmes produced an ICER of ${icer_result[6][chosen_metric]:.2f} [${icer_result[6]['lower']:.2f} - ${icer_result[6]['upper']:.2f}]"
+          f" per DALY averted, and the full HSS package had an ICER of "
+          f"${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}]"
+          f" per DALY averted.")
+
+    print(f"High incremental costs of vertical expansion programs for HIV and malaria result in cost-ineffective ICER values of "
+          f"${icer_result[9][chosen_metric]:.2f} [${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}] per DALY averted and "
+          f"${icer_result[27][chosen_metric]:.2f} [${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f} per DALY averted, "
+          f"respectively. The ICER of the vertical TB expansion program is "
+          f"${icer_result[18][chosen_metric]:.2f} [${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}] per DALY averted. "
+          f"When all these vertical expansion programmes are combined, the resulting ICER is "
+          f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}] per DALY averted.")
+
+    print(f"Combining HSS with vertical program expansion was more cost-effective for malaria and HIV programmes, whereas this was not the case for TB. "
+          f"The ICERs for the HIV, malaria and TB programmes with HSS were "
+          f"${icer_result[17][chosen_metric]:.2f} [${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}] per DALY averted, "
+          f"${icer_result[35][chosen_metric]:.2f} [${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}] per DALY averted and "
+          f"${icer_result[26][chosen_metric]:.2f} [${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}] per DALY averted, "
+          f"respectively. The joint expansion of HTM programmes was also made more cost effective through combined HSS investments"
+          f"in comparison with its vertical expansion counterpart, with an ICER of "
+          f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted.")
+
+    # Plot ICERs
+    name_of_plot = f'Incremental cost-effectiveness ratios (ICERs), {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+    fig, ax = do_standard_bar_plot_with_ci(
+        (icers_summarized_subset_for_figure),
+        annotations=[
+            f"{row[chosen_metric]:.2f} ({row['lower'] :.2f}- \n {row['upper'] :.2f})"
+            for _, row in icers_summarized_subset_for_figure.iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+        put_labels_in_legend=True,
+        offset=10,
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('ICERs \n($/DALY averted)')
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+    plt.close(fig)
+
+    # Extract ICERs into a table for manuscript
+    icers_summarized_subset_for_table = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+    icers_summarized_subset_for_table = icers_summarized_subset_for_table.reset_index()
+    icers_summarized_subset_for_table['scenario'] = icers_summarized_subset_for_table['draw'].map(all_manuscript_scenarios)
+    icers_summarized_subset_for_table['ICER (2023 USD)'] = icers_summarized_subset_for_table.apply(
+        lambda row: f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
         if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
         axis=1
     )
-    # Reset index to move 'implementation_cost' to columns and reshape for the manuscript
-    roi_pivot_table = roi_pivot_table['ROI at VSLY = $834'].unstack(level='implementation_cost')
-    roi_pivot_table.columns.name = None  # Remove multi-index column name
-    roi_pivot_table.index.name = 'Scenario'
-    roi_pivot_table.reset_index().drop(columns = 'draw').to_csv(roi_outputs_folder / f'tabulated_roi_for_manscript_{roi_table_label[i]}.csv', index = False)
-    i += 1
+    icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(figurespath / 'tabulated_icers.csv', index = False)
 
-# 5. Plot Maximum ability-to-pay at CET
-# ----------------------------------------------------
-max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
-    lower=0.0)  # monetary value - change in costs
-max_ability_to_pay_for_implementation_subset_for_figure = max_ability_to_pay_for_implementation[max_ability_to_pay_for_implementation.index.get_level_values('draw').isin(list(htm_scenarios.keys()))]
-max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation_subset_for_figure, _metric = chosen_metric)
+    # 4. Return on Investment
+    # ----------------------------------------------------
+    # Estimate projected health spending
+    projected_health_spending = estimate_projected_health_spending(resourcefilepath,
+                                      results_folder,
+                                     _years = list_of_relevant_years_for_costing,
+                                     _discount_rate = discount_rate_cost,
+                                     _summarize = True,
+                                     _metric = chosen_metric)
+    projected_health_spending_baseline = projected_health_spending[projected_health_spending.index.get_level_values(0) == 0][chosen_metric][0]
 
-# Plot Maximum ability to pay
-name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (max_ability_to_pay_for_implementation_summarized / 1e6),
-    annotations=[
-        f"{row[chosen_metric] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- \n {row['upper'] / projected_health_spending_baseline:.2%})"
-        for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-    put_labels_in_legend=True,
-    offset=50,
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Maximum ability to pay \n(Millions)')
-ax.set_ylim(bottom=0)
-fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
-plt.close(fig)
+    # Extract projected health spending table for appendix
+    def get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing):
+        def get_total_population_by_year(_df):
+            years_needed = _relevant_period_for_costing  # Malaria scale-up period years
+            _df['year'] = pd.to_datetime(_df['date']).dt.year
 
-# Plot incremental costs
-incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost_subset_for_figure, _metric = chosen_metric)
-name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
-fig, ax = do_standard_bar_plot_with_ci(
-    (incremental_scenario_cost_summarized / 1e6),
-    annotations=[
-        f"{row[chosen_metric] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- {row['upper'] / projected_health_spending_baseline:.2%})"
-        for _, row in incremental_scenario_cost_summarized.iterrows()
-    ],
-    xticklabels_horizontal_and_wrapped=False,
-    put_labels_in_legend=True,
-    offset=50,
-)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Cost \n(USD Millions)')
-ax.set_ylim(bottom=0)
-fig.tight_layout()
-fig.savefig(roi_outputs_folder / name_of_plot.replace(' ', '_').replace(',', ''))
-plt.close(fig)
+            # Validate that all necessary years are in the DataFrame
+            if not set(years_needed).issubset(_df['year'].unique()):
+                raise ValueError("Some years are not recorded in the dataset.")
 
-# 6. Plot costs
-# ----------------------------------------------------
-# First summarize all input costs
+            # Filter for relevant years and return the total population as a Series
+            return _df.loc[_df['year'].between(min(years_needed), max(years_needed)), ['year', 'total']].set_index('year')[
+                'total']
 
-input_costs_subset_for_figure = input_costs[input_costs['draw'].isin(list(htm_scenarios.keys()))]
-agg_funcs = {
-    chosen_metric: ('cost', chosen_metric),
-    'lower': ('cost', lambda x: x.quantile(0.025)),
-    'upper': ('cost', lambda x: x.quantile(0.975))
-}
+        # Get total population by year
+        total_population_by_year = extract_results(
+            results_folder,
+            module='tlo.methods.demography',
+            key='population',
+            custom_generate_series=get_total_population_by_year,
+            do_scaling=True
+        ).unstack().reset_index().rename(columns = {0: 'population'})
+        total_population_summary = total_population_by_year[total_population_by_year.draw == 0].groupby("year")["population"].agg(
+            population="median"
+        ).reset_index()
+        workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                          sheet_name=None)
+        health_spending_per_capita = workbook_cost["health_spending_projections"]
+        # Assign the fourth row as column names
+        health_spending_per_capita.columns = health_spending_per_capita.iloc[1]
+        health_spending_per_capita = health_spending_per_capita.iloc[2:].reset_index(drop=True)
+        health_spending_per_capita = health_spending_per_capita[health_spending_per_capita.year.isin(list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1)))]
+        health_spending_per_capita = health_spending_per_capita[['year', 'total_mean']]
+        health_spending_per_capita_table = health_spending_per_capita.merge(total_population_summary, on = "year", how = "left", validate = "1:1")
+        health_spending_per_capita_table["total_health_spending"] = health_spending_per_capita_table['total_mean'] * health_spending_per_capita_table['population']
+        return health_spending_per_capita_table
 
-input_costs_for_plot_summarized = (
-    input_costs_subset_for_figure
-    .groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'])
-    .agg(**agg_funcs)
-    .reset_index()
-    .melt(
-        id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
-        value_vars=[chosen_metric, 'lower', 'upper'],
-        var_name='stat',
-        value_name='cost'
+    health_spending_per_capita_table = get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing = relevant_period_for_costing)
+    health_spending_per_capita_table.to_csv(figurespath / 'projected_health_spending.csv', index = False)
+
+    # ROI at 0 implementation costs
+    benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life) - incremental_scenario_cost
+    roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
+    roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric = chosen_metric)
+    roi_result = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
+
+    # Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
+    health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life), _metric = chosen_metric))
+    incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost, _metric = chosen_metric))
+    breakeven_implementation_cost = (health_benefit_summarised[44][chosen_metric] - incremental_scenario_cost_summarised[44][chosen_metric] * (roi_result[36][chosen_metric] + 1))/((roi_result[36][chosen_metric] + 1))
+
+    # Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
+    breakeven_implementation_cost_tb = ((health_benefit_summarised[26][chosen_metric] * incremental_scenario_cost_summarised[18][chosen_metric]) - (health_benefit_summarised[18][chosen_metric] * incremental_scenario_cost_summarised[26][chosen_metric]))/(health_benefit_summarised[18][chosen_metric] - health_benefit_summarised[26][chosen_metric])
+    breakeven_implementation_cost_malaria = ((health_benefit_summarised[35][chosen_metric] * incremental_scenario_cost_summarised[27][chosen_metric]) - (health_benefit_summarised[27][chosen_metric] * incremental_scenario_cost_summarised[35][chosen_metric]))/(health_benefit_summarised[27][chosen_metric] - health_benefit_summarised[35][chosen_metric])
+    assert(round((health_benefit_summarised[26][chosen_metric] - incremental_scenario_cost_summarised[26][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26][chosen_metric] + breakeven_implementation_cost_tb),6) ==
+           round((health_benefit_summarised[18][chosen_metric] - incremental_scenario_cost_summarised[18][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18][chosen_metric] + breakeven_implementation_cost_tb),6))
+    assert(round((health_benefit_summarised[35][chosen_metric] - incremental_scenario_cost_summarised[35][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35][chosen_metric] + breakeven_implementation_cost_malaria),6) ==
+           round((health_benefit_summarised[27][chosen_metric] - incremental_scenario_cost_summarised[27][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27][chosen_metric] + breakeven_implementation_cost_malaria), 6))
+
+    print(f"The corresponding ROI of scaling the health workforce by 1%, 4% and 6% annually was "
+          f"{roi_result[1][chosen_metric]:.2f} [{roi_result[1]['lower']:.2f} - {roi_result[1]['upper']:.2f}], "
+          f"{roi_result[2][chosen_metric]:.2f} [{roi_result[2]['lower']:.2f} - {roi_result[2]['upper']:.2f}] and "
+          f"{roi_result[3][chosen_metric]:.2f} [{roi_result[3]['lower']:.2f} - {roi_result[3]['upper']:.2f}]. "
+          f"The ROI of increasing consumable availability to the top-performing programmes was "
+          f"{roi_result[6][chosen_metric]:.2f} [{roi_result[6]['lower']:.2f} - {roi_result[6]['upper']:.2f}],"
+          f" and finally the ROI of the full HSS package was "
+          f"{roi_result[8][chosen_metric]:.2f} [{roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}].")
+
+    print(f"ROI: HIV {roi_result[9][chosen_metric]:.2f} [{roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}], "
+          f"TB {roi_result[18][chosen_metric]:.2f} [{roi_result[18]['lower']:.2f} - {roi_result[18]['upper']:.2f}] and "
+          f"Malaria {roi_result[27][chosen_metric]:.2f} [{roi_result[27]['lower']:.2f} - {roi_result[27]['upper']:.2f}] "
+          f"HTM {roi_result[36][chosen_metric]:.2f} [{roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f}]. ")
+
+    print(f"In a similar vein, ROI of the joint HSS and HTM scale-up was "
+          f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}], "
+          f"and outperformed all other scale-up options.")
+
+    print(f"Importantly, not only did the integrated approach yield greater health benefits, at "
+          f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted, "
+          f"it was also cost-effective compared to Malawi’s projected cost-effectiveness threshold of "
+          f"$190 per DALY averted, and yielded a high ROI of "
+          f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}]. ")
+
+    # Extract for manuscript
+    print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario, the "
+          f"incremental cost-effectiveness ratio (ICER) of these horizontal investments remained consistently below "
+          f"the projected cost-effectiveness threshold of $190 per DALY averted. The ICER for health workforce expansion "
+          f"scenarios ranged from "
+          f"${icer_result[hr_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_lowest_icer]['upper']:.2f})"
+          f" per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_lowest_icer]} scenario to "
+          f"${icer_result[hr_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_highest_icer]['upper']:.2f}) "
+          f"per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_highest_icer]} scenario, while for the consumable availability scenarios, it ranged from "
+          f"${icer_result[cons_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_lowest_icer]['upper']:.2f}) "
+          f"per DALY averted in {all_manuscript_scenarios[cons_scenario_with_lowest_icer]} to "
+          f"${icer_result[cons_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_highest_icer]['upper']:.2f}) "
+          f"per DALY averted in "
+          f"{all_manuscript_scenarios[cons_scenario_with_highest_icer]}. "
+          f"The combined health system strengthening (HSS) expansion scenario, which integrated workforce expansion with "
+          f"increased consumable availability, had an ICER of "
+          f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) "
+          f"per DALY averted. At a value of a statistical life year of $834, the return on investment (ROI) for the HSS expansion package was "
+          f"{roi_result[8][chosen_metric]:.2f} ({roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}).")
+
+    print(f"With an ICER of "
+          f"${icer_result[44][chosen_metric]:.2f} (${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}) per DALY averted, "
+          f"the joint expansion of HTM programmes combined with HSS investments was more cost-effective than the vertical "
+          f"expansion counterpart which had an ICER of "
+          f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) per DALY averted, "
+          f"assuming no additional implementation costs. Similarly, ROI of the joint HSS and HTM scale-up was "
+          f"{(roi_result[44][chosen_metric]/roi_result[36][chosen_metric]-1)*100:.2f}% higher at "
+          f"{roi_result[44][chosen_metric]:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}), "
+          f"outperforming its vertical expansion counterpart which had an ROI of "
+          f"{roi_result[36][chosen_metric]:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f})."
+          f"In fact, combined investments with HSS yielded a greater ROI "
+          f"as long as additional implementation costs of this scenario did not exceed "
+          f"${breakeven_implementation_cost/10e6: .2f} million "
+          f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
+          f"of the total projected health spending) between 2025 and 2035.")
+
+    print(f"Simultaneous HSS investments also increased the cost-effectiveness of the HIV scale-up from "
+          f"${icer_result[9][chosen_metric]:.2f} (${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}) per DALY averted to "
+          f"${icer_result[17][chosen_metric]:.2f} (${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}) per DALY averted."
+          f" However, due to very low additional consumables costs, the ICER of TB programme scale-up alone without HSS was much "
+          f"lower at than that with HSS, with ICERs of "
+          f"${icer_result[18][chosen_metric]:.2f} (${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}) per DALY averted and "
+          f"${icer_result[26][chosen_metric]:.2f} (${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}) per DALY averted respectively. "
+          f"Similarly, due to the large costs of scale up of indoor residual spraying (IRS) and bednet distribution, the ICER of malaria scale-up alone was "
+          f"${icer_result[27][chosen_metric]:.2f} (${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f}) "
+          f"per DALY averted compared to "
+          f"${icer_result[35][chosen_metric]:.2f} (${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}) "
+          f"per DALY averted for malaria scale-up with HSS.")
+
+
+    print(f"At no additional implementation costs, simultaneous HSS increased the ROI of the HIV programme substantially to "
+          f"{roi_result[17][chosen_metric]:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) over a negative ROI of "
+          f"{roi_result[9][chosen_metric]:.2f} ({roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}) "
+          f"for HIV investments without HSS. "
+          f"The ROI of malaria and TB programs was higher without simultaneous HSS investments at zero implementation costs "
+          f"but these rapidly declined if the scenarios required any additional implementation costs. More specifically, "
+          f"at an additional implementation cost of "
+          f"${breakeven_implementation_cost_tb/10e6: .2f} million "
+          f"({breakeven_implementation_cost_tb/projected_health_spending_baseline * 100:.2f}% of the projected health spending)  and "
+          f"${breakeven_implementation_cost_malaria/10e6: .2f} million "
+          f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% of the projected health spending) respectively, "
+          f"the ROI of the HSS combined with TB and malaria expansion programs overtook that of vertical investments alone.")
+
+    # Combined ROI plot of relevant scenarios
+    # ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS
+    if rates["discounting_scenario"] == 'MAIN (0.03,0.03)':
+        legend_switch_for_main_roi_plot = False # Don't show legend for main plot
+    else:
+        legend_switch_for_main_roi_plot = True
+
+    draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
+    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                       _incremental_input_cost=incremental_scenario_cost,
+                       _draws = [8, 36, 44],
+                       _scenario_dict = all_manuscript_scenarios,
+                       _outputfilepath=figurespath,
+                       _value_of_life_suffix = 'HSS_VSL',
+                        _metric = chosen_metric,
+                        _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                        _projected_health_spending = projected_health_spending_baseline,
+                       _draw_colors = draw_colors,
+                       show_title_and_legend = legend_switch_for_main_roi_plot)
+
+
+    # ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS - UPPER BOUND
+    draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
+    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_upper),
+                       _incremental_input_cost=incremental_scenario_cost,
+                       _draws = [8, 36, 44],
+                       _scenario_dict = all_manuscript_scenarios,
+                       _outputfilepath=figurespath,
+                       _value_of_life_suffix = 'UPPER',
+                        _metric = chosen_metric,
+                        _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                        _projected_health_spending = projected_health_spending_baseline,
+                       _draw_colors = draw_colors,
+                       show_title_and_legend = True)
+
+    # ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS -  LOWER BOUND
+    draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
+    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_lower),
+                       _incremental_input_cost=incremental_scenario_cost,
+                       _draws = [8, 36, 44],
+                       _scenario_dict = all_manuscript_scenarios,
+                       _outputfilepath=figurespath,
+                       _value_of_life_suffix = 'LOWER',
+                        _metric = chosen_metric,
+                        _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                        _projected_health_spending = projected_health_spending_baseline,
+                       _draw_colors = draw_colors,
+                       show_title_and_legend = True)
+
+    # HIV scenarios with and without HSS
+    draw_colors = {9: '#fdae61', 17:'#66c2a5'}
+    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                       _incremental_input_cost=incremental_scenario_cost,
+                       _draws = [9,17],
+                       _scenario_dict = all_manuscript_scenarios,
+                       _metric=chosen_metric,
+                       _outputfilepath=figurespath,
+                       _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
+                       _value_of_life_suffix = 'HIV_VSL',
+                       _draw_colors = draw_colors)
+
+    # TB scenarios with and without HSS
+    draw_colors = {18: '#fdae61', 26:'#66c2a5'}
+    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                       _incremental_input_cost=incremental_scenario_cost,
+                       _draws = [18,26],
+                       _scenario_dict = all_manuscript_scenarios,
+                       _metric=chosen_metric,
+                       _outputfilepath=figurespath,
+                       _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
+                       _value_of_life_suffix = 'TB_VSL',
+                       _draw_colors = draw_colors,
+                       _y_axis_lim = 30)
+
+    # Malaria scenarios with and without HSS
+    draw_colors = {27: '#fdae61', 35:'#66c2a5'}
+    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
+                       _incremental_input_cost=incremental_scenario_cost,
+                       _draws = [27,35],
+                       _scenario_dict = all_manuscript_scenarios,
+                       _metric=chosen_metric,
+                       _outputfilepath=figurespath,
+                       _year_suffix=f' ({str(relevant_period_for_costing[0])}- {str(relevant_period_for_costing[1])})',
+                       _value_of_life_suffix = 'Malaria_VSL',
+                       _draw_colors = draw_colors)
+
+    # ROI estimates in a table
+    roi_table_label = ['MAIN', 'LOWER', 'UPPER']
+    i = 0
+    for vsly in [chosen_value_of_statistical_life, chosen_value_of_statistical_life_lower, chosen_value_of_statistical_life_upper]:
+        roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
+                           _incremental_input_cost=incremental_scenario_cost,
+                           _draws = list(all_manuscript_scenarios.keys()),
+                           _scenario_dict = all_manuscript_scenarios,
+                           _metric = 'median')
+        roi_table.to_csv(figurespath / f'tabulated_roi_{roi_table_label[i]}.csv', index = False)
+
+        # Extract ROIs into a table for manuscript
+        roi_table['scenario'] = roi_table['draw'].map(all_manuscript_scenarios)
+        # Pivot the DataFrame to make 'stat' values columns
+        roi_table = roi_table.drop_duplicates(['scenario', 'implementation_cost', 'stat', 'roi'])
+        roi_pivot_table = roi_table.pivot(index=['draw', 'scenario', 'implementation_cost'], columns='stat', values='roi')
+        roi_pivot_table = roi_pivot_table.sort_index(level='draw')
+        # Format the values as "median [lower - upper]"
+        roi_pivot_table['ROI at VSLY = $834'] = roi_pivot_table.apply(
+            lambda row: f"{row['median']:.2f} [{row['lower']:.2f} - {row['upper']:.2f}]"
+            if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
+            axis=1
+        )
+        # Reset index to move 'implementation_cost' to columns and reshape for the manuscript
+        roi_pivot_table = roi_pivot_table['ROI at VSLY = $834'].unstack(level='implementation_cost')
+        roi_pivot_table.columns.name = None  # Remove multi-index column name
+        roi_pivot_table.index.name = 'Scenario'
+        roi_pivot_table.reset_index().drop(columns = 'draw').to_csv(figurespath / f'tabulated_roi_for_manscript_{roi_table_label[i]}.csv', index = False)
+        i += 1
+
+    # 5. Plot Maximum ability-to-pay at CET
+    # ----------------------------------------------------
+    max_ability_to_pay_for_implementation = (get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_cet) - incremental_scenario_cost).clip(
+        lower=0.0)  # monetary value - change in costs
+    max_ability_to_pay_for_implementation_subset_for_figure = max_ability_to_pay_for_implementation[max_ability_to_pay_for_implementation.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+    max_ability_to_pay_for_implementation_summarized = summarize_cost_data(max_ability_to_pay_for_implementation_subset_for_figure, _metric = chosen_metric)
+
+    # Plot Maximum ability to pay
+    name_of_plot = f'Maximum ability to pay at CET, {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+    fig, ax = do_standard_bar_plot_with_ci(
+        (max_ability_to_pay_for_implementation_summarized / 1e6),
+        annotations=[
+            f"{row[chosen_metric] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- \n {row['upper'] / projected_health_spending_baseline:.2%})"
+            for _, row in max_ability_to_pay_for_implementation_summarized.iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+        put_labels_in_legend=True,
+        offset=50,
     )
-)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('Maximum ability to pay \n(Millions)')
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+    plt.close(fig)
 
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
-do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'malaria scale-up',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = htm_scenarios_substitutedict)
+    # Plot incremental costs
+    incremental_scenario_cost_summarized = summarize_cost_data(incremental_scenario_cost_subset_for_figure, _metric = chosen_metric)
+    name_of_plot = f'Incremental scenario cost relative to baseline {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
+    fig, ax = do_standard_bar_plot_with_ci(
+        (incremental_scenario_cost_summarized / 1e6),
+        annotations=[
+            f"{row[chosen_metric] / projected_health_spending_baseline :.2%} ({row['lower'] / projected_health_spending_baseline :.2%}- {row['upper'] / projected_health_spending_baseline:.2%})"
+            for _, row in incremental_scenario_cost_summarized.iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=False,
+        put_labels_in_legend=True,
+        offset=50,
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('Cost \n(USD Millions)')
+    ax.set_ylim(bottom=0)
+    fig.tight_layout()
+    fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+    plt.close(fig)
+
+    # 6. Plot costs
+    # ----------------------------------------------------
+    # First summarize all input costs
+
+    input_costs_subset_for_figure = input_costs[input_costs['draw'].isin(list(all_manuscript_scenarios.keys()))]
+    agg_funcs = {
+        chosen_metric: ('cost', chosen_metric),
+        'lower': ('cost', lambda x: x.quantile(0.025)),
+        'upper': ('cost', lambda x: x.quantile(0.975))
+    }
+
+    input_costs_for_plot_summarized = (
+        input_costs_subset_for_figure
+        .groupby(['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'])
+        .agg(**agg_funcs)
+        .reset_index()
+        .melt(
+            id_vars=['draw', 'year', 'cost_subcategory', 'Facility_Level', 'cost_subgroup', 'cost_category'],
+            value_vars=[chosen_metric, 'lower', 'upper'],
+            var_name='stat',
+            value_name='cost'
+        )
+    )
+
+    do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
+    do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'all', _year = [2025],  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
+    do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'human resources for health',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
+    do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical consumables',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
+    do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
+    do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'malaria scale-up',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
+
+# Extract summary of incremental costs for appendix
+
+def calculate_detailed_incremental_costs(_df, comparison_draw=0):
+    """
+    Calculate incremental costs relative to a specified comparison draw.
+
+    Parameters:
+    - _df (pd.DataFrame): The input DataFrame with cost data.
+    - comparison_draw (int): The draw to use as the baseline for comparison.
+
+    Returns:
+    - pd.DataFrame: DataFrame with an additional column 'incremental_cost'.
+    """
+    # Identify all grouping columns (everything except 'draw' and 'cost')
+    group_cols = [col for col in _df.columns if col not in ['draw', 'cost']]
+
+    # Extract baseline costs for the specified comparison draw
+    baseline_costs = _df[_df['draw'] == comparison_draw][group_cols + ['cost']]
+    baseline_costs = baseline_costs.rename(columns={'cost': 'baseline_cost'})
+
+    # Merge baseline costs with the original dataframe
+    merged_df = _df.merge(baseline_costs, on=group_cols, how='left')
+
+    # Calculate incremental costs
+    merged_df['incremental_cost'] = merged_df['cost'] - merged_df['baseline_cost']
+    merged_df.drop(columns=['baseline_cost' ,'cost'], inplace=True) # Drop the baseline cost column
+    return merged_df[merged_df['draw'] != comparison_draw]
+
+
+incremental_costs_df = calculate_detailed_incremental_costs(input_costs_subset_for_figure, comparison_draw=0)
+
+def summarise_detailed_costs_df(_df, _metric, column_to_summarise = 'cost'):
+    # Summarize values
+    agg_func = np.mean if _metric == 'mean' else np.median
+    groupby_cols = [col for col in _df.columns if col not in ['run', column_to_summarise]]
+    _df = pd.concat(
+        {
+            chosen_metric: _df.groupby(by=groupby_cols, sort=False)[column_to_summarise].agg(agg_func),
+            'lower': _df.groupby(by=groupby_cols, sort=False)[column_to_summarise].quantile(0.025),
+            'upper': _df.groupby(by=groupby_cols, sort=False)[column_to_summarise].quantile(0.975),
+        },
+        axis=1
+    )
+
+    summarised_df = pd.melt(
+        _df.reset_index(),
+        id_vars=groupby_cols,  # Columns to keep
+        value_vars=[_metric, 'lower', 'upper'],  # Columns to unpivot
+        var_name='stat',  # New column name for the 'sub-category' of cost
+        value_name=column_to_summarise
+    )
+    return summarised_df
+
+incremental_costs_summary = summarise_detailed_costs_df(_df = incremental_costs_df, _metric = chosen_metric,
+                                                        column_to_summarise = 'incremental_cost')
+incremental_costs_summary = incremental_costs_summary[incremental_costs_summary.stat == 'median'].groupby(['draw', 'cost_category'])['incremental_cost'].sum().reset_index()
+incremental_costs_summary['scenario'] = incremental_costs_summary['draw'].map(all_manuscript_scenarios)
+incremental_costs_summary = incremental_costs_summary.pivot(index='scenario', columns='cost_category', values='incremental_cost')
+incremental_costs_summary = incremental_costs_summary.reindex(all_manuscript_scenarios.values())
+incremental_costs_summary = incremental_costs_summary[['human resources for health', 'medical consumables', 'malaria scale-up',
+                                                       'medical equipment','facility operating cost']]
+incremental_costs_summary.to_csv(figurespath / 'incremental_costs.csv')
 
 # Plost costs over time
 # First remove discounting
@@ -1097,15 +1178,6 @@ do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all'
                          _year=list_of_relevant_years_for_costing, _draws= [44],
                          disaggregate_by= 'cost_category',
                          _outputfilepath = figurespath)
-
-# 7. Sensitivity analysis - discount rate
-# ----------------------------------------------------
-# Recalculate costs and health with the new discount rate
-
-# Recalculate and extract ICERs as a figure and table
-
-# Recalculate and extract ROI as a figure and table
-
 
 
 '''
