@@ -2736,7 +2736,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             or person["tb_diagnosed"]
         ):
             return
-
+        
+        drugs_available = False
         # refer for HIV testing: all ages
         # do not run if already HIV diagnosed or had test in last week
         if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
