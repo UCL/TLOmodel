@@ -968,11 +968,37 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
-        # Determine who will be onset with wasting among those who are not currently wasted -------------
-        not_am_or_treated = df.loc[df.is_alive & (df.age_exact_years < 5) &
-                                   (df.un_clinical_acute_malnutrition == 'well') & (df.un_am_tx_start_date.isna())]
-        incidence_of_wasting_bool = self.module.wasting_models.wasting_incidence_lm.predict(not_am_or_treated, rng=rng)
-        mod_wasting_new_cases = not_am_or_treated.loc[incidence_of_wasting_bool]
+        if self.module.person_of_interest_id in df.index:
+            print("\nINCIDENCE")
+        # Determine who will be onset with wasting among those who
+        # currently do not have acute malnutrition, are not being treated, and did not recover in the last 14 days
+        not_am_or_treated_or_recently_recovered =\
+            df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_clinical_acute_malnutrition == 'well') &
+                   (df.un_am_tx_start_date.isna()) &
+                   (df.un_am_recovery_date.isna() | (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=14)))]
+        if self.module.person_of_interest_id not in not_am_or_treated_or_recently_recovered.index:
+            print("person of interest cannot become wasted, because ")
+            if not df.at[self.module.person_of_interest_id, 'is_alive']:
+                print("is dead")
+            elif df.at[self.module.person_of_interest_id, 'age_exact_years'] >= 5:
+                print("is 5+ ys old")
+            elif not df.at[self.module.person_of_interest_id, 'un_clinical_acute_malnutrition'] == 'well':
+                print("has acute malnutrition")
+            elif not pd.isna(df.at[self.module.person_of_interest_id, 'un_am_tx_start_date']):
+                print("is currently treated")
+            elif (not pd.isna(df.at[self.module.person_of_interest_id, 'un_am_recovery_date']) and
+                  (df.at[self.module.person_of_interest_id, 'un_am_recovery_date'] >=
+                   self.sim.date - pd.DateOffset(days=14))):
+                print("recovered in last 14 days")
+            else:
+                print(f"{df.at[self.module.person_of_interest_id, 'un_am_recovery_date']=}")
+                print("smt strange happening - do investigate!")
+        else:
+            print("person of interest can become wasted")
+
+        incidence_of_wasting_bool = \
+            self.module.wasting_models.wasting_incidence_lm.predict(not_am_or_treated_or_recently_recovered, rng=rng)
+        mod_wasting_new_cases = not_am_or_treated_or_recently_recovered.loc[incidence_of_wasting_bool]
         mod_wasting_new_cases_idx = mod_wasting_new_cases.index
         # update the properties for new cases of wasted children
         df.loc[mod_wasting_new_cases_idx, 'un_ever_wasted'] = True

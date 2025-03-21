@@ -906,3 +906,37 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     death_event.apply(person_id=person_id)
     person = df.loc[person_id]
     assert person['is_alive']
+
+def test_no_wasting_after_recent_recovery(tmpdir):
+    """ Test that a person who recovered from wasting 5 days ago does not become wasted again. """
+    dur = pd.DateOffset(days=0)
+    popsize = 1000
+    sim = get_sim(tmpdir)
+    wmodule = sim.modules['Wasting']
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+    sim.event_queue.queue = []  # clear the queue
+
+    # Get person to use:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+
+    # Manually set this individual properties to be well and recovered 5 days ago
+    df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
+    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.loc[person_id, 'un_am_nutritional_oedema'] = False
+    df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'well'
+    df.loc[person_id, 'un_am_recovery_date'] = sim.date - pd.DateOffset(days=5)
+
+    # Set incidence of wasting at 100%
+    wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
+
+    # Run Wasting Polling event
+    polling = Wasting_IncidencePoll(module=wmodule)
+    polling.apply(sim.population)
+
+    # Check properties of this individual: should still be well
+    person = df.loc[person_id]
+    assert person['un_clinical_acute_malnutrition'] == 'well'
