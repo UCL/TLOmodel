@@ -77,19 +77,25 @@ class ImpactOfTbDaH04(BaseScenario):
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
         ]
 
+    # def draw_parameters(self, draw_number, rng):
+    #     # Adding health system constraints to every draw
+    #     health_system_constraints = {
+    #         'HealthSystem': {
+    #             'use_funded_or_actual_staffing': 'actual',
+    #             'cons_availability': 'default',
+    #         }
+    #     }
+    #
+    #     if draw_number < self.number_of_draws:
+    #         return list(self._scenarios.values())[draw_number] | health_system_constraints
+    #     else:
+    #         return
     def draw_parameters(self, draw_number, rng):
-        # Adding health system constraints to every draw
-        health_system_constraints = {
-            'HealthSystem': {
-                'use_funded_or_actual_staffing': 'actual',
-                'cons_availability': 'default',
-            }
-        }
-
         if draw_number < self.number_of_draws:
-            return list(self._scenarios.values())[draw_number] | health_system_constraints
+            return list(self._scenarios.values())[draw_number]
         else:
             return
+
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
