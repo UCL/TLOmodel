@@ -775,9 +775,6 @@ class Tb(Module):
         self.item_codes_for_consumables_required['chest_xray'] = { hs.get_item_code_from_item_name("X-ray") : 1}
         self.item_codes_for_consumables_required['lead_apron'] = { hs.get_item_code_from_item_name(
         "Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST"): 1 }
-        # TB Chest x-ray++++++++++++++++++++++++
-        # self.item_codes_for_consumables_required['chest_xray'] = {
-        #     hs.get_item_code_from_item_name("X-ray"): 1}
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -786,8 +783,7 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_positive"],
                 specificity=p["spec_xray_smear_positive"],
-                #item_codes=self.item_codes_for_consumables_required['chest_xray'],
-                # optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
+                item_codes=self.item_codes_for_consumables_required['chest_xray'],
             )
         )
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -796,8 +792,6 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_negative"],
                 specificity=p["spec_xray_smear_negative"],
-                # item_codes=self.item_codes_for_consumables_required['chest_xray'],
-                # optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
                 item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
