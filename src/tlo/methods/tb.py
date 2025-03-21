@@ -772,7 +772,7 @@ class Tb(Module):
         )
 
         # TB Chest x-ray
-        self.item_codes_for_consumables_required['chest_xray'] = hs.get_item_code_from_item_name("X-ray")
+        self.item_codes_for_consumables_required['chest_xray'] = { hs.get_item_code_from_item_name("X-ray") : 1}
         self.item_codes_for_consumables_required['lead_apron'] = { hs.get_item_code_from_item_name(
         "Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST"): 1 }
         # TB Chest x-ray++++++++++++++++++++++++
@@ -786,9 +786,8 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_positive"],
                 specificity=p["spec_xray_smear_positive"],
-                # item_codes=self.item_codes_for_consumables_required['chest_xray'],
+                #item_codes=self.item_codes_for_consumables_required['chest_xray'],
                 # optional_item_codes=self.item_codes_for_consumables_required['lead_apron']
-                item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -802,36 +801,6 @@ class Tb(Module):
                 item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
-        # self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-        #     tb_xray_smear_positive_community=DxTest(
-        #         property="tb_inf",
-        #         target_categories=["active"],
-        #         sensitivity=p["sens_xray_smear_positive"],
-        #         specificity=p["spec_xray_smear_positive"],
-        #         item_codes=self.item_codes_for_consumables_required['chest_xray']
-        #     )
-        #
-        # )
-        #
-        # # add two further chest xray tests which don't require consumables
-        # self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
-        #     tb_xray_smear_positive_outreach=DxTest(
-        #         property="tb_inf",
-        #         target_categories=["active"],
-        #         sensitivity=p["sens_xray_smear_positive"],
-        #         specificity=p["spec_xray_smear_positive"],
-        #         item_codes=[]
-        #     )
-        # )
-        # self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
-        #     tb_xray_smear_negative_outreach=DxTest(
-        #         property="tb_inf",
-        #         target_categories=["active"],
-        #         sensitivity=p["sens_xray_smear_negative"],
-        #         specificity=p["spec_xray_smear_negative"],
-        #         item_codes=[]
-        #     )
-        # )
 
         # TB clinical diagnosis
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
