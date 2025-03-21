@@ -43,9 +43,9 @@ class SchistoScenarios(BaseScenario):
         self.start_date = Date(2010, 1, 1)
 
         # todo reset
-        self.end_date = Date(2041, 1, 1)  # 2040 = 15 years of projections
-        self.pop_size = 96_000  # todo if equal_allocation_by_district, 64,000=2k per district
-        self.runs_per_draw = 5
+        self.end_date = Date(2030, 1, 1)  # todo 2041 = 15 years of projections
+        self.pop_size = 1_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.runs_per_draw = 1
 
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -92,13 +92,13 @@ class SchistoScenarios(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.no_MDA(),
                 ),
-
-            "WASH only":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.no_MDA(),
-                    scenario_definitions.scaleup_WASH(),
-                ),
+            #
+            # "WASH only":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.no_MDA(),
+            #         scenario_definitions.scaleup_WASH(),
+            #     ),
 
             # - - - Modify future MDA schedules with/without WASH activities - - -
             "MDA SAC with no WASH":
@@ -107,42 +107,42 @@ class SchistoScenarios(BaseScenario):
                     scenario_definitions.high_coverage_MDA(),
                 ),
 
-            "MDA SAC with WASH":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.scaleup_WASH(),
-                ),
-
-            "MDA PSAC with no WASH":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_PSAC(),
-                ),
-
-            "MDA PSAC with WASH":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_PSAC(),
-                    scenario_definitions.scaleup_WASH(),
-                ),
-
-            "MDA All with no WASH":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_All(),
-                ),
-
-            "MDA All with WASH":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_All(),
-                    scenario_definitions.scaleup_WASH(),
-                )
+            # "MDA SAC with WASH":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.high_coverage_MDA(),
+            #         scenario_definitions.scaleup_WASH(),
+            #     ),
+            #
+            # "MDA PSAC with no WASH":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.high_coverage_MDA(),
+            #         scenario_definitions.expand_MDA_to_PSAC(),
+            #     ),
+            #
+            # "MDA PSAC with WASH":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.high_coverage_MDA(),
+            #         scenario_definitions.expand_MDA_to_PSAC(),
+            #         scenario_definitions.scaleup_WASH(),
+            #     ),
+            #
+            # "MDA All with no WASH":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.high_coverage_MDA(),
+            #         scenario_definitions.expand_MDA_to_All(),
+            #     ),
+            #
+            # "MDA All with WASH":
+            #     mix_scenarios(
+            #         scenario_definitions.baseline(),
+            #         scenario_definitions.high_coverage_MDA(),
+            #         scenario_definitions.expand_MDA_to_All(),
+            #         scenario_definitions.scaleup_WASH(),
+            #     )
         }
 
 

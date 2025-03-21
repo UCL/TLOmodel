@@ -303,6 +303,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
          Mass Drug Administration. The burden and effects of any species are alleviated by a successful treatment."""
 
+        p = self.parameters
+
         df = self.sim.population.props
 
         # Ensure person_id is treated as an iterable (e.g., list) even if it's a single integer
@@ -317,18 +319,37 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Update properties after PZQ treatment
         for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
-            pzq_efficacy = self.parameters[f'{spec_prefix}_PZQ_efficacy']
+            pzq_efficacy = p[f'{spec_prefix}_PZQ_efficacy']
+            high_intensity_threshold_PSAC = p[f'{spec_prefix}_high_intensity_threshold_PSAC']
+            high_intensity_threshold = p[f'{spec_prefix}_high_intensity_threshold']
+            low_intensity_threshold = p[f'{spec_prefix}_low_intensity_threshold']
 
-            df.loc[
-                person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
-                    person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] * (1 - pzq_efficacy)
+            worm_burden_col = f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'
+            infection_status_col = f'{self.module_prefix}_{spec_prefix}_infection_status'
 
-            df[f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df[
-                f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'].clip(lower=0).astype(int)
+            # reduce the worm burden
+            df.loc[person_id, worm_burden_col] *= (1 - pzq_efficacy)
+
+            # clip to 0 and preserve int
+            df.loc[person_id, worm_burden_col] = df.loc[person_id, worm_burden_col].clip(lower=0).astype(int)
 
             # if worm burden >=1, still infected
-            mask = df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] < 1
-            df.loc[mask.index[mask], f'{self.module_prefix}_{spec_prefix}_infection_status'] = 'Non-infected'
+            mask = df.loc[person_id, worm_burden_col] < 1
+            df.loc[mask.index, infection_status_col] = 'Non-infected'
+
+            # update the infection status after changing worm burden
+            aggregate_worm_burden = df.loc[person_id, worm_burden_col]
+            age = df.loc[person_id, 'age_years']
+
+            high_group = ((age < 5) & (aggregate_worm_burden >= high_intensity_threshold_PSAC)) | (
+                aggregate_worm_burden >= high_intensity_threshold)
+            moderate_group = ~high_group & (aggregate_worm_burden >= low_intensity_threshold)
+            low_group = (aggregate_worm_burden < low_intensity_threshold) & (aggregate_worm_burden > 0)
+
+            # Assign infection intensity classification
+            df.loc[high_group.index[high_group], infection_status_col] = 'High-infection'
+            df.loc[moderate_group.index[moderate_group], infection_status_col] = 'Moderate-infection'
+            df.loc[low_group.index[low_group], infection_status_col] = 'Low-infection'
 
     def _load_parameters_from_workbook(self, workbook) -> dict:
         """Load parameters from ResourceFile (loaded by pd.read_excel as `workbook`) that are general (i.e., not
@@ -1654,7 +1675,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """Provide the treatment to the beneficiaries of this HSI."""
-
+        print(f"MDA happening now", {self.sim.date}, {person_id})
         # Find which of the beneficiaries are still alive
         beneficiaries_still_alive = list(set(self.beneficiaries_ids).intersection(
             self.sim.population.props.index[self.sim.population.props.is_alive]

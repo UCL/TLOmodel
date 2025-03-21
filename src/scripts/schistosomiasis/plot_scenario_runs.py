@@ -1,5 +1,9 @@
 """ use the outputs from scenario_runs.py and produce plots
 and summary statistics for paper
+
+JOB ID:
+schisto_scenarios-2025-03-19T092027Z
+
 """
 
 from pathlib import Path
@@ -36,7 +40,6 @@ resourcefilepath = Path("./resources")
 
 output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 
-# results_folder = get_scenario_outputs("schisto_calibration.py", outputpath)[-1]
 results_folder = get_scenario_outputs("schisto_scenarios.py", output_folder)[-1]
 
 
@@ -58,21 +61,8 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # %% FUNCTIONS ##################################################################
-TARGET_PERIOD = (Date(2024, 1, 1), Date(2028, 12, 31))
-
-# figure out data end for each run
-hiv_inc = extract_results(
-    results_folder,
-    module="tlo.methods.hiv",
-    key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-    column="hiv_adult_inc_1549",
-    index="date",
-    do_scaling=False
-)
-
-
-# first run fails in 2030 (0/3)
-# for now, replace with another run
+# todo update
+TARGET_PERIOD = (Date(2024, 1, 1), Date(2029, 12, 31))
 
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
@@ -161,6 +151,8 @@ total_num_dalys_by_label = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 total_num_dalys_by_label_summarized = summarize(total_num_dalys_by_label)
 
+total_num_dalys_by_label_summarized.to_csv(results_folder / f'total_num_dalys_by_label_{target_period()}.csv')
+
 
 def find_difference_relative_to_comparison_series(
     _ser: pd.Series,
@@ -205,8 +197,6 @@ total_num_dalys_by_label_results_averted_vs_WASHonly = summarize(
 total_num_dalys_by_label_results_averted_vs_WASHonly.to_csv(results_folder / f'total_num_dalys_by_label_results_averted_vs_WASHonly{target_period()}.csv')
 
 
-
-
 pc_dalys_averted = 100.0 * summarize(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
@@ -215,6 +205,7 @@ pc_dalys_averted = 100.0 * summarize(
     ),
     only_mean=False
 )
+pc_dalys_averted.to_csv(results_folder / f'pc_dalys_averted{target_period()}.csv')
 
 pc_dalys_averted_WASHonly = 100.0 * summarize(
     -1.0 * find_difference_relative_to_comparison_dataframe(
@@ -344,10 +335,10 @@ daly_summary.to_csv(results_folder / (f'DALYs_by_cause {target_period()}.csv'))
 diarrhoea = extract_results(
     results_folder,
     module="tlo.methods.diarrhoea",
-    key="diarrhoea_episodes",
+    key="incident_case",
     custom_generate_series=(
         lambda df: pd.Series(
-            df.query(f"{TARGET_PERIOD[0].year} <= date.dt.year <= {TARGET_PERIOD[1].year}")["number_episodes"].sum(),
+            df.query(f"{TARGET_PERIOD[0].year} <= date.dt.year <= {TARGET_PERIOD[1].year}")["person_id"].count(),
             index=["total"]
         )
     ),
@@ -404,6 +395,7 @@ alri_pc_dalys_averted = 100.0 * summarize(
     ),
     only_mean=False
 )
+
 
 hiv = extract_results(
     results_folder,
@@ -502,15 +494,20 @@ def get_counts_of_items_requested(_df):
 
     counts_of_available = defaultdict(int)
     counts_of_not_available = defaultdict(int)
+    counts_of_used = defaultdict(int)
 
     for _, row in _df.iterrows():
         for item, num in row['Item_Available'].items():
             counts_of_available[item] += num
         for item, num in row['Item_NotAvailable'].items():
             counts_of_not_available[item] += num
+        for item, num in row['Item_Used'].items():
+            counts_of_used[item] += num
 
     return pd.concat(
-        {'Item_Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        {'Item_Available': pd.Series(counts_of_available),
+         'Not_Available': pd.Series(counts_of_not_available),
+         'Item_Used': pd.Series(counts_of_used)},
         axis=1
     ).fillna(0).astype(int).stack()
 
@@ -679,7 +676,7 @@ def plot_averted_points_with_errorbars(_df):
     # Customize ticks and labels
     ax.set_xticks(x_positions)
     ax.set_xticklabels(_df.columns.levels[0], rotation=45, ha='right')
-    ax.set_ylim(top=50)
+    ax.set_ylim(top=80)
 
     # Add legend for age groups
     handles = [plt.Line2D([0], [0], marker='o', color=color, linestyle='', label=age_group)

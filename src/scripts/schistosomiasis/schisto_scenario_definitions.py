@@ -25,9 +25,6 @@ class ScenarioDefinitions:
                     "beds_availability": "all",
                     "use_funded_or_actual_staffing": "actual"
                 },
-                # "Schisto": {"single_district": False},
-                # "Demography": {"equal_allocation_by_district": True},
-                # "Alri": {"log_indivdual": None},
             },
         )
 
@@ -64,6 +61,6 @@ class ScenarioDefinitions:
         return {
             'Schisto': {
                 'mda_coverage': 0.8,
-                "mda_frequency_months": 12,  # default is 6
+                "mda_frequency_months": 12.0,  # default is 6
             }
         }

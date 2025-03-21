@@ -804,15 +804,15 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         person = df.loc[person_id]
 
         # Log that the episode has ended
-        logger.info(
-            key='end_of_case',
-            data={
-                'person_id': person_id,
-                'date_of_onset': person.gi_date_of_onset,
-                'outcome': outcome
-            },
-            description='information when a case is ended by recovery, cure or death.'
-        )
+        # logger.info(
+        #     key='end_of_case',
+        #     data={
+        #         'person_id': person_id,
+        #         'date_of_onset': person.gi_date_of_onset,
+        #         'outcome': outcome
+        #     },
+        #     description='information when a case is ended by recovery, cure or death.'
+        # )
 
         # Store the totals of days * daly_weight incurred during the episode
         if 'HealthBurden' in self.sim.modules:
