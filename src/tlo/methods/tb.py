@@ -783,7 +783,7 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_positive"],
                 specificity=p["spec_xray_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray'],
+                #item_codes=self.item_codes_for_consumables_required['chest_xray'],
             )
         )
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -792,7 +792,7 @@ class Tb(Module):
                 target_categories=["active"],
                 sensitivity=p["sens_xray_smear_negative"],
                 specificity=p["spec_xray_smear_negative"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray']
+                #item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
 
