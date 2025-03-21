@@ -22,6 +22,8 @@ total_time_start = time.time()
 # ####### TO SET #######################################################################################################
 scenario_filename = 'wasting_analysis__minimal_model'
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting")
+legend_fontsize = 12
+title_fontsize = 16
 ########################################################################################################################
 
 
@@ -155,7 +157,7 @@ class WastingAnalyses:
             show_legend = (_row_counter == 1 and _col_counter == 2)
             # show_x_axis_label = (_row_counter == 0 and _col_counter == 2)
             if show_legend:
-                ax.legend(loc='center')
+                ax.legend(loc='center', fontsize=legend_fontsize)
                 ax.set_title('')
             else:
                 ax.get_legend().remove()
@@ -168,7 +170,7 @@ class WastingAnalyses:
                 _row_counter += 1
                 _col_counter = -1
             _col_counter += 1  # increment column counter
-            fig.suptitle('Annual incidence of wasting among the age group', fontsize=12, weight='bold')
+            fig.suptitle('Annual incidence of wasting among the age group', fontsize=title_fontsize) #, weight='bold')
             fig.tight_layout()
         fig_output_name = ('wasting_incidence__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
@@ -366,12 +368,99 @@ class WastingAnalyses:
                 bottom += w_prev_plot_df[col]
         ax.set_xticks(pos)
         ax.set_xticklabels(w_prev_plot_df.index, rotation=90)
-        ax.set_title("Wasting prevalence in children 0-59 months per year")
+        ax.set_title("Wasting prevalence in children 0-59 months per year", fontsize=title_fontsize-6)
         ax.set_ylabel('proportion of wasted children in the year')
         ax.set_xlabel('year')
-        ax.legend()
+        ax.set_ylim([0, 0.131])
+        ax.legend(fontsize=legend_fontsize-4)
         plt.tight_layout()
         fig_output_name = ('wasting_prevalence_per_year__' + self.datestamp)
+        self.save_fig__store_pdf_file(fig, fig_output_name)
+        # plt.show()
+
+    def plot_wasting_initial_prevalence_by_age_group(self):
+        """ Plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
+        children wasted in a particular age-group divided by the total number of children per that age-group"""
+
+        # Initial prevalence at the beginning of 2010 - model
+        w_prev_df = self.__w_logs_dict["wasting_init_prevalence_props"]
+        w_prev_df = w_prev_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
+        w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
+        w_prev_df = w_prev_df.drop(columns='date')
+
+        # 2010 prevalence calibration data
+        data_2010 = {
+            'wasted_calib': [7.0, 13.0, 12.7, 2.4, 2.7, 1.9, 0.0],
+            'sev_wast_calib': [2.1, 7.1, 4.7, 0.9, 0.7, 0.6, 0.0]
+        }
+        data_2010['mod_wast_calib'] = \
+            [(w - s)/100 for w, s in zip(data_2010['wasted_calib'], data_2010['sev_wast_calib'])]
+        data_2010['sev_wast_calib'] = \
+            [s/100 for s in data_2010['sev_wast_calib']]
+
+        # Prepare plotting data
+        plotting_model = {'severe wasting': {}, 'moderate wasting': {}}
+        for col in w_prev_df.columns:
+            prefix, age_group = col.split('__')
+            if prefix == 'sev':
+                plotting_model['severe wasting'][age_group] = w_prev_df[col].values[0]
+            elif prefix == 'mod':
+                plotting_model['moderate wasting'][age_group] = w_prev_df[col].values[0]
+        plotting_model = pd.DataFrame(plotting_model)
+
+        plotting_calib = {'severe wasting': {}, 'moderate wasting': {}}
+        age_groups = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
+        for i, age_group in enumerate(age_groups):
+            plotting_calib['severe wasting'][age_group] = data_2010['sev_wast_calib'][i]
+            plotting_calib['moderate wasting'][age_group] = data_2010['mod_wast_calib'][i]
+        plotting_calib = pd.DataFrame(plotting_calib)
+
+        order_x_axis = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
+        plotting_model = plotting_model.reindex(order_x_axis)
+        plotting_calib = plotting_calib.reindex(order_x_axis)
+
+        # Plot wasting prevalence
+        fig, ax = plt.subplots(figsize=(10, 6))
+        bar_width = 0.35
+        # Set positions of bars on x-axis
+        r1 = range(len(plotting_model))
+        r2 = [x + bar_width for x in r1]
+
+        # Plot the first set of bars (model data)
+        ax.bar(r1, plotting_model['severe wasting'],
+               color=self.__colors_model['severe wasting'], width=bar_width,
+               label='severe wasting (model)')
+        ax.bar(r1, plotting_model['moderate wasting'], bottom=plotting_model['severe wasting'],
+               color=self.__colors_model['moderate wasting'], width=bar_width,
+               label='moderate wasting (model)')
+
+        # Plot the second set of bars (calibration data)
+        ax.bar(r2, plotting_calib['severe wasting'],
+               color=self.__colors_data['severe wasting'], width=bar_width,
+               label='severe wasting (data)')
+        ax.bar(r2, plotting_calib['moderate wasting'], bottom=plotting_calib['severe wasting'],
+               color=self.__colors_data['moderate wasting'], width=bar_width,
+               label='moderate wasting (data)')
+
+        ax.set_xlabel('age group')
+        ax.set_ylabel('proportion')
+        ax.set_title(
+            r"Wasting prevalence in children 0-59 months per each age group $\bf{at}$ $\bf{initiation}$ (2010)",
+            fontsize=title_fontsize-1)
+        ax.set_xticks([r + bar_width / 2 for r in range(len(plotting_model))])
+        ax.set_xticklabels(order_x_axis)
+        ax.set_ylim([0, 0.16])
+        ax.legend(fontsize=legend_fontsize)
+
+        # Adjust the layout to make space for the footnote
+        plt.subplots_adjust(top=0.15) # Adjust the top margin
+        # Add footnote
+        fig.figure.text(0.43, 0.95,
+                        "proportion = number of wasted children in the age group "
+                        "/ total number of children in the age group",
+                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
+        plt.tight_layout()
+        fig_output_name = ('wasting_initial_prevalence_per_each_age_group__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
 
@@ -465,11 +554,12 @@ class WastingAnalyses:
 
             ax.set_xlabel('age group')
             ax.set_ylabel('proportion')
-            ax.set_title(f"Wasting prevalence in children 0-59 months per each age group in {year_calib}")
+            ax.set_title(f"Wasting prevalence in children 0-59 months per each age group in {year_calib}",
+                         fontsize=title_fontsize-1)
             ax.set_xticks([r + bar_width / 2 for r in range(len(plotting_model))])
             ax.set_xticklabels(order_x_axis)
-            ax.set_ylim([0, 0.168])
-            ax.legend()
+            ax.set_ylim([0, 0.16])
+            ax.legend(fontsize=legend_fontsize)
 
             # Adjust the layout to make space for the footnote
             plt.subplots_adjust(top=0.15)  # Adjust the bottom margin
@@ -483,90 +573,6 @@ class WastingAnalyses:
             fig_output_name = (f'wasting_prevalence_per_each_age_group_{year_calib}__' + self.datestamp)
             self.save_fig__store_pdf_file(fig, fig_output_name)
             # plt.show()
-
-    def plot_wasting_initial_prevalence_by_age_group(self):
-        """ Plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
-        children wasted in a particular age-group divided by the total number of children per that age-group"""
-
-        # Initial prevalence at the beginning of 2010 - model
-        w_prev_df = self.__w_logs_dict["wasting_init_prevalence_props"]
-        w_prev_df = w_prev_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
-        w_prev_df = w_prev_df.set_index(w_prev_df.date.dt.year)
-        w_prev_df = w_prev_df.drop(columns='date')
-
-        # 2010 prevalence calibration data
-        data_2010 = {
-            'wasted_calib': [7.0, 13.0, 12.7, 2.4, 2.7, 1.9, 0.0],
-            'sev_wast_calib': [2.1, 7.1, 4.7, 0.9, 0.7, 0.6, 0.0]
-        }
-        data_2010['mod_wast_calib'] = \
-            [(w - s)/100 for w, s in zip(data_2010['wasted_calib'], data_2010['sev_wast_calib'])]
-        data_2010['sev_wast_calib'] = \
-            [s/100 for s in data_2010['sev_wast_calib']]
-
-        # Prepare plotting data
-        plotting_model = {'severe wasting': {}, 'moderate wasting': {}}
-        for col in w_prev_df.columns:
-            prefix, age_group = col.split('__')
-            if prefix == 'sev':
-                plotting_model['severe wasting'][age_group] = w_prev_df[col].values[0]
-            elif prefix == 'mod':
-                plotting_model['moderate wasting'][age_group] = w_prev_df[col].values[0]
-        plotting_model = pd.DataFrame(plotting_model)
-
-        plotting_calib = {'severe wasting': {}, 'moderate wasting': {}}
-        age_groups = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
-        for i, age_group in enumerate(age_groups):
-            plotting_calib['severe wasting'][age_group] = data_2010['sev_wast_calib'][i]
-            plotting_calib['moderate wasting'][age_group] = data_2010['mod_wast_calib'][i]
-        plotting_calib = pd.DataFrame(plotting_calib)
-
-        order_x_axis = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
-        plotting_model = plotting_model.reindex(order_x_axis)
-        plotting_calib = plotting_calib.reindex(order_x_axis)
-
-        # Plot wasting prevalence
-        fig, ax = plt.subplots(figsize=(10, 6))
-        bar_width = 0.35
-        # Set positions of bars on x-axis
-        r1 = range(len(plotting_model))
-        r2 = [x + bar_width for x in r1]
-
-        # Plot the first set of bars (model data)
-        ax.bar(r1, plotting_model['severe wasting'],
-               color=self.__colors_model['severe wasting'], width=bar_width,
-               label='severe wasting (model)')
-        ax.bar(r1, plotting_model['moderate wasting'], bottom=plotting_model['severe wasting'],
-               color=self.__colors_model['moderate wasting'], width=bar_width,
-               label='moderate wasting (model)')
-
-        # Plot the second set of bars (calibration data)
-        ax.bar(r2, plotting_calib['severe wasting'],
-               color=self.__colors_data['severe wasting'], width=bar_width,
-               label='severe wasting (data)')
-        ax.bar(r2, plotting_calib['moderate wasting'], bottom=plotting_calib['severe wasting'],
-               color=self.__colors_data['moderate wasting'], width=bar_width,
-               label='moderate wasting (data)')
-
-        ax.set_xlabel('age group')
-        ax.set_ylabel('proportion')
-        ax.set_title(r"Wasting prevalence in children 0-59 months per each age group $\bf{at}$ $\bf{initiation}$ (2010)")
-        ax.set_xticks([r + bar_width / 2 for r in range(len(plotting_model))])
-        ax.set_xticklabels(order_x_axis)
-        ax.set_ylim([0, 0.168])
-        ax.legend()
-
-        # Adjust the layout to make space for the footnote
-        plt.subplots_adjust(top=0.15) # Adjust the top margin
-        # Add footnote
-        fig.figure.text(0.43, 0.95,
-                        "proportion = number of wasted children in the age group "
-                        "/ total number of children in the age group",
-                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
-        plt.tight_layout()
-        fig_output_name = ('wasting_initial_prevalence_per_each_age_group__' + self.datestamp)
-        self.save_fig__store_pdf_file(fig, fig_output_name)
-        # plt.show()
 
     def add_wasting_initial_prevalence_by_age_group(self):
         self.fig_files.append('wasting_initial_prevalence_per_each_age_group__' + self.datestamp + '.pdf')
@@ -584,10 +590,10 @@ class WastingAnalyses:
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
                     fmt='o', color='#000', label="GBD")
-        ax.set_title('Direct deaths due to severe acute malnutrition')
+        ax.set_title('Direct deaths due to severe acute malnutrition', fontsize=title_fontsize-1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
-        ax.legend(loc=2)
+        ax.legend(loc='upper center', fontsize=legend_fontsize)
         fig.tight_layout()
         # Adjust the layout to make space for the footnote
         plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
