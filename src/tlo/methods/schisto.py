@@ -323,8 +323,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                 person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
                     person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] * (1 - pzq_efficacy)
 
-            df[f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df[
-                f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'].clip(lower=0).astype(int)
+            dfloc[
+                person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] = df.loc[
+                    person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'].clip(lower=0).astype(int)
 
             # if worm burden >=1, still infected
             mask = df.loc[person_id, f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'] < 1
