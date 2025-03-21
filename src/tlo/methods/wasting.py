@@ -791,10 +791,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         if intervention == 'SFP':
             outcome_date = self.sim.date + DateOffset(weeks=p['tx_length_weeks_SuppFeedingMAM'])
-
-            mam_full_recovery = self.wasting_models.acute_malnutrition_recovery_mam_lm.predict(
-                df.loc[[person_id]], self.rng
-            )
+            # follow-up SFP in a recovered person leads to discharge through "full recovery"
+            if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
+                mam_full_recovery = True
+            # otherwise, it is decided probabilistically whether the person fully recovers or remains MAM
+            else:
+                mam_full_recovery = self.wasting_models.acute_malnutrition_recovery_mam_lm.predict(
+                    df.loc[[person_id]], self.rng
+                )
 
             if mam_full_recovery:
                 # set discharge date and schedule recovery
@@ -837,7 +841,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     priority=0, topen=outcome_date
                 )
                 if do_prints:
-                    print(f"scheduled full recovery from SAM with {intervention=} at {outcome_date=} and sent for"
+                    print(f"scheduled full recovery from SAM with {intervention=} at {outcome_date=} and sent for "
                           "follow-up MAM tx")
 
             else:
