@@ -77,19 +77,6 @@ class ImpactOfTbDaH04(BaseScenario):
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
         ]
 
-    # def draw_parameters(self, draw_number, rng):
-    #     # Adding health system constraints to every draw
-    #     health_system_constraints = {
-    #         'HealthSystem': {
-    #             'use_funded_or_actual_staffing': 'actual',
-    #             'cons_availability': 'default',
-    #         }
-    #     }
-    #
-    #     if draw_number < self.number_of_draws:
-    #         return list(self._scenarios.values())[draw_number] | health_system_constraints
-    #     else:
-    #         return
     def draw_parameters(self, draw_number, rng):
         if draw_number < self.number_of_draws:
             return list(self._scenarios.values())[draw_number]

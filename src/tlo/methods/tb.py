@@ -2210,7 +2210,6 @@ class HSI_Tb_Culture(HSI_Event, IndividualScopeEventMixin):
         test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_culture_test", hsi_event=self)
 
-        #ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
         # todo equipment required: MGIT instrument, MGIT tube, reagent kit included in consumables
         if test_result is not None:
@@ -2265,8 +2264,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
         logger.debug(
             key="message", data=f"Starting CXR for person {person_id}")
-
-        print(f"Starting TB CXR SCREENING AT LEVEL {self.facility_level} ")
 
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
@@ -2353,7 +2350,6 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         logger.debug(key="message", data=f"Starting IPT for person {person_id}")
-        print(f"STARTING TB CXR SCREENING AT LEVEL {self.ACCEPTED_FACILITY_LEVEL} ")
 
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
@@ -2736,7 +2732,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             or person["tb_diagnosed"]
         ):
             return
-        
+
         drugs_available = False
         # refer for HIV testing: all ages
         # do not run if already HIV diagnosed or had test in last week
@@ -2880,7 +2876,6 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
 
                 # Check if the patient has cough, fever, night sweat, or weight loss
                 if any(x in self.module.symptom_list for x in persons_symptoms):
-                    print(f"Community CXR scheduled for person {person_id} due to TB symptoms.")
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         hsi_event=HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
                         topen=now,
@@ -2915,9 +2910,6 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         person = df.loc[person_id]
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
         smear_status = person['tb_smear']
-
-        # Perform the X-ray and decide the result
-        #test_result = False
 
         # Select sensitivity/specificity of the test based on smear status
         if smear_status:
