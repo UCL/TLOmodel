@@ -1041,7 +1041,6 @@ def test_hsi_scheduling(seed):
     hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
     hsi_event.run(squeeze_factor=0)
 
-    # Check person_id has a HSI_Tb_Xray event scheduled
     date_event, event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         isinstance(ev[1], tb.HSI_Tb_Xray_level1b)

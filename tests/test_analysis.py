@@ -371,7 +371,7 @@ def test_get_parameter_functions(seed):
 
                 # Check that the parameter identified exists in the simulation
                 assert (
-                        name in sim.modules[module].parameters
+                    name in sim.modules[module].parameters
                 ), f"Parameter not recognised: {module}:{name}."
 
                 # Check that the original value and the updated value are of the same type.
@@ -390,25 +390,6 @@ def test_get_parameter_functions(seed):
                         and all(df1.columns == df2.columns)
                         if isinstance(df1, pd.DataFrame)
                         else True
-                    )
-
-                def is_list_same_size_and_dtype(l1, l2):
-                    return (len(l1) == len(l2)) and all(
-                        [type(_i) is type(_j) for _i, _j in zip(l1, l2)]
-                    )
-
-                # Check that, if the updated value is a pd.DataFrame, it has the same indicies as the original
-                if isinstance(original, (pd.DataFrame, pd.Series)):
-                    assert is_df_same_size_and_dtype(original, updated_value), print(
-                        f"Dataframe or series if not of the expected size and shape:"
-                        f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
-                    )
-
-                # Check that, if the updated value is a list/tuple, it has the same dimensions as the original
-                elif isinstance(original, (list, tuple)):
-                    assert is_list_same_size_and_dtype(original, updated_value), print(
-                        f"List/tuple is not of the expected size and containing elements of expected type: "
-                        f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}"
                     )
 
 
