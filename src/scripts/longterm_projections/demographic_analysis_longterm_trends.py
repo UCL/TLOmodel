@@ -103,12 +103,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             alpha=0.2,
                             zorder=5
                             )
-        ax.set_title("Population Size 2010-2060")
+        ax.set_title("Population Size 2010-2070")
         ax.set_xlabel("Year")
         ax.set_ylabel("Population Size (millions)")
-        ax.set_xlim(2010, int(max_year))
+        ax.set_xlim(2010, int(max_year) + 2)
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-        ax.set_ylim(0, 40)
+        ax.set_ylim(0, 60)
         ax.legend()
         fig.tight_layout()
 
@@ -371,7 +371,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Merge all draws into a single DataFrame
         births_model = pd.concat(births_model_dict.values(), axis=1)
-        print(births_model)
         # Load WPP births data
         wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
         wpp_births = wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
