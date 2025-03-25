@@ -88,6 +88,7 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None, scenari
     os.unlink(filename)
 
     if draw:
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
         runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
     else:
         runner.run()
