@@ -977,7 +977,8 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_clinical_acute_malnutrition == 'well') &
                    (df.un_am_tx_start_date.isna()) &
                    (df.un_am_recovery_date.isna() | (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=14)))]
-        if self.module.person_of_interest_id not in not_am_or_treated_or_recently_recovered.index:
+        if (self.module.person_of_interest_id in df.index and
+            self.module.person_of_interest_id not in not_am_or_treated_or_recently_recovered.index):
             print("person of interest cannot become wasted, because ")
             if not df.at[self.module.person_of_interest_id, 'is_alive']:
                 print("is dead")
@@ -994,7 +995,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
             else:
                 print(f"{df.at[self.module.person_of_interest_id, 'un_am_recovery_date']=}")
                 print("smt strange happening - do investigate!")
-        else:
+        elif self.module.person_of_interest_id in df.index:
             print("person of interest can become wasted")
 
         incidence_of_wasting_bool = \
@@ -1429,6 +1430,25 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         if do_prints:
             print(f"wast indicators updated to {df.at[person_id, 'un_WHZ_category']=},"
                   f"{df.at[person_id, 'un_am_MUAC_category']=}, and no oedema => MAM")
+
+        outcome_date = self.module.date_of_outcome_for_untreated_wasting(whz_category='-3<=WHZ<-2')
+        progression_severe_wasting_bool = self.module.wasting_models.severe_wasting_progression_lm.predict(
+            df.loc[[person_id]], rng=rng
+        )
+        if progression_severe_wasting_bool:
+            self.sim.schedule_event(
+                event=Wasting_ProgressionToSevere_Event(module=self.module, person_id=person_id), date=outcome_date
+            )
+            if do_prints:
+                print("the person will progress to severe wasting if not treated")
+        else:
+            # schedule full recovery after duration of moderate wasting
+            self.sim.schedule_event(event=Wasting_FullRecovery_Event(module=self.module, person_id=person_id),
+                                    date=outcome_date)
+            if do_prints:
+                print("the person will naturally fully recover if not treated")
+
+        if do_prints:
             print("------------------------------------------------")
 
 
