@@ -265,7 +265,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
         df_all_years_prevalence_normalized.to_csv(output_folder/f"Prevalence_by_condition_normalized_2020_{draw}_over_50.csv")
         all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
-        all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
+        #all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
 
     # Plot across scenarios
 
@@ -278,13 +278,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_ylabel('Prevalence per 1,000')
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
-    all_draws_prevalence_normalized = all_draws_prevalence_normalized - 1
+    #all_draws_prevalence_normalized = all_draws_prevalence_normalized - 1
 
     all_draws_prevalence_normalized.T.plot.bar(
         stacked=True, ax=axes[1],
         color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_normalized.index],
     )
-    axes[1].hlines(y=0, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
 
     axes[1].legend(bbox_to_anchor=(1.05, 1.05), ncol=1)
     axes[1].set_ylabel('Fold change in condition prevalence compared to 2020')
