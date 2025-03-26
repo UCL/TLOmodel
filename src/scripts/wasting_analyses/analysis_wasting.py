@@ -62,10 +62,6 @@ class WastingAnalyses:
         #         '2010-01-01', 'scaling_factor'
         #     ]
 
-        # gender description
-        self.__gender_desc = {'M': 'Males',
-                              'F': 'Females'}
-
         # wasting types description
         self.__wasting_types_desc = {'WHZ<-3': 'severe wasting',
                                      '-3<=WHZ<-2': 'moderate wasting',
@@ -746,7 +742,7 @@ if __name__ == "__main__":
         wasting_analyses.plot_wasting_prevalence_per_year()
         wasting_analyses.plot_wasting_prevalence_by_age_group()
 
-        # plot wasting deaths by gender as compared to GBD deaths
+        # plot wasting deaths as compared to GBD deaths
         wasting_analyses.plot_model_gbd_deaths()
 
         # save all figures in one pdf
