@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2024
+max_year = 2069
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
@@ -229,7 +229,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_prevalence[draw] = df_all_years_prevalence.iloc[:,-1]
 
         df_prevalence_50_years = df_prevalence_50_years.rename(index=rename_dict)
-        df_prevalence_50_years[draw] = df_prevalence_50_years.iloc[:,-1]
+        all_draws_prevalence_50_years[draw] = df_prevalence_50_years.iloc[:,-1]
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))
@@ -261,7 +261,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].grid(True)
         axes[1].set_ylim(0, 4.5)
         fig.tight_layout()
-        fig.savefig(make_graph_file_name(f'Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B_{draw}'))
+        fig.savefig(make_graph_file_name(f'Trend_Prevalence_by_Condition_All_Years_Raw_and_Normalized_Panel_A_and_B_{draw}_over_50'))
         plt.close(fig)
         df_all_years_prevalence_normalized.to_csv(output_folder/f"Prevalence_by_condition_normalized_2020_{draw}_over_50.csv")
         all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
@@ -270,7 +270,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
-    df_prevalence_50_years.T.plot.bar(
+    all_draws_prevalence_50_years.T.plot.bar(
         stacked=True, ax=axes[0],
         color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence.index], legend=False
     )
