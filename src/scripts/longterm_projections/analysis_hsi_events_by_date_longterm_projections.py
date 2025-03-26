@@ -30,7 +30,7 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2020
-max_year = 2059
+max_year = 2069
 spacing_of_years = 1
 
 
@@ -875,10 +875,12 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
             # Loop through all draws and runs
 
             for run in range(scenario_info["runs_per_draw"]):
+
+                    real_population_scaling_factor = load_pickled_dataframes(results_folder, draw, run, 'tlo.methods.population'
+        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
                     hsi_event_key_to_event_details = load_pickled_dataframes(
                         results_folder, draw, run, "tlo.methods.healthsystem.summary"
                     )["tlo.methods.healthsystem.summary"]["hsi_event_details"]
-
                     hsi_event_key_to_event_details = hsi_event_key_to_event_details["hsi_event_key_to_event_details"]
                     hsi_event_key_to_counts = load_pickled_dataframes(
                         results_folder, draw, run, "tlo.methods.healthsystem.summary"
@@ -886,6 +888,11 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                     hsi_event_key_to_counts = hsi_event_key_to_counts[
                         hsi_event_key_to_counts['date'].between(target_period[0], target_period[1])
                     ]
+                    hsi_event_key_to_counts['hsi_event_key_to_counts'] = {
+                        key: {inner_key: inner_value * real_population_scaling_factor
+                              for inner_key, inner_value in value.items()}
+                        for key, value in hsi_event_key_to_counts['hsi_event_key_to_counts'].items()
+                    }
                     hsi_event_key_to_counts = hsi_event_key_to_counts['hsi_event_key_to_counts']
 
                     # Loop through all hsi_event details
