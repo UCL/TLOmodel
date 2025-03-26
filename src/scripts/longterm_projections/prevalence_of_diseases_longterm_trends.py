@@ -198,12 +198,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         only_mean=True
                     )
                     num_by_age = num_by_age_F + num_by_age_M
+                    num_by_age = num_by_age[draw]
+
                     num_by_age_filtered = num_by_age[num_by_age.index.to_series().apply(
                         lambda x: int(x.split('-')[0].replace('+', '')) >= 50
                     )]
-                    num_by_age_filtered  = num_by_age_filtered[draw].reset_index(drop=True)
+
+                    num_by_age = num_by_age.sum()
+                    num_by_age.reset_index(drop=True)
+                    num_by_age_filtered.reset_index(inplace=True)
                     num_by_age_filtered = num_by_age_filtered.sum()
-                    return num_by_age_filtered
+                    return num_by_age_filtered/num_by_age
 
             result_data_over_50 = get_mean_pop_by_age_for_sex_and_year(draw)
             all_years_data_population[target_year] = result_data_over_50['mean']
