@@ -505,7 +505,6 @@ class Demography(Module):
                 df[level] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"]
 
         self.sim.population.props = df
-        print(self.sim.population.props)
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
