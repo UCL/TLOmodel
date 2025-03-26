@@ -656,7 +656,7 @@ class HealthSystem(Module):
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
         # Parameters for climate-mediated disruptions
-        path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'ResourceFile_Climate'
+        path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'climate_change_impacts'
         self.parameters['projected_precip_disruptions']= pd.read_csv(path_to_resourcefiles_for_climate/ f'ResourceFile_Precipitation_Disruptions_{self.climate_ssp}_{self.climate_model_ensemble_model}.csv')
 
     def pre_initialise_population(self):

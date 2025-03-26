@@ -116,8 +116,8 @@ class Demography(Module):
         'gbd_causes_of_death_data': Parameter(Types.DATA_FRAME,
                                               'Proportion of deaths in each age/sex group attributable to each possible'
                                               ' cause of death in the GBD dataset.'),
-        'possible_level1a_facilities':Parameter(Types.DATA_FRAME,
-                                              'Possible Level 1a facilities for individuals to be assigned'),
+        'possible_facilities':Parameter(Types.DATA_FRAME,
+                                              'Possible facilities for individuals to be assigned'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -155,10 +155,18 @@ class Demography(Module):
             categories=['SET_AT_RUNTIME']
         ),
 
-        'facility_used_level_1a': Property(Types.CATEGORICAL,
-                                  'Which level 1 facility is "used" by individual.',
+        'level_1a': Property(Types.CATEGORICAL,
+                                  'Which level 1a facility is "used" by individual.',
                                           categories = ['SET_AT_RUNTIME']),
-
+        'level_1b': Property(Types.CATEGORICAL,
+                                           'Which level 1b facility is "used" by individual.',
+                                           categories=['SET_AT_RUNTIME']),
+        'level_2': Property(Types.CATEGORICAL,
+                                           'Which level 2 facility is "used" by individual.',
+                                           categories=['SET_AT_RUNTIME']),
+        'level_3': Property(Types.CATEGORICAL,
+                                           'Which level 3 facility is "used" by individual.',
+                                           categories=['SET_AT_RUNTIME']),
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
@@ -213,8 +221,8 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'gbd' / 'ResourceFile_CausesOfDeath_GBD2019.csv'
         ).set_index(['Sex', 'Age_Grp'])
 
-        # possible facilities for level 1a
-        self.parameters['possible_level1a_facilities'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Climate'/'facilities_with_lat_long_region.csv')['Fname']
+        # possible facilities for all levels
+        self.parameters['possible_facilities'] = pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts'/'facilities_with_lat_long_region.csv')['Fname']
 
     def pre_initialise_population(self):
         """
@@ -253,11 +261,31 @@ class Demography(Module):
             categories=self.parameters['pop_2010']['Region'].unique().tolist()
         )
 
-        self.PROPERTIES['facility_used_level_1a'] = Property(
+        self.PROPERTIES['level_1a'] = Property(
             Types.CATEGORICAL,
-            'Which level 1 facility is "used" by individual.',
-            categories= self.parameters['possible_level1a_facilities'].unique().tolist()
+            'Which level 1a facility is "used" by individual.',
+            categories= self.parameters['possible_facilities'].unique().tolist()
         )
+
+        self.PROPERTIES['level_1b'] = Property(
+            Types.CATEGORICAL,
+            'Which level 1b facility is "used" by individual.',
+            categories= self.parameters['possible_facilities'].unique().tolist()
+        )
+
+        self.PROPERTIES['level_2'] = Property(
+            Types.CATEGORICAL,
+            'Which level 2 facility is "used" by individual.',
+            categories= self.parameters['possible_facilities'].unique().tolist()
+        )
+
+        self.PROPERTIES['level_3'] = Property(
+            Types.CATEGORICAL,
+            'Which level 3 facility is "used" by individual.',
+            categories= self.parameters['possible_facilities'].unique().tolist()
+        )
+
+
 
     def initialise_population(self, population):
         """Set properties for this module and compute the initial population scaling factor"""
@@ -303,7 +331,12 @@ class Demography(Module):
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
-        df.loc[df.is_alive, 'facility_used_level_1a'] = self.assign_closest_facility_level_1a( )
+        self.assign_closest_facility_level()
+        df.loc[df.is_alive, 'facility_used_level_1a'] = self.sim.population.props.loc[df.is_alive, "level_1a"]
+        df.loc[df.is_alive, 'facility_used_level_1b'] = self.sim.population.props.loc[df.is_alive, "level_1b"]
+        df.loc[df.is_alive, 'facility_used_level_2'] = self.sim.population.props.loc[df.is_alive, "level_2"]
+        df.loc[df.is_alive, 'facility_used_level_3'] = self.sim.population.props.loc[df.is_alive, "level_3"]
+
         df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
@@ -412,7 +445,7 @@ class Demography(Module):
         _df.prob = _df.prob / _df.prob.sum()  # Rescale `prob` so that it sums to 1.0
         return _df.reset_index(drop=True)
 
-    def assign_closest_facility_level_1a(self):
+    def assign_closest_facility_level(self):
         """Function that assigns an individual coordinates,
          and then the facilities at which they recieve care at each level."""
         # Load district polygons from shapefile
@@ -443,33 +476,36 @@ class Demography(Module):
         # self.sim.population.props["coordinate_of_residence"] = self.sim.population.props["district_of_residence"].apply(
         #     assign_random_coordinates)
 
-        facility_info  =pd.read_csv("/Users/rem76/Desktop/Climate_change_health/Data/facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
+        facility_info  =pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts' / "facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
 
-        # Filter for relevant facility types that are Facility 1a according to https://www.tlomodel.org/writeups.html
-        relevant_facilities = facility_info[
-            facility_info["Ftype"].isin([
-                "Dispensary", "Rural/Urban Health Centre",
-                "Private/Special/Antenatal Clinic", "Maternity Clinic/Facility"
-            ])
-        ]
+        facility_levels = {
+            "level_1a": [
+                "Dispensary", "Rural Health Centre", "Urban Health Centre", "Private Clinic", "Special Clinic",
+                "Antenatal Clinic", "Maternity Clinic", "Maternity Facility"
+            ],
+            "level_1b": ["Community Hospital", "Rural Hospital", "CHAM Hospital"],
+            "level_2": ["District Hospital", "District Health Office"],
+            "level_3": ["Kamuzu Central Hospital", "Mzuzu Central Hospital", "Zomba Central Hospital",
+                        "Queen Elizabeth Central Hospital"],
+            "level_4": ["Zomba Mental Hospital"]
+        }
 
-        # Extract coordinates of facilities
-        facility_coords = list(zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"]))
-
-        # Build a spatial KDTree for fast nearest neighbor search
-        facility_tree = cKDTree(facility_coords)
-
-        # Extract individual coordinates
         individual_coords = np.array([
             (point.x, point.y) if point else (np.nan, np.nan)
             for point in df["coordinate_of_residence"]
         ])
 
-        # Find the nearest facility for each individual
-        distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
+        for level, facility_types in facility_levels.items():
+            relevant_facilities = facility_info[facility_info["Ftype"].isin(facility_types)]
+            if not relevant_facilities.empty:
+                facility_coords = list(
+                    zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"]))
+                facility_tree = cKDTree(facility_coords)
+                distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
+                df[level] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"]
 
-        # Assign the closest facility to each individual
-        self.sim.population.props["level_1a"] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"]
+        self.sim.population.props = df
+        print(self.sim.population.props)
     @staticmethod
     def _edit_init_pop_so_that_equal_number_in_each_district(df) -> pd.DataFrame:
         """Return an edited version of the `pd.DataFrame` describing the probability of persons in the population being
