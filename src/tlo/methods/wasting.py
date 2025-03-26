@@ -313,7 +313,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # Assign wasting categories in children under 5 at initiation
         under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
         under5s_index = under5s.index
-        # apply prevalence of wasting and categorise into moderate (-3 <= WHZ < -2) or severe (WHZ < -3) wasting
+        # apply prevalence of wasting
         init_wasting_bool = self.wasting_models.init_wasting_prevalence_lm.predict(
             under5s, rng=self.rng, squeeze_single_row_output=False
         )
@@ -321,6 +321,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         wasted_index = wasted.index
         df.loc[wasted_index, 'un_last_wasting_date_of_onset'] = self.sim.date
         df.loc[wasted_index, 'un_ever_wasted'] = True
+        # categorise into moderate (-3 <= WHZ < -2) or severe (WHZ < -3) wasting
         init_sev_wasting_bool = self.wasting_models.init_severe_wasting_among_wasted_lm.predict(
             wasted, rng=self.rng, squeeze_single_row_output=False
         )
