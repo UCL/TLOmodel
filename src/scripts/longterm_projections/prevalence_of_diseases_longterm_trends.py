@@ -212,7 +212,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             result_data_over_50 = get_mean_pop_by_age_for_sex_and_year(draw)
             all_years_data_population[target_year] = result_data_over_50['mean']
-            all_years_data_prevalence_50_years[target_year] = result_data_prevalence['mean']/result_data_over_50['mean']
+            all_years_data_prevalence_50_years[target_year] = result_data_prevalence['mean']/1#result_data_over_50['mean']
         df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
         df_prevalence_50_years = pd.DataFrame(all_years_data_prevalence_50_years)
         # Drop rows only if they exist
@@ -265,7 +265,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
         df_all_years_prevalence_normalized.to_csv(output_folder/f"Prevalence_by_condition_normalized_2020_{draw}_over_50.csv")
         all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
-        #all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
 
     # Plot across scenarios
 
@@ -278,7 +277,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_ylabel('Prevalence per 1,000')
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
-    #all_draws_prevalence_normalized = all_draws_prevalence_normalized - 1
 
     all_draws_prevalence_normalized.T.plot.bar(
         stacked=True, ax=axes[1],
