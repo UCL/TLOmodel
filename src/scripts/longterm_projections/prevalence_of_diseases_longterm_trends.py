@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2069
+max_year = 2024
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
@@ -157,6 +157,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         all_years_data_prevalence = {}
         all_years_data_population = {}
+        all_years_data_prevalence_50_years = {}
         for target_year in target_year_sequence:
             TARGET_PERIOD = (
                 Date(target_year, 1, 1),
@@ -200,15 +201,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     num_by_age_filtered = num_by_age[num_by_age.index.to_series().apply(
                         lambda x: int(x.split('-')[0].replace('+', '')) >= 50
                     )]
-
-                    return num_by_age_filtered[draw]
+                    num_by_age_filtered  = num_by_age_filtered[draw].reset_index(drop=True)
+                    num_by_age_filtered = num_by_age_filtered.sum()
+                    return num_by_age_filtered
 
             result_data_over_50 = get_mean_pop_by_age_for_sex_and_year(draw)
-            print(result_data_over_50)
             all_years_data_population[target_year] = result_data_over_50['mean']
-            all_draws_prevalence_50_years[target_year] = result_data_prevalence['mean']/result_data_over_50['mean']
+            all_years_data_prevalence_50_years[target_year] = result_data_prevalence['mean']/result_data_over_50['mean']
         df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
-        df_prevalence_50_years = pd.DataFrame(all_draws_prevalence_50_years)
+        df_prevalence_50_years = pd.DataFrame(all_years_data_prevalence_50_years)
         # Drop rows only if they exist
         rows_to_drop = [
             'live_births', 'population',
