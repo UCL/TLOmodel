@@ -30,10 +30,9 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2020
-max_year = 2069
+max_year = 2059
 spacing_of_years = 1
 
-scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
 
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
@@ -843,8 +842,6 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                                              resourcefilepath: Path, min_year, max_year):
     """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
     target_year_sequence = range(min_year, max_year, spacing_of_years)
-    all_draws_cadre = pd.DataFrame(columns = range(5))
-    all_draws_cadre_normalised = pd.DataFrame(columns = range(5))
     for draw in range(5):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig10_{stub}_{draw}.png"  # noqa: E731
         appointment_time_table = pd.read_csv(
@@ -933,8 +930,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         df_all_years_cadre = pd.DataFrame(all_years_data_cadre)
         # Normalizing by the first column (first year in the sequence)
         df_normalized_cadre = df_all_years_cadre.div(df_all_years_cadre.iloc[:, 0], axis=0)
-        all_draws_cadre[draw] = df_all_years_cadre.iloc[:,-1]
-        all_draws_cadre_normalised[draw] = df_normalized_cadre.iloc[:,-1]
+
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
@@ -992,28 +988,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         # Save the figure with both panels
         fig.savefig(make_graph_file_name('Time_HSI_Events_by_Treatment_All_Years_Panel_A_and_B'))
         plt.close(fig)
-    # Plot across scenarios
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, 7))
-
-    all_draws_cadre.T.plot.bar(
-        stacked=True, ax=axes[0], legend=False
-    )
-    axes[0].set_ylabel('Time Spent (Minutes)')
-    axes[0].set_xlabel('Scenario')
-    axes[0].set_xticklabels(scenario_names, rotation=45)
-
-    all_draws_cadre_normalised.T.plot.bar(
-        stacked=True, ax=axes[1],
-    )
-    axes[1].legend(ncol=2)
-    axes[1].set_ylabel('Fold change in time spent compared to 2020')
-    axes[1].set_xlabel('Scenario')
-    axes[1].set_xticklabels(scenario_names, rotation=45)
-
-    fig.tight_layout()
-    fig.savefig(output_folder / "Time_HSI_Events_by_Cadre_combined.png")
-    plt.show()
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
