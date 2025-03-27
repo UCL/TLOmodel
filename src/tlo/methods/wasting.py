@@ -231,7 +231,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             _agrp: copy.deepcopy(blank_length_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
         self.wasting_length_tracker = copy.deepcopy(self.wasting_length_tracker_blank)
 
-        self.person_of_interest_id = 5315 # debugging
+        self.person_of_interest_id = 31846 # debugging
+        self.person_of_interest_born_bool = False
 
         # define age groups
         self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
@@ -340,6 +341,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         print(f"\n{self.person_of_interest_id=}")
         print("###########")
         if self.person_of_interest_id in df.index:
+            self.person_of_interest_born_bool = True
             print(f"initial wasting: {df.loc[self.person_of_interest_id, 'un_WHZ_category']}")
             print(f"initial MUAC: {df.loc[self.person_of_interest_id, 'un_am_MUAC_category']}")
             print(f"initial oedema: {df.loc[self.person_of_interest_id, 'un_am_nutritional_oedema']}")
@@ -395,6 +397,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         )
 
         if child_id == self.person_of_interest_id:
+            self.person_of_interest_born_bool = True
             print(f"person_of_interest born {self.sim.date=}")
             print("-------")
 
@@ -969,15 +972,15 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
-        if self.module.person_of_interest_id in df.index:
-            print("\nINCIDENCE")
+        if self.module.person_of_interest_born_bool:
+            print("INCIDENCE")
         # Determine who will be onset with wasting among those who
         # currently do not have acute malnutrition, are not being treated, and did not recover in the last 14 days
         not_am_or_treated_or_recently_recovered =\
             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_clinical_acute_malnutrition == 'well') &
                    (df.un_am_tx_start_date.isna()) &
                    (df.un_am_recovery_date.isna() | (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=14)))]
-        if (self.module.person_of_interest_id in df.index and
+        if (self.module.person_of_interest_born_bool and
             self.module.person_of_interest_id not in not_am_or_treated_or_recently_recovered.index):
             print("person of interest cannot become wasted, because ")
             if not df.at[self.module.person_of_interest_id, 'is_alive']:
@@ -995,7 +998,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
             else:
                 print(f"{df.at[self.module.person_of_interest_id, 'un_am_recovery_date']=}")
                 print("smt strange happening - do investigate!")
-        elif self.module.person_of_interest_id in df.index:
+        elif self.module.person_of_interest_born_bool:
             print("person of interest can become wasted")
 
         incidence_of_wasting_bool = \
@@ -1068,7 +1071,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
                     print(f"scheduled recovery to MAM at {outcome_date=} as the person has SAM: "
                           f"{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
 
-        if do_prints:
+        if self.module.person_of_interest_born_bool:
             print("---------------------------------")
 
 
@@ -1783,8 +1786,8 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
             if do_prints:
                 print("consumables not available, SFP tx not scheduled, should be picked up with next\n"
-                      "growth monitoring if not naturally recovered in between or could be picked up\n"
-                      "with non-emergency appt")
+                      "growth monitoring or non-emergency appt if this is not follow-up tx,\n"
+                      "or if not naturally recovered in between")
 
         if do_prints:
             print("-----------------------------------------------")
