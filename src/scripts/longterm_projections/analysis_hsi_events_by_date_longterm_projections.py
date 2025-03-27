@@ -1009,7 +1009,6 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
-
     for i, cadre in enumerate(all_draws_cadre_normalised.index):
             axes[1].scatter(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
                             marker='o',
@@ -1017,6 +1016,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     axes[1].legend(ncol=2)
     axes[1].set_ylabel('Fold change in time spent compared to 2020')
     axes[1].set_xlabel('Scenario')
+    axes[1].set_xticks(all_draws_cadre_normalised.columns)
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
 
