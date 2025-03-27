@@ -1037,14 +1037,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     le_all_years.index[1::2],
                     le_all_years.iloc[1::2]['lower'],
                     le_all_years.iloc[1::2]['upper'],
-                    color=scenario_colours[draw*2],
+                    color=scenario_colours[draw],
                     alpha=0.3
                 )
 
             ax[1].plot(
                     le_all_years.index[0::2],
                     le_all_years.iloc[0::2]['mean'],
-                    marker='o',
+                    marker='s',
                     alpha=0.5,
                     color=scenario_colours[draw*2],
                     label=f"{scenario_names[draw]} - M"
