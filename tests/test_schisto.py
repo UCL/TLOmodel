@@ -82,7 +82,6 @@ def test_diagnosis_and_treatment(seed):
                                                         sim.modules['Schisto'].parameters["sm_symptoms"]}
 
     sim.make_initial_population(n=1)
-    sim.simulate(end_date=start_date + pd.DateOffset(days=1))
 
     df = sim.population.props
     person_id = 0
@@ -90,6 +89,7 @@ def test_diagnosis_and_treatment(seed):
     # give person high juvenile S. mansoni worm burden
     infecting_worms = 500
     df.at[person_id, "ss_sm_juvenile_worm_burden"] = infecting_worms
+    df.at[person_id, "ss_sm_juvenile_worm_infection_date"] = sim.date
 
     df.at[person_id, "ss_sm_infection_status"] = 'Non-infected'  # this is their initial status
     df.at[person_id, "ss_sm_aggregate_worm_burden"] = 0
@@ -97,7 +97,8 @@ def test_diagnosis_and_treatment(seed):
     df.at[person_id, "ss_sm_harbouring_rate"] = 0.5
 
     # schedule the event to mature the worms and assign symptoms
-    mature_worms = schisto.SchistoUpdateWormBurdenEvent(module=sim.modules['Schisto'])
+    sim.simulate(end_date=start_date + pd.DateOffset(months=1))
+    mature_worms = schisto.SchistoMatureJuvenileWormsEvent(module=sim.modules['Schisto'])
     mature_worms.apply(sim.population)
 
     assert df.at[person_id, "ss_sm_infection_status"] == 'High-infection'
@@ -128,9 +129,3 @@ def test_diagnosis_and_treatment(seed):
 
     # check worm burden now reduced
     assert df.at[person_id, 'ss_sm_aggregate_worm_burden'] < infecting_worms
-
-
-
-
-
-
