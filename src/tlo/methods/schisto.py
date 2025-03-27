@@ -335,8 +335,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             # reduce the worm burden
             df.loc[person_id, worm_burden_col] *= (1 - pzq_efficacy)
 
-            # clip to 0 and preserve int
-            df.loc[person_id, worm_burden_col] = df.loc[person_id, worm_burden_col].clip(lower=0).astype(int)
+            # clip whole column to 0 and preserve int
+            df[worm_burden_col] = df[worm_burden_col].clip(lower=0).astype('int64')
 
             # if worm burden >=1, still infected
             mask = df.loc[person_id, worm_burden_col] < 1
@@ -1355,7 +1355,7 @@ class SchistoWormDeathEvent(RegularEvent, PopulationScopeEventMixin):
             which varies by species
             """
             df[species_column_aggregate] -= df[species_column_aggregate] * worm_lifespan
-            df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0).astype(int)
+            df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0).astype('int64')
 
             species = 'mansoni' if species_column_aggregate.startswith('ss_sm') else 'haematobium'
             clear_species_symptoms(species)
