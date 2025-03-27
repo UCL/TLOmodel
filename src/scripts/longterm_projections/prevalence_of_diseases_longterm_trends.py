@@ -290,6 +290,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].legend(bbox_to_anchor=(1.05, 1.05), ncol=1)
     axes[1].set_ylabel('Fold change in condition prevalence compared to 2020')
     axes[1].set_xlabel('Scenario')
+    axes[1].set_xticks(all_draws_cadre_normalised.columns)
     axes[1].set_xticklabels(scenario_names, rotation=45)
     fig.tight_layout()
     fig.savefig(output_folder / "Prevalence_by_condition_combined_50_years.png")
