@@ -30,7 +30,7 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
+    compute_summary_statistics,
     make_age_grp_lookup,
     make_age_grp_types,
     unflatten_flattened_multi_index_in_logging,
@@ -82,6 +82,11 @@ def target_period() -> str:
     return "-".join(str(t.year) for t in TARGET_PERIOD)
 
 
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+
 def set_param_names_as_column_index_level_0(_df):
     """Set the columns index (level 0) as the param_names."""
     ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
@@ -117,10 +122,10 @@ total_num_dalys = extract_results(
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
 
-num_dalys_summarized = \
+num_dalys_compute_summary_statistics = \
 compute_summary_statistics(total_num_dalys, central_measure='median').loc[0].unstack().reindex(
     param_names)
-num_dalys_summarized.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
+num_dalys_compute_summary_statistics.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
 
 
 def get_total_num_dalys_by_label(_df):
@@ -152,8 +157,8 @@ total_num_dalys_by_label = extract_results(
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-total_num_dalys_by_label_summarized = compute_summary_statistics(total_num_dalys_by_label, central_measure='median')
-total_num_dalys_by_label_summarized.to_csv(results_folder / f'total_num_dalys_by_label_{target_period()}.csv')
+total_num_dalys_by_label_compute_summary_statistics = compute_summary_statistics(total_num_dalys_by_label, central_measure='median')
+total_num_dalys_by_label_compute_summary_statistics.to_csv(results_folder / f'total_num_dalys_by_label_{target_period()}.csv')
 
 
 def find_difference_relative_to_comparison_series(
@@ -184,7 +189,7 @@ def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs
 total_num_dalys_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys,
-        comparison='Baseline'
+        comparison='No WASH, no MDA'
     ),
     central_measure='median'
 )
@@ -204,7 +209,7 @@ total_num_dalys_averted_vs_baseline_vs_WASH.to_csv(results_folder / f'total_num_
 num_dalys_by_label_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
-        comparison='Baseline'
+        comparison='No WASH, no MDA'
     ),
     central_measure='median'
 )
@@ -225,7 +230,7 @@ num_dalys_by_label_averted_vs_WASHonly.to_csv(results_folder / f'num_dalys_by_la
 pc_dalys_averted_total = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys,
-        comparison='Baseline',
+        comparison='No WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
@@ -246,7 +251,7 @@ pc_dalys_averted_WASHonly_total.to_csv(results_folder / f'pc_dalys_averted_WASHo
 pc_dalys_averted = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
-        comparison='Baseline',
+        comparison='No WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
@@ -265,6 +270,17 @@ pc_dalys_averted_WASHonly.to_csv(results_folder / f'pc_dalys_averted_WASHonly{ta
 
 
 # %% PLOTS DALYS RELATIVE TO WASH ONLY
+
+order_for_plotting = [
+    'No WASH, no MDA',
+    'MDA SAC with no WASH',
+    'MDA PSAC with no WASH',
+    'MDA All with no WASH',
+    'MDA SAC with WASH',
+    'MDA PSAC with WASH',
+    'MDA All with WASH'
+]
+
 
 def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     """
@@ -326,8 +342,11 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     return fig, ax
 
 
+pc_dalys_averted_WASHonly_ordered = pc_dalys_averted_WASHonly.reindex(columns=order_for_plotting, level=0)
+pc_dalys_averted_WASHonly_ordered = pc_dalys_averted_WASHonly_ordered.drop(index='Other')
+
 name_of_plot = f'Percentage reduction in DALYs versus WASH only {target_period()}'
-fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_WASHonly)
+fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_WASHonly_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in DALYs')
 fig.tight_layout()
@@ -354,7 +373,7 @@ def num_dalys_by_cause(_df):
 # extract dalys by cause with mean and upper/lower intervals
 # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
 
-daly_summary = summarize(
+daly_summary = compute_summary_statistics(
     extract_results(
         results_folder,
         module="tlo.methods.healthburden",
@@ -362,8 +381,7 @@ daly_summary = summarize(
         custom_generate_series=num_dalys_by_cause,
         do_scaling=True,
     ),
-    only_mean=True,
-    collapse_columns=False,
+    central_measure='median',
 )
 
 daly_summary = round_to_nearest_100(daly_summary)
@@ -393,21 +411,21 @@ diarrhoea = extract_results(
 diarrhoea.to_csv(results_folder / (f'diarrhoea_incidence {target_period()}.csv'))
 
 
-diarrhoea_averted_vs_baseline = summarize(
+diarrhoea_averted_vs_WASH = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         diarrhoea,
-        comparison='Baseline'
+        comparison='WASH only'
     ),
-    only_mean=True
+    central_measure='median'
 )
 
-diarrhoea_pc_dalys_averted = 100.0 * summarize(
+diarrhoea_pc_dalys_averted = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         diarrhoea,
-        comparison='Baseline',
+        comparison='WASH only',
         scaled=True
     ),
-    only_mean=False
+    central_measure='median'
 )
 
 
@@ -425,21 +443,21 @@ alri = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 alri.to_csv(results_folder / (f'alri_incidence {target_period()}.csv'))
 
-alri_averted_vs_baseline = summarize(
+alri_averted_vs_WASH = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         alri,
-        comparison='Baseline'
+        comparison='WASH only'
     ),
-    only_mean=True
+    central_measure='median'
 )
 
-alri_pc_dalys_averted = 100.0 * summarize(
+alri_pc_dalys_averted = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         alri,
-        comparison='Baseline',
+        comparison='WASH only',
         scaled=True
     ),
-    only_mean=False
+    central_measure='median'
 )
 
 
@@ -458,21 +476,21 @@ hiv = extract_results(
 hiv.to_csv(results_folder / (f'hiv_incidence {target_period()}.csv'))
 
 
-hiv_averted_vs_baseline = summarize(
+hiv_averted_vs_WASH = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         hiv,
-        comparison='Baseline'
+        comparison='WASH only'
     ),
-    only_mean=True
+    central_measure='median'
 )
 
-hiv_pc_dalys_averted = 100.0 * summarize(
+hiv_pc_dalys_averted = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         hiv,
-        comparison='Baseline',
+        comparison='WASH only',
         scaled=True
     ),
-    only_mean=False
+    central_measure='median'
 )
 
 bladder = extract_results(
@@ -489,35 +507,36 @@ bladder = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 bladder.to_csv(results_folder / (f'bladder_incidence {target_period()}.csv'))
 
-bladder_averted_vs_baseline = summarize(
+bladder_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         bladder,
-        comparison='Baseline'
+        comparison='WASH only'
     ),
-    only_mean=True
+    central_measure='median'
 )
 
-bladder_pc_dalys_averted = 100.0 * summarize(
+bladder_pc_dalys_averted = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         bladder,
-        comparison='Baseline',
+        comparison='WASH only',
         scaled=True
     ),
-    only_mean=False
+    central_measure='median'
 )
 
-schisto_row = (pc_dalys_averted.loc['Schisto'])
-other_row = (pc_dalys_averted.loc['Other'])
+schisto_row = (pc_dalys_averted_WASHonly.loc['Schisto'])
 combined_df = pd.concat([schisto_row.to_frame().T,
                          diarrhoea_pc_dalys_averted,
                          alri_pc_dalys_averted,
                          hiv_pc_dalys_averted,
-                         bladder_pc_dalys_averted,
-                         other_row.to_frame().T], ignore_index=True)
-combined_df.index = ['Schisto', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer', 'Other']
+                         bladder_pc_dalys_averted], ignore_index=True)
+combined_df.index = ['Schistosomiasis', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer']
 
-name_of_plot = f'Percentage reduction in incidence from baseline {target_period()}'
-fig, ax = plot_clustered_bars_with_error_bars(combined_df)
+combined_df_ordered = combined_df.reindex(columns=order_for_plotting, level=0)
+
+
+name_of_plot = f'Percentage reduction in incidence versus WASH {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(combined_df_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in incidence')
 fig.tight_layout()
@@ -526,15 +545,10 @@ fig.show()
 plt.close(fig)
 
 
-# %% GET COSTS FOR SCENARIOS -----------------------------------------------------------------------------
+# %% GET PZQ USED FOR SCENARIOS -----------------------------------------------------------------------------
 
-#  numbers of PZQ doses - these are individual tablets
+#  numbers of PZQ doses - these are 1mg doses
 # includes MDA and treatment
-def drop_outside_period(_df):
-    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
-    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
-
-
 def get_counts_of_items_requested(_df):
     _df = drop_outside_period(_df)
 
@@ -557,7 +571,7 @@ def get_counts_of_items_requested(_df):
         axis=1
     ).fillna(0).astype(int).stack()
 
-cons_req = summarize(
+cons_req = compute_summary_statistics(
     extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -565,35 +579,16 @@ cons_req = summarize(
         custom_generate_series=get_counts_of_items_requested,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0),
-    only_mean=True,
-    collapse_columns=True
+    central_measure='median',
 )
 
 cons = cons_req.unstack()
 # item 286 is Praziquantel 600mg_1000_CMST
-# todo these are showing as all unavailable, ie they've been requested and the HSI has run because they're optional
-# so use the quantities requested
 pzq_use = cons_req.loc['286']
 pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# -----------------------------------------------------------------------------
+# %%  -----------------------------------------------------------------------------
 
 # todo person-years infected with low/moderate/high intensity infections by district and total
 # stacked bar plot for each scenario
@@ -647,23 +642,23 @@ for age in ages:
         do_scaling=False,  # switch to True for full runs
     ).pipe(set_param_names_as_column_index_level_0)
 
-    person_years_summary = summarize(person_years, only_mean=True)
+    person_years_summary = compute_summary_statistics(person_years, central_measure='median')
 
-    total_num_py_averted_vs_baseline = summarize(
+    total_num_py_averted_vs_baseline = compute_summary_statistics(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             person_years,
-            comparison='Baseline'
+            comparison='No WASH, no MDA'
         ),
-        only_mean=True
+        central_measure='median'
     )
 
-    pc_py_averted = 100.0 * summarize(
+    pc_py_averted = 100.0 * compute_summary_statistics(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             person_years,
-            comparison='Baseline',
+            comparison='No WASH, no MDA',
             scaled=True
         ),
-        only_mean=False
+        central_measure='median'
     )
 
     # Append the results to the corresponding lists
@@ -695,7 +690,7 @@ def plot_averted_points_with_errorbars(_df):
 
     # Loop over each draw (column level 0)
     for i, draw in enumerate(_df.columns.levels[0]):
-        mean_values = _df[(draw, 'mean')]
+        mean_values = _df[(draw, 'central')]
         lower_values = _df[(draw, 'lower')]
         upper_values = _df[(draw, 'upper')]
 
