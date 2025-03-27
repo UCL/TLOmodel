@@ -207,10 +207,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     def initialise_simulation(self, sim):
         """Get ready for simulation start."""
 
-        # Initialise the simulation for each species
-        for _spec in self.species.values():
-            _spec.initialise_simulation(sim)
-
         # Look-up DALY weights
         if 'HealthBurden' in self.sim.modules:
             self.disability_weights = self._get_disability_weight()
@@ -226,6 +222,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # schedule regular events
         sim.schedule_event(SchistoMatureJuvenileWormsEvent(self), sim.date + pd.DateOffset(months=1))
         sim.schedule_event(SchistoWormDeathEvent(self), sim.date + pd.DateOffset(years=1))
+
+        # Initialise the simulation for each species
+        for _spec in self.species.values():
+            _spec.initialise_simulation(sim)
 
         # Schedule the logging event
         sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
@@ -1369,7 +1369,7 @@ class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
             this is called separately for each species
             """
             # all new juvenile infections will have same infection date
-            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=2)).any():
+            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=1)).any():
                 df[species_column_aggregate] += df[species_column_juvenile]
 
                 # Set 'juvenile' column to zeros
