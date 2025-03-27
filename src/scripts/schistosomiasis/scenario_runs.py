@@ -87,7 +87,7 @@ class SchistoScenarios(BaseScenario):
         # default is no WASH scale-up, MDA 0.7 every 12 months in SAC
 
         return {
-            "Baseline":
+            "No WASH, no MDA":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.no_MDA(),

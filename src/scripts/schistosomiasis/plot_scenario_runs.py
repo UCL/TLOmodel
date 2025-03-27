@@ -2,8 +2,7 @@
 and summary statistics for paper
 
 JOB ID:
-schisto_scenarios-2025-03-19T092027Z
-
+schisto_scenarios-2025-03-22T130153Z
 """
 
 from pathlib import Path
@@ -26,6 +25,7 @@ from tlo.analysis.utils import (
     parse_log_file,
     compare_number_of_deaths,
     extract_params,
+    compute_summary_statistics,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
@@ -62,7 +62,7 @@ params = extract_params(results_folder)
 
 # %% FUNCTIONS ##################################################################
 # todo update
-TARGET_PERIOD = (Date(2024, 1, 1), Date(2029, 12, 31))
+TARGET_PERIOD = (Date(2024, 1, 1), Date(2040, 12, 31))
 
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
@@ -117,7 +117,9 @@ total_num_dalys = extract_results(
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
 
-num_dalys_summarized = summarize(total_num_dalys).loc[0].unstack().reindex(param_names)
+num_dalys_summarized = \
+compute_summary_statistics(total_num_dalys, central_measure='median').loc[0].unstack().reindex(
+    param_names)
 num_dalys_summarized.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
 
 
@@ -149,8 +151,8 @@ total_num_dalys_by_label = extract_results(
     custom_generate_series=get_total_num_dalys_by_label,
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
-total_num_dalys_by_label_summarized = summarize(total_num_dalys_by_label)
 
+total_num_dalys_by_label_summarized = compute_summary_statistics(total_num_dalys_by_label, central_measure='median')
 total_num_dalys_by_label_summarized.to_csv(results_folder / f'total_num_dalys_by_label_{target_period()}.csv')
 
 
@@ -178,47 +180,91 @@ def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs
     }, axis=1).T
 
 
-total_num_dalys_by_label_results_averted_vs_baseline = summarize(
+# total number of DALYs
+total_num_dalys_averted_vs_baseline = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys,
+        comparison='Baseline'
+    ),
+    central_measure='median'
+)
+total_num_dalys_averted_vs_baseline.to_csv(results_folder / f'total_num_dalys_averted_vs_baseline{target_period()}.csv')
+
+total_num_dalys_averted_vs_baseline_vs_WASH = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys,
+        comparison='WASH only'
+    ),
+    central_measure='median'
+)
+total_num_dalys_averted_vs_baseline_vs_WASH.to_csv(results_folder / f'total_num_dalys_averted_vs_baseline_vs_WASH{target_period()}.csv')
+
+
+# NUMBERS OF DALYS BY CAUSE
+num_dalys_by_label_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
         comparison='Baseline'
     ),
-    only_mean=True
+    central_measure='median'
 )
-total_num_dalys_by_label_results_averted_vs_baseline.to_csv(results_folder / f'total_num_dalys_by_label_results_averted_vs_baseline{target_period()}.csv')
+num_dalys_by_label_averted_vs_baseline.to_csv(results_folder / f'num_dalys_by_label_averted_vs_baseline{target_period()}.csv')
 
-total_num_dalys_by_label_results_averted_vs_WASHonly = summarize(
+
+num_dalys_by_label_averted_vs_WASHonly = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
         comparison='WASH only'
     ),
-    only_mean=True
+    central_measure='median'
 )
-total_num_dalys_by_label_results_averted_vs_WASHonly.to_csv(results_folder / f'total_num_dalys_by_label_results_averted_vs_WASHonly{target_period()}.csv')
+num_dalys_by_label_averted_vs_WASHonly.to_csv(results_folder / f'num_dalys_by_label_averted_vs_WASHonly{target_period()}.csv')
 
 
-pc_dalys_averted = 100.0 * summarize(
+# PERCENTAGE DALYS AVERTED - TOTAL
+pc_dalys_averted_total = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys,
+        comparison='Baseline',
+        scaled=True
+    ),
+    central_measure='median'
+)
+pc_dalys_averted_total.to_csv(results_folder / f'pc_dalys_averted_total{target_period()}.csv')
+
+pc_dalys_averted_WASHonly_total = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys,
+        comparison='WASH only',
+        scaled=True
+    ),
+    central_measure='median'
+)
+pc_dalys_averted_WASHonly_total.to_csv(results_folder / f'pc_dalys_averted_WASHonly_total{target_period()}.csv')
+
+# PERCENTAGE DALYS AVERTED BY CAUSE
+pc_dalys_averted = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
         comparison='Baseline',
         scaled=True
     ),
-    only_mean=False
+    central_measure='median'
 )
 pc_dalys_averted.to_csv(results_folder / f'pc_dalys_averted{target_period()}.csv')
 
-pc_dalys_averted_WASHonly = 100.0 * summarize(
+pc_dalys_averted_WASHonly = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
         comparison='WASH only',
         scaled=True
     ),
-    only_mean=False
+    central_measure='median'
 )
 pc_dalys_averted_WASHonly.to_csv(results_folder / f'pc_dalys_averted_WASHonly{target_period()}.csv')
 
 
-# %% PLOTS DALYS RELATIVE TO BASELINE
+# %% PLOTS DALYS RELATIVE TO WASH ONLY
 
 def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     """
@@ -236,7 +282,7 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     color_list = [colors(i / n_draws) for i in range(n_draws)]  # Create a list of colors for each draw
 
     # Extract the data for plotting
-    means = df.xs('mean', level='stat', axis=1)
+    means = df.xs('central', level='stat', axis=1)
     lowers = df.xs('lower', level='stat', axis=1)
     uppers = df.xs('upper', level='stat', axis=1)
 
@@ -280,8 +326,8 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     return fig, ax
 
 
-name_of_plot = f'Percentage reduction in DALYs from baseline {target_period()}'
-fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted)
+name_of_plot = f'Percentage reduction in DALYs versus WASH only {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_WASHonly)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in DALYs')
 fig.tight_layout()
