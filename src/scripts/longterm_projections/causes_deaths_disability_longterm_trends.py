@@ -180,7 +180,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].set_title('Panel A: Deaths by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of deaths')
-        axes[0].grid(True)
+        axes[0].grid(False)
 
         # Panel B: DALYs
         for i, condition in enumerate(df_all_years_DALYS_mean.index):
@@ -191,7 +191,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Number of DALYs')
         axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
-        axes[1].grid(True)
+        axes[1].grid()
+
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B'))
         plt.close(fig)
 
@@ -210,7 +211,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].set_title('Panel A: Deaths by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Fold change in deaths compared to 2020')
-        axes[0].grid(True)
+        axes[0].grid()
 
         # Panel B: DALYs
         for i, condition in enumerate(df_DALY_normalized_mean.index):
@@ -221,7 +222,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Fold change in DALYs compared to 2020')
         axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
-        axes[1].grid(True)
+        axes[1].grid()
+
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Normalized_Panel_A_and_B'))
         plt.close(fig)
@@ -235,10 +237,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].set_title('Panel A: Deaths by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of deaths')
-        axes[0].grid(True)
         axes[0].spines['top'].set_visible(False)
         axes[0].spines['right'].set_visible(False)
         axes[0].legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
+        axes[0].grid()
 
 
         # Panel B: DALYs (Stacked bar plot)
@@ -249,11 +251,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].set_title('Panel B: DALYs')
         axes[1].set_ylabel('Number of DALYs')
         axes[1].set_xlabel('Year')
-        axes[1].grid()
         axes[1].spines['top'].set_visible(False)
         axes[1].spines['right'].set_visible(False)
         axes[1].legend(ncol=3, fontsize=8, loc='upper right')
         axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
+        axes[1].grid()
+
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Stacked'))
 
@@ -273,7 +276,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].set_title('Panel A: Deaths by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of deaths')
-        axes[0].grid(True)
+        axes[0].grid()
 
         # Panel B: DALYs (Stacked area plot)
         years_dalys = df_all_years_DALYS_mean.columns
@@ -289,7 +292,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Number of DALYs')
         axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
-        axes[1].grid(True)
+        axes[1].grid()
+
         fig.tight_layout()
 
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Area'))
@@ -318,7 +322,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].set_title('Panel A: Deaths by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of deaths per 1000 people')
-        axes[0].grid(True)
+        axes[0].grid()
         axes[0].spines['top'].set_visible(False)
         axes[0].spines['right'].set_visible(False)
         axes[0].legend().set_visible(False)
@@ -418,7 +422,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('Total Deaths')
     axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].grid(axis='y')
+    axes[0].grid(False)
 
     # Panel B: Total DALYs
     axes[1].bar(dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
@@ -426,7 +430,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('Total DALYs')
     axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].grid(axis='y')
+    axes[1].grid(False)
     fig.tight_layout()
     fig.savefig(output_folder / "total_deaths_and_dalys_all_draws.png")
     plt.close(fig)
