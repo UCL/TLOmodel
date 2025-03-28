@@ -2292,10 +2292,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
             if self.module.services_affected_precip != 'none' and year > 2025:
                 for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
-                    facility_used = self.sim.population.props.at[item.hsi_event.target, 'level_1a']
-                    if facility_used in self.module.parameters['projected_precip_disruptions']['Facility_ID'].values:
+                    fac_id = item.hsi_event.facility_info.level
+                    facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
+                    if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
                         prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
-                            (self.module.parameters['projected_precip_disruptions']['Facility_ID'] == facility_used) &
+                            (self.module.parameters['projected_precip_disruptions']['RealFacility_ID'] == facility_used) &
                             (self.module.parameters['projected_precip_disruptions']['year'] == year) &
                             (self.module.parameters['projected_precip_disruptions']['month'] == month) &
                             (self.module.parameters['projected_precip_disruptions'][
