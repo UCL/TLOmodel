@@ -1438,13 +1438,16 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         progression_severe_wasting_bool = self.module.wasting_models.severe_wasting_progression_lm.predict(
             df.loc[[person_id]], rng=rng
         )
-
-        if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2' and progression_severe_wasting_bool:
-            self.sim.schedule_event(Wasting_ProgressionToSevere_Event(self.module, person_id), outcome_date)
+        if progression_severe_wasting_bool:
+            self.sim.schedule_event(
+                event=Wasting_ProgressionToSevere_Event(module=self.module, person_id=person_id), date=outcome_date
+            )
             if do_prints:
                 print("the person will progress to severe wasting if not treated")
         else:
-            self.sim.schedule_event(Wasting_FullRecovery_Event(self.module, person_id), outcome_date)
+            # schedule full recovery after duration of moderate wasting
+            self.sim.schedule_event(event=Wasting_FullRecovery_Event(module=self.module, person_id=person_id),
+                                    date=outcome_date)
             if do_prints:
                 print("the person will naturally fully recover if not treated")
 
