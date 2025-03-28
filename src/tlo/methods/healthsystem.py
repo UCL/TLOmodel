@@ -410,7 +410,7 @@ class HealthSystem(Module):
                 Options are ssp126, ssp245, and ssp585, in terms of increasing severity.
         :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
                 Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
-        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'ANC' and 'all', 'none'
+        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'
         """
 
         super().__init__(name)
@@ -523,7 +523,7 @@ class HealthSystem(Module):
         assert climate_model_ensemble_model in ('lowest', 'mean', 'highest')
         self.climate_model_ensemble_model = climate_model_ensemble_model
 
-        assert services_affected_precip in (None, 'none', 'ANC', 'all')
+        assert services_affected_precip in (None, 'none', 'all')
         self.services_affected_precip = services_affected_precip
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
@@ -2290,7 +2290,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 else:
                     list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
             # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-            if self.module.services_affected_precip != 'none' and year > 2025:
+            if self.module.services_affected_precip != 'none' and self.module.services_affected_precip != None and year > 2025:
                 for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
                     fac_id = item.hsi_event.facility_info.level
                     facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
