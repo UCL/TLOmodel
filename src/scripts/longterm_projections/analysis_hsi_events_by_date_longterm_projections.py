@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import squarify
 from matplotlib import pyplot as plt
+import scipy.stats as st
 
 from tlo import Date
 from tlo.analysis.utils import (
@@ -844,6 +845,9 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     target_year_sequence = range(min_year, max_year, spacing_of_years)
     all_draws_cadre = pd.DataFrame(columns=range(5))
     all_draws_cadre_normalised = pd.DataFrame(columns=range(5))
+    all_draws_cadre_normalised_lower = pd.DataFrame(columns=range(5))
+    all_draws_cadre_normalised_upper = pd.DataFrame(columns=range(5))
+
     for draw in range(5):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig10_{stub}_{draw}.png"  # noqa: E731
         appointment_time_table = pd.read_csv(
@@ -863,6 +867,9 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         )
 
         all_years_data_cadre = {}
+        all_years_data_cadre_lower = {}
+        all_years_data_cadre_upper = {}
+
         all_years_data_treatment = {}
 
         scenario_info = get_scenario_info(results_folder)
@@ -871,15 +878,18 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                 Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
             # Initialize aggregation variables
             cadre_to_total_time = {}
+            cadre_to_total_time_lower = {}
+            cadre_to_total_time_upper = {}
             module_id_to_total_time = {}
+            module_id_to_total_time_lower = {}
+            module_id_to_total_time_upper = {}
+
             total_runs = scenario_info["number_of_draws"] * scenario_info["runs_per_draw"]
 
             # Loop through all draws and runs
-
             for run in range(scenario_info["runs_per_draw"]):
 
-                    real_population_scaling_factor = load_pickled_dataframes(results_folder, draw, run, 'tlo.methods.population'
-        )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+                    real_population_scaling_factor = load_pickled_dataframes(results_folder, draw, run, 'tlo.methods.population')['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
                     hsi_event_key_to_event_details = load_pickled_dataframes(
                         results_folder, draw, run, "tlo.methods.healthsystem.summary"
                     )["tlo.methods.healthsystem.summary"]["hsi_event_details"]
@@ -925,22 +935,44 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                                         module_id_to_total_time[treatment_id] = 0
                                     module_id_to_total_time[treatment_id] += (time_for_appointment_officer_facility
                                                                               * hsi_count * appt_number)
+            print(cadre_to_total_time)
 
             # Average the results over all runs and draws
             for cadre in cadre_to_total_time:
+                # get std
+                std_deviation = cadre_to_total_time[cadre].std()
+                std_error = std_deviation/np.sqrt(total_runs)
+                z_value = st.norm.ppf(1 - (1. - 0.95) / 2.)
+
                 cadre_to_total_time[cadre] /= total_runs
+
+                cadre_to_total_time_lower[cadre] = cadre_to_total_time[cadre] - z_value * std_error
+                cadre_to_total_time_upper[cadre] = cadre_to_total_time[cadre] + z_value * std_error
 
             for module_name in module_id_to_total_time:
                 module_id_to_total_time[treatment_id] /= total_runs
+
             all_years_data_cadre[target_year] = cadre_to_total_time
+            all_years_data_cadre_lower[target_year] = cadre_to_total_time_lower
+            all_years_data_cadre_upper[target_year] = cadre_to_total_time_upper
+
             all_years_data_treatment[target_year] = module_id_to_total_time
 
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years_cadre = pd.DataFrame(all_years_data_cadre)
+        df_all_years_cadre_lower = pd.DataFrame(all_years_data_cadre_lower)
+        df_all_years_cadre_upper = pd.DataFrame(all_years_data_cadre_upper)
+
         # Normalizing by the first column (first year in the sequence)
         df_normalized_cadre = df_all_years_cadre.div(df_all_years_cadre.iloc[:, 0], axis=0)
+        df_normalized_cadre_lower = df_all_years_cadre_lower.div(df_all_years_cadre_lower.iloc[:, 0], axis=0)
+        df_normalized_cadre_upper = df_all_years_cadre_lower.div(df_all_years_cadre_upper.iloc[:, 0], axis=0)
+
         all_draws_cadre[draw] = df_all_years_cadre.iloc[:, -1]
         all_draws_cadre_normalised[draw] = df_normalized_cadre.iloc[:, -1]
+        all_draws_cadre_normalised_lower[draw] = df_normalized_cadre_lower.iloc[:, -1]
+        all_draws_cadre_normalised_upper[draw] = df_normalized_cadre_upper.iloc[:, -1]
+
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
@@ -983,7 +1015,6 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[0].grid(True)
 
         # Panel B: Normalized counts
-
         for i, treatment_id in enumerate(df_normalized_treatment_module.index):
             axes[1].scatter(df_normalized_treatment_module.columns, df_normalized_treatment_module.loc[treatment_id],
                             marker='o',
@@ -1009,10 +1040,23 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
+    y_err = [
+        all_draws_cadre_normalised - all_draws_cadre_normalised_lower,
+        all_draws_cadre_normalised_upper - all_draws_cadre_normalised
+    ]
     for i, cadre in enumerate(all_draws_cadre_normalised.index):
             axes[1].scatter(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
                             marker='o',
                             label=cadre)
+            axes[1].errorbar(
+                all_draws_cadre_normalised.columns,
+                all_draws_cadre_normalised.loc[cadre],
+                yerr=[abs(y_err[0].loc[cadre]), abs(y_err[1].loc[cadre])],
+                fmt='none',
+                capsize=3,
+                alpha=0.7
+            )
+
     axes[1].legend(ncol=2)
     axes[1].set_ylabel('Fold change in time spent compared to 2020')
     axes[1].set_xlabel('Scenario')
