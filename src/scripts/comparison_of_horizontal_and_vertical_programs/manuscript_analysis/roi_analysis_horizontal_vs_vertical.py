@@ -13,6 +13,9 @@ import os
 import textwrap
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
+import string
 import seaborn as sns
 import numpy as np
 import pandas as pd
@@ -562,19 +565,6 @@ for rates in alternative_discount_rates:
 
     # %%
     # Return on Invesment analysis
-    # Convert results to dictionary to write text extracts for manuscript
-    def convert_results_to_dict(_df):
-        draws = list(all_manuscript_scenarios.keys())[1:]
-        values = {
-            draw: {
-                chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
-                "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
-                "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
-            }
-            for draw in draws
-        }
-        return values
-
     # 1. Calculate incremental cost
     # -----------------------------------------------------------------------------------------------------------------------
     total_input_cost = input_costs.groupby(['draw', 'run'])['cost'].sum()
@@ -669,41 +659,6 @@ for rates in alternative_discount_rates:
     icers = icers.mask(num_dalys_averted < 0)
     icers_summarized = summarize_cost_data(icers, _metric = chosen_metric)
     icers_summarized_subset_for_figure = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
-    icer_result = convert_results_to_dict(icers_summarized)
-    hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
-    hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
-    cons_scenario_with_lowest_icer = min([5,6,7], key=lambda k: icer_result[k][chosen_metric])
-    cons_scenario_with_highest_icer = max([5,6,7], key=lambda k: icer_result[k][chosen_metric])
-
-    # Extract for manuscript
-    print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario,"
-          f" the Incremental Cost Effectiveness Ratio (ICER) of scaling the health workforce by 1%, 4% and 6% annually was "
-          f"${icer_result[1][chosen_metric]:.2f} [${icer_result[1]['lower']:.2f} - ${icer_result[1]['upper']:.2f}], "
-          f"${icer_result[2][chosen_metric]:.2f} [${icer_result[2]['lower']:.2f} - ${icer_result[2]['upper']:.2f}] "
-          f"and ${icer_result[3][chosen_metric]:.2f} [${icer_result[3]['lower']:.2f} - ${icer_result[3]['upper']:.2f}] "
-          f"per DALY averted, lower than the minimum projected cost effectiveness threshold for 2025-2035 of "
-          f"$190 per DALY averted (Lomas et al, 2021). Aligning consumable availability to levels observed in top-performing "
-          f"programmes produced an ICER of ${icer_result[6][chosen_metric]:.2f} [${icer_result[6]['lower']:.2f} - ${icer_result[6]['upper']:.2f}]"
-          f" per DALY averted, and the full HSS package had an ICER of "
-          f"${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}]"
-          f" per DALY averted.")
-
-    print(f"High incremental costs of vertical expansion programs for HIV and malaria result in cost-ineffective ICER values of "
-          f"${icer_result[9][chosen_metric]:.2f} [${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}] per DALY averted and "
-          f"${icer_result[27][chosen_metric]:.2f} [${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f} per DALY averted, "
-          f"respectively. The ICER of the vertical TB expansion program is "
-          f"${icer_result[18][chosen_metric]:.2f} [${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}] per DALY averted. "
-          f"When all these vertical expansion programmes are combined, the resulting ICER is "
-          f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}] per DALY averted.")
-
-    print(f"Combining HSS with vertical program expansion was more cost-effective for malaria and HIV programmes, whereas this was not the case for TB. "
-          f"The ICERs for the HIV, malaria and TB programmes with HSS were "
-          f"${icer_result[17][chosen_metric]:.2f} [${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}] per DALY averted, "
-          f"${icer_result[35][chosen_metric]:.2f} [${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}] per DALY averted and "
-          f"${icer_result[26][chosen_metric]:.2f} [${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}] per DALY averted, "
-          f"respectively. The joint expansion of HTM programmes was also made more cost effective through combined HSS investments"
-          f"in comparison with its vertical expansion counterpart, with an ICER of "
-          f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted.")
 
     # Plot ICERs
     name_of_plot = f'Incremental cost-effectiveness ratios (ICERs), {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
@@ -903,112 +858,6 @@ for rates in alternative_discount_rates:
     health_spending_per_capita_table = get_manuscript_ready_table_of_projected_health_spending(_relevant_period_for_costing = relevant_period_for_costing)
     health_spending_per_capita_table.to_csv(figurespath / 'projected_health_spending.csv', index = False)
 
-    # ROI at 0 implementation costs
-    benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life) - incremental_scenario_cost
-    roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
-    roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric = chosen_metric)
-    roi_result = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
-
-    # Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
-    health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life), _metric = chosen_metric))
-    incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost, _metric = chosen_metric))
-    breakeven_implementation_cost = (health_benefit_summarised[44][chosen_metric] - incremental_scenario_cost_summarised[44][chosen_metric] * (roi_result[36][chosen_metric] + 1))/((roi_result[36][chosen_metric] + 1))
-
-    # Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
-    breakeven_implementation_cost_tb = ((health_benefit_summarised[26][chosen_metric] * incremental_scenario_cost_summarised[18][chosen_metric]) - (health_benefit_summarised[18][chosen_metric] * incremental_scenario_cost_summarised[26][chosen_metric]))/(health_benefit_summarised[18][chosen_metric] - health_benefit_summarised[26][chosen_metric])
-    breakeven_implementation_cost_malaria = ((health_benefit_summarised[35][chosen_metric] * incremental_scenario_cost_summarised[27][chosen_metric]) - (health_benefit_summarised[27][chosen_metric] * incremental_scenario_cost_summarised[35][chosen_metric]))/(health_benefit_summarised[27][chosen_metric] - health_benefit_summarised[35][chosen_metric])
-    assert(round((health_benefit_summarised[26][chosen_metric] - incremental_scenario_cost_summarised[26][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26][chosen_metric] + breakeven_implementation_cost_tb),6) ==
-           round((health_benefit_summarised[18][chosen_metric] - incremental_scenario_cost_summarised[18][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18][chosen_metric] + breakeven_implementation_cost_tb),6))
-    assert(round((health_benefit_summarised[35][chosen_metric] - incremental_scenario_cost_summarised[35][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35][chosen_metric] + breakeven_implementation_cost_malaria),6) ==
-           round((health_benefit_summarised[27][chosen_metric] - incremental_scenario_cost_summarised[27][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27][chosen_metric] + breakeven_implementation_cost_malaria), 6))
-
-    print(f"The corresponding ROI of scaling the health workforce by 1%, 4% and 6% annually was "
-          f"{roi_result[1][chosen_metric]:.2f} [{roi_result[1]['lower']:.2f} - {roi_result[1]['upper']:.2f}], "
-          f"{roi_result[2][chosen_metric]:.2f} [{roi_result[2]['lower']:.2f} - {roi_result[2]['upper']:.2f}] and "
-          f"{roi_result[3][chosen_metric]:.2f} [{roi_result[3]['lower']:.2f} - {roi_result[3]['upper']:.2f}]. "
-          f"The ROI of increasing consumable availability to the top-performing programmes was "
-          f"{roi_result[6][chosen_metric]:.2f} [{roi_result[6]['lower']:.2f} - {roi_result[6]['upper']:.2f}],"
-          f" and finally the ROI of the full HSS package was "
-          f"{roi_result[8][chosen_metric]:.2f} [{roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}].")
-
-    print(f"ROI: HIV {roi_result[9][chosen_metric]:.2f} [{roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}], "
-          f"TB {roi_result[18][chosen_metric]:.2f} [{roi_result[18]['lower']:.2f} - {roi_result[18]['upper']:.2f}] and "
-          f"Malaria {roi_result[27][chosen_metric]:.2f} [{roi_result[27]['lower']:.2f} - {roi_result[27]['upper']:.2f}] "
-          f"HTM {roi_result[36][chosen_metric]:.2f} [{roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f}]. ")
-
-    print(f"In a similar vein, ROI of the joint HSS and HTM scale-up was "
-          f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}], "
-          f"and outperformed all other scale-up options.")
-
-    print(f"Importantly, not only did the integrated approach yield greater health benefits, at "
-          f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}] per DALY averted, "
-          f"it was also cost-effective compared to Malawi’s projected cost-effectiveness threshold of "
-          f"$190 per DALY averted, and yielded a high ROI of "
-          f"{roi_result[44][chosen_metric]:.2f} [{roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}]. ")
-
-    # Extract for manuscript
-    print(f"Assuming no implementation costs over and above the additional health system input costs of the scenario, the "
-          f"incremental cost-effectiveness ratio (ICER) of these horizontal investments remained consistently below "
-          f"the projected cost-effectiveness threshold of $190 per DALY averted. The ICER for health workforce expansion "
-          f"scenarios ranged from "
-          f"${icer_result[hr_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_lowest_icer]['upper']:.2f})"
-          f" per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_lowest_icer]} scenario to "
-          f"${icer_result[hr_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[hr_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[hr_scenario_with_highest_icer]['upper']:.2f}) "
-          f"per DALY averted in the {all_manuscript_scenarios[hr_scenario_with_highest_icer]} scenario, while for the consumable availability scenarios, it ranged from "
-          f"${icer_result[cons_scenario_with_lowest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_lowest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_lowest_icer]['upper']:.2f}) "
-          f"per DALY averted in {all_manuscript_scenarios[cons_scenario_with_lowest_icer]} to "
-          f"${icer_result[cons_scenario_with_highest_icer][chosen_metric]:.2f} (${icer_result[cons_scenario_with_highest_icer]['lower']:.2f} - ${icer_result[cons_scenario_with_highest_icer]['upper']:.2f}) "
-          f"per DALY averted in "
-          f"{all_manuscript_scenarios[cons_scenario_with_highest_icer]}. "
-          f"The combined health system strengthening (HSS) expansion scenario, which integrated workforce expansion with "
-          f"increased consumable availability, had an ICER of "
-          f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) "
-          f"per DALY averted. At a value of a statistical life year of $834, the return on investment (ROI) for the HSS expansion package was "
-          f"{roi_result[8][chosen_metric]:.2f} ({roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}).")
-
-    print(f"With an ICER of "
-          f"${icer_result[44][chosen_metric]:.2f} (${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}) per DALY averted, "
-          f"the joint expansion of HTM programmes combined with HSS investments was more cost-effective than the vertical "
-          f"expansion counterpart which had an ICER of "
-          f"${icer_result[36][chosen_metric]:.2f} (${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}) per DALY averted, "
-          f"assuming no additional implementation costs. Similarly, ROI of the joint HSS and HTM scale-up was "
-          f"{(roi_result[44][chosen_metric]/roi_result[36][chosen_metric]-1)*100:.2f}% higher at "
-          f"{roi_result[44][chosen_metric]:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}), "
-          f"outperforming its vertical expansion counterpart which had an ROI of "
-          f"{roi_result[36][chosen_metric]:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f})."
-          f"In fact, combined investments with HSS yielded a greater ROI "
-          f"as long as additional implementation costs of this scenario did not exceed "
-          f"${breakeven_implementation_cost/10e6: .2f} million "
-          f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
-          f"of the total projected health spending) between 2025 and 2035.")
-
-    print(f"Simultaneous HSS investments also increased the cost-effectiveness of the HIV scale-up from "
-          f"${icer_result[9][chosen_metric]:.2f} (${icer_result[9]['lower']:.2f} - ${icer_result[9]['upper']:.2f}) per DALY averted to "
-          f"${icer_result[17][chosen_metric]:.2f} (${icer_result[17]['lower']:.2f} - ${icer_result[17]['upper']:.2f}) per DALY averted."
-          f" However, due to very low additional consumables costs, the ICER of TB programme scale-up alone without HSS was much "
-          f"lower at than that with HSS, with ICERs of "
-          f"${icer_result[18][chosen_metric]:.2f} (${icer_result[18]['lower']:.2f} - ${icer_result[18]['upper']:.2f}) per DALY averted and "
-          f"${icer_result[26][chosen_metric]:.2f} (${icer_result[26]['lower']:.2f} - ${icer_result[26]['upper']:.2f}) per DALY averted respectively. "
-          f"Similarly, due to the large costs of scale up of indoor residual spraying (IRS) and bednet distribution, the ICER of malaria scale-up alone was "
-          f"${icer_result[27][chosen_metric]:.2f} (${icer_result[27]['lower']:.2f} - ${icer_result[27]['upper']:.2f}) "
-          f"per DALY averted compared to "
-          f"${icer_result[35][chosen_metric]:.2f} (${icer_result[35]['lower']:.2f} - ${icer_result[35]['upper']:.2f}) "
-          f"per DALY averted for malaria scale-up with HSS.")
-
-
-    print(f"At no additional implementation costs, simultaneous HSS increased the ROI of the HIV programme substantially to "
-          f"{roi_result[17][chosen_metric]:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) over a negative ROI of "
-          f"{roi_result[9][chosen_metric]:.2f} ({roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}) "
-          f"for HIV investments without HSS. "
-          f"The ROI of malaria and TB programs was higher without simultaneous HSS investments at zero implementation costs "
-          f"but these rapidly declined if the scenarios required any additional implementation costs. More specifically, "
-          f"at an additional implementation cost of "
-          f"${breakeven_implementation_cost_tb/10e6: .2f} million "
-          f"({breakeven_implementation_cost_tb/projected_health_spending_baseline * 100:.2f}% of the projected health spending)  and "
-          f"${breakeven_implementation_cost_malaria/10e6: .2f} million "
-          f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% of the projected health spending) respectively, "
-          f"the ROI of the HSS combined with TB and malaria expansion programs overtook that of vertical investments alone.")
-
     # Combined ROI plot of relevant scenarios
     # ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS
     if rates["discounting_scenario"] == 'MAIN (0.03,0.03)':
@@ -1202,6 +1051,10 @@ for rates in alternative_discount_rates:
     do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'medical equipment',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
     do_stacked_bar_plot_of_cost_by_category(_df = input_costs_for_plot_summarized, _cost_category = 'malaria scale-up',  _disaggregate_by_subgroup = False, _outputfilepath = figurespath, _scenario_dict = all_manuscript_scenarios_substitutedict)
 
+
+# %%
+# The following figures and results are generated only for the main (0.03 discount for both health and cost) scenario
+#----------------------------------------------------------
 # Extract summary of incremental costs for appendix
 
 def calculate_detailed_incremental_costs(_df, comparison_draw=0):
@@ -1305,6 +1158,100 @@ do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all'
                          disaggregate_by= 'cost_category',
                          _outputfilepath = figurespath)
 
+# Extracts for manuscript
+#--------------------------
+# Convert results to dictionary to write text extracts for manuscript
+def convert_results_to_dict(_df):
+    draws = _df.index.to_list()
+    values = {
+        draw: {
+            chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
+            "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
+            "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
+        }
+        for draw in draws
+    }
+    return values
+
+# ICER results
+icer_result = convert_results_to_dict(icers_summarized)
+hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
+hr_scenario_with_highest_icer = max([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
+cons_scenario_with_lowest_icer = min([5,6,7], key=lambda k: icer_result[k][chosen_metric])
+cons_scenario_with_highest_icer = max([5,6,7], key=lambda k: icer_result[k][chosen_metric])
+
+# Get DALYs averted with vertical strategy as comparator
+num_dalys_averted_v_vertical = (-1.0 *
+                     pd.DataFrame(
+                         find_difference_relative_to_comparison(
+                             num_dalys.loc[0],
+                             comparison=36)  # sets the comparator to 0 which is the Actual scenario
+                     ).T.iloc[0].unstack(level='run'))
+num_dalys_averted_v_vertical = num_dalys_averted_v_vertical[num_dalys_averted_v_vertical.index.get_level_values('draw').isin(
+    list(all_manuscript_scenarios.keys()))]  # keep only relevant draws
+# Summarize and convert to dictionary
+num_dalys_averted_v_vertical_summarised = summarize_cost_data(num_dalys_averted_v_vertical, _metric=chosen_metric)
+dalys_averted_v_vertical_result = convert_results_to_dict(num_dalys_averted_v_vertical_summarised)
+
+print(f"The ICER of vertical strategy relative to the baseline scenario was "
+      f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}] "
+      f"per DALY averted, assuming no additional implementation costs. The ICER of the diagonal HTM with HSS strategy "
+      f"relative to the baseline scenario was "
+      f"${icer_result[44][chosen_metric]:.2f} [${icer_result[44]['lower']:.2f} - ${icer_result[44]['upper']:.2f}], "
+      f"demonstrating that the diagonal strategy was more cost-effective than the vertical one. While the horizontal "
+      f"strategy, HSS expansion, averted "
+      f"{dalys_averted_v_vertical_result[8][chosen_metric]/1e6:.2f} [{dalys_averted_v_vertical_result[8]['lower']/1e6:.2f} - {dalys_averted_v_vertical_result[8]['upper']/1e6:.2f}] "
+      f"million more DALYs than HTM expansion, it did so at a higher cost per DALY averted "
+      f"(${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}] versus "
+      f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}]), meaning it was less cost-effective.")
+
+# ROI extracts
+# ROI at 0 implementation costs
+benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life) - incremental_scenario_cost
+roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
+roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric = chosen_metric)
+roi_result = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
+
+# Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
+health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life), _metric = chosen_metric))
+incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost, _metric = chosen_metric))
+breakeven_implementation_cost = (health_benefit_summarised[44][chosen_metric] - incremental_scenario_cost_summarised[44][chosen_metric] * (roi_result[36][chosen_metric] + 1))/((roi_result[36][chosen_metric] + 1))
+
+# Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
+breakeven_implementation_cost_tb = ((health_benefit_summarised[26][chosen_metric] * incremental_scenario_cost_summarised[18][chosen_metric]) - (health_benefit_summarised[18][chosen_metric] * incremental_scenario_cost_summarised[26][chosen_metric]))/(health_benefit_summarised[18][chosen_metric] - health_benefit_summarised[26][chosen_metric])
+breakeven_implementation_cost_malaria = ((health_benefit_summarised[35][chosen_metric] * incremental_scenario_cost_summarised[27][chosen_metric]) - (health_benefit_summarised[27][chosen_metric] * incremental_scenario_cost_summarised[35][chosen_metric]))/(health_benefit_summarised[27][chosen_metric] - health_benefit_summarised[35][chosen_metric])
+assert(round((health_benefit_summarised[26][chosen_metric] - incremental_scenario_cost_summarised[26][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26][chosen_metric] + breakeven_implementation_cost_tb),6) ==
+       round((health_benefit_summarised[18][chosen_metric] - incremental_scenario_cost_summarised[18][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18][chosen_metric] + breakeven_implementation_cost_tb),6))
+assert(round((health_benefit_summarised[35][chosen_metric] - incremental_scenario_cost_summarised[35][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35][chosen_metric] + breakeven_implementation_cost_malaria),6) ==
+       round((health_benefit_summarised[27][chosen_metric] - incremental_scenario_cost_summarised[27][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27][chosen_metric] + breakeven_implementation_cost_malaria), 6))
+
+print(f"Notably, the ROI of the HIV program increased substantially to "
+      f"{roi_result[17][chosen_metric]:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) "
+      f"when integrated with HSS, compared to a negative ROI of "
+      f"{roi_result[9][chosen_metric]:.2f} ({roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}) "
+      f"without HSS. While malaria and TB initially demonstrated higher ROIs under the vertical strategy, "
+      f"this trend reversed when additional implementation costs were considered. Specifically, at an additional "
+      f"implementation cost threshold of "
+      f"${breakeven_implementation_cost_malaria/10e6: .2f} million "
+      f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% "
+      f"of the projected health spending) for malaria and "
+      f"${breakeven_implementation_cost_tb/10e6: .2f} million "
+      f"({breakeven_implementation_cost_tb/projected_health_spending_baseline * 100:.2f}%) for TB, "
+      f"the diagonal investment strategy overtook the vertical approach in terms of ROI")
+
+print(f"At a value of a statistical life year of $834 and assuming no additional implementation costs, the return on "
+      f"investment (ROI) for the diagonal strategy (HTM integrated with HSS) was "
+      f"{(roi_result[44][chosen_metric] - roi_result[36][chosen_metric])/roi_result[36][chosen_metric] * 100:.2f}% "
+      f"higher than that of the vertical strategy, reaching "
+      f"{roi_result[44][chosen_metric]:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}) compared to "
+      f"{roi_result[36][chosen_metric]:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f}) "
+      f"(Figure 3). The diagonal approach remained more favourable than the vertical approach, "
+      f"provided the additional implementation costs of the strategy did not exceed "
+      f"${breakeven_implementation_cost/10e6: .2f} million "
+      f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
+      f"of the total projected health spending) "
+      f"between 2025 and 2035. Furthermore, the ROI of the diagonal strategy also surpassed that of the horizontal strategy "
+      f"({roi_result[8][chosen_metric]:.2f} ({roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}))")
 
 '''
 # Extract TB costs for inspection
