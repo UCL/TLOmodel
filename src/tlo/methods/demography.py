@@ -155,6 +155,9 @@ class Demography(Module):
             categories=['SET_AT_RUNTIME']
         ),
 
+        'level_0': Property(Types.CATEGORICAL,
+                             'Which level 0 facility is "used" by individual.',
+                             categories=['SET_AT_RUNTIME']),
         'level_1a': Property(Types.CATEGORICAL,
                                   'Which level 1a facility is "used" by individual.',
                                           categories = ['SET_AT_RUNTIME']),
@@ -261,6 +264,12 @@ class Demography(Module):
             categories=self.parameters['pop_2010']['Region'].unique().tolist()
         )
 
+        self.PROPERTIES['level_0'] = Property(
+            Types.CATEGORICAL,
+            'Which level 0 facility is "used" by individual.',
+            categories= self.parameters['possible_facilities'].unique().tolist()
+        )
+
         self.PROPERTIES['level_1a'] = Property(
             Types.CATEGORICAL,
             'Which level 1a facility is "used" by individual.',
@@ -332,6 +341,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
         self.assign_closest_facility_level()
+        df.loc[df.is_alive, 'facility_used_level_0'] = self.sim.population.props.loc[df.is_alive, "level_0"]
         df.loc[df.is_alive, 'facility_used_level_1a'] = self.sim.population.props.loc[df.is_alive, "level_1a"]
         df.loc[df.is_alive, 'facility_used_level_1b'] = self.sim.population.props.loc[df.is_alive, "level_1b"]
         df.loc[df.is_alive, 'facility_used_level_2'] = self.sim.population.props.loc[df.is_alive, "level_2"]
@@ -479,6 +489,7 @@ class Demography(Module):
         facility_info  =pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts' / "facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
 
         facility_levels = {
+            "level_0": ["Health Post", "Village Health Committee", "Community Health Station", "Village Clinic", "Mobile Clinic", "Outreach Clinic"],
             "level_1a": [
                 "Dispensary", "Rural Health Centre", "Urban Health Centre", "Private Clinic", "Special Clinic",
                 "Antenatal Clinic", "Maternity Clinic", "Maternity Facility"

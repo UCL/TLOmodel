@@ -96,7 +96,7 @@ def test_number_services(seed, tmpdir):
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   climate_ssp = 'ssp585',
                                   climate_model_ensemble_model='mean',
-                                  services_affected_precip = 'ANC'),
+                                  services_affected_precip = 'all'),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         mockitis.Mockitis(),
@@ -105,7 +105,7 @@ def test_number_services(seed, tmpdir):
     )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-    assert sim.modules['HealthSystem'].services_affected_precip == 'ANC'
+    assert sim.modules['HealthSystem'].services_affected_precip == 'all'
     #output_climate = parse_log_file(sim.log_filepath)
     hsi_event_count_df_climate = get_dataframe_of_run_events_count(sim)
 

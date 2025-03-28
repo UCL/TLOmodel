@@ -2283,39 +2283,37 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
 
-            list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment = list()
+            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = list()
             for item in list_of_individual_hsi_event_tuples_due_today:
                 if not item.hsi_event.is_all_declared_equipment_available:
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-                else:
-                    list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
-            # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-            if self.module.services_affected_precip != 'none' and self.module.services_affected_precip != None and year > 2025:
-                for item in list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment:
-                    fac_id = item.hsi_event.facility_info.level
-                    facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
-                    if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
-                        prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
-                            (self.module.parameters['projected_precip_disruptions']['RealFacility_ID'] == facility_used) &
-                            (self.module.parameters['projected_precip_disruptions']['year'] == year) &
-                            (self.module.parameters['projected_precip_disruptions']['month'] == month) &
-                            (self.module.parameters['projected_precip_disruptions'][
-                                 'service'] == self.module.services_affected_precip),
-                            'disruption'
-                        ]
-                        if len(prob_disruption) > 0:
+                # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
+                elif self.module.services_affected_precip != 'none' and self.module.services_affected_precip != None and year > 2025:
+                    for item in list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions:
+                        fac_id = item.hsi_event.facility_info.level
+                        facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
+                        if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
+                            prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
+                                (self.module.parameters['projected_precip_disruptions']['RealFacility_ID'] == facility_used) &
+                                (self.module.parameters['projected_precip_disruptions']['year'] == year) &
+                                (self.module.parameters['projected_precip_disruptions']['month'] == month) &
+                                (self.module.parameters['projected_precip_disruptions'][
+                                     'service'] == self.module.services_affected_precip),
+                                'disruption'
+                            ]
+
                             prob_disruption = pd.DataFrame(prob_disruption)
                             prob_disruption = float(prob_disruption.iloc[0,0])
                             assert isinstance(prob_disruption, (int, float)), "prob_disruption must be an int or float"
 
                             if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
-                                list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.remove(
-                                                item)  # Remove item from list? Should I create a seperate list?
-                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
-                                                                                            priority=item.priority)
+                                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
+                                                                                                priority=item.priority)
+                else:
+                    list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
                 # Try to run the list of individual-level events that have their essential equipment
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
-                list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
+                list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
             )
             hold_over.extend(_to_be_held_over)
 
