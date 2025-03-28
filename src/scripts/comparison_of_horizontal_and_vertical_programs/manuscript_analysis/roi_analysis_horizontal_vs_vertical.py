@@ -90,32 +90,40 @@ all_manuscript_scenarios = {0:"Baseline", 1: "HRH Scale-up (1%)", 2:"HRH Scale-u
 all_manuscript_scenarios_substitutedict = {0:"0", 1: "A", 2: "B", 3: "C", 4: "D", 5: "E", 6: "F", 7: "G", 8: "H",
                                            9: "I", 17: "J", 18: "K", 26: "L", 27: "M", 35: "N", 36: "O", 44: "P"}
 
+
+# Function to adjust color brightness (lighten/darken)
+def adjust_color(hex_color, factor=0.5):
+    rgb = mcolors.hex2color(hex_color)  # Convert hex to RGB
+    adjusted_rgb = [(1 - factor) * c + factor * 1 for c in rgb]  # Lighten
+    return mcolors.to_hex(adjusted_rgb)
+
+# Generate color map
 color_map = {
-    # Baseline (single color)
-    'Baseline': '#9e0142',
-    # HR scenarios (shades of red)
-    "HRH Scale-up (1%)": "#c71f49",
-    "HRH Scale-up (4%)": "#d8434e",
-    "HRH Scale-up (6%)": "#e65a55",
-    "Increase Capacity at Primary Care Levels": "#f1745c",
-    # Consumables scenarios (shades of orange)
-    "Consumables Increased to 75th Percentile": "#f36b48",
-    "Consumables Available at HIV levels": "#f58a50",
-    "Consumables Available at EPI levels": "#fca45c",
-    # HIV scenarios (shades of yellow-orange)
-    'HIV Program Scale-up Without HSS Expansion': '#fddc89',
-    'HIV Programs Scale-up With HSS Expansion Package': '#fbd977',
-    # TB scenarios (shades of green-yellow)
-    'TB Program Scale-up Without HSS Expansion': '#e7f7a0',
-    'TB Programs Scale-up With HSS Expansion Package': '#cbe88c',
-    # Malaria scenarios (shades of green)
-    'Malaria Program Scale-up Without HSS Expansion': '#a5dc97',
-    'Malaria Programs Scale-up With HSS Expansion Package': '#6dc0a6',
-    # HSS scenarios (shades of blue-green)
-    'HSS Expansion Package': '#439fba',
-    # HTM scenarios (shades of blue)
-    'HTM Program Scale-up Without HSS Expansion': '#5e4fa2',
-    'HTM Programs Scale-up With HSS Expansion Package': '#4a368f',
+# Baseline (single color)
+    'Baseline': 'black',
+# HR scenarios
+    "HRH Scale-up (1%)": adjust_color('#9e0142', 0.5),
+    "HRH Scale-up (4%)": adjust_color('#9e0142', 0.5),
+    "HRH Scale-up (6%)": adjust_color('#9e0142', 0.5),
+    "Increase Capacity at Primary Care Levels": adjust_color('#9e0142', 0.5),
+# Consumables scenarios
+    "Consumables Increased to 75th Percentile": adjust_color('#9e0142', 0.5),
+    "Consumables Available at HIV levels": adjust_color('#9e0142', 0.5),
+    "Consumables Available at EPI levels": adjust_color('#9e0142', 0.5),
+# HIV scenarios
+    'HIV Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.5),
+    'HIV Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.5),
+# TB scenarios
+    'TB Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.5),
+    'TB Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.5),
+# Malaria scenarios
+    'Malaria Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.5),
+    'Malaria Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.5),
+# HSS scenarios
+    'HSS Expansion Package': adjust_color('#9e0142', 0.1),  # Darker
+# HTM scenarios
+    'HTM Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.1),
+    'HTM Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.1),
 }
 
 # Cost-effectiveness threshold
@@ -591,6 +599,7 @@ for rates in alternative_discount_rates:
             comparison=0)  # sets the comparator to draw 0 which is the Actual scenario
     ).T.iloc[0].unstack()).T
     incremental_scenario_cost_subset_for_figure = incremental_scenario_cost[incremental_scenario_cost.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
+    incremental_scenario_cost_summarised = summarize_cost_data(incremental_scenario_cost_subset_for_figure, _metric = chosen_metric)
 
     # 2. Monetary value of health impact
     # -----------------------------------------------------------------------------------------------------------------------
@@ -725,6 +734,123 @@ for rates in alternative_discount_rates:
         axis=1
     )
     icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(figurespath / 'tabulated_icers.csv', index = False)
+
+    # Plot incremental health and cost in a scatterplot
+    # ----------------------------------------------------
+    def do_incremental_cost_and_health_plot(incremental_cost_df, incremental_dalys_df, figname):
+        # Define colors
+        color_map_scatter = {
+            "Horizontal": "#9e0142",
+            "Vertical": "#fdae61",
+            "Diagonal": "#66c2a5"
+        }
+
+        # Assign scenario groups
+        horizontal_scenarios = [1, 2, 3, 4, 5, 6, 7, 8]
+        vertical_scenarios = [9, 18, 27, 36]
+        diagonal_scenarios = [17, 26, 35, 44]
+        darker_scenarios = {'HSS Expansion Package', 'HTM Program Scale-up Without HSS Expansion',
+                            'HTM Programs Scale-up With HSS Expansion Package'}
+
+        # Reorder DataFrames
+        new_order = horizontal_scenarios + vertical_scenarios + diagonal_scenarios
+        incremental_dalys_df = incremental_dalys_df.loc[new_order]
+        incremental_cost_df = incremental_cost_df.loc[new_order]
+
+        # Generate letter labels
+        scenario_labels = {draw: letter for draw, letter in zip(incremental_dalys_df.index, string.ascii_uppercase)}
+
+        # Extract values for axes
+        x_median = incremental_dalys_df['median'] / 1e6
+        x_lower = incremental_dalys_df['lower'] / 1e6
+        x_upper = incremental_dalys_df['upper'] / 1e6
+
+        y_median = incremental_cost_df['median']
+        y_lower = incremental_cost_df['lower']
+        y_upper = incremental_cost_df['upper']
+
+        # Create scatter plot
+        plt.figure(figsize=(12, 7))
+
+        # Loop through each draw to plot points with assigned colors
+        for draw in incremental_dalys_df.index:
+            scenario_name = all_manuscript_scenarios.get(draw, f"Scenario {draw}")
+
+            # Assign colors based on scenario category
+            if draw in horizontal_scenarios:
+                color = color_map_scatter["Horizontal"]
+            elif draw in vertical_scenarios:
+                color = color_map_scatter["Vertical"]
+            elif draw in diagonal_scenarios:
+                color = color_map_scatter["Diagonal"]
+            else:
+                color = "gray"  # Default fallback color
+
+            is_darker = scenario_name in darker_scenarios
+
+            # Scatter plot with error bars
+            plt.scatter(
+                x_median[draw], y_median[draw], color=color,
+                edgecolor='black' if is_darker else 'none',
+                linewidth=3.5 if is_darker else 0,
+                label=scenario_labels[draw]
+            )
+
+            plt.errorbar(
+                x_median[draw], y_median[draw],
+                xerr=[[x_median[draw] - x_lower[draw]], [x_upper[draw] - x_median[draw]]],
+                yerr=[[y_median[draw] - y_lower[draw]], [y_upper[draw] - y_median[draw]]],
+                fmt='o', color=color, alpha=0.6, capsize=5, elinewidth=1
+            )
+
+            # Add letter labels above the dots
+            plt.text(x_median[draw], y_median[draw] + 3e7, scenario_labels[draw], fontsize=10, ha='right', va='bottom',
+                     color='black')
+
+        # Manually create legend
+        legend_labels = []
+        dummy_handles = []
+        scenario_categories = {
+            "Horizontal Scenarios": horizontal_scenarios,
+            "Vertical Scenarios": vertical_scenarios,
+            "Diagonal Scenarios": diagonal_scenarios
+        }
+
+        for category, draws in scenario_categories.items():
+            legend_labels.append(category)  # Add category header
+            dummy_handles.append(mpatches.Patch(color="white", label=""))  # Invisible spacing patch
+
+            for draw in draws:
+                scenario_name = all_manuscript_scenarios.get(draw, f"Scenario {draw}")
+                color = (
+                    color_map_scatter["Horizontal"] if draw in horizontal_scenarios else
+                    color_map_scatter["Vertical"] if draw in vertical_scenarios else
+                    color_map_scatter["Diagonal"] if draw in diagonal_scenarios else
+                    "gray"
+                )
+                is_darker = scenario_name in darker_scenarios
+
+                legend_labels.append(f"{scenario_labels[draw]}: {scenario_name}")
+                dummy_handles.append(
+                    plt.Line2D([0], [0], marker='o', color='w',
+                               markerfacecolor=color, markeredgecolor='black' if is_darker else 'none',
+                               markersize=8, markeredgewidth=2 if is_darker else 0)
+                )
+
+        plt.legend(dummy_handles, legend_labels, loc='upper left', fontsize=8, title="Scenario Key", frameon=True)
+
+        # Labels and title
+        plt.xlabel("DALYs Averted, millions")
+        plt.ylabel("Incremental Scenario Cost, billions (USD)")
+        plt.grid(True)
+
+        plt.savefig(figurespath / figname )
+
+
+    do_incremental_cost_and_health_plot(incremental_cost_df = incremental_scenario_cost_summarised,
+                                        incremental_dalys_df = num_dalys_averted_summarised,
+                                        figname = 'cea_plane.png')
+
 
     # 4. Return on Investment
     # ----------------------------------------------------
