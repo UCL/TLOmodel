@@ -22,7 +22,7 @@ max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
-age_standardisation = 60
+age_standardisation = 50
 
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
     {
@@ -92,8 +92,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """
     # Set period of interest needed for helper functions
     all_draws_prevalence_normalized = pd.DataFrame(columns = range(5)) # to save 2069 results
+    all_draws_prevalence_normalized_lower = pd.DataFrame(columns = range(5)) # to save 2069 results
+    all_draws_prevalence_normalized_upper = pd.DataFrame(columns = range(5)) # to save 2069 results
+
     all_draws_prevalence = pd.DataFrame(columns = range(5))
+
     all_draws_prevalence_standard_years = pd.DataFrame(columns = range(5))
+    all_draws_prevalence_standard_years_lower = pd.DataFrame(columns = range(5))
+    all_draws_prevalence_standard_years_upper = pd.DataFrame(columns = range(5))
+
     for draw in range(5):
         TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
         # Definitions of general helper functions
@@ -157,8 +164,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
         all_years_data_prevalence = {}
+        all_years_data_prevalence_lower = {}
+        all_years_data_prevalence_upper = {}
+
         all_years_data_population = {}
+        all_years_data_population_lower = {}
+        all_years_data_population_upper = {}
+
         all_years_data_prevalence_standard_years = {}
+        all_years_data_prevalence_standard_years_lower = {}
+        all_years_data_prevalence_standard_years_upper = {}
+
         for target_year in target_year_sequence:
             TARGET_PERIOD = (
                 Date(target_year, 1, 1),
@@ -176,6 +192,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 collapse_columns=True,
             )[draw]
             all_years_data_prevalence[target_year] = result_data_prevalence['mean']
+
+
             #Total population
             def get_mean_pop_by_age_for_sex_and_year(draw):
                     num_by_age_F = summarize(
@@ -213,9 +231,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             result_data_over_standard = get_mean_pop_by_age_for_sex_and_year(draw)
             all_years_data_population[target_year] = result_data_over_standard['mean']
+            all_years_data_prevalence_lower[target_year] = result_data_prevalence['lower']
+            all_years_data_prevalence_upper[target_year] = result_data_prevalence['upper']
+
+            all_years_data_population_lower[target_year] = result_data_over_standard['lower']
+            all_years_data_population_upper[target_year] = result_data_over_standard['upper']
+
             all_years_data_prevalence_standard_years[target_year] = result_data_prevalence['mean']/result_data_over_standard['mean']
+            all_years_data_prevalence_standard_years_lower[target_year] = result_data_prevalence['lower']/result_data_over_standard['lower']
+            all_years_data_prevalence_standard_years_upper[target_year] = result_data_prevalence['upper']/result_data_over_standard['upper']
+
         df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
         df_prevalence_standard_years = pd.DataFrame(all_years_data_prevalence_standard_years)
+        df_prevalence_standard_years_lower = pd.DataFrame(all_years_data_prevalence_standard_years_lower)
+        df_prevalence_standard_years_upper = pd.DataFrame(all_years_data_prevalence_standard_years_upper)
+
         # Drop rows only if they exist
         rows_to_drop = [
             'live_births', 'population',
@@ -224,13 +254,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'Intrapartum stillbirth', 'Antenatal stillbirth', 'NMR', 'MMR'
         ]
         df_all_years_prevalence = df_all_years_prevalence.drop(index=rows_to_drop, errors='ignore')
+
         df_prevalence_standard_years = df_prevalence_standard_years.drop(index=rows_to_drop, errors='ignore')
+        df_prevalence_standard_years_lower = df_prevalence_standard_years_lower.drop(index=rows_to_drop, errors='ignore')
+        df_prevalence_standard_years_upper = df_prevalence_standard_years_upper.drop(index=rows_to_drop, errors='ignore')
+
         # Rename index labels
         df_all_years_prevalence = df_all_years_prevalence.rename(index=rename_dict)
         all_draws_prevalence[draw] = df_all_years_prevalence.iloc[:,-1]
 
         df_prevalence_standard_years = df_prevalence_standard_years.rename(index=rename_dict)
         all_draws_prevalence_standard_years[draw] = df_prevalence_standard_years.iloc[:,-1]
+
+        df_prevalence_standard_years_lower = df_prevalence_standard_years_lower.rename(index=rename_dict)
+        all_draws_prevalence_standard_years_lower[draw] = df_prevalence_standard_years_lower.iloc[:,-1]
+
+        df_prevalence_standard_years_upper = df_prevalence_standard_years_upper.rename(index=rename_dict)
+        all_draws_prevalence_standard_years_upper[draw] = df_prevalence_standard_years_upper.iloc[:,-1]
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))
@@ -249,11 +289,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # NORMALIZED Prevalence - normalized to 2010
         df_prevalence_standard_years = df_prevalence_standard_years.rename(index=rename_dict)
         df_all_years_prevalence_normalized = df_prevalence_standard_years.div(df_prevalence_standard_years.iloc[:, 0], axis=0)
+        df_all_years_prevalence_normalized_lower = df_prevalence_standard_years_lower.div(df_prevalence_standard_years_lower.iloc[:, 0], axis=0)
+        df_all_years_prevalence_normalized_upper = df_prevalence_standard_years_upper.div(df_prevalence_standard_years_upper.iloc[:, 0], axis=0)
+
+
         for i, condition in enumerate(df_all_years_prevalence_normalized.index):
             axes[1].plot(df_all_years_prevalence_normalized.columns, df_all_years_prevalence_normalized.loc[condition],
                          marker='o',
                          label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
                                                  df_all_years_prevalence_normalized.index][i])
+
         axes[1].set_title('Panel B: Normalized Prevalence by Condition')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Fold change in deaths compared to 2020')
@@ -266,6 +311,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
         df_all_years_prevalence_normalized.to_csv(output_folder/f"Prevalence_by_condition_normalized_2020_{draw}_over_{age_standardisation}.csv")
         all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
+        all_draws_prevalence_normalized_lower[draw] = df_all_years_prevalence_normalized_lower.iloc[:,-1]
+        all_draws_prevalence_normalized_upper[draw] = df_all_years_prevalence_normalized_upper.iloc[:,-1]
 
     # Plot across scenarios
 
@@ -278,13 +325,25 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_ylabel('Prevalence per 1,000')
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
-
-
+    y_err = [
+        all_draws_prevalence_normalized - all_draws_prevalence_normalized_lower,
+        all_draws_prevalence_normalized_upper - all_draws_prevalence_normalized
+    ]
     for i, condition in enumerate(all_draws_prevalence_normalized.index):
         axes[1].scatter(all_draws_prevalence_normalized.columns, all_draws_prevalence_normalized.loc[condition],
-                     marker='o',
+                     marker='o',s = 10,
                      label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
                                              all_draws_prevalence_normalized.index][i])
+        axes[1].errorbar(
+            all_draws_prevalence_normalized.columns,
+            all_draws_prevalence_normalized.loc[condition],
+            yerr=[abs(y_err[0].loc[condition]), abs(y_err[1].loc[condition])],
+            fmt='none',
+            ecolor=[get_color_cause_of_prevalence_label(_label) for _label in
+                                             all_draws_prevalence_normalized.index][i],
+            capsize=3,
+            alpha=0.7
+        )
 
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
 
