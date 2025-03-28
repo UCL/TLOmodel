@@ -10,7 +10,10 @@ from collections import defaultdict
 from pathlib import Path
 from types import MappingProxyType
 from typing import Union
-from shapely.geometry import Point
+try:
+    from shapely.geometry import Point
+except ImportError:
+    shapely.geometry = None
 import random
 import numpy as np
 import pandas as pd
