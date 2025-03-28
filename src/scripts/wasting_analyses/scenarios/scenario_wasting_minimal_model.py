@@ -43,7 +43,7 @@ class WastingAnalysis(BaseScenario):
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
-            number_of_draws=216,
+            number_of_draws=5,
             runs_per_draw=1,
         )
 
@@ -91,12 +91,15 @@ class WastingAnalysis(BaseScenario):
         progression_severe_wasting_monthly_props_by_agegp = [0.3082, 0.8614, 0.4229, 0.4337, 0.2508, 0.3321]
         prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.1, 0.4, 0.7]
 
-        pars_combinations = list(itertools.product(
-            base_death_rate_untreated_sam__draws,
-            mod_wast_incidence__coef,
-            progression_to_sev_wast__coef,
-            prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam
-        ))
+        # pars_combinations = list(itertools.product(
+        #     base_death_rate_untreated_sam__draws,
+        #     mod_wast_incidence__coef,
+        #     progression_to_sev_wast__coef,
+        #     prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam
+        # ))
+        # draws [14, 52, 129, 197, 203]
+        pars_combinations =[(0.1, 1.0, 2.0, 0.7), (0.1, 0.2, 2.3, 0.4), (0.03, 0.6, 0.75, 0.1), (0.01, 0.6, 2.3, 0.7),
+                            (0.01, 0.2, 0.75, 0.7)]
         return {
             'Wasting': {
                 'base_death_rate_untreated_SAM': pars_combinations[draw_number][0],
