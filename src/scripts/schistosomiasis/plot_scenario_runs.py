@@ -419,7 +419,7 @@ diarrhoea_averted_vs_WASH = compute_summary_statistics(
     central_measure='median'
 )
 
-diarrhoea_pc_dalys_averted = 100.0 * compute_summary_statistics(
+diarrhoea_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         diarrhoea,
         comparison='WASH only',
@@ -428,7 +428,24 @@ diarrhoea_pc_dalys_averted = 100.0 * compute_summary_statistics(
     central_measure='median'
 )
 
+diarrhoea_averted_vs_baseline = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        diarrhoea,
+        comparison='No WASH, no MDA'
+    ),
+    central_measure='median'
+)
 
+diarrhoea_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        diarrhoea,
+        comparison='No WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+
+# ALRI
 alri = extract_results(
     results_folder,
     module="tlo.methods.alri",
@@ -451,7 +468,7 @@ alri_averted_vs_WASH = compute_summary_statistics(
     central_measure='median'
 )
 
-alri_pc_dalys_averted = 100.0 * compute_summary_statistics(
+alri_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         alri,
         comparison='WASH only',
@@ -460,7 +477,24 @@ alri_pc_dalys_averted = 100.0 * compute_summary_statistics(
     central_measure='median'
 )
 
+alri_averted_vs_baseline = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        alri,
+        comparison='No WASH, no MDA'
+    ),
+    central_measure='median'
+)
 
+alri_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        alri,
+        comparison='No WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+
+# HIV
 hiv = extract_results(
     results_folder,
     module="tlo.methods.hiv",
@@ -484,7 +518,7 @@ hiv_averted_vs_WASH = compute_summary_statistics(
     central_measure='median'
 )
 
-hiv_pc_dalys_averted = 100.0 * compute_summary_statistics(
+hiv_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         hiv,
         comparison='WASH only',
@@ -493,6 +527,24 @@ hiv_pc_dalys_averted = 100.0 * compute_summary_statistics(
     central_measure='median'
 )
 
+hiv_averted_vs_baseline = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        hiv,
+        comparison='No WASH, no MDA'
+    ),
+    central_measure='median'
+)
+
+hiv_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        hiv,
+        comparison='No WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+
+# bladder cancer
 bladder = extract_results(
     results_folder,
     module="tlo.methods.bladder_cancer",
@@ -507,7 +559,7 @@ bladder = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 bladder.to_csv(results_folder / (f'bladder_incidence {target_period()}.csv'))
 
-bladder_averted_vs_baseline = compute_summary_statistics(
+bladder_averted_vs_WASH = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         bladder,
         comparison='WASH only'
@@ -515,7 +567,7 @@ bladder_averted_vs_baseline = compute_summary_statistics(
     central_measure='median'
 )
 
-bladder_pc_dalys_averted = 100.0 * compute_summary_statistics(
+bladder_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         bladder,
         comparison='WASH only',
@@ -524,18 +576,66 @@ bladder_pc_dalys_averted = 100.0 * compute_summary_statistics(
     central_measure='median'
 )
 
+bladder_averted_vs_baseline = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        bladder,
+        comparison='No WASH, no MDA'
+    ),
+    central_measure='median'
+)
+
+bladder_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        bladder,
+        comparison='No WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+
+
+# %% plot incidence of diseases with each MDR strategy vs WASH
+
+# combine the dataframes for plotting
 schisto_row = (pc_dalys_averted_WASHonly.loc['Schisto'])
 combined_df = pd.concat([schisto_row.to_frame().T,
-                         diarrhoea_pc_dalys_averted,
-                         alri_pc_dalys_averted,
-                         hiv_pc_dalys_averted,
-                         bladder_pc_dalys_averted], ignore_index=True)
+                         diarrhoea_pc_dalys_averted_vs_WASH,
+                         alri_pc_dalys_averted_vs_WASH,
+                         hiv_pc_dalys_averted_vs_WASH,
+                         bladder_pc_dalys_averted_vs_WASH], ignore_index=True)
 combined_df.index = ['Schistosomiasis', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer']
+combined_df.to_csv(results_folder / (f'percentage_dalys_averted_vs_WASH_{target_period()}.csv'))
 
 combined_df_ordered = combined_df.reindex(columns=order_for_plotting, level=0)
 
 
 name_of_plot = f'Percentage reduction in incidence versus WASH {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(combined_df_ordered)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Percentage reduction in incidence')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
+
+
+# %% plot incidence of diseases with each MDR strategy vs Baseline
+
+
+# combine the dataframes for plotting
+schisto_row = (pc_dalys_averted.loc['Schisto'])
+combined_df = pd.concat([schisto_row.to_frame().T,
+                         diarrhoea_pc_dalys_averted_vs_baseline,
+                         alri_pc_dalys_averted_vs_baseline,
+                         hiv_pc_dalys_averted_vs_baseline,
+                         bladder_pc_dalys_averted_vs_baseline], ignore_index=True)
+combined_df.index = ['Schistosomiasis', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer']
+combined_df.to_csv(results_folder / (f'percentage_dalys_averted_vs_baseline_{target_period()}.csv'))
+
+combined_df_ordered = combined_df.reindex(columns=order_for_plotting, level=0)
+
+
+name_of_plot = f'Percentage reduction in incidence versus Baseline {target_period()}'
 fig, ax = plot_clustered_bars_with_error_bars(combined_df_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in incidence')
@@ -630,8 +730,8 @@ ages = ['PSAC', 'SAC', 'Adults']
 inf = 'HML'  # 'HML' or any combination
 
 # Initialise empty lists to hold the results for each age group
-total_num_py_averted_results = []
-pc_py_averted_results = []
+num_py_averted_vs_WASH_results = []
+pc_py_averted_vs_WASH_results = []
 
 for age in ages:
     person_years = extract_results(
@@ -644,33 +744,36 @@ for age in ages:
 
     person_years_summary = compute_summary_statistics(person_years, central_measure='median')
 
-    total_num_py_averted_vs_baseline = compute_summary_statistics(
+    num_py_averted_vs_WASH = compute_summary_statistics(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             person_years,
-            comparison='No WASH, no MDA'
+            comparison='WASH only'
         ),
         central_measure='median'
     )
 
-    pc_py_averted = 100.0 * compute_summary_statistics(
+    pc_py_averted_vs_WASH = 100.0 * compute_summary_statistics(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             person_years,
-            comparison='No WASH, no MDA',
+            comparison='WASH only',
             scaled=True
         ),
         central_measure='median'
     )
 
     # Append the results to the corresponding lists
-    total_num_py_averted_results.append(total_num_py_averted_vs_baseline)
-    pc_py_averted_results.append(pc_py_averted)
+    num_py_averted_vs_WASH_results.append(num_py_averted_vs_WASH)
+    pc_py_averted_vs_WASH_results.append(pc_py_averted_vs_WASH)
 
 # Combine results into two DataFrames, with age groups as a single-level row index
-total_num_py_averted_df = pd.concat(total_num_py_averted_results, keys=ages, axis=0)
-pc_py_averted_df = pd.concat(pc_py_averted_results, keys=ages, axis=0)
+num_py_averted_vs_WASH_results = pd.concat(num_py_averted_vs_WASH_results, keys=ages, axis=0)
+pc_py_averted_vs_WASH_results = pd.concat(pc_py_averted_vs_WASH_results, keys=ages, axis=0)
 
-total_num_py_averted_df.index = total_num_py_averted_df.index.get_level_values(0)
-pc_py_averted_df.index = pc_py_averted_df.index.get_level_values(0)
+num_py_averted_vs_WASH_results.index = num_py_averted_vs_WASH_results.index.get_level_values(0)
+pc_py_averted_vs_WASH_results.index = pc_py_averted_vs_WASH_results.index.get_level_values(0)
+
+num_py_averted_vs_WASH_results.to_csv(results_folder / (f'num_py_averted_vs_WASH_results {target_period()}.csv'))
+pc_py_averted_vs_WASH_results.to_csv(results_folder / (f'pc_py_averted_vs_WASH_results {target_period()}.csv'))
 
 
 def plot_averted_points_with_errorbars(_df):
@@ -727,10 +830,13 @@ def plot_averted_points_with_errorbars(_df):
     return fig, ax
 
 
-name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis from baseline {target_period()}'
-fig, ax = plot_averted_points_with_errorbars(pc_py_averted_df)
+pc_py_averted_vs_WASH_results_ordered = pc_py_averted_vs_WASH_results.reindex(columns=order_for_plotting, level=0)
+
+name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs WASH {target_period()}'
+fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_WASH_results_ordered)
 ax.set_title(name_of_plot)
-ax.set_ylabel('Percentage reduction in Person-Years')
+ax.set_ylabel('Percentage reduction in Person-Years Infected')
+ax.set_ylim(-100, 100)
 fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
 fig.show()
