@@ -43,7 +43,7 @@ class WastingAnalysis(BaseScenario):
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
-            number_of_draws=5,
+            number_of_draws=192,
             runs_per_draw=1,
         )
 
@@ -84,22 +84,20 @@ class WastingAnalysis(BaseScenario):
     #     return {}
 
     def draw_parameters(self, draw_number, rng):
-        base_death_rate_untreated_sam__draws = [0.1, 0.05, 0.03, 0.01]
-        mod_wast_incidence__coef = [1.0, 0.6, 0.2]
+        base_death_rate_untreated_sam__draws = [0.030, 0.023, 0.017, 0.010]
+        mod_wast_incidence__coef = [0.7, 0.6, 0.5, 0.4]
         base_overall_mod_wast_inc_rate = 0.019
-        progression_to_sev_wast__coef = [0.5, 0.75, 1.0, 1.5, 2.0, 2.3]
+        progression_to_sev_wast__coef = [1.0, 1.25, 1.5]
         progression_severe_wasting_monthly_props_by_agegp = [0.3082, 0.8614, 0.4229, 0.4337, 0.2508, 0.3321]
-        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.1, 0.4, 0.7]
+        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.1, 0.17, 0.23, 0.3]
 
-        # pars_combinations = list(itertools.product(
-        #     base_death_rate_untreated_sam__draws,
-        #     mod_wast_incidence__coef,
-        #     progression_to_sev_wast__coef,
-        #     prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam
-        # ))
-        # draws [14, 52, 129, 197, 203]
-        pars_combinations =[(0.1, 1.0, 2.0, 0.7), (0.1, 0.2, 2.3, 0.4), (0.03, 0.6, 0.75, 0.1), (0.01, 0.6, 2.3, 0.7),
-                            (0.01, 0.2, 0.75, 0.7)]
+        pars_combinations = list(itertools.product(
+            base_death_rate_untreated_sam__draws,
+            mod_wast_incidence__coef,
+            progression_to_sev_wast__coef,
+            prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam
+        ))
+
         return {
             'Wasting': {
                 'base_death_rate_untreated_SAM': pars_combinations[draw_number][0],
