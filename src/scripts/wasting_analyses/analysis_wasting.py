@@ -66,7 +66,7 @@ class WastingAnalyses:
         # wasting types description
         self.__wasting_types_desc = {'WHZ<-3': 'severe wasting',
                                      '-3<=WHZ<-2': 'moderate wasting',
-                                     'WHZ>=-2': 'not undernourished'}
+                                     'WHZ>=-2': 'no wasting'}
 
         self.fig_files = []
 
@@ -689,7 +689,7 @@ class WastingAnalyses:
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
                     fmt='o', color='#000', label="GBD")
-        ax.set_title('Direct deaths due to severe acute malnutrition', fontsize=title_fontsize-1)
+        ax.set_title('Direct average deaths per year due to severe acute malnutrition', fontsize=title_fontsize-1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc='upper center', fontsize=legend_fontsize)
