@@ -373,6 +373,8 @@ class WastingAnalyses:
         w_prev_df = w_prev_df.drop(columns='date')
 
         # 2010 prevalence calibration data
+        # TODO: load data_2010 from the resource file:
+        #  resources_path / 'ResourceFile_Wasting/wasting_prevalence_and_sample_size.csv'
         data_2010 = {
             'wasted_calib': [7.0, 13.0, 12.7, 2.4, 2.7, 1.9, 0.0],
             'sev_wast_calib': [2.1, 7.1, 4.7, 0.9, 0.7, 0.6, 0.0]
@@ -452,6 +454,9 @@ class WastingAnalyses:
         children wasted divide by the total number of children less than 5 years"""
 
         ## Prevalence at some years - data (2010 are the data used to draw initial prevalence)
+        # TODO: add calibration data into the resource file:
+        #  resources_path / 'ResourceFile_Wasting/wasting_prevalence_and_sample_size.csv'
+        #  and load here and for initial overall prev from the RF
         w_prev_calib_data_years_only_df = pd.DataFrame({
             'sev_wast_calib': [0.015, 0.011, 0.006, 0.007],
             'mod_wast_calib': [0.025, 0.027, 0.021, 0.019]
@@ -536,37 +541,22 @@ class WastingAnalyses:
         children wasted in a particular age-group divided by the total number of children per that age-group"""
 
         age_groups = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
-        columns = [f'mod__{age}' for age in age_groups] + [f'sev__{age}' for age in age_groups]
-        # data in percent (0% to 100%)
-        data = {
-            2010: {
-                'wasted_calib': [7.0, 13.0, 12.7, 2.4, 2.7, 1.9, 0.0],
-                'sev_wast_calib': [2.1, 7.1, 4.7, 0.9, 0.7, 0.6, 0.0]
-            },
-            2013: {
-                'wasted_calib': [5.8, 5.8, 5.4, 3.9, 2.2, 2.0, 0.0],
-                'sev_wast_calib': [2.6, 2.5, 1.1, 0.8, 0.7, 0.3, 0.0]
-            },
-            2015: {
-                'wasted_calib': [3.7, 7.7, 6.5, 2.2, 1.9, 2.6, 0.0],
-                'sev_wast_calib': [1.1, 1.0, 0.7, 1.0, 0.1, 0.5, 0.0]
-            },
-            2019: {
-                'wasted_calib': [2.5, 2.6, 9.1, 2.0, 1.8, 1.8, 0.0],
-                'sev_wast_calib': [1.0, 1.0, 2.7, 0.8, 0.2, 0.3, 0.0]
-            }
-        }
-        # recalculate data to proportions (0 to 1) and separate mod wast as (wasted - sev wast)
-        for year in data:
-            data[year]['mod_wast_calib'] = \
-                [(w - s)/100 for w, s in zip(data[year]['wasted_calib'], data[year]['sev_wast_calib'])]
-            data[year]['sev_wast_calib'] = \
-                [s/100 for s in data[year]['sev_wast_calib']]
-        data_list = []
-        for year in data:
-            values = data[year]['mod_wast_calib'] + data[year]['sev_wast_calib']
-            data_list.append(values)
-        w_prev_calib_data_df = pd.DataFrame(data_list, columns=columns, index=data.keys())
+
+        # Load calibration data from CSV file
+        wasting_data_path = resources_path / 'ResourceFile_Wasting/wasting_prevalence_and_sample_size.csv'
+        wasting_data_df = pd.read_csv(wasting_data_path)
+
+        # Recalculate data to proportions (0 to 1) and separate mod wast as (wasted - sev wast)
+        wasting_data_df['mod_wast_calib'] = \
+            (wasting_data_df['prev any wast (%)'] - wasting_data_df['prev severe wast (%)']) / 100
+        wasting_data_df['sev_wast_calib'] = wasting_data_df['prev severe wast (%)'] / 100
+
+        # Pivot the data to get the required format
+        w_prev_calib_data_df = wasting_data_df.pivot(index='year', columns='age_group (months)',
+                                                     values=['mod_wast_calib', 'sev_wast_calib'])
+        w_prev_calib_data_df.columns = [f'{col[0][:3]}__{col[1]}' for col in w_prev_calib_data_df.columns]
+
+        # pop_sizes_calib_data_df =
 
         w_prev_model_df = self.__w_logs_dict["wasting_prevalence_props"]
         w_prev_model_df = w_prev_model_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
