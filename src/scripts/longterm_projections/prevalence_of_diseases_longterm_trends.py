@@ -22,7 +22,7 @@ max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
-age_standardisation = 50
+age_standardisation = 'non_age_standardization'
 
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
     {
@@ -128,18 +128,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             prevalence_sum = filtered_df.sum(numeric_only=True)
             return prevalence_sum
 
-        def population_over_fifty_for_year(_df):
+        def population_by_agegroup_for_year(_df):
             _df['date'] = pd.to_datetime(_df['date'])
 
             # Filter the DataFrame based on the target period
             filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
 
-            population_over_fifty = (
+            population_by_agegroup = (
                 filtered_df.drop(columns=['date'], errors='ignore')
                 .melt(var_name='age_grp')
                 .set_index('age_grp')['value']
             )
-            return population_over_fifty
+            return population_by_agegroup
 
 
         def get_population_for_year(_df):
@@ -200,7 +200,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         extract_results(results_folder,
                                         module="tlo.methods.demography",
                                         key='age_range_f',
-                                        custom_generate_series=population_over_fifty_for_year,
+                                        custom_generate_series=population_by_agegroup_for_year,
                                         do_scaling=True
                                         ),
                         collapse_columns=True,
@@ -210,7 +210,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         extract_results(results_folder,
                                         module="tlo.methods.demography",
                                         key='age_range_m',
-                                        custom_generate_series=population_over_fifty_for_year,
+                                        custom_generate_series=population_by_agegroup_for_year,
                                         do_scaling=True
                                         ),
                         collapse_columns=True,
@@ -220,7 +220,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     num_by_age = num_by_age[draw]
 
                     num_by_age_filtered = num_by_age[num_by_age.index.to_series().apply(
-                        lambda x: int(x.split('-')[0].replace('+', '')) >= age_standardisation
+                        lambda x: int(x.split('-')[0].replace('+', '')) >= 0#age_standardisation
                     )]
 
                     num_by_age = num_by_age.sum()
@@ -237,9 +237,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             all_years_data_population_lower[target_year] = result_data_over_standard['lower']
             all_years_data_population_upper[target_year] = result_data_over_standard['upper']
 
-            all_years_data_prevalence_standard_years[target_year] = result_data_prevalence['mean']/result_data_over_standard['mean']
-            all_years_data_prevalence_standard_years_lower[target_year] = result_data_prevalence['lower']/result_data_over_standard['lower']
-            all_years_data_prevalence_standard_years_upper[target_year] = result_data_prevalence['upper']/result_data_over_standard['upper']
+            all_years_data_prevalence_standard_years[target_year] = result_data_prevalence['mean']#/result_data_over_standard['mean']
+            all_years_data_prevalence_standard_years_lower[target_year] = result_data_prevalence['lower']#/result_data_over_standard['lower']
+            all_years_data_prevalence_standard_years_upper[target_year] = result_data_prevalence['upper']#/result_data_over_standard['upper']
 
         df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
         df_prevalence_standard_years = pd.DataFrame(all_years_data_prevalence_standard_years)
