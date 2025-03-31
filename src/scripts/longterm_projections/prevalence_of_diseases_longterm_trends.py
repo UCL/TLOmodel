@@ -22,7 +22,7 @@ max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
-age_standardisation = 'non_age_standardization'
+age_standardisation = 50 #'non_age_standardization'
 
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
     {
@@ -125,7 +125,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             _df['date'] = pd.to_datetime(_df['date'])
             # Filter the DataFrame based on the target period
             filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
-            prevalence_sum = filtered_df.sum(numeric_only=True)
+            prevalence_sum = filtered_df.mean(numeric_only=True)
             return prevalence_sum
 
         def population_by_agegroup_for_year(_df):
@@ -160,7 +160,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 
-        target_year_sequence = range(min_year, max_year, spacing_of_years)
+        target_year_sequence = [min_year, max_year]#range(min_year, max_year, spacing_of_years)
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
         all_years_data_prevalence = {}
@@ -220,7 +220,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     num_by_age = num_by_age[draw]
 
                     num_by_age_filtered = num_by_age[num_by_age.index.to_series().apply(
-                        lambda x: int(x.split('-')[0].replace('+', '')) >= 0#age_standardisation
+                        lambda x: int(x.split('-')[0].replace('+', '')) >= age_standardisation
                     )]
 
                     num_by_age = num_by_age.sum()
@@ -237,9 +237,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             all_years_data_population_lower[target_year] = result_data_over_standard['lower']
             all_years_data_population_upper[target_year] = result_data_over_standard['upper']
 
-            all_years_data_prevalence_standard_years[target_year] = result_data_prevalence['mean']#/result_data_over_standard['mean']
-            all_years_data_prevalence_standard_years_lower[target_year] = result_data_prevalence['lower']#/result_data_over_standard['lower']
-            all_years_data_prevalence_standard_years_upper[target_year] = result_data_prevalence['upper']#/result_data_over_standard['upper']
+            all_years_data_prevalence_standard_years[target_year] = result_data_prevalence['mean']/result_data_over_standard['mean']
+            all_years_data_prevalence_standard_years_lower[target_year] = result_data_prevalence['lower']/result_data_over_standard['lower']
+            all_years_data_prevalence_standard_years_upper[target_year] = result_data_prevalence['upper']/result_data_over_standard['upper']
 
         df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
         df_prevalence_standard_years = pd.DataFrame(all_years_data_prevalence_standard_years)
@@ -270,13 +270,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_prevalence_standard_years_lower[draw] = df_prevalence_standard_years_lower.iloc[:,-1]
 
         df_prevalence_standard_years_upper = df_prevalence_standard_years_upper.rename(index=rename_dict)
+        print("df_prevalence_standard_years_upper", df_prevalence_standard_years_upper)
+        print("df_prevalence_standard_years_upper.iloc[:,-1]", df_prevalence_standard_years_upper.iloc[:,-1])
         all_draws_prevalence_standard_years_upper[draw] = df_prevalence_standard_years_upper.iloc[:,-1]
-
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))
         # Panel A: Prevalence - general - stacked
-
-        df_prevalence_standard_years.T.plot.bar(stacked=True, ax=axes[0],
+        df_prevalence_standard_years.iloc[:,-1].T.plot.bar(stacked=True, ax=axes[0],
                                            color=[get_color_cause_of_prevalence_label(_label) for _label in
                                                   df_prevalence_standard_years.index])
         axes[0].set_title('Panel A: Prevalence by Condition')
@@ -286,7 +286,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         axes[0].legend().set_visible(False)
 
-        # NORMALIZED Prevalence - normalized to 2010
+        # NORMALIZED Prevalence - normalized to 2020
         df_prevalence_standard_years = df_prevalence_standard_years.rename(index=rename_dict)
         df_all_years_prevalence_normalized = df_prevalence_standard_years.div(df_prevalence_standard_years.iloc[:, 0], axis=0)
         df_all_years_prevalence_normalized_lower = df_prevalence_standard_years_lower.div(df_prevalence_standard_years_lower.iloc[:, 0], axis=0)
@@ -317,11 +317,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plot across scenarios
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
-
     all_draws_prevalence_standard_years.T.plot.bar(
         stacked=True, ax=axes[0],
         color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence.index], legend=False
     )
+    axes[0].set_title('Prevalence per 1,000 in 2070')
     axes[0].set_ylabel('Prevalence per 1,000')
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
