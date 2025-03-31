@@ -248,7 +248,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         # Read parameters from the resource file
         self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Wasting.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Wasting/parameters.csv')
         )
 
         # Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
