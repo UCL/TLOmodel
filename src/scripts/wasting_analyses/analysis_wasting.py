@@ -661,9 +661,6 @@ class WastingAnalyses:
             self.save_fig__store_pdf_file(fig, fig_output_name)
             # plt.show()
 
-    def add_wasting_initial_prevalence_by_age_group(self):
-        self.fig_files.append('wasting_initial_prevalence_per_each_age_group__' + self.datestamp + '.pdf')
-
     def plot_model_gbd_deaths(self):
         """ compare model and GBD deaths 2010-2014 & 2015-2019 """
         death_compare = \
