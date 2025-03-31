@@ -106,14 +106,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             result_data_yll = summarize(extract_results(
             results_folder,
             module="tlo.methods.healthburden",
-            key="yll_by_causes_of_death",
+            key="yll_by_causes_of_death_stacked",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range', 'year']).sum()),
             do_scaling=True),
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
+            result_data_yll = result_data_yll[result_data_yll.index.str.contains('cancer', case=False)]
+
             all_years_data_yll_mean[target_year] = result_data_yll['mean']
             all_years_data_yll_lower[target_year] = result_data_yll['lower']
             all_years_data_yll_upper[target_year] = result_data_yll['upper']
@@ -125,11 +127,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     key="yld_by_causes_of_disability",
                     custom_generate_series=(
                         lambda df: df.drop(
-                            columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
+                            columns=['date', 'sex', 'age_range', 'year']).sum()),
                     do_scaling=True),
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
+            result_data_yld = result_data_yld[result_data_yld.index.str.contains('cancer', case=False)]
+
             all_years_data_yld_mean[target_year] = result_data_yld['mean']
             all_years_data_yld_lower[target_year] = result_data_yld['lower']
             all_years_data_yld_upper[target_year] = result_data_yld['upper']
@@ -168,8 +172,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Panel A: Deaths
         for i, condition in enumerate(df_all_years_yll_mean.index):
             axes[0].plot(df_all_years_yll_mean.columns, df_all_years_yll_mean.loc[condition], marker='o',
-                         label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                                 df_all_years_yll_mean.index][i])
+                         label=condition)
+            # , color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+            #                                      df_all_years_yll_mean.index][i])
         axes[0].set_title('Panel A: YLLs by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of YLLs')
@@ -177,9 +182,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Panel B: ylls
         for i, condition in enumerate(df_all_years_yld_mean.index):
-            axes[1].plot(df_all_years_yld_mean.columns, df_all_years_yld_mean.loc[condition], marker='o', label=condition,
-                         color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                df_all_years_yld_mean.index][i])
+            axes[1].plot(df_all_years_yld_mean.columns, df_all_years_yld_mean.loc[condition], marker='o', label=condition,)
+                         # color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                         #        df_all_years_yld_mean.index][i])
         axes[1].set_title('Panel B: YLDs by cause')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Number of YLDs')
@@ -192,15 +197,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # NORMALIZED DEATHS AND yllS - TO 2020
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
-        df_yll_normalized_mean = df_all_years_deaths_mean.div(df_all_years_yll_mean.iloc[:, 0], axis=0)
+        df_yll_normalized_mean = df_all_years_yll_mean.div(df_all_years_yll_mean.iloc[:, 0], axis=0)
         df_yld_normalized_mean = df_all_years_yld_mean.div(df_all_years_yld_mean.iloc[:, 0], axis=0)
         df_yll_normalized_mean.to_csv(output_folder / f"cause_of_yll_normalized_2020_{draw}.csv")
         df_yld_normalized_mean.to_csv(output_folder / f"cause_of_yld_normalized_2020_{draw}.csv")
 
         for i, condition in enumerate(df_yll_normalized_mean.index):
             axes[0].plot(df_yll_normalized_mean.columns, df_yll_normalized_mean.loc[condition], marker='o',
-                         label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                                 df_all_years_yll_mean.index][i])
+                         label=condition)
         axes[0].set_title('Panel A: YLL by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Fold change in YLLs compared to 2020')
@@ -208,9 +212,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Panel B: ylls
         for i, condition in enumerate(df_yll_normalized_mean.index):
-            axes[1].plot(df_yld_normalized_mean.columns, df_yld_normalized_mean.loc[condition], marker='o', label=condition,
-                         color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                df_yld_normalized_mean.index][i])
+            axes[1].plot(df_yld_normalized_mean.columns, df_yld_normalized_mean.loc[condition], marker='o', label=condition,)
         axes[1].set_title('Panel B: YLDs by cause')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Fold change in YLDs compared to 2020')
@@ -223,9 +225,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # BARPLOT STACKED DEATHS AND yllS OVER TIME
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-        df_all_years_deaths_mean.T.plot.bar(stacked=True, ax=axes[1],
-                                       color=[get_color_cause_of_death_or_yll_label(_label) for _label in
-                                              df_all_years_deaths_mean.index])
+        df_all_years_yll_mean.T.plot.bar(stacked=True, ax=axes[1])
 
         axes[0].set_title('Panel A: YLLs by Cause')
         axes[0].set_xlabel('Year')
@@ -237,9 +237,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
         # Panel B: ylls (Stacked bar plot)
-        df_all_years_yllS_mean.T.plot.bar(stacked=True, ax=axes[1],
-                                      color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                             df_all_years_yld_mean.index])
+        df_all_years_yll_mean.T.plot.bar(stacked=True, ax=axes[1])
         axes[1].axhline(0.0, color='black')
         axes[1].set_title('Panel B: YLDs')
         axes[1].set_ylabel('Number of YLDs')
@@ -257,13 +255,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
         # Panel A: Deaths (Stacked area plot)
-        years_deaths = df_all_years_deaths_mean.columns
-        conditions_deaths = df_all_years_deaths_mean.index
+        years_yll = df_all_years_yll_mean.columns
+        conditions_yll = df_all_years_yll_mean.index
 
 
-        axes[0].stackplot(years_deaths, df_all_years_ylls_mean.values, labels=conditions_deaths,
-                          colors=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                  df_all_years_ylls_mean.index])
+        axes[0].stackplot(years_yll, df_all_years_yll_mean.values, labels=conditions_yll)
         axes[0].set_title('Panel A: YLLs by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of YLLs')
@@ -274,8 +270,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         conditions_yld = df_all_years_yld_mean.index
 
         axes[1].stackplot(years_yld, df_all_years_yld_mean.values, labels=conditions_yld,
-                          colors=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                  df_all_years_yld_mean.index])
+                          )
         axes[1].set_title('Panel B: YLDs by Cause')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Number of YLDs')
@@ -297,9 +292,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_yld_per_1000_upper = df_all_years_yll_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
 
         # Panel A: Deaths (Stacked bar plot)
-        df_yll_per_1000_mean.T.plot.bar(stacked=True, ax=axes[0],
-                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                            df_yll_per_1000_mean.index])
+        df_yll_per_1000_mean.T.plot.bar(stacked=True, ax=axes[0])
         axes[0].set_title('Panel A: YLL by Cause')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Number of YLLs per 1000 people')
@@ -309,9 +302,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].legend().set_visible(False)
 
         # Panel B: ylls (Stacked bar plot)
-        df_yld_per_1000_mean.T.plot.bar(stacked=True, ax=axes[1],
-                                    color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                           df_yld_per_1000_mean.index], label = [label for label in df_yld_per_1000_mean.index])
+        df_yld_per_1000_mean.T.plot.bar(stacked=True, ax=axes[1], label = [label for label in df_yld_per_1000_mean.index])
         axes[1].axhline(0.0, color='black')
         axes[1].set_title('Panel B: YLDs')
         axes[1].set_ylabel('Number of YLDs per 1000 people')
@@ -407,19 +398,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
     # Panel A: Total Deaths
     #axes[0].bar(df_deaths_all_draws_mean_1000.index, df_deaths_all_draws_mean_1000.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
-    df_yll_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0],
-                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                            df_daly_all_draws_mean_1000.index])
+    df_yll_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0])
     axes[0].set_title('Mean YLLs per 1,000 (2020-2070)')
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('YLLs per 1,000')
     axes[0].set_xticklabels(scenario_names, rotation=45)
+    print(df_yll_all_draws_mean_1000)
+
     axes[0].legend().set_visible(False)
     # Panel B: Total ylls
     #axes[1].bar(df_ylls_all_draws_mean_1000.index, df_ylls_all_draws_mean_1000.values, color=scenario_colours, yerr = ylls_totals_err, capsize=20)
-    df_yld_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],
-                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                            df_yld_all_draws_mean_1000.index], label = [label for label in df_all_years_yld_mean.index])
+    df_yld_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],label = [label for label in df_all_years_yld_mean.index])
+    print(df_yld_all_draws_mean_1000)
     axes[1].set_title('Mean YLDs per 1,000 (2020-2070)')
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('YLDs per 1,000')
