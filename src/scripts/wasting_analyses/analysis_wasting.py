@@ -542,29 +542,35 @@ class WastingAnalyses:
 
         age_groups = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
 
+        # ### Calibration Data
         # Load calibration data from CSV file
-        wasting_data_path = resources_path / 'ResourceFile_Wasting/wasting_prevalence_and_sample_size.csv'
-        wasting_data_df = pd.read_csv(wasting_data_path)
+        wasting_calib_data_path = resources_path / 'ResourceFile_Wasting/wasting_prevalence_and_sample_size.csv'
+        wasting_calib_data_df = pd.read_csv(wasting_calib_data_path, index_col='year')
 
         # Recalculate data to proportions (0 to 1) and separate mod wast as (wasted - sev wast)
-        wasting_data_df['mod_wast_calib'] = \
-            (wasting_data_df['prev any wast (%)'] - wasting_data_df['prev severe wast (%)']) / 100
-        wasting_data_df['sev_wast_calib'] = wasting_data_df['prev severe wast (%)'] / 100
+        wasting_calib_data_df['mod_wast_calib'] = \
+            (wasting_calib_data_df['prev any wast (%)'] - wasting_calib_data_df['prev severe wast (%)']) / 100
+        wasting_calib_data_df['sev_wast_calib'] = wasting_calib_data_df['prev severe wast (%)'] / 100
 
         # Pivot the data to get the required format
-        w_prev_calib_data_df = wasting_data_df.pivot(index='year', columns='age_group (months)',
+        w_prev_calib_data_df = wasting_calib_data_df.pivot(columns='age_group (months)',
                                                      values=['mod_wast_calib', 'sev_wast_calib'])
         w_prev_calib_data_df.columns = [f'{col[0][:3]}__{col[1]}' for col in w_prev_calib_data_df.columns]
 
-        # pop_sizes_calib_data_df =
+        # Load calibration sample sizes from CSV file
+        sample_sizes_calib_data_df = wasting_calib_data_df.pivot(columns='age_group (months)', values='sample_size')
+        sample_sizes_calib_data_df = sample_sizes_calib_data_df.reindex(columns=age_groups)
 
+        # ### Model Outcomes
+        # Load modelled prevalence proportions
         w_prev_model_df = self.__w_logs_dict["wasting_prevalence_props"]
         w_prev_model_df = w_prev_model_df.drop(columns={'total_mod_under5_prop', 'total_sev_under5_prop'})
         w_prev_model_df = w_prev_model_df.set_index(w_prev_model_df.date.dt.year)
         w_prev_model_df = w_prev_model_df.drop(columns='date')
 
+        # Load modelled population sizes
         pop_sizes_model_df = self.__w_logs_dict['pop sizes']
-        pop_sizes_model_df = pop_sizes_model_df.set_index(pop_sizes_model_df.date.dt.year)
+        pop_sizes_model_df = pop_sizes_model_df.set_index(pop_sizes_model_df.date.dt.year).rename_axis('year')
         pop_sizes_model_df = pop_sizes_model_df.drop(columns='date')
         pop_sizes_model_df = pop_sizes_model_df.filter(like='total__').rename(
             lambda x: x.replace('total__', ''), axis=1
@@ -592,19 +598,27 @@ class WastingAnalyses:
             plotting_model = create_plotting_data(w_prev_model_year_df, 'w_prev_model_year_df')
             plotting_calib = create_plotting_data(w_prev_calib_data_year_df, 'w_prev_calib_data_year_df')
 
-            # Calculate 95% confidence intervals for model outcomes
+            # Calculate 95% confidence intervals for both
+            sample_sizes_calib_data_year = sample_sizes_calib_data_df.loc[year_calib, :]
             sample_sizes_model_year = pop_sizes_model_df.loc[year_calib, :]
 
             confidence_level = 0.95
             z_score = stats.norm.ppf(1 - (1 - confidence_level) / 2)
 
-            margin_of_error_any_wast = []
-            for p, n in zip(plotting_model['any wasting'].reindex(age_groups), sample_sizes_model_year):
-                margin_of_error_any_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
-
-            margin_of_error_sev_wast = []
-            for p, n in zip(plotting_model['severe wasting'].reindex(age_groups), sample_sizes_model_year):
-                margin_of_error_sev_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
+            calib_data_margin_of_error_any_wast = []
+            calib_data_margin_of_error_sev_wast = []
+            print(f"sample_sizes_calib_data_year:\n{sample_sizes_calib_data_year}")
+            for p, n in zip(plotting_calib['any wasting'].reindex(age_groups[:-1]), sample_sizes_calib_data_year[:-1]):
+                calib_data_margin_of_error_any_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
+            for p, n in \
+                zip(plotting_calib['severe wasting'].reindex(age_groups[:-1]),sample_sizes_calib_data_year[:-1]):
+                calib_data_margin_of_error_sev_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
+            model_margin_of_error_any_wast = []
+            model_margin_of_error_sev_wast = []
+            for p, n in zip(plotting_model['any wasting'].reindex(age_groups[:-1]), sample_sizes_model_year[:-1]):
+                model_margin_of_error_any_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
+            for p, n in zip(plotting_model['severe wasting'].reindex(age_groups[:-1]), sample_sizes_model_year[:-1]):
+                model_margin_of_error_sev_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
 
             # #####
             # Plot wasting prevalence
@@ -625,10 +639,10 @@ class WastingAnalyses:
             # Add the confidence intervals
             for i, age_group in enumerate(age_groups[0:len(age_groups)-1]):
                 ax.errorbar(r1[i], plotting_model['any wasting'][age_group],
-                            yerr=[margin_of_error_any_wast[i]],
+                            yerr=[model_margin_of_error_any_wast[i]],
                             capsize=5, fmt='none', color='black')
                 ax.errorbar(r1[i], plotting_model['severe wasting'][age_group],
-                            yerr=[margin_of_error_sev_wast[i]],
+                            yerr=[model_margin_of_error_sev_wast[i]],
                             capsize=5, fmt='none', color='black')
 
             # Plot the second set of bars (calibration data)
@@ -638,6 +652,15 @@ class WastingAnalyses:
             ax.bar(r2, plotting_calib['moderate wasting'], bottom=plotting_calib['severe wasting'],
                    color=self.__colors_data['moderate wasting'], width=bar_width,
                    label='moderate wasting (data)')
+
+            # Add the confidence intervals
+            for i, age_group in enumerate(age_groups[0:len(age_groups)-1]):
+                ax.errorbar(r2[i], plotting_calib['any wasting'][age_group],
+                            yerr=[calib_data_margin_of_error_any_wast[i]],
+                            capsize=5, fmt='none', color='black')
+                ax.errorbar(r2[i], plotting_calib['severe wasting'][age_group],
+                            yerr=[calib_data_margin_of_error_sev_wast[i]],
+                            capsize=5, fmt='none', color='black')
 
             ax.set_xlabel('age group')
             ax.set_ylabel('proportion')
