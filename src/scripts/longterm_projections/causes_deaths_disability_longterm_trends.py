@@ -417,7 +417,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_deaths_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0],
                                      color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                             df_deaths_all_draws_mean_1000.index])
-    axes[0].set_title('Mean Deaths per 1,000 (2020-2070)')
+    axes[0].set_title('Deaths per 1,000 (2020-2070)')
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('Deaths per 1,000')
     axes[0].set_xticklabels(scenario_names, rotation=45)
@@ -428,7 +428,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],
                                      color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                             df_dalys_all_draws_mean_1000.index], label = [label for label in df_all_years_DALYS_mean.index])
-    axes[1].set_title('Mean DALYS per 1,000 (2020-2070)')
+    axes[1].set_title('DALYS per 1,000 (2020-2070)')
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('DALYS per 1,000')
     axes[1].set_xticklabels(scenario_names, rotation=45)
