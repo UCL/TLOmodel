@@ -372,7 +372,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Merge all draws into a single DataFrame
         births_model = pd.concat(births_model_dict.values(), axis=1)
-        print(births_model)
         # Load WPP births data
         wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
         wpp_births = wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
@@ -402,7 +401,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Plot all draws on the same graph
         for tp in time_period:
             births_loc = births.loc[time_period[tp]]
-            print(births_loc)
             fig, ax = plt.subplots()
 
             # Plot Census data
@@ -988,6 +986,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             (deaths_by_period['GBD_Lower'] / 1e6).to_numpy(),
             (deaths_by_period['GBD_Upper'] / 1e6).to_numpy(),
             facecolor=colors['GBD'], alpha=0.2)
+        #GBD goes up to 2020 so can use this to show where differences in scenarios start
+        ax[0].axvline(x=deaths_by_period.index[-1], color='black', linestyle='--', linewidth=1)
         for draw in range(5):
             ax[0].plot(
                 deaths_by_period.index,
@@ -1008,7 +1008,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax[0].legend(loc='upper left')
         ax[0].set_xlabel('Calendar Period')
         ax[0].set_ylabel('Number per period (millions)')
-        ax[0].set_xlim(left = min_index, right = max_index - 1)
+        ax[0].set_xlim(left=min_index, right=max_index - 1)
+        xticks = [tick for tick in ax[0].get_xticks() if min_index <= tick <= max_index - 1]
+        ax[0].set_xticks(xticks[::2])
+        # xticklabels = deaths_by_period.index[::2]
+        # ax[0].set_xticklabels(xticklabels)
         fig.tight_layout()
 
         # Panel B - Life expectancy
@@ -1027,6 +1031,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # Concatenate all dataframes
             le_all_years = pd.concat(dataframes, ignore_index=True)
             le_all_years.set_index('Year', inplace=True)
+            ax[1].axvline(x=2020, color='black', linestyle='--', linewidth=1)
             ax[1].plot(
                     le_all_years.index[1::2],
                     le_all_years.iloc[1::2]['mean'],
