@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from PyPDF2 import PdfReader, PdfWriter
+from scipy import stats
 
 from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, parse_log_file
 
@@ -579,16 +580,16 @@ class WastingAnalyses:
             order_x_axis = ['0_5mo', '6_11mo', '12_23mo', '24_35mo', '36_47mo', '48_59mo', '5y+']
 
             def create_plotting_data(df, df_name):
-                plotting = {'severe wasting': {}, 'moderate wasting': {}}
+                plotting = {'severe wasting': {}, 'moderate wasting': {}, 'any wasting': {}}
                 for col in df.columns:
                     prefix, age_group = col.split('__')
                     if prefix == 'sev':
                         plotting['severe wasting'][age_group] = df[col].values[0]
                     elif prefix == 'mod':
                         plotting['moderate wasting'][age_group] = df[col].values[0]
+                        plotting['any wasting'][age_group] = df[col].values[0] + df[f'sev__{age_group}'].values[0]
                 plotting_df = pd.DataFrame(plotting)
-                assert set(plotting_df.index) == set(
-                    order_x_axis), f"age groups in {w_prev_calib_data_year_df} are not in line with the order_x_axis."
+                assert set(plotting_df.index) == set(order_x_axis), f"age groups in {df_name} are not in line with the order_x_axis."
                 plotting_df = plotting_df.reindex(order_x_axis)
                 return plotting_df
 
@@ -596,6 +597,28 @@ class WastingAnalyses:
             plotting_model = create_plotting_data(w_prev_model_year_df, 'w_prev_model_year_df')
             plotting_calib = create_plotting_data(w_prev_calib_data_year_df, 'w_prev_calib_data_year_df')
 
+            # Calculate 95% confidence intervals for model outcomes
+            pop_sizes_df = self.__w_logs_dict['pop sizes']
+            pop_sizes_df = pop_sizes_df.set_index(pop_sizes_df.date.dt.year)
+            pop_sizes_df = pop_sizes_df.drop(columns='date')
+            pd.set_option('display.max_columns', None)
+            model_sample_sizes = pop_sizes_df.loc[year_calib, :].filter(like='total__').rename(
+                lambda x: x.replace('total__', ''), axis=0
+            ).reindex(order_x_axis)
+            print(f"{model_sample_sizes=}")
+
+            confidence_level = 0.95
+            z_score = stats.norm.ppf(1 - (1 - confidence_level) / 2)
+
+            margin_of_error_any_wast = []
+            for p, n in zip(plotting_model['any wasting'].reindex(order_x_axis), model_sample_sizes):
+                margin_of_error_any_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
+
+            margin_of_error_sev_wast = []
+            for p, n in zip(plotting_model['severe wasting'].reindex(order_x_axis), model_sample_sizes):
+                margin_of_error_sev_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
+
+            # #####
             # Plot wasting prevalence
             fig, ax = plt.subplots(figsize=(10, 6))
             bar_width = 0.35
@@ -610,6 +633,15 @@ class WastingAnalyses:
             ax.bar(r1, plotting_model['moderate wasting'], bottom=plotting_model['severe wasting'],
                    color=self.__colors_model['moderate wasting'], width=bar_width,
                    label='moderate wasting (model)')
+
+            # Add the confidence intervals
+            for i, age_group in enumerate(order_x_axis[0:len(order_x_axis)-1]):
+                ax.errorbar(r1[i], plotting_model['any wasting'][age_group],
+                            yerr=[margin_of_error_any_wast[i]],
+                            capsize=5, fmt='none', color='black')
+                ax.errorbar(r1[i], plotting_model['severe wasting'][age_group],
+                            yerr=[margin_of_error_sev_wast[i]],
+                            capsize=5, fmt='none', color='black')
 
             # Plot the second set of bars (calibration data)
             ax.bar(r2, plotting_calib['severe wasting'],
