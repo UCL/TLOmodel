@@ -48,47 +48,46 @@ def table1_description_of_hsi_events(
     """ `Table 1`: A summary table of all the HSI Events seen in the simulation.
     This is similar to that created by `hsi_events.py` but records all the different forms (levels/appt-type) that
     an HSI Event can take."""
+    for draw in range(5):
+        log = load_pickled_dataframes(results_folder, draw, 0)
+        h = pd.DataFrame(
+            log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
+        ).T
 
-    # Pick the first draw/run only -- assume that it is indicative of all the HSI Events seen in a simulation
-    log = load_pickled_dataframes(results_folder, 0, 0)
-    h = pd.DataFrame(
-        log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
-    ).T
+        # Re-order columns & sort; Remove 'HSI_' prefix from event name
+        h = h[['module_name', 'treatment_id', 'event_name', 'facility_level', 'appt_footprint', 'beddays_footprint']]
+        h = h.sort_values(['module_name', 'treatment_id', 'event_name', 'facility_level']).reset_index(drop=True)
+        h['event_name'] = h['event_name'].str.replace('HSI_', '')
 
-    # Re-order columns & sort; Remove 'HSI_' prefix from event name
-    h = h[['module_name', 'treatment_id', 'event_name', 'facility_level', 'appt_footprint', 'beddays_footprint']]
-    h = h.sort_values(['module_name', 'treatment_id', 'event_name', 'facility_level']).reset_index(drop=True)
-    h['event_name'] = h['event_name'].str.replace('HSI_', '')
+        # Rename columns
+        h = h.rename(columns={
+            "module_name": 'Module',
+            "treatment_id": 'TREATMENT_ID',
+            "event_name": 'HSI Event',
+            "facility_level": 'Facility Level',
+            "appt_footprint": 'Appointment Types',
+            "beddays_footprint": 'Bed-Days',
+        })
 
-    # Rename columns
-    h = h.rename(columns={
-        "module_name": 'Module',
-        "treatment_id": 'TREATMENT_ID',
-        "event_name": 'HSI Event',
-        "facility_level": 'Facility Level',
-        "appt_footprint": 'Appointment Types',
-        "beddays_footprint": 'Bed-Days',
-    })
+        # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows
+        # (otherwise there are many rows with similar number of appointments, especially from Schistosomiasis.)
+        def reformat_col(col):
+            return col.apply(pd.Series) \
+                .applymap(lambda x: x[0], na_action='ignore') \
+                .apply(lambda row: ', '.join(_r for _r in row.sort_values() if not pd.isnull(_r)), axis=1)
 
-    # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows
-    # (otherwise there are many rows with similar number of appointments, especially from Schistosomiasis.)
-    def reformat_col(col):
-        return col.apply(pd.Series) \
-            .applymap(lambda x: x[0], na_action='ignore') \
-            .apply(lambda row: ', '.join(_r for _r in row.sort_values() if not pd.isnull(_r)), axis=1)
+        h['Appointment Types'] = h['Appointment Types'].pipe(reformat_col)
+        h["Bed-Days"] = h["Bed-Days"].pipe(reformat_col)
+        h = h.drop_duplicates()
 
-    h['Appointment Types'] = h['Appointment Types'].pipe(reformat_col)
-    h["Bed-Days"] = h["Bed-Days"].pipe(reformat_col)
-    h = h.drop_duplicates()
+        # Put something in for blanks/nan (helps with imported into Excel/Word)
+        h = h.fillna('-').replace('', '-')
 
-    # Put something in for blanks/nan (helps with imported into Excel/Word)
-    h = h.fillna('-').replace('', '-')
-
-    # Save table as csv
-    h.to_csv(
-        output_folder / f"{PREFIX_ON_FILENAME}_Table1_{year_range}.csv",
-        index=False
-    )
+        # Save table as csv
+        h.to_csv(
+            output_folder / f"{PREFIX_ON_FILENAME}_Table1_{year_range}_{draw}.csv",
+            index=False
+        )
 
 
 def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, output_folder: Path,
@@ -1088,19 +1087,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     target_year_sequence = range(min_year, max_year, spacing_of_years)
 
-    # for target_year in target_year_sequence:
-    #     TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
-    #     year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
-    #
-    #     table1_description_of_hsi_events(
-    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #         year_range=year_range, target_period=TARGET_PERIOD
-    #     )
-    #
-    #     figure1_distribution_of_hsi_event_by_treatment_id(
-    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #         year_range=year_range, target_period=TARGET_PERIOD
-    #     )
+    for target_year in target_year_sequence:
+        TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
+        year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
+
+
+
+        figure1_distribution_of_hsi_event_by_treatment_id(
+            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+            year_range=year_range, target_period=TARGET_PERIOD
+        )
     #
     #     figure3_fraction_of_time_of_hcw_used_by_treatment(
     #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
