@@ -3344,12 +3344,11 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
-        if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
-
-        elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+        if 'Tomography' in self.EXPECTED_APPT_FOOTPRINT:
             self.ACCEPTED_FACILITY_LEVEL = '3'
             self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
     def did_not_run(self, *args, **kwargs):
         pass
