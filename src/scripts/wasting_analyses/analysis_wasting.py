@@ -27,6 +27,28 @@ legend_fontsize = 12
 title_fontsize = 16
 ########################################################################################################################
 
+def create_calib_outcome_csv(sim_results_folder_path_str):
+    """
+    Creates a new empty csv file with the header if it doesn't exist yet.
+    :return:
+    """
+    csv_file_name = str(sim_results_folder_path_str).replace(str(outputs_path), '').lstrip('/') + \
+                    "_model_calib-data_intersect_bool"
+    csv_file_path = sim_results_folder_path_str / f"{csv_file_name}.csv"
+
+    if not csv_file_path.exists():
+        age_groups = [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]
+        calib_ys = [2015, 2019]
+        wast_type_agegp = [f'{wast_type}_wast__{low_bound}_{high_bound}mo' for wast_type in ['any', 'sev'] for
+                           low_bound, high_bound in age_groups]
+        year_wast_age_grps = [f'{year}__{wast_age_grp}' for year in calib_ys for wast_age_grp in wast_type_agegp]
+        sum_year_prev_calib_points = [f'{year}__sum_prev_calib_points' for year in calib_ys]
+
+        with open(csv_file_path, 'w') as csv_file:
+            csv_file.write(
+                'draw,run,' + ','.join(year_wast_age_grps) + ',deaths_2010_2014,deaths_2015_2019,' +
+                ','.join(sum_year_prev_calib_points) + ',sum_prev_calib_points,sum_all_calib_points\n'
+            )
 
 class WastingAnalyses:
     """
@@ -756,6 +778,10 @@ if __name__ == "__main__":
 
     folders = [name for name in os.listdir(sim_results_folder_path) if \
                os.path.isdir(os.path.join(sim_results_folder_path, name))]
+
+    # Create a csv to write down calibration outputs
+    #  as bool values indicating whether model outcomes and calibration data intersect
+    create_calib_outcome_csv(sim_results_folder_path)
 
     # Analyse each draw
     # for now, we always have just one run, run 0
