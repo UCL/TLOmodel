@@ -642,7 +642,7 @@ class WastingAnalyses:
                             capsize=5, fmt='none', color='black')
                 ax.errorbar(r1[i], plotting_model['severe wasting'][age_group],
                             yerr=[model_margin_of_error_sev_wast[i]],
-                            capsize=5, fmt='none', color='black')
+                            capsize=5, fmt='none', color='white')
 
             # Plot the second set of bars (calibration data)
             ax.bar(r2, plotting_calib['severe wasting'],
@@ -659,7 +659,7 @@ class WastingAnalyses:
                             capsize=5, fmt='none', color='black')
                 ax.errorbar(r2[i], plotting_calib['severe wasting'][age_group],
                             yerr=[calib_data_margin_of_error_sev_wast[i]],
-                            capsize=5, fmt='none', color='black')
+                            capsize=5, fmt='none', color='white')
 
             ax.set_xlabel('age group')
             ax.set_ylabel('proportion')
