@@ -607,7 +607,6 @@ class WastingAnalyses:
 
             calib_data_margin_of_error_any_wast = []
             calib_data_margin_of_error_sev_wast = []
-            print(f"sample_sizes_calib_data_year:\n{sample_sizes_calib_data_year}")
             for p, n in zip(plotting_calib['any wasting'].reindex(age_groups[:-1]), sample_sizes_calib_data_year[:-1]):
                 calib_data_margin_of_error_any_wast.append(z_score * np.sqrt((p * (1 - p)) / n))
             for p, n in \
@@ -689,15 +688,18 @@ class WastingAnalyses:
         death_compare = \
             compare_number_of_deaths(self.__log_file_path, resources_path)
         fig, ax = plt.subplots(figsize=(10, 6))
+        # cause of death as of GBD 2019 'Protein-energy malnutrition' was labeled as 'Childhood Undernutrition' in
+        # wasting module
         plot_df = death_compare.loc[(['2010-2014', '2015-2019'],
-                                     slice(None), slice(None), 'Childhood Undernutrition'
+                                     slice(None), ['0-4'], 'Childhood Undernutrition'
                                      )].groupby('period').sum()
         plotting = plot_df.loc[['2010-2014', '2015-2019']]
         ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
         ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
                     yerr=[plotting.GBD_lower, plotting.GBD_upper],
                     fmt='o', color='#000', label="GBD")
-        ax.set_title('Direct average deaths per year due to severe acute malnutrition', fontsize=title_fontsize-1)
+
+        ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5', fontsize=title_fontsize-1)
         ax.set_xlabel("time period")
         ax.set_ylabel("number of deaths")
         ax.legend(loc='upper center', fontsize=legend_fontsize)
