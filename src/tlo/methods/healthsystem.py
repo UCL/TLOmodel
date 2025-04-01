@@ -336,6 +336,15 @@ class HealthSystem(Module):
         # Climate disruptions
         'projected_precip_disruptions': Parameter(Types.REAL, 'Probabilities of precipitation-mediated '
                                                               'disruptions to services by month, year, and clinic.'),
+        'climate_ssp': Parameter(Types.String, 'Which future shared socioeconomic pathway (determines degree of warming) is under consideration. '
+                                                'Options are ssp126, ssp245, and ssp585, in terms of increasing severity.'),
+        'climate_model_ensemble_model': Parameter(Types.String,
+                                 'Which model from the model ensemble for each climate ssp is under consideration.'
+                                'Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.'),
+
+        'services_affected_precip': Parameter(Types.String,
+                                                  'Which modelled services can be affected by weather. Options are all, none')
+
     }
 
     PROPERTIES = {
@@ -658,8 +667,7 @@ class HealthSystem(Module):
         # Parameters for climate-mediated disruptions
         path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'climate_change_impacts'
         self.parameters['projected_precip_disruptions']= pd.read_csv(path_to_resourcefiles_for_climate/ f'ResourceFile_Precipitation_Disruptions_{self.climate_ssp}_{self.climate_model_ensemble_model}.csv')
-
-    def pre_initialise_population(self):
+   def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
         # Create dedicated RNGs for separate functions done by the HealthSystem module
