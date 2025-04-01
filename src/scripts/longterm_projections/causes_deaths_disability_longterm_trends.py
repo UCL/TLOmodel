@@ -349,7 +349,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_dalys_lower.append(pd.Series(all_years_data_dalys_lower, name=f'Draw {draw}'))
         all_draws_deaths_upper.append(pd.Series(all_years_data_deaths_upper, name=f'Draw {draw}'))
         all_draws_dalys_upper.append(pd.Series(all_years_data_dalys_upper, name=f'Draw {draw}'))
-
+        # only include 2070 as can't have cumulative per 1000?
         all_draws_dalys_mean_1000.append(pd.Series(df_daly_per_1000_mean.iloc[:,-1], name=f'Draw {draw}'))
         all_draws_dalys_lower_1000.append(pd.Series(df_daly_per_1000_lower.iloc[:,-1], name=f'Draw {draw}'))
         all_draws_dalys_upper_1000.append(pd.Series(df_daly_per_1000_upper.iloc[:,-1], name=f'Draw {draw}'))
@@ -417,7 +417,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_deaths_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0],
                                      color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                             df_deaths_all_draws_mean_1000.index])
-    axes[0].set_title('Deaths per 1,000 (2020-2070)')
+    axes[0].set_title('Deaths per 1,000 (2070)')
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('Deaths per 1,000')
     axes[0].set_xticklabels(scenario_names, rotation=45)
@@ -428,14 +428,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],
                                      color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                             df_dalys_all_draws_mean_1000.index], label = [label for label in df_all_years_DALYS_mean.index])
-    axes[1].set_title('DALYS per 1,000 (2020-2070)')
+    axes[1].set_title('DALYS per 1,000 (2070)')
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('DALYS per 1,000')
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
 
     fig.tight_layout()
-    fig.savefig(output_folder / "deaths_and_dalys_per_1000_all_cause_all_draws.png")
+    fig.savefig(output_folder / "deaths_and_dalys_per_1000_all_cause_all_draws_2070.png")
     plt.close(fig)
 
 
