@@ -411,6 +411,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(output_folder / "total_deaths_and_dalys_all_draws.png")
     plt.close(fig)
 
+
+    # per 1000 in 2070
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
     # Panel A: Total Deaths
     #axes[0].bar(df_deaths_all_draws_mean_1000.index, df_deaths_all_draws_mean_1000.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
@@ -424,7 +426,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].legend().set_visible(False)
     # Panel B: Total DALYs
     #axes[1].bar(df_dalys_all_draws_mean_1000.index, df_dalys_all_draws_mean_1000.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
-    print(df_dalys_all_draws_mean_1000)
     df_dalys_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],
                                      color=[get_color_cause_of_death_or_daly_label(_label) for _label in
                                             df_dalys_all_draws_mean_1000.index], label = [label for label in df_all_years_DALYS_mean.index])
@@ -437,6 +438,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(output_folder / "deaths_and_dalys_per_1000_all_cause_all_draws_2070.png")
     plt.close(fig)
+
+    # By cause total
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    # Panel A: Total Deaths
+    print(df_deaths_all_draws_mean)
+    df_deaths_all_draws_mean.T.plot.bar(stacked=True, ax=axes[0],
+                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                            df_deaths_all_draws_mean.index])
+    axes[0].set_title('Deaths per 1,000 (2020 - 2070)')
+    axes[0].set_xlabel('Scenario')
+    axes[0].set_ylabel('Deaths per 1,000')
+    axes[0].set_xticklabels(scenario_names, rotation=45)
+    axes[0].legend().set_visible(False)
+    # Panel B: Total DALYs
+    #axes[1].bar(df_dalys_all_draws_mean_1000.index, df_dalys_all_draws_mean_1000.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
+    df_dalys_all_draws_mean.T.plot.bar(stacked=True, ax=axes[1],
+                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                            df_dalys_all_draws_mean.index], label = [label for label in df_all_years_DALYS_mean.index])
+    axes[1].set_title('DALYS per 1,000 (2020 - 2070)')
+    axes[1].set_xlabel('Scenario')
+    axes[1].set_ylabel('DALYS per 1,000')
+    axes[1].set_xticklabels(scenario_names, rotation=45)
+    axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
+
+    fig.tight_layout()
+    fig.savefig(output_folder / "deaths_and_dalys_all_cause_all_draws_2020_2070_.png")
+    plt.close(fig)
+
 
 
 if __name__ == "__main__":
