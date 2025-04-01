@@ -21,7 +21,7 @@ min_year = 2020
 max_year = 2070
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
-
+age_standardisation = 50
 
 scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
 scenario_colours = ['#0081a7', '#00afb9', '#fdfcdc', '#fed9b7', '#f07167']
@@ -37,6 +37,51 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         e = LongRun()
         return tuple(e._scenarios.keys())
+    def population_by_agegroup_for_year(_df):
+            _df['date'] = pd.to_datetime(_df['date'])
+
+            # Filter the DataFrame based on the target period
+            filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+
+            population_by_agegroup = (
+                filtered_df.drop(columns=['date'], errors='ignore')
+                .melt(var_name='age_grp')
+                .set_index('age_grp')['value']
+            )
+            return population_by_agegroup
+    def get_mean_pop_by_age_for_sex_and_year(draw):
+        num_by_age_F = summarize(
+            extract_results(results_folder,
+                            module="tlo.methods.demography",
+                            key='age_range_f',
+                            custom_generate_series=population_by_agegroup_for_year,
+                            do_scaling=True
+                            ),
+            collapse_columns=True,
+            only_mean=True
+        )
+        num_by_age_M = summarize(
+            extract_results(results_folder,
+                            module="tlo.methods.demography",
+                            key='age_range_m',
+                            custom_generate_series=population_by_agegroup_for_year,
+                            do_scaling=True
+                            ),
+            collapse_columns=True,
+            only_mean=True
+        )
+        num_by_age = num_by_age_F + num_by_age_M
+        num_by_age = num_by_age[draw]
+
+        num_by_age_filtered = num_by_age[num_by_age.index.to_series().apply(
+            lambda x: int(x.split('-')[0].replace('+', '')) >= age_standardisation
+        )]
+
+        num_by_age = num_by_age.sum()
+        num_by_age.reset_index(drop=True)
+        num_by_age_filtered.reset_index(inplace=True)
+        num_by_age_filtered = num_by_age_filtered.sum()
+        return num_by_age_filtered / num_by_age
 
     param_names = get_parameter_names_from_scenario_file()
     print(param_names)
@@ -148,9 +193,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
-            all_years_data_population_mean[target_year] = result_data_population['mean']
-            all_years_data_population_lower[target_year] = result_data_population['lower']
-            all_years_data_population_upper[target_year] = result_data_population['upper']
+            result_data_over_standard = get_mean_pop_by_age_for_sex_and_year(draw)
+            all_years_data_population_mean[target_year] = result_data_population['mean']/result_data_over_standard['mean']
+            all_years_data_population_lower[target_year] = result_data_population['lower']/result_data_over_standard['lower']
+            all_years_data_population_upper[target_year] = result_data_population['upper']/result_data_over_standard['upper']
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years_yll_mean = pd.DataFrame(all_years_data_yll_mean)
         df_all_years_yll_lower = pd.DataFrame(all_years_data_yll_lower)
@@ -163,6 +209,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
         df_all_years_data_population_lower = pd.DataFrame(all_years_data_population_lower)
         df_all_years_data_population_upper = pd.DataFrame(all_years_data_population_upper)
+        df_yll_per_1000_mean = df_all_years_yll_mean.iloc[:,-1].div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
+        df_yld_per_1000_mean = df_all_years_yld_mean.iloc[:,-1].div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
+        df_yll_per_1000_lower = df_all_years_yll_lower.iloc[:,-1].div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
+        df_yld_per_1000_lower = df_all_years_yld_lower.iloc[:,-1].div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
+        df_yll_per_1000_upper = df_all_years_yld_upper.iloc[:,-1].div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
+        df_yld_per_1000_upper = df_all_years_yll_upper.iloc[:,-1].div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
 
         # Extract total population
 
@@ -202,121 +254,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_yll_normalized_mean.to_csv(output_folder / f"cause_of_yll_normalized_2020_{draw}.csv")
         df_yld_normalized_mean.to_csv(output_folder / f"cause_of_yld_normalized_2020_{draw}.csv")
 
-        for i, condition in enumerate(df_yll_normalized_mean.index):
-            axes[0].plot(df_yll_normalized_mean.columns, df_yll_normalized_mean.loc[condition], marker='o',
-                         label=condition)
-        axes[0].set_title('Panel A: YLL by Cause')
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Fold change in YLLs compared to 2020')
-        axes[0].grid()
-
-        # Panel B: ylls
-        for i, condition in enumerate(df_yll_normalized_mean.index):
-            axes[1].plot(df_yld_normalized_mean.columns, df_yld_normalized_mean.loc[condition], marker='o', label=condition,)
-        axes[1].set_title('Panel B: YLDs by cause')
-        axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Fold change in YLDs compared to 2020')
-        axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
-        axes[1].grid()
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name('Trend_YLLd_and_YLDs_by_condition_All_Years_Normalized_Panel_A_and_B'))
-        plt.close(fig)
-
-        # BARPLOT STACKED DEATHS AND yllS OVER TIME
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-        df_all_years_yll_mean.T.plot.bar(stacked=True, ax=axes[1])
-
-        axes[0].set_title('Panel A: YLLs by Cause')
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Number of YLLs')
-        axes[0].spines['top'].set_visible(False)
-        axes[0].spines['right'].set_visible(False)
-        axes[0].legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
-        axes[0].grid()
-
-
-        # Panel B: ylls (Stacked bar plot)
-        df_all_years_yll_mean.T.plot.bar(stacked=True, ax=axes[1])
-        axes[1].axhline(0.0, color='black')
-        axes[1].set_title('Panel B: YLDs')
-        axes[1].set_ylabel('Number of YLDs')
-        axes[1].set_xlabel('Year')
-        axes[1].spines['top'].set_visible(False)
-        axes[1].spines['right'].set_visible(False)
-        axes[1].legend(ncol=3, fontsize=8, loc='upper right')
-        axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
-        axes[1].grid()
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name('Trend_YLLs_and_YLDs_by_condition_All_Years_Panel_A_and_B_Stacked'))
-
-        # Stacked area graph for yllS and Deaths
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-
-        # Panel A: Deaths (Stacked area plot)
-        years_yll = df_all_years_yll_mean.columns
-        conditions_yll = df_all_years_yll_mean.index
-
-
-        axes[0].stackplot(years_yll, df_all_years_yll_mean.values, labels=conditions_yll)
-        axes[0].set_title('Panel A: YLLs by Cause')
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Number of YLLs')
-        axes[0].grid()
-
-        # Panel B: ylls (Stacked area plot)
-        years_yld = df_all_years_yld_mean.columns
-        conditions_yld = df_all_years_yld_mean.index
-
-        axes[1].stackplot(years_yld, df_all_years_yld_mean.values, labels=conditions_yld,
-                          )
-        axes[1].set_title('Panel B: YLDs by Cause')
-        axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Number of YLDs')
-        axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
-        axes[1].grid()
-
-        fig.tight_layout()
-
-        fig.savefig(make_graph_file_name('Trend_Deaths_and_YLDs_by_condition_All_Years_Panel_A_and_B_Area'))
-
-        ## BARPLOTS STACKED PER 1000
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-
-        df_yll_per_1000_mean = df_all_years_yll_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
-        df_yld_per_1000_mean = df_all_years_yld_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
-        df_yll_per_1000_lower = df_all_years_yll_lower.div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
-        df_yld_per_1000_lower = df_all_years_yld_lower.div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
-        df_yll_per_1000_upper = df_all_years_yld_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
-        df_yld_per_1000_upper = df_all_years_yll_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
-
-        # Panel A: Deaths (Stacked bar plot)
-        df_yll_per_1000_mean.T.plot.bar(stacked=True, ax=axes[0])
-        axes[0].set_title('Panel A: YLL by Cause')
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Number of YLLs per 1000 people')
-        axes[0].grid()
-        axes[0].spines['top'].set_visible(False)
-        axes[0].spines['right'].set_visible(False)
-        axes[0].legend().set_visible(False)
-
-        # Panel B: ylls (Stacked bar plot)
-        df_yld_per_1000_mean.T.plot.bar(stacked=True, ax=axes[1], label = [label for label in df_yld_per_1000_mean.index])
-        axes[1].axhline(0.0, color='black')
-        axes[1].set_title('Panel B: YLDs')
-        axes[1].set_ylabel('Number of YLDs per 1000 people')
-        axes[1].set_xlabel('Year')
-        axes[1].grid()
-        axes[1].spines['top'].set_visible(False)
-        axes[1].spines['right'].set_visible(False)
-        axes[1].legend(ncol=3, fontsize=8, loc='upper right')
-        axes[1].legend(title='Condition', bbox_to_anchor=(1.05, 1), loc='upper left')
-
-        fig.tight_layout()
-        fig.savefig(make_graph_file_name('Trend_YLL_and_YLD_by_condition_All_Years_Panel_A_and_B_Stacked_Rate'))
-
-
 
         #data_ylls_mean.to_csv(output_folder/f"ylls_by_cause_rate_2020_{draw}.csv")
 
@@ -334,12 +271,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_yll_upper.append(pd.Series(all_years_data_yll_upper, name=f'Draw {draw}'))
         all_draws_yld_upper.append(pd.Series(all_years_data_yld_upper, name=f'Draw {draw}'))
 
-        all_draws_yld_mean_1000.append(pd.Series(df_yld_per_1000_mean.iloc[:,-1], name=f'Draw {draw}'))
-        all_draws_yld_lower_1000.append(pd.Series(df_yld_per_1000_lower.iloc[:,-1], name=f'Draw {draw}'))
-        all_draws_yld_upper_1000.append(pd.Series(df_yld_per_1000_upper.iloc[:,-1], name=f'Draw {draw}'))
-        all_draws_yll_mean_1000.append(pd.Series(df_yll_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_yll_lower_1000.append(pd.Series(df_yll_per_1000_lower.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_yll_upper_1000.append(pd.Series(df_yll_per_1000_upper.iloc[:, -1], name=f'Draw {draw}'))
+        all_draws_yld_mean_1000.append(pd.Series(df_yld_per_1000_mean, name=f'Draw {draw}'))
+        all_draws_yld_lower_1000.append(pd.Series(df_yld_per_1000_lower, name=f'Draw {draw}'))
+        all_draws_yld_upper_1000.append(pd.Series(df_yld_per_1000_upper, name=f'Draw {draw}'))
+        all_draws_yll_mean_1000.append(pd.Series(df_yll_per_1000_mean, name=f'Draw {draw}'))
+        all_draws_yll_lower_1000.append(pd.Series(df_yll_per_1000_lower, name=f'Draw {draw}'))
+        all_draws_yll_upper_1000.append(pd.Series(df_yll_per_1000_upper, name=f'Draw {draw}'))
 
     df_yll_all_draws_mean = pd.concat(all_draws_yll_mean, axis=1)
     df_yld_all_draws_mean = pd.concat(all_draws_yld_mean, axis=1)
@@ -392,14 +329,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].grid(False)
     fig.tight_layout()
-    fig.savefig(output_folder / "total_ylds_and_ylls_all_draws.png")
+    fig.savefig(output_folder / "total_ylds_and_ylls_all_draws_age_standardized.png")
     plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
     # Panel A: Total Deaths
     #axes[0].bar(df_deaths_all_draws_mean_1000.index, df_deaths_all_draws_mean_1000.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
     df_yll_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0])
-    axes[0].set_title('Mean YLLs per 1,000 (2020-2070)')
+    axes[0].set_title('YLLs per 1,000 2070')
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('YLLs per 1,000')
     axes[0].set_xticklabels(scenario_names, rotation=45)
@@ -410,14 +347,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #axes[1].bar(df_ylls_all_draws_mean_1000.index, df_ylls_all_draws_mean_1000.values, color=scenario_colours, yerr = ylls_totals_err, capsize=20)
     df_yld_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],label = [label for label in df_all_years_yld_mean.index])
     print(df_yld_all_draws_mean_1000)
-    axes[1].set_title('Mean YLDs per 1,000 (2020-2070)')
+    axes[1].set_title('YLDs per 1,000 (2020-2070)')
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('YLDs per 1,000')
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
 
     fig.tight_layout()
-    fig.savefig(output_folder / "yll_and_yld_per_1000_all_cause_all_draws.png")
+    fig.savefig(output_folder / "yll_and_yld_per_1000_all_cause_all_draws_age_standardized_50.png")
     plt.close(fig)
 
 
