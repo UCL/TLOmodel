@@ -314,47 +314,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_prevalence_normalized_lower[draw] = df_all_years_prevalence_normalized_lower.iloc[:,-1]
         all_draws_prevalence_normalized_upper[draw] = df_all_years_prevalence_normalized_upper.iloc[:,-1]
 
-    # Plot across scenarios
-
-    fig, axes = plt.subplots(1, 2, figsize=(15, 7))
-    all_draws_prevalence_standard_years.T.plot.bar(
-        stacked=True, ax=axes[0],
-        color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence.index], legend=False
-    )
-    axes[0].set_title('Prevalence per 1,000 in 2070')
-    axes[0].set_ylabel('Prevalence per 1,000')
-    axes[0].set_xlabel('Scenario')
-    axes[0].set_xticklabels(scenario_names, rotation=45)
-    y_err = [
-        all_draws_prevalence_normalized - all_draws_prevalence_normalized_lower,
-        all_draws_prevalence_normalized_upper - all_draws_prevalence_normalized
-    ]
-    for i, condition in enumerate(all_draws_prevalence_normalized.index):
-        axes[1].scatter(all_draws_prevalence_normalized.columns, all_draws_prevalence_normalized.loc[condition],
-                     marker='o',s = 10,
-                     label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
-                                             all_draws_prevalence_normalized.index][i])
-        axes[1].errorbar(
-            all_draws_prevalence_normalized.columns,
-            all_draws_prevalence_normalized.loc[condition],
-            yerr=[abs(y_err[0].loc[condition]), abs(y_err[1].loc[condition])],
-            fmt='none',
-            ecolor=[get_color_cause_of_prevalence_label(_label) for _label in
-                                             all_draws_prevalence_normalized.index][i],
-            capsize=3,
-            alpha=0.7
-        )
-
-    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
-
-    axes[1].legend(bbox_to_anchor=(1.05, 1.05), ncol=1)
-    axes[1].set_ylabel('Fold change in condition prevalence compared to 2020')
-    axes[1].set_xlabel('Scenario')
-    axes[1].set_xticks(all_draws_prevalence_normalized.columns)
-    axes[1].set_xticklabels(scenario_names, rotation=45)
-    fig.tight_layout()
-    fig.savefig(output_folder / f"Prevalence_by_condition_combined_{age_standardisation}_years.png")
-    plt.show()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
