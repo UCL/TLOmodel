@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2069
+max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
@@ -337,6 +337,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_DALYS_mean.to_csv(output_folder/f"dalys_by_cause_rate_{draw}.csv")
         df_all_years_deaths_mean.to_csv(output_folder/f"deaths_by_cause_rate_{draw}.csv")
 
+        # get proportion due to CMD, mental, and cancer
+        target_conditions = [
+            "COPD", "Cancer (Bladder)", "Cancer (Breast)", "Cancer (Oesophagus)",
+            "Cancer (Other)", "Cancer (Prostate)", "Depression / Self-harm",
+            "Diabetes", "Epilepsy", "Heart Disease", "Kidney Disease", "Lower Back Pain"
+        ]
+        print(df_all_years_DALYS_mean.index)
+        df_all_years_DALYS_mean_filtered = df_all_years_DALYS_mean[df_all_years_DALYS_mean.index.isin(target_conditions)]
+        proportion_DALYS_NCD = df_all_years_DALYS_mean_filtered.iloc[:, 1:].sum() / df_all_years_DALYS_mean.iloc[:, 1:].sum()
+        proportion_DALYS_NCD.to_csv(output_folder/f"prop_DALYs_NCD_{draw}.csv", index=True)
+
+        df_all_years_deaths_mean_filtered = df_all_years_deaths_mean[df_all_years_deaths_mean.index.isin(target_conditions)]
+        proportion_deaths_NCD = df_all_years_deaths_mean_filtered.iloc[:, 1:].sum() / df_all_years_deaths_mean.iloc[:, 1:].sum()
+        proportion_deaths_NCD.to_csv(output_folder/f"prop_deaths_NCD_{draw}.csv", index=True)
 
         all_years_data_dalys_mean = df_all_years_DALYS_mean.sum()
         all_years_data_deaths_mean = df_all_years_deaths_mean.sum()
