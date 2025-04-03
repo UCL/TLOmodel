@@ -934,7 +934,6 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                                         module_id_to_total_time[treatment_id] = 0
                                     module_id_to_total_time[treatment_id] += (time_for_appointment_officer_facility
                                                                               * hsi_count * appt_number)
-            print(cadre_to_total_time)
 
             # Average the results over all runs and draws
             for cadre in cadre_to_total_time:
@@ -947,7 +946,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
                 cadre_to_total_time_lower[cadre] = cadre_to_total_time[cadre] - z_value * std_error
                 cadre_to_total_time_upper[cadre] = cadre_to_total_time[cadre] + z_value * std_error
-
+                print(cadre_to_total_time_lower)
             for module_name in module_id_to_total_time:
                 module_id_to_total_time[treatment_id] /= total_runs
 
