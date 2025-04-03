@@ -1039,50 +1039,31 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
-    ax1, ax2 = axes[1], axes[1].twinx()
-    ax1.set_xticks([])
-
     y_err = [
         all_draws_cadre_normalised - all_draws_cadre_normalised_lower,
         all_draws_cadre_normalised_upper - all_draws_cadre_normalised
     ]
+    for i, cadre in enumerate(all_draws_cadre_normalised.index):
+            axes[1].scatter(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
+                            marker='o',
+                            label=cadre)
+            axes[1].errorbar(
+                all_draws_cadre_normalised.columns,
+                all_draws_cadre_normalised.loc[cadre],
+                yerr=[abs(y_err[0].loc[cadre]), abs(y_err[1].loc[cadre])],
+                fmt='none',
+                capsize=3,
+                alpha=0.7
+            )
 
-    for cadre in all_draws_cadre_normalised.index:
-        x_vals = all_draws_cadre_normalised.columns
-        y_vals = all_draws_cadre_normalised.loc[cadre]
-        y_err_low = abs(y_err[0].loc[cadre])
-        y_err_high = abs(y_err[1].loc[cadre])
+    axes[1].legend(ncol=2)
+    axes[1].set_ylabel('Fold change in time spent compared to 2020')
+    axes[1].set_xlabel('Scenario')
+    axes[1].set_xticks(all_draws_cadre_normalised.columns)
+    axes[1].set_xticklabels(scenario_names, rotation=45)
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
 
-        mask_low = y_vals < break_low
-        ax2.scatter(x_vals[mask_low], y_vals[mask_low], label=cadre, alpha=0.5)
-        ax2.errorbar(x_vals[mask_low], y_vals[mask_low], yerr=[y_err_low[mask_low], y_err_high[mask_low]], fmt='none',
-                     capsize=3)
-
-        mask_high = y_vals > break_high
-        ax1.scatter(x_vals[mask_high], y_vals[mask_high], label=cadre, alpha=0.5)
-        ax1.errorbar(x_vals[mask_high], y_vals[mask_high], yerr=[y_err_low[mask_high], y_err_high[mask_high]],
-                     fmt='none', capsize=3)
-
-    ax1.set_ylim(break_high, y_max)
-    ax2.set_ylim(y_min, break_low)
-    ax1.spines.bottom.set_visible(False)
-    ax2.spines.top.set_visible(False)
-
-    d = 0.01
-    kwargs = dict(transform=ax1.transAxes, color='black', clip_on=False)
-    ax1.plot((-d, d), (-d, d), **kwargs)
-    ax1.plot((1 - d, 1 + d), (-d, d), **kwargs)
-    ax1.xaxis.set_visible(False)
-    kwargs.update(transform=ax2.transAxes)
-    ax2.plot((-d, d), (1 - d, 1 + d), **kwargs)
-    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
-
-    ax2.set_xlabel("Scenario")
-    ax2.set_ylabel("Fold change in time spent vs. 2020")
-    ax2.axhline(y=1, color='black', linestyle='--')
-    ax2.set_xticks(x_vals)
-    ax2.set_xticklabels(scenario_names, rotation=45)
-    ax1.legend(ncol=2, fontsize='small')
+    fig.tight_layout()
     fig.savefig(output_folder / "Time_HSI_Events_by_Cadre_combined.png")
     plt.show()
 
