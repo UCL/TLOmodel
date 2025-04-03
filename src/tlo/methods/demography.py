@@ -486,9 +486,6 @@ class Demography(Module):
         df = self.sim.population.props.copy() # take copy of dataframe
         df["coordinate_of_residence"] = df["district_of_residence"].apply(
             assign_random_coordinates)
-        # self.sim.population.props["coordinate_of_residence"] = self.sim.population.props["district_of_residence"].apply(
-        #     assign_random_coordinates)
-
         facility_info  =pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts' / "facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
 
         facility_levels = {
