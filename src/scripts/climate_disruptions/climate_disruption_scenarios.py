@@ -21,7 +21,7 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'longterm_trends_all_diseases',
+            'filename': 'climate_scenario_runs',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
