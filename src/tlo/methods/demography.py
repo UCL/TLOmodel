@@ -343,12 +343,6 @@ class Demography(Module):
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
-        self.assign_closest_facility_level()
-        df.loc[df.is_alive, 'facility_used_level_0'] = self.sim.population.props.loc[df.is_alive, "level_0"]
-        df.loc[df.is_alive, 'facility_used_level_1a'] = self.sim.population.props.loc[df.is_alive, "level_1a"]
-        df.loc[df.is_alive, 'facility_used_level_1b'] = self.sim.population.props.loc[df.is_alive, "level_1b"]
-        df.loc[df.is_alive, 'facility_used_level_2'] = self.sim.population.props.loc[df.is_alive, "level_2"]
-        df.loc[df.is_alive, 'facility_used_level_3'] = self.sim.population.props.loc[df.is_alive, "level_3"]
 
         df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
@@ -356,6 +350,12 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_days'] = (
             self.sim.date - demog_char_to_assign['date_of_birth']
         ).dt.days
+        self.assign_closest_facility_level()
+        df.loc[df.is_alive, 'facility_used_level_0'] = self.sim.population.props.loc[df.is_alive, "level_0"]
+        df.loc[df.is_alive, 'facility_used_level_1a'] = self.sim.population.props.loc[df.is_alive, "level_1a"]
+        df.loc[df.is_alive, 'facility_used_level_1b'] = self.sim.population.props.loc[df.is_alive, "level_1b"]
+        df.loc[df.is_alive, 'facility_used_level_2'] = self.sim.population.props.loc[df.is_alive, "level_2"]
+        df.loc[df.is_alive, 'facility_used_level_3'] = self.sim.population.props.loc[df.is_alive, "level_3"]
 
         # Ensure first individual in df is a man, to safely exclude person_id=0 from selection of direct birth mothers.
         # If no men are found in df, issue a warning and proceed with female individual at person_id = 0.
