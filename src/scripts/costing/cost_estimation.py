@@ -1001,14 +1001,6 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
         # Plot the stacked bar chart with set colours
         ax = pivot_central.plot(kind='bar', stacked=True, figsize=(10, 6), color=column_colors)
 
-        # Add data labels
-        for c in ax.containers:
-            # Add label only if the value of the segment is > 1.20th of the ylim
-            max_y = ax.get_ylim()[1]
-            labels = [round(v.get_height(),1) if v.get_height() > max_y/20 else '' for v in c]
-            # remove the labels parameter if it's not needed for customized labels
-            ax.bar_label(c, labels=labels, label_type='center', fontsize='small')
-
         # Add error bars
         x_pos = np.arange(len(pivot_central.index))
         total_central = pivot_central.sum(axis=1)
@@ -1019,19 +1011,36 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
         # Plot the stacked bar chart without set colours
         ax = pivot_central.plot(kind='bar', stacked=True, figsize=(10, 6))
 
-        # Add data labels
-        for c in ax.containers:
-            # Add label only if the value of the segment is > 1.20th of the ylim
-            max_y = ax.get_ylim()[1]
-            labels = [round(v.get_height(),1) if v.get_height() > max_y/20 else '' for v in c]
-            # remove the labels parameter if it's not needed for customized labels
-            ax.bar_label(c, labels=labels, label_type='center', fontsize='small')
-
         # Add error bars
         x_pos = np.arange(len(pivot_central.index))
         total_central = pivot_central.sum(axis=1)
         error_bars = [lower_bounds, upper_bounds]
         ax.errorbar(x_pos, total_central, yerr=error_bars, fmt='o', color='black', capsize=5)
+
+    # Add data labels such that the stacked block has a superimposed white label is the value is >=2% of the Y-axis limit
+    # and a black label adjusted to the right of the bar (for visibility) if the value is <2%
+    # Get max y-limit for threshold
+    max_y = ax.get_ylim()[1]
+    threshold = max_y * 0.02  # 2% of ylim
+
+    for container in ax.containers:
+        if isinstance(container, mpc.BarContainer):  # Ensure we're working with bars, not error bars
+            for rect in container:
+                height = rect.get_height()
+                if height > 0:  # Avoid labeling zero-height bars
+                    x = rect.get_x() + rect.get_width() / 2  # Center of bar
+                    y = rect.get_y() + height / 2  # Middle of segment
+
+                    if height < threshold:  # Small segment -> place label outside
+                        ax.annotate(
+                            f'{round(height, 1)}',
+                            xy=(x, rect.get_y() + height),  # Arrow start
+                            xytext=(x + 0.3, rect.get_y() + height + threshold),  # Offset text
+                            arrowprops=dict(arrowstyle="->", color='black', lw=0.8),
+                            fontsize='small', ha='left', va='center', color='black'
+                        )
+                    else:  # Large segment -> label inside
+                        ax.text(x, y, f'{round(height, 1)}', ha='center', va='center', fontsize='small', color='white')
 
     # Set custom x-tick labels if _scenario_dict is provided
     if _scenario_dict:
@@ -1255,7 +1264,7 @@ def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = 
     if (len(_df['cost_subgroup'].unique()) > 10):
         # Step 2: Group all other consumables into "Other"
         other_cost = _df.iloc[10:]["cost"].sum()
-        top_10 = top_10.append({"cost_subgroup": "Other", "cost": other_cost}, ignore_index=True)
+        top_10 = pd.concat([top_10, pd.DataFrame([{"cost_subgroup": "Other", "cost": other_cost}])], ignore_index=True)
 
     # Prepare data for the treemap
     total_cost = top_10["cost"].sum()
