@@ -1039,32 +1039,116 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
+    ax1, ax2 = axes[1], axes[1].twinx()
+    ax1.set_xticks([])
+
     y_err = [
         all_draws_cadre_normalised - all_draws_cadre_normalised_lower,
         all_draws_cadre_normalised_upper - all_draws_cadre_normalised
     ]
-    for i, cadre in enumerate(all_draws_cadre_normalised.index):
-            axes[1].scatter(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
-                            marker='o',
-                            label=cadre)
-            axes[1].errorbar(
-                all_draws_cadre_normalised.columns,
-                all_draws_cadre_normalised.loc[cadre],
-                yerr=[abs(y_err[0].loc[cadre]), abs(y_err[1].loc[cadre])],
-                fmt='none',
-                capsize=3,
-                alpha=0.7
-            )
 
-    axes[1].legend(ncol=2)
-    axes[1].set_ylabel('Fold change in time spent compared to 2020')
-    axes[1].set_xlabel('Scenario')
-    axes[1].set_xticks(all_draws_cadre_normalised.columns)
-    axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+    for cadre in all_draws_cadre_normalised.index:
+        x_vals = all_draws_cadre_normalised.columns
+        y_vals = all_draws_cadre_normalised.loc[cadre]
+        y_err_low = abs(y_err[0].loc[cadre])
+        y_err_high = abs(y_err[1].loc[cadre])
 
-    fig.tight_layout()
+        mask_low = y_vals < break_low
+        ax2.scatter(x_vals[mask_low], y_vals[mask_low], label=cadre, alpha=0.5)
+        ax2.errorbar(x_vals[mask_low], y_vals[mask_low], yerr=[y_err_low[mask_low], y_err_high[mask_low]], fmt='none',
+                     capsize=3)
+
+        mask_high = y_vals > break_high
+        ax1.scatter(x_vals[mask_high], y_vals[mask_high], label=cadre, alpha=0.5)
+        ax1.errorbar(x_vals[mask_high], y_vals[mask_high], yerr=[y_err_low[mask_high], y_err_high[mask_high]],
+                     fmt='none', capsize=3)
+
+    ax1.set_ylim(break_high, y_max)
+    ax2.set_ylim(y_min, break_low)
+    ax1.spines.bottom.set_visible(False)
+    ax2.spines.top.set_visible(False)
+
+    d = 0.01
+    kwargs = dict(transform=ax1.transAxes, color='black', clip_on=False)
+    ax1.plot((-d, d), (-d, d), **kwargs)
+    ax1.plot((1 - d, 1 + d), (-d, d), **kwargs)
+    ax1.xaxis.set_visible(False)
+    kwargs.update(transform=ax2.transAxes)
+    ax2.plot((-d, d), (1 - d, 1 + d), **kwargs)
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
+
+    ax2.set_xlabel("Scenario")
+    ax2.set_ylabel("Fold change in time spent vs. 2020")
+    ax2.axhline(y=1, color='black', linestyle='--')
+    ax2.set_xticks(x_vals)
+    ax2.set_xticklabels(scenario_names, rotation=45)
+    ax1.legend(ncol=2, fontsize='small')
     fig.savefig(output_folder / "Time_HSI_Events_by_Cadre_combined.png")
+    plt.show()
+
+    # Plot for WHO AFRO
+
+    y_min = all_draws_cadre_normalised.min().min() * 0.5
+    y_max = 11.9
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, gridspec_kw={'height_ratios': [1, 3]}, figsize=(8, 6))
+
+    y_err = [
+        all_draws_cadre_normalised - all_draws_cadre_normalised_lower,
+        all_draws_cadre_normalised_upper - all_draws_cadre_normalised
+    ]
+
+    # Define the break in the Y-axis (skip range 5-10)
+    break_low, break_high = 9.5, 11.8
+    ax1.set_xticks([])
+    for cadre in all_draws_cadre_normalised.index:
+        if cadre == "Dental":
+            continue
+
+        x_vals = all_draws_cadre_normalised.columns
+        y_vals = all_draws_cadre_normalised.loc[cadre]
+        y_err_low = abs(y_err[0].loc[cadre])
+        y_err_high = abs(y_err[1].loc[cadre])
+
+        mask_low = y_vals < break_low
+        ax2.scatter(x_vals[mask_low], y_vals[mask_low], label=cadre, alpha=0.5)
+        ax2.errorbar(x_vals[mask_low], y_vals[mask_low], yerr=[y_err_low[mask_low], y_err_high[mask_low]], fmt='none',
+                     capsize=3)
+
+        mask_high = y_vals > break_high
+        ax1.scatter(x_vals[mask_high], y_vals[mask_high], label=cadre, alpha=0.5)
+        ax1.errorbar(x_vals[mask_high], y_vals[mask_high], yerr=[y_err_low[mask_high], y_err_high[mask_high]],
+                     fmt='none', capsize=3)
+
+    ax1.set_ylim(break_high, y_max)  # Top subplot (skipping 5-10)
+    ax2.set_ylim(y_min, break_low)  # Bottom subplot
+
+    # Hide top and bottom spines where the break occurs
+    ax1.spines.bottom.set_visible(False)
+    ax2.spines.top.set_visible(False)
+    d = 0.01
+    kwargs = dict(transform=ax1.transAxes, color='black', clip_on=False)
+    ax1.plot((-d, d), (-d, d), **kwargs)  # Upper left diagonal
+    ax1.plot((1 - d, 1 + d), (-d, d), **kwargs)  # Upper right diagonal
+    ax1.xaxis.set_visible(False)
+    kwargs.update(transform=ax2.transAxes)
+    ax2.plot((-d, d), (1 - d, 1 + d), **kwargs)  # Lower left diagonal
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # Lower right diagonal
+
+    ax2.set_xlabel("Scenario")
+    ax2.set_ylabel("Fold change in time spent vs. 2020")
+    ax2.set_ylabel("")
+
+    ax2.axhline(y=1, color='black', linestyle='--')
+    ax2.set_xticks(x_vals)
+    ax2.set_xticklabels(scenario_names, rotation=45)
+
+    # Combine legends
+    ax1.legend(ncol=2, fontsize='small')
+
+    plt.tight_layout()
+    fig.savefig(output_folder / "WHO_AFRO_Relative_2070_to_2020.png")
+
     plt.show()
 
 
@@ -1087,16 +1171,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     target_year_sequence = range(min_year, max_year, spacing_of_years)
 
-    for target_year in target_year_sequence:
-        TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
-        year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
-
-
-
-        figure1_distribution_of_hsi_event_by_treatment_id(
-            results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-            year_range=year_range, target_period=TARGET_PERIOD
-        )
+    # for target_year in target_year_sequence:
+    #     TARGET_PERIOD = (Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
+    #     year_range = f"{TARGET_PERIOD[0].year}-{TARGET_PERIOD[1].year}"
+    #
+    #
+    #
+    #     figure1_distribution_of_hsi_event_by_treatment_id(
+    #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #         year_range=year_range, target_period=TARGET_PERIOD
+    #     )
     #
     #     figure3_fraction_of_time_of_hcw_used_by_treatment(
     #         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
