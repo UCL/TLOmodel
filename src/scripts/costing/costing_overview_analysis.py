@@ -19,6 +19,7 @@ import squarify
 import numpy as np
 import pandas as pd
 from itertools import cycle
+import jinja2 # This is for the latex table
 
 from tlo.analysis.utils import (
     extract_params,
@@ -61,7 +62,7 @@ info = get_scenario_info(results_folder)
 # Declare default parameters for cost analysis
 # ------------------------------------------------------------------------------------------------------------------
 # Period relevant for costing
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2030, 12, 31))  # This is the period that is costed
+TARGET_PERIOD = (Date(2023, 1, 1), Date(2030, 12, 31))  # This is the period that is costed
 relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
 list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
 list_of_years_for_plot = list(range(2023, 2031))
@@ -73,27 +74,25 @@ cost_scenarios = {0: "Actual", 3: "Expanded HRH", 5: "Improved consumable availa
 
 # Costing parameters
 discount_rate = 0.03
-discount_rate_lomas = -0.0079
+discount_rate_lomas = {2023: 0.0036, 2024: 0.0040, 2025: 0.0039, 2026: 0.0042, 2027: 0.0042, 2028: 0.0041,
+                       2029: 0.0041, 2030: 0.0040}# get the list of discount rates from 2023 until 2030
 
 # Estimate standard input costs of scenario
 # -----------------------------------------------------------------------------------------------------------------------
+# Standard 3% discount rate
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate, summarize = True)
-input_costs = input_costs[(input_costs.year > 2022) & (input_costs.year < 2031)]
-# _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
 
+# Undiscounted costs
 input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = 0, summarize = True)
-input_costs_undiscounted = input_costs_undiscounted[(input_costs_undiscounted.year > 2022) & (input_costs_undiscounted.year < 2031)]
 
+# Cost with variable discount rate based on Lomas et al (2021)
 input_costs_variable_discounting = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws = [0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate = discount_rate_lomas, summarize = True)
-input_costs_variable_discounting = input_costs_variable_discounting[(input_costs_variable_discounting.year > 2022) & (input_costs_variable_discounting.year < 2031)]
-
-# _draws = htm_scenarios_for_gf_report --> this subset is created after calculating malaria scale up costs
 
 # Get overall estimates for main text
 # -----------------------------------------------------------------------------------------------------------------------
@@ -131,15 +130,16 @@ print(f"For instance, the cost of HIV testing consumables increases by {(cost_of
 
 # Get figures for overview paper
 # -----------------------------------------------------------------------------------------------------------------------
-# Figure 1: Estimated costs by cost category
+# Figure 2: Estimated costs by cost category
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'all', _disaggregate_by_subgroup = False,
-                                        _year = list_of_years_for_plot,
+                                        _year = list_of_relevant_years_for_costing,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 
 revised_consumable_subcategories = {'cost_of_separately_managed_medical_supplies_dispensed':'cost_of_consumables_dispensed', 'cost_of_excess_separately_managed_medical_supplies_stocked': 'cost_of_excess_consumables_stocked', 'supply_chain':'supply_chain'}
 input_costs_new = input_costs.copy()
 input_costs_new['cost_subcategory'] = input_costs_new['cost_subcategory'].map(revised_consumable_subcategories).fillna(input_costs_new['cost_subcategory'])
 
+# Figure 3: Estimated costs by cost sub-category
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_new, _cost_category = 'medical consumables', _disaggregate_by_subgroup = False,
                                         _year = list_of_years_for_plot,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
@@ -154,7 +154,7 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'fac
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 
 
-# Figure 2: Estimated costs by year
+# Figure 4: Estimated costs by year
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          _year=list_of_years_for_plot, _draws= [0],
                          disaggregate_by= 'cost_category',
@@ -172,9 +172,7 @@ do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          disaggregate_by= 'cost_category',
                          _outputfilepath = figurespath)
 
-# Figure 3: Comparison of model-based cost estimates with actual expenditure recorded for 2018/19 and budget planned for 2020/21-2022/23
-
-# Figure 4: Total cost by scenario assuming 0% discount rate
+# Figure D1: Total cost by scenario assuming 0% discount rate
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_undiscounted,
                                         _cost_category = 'all',
                                         _year=list_of_years_for_plot,
@@ -183,8 +181,7 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs_undiscounted,
                                         _scenario_dict = cost_scenarios,
                                         _add_figname_suffix = '_UNDISCOUNTED')
 
-# Figure 5: Total cost by scenario applying changing discount rates
-# Figure 4: Total cost by scenario assuming 0% discount rate
+# Figure D2: Total cost by scenario assuming variable discount rates
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_variable_discounting,
                                         _cost_category = 'all',
                                         _year=list_of_years_for_plot,
@@ -194,6 +191,7 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs_variable_discounting,
                                         _add_figname_suffix = '_VARIABLE_DISCOUNTING')
 
 
+# Figure F1-F4: Cost by cost sub-group
 cost_categories = ['human resources for health', 'medical consumables',
        'medical equipment', 'facility operating cost']
 draws = input_costs.draw.unique().tolist()
@@ -285,13 +283,14 @@ def generate_detail_cost_table(_groupby_var, _groupby_var_name, _longtable = Fal
     # Print latex for reference
     print(latex_table)
 
-# Table : Cost by cost subcategory
-generate_detail_cost_table(_groupby_var = 'cost_subcategory', _groupby_var_name = 'Cost Subcategory')
-# Table : Cost by cost subgroup
+# Table F1: Cost by cost subcategory
+generate_detail_cost_table(_groupby_var = 'cost_subcategory', _groupby_var_name = 'Cost Subcategory', _longtable = True)
+# Table F2: Cost by cost subgroup
 generate_detail_cost_table(_groupby_var = 'cost_subgroup', _groupby_var_name = 'Category Subgroup', _longtable = True)
 
-# Generate consumable inflow to outflow ratio figure
+# Figure E1: Consumable inflow to outflow ratio figure
 # -----------------------------------------------------------------------------------------------------------------------
+path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 # Estimate the stock to dispensed ratio from OpenLMIS data
 lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # Collapse individual facilities
