@@ -132,7 +132,7 @@ print(f"For instance, the cost of HIV testing consumables increases by {(cost_of
 # -----------------------------------------------------------------------------------------------------------------------
 # Figure 2: Estimated costs by cost category
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'all', _disaggregate_by_subgroup = False,
-                                        _year = list_of_relevant_years_for_costing,
+                                        _year = list_of_relevant_years_for_costing,show_title = False,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 
 revised_consumable_subcategories = {'cost_of_separately_managed_medical_supplies_dispensed':'cost_of_consumables_dispensed', 'cost_of_excess_separately_managed_medical_supplies_stocked': 'cost_of_excess_consumables_stocked', 'supply_chain':'supply_chain'}
@@ -141,16 +141,16 @@ input_costs_new['cost_subcategory'] = input_costs_new['cost_subcategory'].map(re
 
 # Figure 3: Estimated costs by cost sub-category
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs_new, _cost_category = 'medical consumables', _disaggregate_by_subgroup = False,
-                                        _year = list_of_years_for_plot,
+                                        _year = list_of_years_for_plot, show_title = False,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'human resources for health', _disaggregate_by_subgroup = False,
-                                        _year = list_of_years_for_plot,
+                                        _year = list_of_years_for_plot, show_title = False,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'medical equipment', _disaggregate_by_subgroup = False,
-                                        _year = list_of_years_for_plot,
+                                        _year = list_of_years_for_plot, show_title = False,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'facility operating cost', _disaggregate_by_subgroup = False,
-                                        _year = list_of_years_for_plot,
+                                        _year = list_of_years_for_plot, show_title = False,
                                         _outputfilepath = figurespath, _scenario_dict = cost_scenarios)
 
 
@@ -158,18 +158,26 @@ do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'fac
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          _year=list_of_years_for_plot, _draws= [0],
                          disaggregate_by= 'cost_category',
+                         _y_lim = 400,
+                         show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          _year=list_of_years_for_plot, _draws= [3],
                          disaggregate_by= 'cost_category',
+                         _y_lim = 400,
+                         show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          _year=list_of_years_for_plot, _draws= [5],
                          disaggregate_by= 'cost_category',
+                         _y_lim = 400,
+                         show_title = False,
                          _outputfilepath = figurespath)
 do_line_plot_of_cost(_df = input_costs_undiscounted, _cost_category='all',
                          _year=list_of_years_for_plot, _draws= [8],
                          disaggregate_by= 'cost_category',
+                         _y_lim = 400,
+                         show_title = False,
                          _outputfilepath = figurespath)
 
 # Figure D1: Total cost by scenario assuming 0% discount rate
@@ -217,11 +225,11 @@ for _cat in cost_categories:
         if _cat == 'medical consumables':
             create_summary_treemap_by_cost_subgroup(_df = input_costs, _year = list_of_years_for_plot,
                                                _cost_category = _cat, _draw = _d, _color_map=colourmap_for_consumables,
-                                                _label_fontsize= 8, _outputfilepath=figurespath)
+                                                show_title= False, _label_fontsize= 8, _outputfilepath=figurespath)
         else:
             create_summary_treemap_by_cost_subgroup(_df=input_costs, _year=list_of_years_for_plot,
-                                                    _cost_category=_cat, _draw=_d, _label_fontsize= 8.5,
-                                                    _outputfilepath=figurespath)
+                                                    _cost_category=_cat, _draw=_d, show_title= False,
+                                                    _label_fontsize= 8.5, _outputfilepath=figurespath)
 
 
 # Get tables for overview paper
@@ -313,23 +321,41 @@ inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.qu
 #average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
 inflow_to_outflow_ratio = inflow_to_outflow_ratio.reset_index().rename(columns = {0:'inflow_to_outflow_ratio'})
 
+# Clean category names for plot
+clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiometabolic Disorders',
+                        'contraception': 'Contraception', 'general': 'General', 'hiv': 'HIV', 'malaria': 'Malaria',
+                        'ncds': 'Non-communicable Diseases', 'neonatal_health': 'Neonatal Health',
+                        'other_childhood_illnesses': 'Other Childhood Illnesses', 'reproductive_health': 'Reproductive Health',
+                        'road_traffic_injuries': 'Road Traffic Injuries', 'tb': 'Tuberculosis',
+                        'undernutrition': 'Undernutrition'}
+inflow_to_outflow_ratio['category'] = inflow_to_outflow_ratio['category'].map(clean_category_names)
+
+
 def plot_inflow_to_outflow_ratio(_df, groupby_var, _outputfilepath):
-    # Plot the bar plot
+    # Plot the bar plot with gray bars
     plt.figure(figsize=(10, 6))
-    sns.barplot(data=_df , x=groupby_var, y= 'inflow_to_outflow_ratio', errorbar=None)
+    sns.barplot(data=_df, x=groupby_var, y='inflow_to_outflow_ratio', errorbar=None, color="gray")
 
     # Add points representing the distribution of individual values
     sns.stripplot(data=_df, x=groupby_var, y='inflow_to_outflow_ratio', color='black', size=5, alpha=0.2)
 
+    # Wrap x-axis labels ONLY if they are strings and longer than 15 characters
+    labels = []
+    for label in _df[groupby_var].unique():
+        if isinstance(label, str) and len(label) > 15:
+            labels.append(textwrap.fill(label, width=15))
+        else:
+            labels.append(label)
+    plt.xticks(ticks=range(len(labels)), labels=labels, rotation=90, ha='center')
+
     # Set labels and title
     plt.xlabel(groupby_var)
     plt.ylabel('Inflow to Outflow Ratio')
-    plt.title('Average Inflow to Outflow Ratio by ' + f'{groupby_var}')
-    plt.xticks(rotation=45)
 
-    # Show plot
+    # Show and save plot
     plt.tight_layout()
-    plt.savefig(_outputfilepath / 'inflow_to_outflow_ratio_by' f'{groupby_var}' )
+    plt.savefig(_outputfilepath / f'inflow_to_outflow_ratio_by_{groupby_var}.png')
+    plt.close()
 
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'fac_type_tlo', _outputfilepath = figurespath)
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district', _outputfilepath = figurespath)

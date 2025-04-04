@@ -19,6 +19,7 @@ import ast
 import math
 import itertools
 from itertools import cycle
+import matplotlib.container as mpc
 
 from tlo.analysis.utils import (
     extract_params,
@@ -903,6 +904,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
                                             _disaggregate_by_subgroup: bool = False,
                                             _year = 'all', _draws = None,
                                             _scenario_dict: dict = None,
+                                            show_title = True,
                                             _outputfilepath: Path = None,
                                             _add_figname_suffix = ''):
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
@@ -1082,7 +1084,8 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
     plt.rcParams['figure.edgecolor'] = 'gray'
     plt.rcParams['figure.frameon'] = True
 
-    plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
+    if show_title != False:
+        plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
     plt.savefig(_outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}{_add_figname_suffix}.png', dpi=100,
                 bbox_inches='tight')
     plt.close()
@@ -1093,6 +1096,8 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 def do_line_plot_of_cost(_df, _cost_category='all',
                          _year='all', _draws=None,
                          disaggregate_by=None,
+                         _y_lim = None,
+                         show_title = True,
                          _outputfilepath: Path = None):
     # Check what's the correct central metric to use (either 'mean' or 'median')
     central_metric = [stat for stat in _df.stat.unique() if stat not in ['lower', 'upper']][0]
@@ -1211,13 +1216,18 @@ def do_line_plot_of_cost(_df, _cost_category='all',
         period = f"{min(_year)} - {max(_year)}"
 
     # Set labels, legend, and title
+    # Set y-axis limit if provided
+    if _y_lim is not None:
+        plt.ylim(0, _y_lim)
+
     # Add gridlines and border
     plt.grid(visible=True, which='major', linestyle='--', linewidth=0.5, color='gray')
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
-    plt.legend(handles[::-1], sorted_labels[::-1], bbox_to_anchor=(1.05, 1), loc='upper left')
-    plot_title = f'Total input cost \n (Category = {_cost_category}, Period = {period})'
-    plt.title(plot_title)
+    plt.legend(handles[::-1], sorted_labels[::-1], loc='upper right', bbox_to_anchor=(0.98, 0.98), framealpha=0.6)
+    if (show_title != False):
+        plot_title = f'Total input cost \n (Category = {_cost_category}, Period = {period})'
+        plt.title(plot_title)
 
     # Save plot with a proper filename
     if disaggregate_by is None:
@@ -1234,6 +1244,7 @@ def do_line_plot_of_cost(_df, _cost_category='all',
 #-----------------------------------------------------------------------------------------------
 def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = None, _year = 'all',
                                             _color_map = None, _label_fontsize = 10,
+                                            show_title = True,
                                             _outputfilepath: Path = None):
     # Function to wrap text to fit within treemap rectangles
     def wrap_text(text, width=15):
@@ -1303,7 +1314,9 @@ def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = 
     plt.figure(figsize=(12, 8))
     squarify.plot(sizes=sizes, label=labels, alpha=0.8, color=colors, text_kwargs={'fontsize': _label_fontsize})
     plt.axis("off")
-    plt.title(f'{_cost_category} ; Period = {period}')
+    if (show_title != False):
+        plt.title(f'{_cost_category} ; Period = {period}')
+
     plt.savefig(_outputfilepath / f'treemap_{_cost_category}_[{_draw}]_{period}.png',
                 dpi=100,
                 bbox_inches='tight')
