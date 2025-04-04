@@ -9,31 +9,22 @@ or locally using:
     ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
 
 """
-from pathlib import Path
+
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo
-from tlo.methods import (
-    chronicsyndrome,
-    demography,
-    enhanced_lifestyle,
-    healthseekingbehaviour,
-    healthsystem,
-    mockitis,
-    simplified_births,
-    symptommanager,
-)
+from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
-resourcefilepath = Path("./resources")
+
 class LongRun(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
-        self.start_date = Date(2026, 1, 1)
-        self.end_date = Date(2026, 1, 12)  # The simulation will stop before reaching this date.
-        self.pop_size = 5000
+        self.start_date = Date(2010, 1, 1)
+        self.end_date = Date(2031, 1, 1)  # The simulation will stop before reaching this date.
+        self.pop_size = 20_000
         self.number_of_draws = 1
-        self.runs_per_draw = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -51,18 +42,7 @@ class LongRun(BaseScenario):
         }
 
     def modules(self):
-        return [demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  climate_ssp = 'ssp585',
-                                  climate_model_ensemble_model='mean',
-                                  services_affected_precip = 'none'),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        mockitis.Mockitis(),
-        chronicsyndrome.ChronicSyndrome(),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),]
+        return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
         return get_parameters_for_status_quo()
