@@ -612,7 +612,8 @@ class WastingAnalyses:
                         plotting['moderate wasting'][agegp] = df[col].values[0]
                         plotting['any wasting'][agegp] = df[col].values[0] + df[f'sev__{agegp}'].values[0]
                 plotting_df = pd.DataFrame(plotting)
-                assert set(plotting_df.index) == set(age_groups), f"age groups in {df_name} are not in line with the age_groups."
+                assert set(plotting_df.index) == set(age_groups),\
+                    f"age groups in {df_name} are not in line with the age_groups."
                 plotting_df = plotting_df.reindex(age_groups)
                 return plotting_df
 
@@ -813,7 +814,7 @@ if __name__ == "__main__":
         # plot wasting deaths as compared to GBD deaths
         wasting_analyses.plot_model_gbd_deaths()
 
-        # save all figures in one pdf
+        # ### Save all figures in one pdf
         outcome_figs_folder = sim_results_folder_path / '_outcome_figures'
         outcome_figs_folder.mkdir(parents=True, exist_ok=True)
         wasting_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
