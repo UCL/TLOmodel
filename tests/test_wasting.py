@@ -116,7 +116,7 @@ def test_basic_run(tmpdir):
             # Check types of columns
             df = population.props
             orig = population.new_row
-            assert (df.dtypes == orig.dtypes).all()
+            assert df.dtypes.eq(orig.dtypes).all()
 
         def check_configuration_of_properties(self, population):
             """ check wasting properties on a daily basis to ensure integrity """
@@ -125,12 +125,12 @@ def test_basic_run(tmpdir):
                                   (df.un_clinical_acute_malnutrition == 'SAM')]
 
             # Those that were never wasted, should have normal WHZ score:
-            assert (df.loc[~df.un_ever_wasted & ~df.date_of_birth.isna(), 'un_WHZ_category'] == 'WHZ>=-2').all()
+            assert (df.loc[~df.un_ever_wasted & ~df.date_of_birth.isna(), 'un_WHZ_category'].eq('WHZ>=-2')).all()
 
             # Those for whom the death date has past should be dead
             assert not df.loc[(df['un_sam_death_date'] < self.sim.date), 'is_alive'].any()
             # Those who died due to SAM should have SAM
-            assert (df.loc[(df['un_sam_death_date']) < self.sim.date, 'un_clinical_acute_malnutrition'] == 'SAM').all()
+            assert df.loc[(df['un_sam_death_date']) < self.sim.date, 'un_clinical_acute_malnutrition'].eq('SAM').all()
 
             # Check that those in a current episode have symptoms of wasting
             # [caused by the wasting module] but not others (among those alive)
@@ -158,9 +158,9 @@ def test_basic_run(tmpdir):
             whz_index = df.index[df['un_WHZ_category'] == 'WHZ<-3']
             muac_index = df.index[df['un_am_MUAC_category'] == '<115mm']
             oedema_index = df.index[df['un_am_nutritional_oedema']]
-            assert (df.loc[whz_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
-            assert (df.loc[muac_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
-            assert (df.loc[oedema_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
+            assert df.loc[whz_index, 'un_clinical_acute_malnutrition'].eq("SAM").all()
+            assert df.loc[muac_index, 'un_clinical_acute_malnutrition'].eq("SAM").all()
+            assert df.loc[oedema_index, 'un_clinical_acute_malnutrition'].eq("SAM").all()
 
             # all SAM individuals should have symptoms of wasting
             assert set(under5_sam).issubset(has_symptoms)
