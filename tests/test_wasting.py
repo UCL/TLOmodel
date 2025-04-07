@@ -177,33 +177,38 @@ def test_basic_run(tmpdir):
 
 
 def test_wasting_incidence(tmpdir):
-    """Check Incidence of wasting is happening as expected """
+    """ Check incidence of wasting is happening as expected. """
     # get simulation object:
     dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
+    # get wasting module
+    wmodule = sim.modules['Wasting']
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
 
-    # reset properties of all individuals so that they are not wasted
+    # Reset properties of all individuals so that they are well-nourished
     df = sim.population.props
-    df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
+    df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not wasted
+    df.loc[df.is_alive, 'un_am_MUAC_category'] = '>=125mm'
+    df.loc[df.is_alive, 'un_am_nutritional_oedema'] = False
+    df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
     df.loc[df.is_alive, 'un_ever_wasted'] = False
     df.loc[df.is_alive, 'un_last_wasting_date_of_onset'] = pd.NaT
 
     # Set incidence of wasting at 100%
-    sim.modules['Wasting'].wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
+    wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
 
-    # Run polling event: check that all children should now have moderate wasting:
-    polling = Wasting_IncidencePoll(sim.modules['Wasting'])
+    # Run polling event: check that all children should now have moderate wasting
+    polling = Wasting_IncidencePoll(wmodule)
     polling.apply(sim.population)
 
     # Check properties of individuals: should now be moderately wasted
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     assert all(under5s['un_ever_wasted'])
-    assert all(under5s['un_WHZ_category'] == '-3<=WHZ<-2')
-    assert all(under5s['un_last_wasting_date_of_onset'] == sim.date)
+    assert (under5s['un_WHZ_category'].eq('-3<=WHZ<-2')).all()
+    assert (under5s['un_last_wasting_date_of_onset'].eq(sim.date)).all()
 
 
 def test_report_daly_weights(tmpdir):
