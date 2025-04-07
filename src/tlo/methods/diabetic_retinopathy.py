@@ -11,6 +11,7 @@ from tlo.methods import Metadata
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.methods.symptommanager import Symptom
+from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,13 +32,13 @@ class DiabeticRetinopathy(Module):
 
     PARAMETERS = {
         "rate_onset_to_mild_dr": Parameter(Types.REAL,
-                                            "Probability of people who get diagnosed with mild diabetic retinopathy"),
+                                           "Probability of people who get diagnosed with mild diabetic retinopathy"),
         "rate_mild_to_moderate": Parameter(Types.REAL,
-                                                       "Probability of people who get diagnosed with moderate diabetic retinopathy"),
+                                           "Probability of people who get diagnosed with moderate diabetic retinopathy"),
         "rate_moderate_to_severe": Parameter(Types.REAL,
-                                                       "Probability of people who get diagnosed with severe diabetic retinopathy"),
+                                             "Probability of people who get diagnosed with severe diabetic retinopathy"),
         "rate_severe_to_proliferative": Parameter(Types.REAL,
-                                            "Probability of people who get diagnosed with proliferative diabetic retinopathy"),
+                                                  "Probability of people who get diagnosed with proliferative diabetic retinopathy"),
         'prob_fast_dr': Parameter(Types.REAL,
                                   "Probability of people who get diagnosed from none phase to proliferative diabetic "
                                   "retinopathy stage"),
@@ -231,7 +232,6 @@ class DiabeticRetinopathy(Module):
                 p=probs
             )
 
-
         # dr_stage_probs = self.parameters["init_prob_any_dr"]
         # Determine the stage of DR for those who have DM:
         # if any_dr.sum():
@@ -251,23 +251,22 @@ class DiabeticRetinopathy(Module):
         #         p=prob_by_stage_of_dr_if_dr
         #     )
 
-            # sum_probs = sum(self.parameters['init_prob_any_dr'])
-            # if sum_probs > 0:
-            #     prob_by_stage_of_dr_if_dr = [i / sum_probs for i in self.parameters['init_prob_any_dr']]
-            #     assert (sum(prob_by_stage_of_dr_if_dr) - 1.0) < 1e-10
-            #     # df.loc[any_dr, "dr_status"] = self.rng.choice(
-            #     #     dr_stage_probs[1:],  # exclude "none"
-            #     #     size=len(df.loc[any_dr]),
-            #     #     p=dr_stage_probs
-            #     # )
-            #     df.loc[any_dr, "dr_status"] = self.rng.choice(
-            #         [val for val in df.dr_status.cat.categories if val != 'none'],
-            #         size=any_dr.sum(),
-            #         p=prob_by_stage_of_dr_if_dr
-            #     )
+        # sum_probs = sum(self.parameters['init_prob_any_dr'])
+        # if sum_probs > 0:
+        #     prob_by_stage_of_dr_if_dr = [i / sum_probs for i in self.parameters['init_prob_any_dr']]
+        #     assert (sum(prob_by_stage_of_dr_if_dr) - 1.0) < 1e-10
+        #     # df.loc[any_dr, "dr_status"] = self.rng.choice(
+        #     #     dr_stage_probs[1:],  # exclude "none"
+        #     #     size=len(df.loc[any_dr]),
+        #     #     p=dr_stage_probs
+        #     # )
+        #     df.loc[any_dr, "dr_status"] = self.rng.choice(
+        #         [val for val in df.dr_status.cat.categories if val != 'none'],
+        #         size=any_dr.sum(),
+        #         p=prob_by_stage_of_dr_if_dr
+        #     )
 
         # df.loc[~any_dr, "dr_status"] = "none"
-
 
     def initialise_simulation(self, sim: Simulation) -> None:
         """ This is where you should include all things you want to be happening during simulation
@@ -322,8 +321,6 @@ class DiabeticRetinopathy(Module):
             intercept=self.parameters['rate_severe_to_proliferative']
         )
 
-
-
         self.lm['ever_diet_mgmt_initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             intercept=self.parameters['init_prob_ever_diet_mgmt_if_diagnosed']
@@ -334,10 +331,10 @@ class DiabeticRetinopathy(Module):
         get_item_codes = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
         self.cons_item_codes = dict()
-        # self.cons_item_codes['laser_photocoagulation'] = {
-        #         get_item_codes("Anesthetic Eye drops, 15ml"): 3,
-        #         get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 1,
-        #     }
+        self.cons_item_codes['laser_photocoagulation'] = {
+            get_item_codes("Anesthetic Eye drops, 15ml"): 1,
+            get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 2,
+        }
         self.cons_item_codes['eye_injection'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
             get_item_codes('Aflibercept, 2mg'): 3,
@@ -376,10 +373,10 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[moderate_to_severe_idx, 'dr_status'] = 'severe'
 
         severe_to_proliferative = self.module.lm['severe_proliferative_dr'].predict(diabetes_and_alive_severedr,
-                                                                          self.module.rng)
+                                                                                    self.module.rng)
         # severe_to_proliferative_idx = mild_to_moderate[severe_to_proliferative].index
         severe_to_proliferative_idx = df.index[np.where(severe_to_proliferative)[0]]
-        df.loc[severe_to_proliferative_idx, 'dr_status'] = 'severe'
+        df.loc[severe_to_proliferative_idx, 'dr_status'] = 'proliferative'
 
         # fast_dr = self.module.lm['onset_fast_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
         # # fast_dr_idx = fast_dr[fast_dr].index
@@ -427,80 +424,95 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         **kwargs,
     ) -> None:
 
-        has_dr = individual_properties["un_HAZ_category"] in (
-            "HAZ<-3",
-            "-3<=HAZ<-2",
-        )
+        # get the clinical states
+        dr_stage = individual_properties['dr_status']
 
-        if "blindness_full" in symptoms or "blindness_partial" in symptoms:
-            event = HSI_Dr_TestingFollowingSymptoms(
-                module=self,
-                person_id=person_id,
-            )
-            schedule_hsi_event(event, priority=1, topen=self.sim.date)
+        # No interventions if well
+        if dr_stage == 'none':
+            return
+
+        # Interventions for MAM
+        elif dr_stage == 'mild' or dr_stage == 'moderate':
+            # schedule HSI for mild and moderate
+            schedule_hsi_event(
+                hsi_event=HSI_Dr_DietManagement(module=self, person_id=person_id),
+                priority=0, topen=self.sim.date)
+
+        elif dr_stage == 'severe' or dr_stage == 'proliferative':
+            # Interventions for severe and proliferative
+            schedule_hsi_event(
+                hsi_event=HSI_zzzzzzzzzzzzz(module=self, person_id=person_id),
+                priority=0, topen=self.sim.date)
+
+        # if "blindness_full" in symptoms or "blindness_partial" in symptoms:
+        #     event = HSI_Dr_TestingFollowingSymptoms(
+        #         module=self,
+        #         person_id=person_id,
+        #     )
+        #     schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 
-class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
-    """
-        This event is scheduled by do_at_generic_first_appt_emergency following presentation for care with the symptoms
-        of partial and full blindness.
-        This event begins the investigation that may result in diagnosis of Diabetic Retinopathy and the scheduling of
-        treatment.
-        """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = "Dr_Investigation"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        # person = df.loc[person_id]
-        hs = self.sim.modules["HealthSystem"]
-
-        # Ignore this event if the person is no longer alive:
-        if not df.at[person_id, 'is_alive']:
-            return hs.get_blank_appt_footprint()
-
-        # Check that this event has been called for someone with the symptom blindness_partial
-        assert 'blindness_partial' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
-        # Check that this event has been called for someone with the symptom blindness_full
-        assert 'blindness_full' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
-
-        # If the person is already diagnosed, then take no action:
-        if not pd.isnull(df.at[person_id, "dr_date_diagnosis"]):
-            return hs.get_blank_appt_footprint()
-
-        df.at[person_id, 'dr_blindness_investigated'] = True
-
-        is_cons_available = self.get_consumables(
-            self.module.cons_item_codes['eye_injection']
-        )
-
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='dilated_eye_exam_dr_blindness',
-            hsi_event=self
-        )
-        # TODO Those in mild and moderate DR must not go to start treatment since these can be managed with good blood
-        #  sugar control to slow the progression.
-        if dx_result and is_cons_available:
-            # record date of diagnosis
-            df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
-            # If consumables are available, add equipment used and run dx_test
-            self.add_equipment({'Ophthalmoscope'})
-
-            hs.schedule_hsi_event(
-                hsi_event=HSI_Dr_StartTreatment(
-                    module=self.module,
-                    person_id=person_id
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
+# class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
+#     """
+#         This event is scheduled by do_at_generic_first_appt_emergency following presentation for care with the symptoms
+#         of partial and full blindness.
+#         This event begins the investigation that may result in diagnosis of Diabetic Retinopathy and the scheduling of
+#         treatment.
+#         """
+#
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#
+#         self.TREATMENT_ID = "Dr_Investigation"
+#         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+#         self.ACCEPTED_FACILITY_LEVEL = '2'
+#         self.ALERT_OTHER_DISEASES = []
+#
+#     def apply(self, person_id, squeeze_factor):
+#         df = self.sim.population.props
+#         # person = df.loc[person_id]
+#         hs = self.sim.modules["HealthSystem"]
+#
+#         # Ignore this event if the person is no longer alive:
+#         if not df.at[person_id, 'is_alive']:
+#             return hs.get_blank_appt_footprint()
+#
+#         # Check that this event has been called for someone with the symptom blindness_partial
+#         assert 'blindness_partial' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+#         # Check that this event has been called for someone with the symptom blindness_full
+#         assert 'blindness_full' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+#
+#         # If the person is already diagnosed, then take no action:
+#         if not pd.isnull(df.at[person_id, "dr_date_diagnosis"]):
+#             return hs.get_blank_appt_footprint()
+#
+#         df.at[person_id, 'dr_blindness_investigated'] = True
+#
+#         is_cons_available = self.get_consumables(
+#             self.module.cons_item_codes['eye_injection']
+#         )
+#
+#         dx_result = hs.dx_manager.run_dx_test(
+#             dx_tests_to_run='dilated_eye_exam_dr_blindness',
+#             hsi_event=self
+#         )
+#         # TODO Those in mild and moderate DR must not go to start treatment since these can be managed with good blood
+#         #  sugar control to slow the progression.
+#         if dx_result and is_cons_available:
+#             # record date of diagnosis
+#             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
+#             # If consumables are available, add equipment used and run dx_test
+#             self.add_equipment({'Ophthalmoscope'})
+#
+#             hs.schedule_hsi_event(
+#                 hsi_event=HSI_Dr_StartTreatment(
+#                     module=self.module,
+#                     person_id=person_id
+#                 ),
+#                 priority=0,
+#                 topen=self.sim.date,
+#                 tclose=None
+#             )
 
 
 class HSI_Dr_DietManagement(HSI_Event, IndividualScopeEventMixin):
@@ -556,6 +568,7 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                      data=f'This is HSI_Dr_StartTreatment: initiating treatment for person {person_id}')
         df = self.sim.population.props
         person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
 
         if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
@@ -568,30 +581,45 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         randomly_sampled = self.module.rng.rand()
         treatment_slows_progression_to_proliferative = randomly_sampled < self.module.parameters['p_medication']
 
-        #TODO Add consumables in codition below
+        df.at[person_id, 'dr_blindness_investigated'] = True
 
-        # is_cons_available = self.get_consumables(
-        #     self.module.cons_item_codes['eye_injection']
-        # )
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['laser_photocoagulation']
+        )
 
-        if treatment_slows_progression_to_proliferative:
-            df.at[person_id, 'dr_on_treatment'] = True
-            df.at[person_id, 'dr_date_treatment'] = self.sim.date
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='dilated_eye_exam_dr_blindness',
+            hsi_event=self
+        )
 
-            # Reduce probability of progression to "proliferative" DR
-            progression_chance = self.module.parameters['rate_severe_to_proliferative'] * (
-                1 - self.module.parameters['p_medication'])
+        if dx_result and is_cons_available:
+            # record date of diagnosis
+            df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
+            # If consumables are available, add equipment used and run dx_test
+            self.add_equipment({'Ophthalmoscope'})
 
-            # Determine if person will still progress
-            if self.module.rng.rand() < progression_chance:
-                df.at[person_id, 'dr_status'] = 'proliferative'
+            if person.dr_status = 'severe':
+                #determine_effectiveness
+                if prob_success > self.rng.random_sample():
+
+            if treatment_slows_progression_to_proliferative:
+                df.at[person_id, 'dr_on_treatment'] = True
+                df.at[person_id, 'dr_date_treatment'] = self.sim.date
+
+                # Reduce probability of progression to "proliferative" DR
+                progression_chance = self.module.parameters['rate_severe_to_proliferative'] * (
+                    1 - self.module.parameters['p_medication'])
+
+                # Determine if person will still progress
+                if self.module.rng.rand() < progression_chance:
+                    df.at[person_id, 'dr_status'] = 'proliferative'
+                else:
+                    df.at[person_id, 'dr_status'] = 'mild'  # Stays in mild stage due to medication
+
             else:
-                df.at[person_id, 'dr_status'] = 'mild'  # Stays in mild stage due to medication
-
-        else:
-            # If medication is not effective, progression happens as usual
-            df.at[person_id, 'dr_on_treatment'] = True
-            df.at[person_id, 'dr_status'] = 'proliferative'
+                # If medication is not effective, progression happens as usual
+                df.at[person_id, 'dr_on_treatment'] = True
+                df.at[person_id, 'dr_status'] = 'proliferative'
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
