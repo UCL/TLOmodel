@@ -1012,12 +1012,14 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
         hs = self.sim.modules["HealthSystem"]
 
         # Check consumables are available
-        cons_avail = self.get_consumables(
-            item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'],
-            optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via_optional'])
+ #      cons_avail = self.get_consumables(
+ #          item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via'],
+ #          optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via_optional'])
+
+        cons_avail = True
 
         if cons_avail:
-            self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
+#           self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
 
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(

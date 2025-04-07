@@ -29,7 +29,7 @@ from tlo.methods import (
     tb,
 )
 
-seed = 7
+seed = 12
 
 # Date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -49,9 +49,9 @@ log_config = {
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2013, 1, 1)
 malawi_country_pop = 17000000
-popsize = 1700
+popsize = 170000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
@@ -196,6 +196,122 @@ plt.xlabel('Year')
 plt.ylabel('Total cured per year')
 plt.grid(True)
 plt.ylim(0,10000)
+plt.show()
+
+
+
+# plot number of women screened with via in past year
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_via_past_year', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_via_past_year'] = out_df['n_via_past_year'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_via_past_year'], marker='o')
+plt.title('Number of women screened with via in past year')
+plt.xlabel('Year')
+plt.ylabel('Number')
+plt.grid(True)
+plt.ylim(0, 3000000)
+plt.show()
+
+
+
+# plot number of women screened with xpert in past year
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_xpert_past_year', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_xpert_past_year'] = out_df['n_xpert_past_year'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_xpert_past_year'], marker='o')
+plt.title('Number of women screened with xpert in past year')
+plt.xlabel('Year')
+plt.ylabel('Number')
+plt.grid(True)
+plt.ylim(0, 3000000)
+plt.show()
+
+
+
+# plot of n_women_screened
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_ever_screened', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_ever_screened'] = out_df['n_ever_screened'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_ever_screened'], marker='o')
+plt.title('n_ever_screened')
+plt.xlabel('Year')
+plt.ylabel('Number')
+plt.grid(True)
+plt.ylim(0, 10000000)
+plt.show()
+
+
+# plot of n_via_cin_ever_detected
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_via_cin_ever_detected', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_via_cin_ever_detected'] = out_df['n_via_cin_ever_detected'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_via_cin_ever_detected'], marker='o')
+plt.title('n_via_cin_ever_detected')
+plt.xlabel('Year')
+plt.ylabel('Number')
+plt.grid(True)
+plt.ylim(0, 500000)
+plt.show()
+
+
+
+# plot of n women age 15-49
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_women_alive_1549', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_women_alive_1549'] = out_df['n_women_alive_1549'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_women_alive_1549'], marker='o')
+plt.title('n_women_alive_1549')
+plt.xlabel('Year')
+plt.ylabel('Number')
+plt.grid(True)
+plt.ylim(0, 5000000)
+plt.show()
+
+
+# plot number of women given cryotherapy in past year
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_cryotherapy_past_year', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_cryotherapy_past_year'] = out_df['n_cryotherapy_past_year'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_cryotherapy_past_year'], marker='o')
+plt.title('Number of women given cryotherapy in past year')
+plt.xlabel('Year')
+plt.ylabel('Number')
+plt.grid(True)
+plt.ylim(0,30000)
+plt.show()
+
+
+# plot number of women given thermoabl in past year
+out_df = pd.read_csv(output_csv_file)
+out_df = out_df[['n_thermoabl_past_year', 'rounded_decimal_year']].dropna()
+out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df['n_thermoabl_past_year'] = out_df['n_thermoabl_past_year'] * scale_factor
+print(out_df)
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['n_thermoabl_past_year'], marker='o')
+plt.title('umber of women given thermoabl in past year')
+plt.xlabel('Year')
+plt.ylabel('Number')
+plt.grid(True)
+plt.ylim(0,30000)
 plt.show()
 
 
@@ -351,20 +467,25 @@ plt.ylim(0,100)
 plt.show()
 
 
-# plot number of hivneg in stage 4
-out_df_7 = pd.read_csv(output_csv_file)
-out_df_7 = out_df_7[['total_hivneg_stage4', 'rounded_decimal_year']].dropna()
-# out_df_7 = out_df_7[out_df_7['rounded_decimal_year'] >= 2011]
-# out_df_7['total_hivneg_stage4'] = out_df_7['total_hivneg_stage4'] * scale_factor
-print(out_df_7)
+
+
+# plot n_hivneg_diagnosed_past_year
+out_df_13 = pd.read_csv(output_csv_file)
+out_df_13 = out_df_13[['n_hivneg_diagnosed_past_year', 'rounded_decimal_year']].dropna()
+out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2011]
+out_df_13['n_hivneg_diagnosed_past_year'] = out_df_13['n_hivneg_diagnosed_past_year4'] * scale_factor
+print(out_df_13)
 plt.figure(figsize=(10, 6))
-plt.plot(out_df_7['rounded_decimal_year'], out_df_7['total_hivneg_stage4'], marker='o')
-plt.title('total_hivneg_stage4')
+plt.plot(out_df_13['rounded_decimal_year'], out_df_13['n_hivneg_diagnosed_past_year'], marker='o')
+plt.title('n_hivneg_diagnosed_past_year')
 plt.xlabel('Year')
-plt.ylabel('total_hivneg_stage4')
+plt.ylabel('n_hivneg_diagnosed_past_year')
 plt.grid(True)
-plt.ylim(0,100)
+plt.ylim(0,10000)
 plt.show()
+
+
+
 
 
 # plot number of hivneg in stage 4
