@@ -102,7 +102,7 @@ scale_factor = malawi_country_pop / popsize
 # plot number of cervical cancer deaths in past year
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_deaths_past_year', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_deaths_past_year'] = out_df['n_deaths_past_year'] * scale_factor
 print(out_df)
 plt.figure(figsize=(10, 6))
@@ -111,14 +111,14 @@ plt.title('Total deaths by Year')
 plt.xlabel('Year')
 plt.ylabel('Total deaths past year')
 plt.grid(True)
-plt.ylim(0, 10000)
+# plt.ylim(0, 10000)
 plt.show()
 
 
 # plot number of cervical cancer deaths in hivneg in past year
 out_df_6 = pd.read_csv(output_csv_file)
 out_df_6 = out_df_6[['n_deaths_cc_hivneg_past_year', 'rounded_decimal_year']].dropna()
-out_df_6 = out_df_6[out_df_6['rounded_decimal_year'] >= 2011]
+out_df_6 = out_df_6[out_df_6['rounded_decimal_year'] >= 2010]
 out_df_6['n_deaths_cc_hivneg_past_year'] = out_df_6['n_deaths_cc_hivneg_past_year'] * scale_factor
 print(out_df_6)
 plt.figure(figsize=(10, 6))
@@ -127,14 +127,14 @@ plt.title('Total deaths cervical cancer in hivneg by Year')
 plt.xlabel('Year')
 plt.ylabel('Total deaths cervical cancer in hivneg past year')
 plt.grid(True)
-plt.ylim(0, 10000)
+# plt.ylim(0, 10000)
 plt.show()
 
 
 # plot number of cervical cancer deaths in hivpos in past year
 out_df_9 = pd.read_csv(output_csv_file)
 out_df_9 = out_df_9[['n_deaths_cc_hivpos_past_year', 'rounded_decimal_year']].dropna()
-out_df_9 = out_df_9[out_df_9['rounded_decimal_year'] >= 2011]
+out_df_9 = out_df_9[out_df_9['rounded_decimal_year'] >= 2010]
 out_df_9['n_deaths_cc_hivpos_past_year'] = out_df_9['n_deaths_cc_hivpos_past_year'] * scale_factor
 print(out_df_9)
 plt.figure(figsize=(10, 6))
@@ -143,14 +143,14 @@ plt.title('Total deaths cervical cancer in hivpos by Year')
 plt.xlabel('Year')
 plt.ylabel('Total deaths cervical cancer in hivpos past year')
 plt.grid(True)
-plt.ylim(0, 10000)
+# plt.ylim(0, 10000)
 plt.show()
 
 
 # plot number of cc diagnoses in past year
 out_df_4 = pd.read_csv(output_csv_file)
 out_df_4 = out_df_4[['n_diagnosed_past_year', 'rounded_decimal_year']].dropna()
-out_df_4 = out_df_4[out_df_4['rounded_decimal_year'] >= 2011]
+out_df_4 = out_df_4[out_df_4['rounded_decimal_year'] >= 2010]
 out_df_4['n_diagnosed_past_year'] = out_df_4['n_diagnosed_past_year'] * scale_factor
 print(out_df_4)
 plt.figure(figsize=(10, 6))
@@ -159,7 +159,7 @@ plt.title('Total diagnosed per Year')
 plt.xlabel('Year')
 plt.ylabel('Total diagnosed per year')
 plt.grid(True)
-plt.ylim(0,10000)
+# plt.ylim(0,10000)
 plt.show()
 
 
@@ -168,7 +168,7 @@ plt.show()
 # plot number cc treated in past year
 out_df_13 = pd.read_csv(output_csv_file)
 out_df_13 = out_df_13[['n_treated_past_year', 'rounded_decimal_year']].dropna()
-out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2011]
+out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2010]
 out_df_13['n_treated_past_year'] = out_df_13['n_treated_past_year'] * scale_factor
 print(out_df_13)
 plt.figure(figsize=(10, 6))
@@ -177,7 +177,7 @@ plt.title('Total treated per Year')
 plt.xlabel('Year')
 plt.ylabel('Total treated per year')
 plt.grid(True)
-plt.ylim(0,10000)
+# plt.ylim(0,10000)
 plt.show()
 
 
@@ -186,7 +186,7 @@ plt.show()
 # plot number cc cured in past year
 out_df_14 = pd.read_csv(output_csv_file)
 out_df_14 = out_df_14[['n_cured_past_year', 'rounded_decimal_year']].dropna()
-out_df_14 = out_df_14[out_df_14['rounded_decimal_year'] >= 2011]
+out_df_14 = out_df_14[out_df_14['rounded_decimal_year'] >= 2010]
 out_df_14['n_cured_past_year'] = out_df_14['n_cured_past_year'] * scale_factor
 print(out_df_14)
 plt.figure(figsize=(10, 6))
@@ -195,7 +195,7 @@ plt.title('Total cured per Year')
 plt.xlabel('Year')
 plt.ylabel('Total cured per year')
 plt.grid(True)
-plt.ylim(0,10000)
+# plt.ylim(0,10000)
 plt.show()
 
 
@@ -203,7 +203,7 @@ plt.show()
 # plot number of women screened with via in past year
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_via_past_year', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_via_past_year'] = out_df['n_via_past_year'] * scale_factor
 print(out_df)
 plt.figure(figsize=(10, 6))
@@ -212,7 +212,7 @@ plt.title('Number of women screened with via in past year')
 plt.xlabel('Year')
 plt.ylabel('Number')
 plt.grid(True)
-plt.ylim(0, 3000000)
+# plt.ylim(0, 3000000)
 plt.show()
 
 
@@ -220,7 +220,7 @@ plt.show()
 # plot number of women screened with xpert in past year
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_xpert_past_year', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_xpert_past_year'] = out_df['n_xpert_past_year'] * scale_factor
 print(out_df)
 plt.figure(figsize=(10, 6))
@@ -229,7 +229,7 @@ plt.title('Number of women screened with xpert in past year')
 plt.xlabel('Year')
 plt.ylabel('Number')
 plt.grid(True)
-plt.ylim(0, 3000000)
+# plt.ylim(0, 3000000)
 plt.show()
 
 
@@ -237,7 +237,7 @@ plt.show()
 # plot of n_women_screened
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_ever_screened', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_ever_screened'] = out_df['n_ever_screened'] * scale_factor
 print(out_df)
 plt.figure(figsize=(10, 6))
@@ -246,23 +246,23 @@ plt.title('n_ever_screened')
 plt.xlabel('Year')
 plt.ylabel('Number')
 plt.grid(True)
-plt.ylim(0, 10000000)
+# plt.ylim(0, 10000000)
 plt.show()
 
 
 # plot of n_via_cin_ever_detected
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_via_cin_ever_detected', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_via_cin_ever_detected'] = out_df['n_via_cin_ever_detected'] * scale_factor
-print(out_df)
+# print(out_df)
 plt.figure(figsize=(10, 6))
 plt.plot(out_df['rounded_decimal_year'], out_df['n_via_cin_ever_detected'], marker='o')
 plt.title('n_via_cin_ever_detected')
 plt.xlabel('Year')
 plt.ylabel('Number')
 plt.grid(True)
-plt.ylim(0, 500000)
+# plt.ylim(0, 500000)
 plt.show()
 
 
@@ -270,7 +270,7 @@ plt.show()
 # plot of n women age 15-49
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_women_alive_1549', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_women_alive_1549'] = out_df['n_women_alive_1549'] * scale_factor
 print(out_df)
 plt.figure(figsize=(10, 6))
@@ -279,14 +279,14 @@ plt.title('n_women_alive_1549')
 plt.xlabel('Year')
 plt.ylabel('Number')
 plt.grid(True)
-plt.ylim(0, 5000000)
+# plt.ylim(0, 5000000)
 plt.show()
 
 
 # plot number of women given cryotherapy in past year
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_cryotherapy_past_year', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_cryotherapy_past_year'] = out_df['n_cryotherapy_past_year'] * scale_factor
 print(out_df)
 plt.figure(figsize=(10, 6))
@@ -295,14 +295,14 @@ plt.title('Number of women given cryotherapy in past year')
 plt.xlabel('Year')
 plt.ylabel('Number')
 plt.grid(True)
-plt.ylim(0,30000)
+# plt.ylim(0,30000)
 plt.show()
 
 
 # plot number of women given thermoabl in past year
 out_df = pd.read_csv(output_csv_file)
 out_df = out_df[['n_thermoabl_past_year', 'rounded_decimal_year']].dropna()
-out_df = out_df[out_df['rounded_decimal_year'] >= 2011]
+out_df = out_df[out_df['rounded_decimal_year'] >= 2010]
 out_df['n_thermoabl_past_year'] = out_df['n_thermoabl_past_year'] * scale_factor
 print(out_df)
 plt.figure(figsize=(10, 6))
@@ -311,7 +311,7 @@ plt.title('umber of women given thermoabl in past year')
 plt.xlabel('Year')
 plt.ylabel('Number')
 plt.grid(True)
-plt.ylim(0,30000)
+# plt.ylim(0,30000)
 plt.show()
 
 
@@ -344,7 +344,7 @@ plt.xlabel('Year')
 plt.ylabel('Proportion')
 plt.grid(True)
 plt.legend(loc='upper right')
-plt.ylim(0, 0.30)
+# plt.ylim(0, 0.30)
 plt.show()
 
 
@@ -358,7 +358,7 @@ plt.title('Proportion of people with cervical cancer who are HIV positive')
 plt.xlabel('Year')
 plt.ylabel('Proportion')
 plt.grid(True)
-plt.ylim(0, 1)
+# plt.ylim(0, 1)
 plt.show()
 
 # log_config = {
@@ -376,7 +376,7 @@ plt.show()
 # plot number of women living with unsuppressed HIV
 out_df_4 = pd.read_csv(output_csv_file)
 out_df_4 = out_df_4[['n_women_hiv_unsuppressed', 'rounded_decimal_year']].dropna()
-out_df_4 = out_df_4[out_df_4['rounded_decimal_year'] >= 2011]
+out_df_4 = out_df_4[out_df_4['rounded_decimal_year'] >= 2010]
 out_df_4['n_women_hiv_unsuppressed'] = out_df_4['n_women_hiv_unsuppressed'] * scale_factor
 print(out_df_4)
 plt.figure(figsize=(10, 6))
@@ -385,7 +385,7 @@ plt.title('n_women_hiv_unsuppressed')
 plt.xlabel('Year')
 plt.ylabel('n_women_hiv_unsuppressed')
 plt.grid(True)
-plt.ylim(0, 300000)
+# plt.ylim(0, 300000)
 plt.show()
 
 
@@ -416,7 +416,7 @@ plt.xlabel('Year')
 plt.ylabel('Proportion')
 plt.grid(True)
 plt.legend(loc='upper right')
-plt.ylim(0, 0.30)
+# plt.ylim(0, 0.30)
 plt.show()
 
 
@@ -447,7 +447,7 @@ plt.xlabel('Year')
 plt.ylabel('Proportion')
 plt.grid(True)
 plt.legend(loc='upper right')
-plt.ylim(0, 0.30)
+# plt.ylim(0, 0.30)
 plt.show()
 
 
@@ -463,26 +463,26 @@ plt.title('total_hivpos_stage4')
 plt.xlabel('Year')
 plt.ylabel('total_hivpos_stage4')
 plt.grid(True)
-plt.ylim(0,100)
+# plt.ylim(0,100)
 plt.show()
 
 
 
 
-# plot n_hivneg_diagnosed_past_year
-out_df_13 = pd.read_csv(output_csv_file)
-out_df_13 = out_df_13[['n_hivneg_diagnosed_past_year', 'rounded_decimal_year']].dropna()
-out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2011]
-out_df_13['n_hivneg_diagnosed_past_year'] = out_df_13['n_hivneg_diagnosed_past_year4'] * scale_factor
-print(out_df_13)
-plt.figure(figsize=(10, 6))
-plt.plot(out_df_13['rounded_decimal_year'], out_df_13['n_hivneg_diagnosed_past_year'], marker='o')
-plt.title('n_hivneg_diagnosed_past_year')
-plt.xlabel('Year')
-plt.ylabel('n_hivneg_diagnosed_past_year')
-plt.grid(True)
-plt.ylim(0,10000)
-plt.show()
+# # plot n_hivneg_diagnosed_past_year
+# out_df_13 = pd.read_csv(output_csv_file)
+# out_df_13 = out_df_13[['n_hivneg_diagnosed_past_year', 'rounded_decimal_year']].dropna()
+# out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2011]
+# out_df_13['n_hivneg_diagnosed_past_year'] = out_df_13['n_hivneg_diagnosed_past_year4'] * scale_factor
+# print(out_df_13)
+# plt.figure(figsize=(10, 6))
+# plt.plot(out_df_13['rounded_decimal_year'], out_df_13['n_hivneg_diagnosed_past_year'], marker='o')
+# plt.title('n_hivneg_diagnosed_past_year')
+# plt.xlabel('Year')
+# plt.ylabel('n_hivneg_diagnosed_past_year')
+# plt.grid(True)
+# plt.ylim(0,10000)
+# plt.show()
 
 
 
@@ -491,7 +491,7 @@ plt.show()
 # plot number of hivneg in stage 4
 out_df_13 = pd.read_csv(output_csv_file)
 out_df_13 = out_df_13[['total_hivneg_stage4', 'rounded_decimal_year']].dropna()
-out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2011]
+out_df_13 = out_df_13[out_df_13['rounded_decimal_year'] >= 2010]
 out_df_13['total_hivneg_stage4'] = out_df_13['total_hivneg_stage4'] * scale_factor
 print(out_df_13)
 plt.figure(figsize=(10, 6))
@@ -500,7 +500,7 @@ plt.title('total_hivneg_stage4')
 plt.xlabel('Year')
 plt.ylabel('total_hivneg_stage4')
 plt.grid(True)
-plt.ylim(0,10000)
+# plt.ylim(0,10000)
 plt.show()
 
 # LOG PLOTTING with function ---------------------------------------------------------------------------
