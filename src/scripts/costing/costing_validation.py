@@ -501,3 +501,156 @@ convert_df_to_latex(calibration_data_extract, _longtable = True, numeric_columns
 # Stacked bar charts to represent all cost sub-groups
 do_stacked_bar_plot_of_cost_by_category(_df = input_costs, _cost_category = 'all', _disaggregate_by_subgroup = False,
                                         _outputfilepath = calibration_outputs_folder)
+
+# Extract for manuscript
+# Convert column to float (removing commas first)
+cols_to_convert = ['Recorded Expenditure (FY 2018/19)', 'Estimated cost (TLO Model, 2018)']
+calibration_data_extract[cols_to_convert] = (
+    calibration_data_extract[cols_to_convert]
+    .replace({'NA': None})  # Convert 'NA' to None (optional, depends on dataset)
+    .apply(lambda x: x.str.replace(',', '', regex=True))
+    .astype(float)
+)
+# Sum only the relevant rows
+total_expenditure = calibration_data_extract[calibration_data_extract['Cost Category'] != 'Not represented in TLO model']['Recorded Expenditure (FY 2018/19)'].sum()
+total_cost_estimate = calibration_data_extract[calibration_data_extract['Cost Category'] != 'Not represented in TLO model']['Estimated cost (TLO Model, 2018)'].sum()
+
+# Extract
+print(f"Based on the TLO model, we estimate the total healthcare cost to be "
+      f"\${total_cost_estimate/1e6:,.2f} million "
+      f"({(1 - total_cost_estimate/total_expenditure)*100:,.2f}\% "
+      f"lower than the RM expenditure estimate).")
+
+# Extracts on consumable calibration for Appendix C
+# first obtain consumables dispensed estimate
+years = [2018]
+
+def drop_outside_period(_df, _years):
+    """Return a DataFrame filtered to only include rows within the specified _years"""
+    # Define year range
+    start_year = min(_years)
+    end_year = max(_years)
+
+    # Filter rows by year
+    return _df[_df['date'].dt.year.between(start_year, end_year)]
+
+def get_quantity_of_consumables_dispensed(results_folder, _years):
+    def get_counts_of_items_requested(_df):
+        _df = drop_outside_period(_df, _years)
+        counts_of_used = defaultdict(lambda: defaultdict(int))
+        counts_of_not_available = defaultdict(lambda: defaultdict(int))
+
+        for _, row in _df.iterrows():
+            date = row['date']
+            for item, num in row['Item_Used'].items():
+                counts_of_used[date][item] += num
+            for item, num in row['Item_NotAvailable'].items():
+                counts_of_not_available[date][item] += num
+        used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
+        not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename('Not_Available')
+
+        # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
+        combined_df = pd.concat([used_df, not_available_df], axis=1).fillna(0).astype(int)
+
+        # Convert to a pd.Series, as expected by the custom_generate_series function
+        return combined_df.stack()
+
+    cons_req = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True)
+
+    cons_dispensed = cons_req.xs("Used", level=2)  # only keep actual dispensed amount, i.e. when available
+    return cons_dispensed
+idx = pd.IndexSlice
+consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder, _years = years)
+consumables_dispensed = consumables_dispensed.reset_index().rename(columns={'level_0': 'Item_Code', 'level_1': 'year'})
+consumables_dispensed[idx['year']] = pd.to_datetime(
+    consumables_dispensed[idx['year']]).dt.year  # Extract only year from date
+# Keep only baseline
+consumables_dispensed_filtered = consumables_dispensed.loc[:, consumables_dispensed.columns.get_level_values(0) == 0]
+consumables_dispensed_summary = pd.concat([
+    consumables_dispensed_filtered.mean(axis=1).rename(('mean',)),
+    consumables_dispensed_filtered.quantile(0.025, axis=1).rename(('lower',)),
+    consumables_dispensed_filtered.quantile(0.975, axis=1).rename(('upper',))
+], axis=1)
+
+consumables_dispensed_summary = pd.concat([consumables_dispensed_summary, consumables_dispensed[[idx['Item_Code'], idx['year']]]], axis=1)
+consumables_dispensed_summary.columns = ['mean', 'lower', 'upper', 'Item_Code', 'year']
+consumables_dispensed_dict = dict(zip(consumables_dispensed_summary['Item_Code'], consumables_dispensed_summary['mean']))
+
+# Antimalarials
+la = get_item_code('Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST')
+artesunate = get_item_code('Injectable artesunate')
+sp = get_item_code('Fansidar (sulphadoxine / pyrimethamine tab)')
+print(f"{consumables_dispensed_dict[str(la)]:,.0f} tablets of Lumefantrine/Arthemeter, "
+      f"{consumables_dispensed_dict[str(artesunate)]:,.0f} ampoules of Injectable artesunate, "
+      f"and {consumables_dispensed_dict[str(sp)]:,.0f} tablets of Sulphadoxine / pyrimethamine were dispensed as per the model."
+      f"The units of dispensation in the Open LMIS are not clear so these could not be compared directly. ")
+
+# Malaria testing
+malaria_rdt = get_item_code('Malaria test kit (RDT)')
+print(f"There is good correspondence between quantity of Malaria test kits (RDT) logged by the TLO model and LMIS data -  "
+      f"14,295,107 units dispensed as per OpenLMIS, "
+      f"{consumables_dispensed_dict[str(malaria_rdt)]:,.0f} units dispensed as per modelled estimates")
+
+# Bednets
+bednets = get_item_code('Insecticide-treated net')
+print(f"792,101  units dispensed as per OpenLMIS, "
+      f"{consumables_dispensed_dict[str(bednets)]:,.0f} units dispensed as per modelled estimates")
+
+# TB treatment
+adult_primary = get_item_code("Cat. I & III Patient Kit A") # adult primary
+child_primary = get_item_code("Cat. I & III Patient Kit B") # child primary
+adult_second = get_item_code("Cat. II Patient Kit A1") # adult secondary
+child_second = get_item_code("Cat. II Patient Kit A2") # child secondary
+mdr = get_item_code("Treatment: second-line drugs") # MDR
+ipt = get_item_code("Isoniazid/Pyridoxine, tablet 300 mg") # IPT
+iso_rifa = get_item_code("Isoniazid/Rifapentine")
+print(f"\item {consumables_dispensed_dict[str(adult_primary)]:,.0f} units of primary treatment kits for adults "
+      f"\item {consumables_dispensed_dict[str(child_primary)]:,.0f} units of primary treatment kids for children "
+      f"\item {consumables_dispensed_dict[str(adult_second)]:,.0f} units of secondary treatment kits for adults "
+      f"\item {consumables_dispensed_dict[str(child_second)]:,.0f} units of secondary treatment kits for children "
+      f"\item {consumables_dispensed_dict[str(mdr)]:,.0f} kits for Multi-drug resistant treatment "
+      f"\item {consumables_dispensed_dict[str(ipt)]:,.0f} tablets of preventive Isoniazid/Pyridoxine, and "
+      f"\item {consumables_dispensed_dict[str(iso_rifa)]:,.0f} tablets of preventive Isoniazid/Rifapentine")
+
+# TB testing
+zn_stain = get_item_code("ZN Stain")
+sputum_container = get_item_code("Sputum container")
+slides = get_item_code("Microscope slides, lime-soda-glass, pack of 50")
+xpert = get_item_code("Xpert")
+xray_aprons = get_item_code("Lead rubber x-ray protective aprons up to 150kVp 0.50mm_each_CMST")
+film = get_item_code("X-ray")
+culture = get_item_code("MGIT960 Culture and DST")
+solid_culture = get_item_code("Solid culture and DST")
+
+print(f"\item `ZN Stain' - No record in OpenLMIS; {consumables_dispensed_dict[str(zn_stain)]:,.0f} units dispensed as per modelled estimates"
+      f"\item `Sputum container' - No record in OpenLMIS; {consumables_dispensed_dict[str(sputum_container)]:,.0f} units dispensed as per modelled estimates"
+      f"\item `Microscope slides, lime-soda-glass, pack of 50' - No record in OpenLMIS; {consumables_dispensed_dict[str(slides)]:,.0f} units dispensed as per modelled estimates"
+      f"\item `Xpert cartridge' - 25,205 cartridges recorded in OpenLMIS; {consumables_dispensed_dict[str(xpert)]:,.0f} units dispensed as per modelled estimates. "
+      f"\item `Lead rubber x-ray protective aprons up to 150kVp 0.50mm' - No record in OpenLMIS; {consumables_dispensed_dict[str(xray_aprons)]:,.0f} units dispensed as per modelled estimates. "
+      f"\item `X-Ray film' - No record in OpenLMIS; {consumables_dispensed_dict[str(film)]:,.0f} units dispensed as per modelled estimates. ")
+# Culture not included as this these have been replaced by ZN stain - there was no record in OpenLMIS
+
+
+# HIV testing
+hiv_test = get_item_code('Test, HIV EIA Elisa')
+vl_test = get_item_code('VL Test')
+print(f"{consumables_dispensed_dict[str(hiv_test)]:,.0f} units of 'Test, HIV EIA Elisa', and "
+      f"{consumables_dispensed_dict[str(vl_test)]:,.0f} units of 'VL Test' were dispensed in 2018 as per the model."
+      f" OpenLMIS recorded 9,382,640 units of 'Test, HIV EIA Elisa' and there was no record of VL tests. We suspect that this discrepancy arises "
+      f"because some channels of HIV testing might not be recorded in the model.")
+
+# Family Planning commodities
+jadelle = get_item_code("Jadelle (implant), box of 2_CMST")
+iud = get_item_code("IUD, Copper T-380A")
+levonorgestrel = get_item_code("Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle")
+depot = get_item_code("Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly")
+
+print(f"\item `Jadelle (implant), box of 2\_CMST' -  53,585 units dispensed as per OpenLMIS, {consumables_dispensed_dict[str(jadelle)]:,.0f} units dispensed as per modelled estimates"
+      f"\item `IUD, Copper T-380A' -  4,079 units dispensed as per OpenLMIS, {consumables_dispensed_dict[str(iud)]:,.0f} units dispensed as per modelled estimates"
+      f"\item `Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly' -   2,807,681 units dispensed as per OpenLMIS, {consumables_dispensed_dict[str(depot)]:,.0f} dispensed as per modelled estimates"
+      f"\item `Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle' -  1,795,325 units (37,701,825 tablets) dispensed as per OpenLMIS, {consumables_dispensed_dict[str(levonorgestrel)]:,.0f} tablets dispensed as per modelled estimates")
