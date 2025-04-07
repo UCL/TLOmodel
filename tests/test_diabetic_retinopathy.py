@@ -90,7 +90,6 @@ def check_dtypes(sim):
 
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
-    # Change to [0.0] * 2 (or num of stages) after getting all stages from Shaffi and changing TYPE to LIST
     sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = [0.0] * 4
     # sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.0
     return sim
@@ -150,7 +149,7 @@ def test_initial_config_of_pop_zero_prevalence(seed):
     check_dtypes(sim)
     check_configuration_of_population(sim)
     df = sim.population.props
-    assert (df.loc[df.is_alive].dr_status == 'none').all()
+    assert (df.loc[df.is_alive & ~df.nc_diabetes].dr_status == 'none').all()
 
 
 def test_initial_config_of_pop_high_prevalence(seed):

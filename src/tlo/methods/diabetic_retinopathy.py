@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -69,6 +69,9 @@ class DiabeticRetinopathy(Module):
         "rp_dr_urban": Parameter(
             Types.REAL, "relative prevalence at baseline of diabetic retinopathy if urban"
         ),
+        'effectiveness_of_laser_photocoagulation_in_severe_regression': Parameter(
+            Types.REAL,
+            'Probability of severe diabetic retinopathy regressing to moderate.'),
     }
 
     PROPERTIES = {
@@ -142,6 +145,7 @@ class DiabeticRetinopathy(Module):
         # self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.15, 0.05]
         # self.parameters['init_prob_proliferative_dr'] = 0.09
         self.parameters['p_medication'] = 0.8
+        self.parameters['effectiveness_of_laser_photocoagulation_in_severe_regression'] = 0.21
         self.parameters['init_prob_ever_diet_mgmt_if_diagnosed'] = 0.1
         self.parameters['prob_reg_eye_exam'] = 0.05
 
@@ -180,9 +184,7 @@ class DiabeticRetinopathy(Module):
 
         # write to property:
         df.loc[df.is_alive & ~df.nc_diabetes, 'dr_status'] = 'none'
-        # df.loc[list(no_dr_idx), 'dr_status'] = 'none'
-        # df.loc[list(mild_dr_idx), "dr_status"] = "mild"
-        # df.loc[list(proliferative_dr_idx), "dr_status"] = "proliferative"
+
         df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_treatment"] = pd.NaT
@@ -333,12 +335,29 @@ class DiabeticRetinopathy(Module):
         self.cons_item_codes = dict()
         self.cons_item_codes['laser_photocoagulation'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
-            get_item_codes('Disposables gloves, powder free, 100 pieces per box'): 2,
+            get_item_codes('Gloves, exam, latex, disposable, pair'): 4,
+            get_item_codes('Contact lens'): 7
         }
         self.cons_item_codes['eye_injection'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
-            get_item_codes('Aflibercept, 2mg'): 3,
+            get_item_codes('Aflibercept, 2mg'): 3
         }
+
+    def do_recovery(self, idx: Union[list, pd.Index]):
+        """Represent the recovery from diabetic retinopathy for the person_id given in `idx`.
+        Recovery causes the person to move from severe to moderate"""
+        df = self.sim.population.props
+
+        # Getting those with severe and updating to moderate
+        mask = df.loc[idx, 'dr_status'] == 'severe'
+        df.loc[idx[mask], 'dr_status'] = 'moderate'
+        df.loc[idx[mask], 'dr_date_treatment'] = self.sim.date
+        df.loc[idx[mask], 'dr_on_treatment'] = True
+
+    def do_treatment(self, person_id, prob_success):
+        """For treatment of individuals with Severe DR status. If treatment is successful, regress to moderate."""
+        if prob_success > self.rng.random_sample():
+            self.do_recovery([person_id])
 
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
@@ -400,21 +419,21 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         #         tclose=None
         #     )
 
-        if len(will_progress_idx):
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=will_progress_idx,
-                symptom_string='blindness_partial',
-                add_or_remove='+',
-                disease_module=self.module,
-            )
-
-        if len(mild_to_moderate_idx):
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=mild_to_moderate_idx,
-                symptom_string='blindness_full',
-                add_or_remove='+',
-                disease_module=self.module,
-            )
+        # if len(will_progress_idx):
+        #     self.sim.modules['SymptomManager'].change_symptom(
+        #         person_id=will_progress_idx,
+        #         symptom_string='blindness_partial',
+        #         add_or_remove='+',
+        #         disease_module=self.module,
+        #     )
+        #
+        # if len(mild_to_moderate_idx):
+        #     self.sim.modules['SymptomManager'].change_symptom(
+        #         person_id=mild_to_moderate_idx,
+        #         symptom_string='blindness_full',
+        #         add_or_remove='+',
+        #         disease_module=self.module,
+        #     )
 
     def do_at_generic_first_appt(
         self,
@@ -441,15 +460,9 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         elif dr_stage == 'severe' or dr_stage == 'proliferative':
             # Interventions for severe and proliferative
             schedule_hsi_event(
-                hsi_event=HSI_zzzzzzzzzzzzz(module=self, person_id=person_id),
+                hsi_event=HSI_Dr_StartTreatment(module=self, person_id=person_id),
                 priority=0, topen=self.sim.date)
 
-        # if "blindness_full" in symptoms or "blindness_partial" in symptoms:
-        #     event = HSI_Dr_TestingFollowingSymptoms(
-        #         module=self,
-        #         person_id=person_id,
-        #     )
-        #     schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 
 # class HSI_Dr_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
@@ -496,8 +509,7 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
 #             dx_tests_to_run='dilated_eye_exam_dr_blindness',
 #             hsi_event=self
 #         )
-#         # TODO Those in mild and moderate DR must not go to start treatment since these can be managed with good blood
-#         #  sugar control to slow the progression.
+#
 #         if dx_result and is_cons_available:
 #             # record date of diagnosis
 #             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
@@ -588,7 +600,7 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='dilated_eye_exam_dr_blindness',
+            dx_tests_to_run='dilated_eye_exam_dr',
             hsi_event=self
         )
 
@@ -598,28 +610,29 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # If consumables are available, add equipment used and run dx_test
             self.add_equipment({'Ophthalmoscope'})
 
-            if person.dr_status = 'severe':
+            if person.dr_status == 'severe':
                 #determine_effectiveness
-                if prob_success > self.rng.random_sample():
+                self.module.do_treatment(person_id, prob_success=self.module.parameters[
+                    'effectiveness_of_laser_photocoagulation_in_severe_regression'])
 
-            if treatment_slows_progression_to_proliferative:
-                df.at[person_id, 'dr_on_treatment'] = True
-                df.at[person_id, 'dr_date_treatment'] = self.sim.date
-
-                # Reduce probability of progression to "proliferative" DR
-                progression_chance = self.module.parameters['rate_severe_to_proliferative'] * (
-                    1 - self.module.parameters['p_medication'])
-
-                # Determine if person will still progress
-                if self.module.rng.rand() < progression_chance:
-                    df.at[person_id, 'dr_status'] = 'proliferative'
-                else:
-                    df.at[person_id, 'dr_status'] = 'mild'  # Stays in mild stage due to medication
-
-            else:
-                # If medication is not effective, progression happens as usual
-                df.at[person_id, 'dr_on_treatment'] = True
-                df.at[person_id, 'dr_status'] = 'proliferative'
+            # if treatment_slows_progression_to_proliferative:
+            #     df.at[person_id, 'dr_on_treatment'] = True
+            #     df.at[person_id, 'dr_date_treatment'] = self.sim.date
+            #
+            #     # Reduce probability of progression to "proliferative" DR
+            #     progression_chance = self.module.parameters['rate_severe_to_proliferative'] * (
+            #         1 - self.module.parameters['p_medication'])
+            #
+            #     # Determine if person will still progress
+            #     if self.module.rng.rand() < progression_chance:
+            #         df.at[person_id, 'dr_status'] = 'proliferative'
+            #     else:
+            #         df.at[person_id, 'dr_status'] = 'mild'  # Stays in mild stage due to medication
+            #
+            # else:
+            #     # If medication is not effective, progression happens as usual
+            #     df.at[person_id, 'dr_on_treatment'] = True
+            #     df.at[person_id, 'dr_status'] = 'proliferative'
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
