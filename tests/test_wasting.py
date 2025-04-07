@@ -75,7 +75,7 @@ def get_sim(tmpdir):
 
 @pytest.mark.slow
 def test_basic_run(tmpdir):
-    """Run the simulation and do some daily checks on dtypes and properties integrity """
+    """ Run the simulation and do some daily checks on dtypes and properties integrity. """
     class DummyModule(Module):
         """ A Dummy module that ensure wasting properties are as expected on a daily basis """
         METADATA = {Metadata.DISEASE_MODULE}
@@ -154,13 +154,13 @@ def test_basic_run(tmpdir):
             assert set() == set_of_person_id_in_current_episode_before_recovery.intersection(
                 set_of_person_id_in_current_episode_before_death)
 
-            # WHZ standard deviation of -3, oedema, and MUAC <115mm should cause severe acute malnutrition
+            # WHZ standard deviation of -3, MUAC <115mm, and oedema should cause severe acute malnutrition
             whz_index = df.index[df['un_WHZ_category'] == 'WHZ<-3']
-            oedema_index = df.index[df['un_am_nutritional_oedema']]
             muac_index = df.index[df['un_am_MUAC_category'] == '<115mm']
+            oedema_index = df.index[df['un_am_nutritional_oedema']]
             assert (df.loc[whz_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
-            assert (df.loc[oedema_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
             assert (df.loc[muac_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
+            assert (df.loc[oedema_index, 'un_clinical_acute_malnutrition'] == "SAM").all()
 
             # all SAM individuals should have symptoms of wasting
             assert set(under5_sam).issubset(has_symptoms)
