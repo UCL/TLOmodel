@@ -212,16 +212,19 @@ def test_wasting_incidence(tmpdir):
 
 
 def test_report_daly_weights(tmpdir):
-    """Check if daly weights reporting is done as expected. Four checks are made:
+    """ Check if daly weights reporting is done as expected. Four checks are made:
     1. For an individual who is well (No weight is expected/must be 0.0)
     2. For an individual with moderate wasting and oedema (expected daly weight is 0.051)
     3. For an individual with severe wasting and oedema (expected daly weight is 0.172)
-    4. For an individual with severe wasting without oedema (expected daly weight is 0.128)"""
+    4. For an individual with severe wasting without oedema (expected daly weight is 0.128) """
 
     dur = pd.DateOffset(days=0)
     popsize = 1
     sim = get_sim(tmpdir)
     sim.modules['Demography'].parameters['max_age_initial'] = 4.9
+    # get wasting module
+    wmodule = sim.modules['Wasting']
+
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
 
@@ -233,35 +236,35 @@ def test_report_daly_weights(tmpdir):
     person_id = df.index[0]
     df.at[person_id, 'is_alive'] = True
 
-    # Check daly weight for not undernourished person (weight is 0.0)
+    # 1. Check daly weight for well-nourished person (weight is 0.0)
     # Reset diagnostic properties
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
     df.loc[person_id, 'un_am_nutritional_oedema'] = False
     df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
 
     # Verify diagnosis - an individual should be well
-    sim.modules["Wasting"].clinical_acute_malnutrition_state(person_id, df)
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'well'
 
     # Report daly weight for this individual
-    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+    daly_weights_reported = wmodule.report_daly_values()
 
     # Verify that individual has no daly weight
     assert daly_weights_reported.loc[person_id] == 0.0
 
     get_daly_weights = sim.modules['HealthBurden'].get_daly_weight
 
-    # Check daly weight for person with moderate wasting and oedema (weight is 0.051)
+    # 2. Check daly weight for person with moderate wasting and oedema (weight is 0.051)
     # Reset diagnostic properties
     df.loc[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
     df.loc[person_id, 'un_am_nutritional_oedema'] = True
 
-    # Verify diagnosis - an individual should be SAM
-    sim.modules["Wasting"].clinical_acute_malnutrition_state(person_id, df)
+    # Verify diagnosis - an individual should have SAM
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
 
     # Report daly weight for this individual
-    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+    daly_weights_reported = wmodule.report_daly_values()
 
     # Get daly weight of moderate wasting with oedema
     daly_wts['mod_wasting_with_oedema'] = get_daly_weights(sequlae_code=461)
@@ -269,17 +272,17 @@ def test_report_daly_weights(tmpdir):
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
     assert daly_wts['mod_wasting_with_oedema'] == daly_weights_reported.loc[person_id]
 
-    # Check daly weight for person with severe wasting and oedema (weight is 0.172)
+    # 3. Check daly weight for person with severe wasting and oedema (weight is 0.172)
     # Reset diagnostic properties
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
     df.loc[person_id, 'un_am_nutritional_oedema'] = True
 
-    # Verify diagnosis - an individual should be SAM
-    sim.modules["Wasting"].clinical_acute_malnutrition_state(person_id, df)
+    # Verify diagnosis - an individual should have SAM
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
 
     # Report daly weight for this individual
-    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+    daly_weights_reported = wmodule.report_daly_values()
 
     # Get daly weight of severe wasting with oedema
     daly_wts['sev_wasting_with_oedema'] = get_daly_weights(sequlae_code=463)
@@ -287,17 +290,17 @@ def test_report_daly_weights(tmpdir):
     # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
     assert daly_wts['sev_wasting_with_oedema'] == daly_weights_reported.loc[person_id]
 
-    # Check daly weight for person with severe wasting without oedema (weight is 0.128)
+    # 4. Check daly weight for person with severe wasting without oedema (weight is 0.128)
     # Reset diagnosis
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
     df.loc[person_id, 'un_am_nutritional_oedema'] = False
 
-    # Verify diagnosis - an individual should be SAM
-    sim.modules["Wasting"].clinical_acute_malnutrition_state(person_id, df)
+    # Verify diagnosis - an individual should have SAM
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
 
     # Report daly weight for this individual
-    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+    daly_weights_reported = wmodule.report_daly_values()
 
     # Get day weight of severe wasting without oedema
     daly_wts['sev_wasting_w/o_oedema'] = get_daly_weights(sequlae_code=462)
