@@ -1718,6 +1718,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                     & (((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not'))
                                        & (df['hv_inf']))).sum()
 
+        n_via_cin_ever_detected = ((df['is_alive']) & (df['ce_via_cin_ever_detected'])).sum()
+
         n_women_hivneg = ((df['is_alive']) &
                           (df['sex'] == 'F') &
                           (df['age_years'] > p['min_age_hpv']) &
@@ -1781,6 +1783,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_cryotherapy_past_year": n_cryotherapy_past_year})
         out.update({"n_via_past_year": n_via_past_year})
         out.update({"n_xpert_past_year": n_xpert_past_year})
+        out.update({"n_via_cin_ever_detected": n_via_cin_ever_detected})
 
         pop = len(df.is_alive)
         count_summary = {
