@@ -397,7 +397,7 @@ def test_nat_recovery_moderate_wasting(tmpdir):
 
 
 def test_tx_recovery_severe_acute_malnutrition_without_complications(tmpdir):
-    """ Check the onset of symptoms with SAM, check recovery to MAM with tx when
+    """ Check the onset of symptoms with uncomplicated SAM, check recovery to MAM with tx when
     the progression to severe wasting is certain, hence no natural recovery from moderate wasting,
     the natural death due to SAM is certain, hence no natural recovery from severe wasting,
     and check natural death canceled w\ tx and symptoms resolved when recovered to MAM with tx. """
@@ -443,8 +443,7 @@ def test_tx_recovery_severe_acute_malnutrition_without_complications(tmpdir):
     polling.apply(sim.population)
 
     # Check properties of this individual: should now be moderately wasted
-    person = df.loc[person_id]
-    assert person['un_WHZ_category'] == '-3<=WHZ<-2'
+    assert df.loc[person_id]['un_WHZ_category'] == '-3<=WHZ<-2'
 
     # Check that there is a Wasting_ProgressionToSevere_Event scheduled for this person:
     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
