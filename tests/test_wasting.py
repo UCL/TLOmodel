@@ -27,12 +27,11 @@ from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.wasting import (
     HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM,
     HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
-    Wasting_ClinicalAcuteMalnutritionRecovery_Event,
+    Wasting_FullRecovery_Event,
     Wasting_IncidencePoll,
-    Wasting_NaturalRecovery_Event,
     Wasting_ProgressionToSevere_Event,
+    Wasting_RecoveryToMAM_Event,
     Wasting_SevereAcuteMalnutritionDeath_Event,
-    Wasting_UpdateToMAM_Event,
 )
 
 # Path to the resource files used by the disease and intervention methods
