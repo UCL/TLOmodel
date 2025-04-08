@@ -81,6 +81,26 @@ def get_simulation_healthsystemdisabled(seed):
                  )
     return sim
 
+def get_simulation_nohsi(seed):
+    """Make the simulation with:
+    * the healthsystem enabled but with no service availabilty (so no HSI run)
+    """
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+                 diabetic_retinopathy.DiabeticRetinopathy(),
+                 depression.Depression(resourcefilepath=resourcefilepath)
+                 )
+    return sim
+
 
 def check_dtypes(sim):
     df = sim.population.props
@@ -98,6 +118,16 @@ def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
     sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = [0.1] * 4
     # sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.1
+    return sim
+
+def incr_rate_of_onset_mild(sim):
+    # Rate of cancer onset per # months:
+    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_dr'] = 0.05
+    return sim
+
+def zero_rate_of_onset_mild(sim):
+    # Rate of cancer onset per # months:
+    sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_dr'] = 0.00
     return sim
 
 def incr_rates_of_progression(sim):
@@ -140,9 +170,15 @@ def test_basic_run(seed):
     sim.simulate(end_date=Date(2010, 5, 1))
     check_dtypes(sim)
 
+def test_initial_config_of_pop_usual_prevalence(seed):
+    """Tests the way the population is configured: with usual initial prevalence values"""
+    sim = get_simulation_healthsystemdisabled(seed=seed)
+    sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
 
 def test_initial_config_of_pop_zero_prevalence(seed):
-    """Tests of the way the population is configured: with zero initial prevalence values """
+    """Tests the way the population is configured: with zero initial prevalence values """
     sim = get_simulation_healthsystemdisabled(seed=seed)
     sim = zero_out_init_prev(sim)
     sim.make_initial_population(n=popsize)
