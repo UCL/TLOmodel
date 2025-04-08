@@ -518,7 +518,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             # severe acute malnutrition (SAM): MUAC < 115 mm and/or WHZ < -3 and/or nutritional oedema
             if (muac == '<115mm') or (whz == 'WHZ<-3') or oedema_presence:
                 df.at[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
-                # apply symptoms to all SAM cases
+                # apply symptoms to the SAM case
                 self.wasting_clinical_symptoms(person_id=person_id)
 
             # otherwise moderate acute malnutrition (MAM)
@@ -651,14 +651,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def wasting_clinical_symptoms(self, person_id) -> None:
         """
-        assign clinical symptoms to new acute malnutrition cases
+        assign clinical symptoms to the new acute malnutrition case
         :param person_id:
         """
         df = self.sim.population.props
         if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
             return
 
-        # apply wasting symptoms to all SAM cases
+        # apply wasting symptoms to the new SAM case
         self.sim.modules["SymptomManager"].change_symptom(
             person_id=person_id,
             symptom_string=self.wasting_symptom,
