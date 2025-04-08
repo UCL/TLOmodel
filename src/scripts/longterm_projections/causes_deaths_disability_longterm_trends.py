@@ -82,7 +82,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_dalys_lower = []
     all_draws_dalys_upper = []
 
-
+    normalized_DALYs = []
     all_draws_deaths_mean_1000 = []
     all_draws_deaths_lower_1000 = []
     all_draws_deaths_upper_1000 = []
@@ -293,6 +293,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         fig.savefig(make_graph_file_name('Trend_Deaths_and_DALYs_by_condition_All_Years_Panel_A_and_B_Area'))
 
+
         ## BARPLOTS STACKED PER 1000
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
@@ -352,6 +353,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         proportion_deaths_NCD = df_all_years_deaths_mean_filtered.iloc[:, 1:].sum() / df_all_years_deaths_mean.iloc[:, 1:].sum()
         proportion_deaths_NCD.to_csv(output_folder/f"prop_deaths_NCD_{draw}.csv", index=True)
 
+
+        normalized_DALYs.append(pd.Series(df_DALY_normalized_mean.iloc[:,-1], name=f'Draw {draw}'))
         all_years_data_dalys_mean = df_all_years_DALYS_mean.sum()
         all_years_data_deaths_mean = df_all_years_deaths_mean.sum()
         all_years_data_dalys_lower = df_all_years_DALYS_lower.sum()
@@ -385,7 +388,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     df_dalys_all_draws_lower_1000 = pd.concat(all_draws_dalys_lower_1000, axis=1)
     df_deaths_all_draws_upper_1000 = pd.concat(all_draws_deaths_upper_1000, axis=1)
     df_dalys_all_draws_upper_1000 = pd.concat(all_draws_dalys_upper_1000, axis=1)
-
+    normalized_DALYs = pd.concat(normalized_DALYs, axis = 1)
 
     # Plotting as bar charts
     deaths_totals_mean = df_deaths_all_draws_mean.sum()
@@ -452,6 +455,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
 
+    ## Normalize to 2020
+    fig, axes = plt.subplots(1, 1, figsize=(7.5, 7.5))
+
+    for i, condition in enumerate(normalized_DALYs.index):
+        axes.scatter(normalized_DALYs.columns, normalized_DALYs.loc[condition],
+                     marker='o',
+                     label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                             normalized_DALYs.index][i])
+
+    axes.set_ylabel('Fold change in DALYs compared to 2020')
+    axes.set_xlabel('Scenario')
+    axes.set_xticklabels(scenario_names, rotation=45)
+    axes.legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
+    axes.grid(False)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(
+        f'dalys_all_cause_all_draws_relative_2070_2020'))
+    plt.close(fig)
 
 
 if __name__ == "__main__":
