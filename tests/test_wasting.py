@@ -309,61 +309,92 @@ def test_report_daly_weights(tmpdir):
     assert daly_wts['sev_wasting_w/o_oedema'] == daly_weights_reported.loc[person_id]
 
 
-def test_recovery_moderate_wasting(tmpdir):
-    """Check natural recovery of moderate wasting """
-    dur = pd.DateOffset(days=0)
-    popsize = 1000
-    sim = get_sim(tmpdir)
+def test_nat_recovery_moderate_wasting(tmpdir):
+    """ Check natural recovery after onset of moderate wasting with MAM diagnosis. """
+    for am_state_expected in ['MAM', 'SAM']:
+        dur = pd.DateOffset(days=0)
+        popsize = 1000
+        sim = get_sim(tmpdir)
+        # get wasting module
+        wmodule = sim.modules['Wasting']
 
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
-    sim.event_queue.queue = []  # clear the queue
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date + dur)
+        sim.event_queue.queue = []  # clear the queue
 
-    # Get person to use:
-    df = sim.population.props
-    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[0]
-    # make this individual have no wasting
-    df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-    # confirm wasting property is reset. This individual should have no wasting
-    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
+        # Get person to use:
+        df = sim.population.props
+        under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+        person_id = under5s.index[0]
+        # Reset properties of this individual to be well-nourished
+        df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not wasted
+        df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
+        df.loc[person_id, 'un_am_nutritional_oedema'] = False
+        df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'well' # well-nourished
+        df.loc[person_id, 'un_ever_wasted'] = False
+        df.loc[person_id, 'un_last_wasting_date_of_onset'] = pd.NaT
 
-    # Set incidence of wasting at 100%
-    sim.modules['Wasting'].wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
+        # Set incidence of moderate wasting at 100%
+        wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
+        # Set progression rate to severe wasting at 0% (hence, natural recovery always scheduled)
+        wmodule.wasting_models.severe_wasting_progression_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        if am_state_expected == 'MAM':
+            # Set probability of MUAC < 115mm with moderate wasting, and probability of oedema with moderate wasting
+            # at 0% in order to have MAM with onset of wasting
+            wmodule.parameters['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = 0.0
+            wmodule.parameters['proportion_WHZ<-2_with_oedema'] = 0.0
+        else:  # am_state_expected == 'SAM'
+            # Set probability of oedema with moderate wasting at 100% in order to have SAM with onset of wasting
+            wmodule.parameters['proportion_WHZ<-2_with_oedema'] = 1.0
 
-    # Run Wasting Polling event: This event should cause all young children to be moderate wasting
-    polling = Wasting_IncidencePoll(module=sim.modules['Wasting'])
-    polling.apply(sim.population)
+        # Run Wasting Polling event: This event should cause all young children to be moderately wasted
+        polling = Wasting_IncidencePoll(module=wmodule)
+        polling.apply(sim.population)
 
-    # Check properties of this individual: should now be moderately wasted
-    person = df.loc[person_id]
-    assert person['un_ever_wasted']
-    assert person['un_WHZ_category'] == '-3<=WHZ<-2'
-    assert person['un_last_wasting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_am_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+        # Check properties of this individual: should now be moderately wasted with MAM or SAM respectively
+        person = df.loc[person_id]
+        assert person['un_ever_wasted']
+        assert person['un_WHZ_category'] == '-3<=WHZ<-2'
+        assert person['un_last_wasting_date_of_onset'] == sim.date
+        assert pd.isnull(person['un_am_tx_start_date'])
+        assert pd.isnull(person['un_am_recovery_date'])
+        if am_state_expected == 'MAM':
+            assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+        else:
+            assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
 
-    # Check that there is a Wasting_NaturalRecovery_Event scheduled
-    # for this person
-    recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                         if isinstance(event_tuple[1], Wasting_NaturalRecovery_Event)][0]
-    date_of_scheduled_recov = recov_event_tuple[0]
-    recov_event = recov_event_tuple[1]
-    assert date_of_scheduled_recov > sim.date
+        # Check that there is a natural recovery event scheduled:
+        #  Wasting_FullRecovery_Event if this person has MAM, Wasting_RecoveryToMAM_Event if this person has SAM
+        if am_state_expected == 'MAM':
+            recov_event_type = Wasting_FullRecovery_Event
+        else:  # am_state_expected == 'SAM'
+            recov_event_type = Wasting_RecoveryToMAM_Event
+        recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
+                             if isinstance(event_tuple[1], recov_event_type)][0]
+        date_of_scheduled_recov = recov_event_tuple[0]
+        recov_event = recov_event_tuple[1]
+        assert date_of_scheduled_recov > sim.date
 
-    # Run the recovery event:
-    sim.date = date_of_scheduled_recov
-    recov_event.apply(person_id=person_id)
+        # Run the natural recovery event:
+        sim.date = date_of_scheduled_recov
+        recov_event.apply(person_id)
 
-    # Check properties of this individual
-    person = df.loc[person_id]
-    assert person['un_WHZ_category'] == 'WHZ>=-2'
-    if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
-        assert person['un_am_recovery_date'] == sim.date
-    else:
-        assert pd.isnull(df.at[person_id, 'un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+        # Check properties of this individual, if recovered from MAM should be well, if recovered from SAM should be MAM
+        person = df.loc[person_id]
+        if am_state_expected == 'MAM':  # with moderate wasting
+            assert person['un_WHZ_category'] == 'WHZ>=-2'
+            assert person['un_am_MUAC_category'] == '>=125mm'
+            assert not person['un_am_nutritional_oedema']
+            assert person['un_clinical_acute_malnutrition'] == 'well'
+            assert not person['un_sam_with_complications']
+            assert person['un_am_recovery_date'] == sim.date
+            assert pd.isnull(person['un_sam_death_date'])
+        else:  # am_state_expected == 'SAM' with moderate wasting
+            assert not person['un_am_nutritional_oedema']
+            assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+            assert not person['un_sam_with_complications']
+            assert pd.isnull(person['un_am_recovery_date'])
+            assert pd.isnull(person['un_sam_death_date'])
 
 
 def test_recovery_severe_acute_malnutrition_without_complications(tmpdir):
