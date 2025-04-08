@@ -396,7 +396,7 @@ def test_nat_recovery_moderate_wasting(tmpdir):
             assert pd.isnull(person['un_sam_death_date'])
 
 
-def test_tx_recovery_severe_acute_malnutrition_without_complications(tmpdir):
+def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpdir):
     """ Check the onset of symptoms with uncomplicated SAM, check recovery to MAM with tx when
     the progression to severe wasting is certain, hence no natural recovery from moderate wasting,
     the natural death due to SAM is certain, hence no natural recovery from severe wasting,
