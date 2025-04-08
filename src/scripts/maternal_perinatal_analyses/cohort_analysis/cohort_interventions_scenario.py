@@ -16,7 +16,7 @@ class BaselineScenario(BaseScenario):
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 6
+        self.number_of_draws = 3
         self.runs_per_draw = 60
 
     def log_configuration(self):
@@ -45,19 +45,14 @@ class BaselineScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        # if draw_number == 0:
-        #     return {'PregnancySupervisor': {
-        #             'analysis_year': 2024}}
-        #
-        # else:
-        interventions_for_analysis = ['anti_htn_mgso4', 'anti_htn_mgso4',
-                                      'caesarean_section_oth_surg', 'caesarean_section_oth_surg',
-                                      'pph_treatment_mrrp', 'pph_treatment_mrrp']
+        if draw_number == 0:
+            return {'PregnancySupervisor': {
+                    'analysis_year': 2024}}
 
-        avail_for_draw = [0.0, 1.0,
-                          0.0, 1.0,
-                          0.0, 1.0,
-                          ]
+        else:
+            interventions_for_analysis = ['caesarean_section_oth_surg', 'caesarean_section_oth_surg']
+
+        avail_for_draw = [0.0, 1.0]
 
         return {'PregnancySupervisor': {
                 'analysis_year': 2024,
