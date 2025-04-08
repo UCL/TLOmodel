@@ -474,6 +474,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         f'dalys_all_cause_all_draws_relative_2070_2020'))
     plt.close(fig)
 
+    normalized_DALYs.to_csv(output_folder / f"relative_of_dalys_normalized_2020_2070.csv")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
