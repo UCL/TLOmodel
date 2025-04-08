@@ -456,7 +456,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     ## Normalize to 2020
-    fig, axes = plt.subplots(1, 1, figsize=(7.5, 7.5))
+    fig, axes = plt.subplots(1, 1, figsize=(15, 7.5))
 
     for i, condition in enumerate(normalized_DALYs.index):
         axes.scatter(normalized_DALYs.columns, normalized_DALYs.loc[condition],
