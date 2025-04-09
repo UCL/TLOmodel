@@ -10,6 +10,7 @@ from tlo.scenario import BaseScenario
 
 
 class BaselineScenario(BaseScenario):
+    """Scenario for cohort model"""
     def __init__(self):
         super().__init__()
         self.seed = 562661
