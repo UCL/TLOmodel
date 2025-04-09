@@ -33,7 +33,7 @@ worldpop_gdf = worldpop_gdf.to_crs(malawi_admin2.crs)
 
 joined = gpd.sjoin(worldpop_gdf, malawi_admin2[['ADM2_EN', 'geometry']], how='left', predicate='within')
 
-joined['Z_proportion'] = joined.groupby('ADM2_EN')['Z'].transform(lambda x: x / x.sum())
+joined['Z_prop'] = joined.groupby('ADM2_EN')['Z'].transform(lambda x: x / x.sum())
 
 print(joined)
 
