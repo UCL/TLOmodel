@@ -644,58 +644,68 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     assert 0 == len(sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=wmodule))
 
 
-def test_nat_hist_death(tmpdir):
-    """ Check: Wasting onset --> death """
-    """ Check if the risk of death is 100% does everyone with SAM die? """
+def test_nat_death_overwritten_by_tx_death(tmpdir):
+    """ Check if the risk of death when untreated is 100%, the person is scheduled to die due to natural history. But
+     with treatment the natural death is cancelled. Check if also chance to fully recover with treatment is 0%, and
+     risk of death when treated is 100%, the person will die. Tested for uncomplicated SAM."""
     dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
+    # get wasting module
+    wmodule = sim.modules['Wasting']
+
+    # Set death due to untreated SAM at 100% for all, hence no natural recovery from severe wasting,
+    # hence all SAM cases should die without treatment
+    wmodule.parameters['base_death_rate_untreated_SAM'] = 1.0
+    wmodule.parameters['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # get wasting module
-    wmodule = sim.modules['Wasting']
-
-    # Set death rate with tx at 100%
-    wmodule.parameters['prob_death_after_SAMcare'] = 1.0
-
-    # make zero recovery rate. reset recovery linear model
+    # Set full recovery with treatment at 0%
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+    # Set death rate with tx at 100%, hence all SAM cases should die with treatment
+    wmodule.parameters['prob_death_after_SAMcare'] = 1.0
+    # Ensure the individual has no complications when SAM occurs
+    wmodule.parameters['prob_complications_in_SAM'] = 0.0
 
-    # Get the children to use:
+    # Get person to use:
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
-
-    # make an individual diagnosed as SAM by WHZ category.
-    # We want to make this individual qualify for death
+    # Manually set this individual properties to have SAM due to severe wasting, hence natural death should be applied
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+    df.loc[person_id, 'un_last_wasting_date_of_onset'] = sim.date
 
-    # assign diagnosis
+    # Assign diagnosis
     wmodule.clinical_acute_malnutrition_state(person_id, df)
 
-    # apply wasting symptoms to this individual
-    wmodule.wasting_clinical_symptoms(person_id)
-
-    # check symptoms are applied
+    # Check properties of this individual:
+    person = df.loc[person_id]
+    # should be diagnosed as SAM due to severe wasting
+    assert person['un_clinical_acute_malnutrition'] == 'SAM'
+    # symptoms should be applied
     assert person_id in set(sim.modules['SymptomManager'].who_has('weight_loss'))
+    # natural death should be scheduled
+    assert not pd.isnull(person['un_sam_death_date'])
 
-    # run health seeking behavior and ensure non-emergency event is scheduled
+    # Get the natural death date
+    nat_death_date = person['un_sam_death_date']
+
+    # Run health seeking behavior two days later
+    sim.date = sim.date + DateOffset(weeks=1)
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
     hsp.run()
-
     # check non-emergency care event is scheduled
     assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
                       hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
 
-    # Run the created instance of HSI_GenericFirstApptAtFacilityLevel0 and check care was sought
+    # Run the created instance of HSI_GenericNonEmergencyFirstAppt
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
           if isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
-
-    # check outpatient care event is scheduled
+    # check outpatient care event is scheduled for uncomplicated SAM
     hsi_event_scheduled = [
         ev
         for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
@@ -703,24 +713,41 @@ def test_nat_hist_death(tmpdir):
     ]
     assert 1 == len(hsi_event_scheduled)
 
-    # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM and check care was sought
+    # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM
     sam_ev = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
               if isinstance(ev[1], HSI_Wasting_OutpatientTherapeuticProgramme_SAM)][0]
     sam_ev.run(squeeze_factor=0.0)
 
-    # since there is zero recovery rate, check death event is scheduled
+    # Check death event is scheduled for another day than natural death was scheduled for since there is no recovery
+    # with treatment
     assert isinstance(sim.find_events_for_person(person_id)[0][1], Wasting_SevereAcuteMalnutritionDeath_Event)
+    assert df.loc[person_id]['un_sam_death_date'] != nat_death_date
 
-    # # Run the acute death event and ensure the person is now dead:
-    death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                         if isinstance(event_tuple[1], Wasting_SevereAcuteMalnutritionDeath_Event)][0]
-    date_of_scheduled_death = death_event_tuple[0]
-    death_event = death_event_tuple[1]
-    assert date_of_scheduled_death > sim.date
-    sim.date = date_of_scheduled_death
-    death_event.apply(person_id=person_id)
+    # Load list of all death events scheduled for the person
+    death_events_list = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
+                         isinstance(event_tuple[1], Wasting_SevereAcuteMalnutritionDeath_Event)]
 
-    # Check properties of this individual: (should now be dead)
+    # Run the first scheduled death event (ie natural death), nothing should happen, person should be still alive:
+    nat_death_event_tuple = death_events_list[0]
+    assert nat_death_date == nat_death_event_tuple[0]
+    nat_death_event = nat_death_event_tuple[1]
+    assert nat_death_date > sim.date
+    sim.date = nat_death_date
+    nat_death_event.apply(person_id)
+    # check properties of this individual: (should be still alive, with death scheduled to another day)
+    person = df.loc[person_id]
+    assert person['un_sam_death_date'] != nat_death_date
+    assert person['is_alive']
+
+    # Run the second scheduled death event (ie death with treatment), ensure the person is now dead:
+    death_with_tx_event_tuple = death_events_list[1]
+    death_with_tx_date = death_with_tx_event_tuple[0]
+    death_with_tx_event = death_with_tx_event_tuple[1]
+    assert death_with_tx_date != nat_death_date
+    assert death_with_tx_date > sim.date
+    sim.date = death_with_tx_date
+    death_with_tx_event.apply(person_id)
+    # check properties of this individual: (should now be dead)
     person = df.loc[person_id]
     assert not pd.isnull(person['un_sam_death_date'])
     assert person['un_sam_death_date'] == sim.date
