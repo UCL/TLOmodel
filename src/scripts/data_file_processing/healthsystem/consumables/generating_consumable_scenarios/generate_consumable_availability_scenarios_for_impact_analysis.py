@@ -715,14 +715,23 @@ plt.show()
 plt.close()
 
 # Create heatmap of average availability by Facility_Level and program for actual and 75th percentile (Costing paper)
+clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiometabolic Disorders',
+                        'contraception': 'Contraception', 'general': 'General', 'hiv': 'HIV', 'malaria': 'Malaria',
+                        'ncds': 'Non-communicable Diseases', 'neonatal_health': 'Neonatal Health',
+                        'other_childhood_illnesses': 'Other Childhood Illnesses', 'reproductive_health': 'Reproductive Health',
+                        'road_traffic_injuries': 'Road Traffic Injuries', 'tb': 'Tuberculosis',
+                        'undernutrition': 'Undernutrition', 'epi': 'Expanded programme on immunization'}
+df_with_cleaned_item_category = df_for_plots.copy()
+df_with_cleaned_item_category['item_category'] = df_for_plots['item_category'].map(clean_category_names)
+
 # Actual
-aggregated_df = df_for_plots.groupby(['Facility_Level', 'item_category'])['Actual'].mean().reset_index()
+aggregated_df = df_with_cleaned_item_category.groupby(['Facility_Level', 'item_category'])['Actual'].mean().reset_index()
 heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='Actual')
 
 # Calculate the aggregate row and column
-aggregate_col= df_for_plots.groupby('item_category')['Actual'].mean()
-overall_aggregate = df_for_plots['Actual'].mean()
-aggregate_row =  df_for_plots.groupby('Facility_Level')['Actual'].mean()
+aggregate_col= df_with_cleaned_item_category.groupby('item_category')['Actual'].mean()
+overall_aggregate = df_with_cleaned_item_category['Actual'].mean()
+aggregate_row =  df_with_cleaned_item_category.groupby('Facility_Level')['Actual'].mean()
 
 # Add aggregate row and column
 heatmap_data['Average'] = aggregate_col
@@ -745,13 +754,13 @@ plt.show()
 plt.close()
 
 # 75th percentile
-aggregated_df = df_for_plots.groupby(['Facility_Level', 'item_category'])['75th percentile\n  facility'].mean().reset_index()
+aggregated_df = df_with_cleaned_item_category.groupby(['Facility_Level', 'item_category'])['75th percentile\n  facility'].mean().reset_index()
 heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='75th percentile\n  facility')
 
 # Calculate the aggregate row and column
-aggregate_col= df_for_plots.groupby('item_category')['75th percentile\n  facility'].mean()
-overall_aggregate = df_for_plots['75th percentile\n  facility'].mean()
-aggregate_row =  df_for_plots.groupby('Facility_Level')['75th percentile\n  facility'].mean()
+aggregate_col= df_with_cleaned_item_category.groupby('item_category')['75th percentile\n  facility'].mean()
+overall_aggregate = df_with_cleaned_item_category['75th percentile\n  facility'].mean()
+aggregate_row =  df_with_cleaned_item_category.groupby('Facility_Level')['75th percentile\n  facility'].mean()
 
 
 # Add aggregate row and column
