@@ -463,6 +463,8 @@ class Demography(Module):
          and then the facilities at which they recieve care at each level."""
         # Load district polygons from shapefile
         malawi_admin2 = gpd.read_file(Path(self.resourcefilepath/'mapping'/'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp'))
+        worldpop_gdf = gpd.read_file(Path(self.resourcefilepath / 'climate_change_impacts' / 'worldpop_density_with_districts.shp'))
+        worldpop_gdf['Z_prop'] = pd.to_numeric(worldpop_gdf['Z_prop'], errors='coerce') # even when saved as numeric, read in as string
 
         # Create a lookup from district name to its polygon
         district_to_geometry = {row["ADM2_EN"]: row["geometry"] for _, row in malawi_admin2.iterrows()}
@@ -474,18 +476,19 @@ class Demography(Module):
                 if polygon.contains(random_point):
                     return random_point
 
-        def assign_random_coordinates(district_name):
-            """Returns a randomly sampled coordinate within the given district."""
-            polygon = district_to_geometry.get(district_name)
-            if polygon:
-                return sample_point_within_polygon(polygon)
-            else:
-                return None  # Handle cases where the district isn't found, which shouldn't happen
+        def assign_coordinate_by_population_weight(district_name):
+            """Assigns a coordinate within the district, weighted by population density (Z_proportion)."""
+            subset = worldpop_gdf[worldpop_gdf["ADM2_EN"] == district_name]
+            if subset.empty:
+                return None
+            chosen_point = subset.sample(weights="Z_prop").iloc[0]["geometry"]
+            return chosen_point
+
 
         # Assign unique coordinates to each individual based on their district
         df = self.sim.population.props.copy() # take copy of dataframe
         df["coordinate_of_residence"] = df["district_of_residence"].apply(
-            assign_random_coordinates)
+            assign_coordinate_by_population_weight)
         facility_info  =pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts' / "facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
 
         facility_levels = {
