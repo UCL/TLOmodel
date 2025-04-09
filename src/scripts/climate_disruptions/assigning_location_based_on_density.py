@@ -38,6 +38,6 @@ joined['Z_proportion'] = joined.groupby('ADM2_EN')['Z'].transform(lambda x: x / 
 print(joined)
 
 joined.to_file(
-    Path(resourcefilepath) / 'worldpop_density_with_districts.shp',
+    Path(resourcefilepath) / 'climate_change_impacts'/'worldpop_density_with_districts.shp',
     driver='ESRI Shapefile'
 )
