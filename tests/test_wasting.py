@@ -316,6 +316,7 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         sim = get_sim(tmpdir)
         # get wasting module
         wmodule = sim.modules['Wasting']
+        p = wmodule.parameters
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=start_date + dur)
@@ -340,11 +341,11 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         if am_state_expected == 'MAM':
             # Set probability of MUAC < 115mm with moderate wasting, and probability of oedema with moderate wasting
             # at 0% in order to have MAM with onset of wasting
-            wmodule.parameters['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = 0.0
-            wmodule.parameters['proportion_WHZ<-2_with_oedema'] = 0.0
+            p['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = 0.0
+            p['proportion_WHZ<-2_with_oedema'] = 0.0
         else:  # am_state_expected == 'SAM'
             # Set probability of oedema with moderate wasting at 100% in order to have SAM with onset of wasting
-            wmodule.parameters['proportion_WHZ<-2_with_oedema'] = 1.0
+            p['proportion_WHZ<-2_with_oedema'] = 1.0
 
         # Run Wasting Polling event: This event should cause all young children to be moderately wasted
         polling = Wasting_IncidencePoll(module=wmodule)
@@ -406,10 +407,11 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     sim = get_sim(tmpdir)
     # get wasting module
     wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
 
     # Set death due to untreated SAM at 100% for all, hence no natural recovery from severe wasting
-    wmodule.parameters['base_death_rate_untreated_SAM'] = 1.0
-    wmodule.parameters['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
+    p['base_death_rate_untreated_SAM'] = 1.0
+    p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -428,7 +430,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
     # Ensure the individual has no complications when SAM occurs
-    wmodule.parameters['prob_complications_in_SAM'] = 0.0
+    p['prob_complications_in_SAM'] = 0.0
     # Set incidence of wasting at 100%
     wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
     # Set progress to severe wasting at 100% as well, hence no natural recovery from moderate wasting
@@ -436,7 +438,7 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
     # Set complete recovery from SAM to zero. We want those with SAM to recover to MAM with tx
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     # Set prob of death after tx at 0% (hence recovery to MAM w\ tx at 100%)
-    wmodule.parameters['prob_death_after_SAMcare'] = 0.0
+    p['prob_death_after_SAMcare'] = 0.0
 
     # Run Wasting Polling event to get new incident cases:
     polling = Wasting_IncidencePoll(module=wmodule)
@@ -540,10 +542,11 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     sim = get_sim(tmpdir)
     # get wasting module
     wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
 
     # Set death due to untreated SAM at 100% for all, hence no natural recovery from severe wasting
-    wmodule.parameters['base_death_rate_untreated_SAM'] = 1.0
-    wmodule.parameters['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
+    p['base_death_rate_untreated_SAM'] = 1.0
+    p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -558,7 +561,7 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
     df.loc[person_id, 'un_last_wasting_date_of_onset'] = sim.date
 
     # Ensure the individual has complications due to SAM
-    wmodule.parameters['prob_complications_in_SAM'] = 1.0
+    p['prob_complications_in_SAM'] = 1.0
     # Set full recovery rate to 100% so that this individual should fully recover with tx
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel.multiplicative()
 
@@ -653,11 +656,12 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     sim = get_sim(tmpdir)
     # get wasting module
     wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
 
     # Set death due to untreated SAM at 100% for all, hence no natural recovery from severe wasting,
     # hence all SAM cases should die without treatment
-    wmodule.parameters['base_death_rate_untreated_SAM'] = 1.0
-    wmodule.parameters['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
+    p['base_death_rate_untreated_SAM'] = 1.0
+    p['rr_death_rate_by_agegp'] = [1, 1, 1, 1, 1, 1]
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
@@ -666,9 +670,9 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     # Set full recovery with treatment at 0%
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     # Set death rate with tx at 100%, hence all SAM cases should die with treatment
-    wmodule.parameters['prob_death_after_SAMcare'] = 1.0
+    p['prob_death_after_SAMcare'] = 1.0
     # Ensure the individual has no complications when SAM occurs
-    wmodule.parameters['prob_complications_in_SAM'] = 0.0
+    p['prob_complications_in_SAM'] = 0.0
 
     # Get person to use:
     df = sim.population.props
