@@ -287,6 +287,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p['progression_severe_wasting_by_agegp'] = \
             [s/30.4375*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
         print(f"{p['progression_severe_wasting_by_agegp']=}")
+        print()
 
         # Set initial properties
         df.loc[df.is_alive, 'un_ever_wasted'] = False
@@ -552,6 +553,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         assert not ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM')
                     and (df.at[person_id, 'un_sam_with_complications'])), f'{person_id=} has MAM with complications.'
+
+        if person_id == self.person_of_interest_id:
+            print("ACUTE MALNUTRITION STATE ASSIGNED")
+            print(f"am state: {df.at[person_id, 'un_clinical_acute_malnutrition']}; "
+                  f"complications: {df.at[person_id, 'un_sam_with_complications']}; "
+                  f"death_date: {df.at[person_id, 'un_sam_death_date']}")
+            print("--------------------------------------")
+
 
     def date_of_outcome_for_untreated_wasting(self, whz_category):
         """
@@ -1205,7 +1214,6 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
                 cause='Severe Acute Malnutrition',
                 originating_module=self.module)
         else:
-            df.at[person_id, 'un_sam_death_date'] = pd.NaT
             if do_prints:
                 print("death is not happening because")
                 if not pd.isnull(df.at[person_id, 'un_am_recovery_date']):
@@ -1827,7 +1835,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         if not df.at[person_id, 'is_alive']:
             if do_prints:
                 print("dead already, appt not going through")
-                print("--------------OTP end1-------------------")
+                print("---------------------------------")
             return
 
         # Do here whatever happens to an individual during the admission for the treatment
@@ -1861,7 +1869,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                       "between")
 
         if do_prints:
-            print("----------------------OTP end2-------------------------")
+            print("-----------------------------------------------")
 
     def did_not_run(self):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
