@@ -52,13 +52,13 @@ class BaselineScenario(BaseScenario):
         else:
             interventions_for_analysis = ['caesarean_section_oth_surg', 'caesarean_section_oth_surg']
 
-        avail_for_draw = [0.0, 1.0]
+            avail_for_draw = [0.0, 1.0]
 
-        return {'PregnancySupervisor': {
-                'analysis_year': 2024,
-                'interventions_analysis': True,
-                'interventions_under_analysis': [interventions_for_analysis[draw_number]],
-                'intervention_analysis_availability': avail_for_draw[draw_number]}}
+            return {'PregnancySupervisor': {
+                    'analysis_year': 2024,
+                    'interventions_analysis': True,
+                    'interventions_under_analysis': [interventions_for_analysis[draw_number]],
+                    'intervention_analysis_availability': avail_for_draw[draw_number]}}
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
