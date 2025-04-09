@@ -36,3 +36,8 @@ joined = gpd.sjoin(worldpop_gdf, malawi_admin2[['ADM2_EN', 'geometry']], how='le
 joined['Z_proportion'] = joined.groupby('ADM2_EN')['Z'].transform(lambda x: x / x.sum())
 
 print(joined)
+
+joined.to_file(
+    Path(resourcefilepath) / 'worldpop_density_with_districts.shp',
+    driver='ESRI Shapefile'
+)
