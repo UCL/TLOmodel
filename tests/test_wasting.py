@@ -765,86 +765,125 @@ def test_nat_death_overwritten_by_tx_death(tmpdir):
     assert not person['is_alive']
 
 
-def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
-    """ Show that if a cure event is run before when a person was going to recover naturally, it causes the episode
-    to end earlier. """
+def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
+    """ Show that if recovered with a tx event before the person was going to recover naturally from moderate wasting
+    with moderate or severe acute malnutrition, it causes the episode to end earlier, natural recovery is cancelled.
+    Test for MAM and complicated SAM. """
 
-    dur = pd.DateOffset(days=0)
-    popsize = 1000
-    sim = get_sim(tmpdir)
+    for am_state_expected in ['MAM', 'SAM']:
 
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=start_date + dur)
-    sim.event_queue.queue = []  # clear the queue
+        dur = pd.DateOffset(days=0)
+        popsize = 1000
+        sim = get_sim(tmpdir)
+        # get wasting module
+        wmodule = sim.modules['Wasting']
+        p = wmodule.parameters
 
-    wmodule = sim.modules['Wasting']
-    p = wmodule.parameters
-    # set prob of death after tx at 0% (hence recovery to MAM at 100%)
-    p['prob_death_after_SAMcare'] = 0.0
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date + dur)
+        sim.event_queue.queue = []  # clear the queue
 
-    # increase wasting incidence rate to 100% and reduce rate of progress to severe wasting to zero. We don't want
-    # individuals to progress to SAM as we are testing for MAM natural recovery
-    wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
-    wmodule.wasting_models.severe_wasting_progression_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        # Set moderate wasting incidence rate at 100% and rate of progression to severe wasting at 0%.
+        # (Hence, all children with normal wasting should get onset of moderate wasting and be scheduled for natural
+        # recovery.)
+        wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
+        wmodule.wasting_models.severe_wasting_progression_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        # Set probs of full recovery from MAM and SAM at 100%, so with tx they always fully recover
+        wmodule.wasting_models.acute_malnutrition_recovery_mam_lm = LinearModel.multiplicative()
+        wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel.multiplicative()
 
-    # Get person to use:
-    df = sim.population.props
-    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[0]
-    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
+        # Get person to use:
+        df = sim.population.props
+        under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+        person_id = under5s.index[0]
+        # Manually set this individual properties to be well
+        df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
+        df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
+        df.loc[person_id, 'un_am_nutritional_oedema'] = False
+        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
+        df.at[person_id, 'un_sam_with_complications'] = False
+        df.at[person_id, 'un_sam_death_date'] = pd.NaT
 
-    # Run Wasting Polling event to get new incident cases:
-    polling = Wasting_IncidencePoll(module=sim.modules['Wasting'])
-    polling.apply(sim.population)
+        if am_state_expected == 'MAM':
+            # Set probability of MUAC < 115mm with moderate wasting, and probability of oedema with moderate wasting
+            # at 0% in order to have MAM with onset of wasting
+            p['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = 0.0
+            p['proportion_WHZ<-2_with_oedema'] = 0.0
+        else:  # am_state_expected == 'SAM'
+            # Set probability of oedema with moderate wasting at 100% in order to have SAM with onset of wasting
+            p['proportion_WHZ<-2_with_oedema'] = 1.0
+            # Ensure the individual has always complications when SAM occurs
+            p['prob_complications_in_SAM'] = 1.0
 
-    # Check properties of this individual: (should now be moderately wasted without progression to severe)
-    person = df.loc[person_id]
-    assert person['un_ever_wasted']
-    assert person['un_WHZ_category'] == '-3<=WHZ<-2'
-    assert person['un_last_wasting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_am_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+        # Run Wasting Polling event to get new incident cases:
+        polling = Wasting_IncidencePoll(module=wmodule)
+        polling.apply(sim.population)
 
-    # Check that there is a Wasting_NaturalRecovery_Event scheduled for this person:
-    recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
-                         if isinstance(event_tuple[1], Wasting_NaturalRecovery_Event)][0]
-    date_of_scheduled_recov = recov_event_tuple[0]
-    recov_event = recov_event_tuple[1]
-    assert date_of_scheduled_recov > sim.date
+        # Check that there is a natural recovery event scheduled:
+        #  Wasting_FullRecovery_Event if this person has MAM, Wasting_RecoveryToMAM_Event if this person has SAM
+        if am_state_expected == 'MAM':
+            recov_event_type = Wasting_FullRecovery_Event
+        else:  # am_state_expected == 'SAM'
+            recov_event_type = Wasting_RecoveryToMAM_Event
+        nat_recov_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
+                             if isinstance(event_tuple[1], recov_event_type)][0]
+        date_of_scheduled_nat_recov = nat_recov_event_tuple[0]
+        nat_recov_event = nat_recov_event_tuple[1]
 
-    # Run a Cure Event after the length of the treatment
-    def get_tx_length(in_person_id):
-        if df.at[in_person_id, 'un_sam_with_complications']:
-            tx_length = p['tx_length_weeks_InpatientSAM']
-        elif df.at[in_person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
-            tx_length = p['tx_length_weeks_OutpatientSAM']
-        else:  # df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM':
+        # Start appropriate treatment
+        if am_state_expected == 'MAM':
+            wmodule.do_when_am_treatment(person_id, intervention='SFP')
             tx_length = p['tx_length_weeks_SuppFeedingMAM']
-        return tx_length
-    sim.date = sim.date + DateOffset(weeks=get_tx_length(person_id))
-    assert sim.date < date_of_scheduled_recov
-    cure_event = Wasting_ClinicalAcuteMalnutritionRecovery_Event(person_id=person_id, module=sim.modules['Wasting'])
-    cure_event.apply(person_id=person_id)
+        else: # complicated SAM
+            wmodule.do_when_am_treatment(person_id, intervention='ITC')
+            tx_length = p['tx_length_weeks_InpatientSAM']
+        assert df.at[person_id, 'un_am_tx_start_date'] == sim.date
 
-    # Check the natural recovery was cancelled with the cure:
-    assert date_of_scheduled_recov in df.at[person_id, 'un_nat_recov_to_cancel']
+        # Check full recovery with tx is scheduled before the natural recovery
+        full_recov_events = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
+                                 if isinstance(event_tuple[1], Wasting_FullRecovery_Event)]
+        assert len(full_recov_events) in [1, 2], "only 1 or 2 full recovery events should be scheduled"
+        if len(full_recov_events) == 2: # with MAM nat full recovery as well as full recovery with tx
+            nat_recov_event_tuple = full_recov_events[1] # tx recovery scheduled to happen before recovery with tx
+            date_of_scheduled_nat_recov_to_confirm = nat_recov_event_tuple[0]
+            assert date_of_scheduled_nat_recov_to_confirm == date_of_scheduled_nat_recov
+        tx_recov_event_tuple = full_recov_events[0]
+        date_of_scheduled_tx_recov = tx_recov_event_tuple[0]
+        tx_recov_event = tx_recov_event_tuple[1]
+        assert date_of_scheduled_tx_recov > sim.date
+        assert date_of_scheduled_tx_recov < date_of_scheduled_nat_recov
 
-    # Check that the person is not wasted and is alive still:
-    person = df.loc[person_id]
-    assert person['is_alive']
-    assert person['un_WHZ_category'] == 'WHZ>=-2'
-    assert not pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+        # Run a recovery event due to tx first
+        sim.date = date_of_scheduled_tx_recov
+        tx_recov_event.apply(person_id)
+        # check properties of this individual, should have recovered today, is not wasted, is well-nourished and alive
+        person = df.loc[person_id]
+        assert person['un_am_recovery_date'] == sim.date
+        assert person['un_WHZ_category'] == 'WHZ>=-2'
+        assert person['un_am_MUAC_category'] == '>=125mm'
+        assert not person['un_am_nutritional_oedema']
+        assert person['un_clinical_acute_malnutrition'] == 'well'
+        assert person['is_alive']
+        assert pd.isnull(person['un_sam_death_date'])
 
-    # Run the recovery event that was originally scheduled - this should have no effect
-    sim.date = date_of_scheduled_recov
-    recov_event.apply(person_id=person_id)
-    person = df.loc[person_id]
-    assert person['is_alive']
-    assert person['un_WHZ_category'] == 'WHZ>=-2'
-    assert not pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
+        # Check natural recovery is going to be cancelled
+        if am_state_expected == 'MAM':
+            assert date_of_scheduled_nat_recov in df.loc[person_id, 'un_full_recov_to_cancel']
+        else: # complicated SAM
+            assert date_of_scheduled_nat_recov in df.loc[person_id, 'un_recov_to_mam_to_cancel']
+        # Run the natural recovery, this should have no effect
+        sim.date = date_of_scheduled_nat_recov
+        nat_recov_event.apply(person_id)
+        # check properties of this individual are still exact the same
+        person = df.loc[person_id]
+        assert person['un_am_recovery_date'] == date_of_scheduled_tx_recov
+        assert date_of_scheduled_tx_recov < sim.date
+        assert person['un_WHZ_category'] == 'WHZ>=-2'
+        assert person['un_am_MUAC_category'] == '>=125mm'
+        assert not person['un_am_nutritional_oedema']
+        assert person['un_clinical_acute_malnutrition'] == 'well'
+        assert person['is_alive']
+        assert pd.isnull(person['un_sam_death_date'])
 
 
 def test_nat_hist_cure_if_death_scheduled(tmpdir):
