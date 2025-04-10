@@ -216,14 +216,14 @@ num_dalys_by_label_averted_vs_baseline = compute_summary_statistics(
 num_dalys_by_label_averted_vs_baseline.to_csv(results_folder / f'num_dalys_by_label_averted_vs_baseline{target_period()}.csv')
 
 
-num_dalys_by_label_averted_vs_WASHonly = compute_summary_statistics(
+num_dalys_by_label_averted_vs_WASH = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
         comparison='WASH only'
     ),
     central_measure='median'
 )
-num_dalys_by_label_averted_vs_WASHonly.to_csv(results_folder / f'num_dalys_by_label_averted_vs_WASHonly{target_period()}.csv')
+num_dalys_by_label_averted_vs_WASH.to_csv(results_folder / f'num_dalys_by_label_averted_vs_WASH{target_period()}.csv')
 
 
 # PERCENTAGE DALYS AVERTED - TOTAL
@@ -237,7 +237,7 @@ pc_dalys_averted_total = 100.0 * compute_summary_statistics(
 )
 pc_dalys_averted_total.to_csv(results_folder / f'pc_dalys_averted_total{target_period()}.csv')
 
-pc_dalys_averted_WASHonly_total = 100.0 * compute_summary_statistics(
+pc_dalys_averted_WASH_total = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys,
         comparison='WASH only',
@@ -245,7 +245,7 @@ pc_dalys_averted_WASHonly_total = 100.0 * compute_summary_statistics(
     ),
     central_measure='median'
 )
-pc_dalys_averted_WASHonly_total.to_csv(results_folder / f'pc_dalys_averted_WASHonly_total{target_period()}.csv')
+pc_dalys_averted_WASH_total.to_csv(results_folder / f'pc_dalys_averted_WASH_total{target_period()}.csv')
 
 # PERCENTAGE DALYS AVERTED BY CAUSE
 pc_dalys_averted = 100.0 * compute_summary_statistics(
@@ -258,7 +258,7 @@ pc_dalys_averted = 100.0 * compute_summary_statistics(
 )
 pc_dalys_averted.to_csv(results_folder / f'pc_dalys_averted{target_period()}.csv')
 
-pc_dalys_averted_WASHonly = 100.0 * compute_summary_statistics(
+pc_dalys_averted_WASH = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys_by_label,
         comparison='WASH only',
@@ -266,7 +266,7 @@ pc_dalys_averted_WASHonly = 100.0 * compute_summary_statistics(
     ),
     central_measure='median'
 )
-pc_dalys_averted_WASHonly.to_csv(results_folder / f'pc_dalys_averted_WASHonly{target_period()}.csv')
+pc_dalys_averted_WASH.to_csv(results_folder / f'pc_dalys_averted_WASH{target_period()}.csv')
 
 
 # %% PLOTS DALYS RELATIVE TO WASH ONLY
@@ -342,11 +342,35 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     return fig, ax
 
 
-pc_dalys_averted_WASHonly_ordered = pc_dalys_averted_WASHonly.reindex(columns=order_for_plotting, level=0)
-pc_dalys_averted_WASHonly_ordered = pc_dalys_averted_WASHonly_ordered.drop(index='Other')
+# DALYs averted vs BASELINE
+pc_dalys_averted_WASH_ordered = pc_dalys_averted_WASH.reindex(columns=order_for_plotting, level=0)
+pc_dalys_averted_WASH_ordered = pc_dalys_averted_WASH_ordered.drop(index='Other')
 
 name_of_plot = f'Percentage reduction in DALYs versus WASH only {target_period()}'
-fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_WASHonly_ordered)
+fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_WASH_ordered)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Percentage reduction in DALYs')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
+
+
+# DALYs averted vs BASELINE
+order_for_plotting_vs_baseline = [
+    'MDA SAC with no WASH',
+    'MDA PSAC with no WASH',
+    'MDA All with no WASH',
+    'WASH only'
+    'MDA SAC with WASH',
+    'MDA PSAC with WASH',
+    'MDA All with WASH'
+]
+pc_dalys_averted_ordered = pc_dalys_averted.reindex(columns=order_for_plotting_vs_baseline, level=0)
+pc_dalys_averted__ordered = pc_dalys_averted_ordered.drop(index='Other')
+
+name_of_plot = f'Percentage reduction in DALYs versus Baseline {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in DALYs')
 fig.tight_layout()
@@ -597,7 +621,7 @@ bladder_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
 # %% plot incidence of diseases with each MDR strategy vs WASH
 
 # combine the dataframes for plotting
-schisto_row = (pc_dalys_averted_WASHonly.loc['Schisto'])
+schisto_row = (pc_dalys_averted_WASH.loc['Schisto'])
 combined_df = pd.concat([schisto_row.to_frame().T,
                          diarrhoea_pc_dalys_averted_vs_WASH,
                          alri_pc_dalys_averted_vs_WASH,
@@ -690,7 +714,7 @@ pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
 
 # %%  -----------------------------------------------------------------------------
 
-# todo person-years infected with low/moderate/high intensity infections by district and total
+# PERSON-YEARS INFECTED
 # stacked bar plot for each scenario
 # not separate for mansoni and haematobium
 
@@ -843,37 +867,28 @@ fig.show()
 plt.close(fig)
 
 
-# todo table, rows=districts, columns=diff in PY for each scenario 2035
-# both species combined, all ages
-# column level0 with and without WASH:
-# classify districts into low/moderate/high burden
-# columns=[HML burden, person-years of low/moderate/high infection, # PZQ tablets]
+# %% PREVALENCE OF INFECTION BY SPECIES / AGE-GROUP
 
-
-# todo elimination
-# years to reach elimination as PH problem
-# -- Elimination as a PH problem is defined as reducing the prevalence of heavy infections to less than 1% of population
-# years to reach elimination of transmission
-# years to reach morbidity control (heavy infections below threshold)
-
-# -- morbidity control is reducing the prevalence of heavy infections to below 5% of the population
-# -- (e.g. ≥400 EPG for mansoni or ≥50 eggs/10 mL urine for haematobium).
-def get_prevalence_heavy_infection(_df):
+def get_prevalence_infection(_df):
     """Get the prevalence every year of the simulation """
 
     # select the last entry for each year
     _df.set_index('date', inplace=True)
     df = _df.resample('Y').last()
 
-    # df = df.filter(like='Likoma')
-
-    # limit to SAC
+    # limit to specific age-groups
+    # if age=All, then don't filter - all age-groups included
     if age == 'SAC':
         df = df.filter(like='SAC')
-    if age == 'adult':
+    if age == 'Adult':
         df = df.filter(like='Adult')
+    if age == 'PSAC':
+        df = df.filter(like='PSAC')
+    if age == 'Infant':
+        df = df.filter(like='Infant')
 
     # Aggregate the sums of infection statuses by district_of_residence and year
+    # this df is filtered by age-group
     district_sum = df.sum(axis=1)
 
     if inf == 'HML':
@@ -882,6 +897,8 @@ def get_prevalence_heavy_infection(_df):
         df_filtered = df.filter(regex='(Moderate-infection|High-infection)')
     if inf == 'ML':
         df_filtered = df.filter(regex='(Moderate-infection|Low-infection)')
+    if inf == 'H':
+        df_filtered = df.filter(regex='(High-infection)')
     if inf == 'M':
         df_filtered = df.filter(regex='(Moderate-infection)')
     if inf == 'L':
@@ -894,13 +911,113 @@ def get_prevalence_heavy_infection(_df):
     return prop_infected
 
 
-age = 'SAC'  # SAC, adult, all
-inf = 'HM'
+age = 'All'  # SAC, Adult, all, infant, PSAC
+inf = 'H'
 prev = extract_results(
     results_folder,
     module="tlo.methods.schisto",
     key="infection_status_haematobium",
-    custom_generate_series=get_prevalence_heavy_infection,
+    custom_generate_series=get_prevalence_infection,
     do_scaling=False,
 )
 prev.index = prev.index.year
+prev.to_csv(results_folder / (f'prevalence_H_ALL_haematobium {target_period()}.csv'))
+
+
+prevM = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_mansoni",
+    custom_generate_series=get_prevalence_infection,
+    do_scaling=False,
+)
+prevM.index = prevM.index.year
+prevM.to_csv(results_folder / (f'prevalence_H_ALL_mansoni {target_period()}.csv'))
+
+
+
+# %% PREVALENCE OF INFECTION OVERALL (BOTH SPECIES)
+
+number_infected = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="number_infected_any_species",
+    column="number_infected",
+    do_scaling=False,
+)
+
+number_in_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="number_in_subgroup",
+    column="number_alive",
+    do_scaling=False,
+)
+
+
+def get_numbers_infected_any_species(_df):
+    """Return a DataFrame with one row per year, columns as multi-index (draw, run, district),
+    and values as the sum of counts across all age groups for each district in each draw/run for each year."""
+
+    records = []
+
+    # Iterate through the rows (each year)
+    for year, row in _df.iterrows():
+        for (draw, run), entry in row.items():
+            if not entry:  # Skip if the entry is empty
+                continue
+            if isinstance(entry, dict):  # Ensure the entry is a dictionary
+                for composite_key, value in entry.items():
+                    split_keys = dict(kv.split("=") for kv in composite_key.split("|"))
+                    district = split_keys.get("district_of_residence")
+                    if district:  # Ensure district is available
+                        records.append({
+                            "year": year,
+                            "draw": draw,
+                            "run": run,
+                            "district": district,
+                            "count": value
+                        })
+
+    # Convert the flattened records into a DataFrame
+    long_df = pd.DataFrame(records)
+
+    # Group by (year, draw, run, district) and sum the counts
+    grouped = (
+        long_df
+        .groupby(["year", "draw", "run", "district"])["count"]
+        .sum()
+        .rename("summed_value")
+        .to_frame()
+    )
+
+    # Reshape the data so that we have multi-index columns (draw, run, district)
+    result = (
+        grouped
+        .unstack(["draw", "run", "district"])  # Unstack to create the multi-index columns
+        .droplevel(0, axis=1)  # Drop the 'number_infected' level
+    )
+
+    return result
+
+
+total_number_infected = get_numbers_infected_any_species(number_infected)
+total_number_in_district = get_numbers_infected_any_species(number_in_district)
+
+if total_number_infected.columns.equals(total_number_in_district.columns):
+    # Perform element-wise division for matching columns
+    result = total_number_infected / total_number_in_district
+
+result.to_csv(results_folder / (f'prevalence_any_infection_all_ages_{target_period()}.csv'))
+
+
+
+# %% ELIMINATION
+# todo elimination
+# years to reach elimination as PH problem
+# -- Elimination as a PH problem is defined as reducing the prevalence of heavy infections to less than 1% of population
+# years to reach elimination of transmission
+# years to reach morbidity control (heavy infections below threshold)
+
+# -- morbidity control is reducing the prevalence of heavy infections to below 5% of the population
+# -- (e.g. ≥400 EPG for mansoni or ≥50 eggs/10 mL urine for haematobium).
