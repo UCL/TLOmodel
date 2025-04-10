@@ -376,7 +376,7 @@ class HealthSystem(Module):
         projected_precip_disruptions: Optional[List[str]] = None,
         climate_ssp: Optional[str] = 'ssp245',
         climate_model_ensemble_model: Optional[str] = 'mean',
-        services_affected_precip: Optional[str] = None
+        services_affected_precip: Optional[str] = 'none'
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -536,12 +536,10 @@ class HealthSystem(Module):
         assert climate_model_ensemble_model in ('lowest', 'mean', 'highest')
         self.climate_model_ensemble_model = climate_model_ensemble_model
         self.parameters['climate_model_ensemble_model'] = climate_model_ensemble_model
-        print(self.parameters['climate_model_ensemble_model'])
 
         assert services_affected_precip in (None, 'none', 'all')
         self.services_affected_precip = services_affected_precip
         self.parameters['services_affected_precip'] = services_affected_precip
-        print(self.parameters['services_affected_precip'])
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
