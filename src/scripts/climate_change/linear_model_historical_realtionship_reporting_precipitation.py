@@ -700,9 +700,9 @@ for ssp_scenario in ssp_scenarios:
         month_repeated_prediction = [m for _ in year_range_prediction for m in range(1, 13)]
         year_flattened_prediction = np.repeat(year_range_prediction, 12 * num_facilities)
         month_flattened_prediction = month_repeated_prediction * num_facilities
-        facility_flattened_prediction = np.tile(monthly_reporting_by_facility.columns,
-                                                len(year_flattened_prediction) // len(
-                                                    monthly_reporting_by_facility.columns))
+
+        facility_flattened_prediction = repeat_info(monthly_reporting_by_facility.columns, num_facilities, year_range_prediction, historical = False)
+
         # Encode facilities and create above/below average weather data
         facility_encoded_prediction = pd.get_dummies(facility_flattened_prediction, drop_first=True)
 
@@ -833,11 +833,12 @@ for ssp_scenario in ssp_scenarios:
 
         plt.tight_layout()
         #plt.show()
+        print(facility_flattened_prediction)
         # Format output: Add all relevant X variables
         full_data_weather_predictions = pd.DataFrame({
             'Year': year_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
             'Month': np.array(month_flattened_prediction)[X_basis_weather[:, 0] > mask_threshold],
-            'Facility_ID': facility_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
+            'Facility_ID': np.array(facility_flattened_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'Altitude': np.array(altitude_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'Zone': np.array(zone_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
             'District':np.array(dist_info_prediction)[X_basis_weather[:, 0] > mask_threshold],
@@ -1081,6 +1082,7 @@ full_data_weather_predictions = pd.DataFrame({
     'Difference_in_Expectation': predictions_baseline,
 })
 
+print(full_data_weather_predictions)
 # Save the results
 full_data_weather_predictions.to_csv(f"{data_path}weather_predictions_with_X_baseline_{service}.csv",
                                      index=False)
