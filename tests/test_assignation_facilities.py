@@ -14,8 +14,8 @@ from tlo.methods import (
     symptommanager,
 )
 start_date = Date(2026, 1, 1)
-end_date = Date(2027, 1, 12)
-popsize = 10000
+end_date = Date(2026, 1, 2)
+popsize = 100
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 def get_dataframe_of_run_events_count(_sim):
@@ -81,6 +81,8 @@ def get_dataframe_of_run_events_count(_sim):
 def test_number_services(seed, tmpdir):
     """Checks to see if the number of services under the climate disrupted scenario
     are fewer than the no-climate disruption scenario"""
+
+    # 585 highest
     sim = Simulation(start_date=start_date,
                      seed=seed,
                      log_config={
@@ -109,6 +111,36 @@ def test_number_services(seed, tmpdir):
     #output_climate = parse_log_file(sim.log_filepath)
     hsi_event_count_df_climate = get_dataframe_of_run_events_count(sim)
 
+    # 126 lowest
+    sim_low = Simulation(start_date=start_date,
+                     seed=seed,
+                     log_config={
+                         "filename": "log",
+                         "directory": tmpdir,
+                         "custom_levels": {
+                             "tlo.methods.healthsystem.summary": logging.DEBUG,
+                         }})
+    sim_low.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  climate_ssp='ssp126',
+                                  climate_model_ensemble_model='lowest',
+                                  services_affected_precip='all'),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    )
+    sim_low.make_initial_population(n=popsize)
+    sim_low.simulate(end_date=end_date)
+    assert sim_low.modules['HealthSystem'].services_affected_precip == 'all'
+    # output_climate = parse_log_file(sim.log_filepath)
+    hsi_event_count_df_climate_126 = get_dataframe_of_run_events_count(sim_low)
+
+    # no climate
     sim_no_climate = Simulation(start_date=start_date,
                      seed=seed,
                      log_config={
@@ -138,5 +170,8 @@ def test_number_services(seed, tmpdir):
     assert sim_no_climate.modules['HealthSystem'].services_affected_precip == 'none'
     hsi_event_count_df_no_climate = get_dataframe_of_run_events_count(sim_no_climate)
 
-
+    assert 0 > sum(hsi_event_count_df_no_climate['count'])
     assert sum(hsi_event_count_df_climate['count']) < sum(hsi_event_count_df_no_climate['count'])
+    assert sum(hsi_event_count_df_climate_126['count']) < sum(hsi_event_count_df_no_climate['count'])
+
+    assert sum(hsi_event_count_df_climate['count']) < sum(hsi_event_count_df_climate_126['count'])
