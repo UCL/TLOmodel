@@ -657,7 +657,7 @@ def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
 def test_nat_death_overwritten_by_tx_death(tmpdir):
     """ Check if the risk of death when untreated is 100%, the person is scheduled to die due to natural history. But
      with treatment the natural death is cancelled. Check if also chance to fully recover with treatment is 0%, and
-     risk of death when treated is 100%, the person will die. Tested for uncomplicated SAM."""
+     risk of death when treated is 100%, the person will die. Test for uncomplicated SAM."""
     dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
