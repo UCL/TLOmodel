@@ -26,7 +26,9 @@ for scenario in scenarios:
             projected_precip_disruptions['year'] = climate_file['Year']
             projected_precip_disruptions['month'] = climate_file['Month']
             for service in services:
-                projected_precip_disruptions['service'] = [service] * len(climate_file['Month'])
+                #projected_precip_disruptions['service'] = ['ANC'] * len(climate_file['Month'])
+                projected_precip_disruptions['service'] = ['all'] * len(climate_file['Month']) # initially assuming all are disrupted as ANC is
+
             projected_precip_disruptions['disruption'] = climate_file['Difference_in_Expectation']/100
             projected_precip_disruptions['disruption'] = np.where(
                 projected_precip_disruptions['disruption'] < 0,
@@ -36,5 +38,5 @@ for scenario in scenarios:
             projected_precip_disruptions['disruption'] = abs(projected_precip_disruptions['disruption']) # for sampling later
         projected_precip_disruptions['mean_all_service'] = \
         projected_precip_disruptions.groupby(['Facility_ID', 'month', 'year'])['disruption'].transform('mean')
-        projected_precip_disruptions.to_csv(f'/Users/rem76/PycharmProjects/TLOmodel/resources/ResourceFile_Climate/ResourceFile_Precipitation_Disruptions_{scenario}_{model}.csv')
+        projected_precip_disruptions.to_csv(f'/Users/rem76/PycharmProjects/TLOmodel/resources/climate_change_impacts/ResourceFile_Precipitation_Disruptions_{scenario}_{model}.csv')
 
