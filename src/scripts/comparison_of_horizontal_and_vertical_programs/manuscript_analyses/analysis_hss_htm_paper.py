@@ -749,6 +749,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             target_period (callable): Function returning the target period string.
             make_graph_file_name (callable): Function to generate filenames for saving plots.
         """
+
         # Exclude 'Summary_scenarios'
         scenario_groups = {key: val for key, val in scenario_groups.items() if key != 'Summary_scenarios'}
 
@@ -783,13 +784,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             if group_name == 'HSS_scenarios':
                 ax.set_title('Health System Strengthening')
             if group_name == 'HIV_scenarios':
-                ax.set_title('HIV Program')
+                ax.set_title('HIV Program + HSS')
             if group_name == 'TB_scenarios':
-                ax.set_title('TB Program')
+                ax.set_title('TB Program + HSS')
             if group_name == 'Malaria_scenarios':
-                ax.set_title('Malaria Program')
+                ax.set_title('Malaria Program + HSS')
             if group_name == 'HTM_scenarios':
-                ax.set_title('HTM Program')
+                ax.set_title('HTM Program + HSS')
 
             # ax.set_title(panel_titles.get(group_name, group_name), fontsize=12)  # Set the new title
             ax.set_xlabel(f'DALYs Averted (Millions)')
@@ -813,6 +814,173 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     plot_horizontal_stacked_barpanels(scenario_groups, total_num_dalys_by_label_results_averted_vs_baseline, target_period, make_graph_file_name)
+
+
+
+
+
+
+    # todo this is the edited plot
+    def plot_horizontal_stacked_barpanels(scenario_groups, data, target_period, make_graph_file_name):
+        """
+        Create a 5-panel horizontal stacked bar plot for scenario groups, with custom scenario and panel ordering.
+
+        Parameters:
+            scenario_groups (dict): Dictionary of scenario groups.
+            data (DataFrame): Data for plotting, filtered by 'central'.
+            target_period (callable): Function returning the target period string.
+            make_graph_file_name (callable): Function to generate filenames for saving plots.
+        """
+
+        # Define the preferred order of scenario groups (panels)
+        panel_order = ['HIV_scenarios', 'TB_scenarios', 'Malaria_scenarios', 'HTM_scenarios', 'HSS_scenarios']
+
+        # Define the preferred order of scenarios (rows) per group
+        scenario_order_per_group = {
+            'HIV_scenarios': [
+                'HIV Programs Scale-up With HSS Expansion Package',
+                'HIV Program Scale-up With Consumables at EPI levels',
+                'HIV Program Scale-up With Consumables at HIV levels',
+                'HIV Program Scale-up With Consumables at 75th Percentile',
+                'HIV Program Scale-up With Increased HRH at Primary Care Levels',
+                'HIV Program Scale-up With HRH Scale-up (6%)',
+                'HIV Program Scale-up With HRH Scale-up (4%)',
+                'HIV Program Scale-up With HRH Scale-up (1%)',
+                'HIV Program Scale-up Without HSS Expansion'
+            ],
+            'TB_scenarios': [
+                'TB Programs Scale-up With HSS Expansion Package',
+                'TB Program Scale-up With Consumables at EPI levels',
+                'TB Program Scale-up With Consumables at HIV levels',
+                'TB Program Scale-up With Consumables at 75th Percentile',
+                'TB Program Scale-up With Increased HRH at Primary Care Levels',
+                'TB Program Scale-up With HRH Scale-up (6%)',
+                'TB Program Scale-up With HRH Scale-up (4%)',
+                'TB Program Scale-up With HRH Scale-up (1%)',
+                'TB Program Scale-up Without HSS Expansion'
+            ],
+            'Malaria_scenarios': [
+                'Malaria Programs Scale-up With HSS Expansion Package',
+                'Malaria Program Scale-up With Consumables at EPI levels',
+                'Malaria Program Scale-up With Consumables at HIV levels',
+                'Malaria Program Scale-up With Consumables at 75th Percentile',
+                'Malaria Program Scale-up With Increased HRH at Primary Care Levels',
+                'Malaria Program Scale-up With HRH Scale-up (6%)',
+                'Malaria Program Scale-up With HRH Scale-up (4%)',
+                'Malaria Program Scale-up With HRH Scale-up (1%)',
+                'Malaria Program Scale-up Without HSS Expansion'
+            ],
+            'HTM_scenarios': [
+                'HTM Programs Scale-up With HSS Expansion Package',
+                'HTM Program Scale-up With Consumables at EPI levels',
+                'HTM Program Scale-up With Consumables at HIV levels',
+                'HTM Program Scale-up With Consumables at 75th Percentile',
+                'HTM Program Scale-up With Increased HRH at Primary Care Levels',
+                'HTM Program Scale-up With HRH Scale-up (6%)',
+                'HTM Program Scale-up With HRH Scale-up (4%)',
+                'HTM Program Scale-up With HRH Scale-up (1%)',
+                'HTM Program Scale-up Without HSS Expansion'
+            ],
+            'HSS_scenarios': [
+                'HSS Expansion Package',
+                'Consumables Available at EPI levels',
+                'Consumables Available at HIV levels',
+                'Consumables Increased to 75th Percentile',
+                'Increase Capacity at Primary Care Levels',
+                'HRH Scale-up (6%)',
+                'HRH Scale-up (4%)',
+                'HRH Scale-up (1%)'
+            ],
+        }
+
+        # Filter and reorder scenario_groups based on panel_order, excluding any not present
+        scenario_groups = {
+            key: scenario_groups[key]
+            for key in panel_order if key in scenario_groups
+        }
+
+        # Create the figure and axes
+        fig, axes = plt.subplots(1, len(scenario_groups), figsize=(20, 10), sharey=False, constrained_layout=True)
+
+        # Set colour palette
+        num_categories = len(data.index)
+        colours = sns.color_palette('cubehelix', num_categories)
+
+        y_axis_labels = ['HSS Package',
+                         'Consumables Available at EPI levels',
+                         'Consumables Available at HIV levels',
+                         'Consumables Increased to 75th Percentile',
+                         'Increase Capacity at Primary Care Levels',
+                         'HRH Scale-up (6%)',
+                         'HRH Scale-up (4%)',
+                         'HRH Scale-up (1%)',
+                         'Vertical Program Only']
+
+        # Iterate through panels
+        for ax, group_name in zip(axes, scenario_groups):
+            central_data = data.xs('central', level='stat', axis=1)
+            include_scenarios = [s for s in scenario_order_per_group[group_name] if s in central_data.columns]
+            plot_data = central_data.loc[:, include_scenarios] / 1e6
+            plot_data = plot_data.reindex(columns=include_scenarios)
+
+            if group_name == 'HSS_scenarios':
+                plot_data = pd.concat([plot_data, pd.DataFrame(0, index=plot_data.index, columns=[''])], axis=1)
+
+            plot_data.clip(lower=0.0).T.plot.barh(
+                stacked=True,
+                ax=ax,
+                color=colours,
+                edgecolor='none',
+            )
+
+            ax.set_xlim([0, 30])
+            ax.set_xlabel('DALYs Averted (Millions)')
+            ax.set_ylabel('')
+
+            titles = {
+                'HSS_scenarios': 'HSS Only',
+                'HIV_scenarios': 'HIV Program + HSS',
+                'TB_scenarios': 'TB Program + HSS',
+                'Malaria_scenarios': 'Malaria Program + HSS',
+                'HTM_scenarios': 'HTM Program + HSS'
+            }
+            ax.set_title(titles.get(group_name, group_name))
+
+            # Format y-axis
+            # wrapped_labels = ["\n".join(textwrap.wrap(label, 25)) for label in plot_data.columns]
+            # ax.set_yticks(range(len(wrapped_labels)))
+            # ax.set_yticklabels(wrapped_labels if group_name == 'HIV_scenarios' else [])
+            # ax.tick_params(axis='y', labelsize=10)
+            wrapped_labels = ["\n".join(textwrap.wrap(label, 25)) for label in y_axis_labels]
+            ax.set_yticks(range(len(wrapped_labels)))
+            ax.set_yticklabels(wrapped_labels if group_name == 'HIV_scenarios' else [])
+            ax.tick_params(axis='y', labelsize=10)
+
+            ax.axhline(y=9 - 1.5, color='grey', linewidth=1.5, linestyle='-')
+
+            # Add a box around each panel
+            for spine in ax.spines.values():
+                spine.set_edgecolor('grey')
+                spine.set_linewidth(1)
+
+            if group_name == 'HSS_scenarios':
+                ax.legend(loc='upper right')
+            else:
+                ax.get_legend().remove()
+
+        # Save and show
+        file_name = make_graph_file_name(f'EDITED_5_Panel_Horizontal_Stacked_Bar_Plot_{target_period().replace(" ", "_")}')
+        fig.savefig(file_name, dpi=300)
+        plt.show()
+        plt.close(fig)
+
+    plot_horizontal_stacked_barpanels(scenario_groups, total_num_dalys_by_label_results_averted_vs_baseline, target_period, make_graph_file_name)
+
+
+
+
+
+
 
     # get numbers of deaths by cause
     def summarise_deaths_by_cause(results_folder):
