@@ -374,8 +374,8 @@ class HealthSystem(Module):
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
         projected_precip_disruptions: Optional[List[str]] = None,
-        climate_ssp: Optional[str] = None,
-        climate_model_ensemble_model: Optional[str] = None,
+        climate_ssp: Optional[str] = 'ssp245',
+        climate_model_ensemble_model: Optional[str] = 'mean',
         services_affected_precip: Optional[str] = None
     ):
         """
@@ -530,7 +530,6 @@ class HealthSystem(Module):
 
         # Set default climate disruption paramters
         assert climate_ssp in ('ssp126', 'ssp245', 'ssp585')
-        print(climate_ssp)
         self.climate_ssp = climate_ssp
         self.parameters['climate_ssp'] = climate_ssp
 
@@ -2324,23 +2323,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                      'service'] == self.module.services_affected_precip),
                                 'disruption'
                             ]
-                            print(self.module.parameters['projected_precip_disruptions'])
-                            print(self.module.parameters['projected_precip_disruptions'].loc[
-                                (self.module.parameters['projected_precip_disruptions'][
-                                     'RealFacility_ID'] == facility_used)])
-                            print(self.module.parameters['projected_precip_disruptions'].loc[
-                                (self.module.parameters['projected_precip_disruptions'][
-                                     'year'] == year)])
-                            print(self.module.parameters['projected_precip_disruptions'].loc[
-                                (self.module.parameters['projected_precip_disruptions'][
-                                     'month'] == month)])
-                            print(self.module.parameters['projected_precip_disruptions'].loc[
-                                (self.module.parameters['projected_precip_disruptions'][
-                                     'service'] == self.module.services_affected_precip)])
-                            print(self.module.services_affected_precip)
-                            print(month)
-                            print(year)
-                            print(facility_used)
                             prob_disruption = pd.DataFrame(prob_disruption)
                             prob_disruption = float(prob_disruption.iloc[0, 0])
                             assert isinstance(prob_disruption, (int, float)), "prob_disruption must be an int or float"
