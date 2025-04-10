@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from tlo import Date
-from collections import Counter, defaultdict
+from collections import defaultdict
 from typing import Optional, Union, Literal
 
 import datetime
@@ -33,7 +33,36 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 #%%
 
 # Define a function to discount and summarise costs by cost_category
-def apply_discounting_to_cost_data(_df, _discount_rate=0, _initial_year=None, _column_for_discounting = 'cost'):
+
+def apply_discounting_to_cost_data(_df: pd.DataFrame,
+                                    _discount_rate: Union[float, dict[int, float]] = 0,
+                                    _initial_year: Optional[int] = None,
+                                    _column_for_discounting: str = 'cost') -> pd.DataFrame:
+    """
+        Apply discounting to the specified column over time, using a fixed or year-specific rate.
+
+        Parameters:
+        ----------
+        _df : pd.DataFrame
+            DataFrame containing a 'year' column and a cost column to be discounted.
+
+        _discount_rate : float or dict of {year: float}, default 0
+            Discount rate to apply. Can be:
+                - A single fixed rate (e.g., 0.03 for 3%)
+                - A dictionary of year-specific rates {2025: 0.03, 2026: 0.035, ...}
+
+        _initial_year : int, optional
+            Reference year for discounting. If None, uses the earliest year in the DataFrame.
+
+        _column_for_discounting : str, default 'cost'
+            Name of the column to apply discounting to.
+
+        Returns:
+        -------
+        pd.DataFrame
+            A copy of the input DataFrame with the specified column discounted in-place.
+        """
+
     if _initial_year is None:
         # Determine the initial year from the dataframe
         _initial_year = min(_df['year'].unique())
@@ -56,12 +85,12 @@ def apply_discounting_to_cost_data(_df, _discount_rate=0, _initial_year=None, _c
     return _df
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
-                                     resourcefilepath: Path = None,
-                                     _draws: list[int] = None,
-                                     _runs: list[int] = None,
+                                     resourcefilepath: Path ,
+                                     _draws: Optional[list[int]] = None,
+                                     _runs: Optional[list[int]] = None,
                                      summarize: bool = False,
                                      _metric: Literal['mean', 'median'] = 'mean',
-                                     _years: list[int] = None,
+                                     _years: Optional[list[int]] = None,
                                      cost_only_used_staff: bool = True,
                                      _discount_rate: Union[float, dict[int, float]] = 0) -> pd.DataFrame:
     """
@@ -840,11 +869,11 @@ def summarize_cost_data(_df,
 
 # Estimate projected health spending
 ####################################################
-def estimate_projected_health_spending(resourcefilepath: Path = None,
-                                      results_folder: Path =  None,
-                                     _draws: list[int] = None,
-                                      _runs: list[int] = None,
-                                     _years: list[int] = None,
+def estimate_projected_health_spending(resourcefilepath: Path,
+                                      results_folder: Path,
+                                     _draws: Optional[list[int]] = None,
+                                      _runs: Optional[list[int]] = None,
+                                     _years: Optional[list[int]] = None,
                                      _discount_rate: float = 0,
                                      _summarize: bool = False,
                                     _metric: Literal['mean', 'median'] = 'mean') -> pd.DataFrame:
@@ -989,10 +1018,10 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
                                             'medical equipment', 'facility operating cost'] = 'all',
                                             _disaggregate_by_subgroup: bool = False,
                                             _year: list[int] = 'all',
-                                            _draws: list[int] = None,
-                                            _scenario_dict: dict[int,str] = None,
+                                            _draws: Optional[list[int]] = None,
+                                            _scenario_dict: Optional[dict[int,str]] = None,
                                             show_title: bool = True,
-                                            _outputfilepath: Path = None,
+                                            _outputfilepath: Optional[Path] = None,
                                             _add_figname_suffix: str = ''):
     """
         Create and save a stacked bar chart of costs by category, subcategory or subgroup.
@@ -1019,7 +1048,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
         _draws : list of int, optional
             If specified, only includes the specified draws.
 
-        _scenario_dict : dict, optional
+        _scenario_dict : dict, required
             Dictionary mapping draw numbers to scenario names, used for x-axis labels.
 
         show_title : bool, default True
@@ -1227,11 +1256,11 @@ def do_line_plot_of_cost(_df: pd.DataFrame,
                          _cost_category: Literal['all', 'human resources for health', 'medical consumables',
                                             'medical equipment', 'facility operating cost'] = 'all',
                          _year: list[int] ='all',
-                         _draws: list[int]=None,
-                         disaggregate_by: Literal['cost_category', 'cost_subcategory', 'cost_subgroup']=None,
-                         _y_lim: float = None,
+                         _draws: Optional[list[int]] = None,
+                         disaggregate_by: Optional[Literal['cost_category', 'cost_subcategory', 'cost_subgroup']] = None,
+                         _y_lim: Optional[float] = None,
                          show_title: bool = True,
-                         _outputfilepath: Path = None)-> None:
+                         _outputfilepath: Optional[Path] = None)-> None:
     """
         Plot and save a line chart of cost trends over time by category or subcategory.
 
@@ -1415,14 +1444,14 @@ def do_line_plot_of_cost(_df: pd.DataFrame,
 # Treemap by category subgroup
 #-----------------------------------------------------------------------------------------------
 def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
-                                            _cost_category: Literal['all', 'human resources for health', 'medical consumables',
-                                            'medical equipment', 'facility operating cost'] = None,
-                                            _draw: list[int] = None,
+                                            _cost_category: Literal['human resources for health', 'medical consumables',
+                                            'medical equipment', 'facility operating cost'],
+                                            _draw: Optional[list[int]] = None,
                                             _year: list[int] = 'all',
-                                            _color_map: dict[str, str] = None,
+                                            _color_map: Optional[dict[str, str]] = None,
                                             _label_fontsize: int = 10,
                                             show_title: bool = True,
-                                            _outputfilepath: Path = None) -> None:
+                                            _outputfilepath: Optional[Path] = None) -> None:
     """
         Generate and save a treemap visualizing cost composition by subgroup within a cost category.
 
@@ -1539,124 +1568,72 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
     plt.close()
 
 # Plot ROI
-# TODO update this function to include an input for the monetary value of DALY
-def generate_roi_plots(_monetary_value_of_incremental_health: pd.DataFrame,
-                       _incremental_input_cost: pd.DataFrame,
-                       _scenario_dict: dict,
-                       _outputfilepath: Path,
-                       _value_of_life_suffix = ''):
-    # Calculate maximum ability to pay for implementation
-    max_ability_to_pay_for_implementation = (_monetary_value_of_incremental_health - _incremental_input_cost).clip(
-        lower=0.0)  # monetary value - change in costs
+def generate_multiple_scenarios_roi_plot( _monetary_value_of_incremental_health: pd.DataFrame,
+                                        _incremental_input_cost: pd.DataFrame,
+                                        _outputfilepath: Path,
+                                        _draws: list[int],
+                                        _scenario_dict: dict[int, str],
+                                        _metric: str = 'mean',
+                                        _y_axis_lim: Optional[float] = None,
+                                        _plot_vertical_lines_at: Optional[list[int]] = None,
+                                        _projected_health_spending: Optional[float] = None,
+                                        _draw_colors: Optional[dict[int, str]] = None,
+                                        _value_of_life_suffix: str = '',
+                                        _year_suffix: str = '',
+                                        show_title_and_legend: Optional[bool] = True) -> None:
+    """
+        Generate and save ROI plots for multiple scenarios, showing returns over a range of implementation costs.
 
-    # Iterate over each draw in monetary_value_of_incremental_health
-    for draw_index, row in _monetary_value_of_incremental_health.iterrows():
-        print("Plotting ROI for draw ", draw_index)
-        # Initialize an empty DataFrame to store values for each 'run'
-        all_run_values = pd.DataFrame()
+        Parameters:
+        ----------
+        _monetary_value_of_incremental_health : pd.DataFrame
+            DataFrame with index (draw, run), containing monetary values of health benefits.
+            This can be estimated as (_num_dalys_averted_by_scenario * _chosen_value_of_life_year).clip(lower=0.0)
 
-        # Create an array of implementation costs ranging from 0 to the max value of max ability to pay for the current draw
-        implementation_costs = np.linspace(0, max_ability_to_pay_for_implementation.loc[draw_index].max(), 50)
+        _incremental_input_cost : pd.DataFrame
+            DataFrame with index (draw, run), containing incremental costs for each scenario.
 
-        # Retrieve the corresponding row from incremental_scenario_cost for the same draw
-        incremental_scenario_cost_row = _incremental_input_cost.loc[draw_index]
+        _outputfilepath : Path
+            Path to the output folder where plots will be saved.
 
-        # Calculate the values for each individual run
-        for run in incremental_scenario_cost_row.index:  # Assuming 'run' columns are labeled by numbers
-            # Calculate the total costs for the current run
-            total_costs = implementation_costs + incremental_scenario_cost_row[run]
+        _draws : list of int, required
+            List of draw indices to include in the plot.
 
-            # Initialize run_values as an empty series with the same index as total_costs
-            run_values = pd.Series(index=total_costs, dtype=float)
+        _scenario_dict : dict of {int: str}, required
+            Mapping from draw index to scenario name, used for plot labeling.
 
-            # For negative total_costs, set corresponding run_values to infinity
-            run_values[total_costs < 0] = np.inf
+        _metric : {'mean', 'median'}, default 'mean'
+            Central tendency to use when summarizing ROI across runs.
 
-            # For non-negative total_costs, calculate the metric and clip at 0
-            non_negative_mask = total_costs >= 0
-            run_values[non_negative_mask] = np.clip(
-                (row[run] - total_costs[non_negative_mask]) / total_costs[non_negative_mask],
-                0,
-                None
-            )
+        _y_axis_lim : float, optional
+            Y-axis upper limit. If None, scales based on the maximum ROI value.
 
-            # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
-            run_values = run_values.values # remove index and convert to array
-            run_df = pd.DataFrame([run_values], index=pd.MultiIndex.from_tuples([(draw_index, run)], names=['draw', 'run']),
-                                  columns=implementation_costs)
+        _plot_vertical_lines_at : list of int, optional
+            If specified, vertical dashed lines are drawn at these implementation cost values (in USD).
+            Annotates ROI ratio across scenarios at those points.
 
-            # Append the run DataFrame to all_run_values
-            all_run_values = pd.concat([all_run_values, run_df])
+        _projected_health_spending : float, optional
+            Used to annotate x-axis values as % of total projected health spending
+        Can be estimated using the function estimate_projected_health_spending, but a single value will need to be taken
+        eg. mean value for the baseline scenario.
 
-        # Replace inf with NaN temporarily to handle quantile calculation correctly
-        temp_data = all_run_values.replace([np.inf, -np.inf], np.nan)
+        _draw_colors : dict of {int: str}, optional
+            Custom colors to use for each scenario/draw.
 
-        collapsed_data = temp_data.groupby(level='draw').agg([
-            'mean',
-            ('lower', lambda x: x.quantile(0.025)),
-            ('upper', lambda x: x.quantile(0.975))
-        ])
+        _value_of_life_suffix : str, default ''
+            Suffix added to the filename to reflect the assumed value of life (e.g., DALY monetization label).
 
-        # Revert the NaNs back to inf
-        collapsed_data = collapsed_data.replace([np.nan], np.inf)
+        _year_suffix : str, default ''
+            Optional suffix to add to the filename or plot title to indicate year range.
 
-        collapsed_data = collapsed_data.unstack()
-        collapsed_data.index = collapsed_data.index.set_names('implementation_cost', level=0)
-        collapsed_data.index = collapsed_data.index.set_names('stat', level=1)
-        collapsed_data = collapsed_data.reset_index().rename(columns = {0: 'roi'})
-        #collapsed_data = collapsed_data.reorder_levels(['draw', 'stat', 'implementation_cost'])
+        show_title_and_legend : bool, default True
+            Whether to include the plot title and legend.
 
-        # Divide rows by the sum of implementation costs and incremental input cost
-        mean_values = collapsed_data[collapsed_data['stat'] == 'mean'][['implementation_cost', 'roi']]
-        lower_values = collapsed_data[collapsed_data['stat'] == 'lower'][['implementation_cost', 'roi']]
-        upper_values = collapsed_data[collapsed_data['stat']  == 'upper'][['implementation_cost', 'roi']]
-
-        fig, ax = plt.subplots()  # Create a figure and axis
-
-        # Plot mean line
-        plt.plot(implementation_costs / 1e6, mean_values['roi'], label=f'{_scenario_dict[draw_index]}')
-        # Plot the confidence interval as a shaded region
-        plt.fill_between(implementation_costs / 1e6, lower_values['roi'], upper_values['roi'], alpha=0.2)
-
-        # Set y-axis limit to upper max + 500
-        ax.set_ylim(0, mean_values[~np.isinf(mean_values.roi)]['roi'].max()*(1+0.05))
-
-        plt.xlabel('Implementation cost, millions')
-        plt.ylabel('Return on Investment')
-        plt.title('Return on Investment of scenario at different levels of implementation cost')
-
-        monetary_value_of_incremental_health_summarized = summarize_cost_data(_monetary_value_of_incremental_health)
-        incremental_scenario_cost_row_summarized =  incremental_scenario_cost_row.agg(
-                                                        mean='mean',
-                                                        lower=lambda x: x.quantile(0.025),
-                                                        upper=lambda x: x.quantile(0.975))
-
-        plt.text(x=0.95, y=0.8,
-                 s=f"Monetary value of incremental health = \n USD {round(monetary_value_of_incremental_health_summarized.loc[draw_index]['mean'] / 1e6, 2)}m (USD {round(monetary_value_of_incremental_health_summarized.loc[draw_index]['lower'] / 1e6, 2)}m-{round(monetary_value_of_incremental_health_summarized.loc[draw_index]['upper'] / 1e6, 2)}m);\n "
-                   f"Incremental input cost of scenario = \n USD {round(incremental_scenario_cost_row_summarized['mean'] / 1e6, 2)}m (USD {round(incremental_scenario_cost_row_summarized['lower'] / 1e6, 2)}m-{round(incremental_scenario_cost_row_summarized['upper'] / 1e6, 2)}m)",
-                 horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes, fontsize=9,
-                 weight='bold', color='black')
-
-        # Show legend
-        plt.legend()
-        # Save
-        plt.savefig(_outputfilepath / f'draw{draw_index}_{_scenario_dict[draw_index]}_ROI_at_{_value_of_life_suffix}.png', dpi=100,
-                    bbox_inches='tight')
-        plt.close()
-
-def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: pd.DataFrame,
-                       _incremental_input_cost: pd.DataFrame,
-                       _draws:None,
-                       _scenario_dict: dict,
-                       _outputfilepath: Path,
-                       _value_of_life_suffix = '',
-                       _metric: str = 'mean',
-                       _y_axis_lim = None,
-                      _plot_vertical_lines_at: list = None,
-                      _year_suffix = '',
-                      _projected_health_spending = None,
-                      _draw_colors = None,
-                      show_title_and_legend = None):
+        Returns:
+        -------
+        None
+            Saves a PNG file visualizing ROI vs. implementation cost for each scenario.
+        """
     if _metric not in ['mean', 'median']:
         raise ValueError(f"Invalid input for _metric: '{_metric}'. "
                          f"Values need to be one of 'mean' or 'median'")
@@ -1822,9 +1799,41 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
 
 def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
                        _incremental_input_cost: pd.DataFrame,
-                       _draws:None,
-                       _scenario_dict: dict,
-                       _metric = 'mean'):
+                       _draws: Optional[list[int]] = None,
+                       _metric: Literal['mean', 'median'] = 'mean') -> pd.DataFrame:
+    """
+        Compute ROI estimates in tabular form for multiple scenarios and implementation costs.
+
+        For each draw, calculates ROI at various hypothetical implementation cost levels.
+        ROI is defined as: (monetary value of health gain - total cost) / total cost.
+
+        Parameters:
+        ----------
+        _monetary_value_of_incremental_health : pd.DataFrame
+            DataFrame indexed by [draw, run], with estimated monetary values of health gain.
+
+        _incremental_input_cost : pd.DataFrame
+            DataFrame indexed by [draw, run], with estimated incremental scenario costs.
+
+        _draws : list of int
+            Draw indices to include in the tabulation.
+
+        _metric : {'mean', 'median'}, default 'mean'
+            Summary statistic to compute across runs. Also includes 2.5th and 97.5th percentiles.
+
+        Returns:
+        -------
+        pd.DataFrame
+            Long-format DataFrame with:
+                - 'implementation_cost' (in USD)
+                - 'stat' ('mean', 'lower', 'upper')
+                - 'roi' (return on investment)
+
+            Includes results for all requested draws and implementation cost levels - the implementation cost levels
+            used are based on max_ability_to_pay_for_implementation calculated within the function - at this level
+             of incremental scenario cost + implementation cost, ROI should be 0.
+        """
+
     # Calculate maximum ability to pay for implementation
     _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
     _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]

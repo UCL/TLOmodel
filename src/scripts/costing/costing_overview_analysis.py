@@ -15,7 +15,6 @@ import textwrap
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-import squarify
 import numpy as np
 import pandas as pd
 from itertools import cycle
@@ -23,11 +22,9 @@ import jinja2 # This is for the latex table
 
 from tlo.analysis.utils import (
     extract_params,
-    extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize
 )
 
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
@@ -102,7 +99,7 @@ undiscounted_cost_by_draw = input_costs_undiscounted.groupby(['draw', 'stat'])['
 # Abstract
 print(f"Under current system capacity, total healthcare delivery costs for 2023–2030 were estimated at \$"
       f"{cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], averaging \$"
-      f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed,.2f}m] annually.")
+      f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] annually.")
 # Results 1
 print(f"The total cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
       f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
