@@ -311,6 +311,7 @@ def test_report_daly_weights(tmpdir):
 def test_nat_recovery_moderate_wasting(tmpdir):
     """ Check natural recovery after onset of moderate wasting with MAM diagnosis. """
     for am_state_expected in ['MAM', 'SAM']:
+
         dur = pd.DateOffset(days=0)
         popsize = 1000
         sim = get_sim(tmpdir)
@@ -334,9 +335,10 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         df.loc[person_id, 'un_ever_wasted'] = False
         df.loc[person_id, 'un_last_wasting_date_of_onset'] = pd.NaT
 
-        # Set incidence of moderate wasting at 100%
+        # Set moderate wasting incidence rate at 100% and rate of progression to severe wasting at 0%.
+        # (Hence, all children with normal wasting should get onset of moderate wasting and be scheduled for natural
+        # recovery.)
         wmodule.wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
-        # Set progression rate to severe wasting at 0% (hence, natural recovery always scheduled)
         wmodule.wasting_models.severe_wasting_progression_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
         if am_state_expected == 'MAM':
             # Set probability of MUAC < 115mm with moderate wasting, and probability of oedema with moderate wasting
