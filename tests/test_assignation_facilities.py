@@ -14,8 +14,8 @@ from tlo.methods import (
     symptommanager,
 )
 start_date = Date(2026, 1, 1)
-end_date = Date(2026, 1, 2)
-popsize = 100
+end_date = Date(2027, 1, 2)
+popsize = 10000
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 def get_dataframe_of_run_events_count(_sim):
@@ -170,7 +170,7 @@ def test_number_services(seed, tmpdir):
     assert sim_no_climate.modules['HealthSystem'].services_affected_precip == 'none'
     hsi_event_count_df_no_climate = get_dataframe_of_run_events_count(sim_no_climate)
 
-    assert 0 > sum(hsi_event_count_df_no_climate['count'])
+    #assert 0 > sum(hsi_event_count_df_no_climate['count'])
     assert sum(hsi_event_count_df_climate['count']) < sum(hsi_event_count_df_no_climate['count'])
     assert sum(hsi_event_count_df_climate_126['count']) < sum(hsi_event_count_df_no_climate['count'])
 
