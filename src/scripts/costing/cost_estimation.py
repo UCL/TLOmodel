@@ -1,17 +1,13 @@
-import argparse
 from pathlib import Path
-from pyexpat.errors import XML_ERROR_RESERVED_PREFIX_XML
 
 from tlo import Date
 from collections import Counter, defaultdict
+from typing import Optional, Union, Literal
 
-import calendar
 import datetime
-import os
 import textwrap
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 import squarify
 import numpy as np
 import pandas as pd
@@ -22,16 +18,9 @@ from itertools import cycle
 import matplotlib.container as mpc
 
 from tlo.analysis.utils import (
-    extract_params,
     extract_results,
     get_scenario_info,
-    get_scenario_outputs,
     load_pickled_dataframes,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    summarize,
-    create_pickles_locally,
-    parse_log_file,
     unflatten_flattened_multi_index_in_logging
 )
 
@@ -68,12 +57,44 @@ def apply_discounting_to_cost_data(_df, _discount_rate=0, _initial_year=None, _c
 
 def estimate_input_cost_of_scenarios(results_folder: Path,
                                      resourcefilepath: Path = None,
-                                     _draws = None, _runs = None,
+                                     _draws: list[int] = None,
+                                     _runs: list[int] = None,
                                      summarize: bool = False,
-                                     _metric: str = 'mean',
-                                     _years = None,
+                                     _metric: Literal['mean', 'median'] = 'mean',
+                                     _years: list[int] = None,
                                      cost_only_used_staff: bool = True,
-                                     _discount_rate = 0):
+                                     _discount_rate: Union[float, dict[int, float]] = 0) -> pd.DataFrame:
+    """
+    Estimate health system input costs for a given simulation.
+
+    Parameters:
+    ----------
+    results_folder : Path
+        Path to the directory containing simulation output files.
+    resourcefilepath : Path, optional
+        Path to the resource files
+    _draws : list, optional
+        Specific draws to include in the cost estimation. Defaults to all available draws.
+    _runs : list, optional
+        Specific runs to include in the cost estimation. Defaults to all runs.
+    summarize : bool, default False
+        Whether to summarize the costs across draws/runs with central metric (specified below) and confidence intervals.
+    _metric : {'mean', 'median'}, default 'mean'
+        Summary statistic to use if `summarize=True`.
+    _years : list of int, optional
+        Years to include in the cost output. If None, all years are included.
+    cost_only_used_staff : bool, default True
+        If True, only costs for level-cadre combinations ever used in simulation are included.
+    _discount_rate : float or dict of {int: float}, default 0
+        Discount rate to apply to future costs. Can be a constant or year-specific dictionary.
+
+    Returns:
+    -------
+    pd.DataFrame
+        A dataframe containing discounted costs disaggregated by category, sub-category, category-specific subgroup, year, draw, and run.
+        Note that if a discount rate is used, the dataframe will provide cost as the NPV during the first year of the dataframe
+    """
+
     # Useful common functions
     def drop_outside_period(_df):
         """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
@@ -776,7 +797,31 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 # Define a function to summarize cost data from
 # Note that the dataframe needs to have draw as index and run as columns. if the dataframe is long with draw and run as index, then
 # first unstack the dataframe and subsequently apply the summarize function
-def summarize_cost_data(_df, _metric = 'mean'):
+def summarize_cost_data(_df,
+                        _metric: Literal['mean', 'median'] = 'mean') -> pd.DataFrame:
+    """
+    Summarize cost data across runs by computing central tendency and 95% confidence intervals.
+
+    Parameters:
+    ----------
+    _df : pd.DataFrame
+        A DataFrame with draw as index and run as columns, where each cell contains a cost value.
+            - Rows = draw IDs (e.g., 0, 1, 2)
+            - Columns = run IDs (e.g., 0, 1, 2)
+            - Values = cost estimates
+
+    _metric : {'mean', 'median'}, default 'mean'
+        The central summary statistic to compute across runs.
+
+    Returns:
+    -------
+    pd.DataFrame
+        A pivoted DataFrame with draws as index and a MultiIndex of columns:
+        (run ID, ['mean' or 'median', 'lower', 'upper']), where:
+        - 'lower' = 2.5th percentile
+        - 'upper' = 97.5th percentile
+    """
+
     if _metric not in ['mean', 'median']:
         raise ValueError(f"Invalid input for _metric: '{_metric}'. "
                          f"Values need to be one of 'mean' or 'median'")
@@ -797,11 +842,50 @@ def summarize_cost_data(_df, _metric = 'mean'):
 ####################################################
 def estimate_projected_health_spending(resourcefilepath: Path = None,
                                       results_folder: Path =  None,
-                                     _draws = None, _runs = None,
-                                     _years = None,
-                                     _discount_rate = 0,
-                                     _summarize = False,
-                                    _metric = 'mean'):
+                                     _draws: list[int] = None,
+                                      _runs: list[int] = None,
+                                     _years: list[int] = None,
+                                     _discount_rate: float = 0,
+                                     _summarize: bool = False,
+                                    _metric: Literal['mean', 'median'] = 'mean') -> pd.DataFrame:
+    """
+    Estimate total projected health spending for a simulation period.
+
+    Combines health spending per capita projections (Dieleman et al, 2019) with simulated population estimates to calculate
+    total health expenditure, optionally applying a discount rate and summarizing across runs.
+
+    Parameters:
+    ----------
+    resourcefilepath : Path
+        Path to the folder containing the costing resource Excel files.
+    results_folder : Path
+        Path to the simulation results folder.
+    _draws : list or range, optional
+        Draws to include. If None, all available draws are used.
+    _runs : list or range, optional
+        Runs to include. If None, all available runs are used.
+    _years : list of int, optional
+        Years to include. If None, includes the full simulation period.
+    _discount_rate : float, default 0
+        Discount rate applied to future costs.
+    _summarize : bool, default False
+        Whether to summarize output across runs using mean/median and 95% confidence intervals.
+    _metric : {'mean', 'median'}, default 'mean'
+        Central tendency metric used if summarizing.
+
+    Returns:
+    -------
+    pd.DataFrame
+        If `_summarize=True`, returns a DataFrame with:
+            - Index = draw
+            - Columns = 'mean'/'median', 'lower', 'upper' ROI values
+
+        If `_summarize=False`, returns a DataFrame with:
+            - Index = draw
+            - Columns = run
+        - Values = discounted total health spending for the selected years
+    """
+
     # %% Gathering basic information
     # Load basic simulation parameters
     #-------------------------------------
@@ -900,13 +984,59 @@ def estimate_projected_health_spending(resourcefilepath: Path = None,
 ####################################################
 # 1. Stacked bar plot (Total cost + Cost categories)
 #----------------------------------------------------
-def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
+def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
+                                            _cost_category: Literal['all', 'human resources for health', 'medical consumables',
+                                            'medical equipment', 'facility operating cost'] = 'all',
                                             _disaggregate_by_subgroup: bool = False,
-                                            _year = 'all', _draws = None,
-                                            _scenario_dict: dict = None,
-                                            show_title = True,
+                                            _year: list[int] = 'all',
+                                            _draws: list[int] = None,
+                                            _scenario_dict: dict[int,str] = None,
+                                            show_title: bool = True,
                                             _outputfilepath: Path = None,
-                                            _add_figname_suffix = ''):
+                                            _add_figname_suffix: str = ''):
+    """
+        Create and save a stacked bar chart of costs by category, subcategory or subgroup.
+
+        Parameters:
+        ----------
+        _df : pd.DataFrame
+            DataFrame with cost results, including columns:
+            ['draw', 'year', 'cost_category', 'cost_subcategory', 'cost_subgroup',
+             'cost', 'stat'] — typically produced by `estimate_input_cost_of_scenarios`.
+
+        _cost_category : str, default 'all'
+            If 'all', compares high-level categories (e.g., HR, consumables, equipment, facilty operations).
+            Otherwise, filters to a specific category and optionally disaggregates.
+
+        _disaggregate_by_subgroup : bool, default False
+            If True and a single `_cost_category` is selected, breaks down costs by `cost_subgroup`.
+
+        _year : str or list of int, default 'all'
+            Year or years to include. Can be:
+                - 'all' to include all available years
+                - a single year or multiple years as a list: [2025]
+
+        _draws : list of int, optional
+            If specified, only includes the specified draws.
+
+        _scenario_dict : dict, optional
+            Dictionary mapping draw numbers to scenario names, used for x-axis labels.
+
+        show_title : bool, default True
+            Whether to display the chart title.
+
+        _outputfilepath : Path, optional
+            Folder to save the plot. File will be saved as a PNG using `_cost_category`
+            and `_add_figname_suffix` in the filename.
+
+        _add_figname_suffix : str, default ''
+            Optional string to append to the saved figure's filename
+
+        Returns:
+        -------
+        None
+            The chart is saved to disk as a PNG.
+        """
     # Subset and Pivot the data to have 'Cost Sub-category' as columns
     # Check what's the correct central metric to use (either 'mean' or 'median')
     central_metric = [stat for stat in _df.stat.unique() if stat not in ['lower', 'upper']][0]
@@ -1093,12 +1223,54 @@ def do_stacked_bar_plot_of_cost_by_category(_df, _cost_category = 'all',
 # 2. Line plots of total costs
 #----------------------------------------------------
 # TODO: Check why line plot get save without a file name
-def do_line_plot_of_cost(_df, _cost_category='all',
-                         _year='all', _draws=None,
-                         disaggregate_by=None,
-                         _y_lim = None,
-                         show_title = True,
-                         _outputfilepath: Path = None):
+def do_line_plot_of_cost(_df: pd.DataFrame,
+                         _cost_category: Literal['all', 'human resources for health', 'medical consumables',
+                                            'medical equipment', 'facility operating cost'] = 'all',
+                         _year: list[int] ='all',
+                         _draws: list[int]=None,
+                         disaggregate_by: Literal['cost_category', 'cost_subcategory', 'cost_subgroup']=None,
+                         _y_lim: float = None,
+                         show_title: bool = True,
+                         _outputfilepath: Path = None)-> None:
+    """
+        Plot and save a line chart of cost trends over time by category or subcategory.
+
+        Parameters:
+        ----------
+        _df : pd.DataFrame
+            A cost summary DataFrame (usually from `estimate_input_cost_of_scenarios`)
+            containing columns like ['year', 'draw', 'cost', 'stat', 'cost_category', etc.].
+
+        _cost_category : str, default 'all'
+            If 'all', plots total cost across all categories. Otherwise, filters to a specific category.
+
+        _year : str or list of int, default 'all'
+            Year(s) to include. Can be:
+                - 'all' to include all
+                - a single year or multiple years as a list: [2025]
+
+        _draws : list of int, optional
+            If specified, filters to those draws. Required if `disaggregate_by` is set.
+
+        disaggregate_by : {'cost_category', 'cost_subcategory', 'cost_subgroup'}, optional
+            Controls disaggregation on the plot
+            Note: If disaggregating, `_draws` must contain **only one draw**.
+
+        _y_lim : float, optional
+            Custom upper limit for the y-axis. If None, uses automatic scaling.
+
+        show_title : bool, default True
+            Whether to show the plot title.
+
+        _outputfilepath : Path, optional
+            Directory where the plot image will be saved. Filename is auto-generated based on inputs.
+
+        Returns:
+        -------
+        None
+            Saves a PNG chart to `_outputfilepath`.
+        """
+
     # Check what's the correct central metric to use (either 'mean' or 'median')
     central_metric = [stat for stat in _df.stat.unique() if stat not in ['lower', 'upper']][0]
 
@@ -1242,10 +1414,54 @@ def do_line_plot_of_cost(_df, _cost_category='all',
 
 # Treemap by category subgroup
 #-----------------------------------------------------------------------------------------------
-def create_summary_treemap_by_cost_subgroup(_df, _cost_category = None, _draw = None, _year = 'all',
-                                            _color_map = None, _label_fontsize = 10,
-                                            show_title = True,
-                                            _outputfilepath: Path = None):
+def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
+                                            _cost_category: Literal['all', 'human resources for health', 'medical consumables',
+                                            'medical equipment', 'facility operating cost'] = None,
+                                            _draw: list[int] = None,
+                                            _year: list[int] = 'all',
+                                            _color_map: dict[str, str] = None,
+                                            _label_fontsize: int = 10,
+                                            show_title: bool = True,
+                                            _outputfilepath: Path = None) -> None:
+    """
+        Generate and save a treemap visualizing cost composition by subgroup within a cost category.
+
+        Parameters:
+        ----------
+        _df : pd.DataFrame
+            DataFrame of costs with columns: ['cost_category', 'cost_subgroup', 'draw', 'year', 'cost'].
+            Typically output from `estimate_input_cost_of_scenarios`.
+
+        _cost_category : str, required
+            The high-level cost category to visualize (e.g., 'human resources for health',
+            'medical consumables', 'medical equipment', 'facility operating cost').
+
+        _draw : int, optional
+            Specific draw to visualize. If None, uses the full dataset.
+
+        _year : str or list of int, default 'all'
+            Year or list of years to include in the treemap. If 'all', includes all available years.
+
+        _color_map : dict, optional
+            Dictionary mapping cost subgroups to specific colors. If None, a default colormap is used.
+            eg. _color_map = {'First-line ART regimen: adult':'#1f77b4',
+                             'Test, HIV EIA Elisa': '#ff7f0e',
+                             'VL Test': '#2ca02c'}
+
+        _label_fontsize : int, default 10
+            Font size used for labels inside treemap tiles.
+
+        show_title : bool, default True
+            Whether to display a plot title.
+
+        _outputfilepath : Path, optional
+            Directory where the treemap image should be saved.
+
+        Returns:
+        -------
+        None
+            Saves the treemap as a PNG file named `treemap_{category}_{draw}_{period}.png`.
+        """
     # Function to wrap text to fit within treemap rectangles
     def wrap_text(text, width=15):
         return "\n".join(textwrap.wrap(text, width))
