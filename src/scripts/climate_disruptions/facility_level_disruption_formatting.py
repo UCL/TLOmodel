@@ -21,8 +21,8 @@ for scenario in scenarios:
         for service in services:
             climate_file = pd.read_csv(Path(climatefilepath) / f'weather_predictions_with_X_{scenario}_{model}_{service}.csv')
             projected_precip_disruptions = pd.DataFrame(
-                columns=['Facility_ID', 'year', 'month', 'service', 'disruption', 'mean_all_service'])
-            projected_precip_disruptions['Facility_ID'] = climate_file['Facility_ID']
+                columns=['RealFacility_ID', 'year', 'month', 'service', 'disruption', 'mean_all_service'])
+            projected_precip_disruptions['RealFacility_ID'] = climate_file['Facility_ID']
             projected_precip_disruptions['year'] = climate_file['Year']
             projected_precip_disruptions['month'] = climate_file['Month']
             for service in services:
@@ -37,6 +37,6 @@ for scenario in scenarios:
             )
             projected_precip_disruptions['disruption'] = abs(projected_precip_disruptions['disruption']) # for sampling later
         projected_precip_disruptions['mean_all_service'] = \
-        projected_precip_disruptions.groupby(['Facility_ID', 'month', 'year'])['disruption'].transform('mean')
+        projected_precip_disruptions.groupby(['RealFacility_ID', 'month', 'year'])['disruption'].transform('mean')
         projected_precip_disruptions.to_csv(f'/Users/rem76/PycharmProjects/TLOmodel/resources/climate_change_impacts/ResourceFile_Precipitation_Disruptions_{scenario}_{model}.csv')
 
