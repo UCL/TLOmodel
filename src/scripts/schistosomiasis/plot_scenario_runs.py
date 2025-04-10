@@ -936,7 +936,7 @@ prevM.to_csv(results_folder / (f'prevalence_H_ALL_mansoni {target_period()}.csv'
 
 
 
-# %% PREVALENCE OF INFECTION OVERALL (BOTH SPECIES)
+# %% PREVALENCE OF INFECTION OVERALL (BOTH SPECIES) BY DISTRICT
 
 number_infected = extract_results(
     results_folder,
@@ -1008,16 +1008,37 @@ if total_number_infected.columns.equals(total_number_in_district.columns):
     # Perform element-wise division for matching columns
     result = total_number_infected / total_number_in_district
 
-result.to_csv(results_folder / (f'prevalence_any_infection_all_ages_{target_period()}.csv'))
+result.to_csv(results_folder / (f'prevalence_any_infection_all_ages_district{target_period()}.csv'))
+
+# summarise the prevalence for each district by draw
+median_by_draw_district = result.groupby(level=['draw', 'district'], axis=1).median()
+median_by_draw_district.to_csv(results_folder / (f'median_prevalence_any_infection_all_ages_district{target_period()}.csv'))
 
 
 
-# %% ELIMINATION
-# todo elimination
-# years to reach elimination as PH problem
-# -- Elimination as a PH problem is defined as reducing the prevalence of heavy infections to less than 1% of population
-# years to reach elimination of transmission
-# years to reach morbidity control (heavy infections below threshold)
+# %% ICERS - comparator is WASH only
 
-# -- morbidity control is reducing the prevalence of heavy infections to below 5% of the population
-# -- (e.g. ≥400 EPG for mansoni or ≥50 eggs/10 mL urine for haematobium).
+# costs for each scenario
+
+# Total DALYs by scenario
+
+
+
+
+# %% todo what do you want by district?
+# above is prevalence by district - way to present this - table / figure
+# summarise across runs for each scenario
+# think about heavy infections only by district
+# person-years infected by district
+# person-years infected heavy infection only by district
+# get schisto DALYS for each scenario
+# get costs for each scenario
+
+
+
+
+
+scaling_factor_district = load_pickled_dataframes(
+                results_folder, draw=0, run=0, name='tlo.methods.population'
+            )['tlo.methods.population']['scaling_factor_district']['scaling_factor_district'].values[0]
+
