@@ -137,6 +137,8 @@ def test_number_services(seed, tmpdir):
     sim_low.make_initial_population(n=popsize)
     sim_low.simulate(end_date=end_date)
     assert sim_low.modules['HealthSystem'].services_affected_precip == 'all'
+    assert sim_low.modules['HealthSystem'].climate_ssp == 'ssp126'
+
     # output_climate = parse_log_file(sim.log_filepath)
     hsi_event_count_df_climate_126 = get_dataframe_of_run_events_count(sim_low)
 
