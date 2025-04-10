@@ -377,6 +377,11 @@ def test_nat_recovery_moderate_wasting(tmpdir):
         recov_event = recov_event_tuple[1]
         assert date_of_scheduled_recov > sim.date
 
+        # Check no progression to sev wasting is scheduled
+        progress_event_tuple = next((event_tuple for event_tuple in sim.find_events_for_person(person_id)
+                                     if isinstance(event_tuple[1], Wasting_ProgressionToSevere_Event)), None)
+        assert not progress_event_tuple
+
         # Run the natural recovery event:
         sim.date = date_of_scheduled_recov
         recov_event.apply(person_id)
