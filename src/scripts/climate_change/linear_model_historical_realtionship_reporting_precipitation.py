@@ -227,14 +227,21 @@ month_range = range(12)
 num_facilities = len(monthly_reporting_by_facility.columns)
 year_repeated = [y for y in year_range for _ in range(12)]
 year = year_repeated[:-4]
+month = range(1, 13)
 year_flattened = year*len(monthly_reporting_by_facility.columns) # to get flattened data
-month_repeated = []
-for _ in year_range:
-    month_repeated.extend(range(1, 13))
-month = month_repeated[:-4]
-month_flattened = month*len(monthly_reporting_by_facility.columns)
+month_repeated = [m for m in range(1,9) for _ in range(len(monthly_reporting_by_facility.columns))]
+month_repeated = month_repeated*len(year_range)
+month_repeated_abbreviated = [m for m in range(9,13) for _ in range(len(monthly_reporting_by_facility.columns))]
+month_repeated_abbreviated = month_repeated_abbreviated*(len(year_range) - 1)
+month_repeated.extend(month_repeated_abbreviated)
+# for _ in year_range:
+#     month_repeated.extend(range(1, 13))
+# month = month_repeated[:-4]
+month_repeated_prediction = [m for m in range(1, 13) for _ in range(num_facilities)]
+month_flattened_prediction = month_repeated_prediction * len(year_range_prediction)
+month_flattened = month_repeated*len(monthly_reporting_by_facility.columns)
 
-facility_flattened = list(monthly_reporting_by_facility.columns) * len(month)
+facility_flattened = list(monthly_reporting_by_facility.columns) * len(month_repeated)
 # Flatten data
 y = monthly_reporting_by_facility.values.flatten()
 if np.nanmin(y) < 1:
@@ -699,10 +706,10 @@ for ssp_scenario in ssp_scenarios:
         year_range_prediction = range(min_year_for_analysis, max_year_for_analysis)
         month_repeated_prediction = [m for _ in year_range_prediction for m in range(1, 13)]
         year_flattened_prediction = np.repeat(year_range_prediction, 12 * num_facilities)
-        month_flattened_prediction = month_repeated_prediction * num_facilities
+        month_repeated_prediction = [m for m in range(1, 13) for _ in range(num_facilities)]
+        month_flattened_prediction = month_repeated_prediction * len(year_range_prediction)
 
         facility_flattened_prediction = repeat_info(monthly_reporting_by_facility.columns, num_facilities, year_range_prediction, historical = False)
-
         # Encode facilities and create above/below average weather data
         facility_encoded_prediction = pd.get_dummies(facility_flattened_prediction, drop_first=True)
 
@@ -833,7 +840,9 @@ for ssp_scenario in ssp_scenarios:
 
         plt.tight_layout()
         #plt.show()
-        print(facility_flattened_prediction)
+
+        facility_names = np.tile(weather_data_prediction_monthly.columns.values, 12 * len(year_range_prediction))
+
         # Format output: Add all relevant X variables
         full_data_weather_predictions = pd.DataFrame({
             'Year': year_flattened_prediction[X_basis_weather[:, 0] > mask_threshold],
