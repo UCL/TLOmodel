@@ -656,18 +656,28 @@ for rates in alternative_discount_rates:
     # 3. Estimate and plot ICERs
     # ----------------------------------------------------
     icers = incremental_scenario_cost.div(num_dalys_averted)  # Element-wise division
-    icers = icers.mask(num_dalys_averted < 0)
+    #icers = icers.mask(num_dalys_averted < 0)
     icers_summarized = summarize_cost_data(icers, _metric = chosen_metric)
+    dominated_scenarios = icers_summarized['median'] < 0
+    icers_summarized[dominated_scenarios] = np.nan # The dominanted scenarios are assigned as ICER of NaN
     icers_summarized_subset_for_figure = icers_summarized[icers_summarized.index.get_level_values('draw').isin(list(all_manuscript_scenarios.keys()))]
 
     # Plot ICERs
+    annotations_icers = []
+    for _, row in icers_summarized_subset_for_figure.iterrows():
+        if not any(pd.isna(row[[chosen_metric, 'lower', 'upper']])) and np.isfinite(row[chosen_metric]):
+            annotations_icers.append(f"{row[chosen_metric]:.2f} ({row['lower']:.2f}-\n{row['upper']:.2f})")
+        elif pd.isna(row['median']):  # or chosen_metric if that's 'median'
+            annotations_icers.append("Dominated")
+        else:
+            annotations_icers.append("")
+
+    for stat in ['median', 'lower', 'upper']:
+        icers_summarized_subset_for_figure.loc[icers_summarized_subset_for_figure[stat].isna(), stat] = 0.1
     name_of_plot = f'Incremental cost-effectiveness ratios (ICERs), {relevant_period_for_costing[0]}-{relevant_period_for_costing[1]}'
     fig, ax = do_standard_bar_plot_with_ci(
         (icers_summarized_subset_for_figure),
-        annotations=[
-            f"{row[chosen_metric]:.2f} ({row['lower'] :.2f}- \n {row['upper'] :.2f})"
-            for _, row in icers_summarized_subset_for_figure.iterrows()
-        ],
+        annotations=annotations_icers,
         xticklabels_horizontal_and_wrapped=False,
         put_labels_in_legend=True,
         offset=10,
@@ -684,8 +694,11 @@ for rates in alternative_discount_rates:
     icers_summarized_subset_for_table = icers_summarized_subset_for_table.reset_index()
     icers_summarized_subset_for_table['scenario'] = icers_summarized_subset_for_table['draw'].map(all_manuscript_scenarios)
     icers_summarized_subset_for_table['ICER (2023 USD)'] = icers_summarized_subset_for_table.apply(
-        lambda row: f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
-        if not any(pd.isna(row[['median', 'lower', 'upper']])) else "N/A",
+        lambda row: "Dominated" # if incremental health is negative, the scenario is dominated - reporting a negative ICER can be confusing
+        if row['median'] < 0 else (
+            f"${row['median']:.2f} [${row['lower']:.2f} - ${row['upper']:.2f}]"
+            if not any(pd.isna(row[['median', 'lower', 'upper']])) else "Dominated"
+        ),
         axis=1
     )
     icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(figurespath / 'tabulated_icers.csv', index = False)
