@@ -2292,7 +2292,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                     equipment_available = False
                 # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-                if self.module.services_affected_precip != 'none' and self.module.services_affected_precip != None and year > 2025:
+                if self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] != None and year > 2025:
                     for item in list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions:
                         fac_id = item.hsi_event.facility_info.level
                         facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
@@ -2304,7 +2304,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 (self.module.parameters['projected_precip_disruptions']['year'] == year) &
                                 (self.module.parameters['projected_precip_disruptions']['month'] == month) &
                                 (self.module.parameters['projected_precip_disruptions'][
-                                     'service'] == self.module._services_affected_precip),
+                                     'service'] == self.module.parameters['services_affected_precip']),
                                 'disruption'
                             ]
                             prob_disruption = pd.DataFrame(prob_disruption)
