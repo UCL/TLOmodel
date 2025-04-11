@@ -375,8 +375,14 @@ for fac in fac_ids:
                 if not items:
                     category_recorded_at_other_facilities_of_same_level = False
                 else:
+                    # Filter only items that exist in the MultiIndex at this facility
+                    valid_items = [
+                        itm for itm in items
+                        if any((fac, m, itm) in full_set.index for m in months)
+                    ]
+
                     category_recorded_at_other_facilities_of_same_level = pd.notnull(
-                        full_set.loc[(fac, slice(None), items), col]
+                        full_set.loc[(fac, slice(None), valid_items), col]
                     ).any()
 
                 if recorded_at_other_facilities_of_same_level:
@@ -388,12 +394,13 @@ for fac in fac_ids:
                         full_set.loc[(facilities, slice(None), item), col].groupby(level=1).mean()
                     )
 
-                elif category_recorded_at_other_facilities_of_same_level:
+                elif category_recorded_at_other_facilities_of_same_level and valid_items:
                     # If it recorded at other facilities of same level, find the average availability of the item at other
                     # facilities of the same level.
-                    print("Data for item ", item, " extrapolated from other items within category - ", items)
+                    print("Data for item ", item, " extrapolated from other items within category - ", valid_items)
+
                     _monthly_records = interpolate_missing_with_mean(
-                        full_set.loc[(fac, slice(None), items), col].groupby(level=1).mean()
+                        full_set.loc[(fac, slice(None), valid_items), col].groupby(level=1).mean()
                     )
 
                 else:
@@ -581,7 +588,7 @@ df_scenarios_10to12['available_prop_scenario12'] = df_scenarios_10to12.apply(
     else row['available_prop_scenario12'], axis=1
 )
 
-# Add scenarios 6 to 11 to the original dataframe
+# Add scenarios 6 to 12 to the original dataframe
 #------------------------------------------------------
 list_of_scenario_suffixes_first_stage = list_of_scenario_suffixes + ['scenario6', 'scenario7', 'scenario8', 'scenario9']
 list_of_scenario_variables_first_stage = ['available_prop_' + item for item in list_of_scenario_suffixes_first_stage]
