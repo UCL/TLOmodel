@@ -1700,7 +1700,6 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """Provide the treatment to the beneficiaries of this HSI."""
-        print(f"MDA happening now", {self.sim.date}, {person_id})
         # Find which of the beneficiaries are still alive
         beneficiaries_still_alive = list(set(self.beneficiaries_ids).intersection(
             self.sim.population.props.index[self.sim.population.props.is_alive]

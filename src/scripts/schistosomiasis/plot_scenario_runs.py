@@ -36,6 +36,13 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
+from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
+                                             summarize_cost_data,
+                                             do_stacked_bar_plot_of_cost_by_category,
+                                             do_line_plot_of_cost,
+                                             create_summary_treemap_by_cost_subgroup,
+                                             estimate_projected_health_spending)
+
 resourcefilepath = Path("./resources")
 
 output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
@@ -669,49 +676,6 @@ fig.show()
 plt.close(fig)
 
 
-# %% GET PZQ USED FOR SCENARIOS -----------------------------------------------------------------------------
-
-#  numbers of PZQ doses - these are 1mg doses
-# includes MDA and treatment
-def get_counts_of_items_requested(_df):
-    _df = drop_outside_period(_df)
-
-    counts_of_available = defaultdict(int)
-    counts_of_not_available = defaultdict(int)
-    counts_of_used = defaultdict(int)
-
-    for _, row in _df.iterrows():
-        for item, num in row['Item_Available'].items():
-            counts_of_available[item] += num
-        for item, num in row['Item_NotAvailable'].items():
-            counts_of_not_available[item] += num
-        for item, num in row['Item_Used'].items():
-            counts_of_used[item] += num
-
-    return pd.concat(
-        {'Item_Available': pd.Series(counts_of_available),
-         'Not_Available': pd.Series(counts_of_not_available),
-         'Item_Used': pd.Series(counts_of_used)},
-        axis=1
-    ).fillna(0).astype(int).stack()
-
-cons_req = compute_summary_statistics(
-    extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='Consumables',
-        custom_generate_series=get_counts_of_items_requested,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0),
-    central_measure='median',
-)
-
-cons = cons_req.unstack()
-# item 286 is Praziquantel 600mg_1000_CMST
-pzq_use = cons_req.loc['286']
-pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
-
-
 # %%  -----------------------------------------------------------------------------
 
 # PERSON-YEARS INFECTED
@@ -1015,10 +979,234 @@ median_by_draw_district = result.groupby(level=['draw', 'district'], axis=1).med
 median_by_draw_district.to_csv(results_folder / (f'median_prevalence_any_infection_all_ages_district{target_period()}.csv'))
 
 
+# %% GET PZQ USED FOR SCENARIOS -----------------------------------------------------------------------------
+
+# numbers of PZQ doses - these are 1mg doses
+# includes MDA and treatment
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df)
+
+    counts_of_available = defaultdict(int)
+    counts_of_not_available = defaultdict(int)
+    counts_of_used = defaultdict(int)
+
+    for _, row in _df.iterrows():
+        for item, num in row['Item_Available'].items():
+            counts_of_available[item] += num
+        for item, num in row['Item_NotAvailable'].items():
+            counts_of_not_available[item] += num
+        for item, num in row['Item_Used'].items():
+            counts_of_used[item] += num
+
+    return pd.concat(
+        {'Item_Available': pd.Series(counts_of_available),
+         'Not_Available': pd.Series(counts_of_not_available),
+         'Item_Used': pd.Series(counts_of_used)},
+        axis=1
+    ).fillna(0).astype(int).stack()
+
+cons_req = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+cons = cons_req.unstack()
+# item 286 is Praziquantel 600mg_1000_CMST
+pzq_use = cons_req.loc['286']
+
+# attach costs to PZQ: 0.0000406606 USD
+PZQ_item_cost = 0.0000406606
+pzq_cost = pd.DataFrame(pzq_use.iloc[-1] * PZQ_item_cost).T
+pzq_cost.index = ['pzq_costs']
+pzq_use = pd.concat([pzq_use, pzq_cost])
+pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
+
+summary_pzq_cost = compute_summary_statistics(pzq_use)
+
+
+def plot_simple_barplot(_df, title=None, ylab=None):
+    """
+    Plot barplot by scenario using the 'central' value for height,
+    and 'lower' and 'upper' for the error bars.
+
+    Assumes the DataFrame has a MultiIndex with 'draw' and 'stat' levels,
+    where 'stat' includes 'lower', 'central', 'upper'.
+    """
+
+    # Extract 'central', 'lower', and 'upper' columns
+    df_plot = _df['central']
+    lower = _df['lower']
+    upper = _df['upper']
+
+    # Compute error bars
+    yerr = [df_plot - lower, upper - df_plot]
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(
+        df_plot.index,
+        df_plot,
+        yerr=yerr,
+        capsize=5,
+        color='skyblue',
+        edgecolor='black'
+    )
+
+    ax.set_ylabel(ylab)
+    ax.set_title(title)
+    ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
+
+    plt.tight_layout()
+    plt.show()
+
+
+# Convert summary_pzq_cost.loc['pzq_costs'] to DataFrame with 'central', 'lower', and 'upper'
+pzq_costs2 = summary_pzq_cost.loc['pzq_costs'].unstack(level='stat')
+plot_simple_barplot(pzq_costs2, title='PZQ Costs', ylab='PZQ Costs, USD')
+
+
+
+# HSIs
+def get_total_num_treatment_episdoes(_df):
+    """Return total number of treatments within the TARGET_PERIOD."""
+    # Ensure 'date' is a datetime column if not already
+    _df['date'] = pd.to_datetime(_df['date'])
+
+    # Filter rows based on the TARGET_PERIOD (date range)
+    filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+
+    # Sum only the numeric columns (exclude 'date' and non-numeric columns)
+    y = filtered_df.select_dtypes(include='number').sum(axis=0)
+
+    return y
+
+
+treatment_episodes = extract_results(
+        results_folder,
+        module='tlo.methods.schisto',
+        key='schisto_treatment_episodes',
+        custom_generate_series=get_total_num_treatment_episdoes,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+
+pzq_plus_tx_episodes = pd.concat([pzq_use, treatment_episodes, total_num_dalys])
+
+pzq_plus_tx_episodes.to_csv(results_folder / (f'pzq_plus_tx_episodes {target_period()}.csv'))
+
+
+summary_treatment_episodes = compute_summary_statistics(treatment_episodes,
+                                                central_measure='median')
+df_reshaped = summary_treatment_episodes.stack(level='draw')
+df_reshaped = df_reshaped.reset_index(level=0, drop=True)
+
+plot_simple_barplot(df_reshaped,
+                    title='Number Treatment Episodes',
+                    ylab='Number treatment episodes')
+
+
+## ICERS
+
+# need the delta costs
+comparison_pzq_costs_vs_WASH = find_difference_relative_to_comparison_series(
+        pzq_plus_tx_episodes.loc['pzq_costs'],
+        comparison='WASH only'
+    )
+
+# get the delta DALYS
+num_dalys_averted_vs_WASH = -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys,
+        comparison='WASH only'
+    )
+
+num_dalys_averted_vs_WASH = num_dalys_averted_vs_WASH.T
+
+# Step 1: Align dataset1 (costs) with dataset2 (health outcomes)
+aligned_data1 = comparison_pzq_costs_vs_WASH.reindex_like(num_dalys_averted_vs_WASH)  # Align dataset1 to dataset2's index
+
+# Step 2: Compute ICER = health_diff / cost_diff
+# Extract values from both Series (dataset1) and DataFrame (dataset2)
+cost_diff = aligned_data1.values.flatten()  # Dataset 1 (cost differences)
+health_diff = num_dalys_averted_vs_WASH.values.flatten()  # Dataset 2 (health outcomes)
+
+# Compute ICER (health difference / cost difference)
+icer = health_diff / cost_diff
+
+# Extract the 'draw' level from the MultiIndex for color coding
+draw_labels = aligned_data1.index.get_level_values('draw').values.flatten()  # Get 'draw' labels
+
+# Step 3: Create a dictionary of unique draw labels to colours
+unique_draws = np.unique(draw_labels)  # Unique draw labels
+colormap = plt.get_cmap('tab20')  # You can choose another colour map if needed
+colors = {label: colormap(i / len(unique_draws)) for i, label in enumerate(unique_draws)}
+
+# Step 4: Assign a colour to each data point based on its draw label
+point_colors = [colors[label] for label in draw_labels]
+
+# Step 5: Create the scatter plot
+plt.figure(figsize=(10, 6))
+scatter = plt.scatter(cost_diff, health_diff, c=point_colors)  # Colour by draw labels
+
+# Add the legend (position it outside the plot to the right)
+handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=colors[label], markersize=10) for label in unique_draws]
+plt.legend(handles, unique_draws, title="Scenario", bbox_to_anchor=(1.05, 0.5), loc='center left')
+
+# Labels and title
+plt.xlabel('Cost Difference')
+plt.ylabel('Health Difference')
+plt.title('Incremental Cost-Effectiveness Ratio \n compared to WASH only')
+plt.grid(True)
+
+plt.xlim(-4e7, 4e7)  # Extend the x-axis
+plt.ylim(-4e6, 4e6)  # Extend the y-axis
+
+# Adding quadrant guidelines (vertical and horizontal lines)
+plt.axhline(0, color='black',linewidth=1, linestyle='--')  # Horizontal line at y=0
+plt.axvline(0, color='black',linewidth=1, linestyle='--')  # Vertical line at x=0
+
+# Add text annotations for the quadrants
+plt.text(1e7, 3.5e6, 'Cost-effective and beneficial', fontsize=12, color='green', ha='left', va='top')
+plt.text(-3e7, 3.5e6, 'Cost-effective but harmful', fontsize=12, color='orange', ha='left', va='top')
+plt.text(-3e7, -3.5e6, 'Dominated', fontsize=12, color='red', ha='left', va='bottom')
+plt.text(1e7, -3.5e6, 'Cost-ineffective and harmful', fontsize=12, color='blue', ha='left', va='bottom')
+
+# Adjust layout to ensure the legend fits outside the plot
+plt.tight_layout()
+plt.show()
+
+
+
+def get_counts_of_hsi_by_treatment_id(_df):
+    """Get the counts of full TREATMENT_IDs occurring within the target period."""
+    _counts_by_treatment_id = _df \
+        .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+        .apply(pd.Series) \
+        .sum() \
+        .astype(int)
+
+    return _counts_by_treatment_id
+
+
+counts_of_hsi_by_treatment_id = extract_results(
+    results_folder,
+    module='tlo.methods.healthsystem.summary',
+    key='HSI_Event',
+    custom_generate_series=get_counts_of_hsi_by_treatment_id,
+    do_scaling=True
+).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index()
+
+median_num_hsi_by_treatment_id = compute_summary_statistics(counts_of_hsi_by_treatment_id, central_measure='median')
+median_num_hsi_by_treatment_id.to_csv(results_folder / (f'median_num_hsi_by_treatment_id {target_period()}.csv'))
+
+
 
 # %% ICERS - comparator is WASH only
 
 # costs for each scenario
+
 
 # Total DALYs by scenario
 
