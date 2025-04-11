@@ -1134,6 +1134,10 @@ health_diff = num_dalys_averted_vs_WASH.values.flatten()  # Dataset 2 (health ou
 
 # Compute ICER (health difference / cost difference)
 icer = health_diff / cost_diff
+# add scenario names to the ICERs
+icer_series = pd.Series(icer, index=aligned_data1.index.get_level_values('draw'))
+icer_series.to_csv(results_folder / (f'icer_values {target_period()}.csv'))
+
 
 # Extract the 'draw' level from the MultiIndex for color coding
 draw_labels = aligned_data1.index.get_level_values('draw').values.flatten()  # Get 'draw' labels
@@ -1148,34 +1152,65 @@ point_colors = [colors[label] for label in draw_labels]
 
 # Step 5: Create the scatter plot
 plt.figure(figsize=(10, 6))
-scatter = plt.scatter(cost_diff, health_diff, c=point_colors)  # Colour by draw labels
+scatter = plt.scatter(cost_diff/1_000_000, health_diff/1_000_000, c=point_colors)  # Colour by draw labels
 
 # Add the legend (position it outside the plot to the right)
 handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=colors[label], markersize=10) for label in unique_draws]
 plt.legend(handles, unique_draws, title="Scenario", bbox_to_anchor=(1.05, 0.5), loc='center left')
 
 # Labels and title
-plt.xlabel('Cost Difference')
-plt.ylabel('Health Difference')
+plt.xlabel('Cost Difference, USD, millions')
+plt.ylabel('Health Difference, DALYs, millions')
 plt.title('Incremental Cost-Effectiveness Ratio \n compared to WASH only')
 plt.grid(True)
 
-plt.xlim(-4e7, 4e7)  # Extend the x-axis
-plt.ylim(-4e6, 4e6)  # Extend the y-axis
+plt.xlim(-40, 40)  # Extend the x-axis
+plt.ylim(-5, 5)  # Extend the y-axis
 
 # Adding quadrant guidelines (vertical and horizontal lines)
 plt.axhline(0, color='black',linewidth=1, linestyle='--')  # Horizontal line at y=0
 plt.axvline(0, color='black',linewidth=1, linestyle='--')  # Vertical line at x=0
 
+wtp = 100
+x_vals = np.linspace(min(cost_diff), max(cost_diff), 100)
+y_vals = wtp * x_vals  # slope = WTP
+plt.plot(x_vals/1_000_000, y_vals/1_000_000, color='blue', linestyle=':', label=f'WTP = ${wtp} per DALY')
+
 # Add text annotations for the quadrants
-plt.text(1e7, 3.5e6, 'Cost-effective and beneficial', fontsize=12, color='green', ha='left', va='top')
-plt.text(-3e7, 3.5e6, 'Cost-effective but harmful', fontsize=12, color='orange', ha='left', va='top')
-plt.text(-3e7, -3.5e6, 'Dominated', fontsize=12, color='red', ha='left', va='bottom')
-plt.text(1e7, -3.5e6, 'Cost-ineffective and harmful', fontsize=12, color='blue', ha='left', va='bottom')
+plt.text(10, 4, 'Cost-effective and beneficial', fontsize=12, color='green', ha='left', va='top')
+plt.text(-30, 4, 'Cost-effective but harmful', fontsize=12, color='orange', ha='left', va='top')
+plt.text(-30, -4, 'Dominated', fontsize=12, color='red', ha='left', va='bottom')
+plt.text(10, -4, 'Cost-ineffective and harmful', fontsize=12, color='blue', ha='left', va='bottom')
 
 # Adjust layout to ensure the legend fits outside the plot
 plt.tight_layout()
 plt.show()
+
+
+## NET PRESENT VALUE
+# NPV=(DALYs_averted×WTP)−Cost
+
+# extract DALYs averted by year for each run
+total_dalys_by_year = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys_stacked_by_age_and_time",
+    custom_generate_series=(
+        lambda df_: df_.drop(
+            columns=['date', 'sex', 'age_range']
+        )
+        .groupby('year')
+        .sum()
+        .sum(axis=1)  # sum across causes to get total DALYs per year
+    ),
+    do_scaling=True
+)
+
+
+
+# extract costs compared with comparator by year for each run
+
+
 
 
 
