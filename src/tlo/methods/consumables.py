@@ -49,6 +49,7 @@ class Consumables:
             'scenario1', 'scenario2', 'scenario3', 'scenario4',
             'scenario5', 'scenario6', 'scenario7', 'scenario8',
             'scenario9', 'scenario10', 'scenario11', 'scenario12',
+            'scenario13', 'scenario14', 'scenario15',
         }
 
         # Create internal items:
@@ -108,7 +109,8 @@ class Consumables:
         if availability in ('default',
                             'scenario1', 'scenario2', 'scenario3', 'scenario4',
                             'scenario5', 'scenario6', 'scenario7', 'scenario8',
-                            'scenario9', 'scenario10', 'scenario11', 'scenario12'):
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                            'scenario13', 'scenario14', 'scenario15'):
             pass
         elif availability == 'all':
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
@@ -148,7 +150,8 @@ class Consumables:
         """
         if availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
                               'scenario5', 'scenario6', 'scenario7', 'scenario8',
-                            'scenario9', 'scenario10', 'scenario11', 'scenario12'):
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                            'scenario13', 'scenario14', 'scenario15',):
             return (
                 set(availability_data.item_code),
                 availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
@@ -286,7 +289,7 @@ class Consumables:
         """
         if len(self._not_recognised_item_codes) > 0:
             not_recognised_item_codes = {
-                treatment_id if treatment_id is not None else "": sorted(codes) 
+                treatment_id if treatment_id is not None else "": sorted(codes)
                 for treatment_id, codes in self._not_recognised_item_codes.items()
             }
             warnings.warn(
@@ -351,7 +354,7 @@ def check_format_of_consumables_file(df, fac_ids):
     """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
-    number_of_scenarios = 12
+    number_of_scenarios = 15
 
     availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
                                                  range(1, number_of_scenarios + 1)]
