@@ -117,7 +117,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'high',
+                "climate_model_ensemble_model":'highest',
                  "services_affected_precip":'all'
                 },
                 "Malaria": {
@@ -155,7 +155,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'low',
+                "climate_model_ensemble_model":'lowest',
                  "services_affected_precip":'all'
                 },
                 "Malaria": {
@@ -231,7 +231,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp245',
-                "climate_model_ensemble_model":'high',
+                "climate_model_ensemble_model":'highest',
                  "services_affected_precip":'all'
                 },
                 "Malaria": {
@@ -269,7 +269,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp245',
-                "climate_model_ensemble_model":'low',
+                "climate_model_ensemble_model":'lowest',
                  "services_affected_precip":'all'
                 },
                 "Malaria": {
@@ -345,7 +345,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp585',
-                "climate_model_ensemble_model":'high',
+                "climate_model_ensemble_model":'highest',
                  "services_affected_precip":'all'
                 },
                 "Malaria": {
@@ -383,7 +383,7 @@ class ClimateDisruptionScenario(BaseScenario):
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp585',
-                "climate_model_ensemble_model":'low',
+                "climate_model_ensemble_model":'lowest',
                  "services_affected_precip":'all'
                 },
                 "Malaria": {
