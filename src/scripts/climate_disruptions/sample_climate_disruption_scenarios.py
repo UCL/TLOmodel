@@ -54,14 +54,15 @@ class ClimateDisruptionScenario(BaseScenario):
     def _ssp126_high(self) -> Dict:
         """Return the Dict with values for the parameter changes that define the baseline scenario. """
         return mix_scenarios(
-            get_parameters_for_status_quo(),
+            #get_parameters_for_status_quo(),
+
              {"HealthSystem": {
                 "mode_appt_constraints": 1,
                 "cons_availability": "default",
                 "cons_availability_postSwitch": "all",
                 "year_cons_availability_switch": self.YEAR_OF_CHANGE,
                 "beds_availability": "all",
-                 "disable": True,
+                #"disable": True,
                 "equip_availability": "default",
                 "equip_availability_postSwitch": "all",
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,

@@ -496,7 +496,7 @@ class HealthSystem(Module):
 
         assert beds_availability in (None, 'default', 'all', 'none')
         self.arg_beds_availability = beds_availability
-
+        print(beds_availability)
         assert equip_availability in (None, 'default', 'all', 'none')
         self.arg_equip_availability = equip_availability
 
@@ -566,7 +566,6 @@ class HealthSystem(Module):
             )
 
     def read_parameters(self, data_folder):
-
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
@@ -636,6 +635,7 @@ class HealthSystem(Module):
             files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        print(self.parameters['HR_scaling_by_level_and_officer_type_mode'])
         assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
                 self.parameters['HR_scaling_by_level_and_officer_type_table']), \
             (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
