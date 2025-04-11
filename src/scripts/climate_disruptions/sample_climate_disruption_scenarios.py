@@ -60,15 +60,15 @@ class ClimateDisruptionScenario(BaseScenario):
                 "mode_appt_constraints": 1,
                 "cons_availability": "default",
                 "cons_availability_postSwitch": "all",
+                "tclose_overwrite": 1,
                 "year_cons_availability_switch": self.YEAR_OF_CHANGE,
                 "beds_availability": "all",
-                #"disable": True,
                 "equip_availability": "default",
                 "equip_availability_postSwitch": "all",
                 "year_equip_availability_switch": self.YEAR_OF_CHANGE,
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp126',
-                "climate_model_ensemble_model":'high',
+                "climate_model_ensemble_model":'highest',
                  "services_affected_precip":'all'
                 }}
 
