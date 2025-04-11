@@ -1623,6 +1623,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
+        # todo adjust refills based on current MW situations
 
         # Check availability of medication for condition
         if self.get_consumables(item_codes=
