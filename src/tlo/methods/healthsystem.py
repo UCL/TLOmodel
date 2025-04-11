@@ -427,7 +427,6 @@ class HealthSystem(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-
         assert isinstance(disable, bool)
         assert isinstance(disable_and_reject_all, bool)
         assert not (disable and disable_and_reject_all), (
@@ -496,7 +495,6 @@ class HealthSystem(Module):
 
         assert beds_availability in (None, 'default', 'all', 'none')
         self.arg_beds_availability = beds_availability
-        print(beds_availability)
         assert equip_availability in (None, 'default', 'all', 'none')
         self.arg_equip_availability = equip_availability
 
@@ -527,19 +525,6 @@ class HealthSystem(Module):
         # A reusable store for holding squeeze factors in get_squeeze_factors()
         self._get_squeeze_factors_store_grow = 500
         self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
-
-        # Set default climate disruption paramters
-        assert climate_ssp in ('ssp126', 'ssp245', 'ssp585')
-        self.climate_ssp = climate_ssp
-        self.parameters['climate_ssp'] = climate_ssp
-
-        assert climate_model_ensemble_model in ('lowest', 'mean', 'highest')
-        self.climate_model_ensemble_model = climate_model_ensemble_model
-        self.parameters['climate_model_ensemble_model'] = climate_model_ensemble_model
-
-        assert services_affected_precip in (None, 'none', 'all')
-        self.services_affected_precip = services_affected_precip
-        self.parameters['services_affected_precip'] = services_affected_precip
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -635,7 +620,6 @@ class HealthSystem(Module):
             files=None  # all sheets read in
         )
         # Ensure the mode of HR scaling to be considered in included in the tables loaded
-        print(self.parameters['HR_scaling_by_level_and_officer_type_mode'])
         assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
                 self.parameters['HR_scaling_by_level_and_officer_type_table']), \
             (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
@@ -670,11 +654,6 @@ class HealthSystem(Module):
         # Ensure that a value for the year at the start of the simulation is provided.
         assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
-        # Parameters for climate-mediated disruptions
-        path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'climate_change_impacts'
-        self.parameters['projected_precip_disruptions'] = pd.read_csv(
-            path_to_resourcefiles_for_climate / f'ResourceFile_Precipitation_Disruptions_{self.climate_ssp}_{self.climate_model_ensemble_model}.csv')
-
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
@@ -696,6 +675,7 @@ class HealthSystem(Module):
 
         # Process health system organisation files (Facilities, Appointment Types, Time Taken etc.)
         self.process_healthsystem_organisation_files()
+
 
         # Set value for `use_funded_or_actual_staffing` and process Human Resources Files
         # (Initially set value should be equal to what is specified by the parameter, but overwritten with what was
@@ -738,6 +718,12 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
+        # Read in climate disruption files
+        # Parameters for climate-mediated disruptions
+        path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'climate_change_impacts'
+        self.parameters['projected_precip_disruptions'] = pd.read_csv(
+            path_to_resourcefiles_for_climate / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv')
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -2318,7 +2304,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 (self.module.parameters['projected_precip_disruptions']['year'] == year) &
                                 (self.module.parameters['projected_precip_disruptions']['month'] == month) &
                                 (self.module.parameters['projected_precip_disruptions'][
-                                     'service'] == self.module.services_affected_precip),
+                                     'service'] == self.module._services_affected_precip),
                                 'disruption'
                             ]
                             prob_disruption = pd.DataFrame(prob_disruption)
@@ -2893,7 +2879,6 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'use_funded_or_actual_staffing' in self._parameters:
             self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing']
-
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
