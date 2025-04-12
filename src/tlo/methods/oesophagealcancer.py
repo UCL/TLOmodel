@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, List
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -23,16 +22,18 @@ from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 
 if TYPE_CHECKING:
-    from tlo.population import PatientDetails
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
+    from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class OesophagealCancer(Module):
+class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
     """Oesophageal Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -578,18 +579,19 @@ class OesophagealCancer(Module):
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
-        patient_details: PatientDetails,
+        person_id: int,
+        individual_properties: IndividualProperties,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # If the symptoms include dysphagia, and the patient is not a child,
         # begin investigation for Oesophageal Cancer:
-        if patient_details.age_years > 5 and "dysphagia" in symptoms:
+        if individual_properties["age_years"] > 5 and "dysphagia" in symptoms:
             event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
-                person_id=patient_id, module=self
+                person_id=person_id, module=self
             )
-            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+            schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -679,20 +681,22 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom dysphagia
-        assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
         # Check the consumables are available
-        # todo: replace with endoscope?
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_biopsy_core'],
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_endoscopy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_oesophageal_can['screening_biopsy_optional'])
+                                          self.module.item_codes_oesophageal_can[
+                                              'screening_biopsy_endoscopy_cystoscopy_optional'])
 
         if cons_avail:
-            # If consumables are available, run the dx_test representing the biopsy
+            # If consumables are available add used equipment and run the dx_test representing the biopsy
+            # n.b. endoscope not in equipment list
+            self.add_equipment({'Endoscope', 'Ordinary Microscope'})
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -781,7 +785,8 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                                           self.module.item_codes_oesophageal_can['treatment_surgery_optional'])
 
         if cons_avail:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Log chemotherapy consumables
             self.get_consumables(
@@ -890,7 +895,8 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             item_codes=self.module.item_codes_oesophageal_can['palliation'])
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):

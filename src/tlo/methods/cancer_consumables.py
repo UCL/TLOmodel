@@ -3,94 +3,75 @@ This file stores defines the consumables required within the cancer modules
 """
 from typing import Dict
 
-from tlo import Module
 
-
-def get_consumable_item_codes_cancers(cancer_module: Module) -> Dict[str, int]:
+def get_consumable_item_codes_cancers(self) -> Dict[str, int]:
     """
     Returns dict the relevant item_codes for the consumables across the five cancer modules. This is intended to prevent
     repetition within module code.
     """
 
-    def get_list_of_items(item_list):
-        item_lookup_fn = cancer_module.sim.modules['HealthSystem'].get_item_code_from_item_name
-        return list(map(item_lookup_fn, item_list))
+    get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
     cons_dict = dict()
 
     # Add items that are needed for all cancer modules
-    # todo: @Eva - add syringes, dressing
-    cons_dict['screening_biopsy_core'] = get_list_of_items(['Biopsy needle'])
+    cons_dict['screening_biopsy_endoscopy_cystoscopy_optional'] = \
+        {get_item_code("Specimen container"): 1,
+         get_item_code("Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml"): 1,
+         get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 30,
+         get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+         get_item_code("Syringe, needle + swab"): 1}
 
-    cons_dict['screening_biopsy_optional'] = \
-        get_list_of_items(['Specimen container',
-                           'Lidocaine, injection, 1 % in 20 ml vial',
-                           'Gauze, absorbent 90cm x 40m_each_CMST',
-                           'Disposables gloves, powder free, 100 pieces per box'])
+    cons_dict['screening_biopsy_core'] = \
+        {get_item_code("Biopsy needle"): 1}
 
     cons_dict['treatment_surgery_core'] = \
-        get_list_of_items(['Halothane (fluothane)_250ml_CMST',
-                           'Scalpel blade size 22 (individually wrapped)_100_CMST'])
+        {get_item_code("Halothane (fluothane)_250ml_CMST"): 100,
+         get_item_code("Scalpel blade size 22 (individually wrapped)_100_CMST"): 1}
 
     cons_dict['treatment_surgery_optional'] = \
-        get_list_of_items(['Sodium chloride, injectable solution, 0,9 %, 500 ml',
-                           'Paracetamol, tablet, 500 mg',
-                           'Pethidine, 50 mg/ml, 2 ml ampoule',
-                           'Suture pack',
-                           'Gauze, absorbent 90cm x 40m_each_CMST',
-                           'Cannula iv  (winged with injection pot) 18_each_CMST'])
+        {get_item_code("Sodium chloride, injectable solution, 0,9 %, 500 ml"): 2000,
+         get_item_code("Paracetamol, tablet, 500 mg"): 8000,
+         get_item_code("Pethidine, 50 mg/ml, 2 ml ampoule"): 6,
+         get_item_code("Suture pack"): 1,
+         get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"): 30,
+         get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 1}
 
     cons_dict['palliation'] = \
-        get_list_of_items(['morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA',
-                           'Diazepam, injection, 5 mg/ml, in 2 ml ampoule',
-                           # N.B. This is not an exhaustive list of drugs required for palliation
-                           ])
+        {get_item_code("morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA"): 1,
+         get_item_code("Diazepam, injection, 5 mg/ml, in 2 ml ampoule"): 3,
+         get_item_code("Syringe, needle + swab"): 4}
+    # N.B. This is not an exhaustive list of drugs required for palliation
+
+    cons_dict['treatment_chemotherapy'] = \
+        {get_item_code("Cyclophosphamide, 1 g"): 16800}
 
     cons_dict['iv_drug_cons'] = \
-        get_list_of_items(['Cannula iv  (winged with injection pot) 18_each_CMST',
-                           'Giving set iv administration + needle 15 drops/ml_each_CMST',
-                           'Disposables gloves, powder free, 100 pieces per box'
-                           ])
+        {get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 1,
+         get_item_code("Giving set iv administration + needle 15 drops/ml_each_CMST"): 1,
+         get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+         get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 84}
 
-    # Add items that are specific to each cancer module
-    if 'BreastCancer' == cancer_module.name:
+    # Add items that are specific to a particular cancer module
+    if 'ProstateCancer' == self.name:
 
-        # TODO: chemotharpy protocols??: TAC(Taxotere, Adriamycin, and Cyclophosphamide), AC (anthracycline and
-        #  cyclophosphamide) +/-Taxane, TC (Taxotere and cyclophosphamide), CMF (cyclophosphamide, methotrexate,
-        #  and fluorouracil), FEC-75 (5-Fluorouracil, Epirubicin, Cyclophosphamide). HER 2 +: Add Trastuzumab
-
-        # only chemotherapy i consumable list which is also in suggested protocol is cyclo
-        cons_dict['treatment_chemotherapy'] = get_list_of_items(['Cyclophosphamide, 1 g'])
-
-    elif 'ProstateCancer' == cancer_module.name:
-
-        # TODO: Prostate specific antigen test is listed in ResourceFile_Consumables_availability_and_usage but not
-        #  ResourceFile_Consumables_Items_and_Package
-        # cons_dict['screening_psa_test_core'] = get_list_of_items(['Prostate specific antigen test'])
+        cons_dict['screening_psa_test_core'] = \
+            {get_item_code("Prostate specific antigen test"): 1}
 
         cons_dict['screening_psa_test_optional'] = \
-            get_list_of_items(['Blood collecting tube, 5 ml',
-                               'Disposables gloves, powder free, 100 pieces per box'])
+            {get_item_code("Blood collecting tube, 5 ml"): 1,
+             get_item_code("Disposables gloves, powder free, 100 pieces per box"): 1,
+             get_item_code("Gauze, swabs 8-ply 10cm x 10cm_100_CMST"): 1}
 
-    elif 'BladderCancer' == cancer_module.name:
+    elif 'BladderCancer' == self.name:
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
 
-        # TODO: cytoscope is listed in ResourceFile_Consumables_availability_and_usage but not
-        #  ResourceFile_Consumables_Items_and_Packages
-        # cons_dict['screening_cystoscopy_core'] = get_list_of_items(['Cytoscope'])
+        cons_dict['screening_cystoscopy_core'] = \
+            {get_item_code("Cystoscope"): 1}
 
-        cons_dict['screening_cystoscope_optional'] = get_list_of_items(['Specimen container'])
+    elif 'OesophagealCancer' == self.name:
 
-    elif 'OesophagealCancer' == cancer_module.name:
-
-        # TODO: endoscope is listed in ResourceFile_Consumables_availability_and_usage but not
-        #  ResourceFile_Consumables_Items_and_Packages
-        # cons_dict['screening_endoscope_core'] = get_list_of_items(['Endoscope'])
-
-        cons_dict['screening_endoscope_optional'] =\
-            get_list_of_items(['Specimen container',
-                               'Gauze, absorbent 90cm x 40m_each_CMST'])
-
-        cons_dict['treatment_chemotherapy'] = get_list_of_items(['Cisplatin 50mg Injection'])
+        cons_dict['screening_endoscopy_core'] = \
+            {get_item_code("Endoscope"): 1}
 
     return cons_dict

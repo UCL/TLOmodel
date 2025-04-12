@@ -576,7 +576,7 @@ def test_children_referrals(seed):
         duration_in_days=None,
     )
 
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
 
     # run HSI_Tb_ScreeningAndRefer and check outcomes
     sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1036,7 +1036,7 @@ def test_hsi_scheduling(seed):
         duration_in_days=None,
     )
 
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
 
     hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
     hsi_event.run(squeeze_factor=0)
@@ -1080,7 +1080,7 @@ def test_hsi_scheduling(seed):
         duration_in_days=None,
     )
 
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
 
     hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
     hsi_event.run(squeeze_factor=0)
@@ -1125,7 +1125,7 @@ def test_hsi_scheduling(seed):
         duration_in_days=None,
     )
 
-    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == symptom_list
 
     hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
     hsi_event.run(squeeze_factor=0)

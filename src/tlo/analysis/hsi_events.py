@@ -47,7 +47,7 @@ def get_hsi_event_classes_per_module(
         module = importlib.import_module(f'tlo.methods.{module_name}')
         tlo_module_classes = [
             obj for _, obj in inspect.getmembers(module)
-            if is_valid_tlo_module_subclass(obj, excluded_modules)
+            if is_valid_tlo_module_subclass(obj, {})
         ]
         hsi_event_classes = [
             obj for _, obj in inspect.getmembers(module)

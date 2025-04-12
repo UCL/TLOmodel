@@ -1129,6 +1129,41 @@ def get_parameters_for_status_quo() -> Dict:
             "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
         },
     }
+    
+def get_parameters_for_standard_mode2_runs() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    the "standard mode 2" scenario.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': 1.0,
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            'Service_Availability': ['*'],
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "mode_appt_constraints_postSwitch": 2, # <-- Include a transition to mode 2, to pick up any issues with this
+            "year_mode_switch": 2012, # <-- Could make this quite soon, but I'd say >1 year
+            "tclose_overwrite": 1, # <-- In most of our runs in mode 2, we chose to overwrite tclose
+            "tclose_days_offset_overwrite": 7, # <-- and usually set it to 7.
+            "cons_availability": "default",
+            "beds_availability": "default",
+            "equip_availability": "all",  # <--- NB. Existing calibration is assuming all equipment is available
+        },
+    }
 
 
 def get_parameters_for_improved_healthsystem_and_healthcare_seeking(

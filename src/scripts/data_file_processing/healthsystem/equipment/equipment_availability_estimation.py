@@ -322,6 +322,12 @@ equipment_price_category_mapper = \
                                                   .drop_duplicates() \
                                                   .pipe(lambda x: x.set_index(x['Item_code'].astype(int)))['Category'] \
                                                   .to_dict()
+# Manually declare the price category for equipment items added manually
+# 402: Endoscope: 'Cost >= $1000'
+equipment_price_category_mapper[402] = 'Cost >= $1000'
+# 403: Electrocardiogram: 'Cost >= $1000'
+equipment_price_category_mapper[403] = 'Cost >= $1000'
+
 equipment_price_category = final_equipment_availability_export_full.index.get_level_values('Item_Code') \
                                                                          .map(equipment_price_category_mapper)
 final_equipment_availability_export_full = final_equipment_availability_export_full.groupby(

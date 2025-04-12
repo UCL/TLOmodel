@@ -68,7 +68,7 @@ class RandomBirth(Module):
         # We use 'broadcasting' to set the same value for every individual
         df.is_pregnant = False
         # We randomly sample birth dates for the initial population during the preceding decade
-        start_date = population.sim.date
+        start_date = self.sim.date
         dates = pd.date_range(start_date - DateOffset(years=10), start_date, freq='M')
         df.date_of_birth = self.rng.choice(dates, size=len(df))
         # No children have yet been born. We iterate over the population to ensure each

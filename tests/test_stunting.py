@@ -235,15 +235,17 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, "un_HAZ_category"] = "-3<=HAZ<-2"
-    patient_details = sim.population.row_in_readonly_form(person_id)
 
     # Make the probability of stunting checking/diagnosis as 1.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
-    # Subject the person to `do_at_generic_first_appt`
-    sim.modules["Stunting"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details
-    )
+    with sim.population.individual_properties(person_id) as individual_properties:
+        # Subject the person to `do_at_generic_first_appt`
+        sim.modules["Stunting"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
 
     # Check that there is an HSI scheduled for this person
     hsi_event_scheduled = [
@@ -302,13 +304,17 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checkin
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, "un_HAZ_category"] = "HAZ<-3"
-    patient_details = sim.population.row_in_readonly_form(person_id)
 
     # Make the probability of stunting checking/diagnosis as 0.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 0.0
 
-    # Subject the person to `do_at_generic_first_appt`
-    sim.modules["Stunting"].do_at_generic_first_appt(patient_id=person_id, patient_details=patient_details)
+    with sim.population.individual_properties(person_id) as individual_properties:
+        # Subject the person to `do_at_generic_first_appt`
+        sim.modules['Stunting'].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
 
     # Check that there is no HSI scheduled for this person
     hsi_event_scheduled = [
@@ -320,10 +326,13 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checkin
 
     # Then make the probability of stunting checking/diagnosis 1.0
     # and check the HSI is scheduled for this person
-    sim.modules["Stunting"].parameters["prob_stunting_diagnosed_at_generic_appt"] = 1.0
-    sim.modules["Stunting"].do_at_generic_first_appt(
-        patient_id=person_id, patient_details=patient_details
-    )
+    sim.modules['Stunting'].parameters["prob_stunting_diagnosed_at_generic_appt"] = 1.0
+    with sim.population.individual_properties(person_id) as individual_properties:
+        sim.modules['Stunting'].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
     hsi_event_scheduled = [
         ev[1]
         for ev in sim.modules["HealthSystem"].find_events_for_person(person_id)
@@ -346,10 +355,13 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
-    patient_details = sim.population.row_in_readonly_form(person_id)
-
-    # Subject the person to `do_at_generic_first_appt`
-    sim.modules["Stunting"].do_at_generic_first_appt(patient_id=person_id, patient_details=patient_details)
+    with sim.population.individual_properties(person_id) as individual_properties:
+        # Subject the person to `do_at_generic_first_appt`
+        sim.modules["Stunting"].do_at_generic_first_appt(
+            person_id=person_id,
+            individual_properties=individual_properties,
+            schedule_hsi_event=sim.modules["HealthSystem"].schedule_hsi_event,
+        )
 
     # Check that there is no HSI scheduled for this person
     hsi_event_scheduled = [

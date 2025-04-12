@@ -211,12 +211,12 @@ def test_moderate_exacerbation():
     df.at[person_id, 'ch_has_inhaler'] = False
 
     # check individuals do not have symptoms before an event is run
-    assert 'breathless_moderate' not in sim.modules['SymptomManager'].has_what(person_id)
+    assert 'breathless_moderate' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # run Copd Exacerbation event on an individual and confirm they now have a
     # non-emergency symptom(breathless moderate)
     copd.CopdExacerbationEvent(copd_module, person_id, severe=False).run()
-    assert 'breathless_moderate' in sim.modules['SymptomManager'].has_what(person_id)
+    assert 'breathless_moderate' in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # Run health seeking behavior event and check non-emergency care is sought
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
@@ -259,13 +259,15 @@ def test_severe_exacerbation():
     df.at[person_id, 'ch_has_inhaler'] = False
 
     # check an individual do not have emergency symptoms before an event is run
-    assert 'breathless_severe' not in sim.modules['SymptomManager'].has_what(person_id)
+    assert 'breathless_severe' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # schedule exacerbations event setting severe to True. This will ensure the individual has severe exacerbation
     copd.CopdExacerbationEvent(copd_module, person_id, severe=True).run()
 
     # severe exacerbation should lead to severe symptom(breathless severe in this case). check this is true
-    assert 'breathless_severe' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+    assert "breathless_severe" in sim.modules["SymptomManager"].has_what(
+        person_id=person_id, disease_module=copd_module
+    )
 
     # # Run health seeking behavior event and check emergency care is sought
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
@@ -420,13 +422,15 @@ def test_referral_logic():
     df.at[person_id, 'ch_has_inhaler'] = False
 
     # check an individual do not have emergency symptoms before an event is run
-    assert 'breathless_severe' not in sim.modules['SymptomManager'].has_what(person_id)
+    assert 'breathless_severe' not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # schedule exacerbations event setting severe to True. This will ensure the individual has severe exacerbation
     copd.CopdExacerbationEvent(copd_module, person_id, severe=True).run()
 
     # severe exacerbation should lead to severe symptom(breathless severe in this case). check this is true
-    assert 'breathless_severe' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+    assert "breathless_severe" in sim.modules["SymptomManager"].has_what(
+        person_id=person_id, disease_module=copd_module
+    )
 
     # Run health seeking behavior event and check emergency care is sought
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])

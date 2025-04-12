@@ -1,21 +1,26 @@
-from typing import List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
+from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Mockitis(Module):
+class Mockitis(Module, GenericFirstAppointmentsMixin):
     """This is a dummy infectious disease.
 
     It demonstrates the following behaviours in respect of the healthsystem module:
@@ -290,17 +295,18 @@ class Mockitis(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
+        person_id: int,
         symptoms: List[str],
+        schedule_hsi_event: HSIEventScheduler,
         **kwargs,
-    ) -> IndividualPropertyUpdates:
+    ) -> None:
         # Example for mockitis
         if "extreme_pain_in_the_nose" in symptoms:
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
                 module=self,
-                person_id=patient_id,
+                person_id=person_id,
             )
-            self.healthsystem.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+            schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
     """

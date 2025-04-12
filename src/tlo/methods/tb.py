@@ -9,7 +9,7 @@ from functools import reduce
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
@@ -376,6 +376,19 @@ class Tb(Module):
             Types.LIST,
             "length of inpatient stay for end-of-life TB patients",
         ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "type_of_scaleup": Parameter(
+            Types.STRING, "argument to determine type scale-up of program which will be implemented, "
+                          "can be 'none', 'target' or 'max'",
+        ),
+        "scaleup_start_year": Parameter(
+            Types.INT,
+            "the year when the scale-up starts (it will occur on 1st January of that year)"
+        ),
+        "scaleup_parameters": Parameter(
+            Types.DATA_FRAME,
+            "the parameters and values changed in scenario analysis"
+        )
     }
 
     def read_parameters(self, data_folder):
@@ -412,6 +425,9 @@ class Tb(Module):
             .unique()
             .tolist()
         )
+
+        # load parameters for scale-up projections
+        p['scaleup_parameters'] = workbook["scaleup_parameters"]
 
         # 2) Get the DALY weights
         if "HealthBurden" in self.sim.modules.keys():
@@ -454,9 +470,13 @@ class Tb(Module):
         )
 
     def pre_initialise_population(self):
-        """
-        * Establish the Linear Models
-        """
+        """Do things required before the population is created
+        * Build the LinearModels"""
+        self._build_linear_models()
+
+    def _build_linear_models(self):
+        """Establish the Linear Models"""
+
         p = self.parameters
 
         # risk of active tb
@@ -743,6 +763,7 @@ class Tb(Module):
         )
 
         # 4) -------- Define the treatment options --------
+        # treatment supplied as full kits for duration of treatment
         # adult treatment - primary
         self.item_codes_for_consumables_required['tb_tx_adult'] = \
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
@@ -760,12 +781,16 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
 
         # mdr treatment
-        self.item_codes_for_consumables_required['tb_mdrtx'] = {
-            hs.get_item_code_from_item_name("Treatment: second-line drugs"): 1}
+        self.item_codes_for_consumables_required['tb_mdrtx'] = \
+            hs.get_item_code_from_item_name("Treatment: second-line drugs")
 
         # ipt
-        self.item_codes_for_consumables_required['tb_ipt'] = {
-            hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
+        self.item_codes_for_consumables_required['tb_ipt'] = \
+            hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg")
+
+        # 3hp
+        self.item_codes_for_consumables_required['tb_3HP'] = \
+            hs.get_item_code_from_item_name("Isoniazid/Rifapentine")
 
     def initialise_population(self, population):
 
@@ -845,6 +870,13 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # 2) log at the end of the year
+        # Optional: Schedule the scale-up of programs
+        if self.parameters["type_of_scaleup"] != 'none':
+            scaleup_start_date = Date(self.parameters["scaleup_start_year"], 1, 1)
+            assert scaleup_start_date >= self.sim.start_date, f"Date {scaleup_start_date} is before simulation starts."
+            sim.schedule_event(TbScaleUpEvent(self), scaleup_start_date)
+
+        # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 3) Define the DxTests and get the consumables required
@@ -855,6 +887,37 @@ class Tb(Module):
             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
+
+    def update_parameters_for_program_scaleup(self):
+        """ options for program scale-up are 'target' or 'max' """
+        p = self.parameters
+        scaled_params_workbook = p["scaleup_parameters"]
+
+        if p['type_of_scaleup'] == 'target':
+            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        else:
+            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+
+        # scale-up TB program
+        # use NTP treatment rates
+        p["rate_testing_active_tb"]["treatment_coverage"] = scaled_params["tb_treatment_coverage"]
+
+        # increase tb treatment success rates
+        p["prob_tx_success_ds"] = scaled_params["tb_prob_tx_success_ds"]
+        p["prob_tx_success_mdr"] = scaled_params["tb_prob_tx_success_mdr"]
+        p["prob_tx_success_0_4"] = scaled_params["tb_prob_tx_success_0_4"]
+        p["prob_tx_success_5_14"] = scaled_params["tb_prob_tx_success_5_14"]
+
+        # change first-line testing for TB to xpert
+        p["first_line_test"] = scaled_params["first_line_test"]
+        p["second_line_test"] = scaled_params["second_line_test"]
+
+        # increase coverage of IPT
+        p["ipt_coverage"]["coverage_plhiv"] = scaled_params["ipt_coverage_plhiv"]
+        p["ipt_coverage"]["coverage_paediatric"] = scaled_params["ipt_coverage_paediatric"]
+
+        # update exising linear models to use new scaled-up paramters
+        self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
@@ -1362,6 +1425,21 @@ class TbRegularEvents(RegularEvent, PopulationScopeEventMixin):
         self.module.relapse_event(population)
 
 
+class TbScaleUpEvent(Event, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once on date: scaleup_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+
+        self.module.update_parameters_for_program_scaleup()
+
+
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     """
     * check for those with dates of active tb onset within last time-period
@@ -1462,7 +1540,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # -------- 5) schedule screening for asymptomatic and symptomatic people --------
-        # sample from all new active cases (active_idx) and determine whether they will seek a test
+        # sample from all NEW active cases (active_idx) and determine whether they will seek a test
         year = min(2019, max(2011, now.year))
 
         active_testing_rates = p["rate_testing_active_tb"]
@@ -1605,8 +1683,19 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         p = self.module.parameters
         person = df.loc[person_id]
 
-        # If the person is dead or already diagnosed, do nothing do not occupy any resources
-        if not person["is_alive"] or person["tb_diagnosed"]:
+        if not person["is_alive"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # If the person is already diagnosed, do nothing do not occupy any resources
+        if person["tb_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # If the person is already on treatment and not failing, do nothing do not occupy any resources
+        if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # if person has tested within last 14 days, do nothing
+        if person["tb_date_tested"] >= (self.sim.date - DateOffset(days=7)):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         logger.debug(
@@ -1615,15 +1704,11 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         smear_status = person["tb_smear"]
 
-        # If the person is already on treatment and not failing, do nothing do not occupy any resources
-        if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
         # ------------------------- screening ------------------------- #
 
         # check if patient has: cough, fever, night sweat, weight loss
         # if none of the above conditions are present, no further action
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         if not any(x in self.module.symptom_list for x in persons_symptoms):
             return self.make_appt_footprint({})
 
@@ -1701,6 +1786,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         ].dx_manager.run_dx_test(
                             dx_tests_to_run="tb_clinical", hsi_event=self
                         )
+                if test_result is not None:
+                    # Add used equipment
+                    self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
             elif test == "xpert":
 
@@ -1733,6 +1821,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                             dx_tests_to_run="tb_xpert_test_smear_negative",
                             hsi_event=self,
                         )
+                    if test_result is not None:
+                        # Add used equipment
+                        self.add_equipment({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # ------------------------- testing referrals ------------------------- #
 
@@ -1751,6 +1842,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"Over5OPD": 2, "LabTBMicro": 1}
             )
+            if test_result is not None:
+                # Add used equipment
+                self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
@@ -1877,7 +1971,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
 
         # check if patient has: cough, fever, night sweat, weight loss
         set_of_symptoms_that_indicate_tb = set(self.module.symptom_list)
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
 
         if not set_of_symptoms_that_indicate_tb.intersection(persons_symptoms):
             # if none of the above conditions are present, no further action
@@ -1948,6 +2042,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
+        if test_result is not None:
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
@@ -2021,6 +2117,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
+        if test_result is not None:
+            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
         # if consumables not available, rely on clinical diagnosis
         # return blank footprint as xray was not available
@@ -2102,8 +2200,9 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         treatment_regimen = self.select_treatment(person_id)
+        # treatment supplied in kits, one kit per treatment course
         treatment_available = self.get_consumables(
-            item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
+            item_codes={self.module.item_codes_for_consumables_required[treatment_regimen]: 1}
         )
 
         # if require MDR treatment, and not currently at level 2, refer to level 2
@@ -2281,6 +2380,9 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                 )
+            if test_result is not None:
+                # Add used equipment
+                self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
             # if sputum test was available and returned positive and not diagnosed with mdr, schedule xpert test
             if test_result and not person["tb_diagnosed_mdr"]:
@@ -2295,6 +2397,9 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                     xperttest_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
                     )
+                if xperttest_result is not None:
+                    # Add used equipment
+                    self.add_equipment({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # if xpert test returns new mdr-tb diagnosis
         if xperttest_result and (df.at[person_id, "tb_strain"] == "mdr"):
@@ -2340,8 +2445,9 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
     * HIV.HSI_Hiv_StartOrContinueTreatment for PLHIV, diagnosed and on ART
     * Tb.HSI_Tb_StartTreatment for up to 5 contacts of diagnosed active TB case
 
-    if person referred by ART initiation (HIV+), IPT given for 36 months
-    paediatric IPT is 6-9 months
+    Isoniazid preventive therapy for HIV-infected children : 6 months, 180 doses
+    3HP (Isoniazid/Rifapentine) for adults: 12 weeks, 12 doses
+    3HP for children ages >2 yrs hiv-
     """
 
     def __init__(self, module, person_id):
@@ -2369,7 +2475,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
             return
 
         # if currently have symptoms of TB, refer for screening/testing
-        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id=person_id)
         if any(x in self.module.symptom_list for x in persons_symptoms):
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2381,10 +2487,23 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         else:
             # Check/log use of consumables, and give IPT if available
-            # if not available, reschedule IPT start
-            if self.get_consumables(
-                item_codes=self.module.item_codes_for_consumables_required["tb_ipt"]
-            ):
+
+            # if child and HIV+ or child under 2 yrs
+            if ((person["age_years"] <= 15) and person["hv_inf"]) or (person["age_years"] <= 2):
+
+                # 6 months dispensation, once daily
+                drugs_available = self.get_consumables(
+                    item_codes={self.module.item_codes_for_consumables_required["tb_ipt"]: 180})
+
+            # for all others
+            else:
+                # 12 weeks dispensation, once weekly
+                drugs_available = self.get_consumables(
+                    item_codes={self.module.item_codes_for_consumables_required["tb_3HP"]: 12}
+                )
+
+            # if available, schedule IPT decision
+            if drugs_available:
                 # Update properties
                 df.at[person_id, "tb_on_ipt"] = True
                 df.at[person_id, "tb_date_ipt"] = self.sim.date
@@ -2610,7 +2729,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # proportion of active TB cases in the last year who are HIV-positive
-        prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
+        prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0.0
 
         logger.info(
             key="tb_incidence",
@@ -2644,7 +2763,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.age_years >= 15) & df.is_alive]
         ) if len(
             df[(df.age_years >= 15) & df.is_alive]
-        ) else 0
+        ) else 0.0
         assert prev_active_adult <= 1
 
         # prevalence of active TB in children
@@ -2655,7 +2774,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.age_years < 15) & df.is_alive]
         ) if len(
             df[(df.age_years < 15) & df.is_alive]
-        ) else 0
+        ) else 0.0
         assert prev_active_child <= 1
 
         # LATENT
@@ -2672,7 +2791,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[(df.age_years >= 15) & df.is_alive]
         ) if len(
             df[(df.age_years >= 15) & df.is_alive]
-        ) else 0
+        ) else 0.0
         assert prev_latent_adult <= 1
 
         # proportion of population with latent TB - children
@@ -2714,7 +2833,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if new_mdr_cases:
             prop_mdr = new_mdr_cases / new_tb_cases
         else:
-            prop_mdr = 0
+            prop_mdr = 0.0
 
         logger.info(
             key="tb_mdr",
@@ -2736,7 +2855,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if new_tb_diagnosis:
             prop_dx = new_tb_diagnosis / new_tb_cases
         else:
-            prop_dx = 0
+            prop_dx = 0.0
 
         # ------------------------------------ TREATMENT ------------------------------------
         # number of tb cases who became active in last timeperiod and initiated treatment
@@ -2752,7 +2871,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             tx_coverage = new_tb_tx / new_tb_cases
             # assert tx_coverage <= 1
         else:
-            tx_coverage = 0
+            tx_coverage = 0.0
 
         # ipt coverage
         new_tb_ipt = len(
@@ -2765,7 +2884,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if new_tb_ipt:
             current_ipt_coverage = new_tb_ipt / len(df[df.is_alive])
         else:
-            current_ipt_coverage = 0
+            current_ipt_coverage = 0.0
 
         logger.info(
             key="tb_treatment",
@@ -2836,7 +2955,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if adult_num_false_positive:
             adult_prop_false_positive = adult_num_false_positive / new_tb_tx_adult
         else:
-            adult_prop_false_positive = 0
+            adult_prop_false_positive = 0.0
 
         # children
         child_num_false_positive = len(

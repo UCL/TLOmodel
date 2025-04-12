@@ -1046,10 +1046,16 @@ class HealthSystem(Module):
             how='left'
         )
 
+        availability_columns = ['available_prop', 'available_prop_scenario1', 'available_prop_scenario2',
+                                'available_prop_scenario3', 'available_prop_scenario4', 'available_prop_scenario5',
+                                'available_prop_scenario6', 'available_prop_scenario7', 'available_prop_scenario8',
+                                'available_prop_scenario9', 'available_prop_scenario10', 'available_prop_scenario11',
+                                'available_prop_scenario12']
+
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1078,7 +1084,7 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
@@ -1208,8 +1214,13 @@ class HealthSystem(Module):
             ].iloc[0]
 
             # Convert policy dataframe into dictionary to speed-up look-up process.
-            self.priority_rank_dict = \
-                Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
+            self.priority_rank_dict = (
+                Policy_df.set_index("Treatment", drop=True)
+                # Standardize dtypes to ensure any integers represented as floats are
+                # converted to integer dtypes
+                .convert_dtypes()
+                .to_dict(orient="index")
+            )
             del self.priority_rank_dict["lowest_priority_considered"]
 
     def schedule_hsi_event(
@@ -1783,7 +1794,7 @@ class HealthSystem(Module):
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
                 'priority': priority,
-                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else "-99",
                 'Facility_ID': facility_id if facility_id is not None else -99,
             },
             description="record of each HSI event that never ran"
@@ -2820,7 +2831,11 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.consumables.availability = self._parameters['cons_availability']
 
         if 'beds_availability' in self._parameters:
-            self.module.bed_days.availability = self._parameters['beds_availability']
+            self.module.bed_days.switch_beddays_availability(
+                new_availability=self._parameters["beds_availability"],
+                effective_on_and_from=self.sim.date,
+                model_to_data_popsize_ratio=self.sim.modules["Demography"].initial_model_to_data_popsize_ratio
+            )
 
         if 'equip_availability' in self._parameters:
             self.module.equipment.availability = self._parameters['equip_availability']
