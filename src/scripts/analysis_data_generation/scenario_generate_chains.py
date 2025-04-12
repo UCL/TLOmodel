@@ -51,7 +51,7 @@ from tlo.methods import (
 class GenerateDataChains(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 0
+        self.seed = 42
         self.start_date = Date(2010, 1, 1)
         self.end_date = self.start_date + pd.DateOffset(months=13)
         self.pop_size = 1000
