@@ -136,7 +136,26 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
-   
+                
+            "GDP growth fHE growth case 7 status quo":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case7",
+                      },
+                    }
+                ),
+                
+            "GDP growth fHE growth case 8 status quo":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case8",
+                      },
+                    }
+                ),
             # =========== PERFECT CONSUMABLES AVAILABILITY ============
             "No growth perfect consumables":
                 mix_scenarios(
@@ -211,6 +230,322 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
+            "GDP growth fHE growth case 7 perfect consumables":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case7",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "all",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 8 perfect consumables":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case8",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "all",
+                      },
+                    }
+                ),
+            # =========== SCENARIO 13 AVAILABILITY ============
+            "No growth cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "no_scaling",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+                
+            "GDP growth cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+                
+            "GDP growth fHE growth case 1 cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+ 
+            "GDP growth fHE growth case 3 cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+
+ 
+            "GDP growth fHE growth case 4 cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 6 cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 7 cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case7",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 8 cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case8",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
+                
+            # =========== SCENARIO 14 AVAILABILITY ============
+            "No growth cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "no_scaling",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+                
+            "GDP growth cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+                
+            "GDP growth fHE growth case 1 cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+ 
+            "GDP growth fHE growth case 3 cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+
+ 
+            "GDP growth fHE growth case 4 cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 6 cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 7 cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case7",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 8 cons scenario 14":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case8",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario14",
+                      },
+                    }
+                ),
+                
+            # =========== SCENARIO 15 AVAILABILITY ============
+            "No growth cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "no_scaling",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
+                
+            "GDP growth cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
+                
+            "GDP growth fHE growth case 1 cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case1",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
+ 
+            "GDP growth fHE growth case 3 cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case3",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
+
+ 
+            "GDP growth fHE growth case 4 cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case4",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 6 cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case6",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 7 cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case7",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
+
+            "GDP growth fHE growth case 8 cons scenario 15":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "GDP_growth_fHE_case8",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario15",
+                      },
+                    }
+                ),
         }
         
     def _baseline(self) -> Dict:
