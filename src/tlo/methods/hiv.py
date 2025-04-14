@@ -1183,6 +1183,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         updated_params_workbook = p["mihpsa_scenarios"]
         # todo: PrEP coverage differs for FSW if oral vs injectable
         # todo: remove drop in VS when VL monitoring stops
+        # todo: self-testing now a separate function
 
         updated_params = updated_params_workbook.set_index('parameter')['target_value'].to_dict()
 
@@ -1307,9 +1308,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             #                                                          updated_params[
             #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
-                                                                       "annual_testing_rate_adults"] * \
-                                                                   updated_params["rr_hiv_self_testing"]
+            # this happens automatically in HIV_poll if mihpsa_scenario==6
+
 
         # VMMC
         if p['select_mihpsa_scenario'] == 7:
@@ -1996,6 +1996,34 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     ),  # (to occur before next polling)
                 )
 
+        # ----------------------------------- SELF-TEST -----------------------------------
+        def self_tests():
+
+            if p['select_mihpsa_scenario'] == 6 & (self.sim.date.year >= p["scaleup_start_year"]):
+
+                test_rates = 0.08  # need 800,000 in population of 19m, half are children
+
+                random_draw = rng.random_sample(size=len(df))
+                self_tests_idx = df.loc[df.is_alive &
+                                        (df.age_years >= 15) &
+                                        ~df.hv_diagnosed &
+                                        (random_draw < test_rates)].index
+
+                for person_id in self_tests_idx:
+                    date_test = self.sim.date + pd.DateOffset(
+                        days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                    )
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id,
+                                                       module=self.module,
+                                                       referred_from='HIV_poll_self_test'),
+                        priority=1,
+                        topen=date_test,
+                        tclose=date_test + pd.DateOffset(
+                            months=self.frequency.months
+                        ),  # (to occur before next polling)
+                    )
+
         # ----------------------------------- PrEP poll for AGYW -----------------------------------
         def prep_for_agyw():
 
@@ -2052,7 +2080,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                          df.li_is_sexworker &
                                          ~df.hv_is_on_prep &
                                         (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
-                print("eligible_fsw_idx", eligible_fsw_idx)
 
                 for person in eligible_fsw_idx:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2103,6 +2130,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             current_year = 2020
         spontaneous_testing(current_year=current_year)
+
+        # self-test
+        self_tests()
 
         # PrEP for AGYW
         prep_for_agyw()
@@ -2999,15 +3029,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         else:
 
             # logger for drugs not available
-            person_details_for_tx = {
-                'age': person['age_years'],
-                'facility_level': self.ACCEPTED_FACILITY_LEVEL,
-                'number_appts': self.counter_for_drugs_not_available,
-                'district': person['district_of_residence'],
-                'person_id': person_id,
-                'drugs_available': drugs_were_available,
-            }
-            logger.info(key='hiv_arv_NA', data=person_details_for_tx)
+            # person_details_for_tx = {
+            #     'age': person['age_years'],
+            #     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+            #     'number_appts': self.counter_for_drugs_not_available,
+            #     'district': person['district_of_residence'],
+            #     'person_id': person_id,
+            #     'drugs_available': drugs_were_available,
+            # }
+            # logger.info(key='hiv_arv_NA', data=person_details_for_tx)
 
             # As drugs were not available, the person will default to being off ART (...if they were on ART at the
             # beginning of the HSI.)
@@ -3133,13 +3163,13 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
-        # Log the VL test: line-list of summary information about each test
-        adult = True if person['age_years'] >= 15 else False
-        person_details_for_test = {
-            'adult': adult,
-            'person_id': person_id
-        }
-        logger.info(key='hiv_VLtest', data=person_details_for_test)
+            # Log the VL test: line-list of summary information about each test
+            adult = True if person['age_years'] >= 15 else False
+            person_details_for_test = {
+                'adult': adult,
+                'person_id': person_id
+            }
+            logger.info(key='hiv_VLtest', data=person_details_for_test)
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
@@ -3787,14 +3817,14 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_tx_delays = (df.loc[child_tx_idx, "hv_date_treated"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
         child_tx_delays = child_tx_delays.tolist()
 
-        logger.info(
-            key="hiv_treatment_delays",
-            description="HIV time from onset to treatment",
-            data={
-                "HivTreatmentDelayAdults": adult_tx_delays,
-                "HivTreatmentDelayChildren": child_tx_delays,
-            },
-        )
+        # logger.info(
+        #     key="hiv_treatment_delays",
+        #     description="HIV time from onset to treatment",
+        #     data={
+        #         "HivTreatmentDelayAdults": adult_tx_delays,
+        #         "HivTreatmentDelayChildren": child_tx_delays,
+        #     },
+        # )
 
 
 # ---------------------------------------------------------------------------
