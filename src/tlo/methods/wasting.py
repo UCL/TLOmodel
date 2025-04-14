@@ -366,6 +366,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # sim.schedule_event(PrintPersonPropertiesEventIfUpdated(self, self.person_of_interest_id),
         #                    sim.date + DateOffset(days=1))
 
+        # Retrieve the consumables codes and amounts of the consumables used
+        self.cons_codes = self.get_consumables_for_each_treatment()
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
         :param mother_id: the mother for this child
@@ -562,6 +565,21 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                   f"death_date: {df.at[person_id, 'un_sam_death_date']}")
             print("-----")
 
+    def get_consumables_for_each_treatment(self):
+        """Get the item_code and amount administrated for all consumables for each treatment."""
+
+        # ### Get item codes from item names and define number of units per case here
+        get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        _cons_codes = dict()
+        _cons_codes['SFP'] = {get_item_code("Corn Soya Blend (or Supercereal - CSB++)"): 3000 * 3}
+        _cons_codes['OTP'] = {get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 20 * 7}
+        _cons_codes['OTP_opt'] = {get_item_code("SAM medicines"): 1}
+        _cons_codes['ITC'] = {get_item_code("F-75 therapeutic milk, 102.5 g"): 102.5 * 24,
+                              get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 3 * 4}
+        _cons_codes['ITC_opt'] = {get_item_code("SAM medicines"): 1}
+
+        return _cons_codes
 
     def date_of_outcome_for_untreated_wasting(self, whz_category):
         """
@@ -1772,16 +1790,10 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         # Perform measurements (height/length), weight, MUAC
         self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
 
-        # Make request for consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
-        # individual items
-        item_code1 = pd.unique(consumables.loc[consumables['Items'] ==
-                                               'Corn Soya Blend (or Supercereal - CSB++)', 'Item_Code'])[0]
-
-        # check availability of consumables
-        if self.get_consumables([item_code1]):
+        # Check and log availability of consumables
+        if self.get_consumables(item_codes=self.module.cons_codes['SFP']):
             logger.debug(key='debug', data='consumables are available')
-            # Log that the treatment is provided:
+            # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             if do_prints:
                 print("consumables available")
@@ -1843,19 +1855,12 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         # Perform measurements (height/length), weight, MUAC
         self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
 
-        # Make request for consumables
-        consumables = self.sim.modules['HealthSystem'].parameters[
-            'item_and_package_code_lookups']
-
-        # individual items
-        item_code1 = pd.unique(consumables.loc[consumables['Items'] ==
-                                               'SAM theraputic foods', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
-
-        # check availability of consumables
-        if self.get_consumables(item_code1) and self.get_consumables(item_code2):
+        # Check and log availability of consumables
+        if self.get_consumables(
+            item_codes=self.module.cons_codes['OTP'], optional_item_codes=self.module.cons_codes['OTP_opt']
+        ):
             logger.debug(key='debug', data='consumables are available.')
-            # Log that the treatment is provided:
+            # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             if do_prints:
                 print("consumables available")
@@ -1914,18 +1919,12 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
         # Perform measurements (height/length, weight, MUAC)
         self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
 
-        # Make request for consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
-
-        # individual items
-        item_code1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
-
-        # check availability of consumables
-        if self.get_consumables(item_code1) and self.get_consumables(item_code2):
+        # Check and log availability of consumables
+        if self.get_consumables(
+            item_codes=self.module.cons_codes['ITC'], optional_item_codes=self.module.cons_codes['ITC_opt']
+        ):
             logger.debug(key='debug', data='consumables available, so use it.')
-            # Log that the treatment is provided:
+            # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             if do_prints:
                 print("consumables available")
