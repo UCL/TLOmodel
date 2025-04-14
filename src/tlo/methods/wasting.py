@@ -555,11 +555,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     and (df.at[person_id, 'un_sam_with_complications'])), f'{person_id=} has MAM with complications.'
 
         if person_id == self.person_of_interest_id:
-            print("ACUTE MALNUTRITION STATE ASSIGNED")
+            print('-----')
+            print("Acute Malnutrition state ASSIGNED")
             print(f"am state: {df.at[person_id, 'un_clinical_acute_malnutrition']}; "
                   f"complications: {df.at[person_id, 'un_sam_with_complications']}; "
                   f"death_date: {df.at[person_id, 'un_sam_death_date']}")
-            print("--------------------------------------")
+            print("-----")
 
 
     def date_of_outcome_for_untreated_wasting(self, whz_category):
@@ -601,7 +602,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                         p['duration_sam_to_death']))
         date_of_death = self.sim.date + DateOffset(days=duration_sam_to_death)
         return date_of_death
-
 
     def clinical_signs_acute_malnutrition(self, idx):
         """
