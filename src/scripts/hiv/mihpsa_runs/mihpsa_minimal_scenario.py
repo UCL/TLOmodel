@@ -50,11 +50,11 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2051, 1, 1)
-        self.pop_size = 100_000
+        self.end_date = Date(2020, 1, 1)  # todo reset
+        self.pop_size = 5_000  # todo reset
         self.scenarios = [1, 2, 3, 4, 5, 6, 7, 8]
         self.number_of_draws = len(self.scenarios)
-        self.runs_per_draw = 3
+        self.runs_per_draw = 1  # todo reset
 
     def log_configuration(self):
         return {
@@ -94,7 +94,7 @@ class TestScenario(BaseScenario):
         return {
             'Hiv': {
                 'select_mihpsa_scenario': self.scenarios[draw_number],
-                'scaleup_start_year': 2024
+                'scaleup_start_year': 2015  # todo reset
             },
         }
 
