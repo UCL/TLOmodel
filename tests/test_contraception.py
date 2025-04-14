@@ -12,6 +12,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, enhanced_lifestyle, healthsystem, symptommanager
 from tlo.methods.contraception import HSI_Contraception_FamilyPlanningAppt
 from tlo.methods.hiv import DummyHivModule
+from tlo.util import read_csv_files
 
 
 def run_sim(tmpdir,
@@ -918,8 +919,8 @@ def test_input_probs_sum():
 
     # Import relevant sheets from the workbook
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    workbook = pd.read_excel(Path(resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx',
-                             sheet_name=None)
+    workbook = read_csv_files(Path(resourcefilepath) / 'contraception' / 'ResourceFile_Contraception',
+                             files=None)
     sheet_names = [
         'Initiation_ByMethod',
         'Interventions_Pop',

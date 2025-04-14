@@ -63,7 +63,6 @@ import abc
 import argparse
 import datetime
 import json
-import pickle
 from collections.abc import Iterable
 from itertools import product
 from pathlib import Path, PurePosixPath
@@ -72,7 +71,6 @@ from typing import List, Optional
 import numpy as np
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
 from tlo.util import str_to_pandas_date
 
 logger = logging.getLogger(__name__)
@@ -245,6 +243,11 @@ class BaseScenario(abc.ABC):
         """
         return None
 
+    def draw_name(self, draw_number) -> str:
+        """Returns the name of the draw corresponding to the given draw number. This is offered for convenience so that
+        the logfile contain a 'user-friendly' label for the draw."""
+        return str(draw_number)
+
     def get_log_config(self, override_output_directory=None):
         """Returns the log configuration for the scenario, with some post_processing."""
         log_config = self.log_configuration()
@@ -330,6 +333,7 @@ class DrawGenerator:
         return {
             "draw_number": draw_number,
             "parameters": self.scenario.draw_parameters(draw_number, self.scenario.rng),
+            "draw_name": self.scenario.draw_name(draw_number),
         }
 
     def get_run_config(self, scenario_path):
@@ -421,6 +425,7 @@ class SampleRunner:
                 log_config=log_config,
             )
             sim.register(*self.scenario.modules())
+            logger.info(key="draw_name", data={'draw_name': draw['draw_name']}, description="The draw name")
 
             if sample["parameters"] is not None:
                 self.override_parameters(sim, sample["parameters"])
@@ -445,13 +450,6 @@ class SampleRunner:
         else:
             sim.run_simulation_to(to_date=self.scenario.end_date)
             sim.finalise()
-
-        if sim.log_filepath is not None:
-            outputs = parse_log_file(sim.log_filepath)
-            for key, output in outputs.items():
-                if key.startswith("tlo."):
-                    with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
-                        pickle.dump(output, f)
 
     def run(self):
         """Run all samples for the scenario. Used by `tlo scenario-run` to run the scenario locally"""

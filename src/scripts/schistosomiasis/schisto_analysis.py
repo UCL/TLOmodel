@@ -13,6 +13,7 @@ from matplotlib.dates import DateFormatter
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography, healthburden, healthsystem, schisto
+from tlo.util import read_csv_files
 
 
 def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
@@ -136,7 +137,7 @@ def save_general_outputs_and_params():
     # loger_DALY_All.to_csv(savepath_daly, index=False)
 
     # parameters spreadsheet
-    parameters_used = pd.read_excel(Path("./resources/ResourceFile_Schisto.xlsx"), sheet_name=None)
+    parameters_used = read_csv_files(Path("./resources/ResourceFile_Schisto"), files=None)
     writer = pd.ExcelWriter(savepath_params)
     for sheet_name in parameters_used.keys():
         parameters_used[sheet_name].to_excel(writer, sheet_name=sheet_name)
@@ -245,8 +246,8 @@ def get_values_per_district(infection):
 
 
 def get_expected_prevalence(infection):
-    expected_district_prevalence = pd.read_excel(Path("./resources") / 'ResourceFile_Schisto.xlsx',
-                                                 sheet_name='District_Params_' + infection.lower())
+    expected_district_prevalence = read_csv_files(Path("./resources") / 'ResourceFile_Schisto',
+                                                 files='District_Params_' + infection.lower())
     expected_district_prevalence = \
         expected_district_prevalence[expected_district_prevalence['District'].isin(['Blantyre',
                                                                                     'Chiradzulu', 'Mulanje', 'Nsanje',

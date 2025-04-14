@@ -11,6 +11,7 @@ from collections import defaultdict
 import pandas as pd
 
 from tlo import Module, logging
+from tlo.util import read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -60,11 +61,11 @@ class Deviance(Module):
         """Make a dict of all data to be used in calculating calibration score"""
 
         # # HIV read in resource files for data
-        xls = pd.ExcelFile(self.resourcefilepath / "ResourceFile_HIV.xlsx")
+        xls = read_csv_files(self.resourcefilepath / "ResourceFile_HIV", files=None)
 
         # MPHIA HIV data - age-structured
-        data_hiv_mphia_inc = pd.read_excel(xls, sheet_name="MPHIA_incidence2015")
-        data_hiv_mphia_prev = pd.read_excel(xls, sheet_name="MPHIA_prevalence_art2015")
+        data_hiv_mphia_inc = xls["MPHIA_incidence2015"]
+        data_hiv_mphia_prev = xls["MPHIA_prevalence_art2015"]
 
         # hiv prevalence
         self.data_dict["mphia_prev_2015_adult"] = data_hiv_mphia_prev.loc[
@@ -86,7 +87,7 @@ class Deviance(Module):
         ]
 
         # DHS HIV data
-        data_hiv_dhs_prev = pd.read_excel(xls, sheet_name="DHS_prevalence")
+        data_hiv_dhs_prev = xls["DHS_prevalence"]
         self.data_dict["dhs_prev_2010"] = data_hiv_dhs_prev.loc[
             (data_hiv_dhs_prev.Year == 2010), "HIV prevalence among general population 15-49"
         ].values[0]
@@ -95,15 +96,15 @@ class Deviance(Module):
         ].values[0]
 
         # UNAIDS AIDS deaths data: 2010-
-        data_hiv_unaids_deaths = pd.read_excel(xls, sheet_name="unaids_mortality_dalys2021")
+        data_hiv_unaids_deaths = xls["unaids_mortality_dalys2021"]
         self.data_dict["unaids_deaths_per_100k"] = data_hiv_unaids_deaths["AIDS_mortality_per_100k"]
 
         # TB
         # TB WHO data: 2010-
-        xls_tb = pd.ExcelFile(self.resourcefilepath / "ResourceFile_TB.xlsx")
+        xls_tb = read_csv_files(self.resourcefilepath / "ResourceFile_TB", files=None)
 
         # TB active incidence per 100k 2010-2017
-        data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2023")
+        data_tb_who = xls_tb["WHO_activeTB2023"]
         self.data_dict["who_tb_inc_per_100k"] = data_tb_who.loc[
             (data_tb_who.year >= 2010), "incidence_per_100k"
         ]

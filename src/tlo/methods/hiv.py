@@ -25,7 +25,6 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING, List
 
 import numpy as np
@@ -40,7 +39,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -443,10 +442,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_HIV.xlsx"),
-            sheet_name=None,
-        )
+        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
@@ -476,11 +472,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
-            # Chronic infection but not AIDS (including if on ART)
-            # (taken to be equal to "Symptomatic HIV without anaemia")
+            # Symptomatic HIV without anemia
             self.daly_wts["hiv_infection_but_not_aids"] = self.sim.modules[
                 "HealthBurden"
             ].get_daly_weight(17)
+
+            # AIDS with antiretroviral treatment without anemia
+            self.daly_wts["hiv_infection_on_ART"] = self.sim.modules[
+                "HealthBurden"
+            ].get_daly_weight(20)
 
             #  AIDS without anti-retroviral treatment without anemia
             self.daly_wts["aids"] = self.sim.modules["HealthBurden"].get_daly_weight(19)
@@ -622,8 +622,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("sex").when("M", 1.0).otherwise(0.0),
             Predictor("year",
                       external=True,
-                      conditions_are_mutually_exclusive=True,
-                      conditions_are_exhaustive=True).when("<2019", 1)
+                      conditions_are_mutually_exclusive=True).when("<2019", 1)
             .otherwise(p["increase_in_prob_circ_2019"])
         )
 
@@ -656,8 +655,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Dates on which things have happened
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
-        df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
-        df.loc[df.is_alive, "hv_date_last_ART"] = pd.NaT
         df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
         df.loc[df.is_alive, "hv_date_last_ART"] = pd.NaT
         df.loc[df.is_alive, "hv_VMMC_in_last_year"] = False
@@ -1087,7 +1084,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # First - line ART for adults(age > "ART_age_cutoff_older_child")
         # TDF/3TC/DTG 120/60/50mg, 1 tablet per day
         # cotrim adult tablet, 1 tablet per day, units specified in mg * dispensation days
-        # Note incorrect spelling of Cotrimoxazole in consumables resourcefile - matched here
         self.item_codes_for_consumables_required['First-line ART regimen: adult'] = \
             hs.get_item_code_from_item_name("First-line ART regimen: adult")
         self.item_codes_for_consumables_required['First-line ART regimen: adult: cotrimoxazole'] = \
@@ -1341,8 +1337,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "hv_last_test_date"] = pd.NaT
         df.at[child_id, "hv_date_treated"] = pd.NaT
         df.at[child_id, "hv_date_last_ART"] = pd.NaT
-        df.at[child_id, "hv_date_treated"] = pd.NaT
-        df.at[child_id, "hv_date_last_ART"] = pd.NaT
         df.at[child_id, "hv_VMMC_in_last_year"] = False
         df.at[child_id, "hv_days_on_prep_AGYW"] = 0
         df.at[child_id, "hv_days_on_prep_FSW"] = 0
@@ -1462,7 +1456,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         dalys = pd.Series(data=0, index=df.loc[df.is_alive].index)
 
         # All those infected get the 'infected but not AIDS' daly_wt:
-        dalys.loc[df.hv_inf] = self.daly_wts["hiv_infection_but_not_aids"]
+        dalys.loc[df.hv_inf & (df.hv_art == "not")] = self.daly_wts["hiv_infection_but_not_aids"]
+
+        # infected and on ART and virally suppressed
+        dalys.loc[df.hv_inf & (df.hv_art == "on_VL_suppressed")] = self.daly_wts["hiv_infection_on_ART"]
 
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[
@@ -1681,20 +1678,20 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         df = self.sim.population.props
 
-        # get number of tests performed in last time period
-        if self.sim.date.year <= 2011:
-            number_tests_new = df.hv_number_tests.sum()
+        if not self.stored_test_numbers:
+            # If it's the first year, set previous_test_numbers to 0
             previous_test_numbers = 0
-
         else:
+            # For subsequent years, retrieve the last stored number
             previous_test_numbers = self.stored_test_numbers[-1]
 
-            # calculate number of tests now performed - cumulative, include those who have died
-            number_tests_new = df.hv_number_tests.sum()
+        # Calculate number of tests now performed - cumulative, include those who have died
+        number_tests_new = df.hv_number_tests.sum()
 
+        # Store the number of tests performed in this year for future reference
         self.stored_test_numbers.append(number_tests_new)
 
-        # number of tests performed in last time period
+        # Number of tests performed in the last time period
         number_tests_in_last_period = number_tests_new - previous_test_numbers
 
         # per-capita testing rate
@@ -2677,6 +2674,14 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         if not person["is_alive"]:
             return
 
+        # get confirmatory test
+        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+            dx_tests_to_run="hiv_rapid_test", hsi_event=self
+        )
+        if test_result is not None:
+            df.at[person_id, "hv_number_tests"] += 1
+            df.at[person_id, "hv_last_test_date"] = self.sim.date
+
         # if person not circumcised, perform the procedure
         if not person["li_is_circ"]:
             # Check/log use of consumables, if materials available, do circumcision and schedule follow-up appts
@@ -2690,7 +2695,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
                 # Add used equipment
                 self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
-                                    'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
+                                       'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
 
                 # Schedule follow-up appts
                 # schedule first follow-up appt, 3 days from procedure;
@@ -2908,7 +2913,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # check whether person had Rx at least 3 months ago and is now due repeat prescription
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
         if person['hv_date_last_ART'] > (
-            self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
+                self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         if art_status_at_beginning_of_hsi == "not":
@@ -3023,6 +3028,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # ART is first item in drugs_available dict
         if drugs_available.get('art', False):
+
+            # get confirmatory test
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="hiv_rapid_test", hsi_event=self
+            )
+            if test_result is not None:
+                df.at[person_id, "hv_number_tests"] += 1
+                df.at[person_id, "hv_last_test_date"] = self.sim.date
+
             # Assign person to be suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset)
@@ -3060,8 +3074,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p[
-            'interval_for_viral_load_measurement_months']:
+        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Log the VL test: line-list of summary information about each test
@@ -3115,7 +3128,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: older child']: dispensation_days * 3},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
+                    'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
@@ -3124,7 +3137,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First-line ART regimen: adult']: dispensation_days},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
+                    'First-line ART regimen: adult: cotrimoxazole']: dispensation_days * 960},
                 return_individual_results=True)
 
         # add drug names to dict

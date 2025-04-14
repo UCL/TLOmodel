@@ -23,6 +23,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.util import read_csv_files
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")
@@ -105,8 +106,8 @@ def get_model_prevalence_by_district(spec: str):
 
 def get_expected_prevalence_by_district(species: str):
     """Get the prevalence of a particular species from the data (which is for year 2010/2011)."""
-    expected_district_prevalence = pd.read_excel(resourcefilepath / 'ResourceFile_Schisto.xlsx',
-                                                 sheet_name='District_Params_' + species.lower())
+    expected_district_prevalence = read_csv_files(resourcefilepath / 'ResourceFile_Schisto',
+                                                 files='District_Params_' + species.lower())
     expected_district_prevalence.set_index("District", inplace=True)
     expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
     return expected_district_prevalence

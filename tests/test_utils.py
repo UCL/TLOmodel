@@ -15,7 +15,12 @@ import tlo.util
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
-from tlo.util import DEFAULT_MOTHER_ID, convert_excel_files_to_csv, read_csv_files
+from tlo.util import (
+    DEFAULT_MOTHER_ID,
+    convert_excel_files_to_csv,
+    parse_csv_values_for_columns_with_mixed_datatypes,
+    read_csv_files,
+)
 
 path_to_files = Path(os.path.dirname(__file__))
 
@@ -332,11 +337,46 @@ def copy_files_to_temporal_directory_and_return_path(tmpdir):
     return tmpdir_resource_filepath
 
 
-def test_read_csv_method_with_no_file(tmpdir):
-    """ read csv method when no file name is supplied
-        i)  should return dictionary.
-        ii) dictionary keys should match csv file names in resource folder
-        iii)  all dictionary values should be dataframes
+def test_pass_datatypes_to_read_csv_method(tmpdir):
+    """ test passing column datatypes to read csv method. Final column datatype should change to what has been passed """
+    # copy and get resource files path in the temporal directory
+    path_to_tmpdir = Path(tmpdir)
+    sample_data = pd.DataFrame(data={'numbers1': [5,6,8,4,9,6], 'numbers2': [19,27,53,49,75,56]}, dtype=int)
+    sample_data.to_csv(tmpdir/'sample_data.csv', index=False)
+    # read from the sample data file
+    read_sample_data = read_csv_files(path_to_tmpdir, files='sample_data')
+    # confirm column datatype is what was assigned
+    assert read_sample_data.numbers1.dtype == 'int' and read_sample_data.numbers2.dtype == 'int'
+    # define new datatypes
+    datatype = {'numbers1': int, 'numbers2': float}
+    # pass the new datatypes to read csv method and confirm datatype has changed to what has been declared now
+    assign_dtype = read_csv_files(path_to_tmpdir, files='sample_data', dtype=datatype)
+    assert assign_dtype.numbers1.dtype == 'int' and assign_dtype.numbers2.dtype == 'float'
+
+
+def test_read_csv_file_method_passing_none_to_files_argument(tmpdir):
+    """ test reading csv files with one file in the target resource file and setting to None the files argument
+
+        Expectations
+            1.  should return a dictionary
+            2.  the dictionary key name should match file name
+    """
+    # copy and get resource files path in the temporal directory
+    tmpdir_resource_filepath = copy_files_to_temporal_directory_and_return_path(tmpdir)
+    #  choose an Excel file with one sheet in it and convert it to csv file
+    convert_excel_files_to_csv(tmpdir_resource_filepath, files=['ResourceFile_load-parameters.xlsx'])
+    # get the folder containing the newly converted csv file and check the expected behavior
+    this_csv_resource_folder = tmpdir_resource_filepath/"ResourceFile_load-parameters"
+    file_names = [csv_file_path.stem for csv_file_path in this_csv_resource_folder.rglob("*.csv")]
+    one_csv_file_in_folder_dict = read_csv_files(this_csv_resource_folder, files=None)
+    assert isinstance(one_csv_file_in_folder_dict, dict)
+    assert set(one_csv_file_in_folder_dict.keys()) == set(file_names)
+
+
+def test_read_csv_method_with_default_value_for_files_argument(tmpdir):
+    """ read csv method when no file name(s) is supplied to the files argument
+        i)  should return a dataframe of the first csv file in the folder. Similar to pd.read_excel returning
+            a dataframe of first sheet in the file.
 
     :param tmpdir: path to a temporal directory
 
@@ -344,18 +384,18 @@ def test_read_csv_method_with_no_file(tmpdir):
     tmpdir_resource_filepath = copy_files_to_temporal_directory_and_return_path(tmpdir)
     file_names = [csv_file_path.stem for csv_file_path in tmpdir_resource_filepath.rglob("*.csv")]
     df_no_files = read_csv_files(tmpdir_resource_filepath)
-    assert isinstance(df_no_files, dict)
-    assert set(df_no_files.keys()) == set(file_names)
-    assert all(isinstance(value, pd.DataFrame) for value in df_no_files.values())
+    fist_file_in_folder_df = read_csv_files(tmpdir_resource_filepath, files=file_names[0])
+    assert isinstance(df_no_files, pd.DataFrame)
+    pd.testing.assert_frame_equal(fist_file_in_folder_df, df_no_files)
 
 
 def test_read_csv_method_with_one_file(tmpdir):
-    """ test read csv method when one file name is supplied. should return a dataframe
+    """ test read csv method when one file name is supplied to files argument. should return a dataframe
     :param tmpdir: path to a temporal directory
 
     """
     tmpdir_resource_filepath = copy_files_to_temporal_directory_and_return_path(tmpdir)
-    df = read_csv_files(tmpdir_resource_filepath, files=['df_at_healthcareseeking'])
+    df = read_csv_files(tmpdir_resource_filepath, files='df_at_healthcareseeking')
     assert isinstance(df, pd.DataFrame)
 
 
@@ -463,3 +503,23 @@ def test_convert_excel_files_method(tmpdir):
     # check behaviours are as expected. New folders containing csv files should be created with names resembling the
     # Excel file they were created from
     check_logic_of_converting_excel_files_to_csv_files(tmpdir_resourcefilepath, excel_files)
+
+def test_parse_values_in_mixed_datatypes_columns():
+    """ parse values from a mixed datatype column. Here we create a dataframe with a column that resembles output from
+    read csv when presented with a mixed datatype column
+    """
+
+    # define a dataframe with mixed type column setting all values as string(This is the default behaviour when reading
+    # csv files columns with mixed datatype column
+    mixed_data_df = pd.DataFrame(data={'param_values':['54', 'inc_malaria', '[1,2,3]', '0.2']})
+    # confirm all values are strings
+    for value in mixed_data_df.param_values:
+        assert isinstance(value, str)
+    # expected datatypes
+    exp_dtypes = [int, str, list, float]
+    # parse values
+    mixed_data_df['param_values'] = mixed_data_df[
+        'param_values'].apply(parse_csv_values_for_columns_with_mixed_datatypes)
+    # confirm value data type is now as expected
+    for _index, exp_dtype in enumerate(exp_dtypes):
+        assert isinstance(mixed_data_df.loc[_index, "param_values"], exp_dtype)

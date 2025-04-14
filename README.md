@@ -28,6 +28,7 @@ TLOmodel is developed in a collaboration between:
 - [Institute for Global Health][igh-link], [University College London][ucl-link]
 - [Centre for Advanced Research Computing][arc-link], [University College London][ucl-link]
 - [Centre for Health Economics][che-link], [University of York][york-link]
+- [East, Central, and Southern African Health Community][ecsa-hc-link]
 
 It benefits from a close partnership between this team and the Ministry of Health, Malawi.
 
@@ -57,4 +58,5 @@ This work has been funded by grants from [Wellcome](https://wellcome.org/),
 [arc-link]: https://www.ucl.ac.uk/arc
 [york-link]: https://www.york.ac.uk/
 [che-link]: https://www.york.ac.uk/che/
+[ecsa-hc-link]: https://ecsahc.org/
 [contributors-link]: https://www.tlomodel.org/contributors.html
