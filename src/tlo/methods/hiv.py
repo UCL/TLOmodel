@@ -3752,7 +3752,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         prop_fsw_on_prep = (
-            0
+            0.0
             if n_fsw == 0
             else len(
                 df[

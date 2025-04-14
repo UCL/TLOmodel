@@ -1,5 +1,9 @@
 """This file uses the results of the batch file to make some summary statistics.
 The results of the batchrun were put into the 'outputspath' results_folder
+
+if running locally need to parse log files:
+tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/mihpsa_runs-2025-04-14T130655Z/0/0
+
 """
 
 import datetime
@@ -24,6 +28,8 @@ from tlo import Date
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+# outputspath = Path("./outputs/")  # for local runs
+
 
 # %% Analyse results of runs
 
