@@ -111,6 +111,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"],
         ),
+        "hv_aids_at_art_start": Property(
+            Types.BOOL,
+            "whether person has AIDS at time of starting ART"
+        ),
         "hv_on_cotrimoxazole": Property(
             Types.BOOL,
             "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
@@ -647,6 +651,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Current status
         df.loc[df.is_alive, "hv_inf"] = False
         df.loc[df.is_alive, "hv_art"] = "not"
+        df.loc[df.is_alive, "hv_aids_at_art_start"] = False
         df.loc[df.is_alive, "hv_is_on_prep"] = False
         df.loc[df.is_alive, "hv_behaviour_change"] = False
         df.loc[df.is_alive, "hv_diagnosed"] = False
@@ -1353,6 +1358,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Current status
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
+        df.at[child_id, "hv_aids_at_art_start"] = False
         df.at[child_id, "hv_on_cotrimoxazole"] = False
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_behaviour_change"] = False
@@ -3132,6 +3138,10 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
             df.at[person_id, "hv_art"] = vl_status
             df.at[person_id, "hv_date_treated"] = self.sim.date
+
+            # if person has AIDS at ART initiation, change property
+            df.at[person_id, "hv_aids_at_art_start"] = True if "aids_symptoms" in self.sim.modules['SymptomManager'].has_what(
+                person_id=person_id) else False
 
             # If VL suppressed, remove any symptoms caused by this module
             if vl_status == "on_VL_suppressed":

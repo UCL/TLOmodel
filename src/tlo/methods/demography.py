@@ -134,7 +134,7 @@ class Demography(Module):
         ),
 
         'district_num_of_residence': Property(
-            Types.CATEGORICAL, 
+            Types.CATEGORICAL,
             'The district number in which the person is resident',
             categories=['SET_AT_RUNTIME']
         ),
@@ -514,13 +514,36 @@ class Demography(Module):
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
+        logger.info(key='death', data=data_to_log_for_each_death)
+
+        # todo additional info to log for MIHPSA
+        time_on_ART = person['hv_date_treated'] >= (self.sim.date - pd.DateOffset(months=6))
+        has_aids = True if "aids_symptoms" in self.sim.modules['SymptomManager'].has_what(person_id=individual_id) else False
+
+        # Log the death
+        # - log the line-list of summary information about each death
+        mihpsa_data_to_log_for_each_death = {
+            'age': person['age_years'],
+            'sex': person['sex'],
+            'cause': cause,
+            'label': self.causes_of_death[cause].label,
+            'person_id': individual_id,
+            'hiv_status': person['hv_inf'],
+            'hiv_diagnosed': person['hv_diagnosed'],
+            'art_status': person['hv_art'],
+            'date_last_art': person['hv_date_last_ART'],
+            'on_ART_more_than_6months': time_on_ART,
+            'aids_status': has_aids,
+            'aids_at_art_start': person['hv_aids_at_art_start']
+        }
+
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
             # If possible, append to the log additional information about pregnancy:
             data_to_log_for_each_death.update({
                 'pregnancy': person['is_pregnant'],
             })
 
-        logger.info(key='death', data=data_to_log_for_each_death)
+        logger.info(key='death_MIHPSA', data=mihpsa_data_to_log_for_each_death)
 
         # - log all the properties for the deceased person
         logger_detail.info(key='properties_of_deceased_persons',
