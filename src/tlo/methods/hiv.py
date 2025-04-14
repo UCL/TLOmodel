@@ -472,10 +472,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
-            # Symptomatic HIV without anemia
+            # Early HIV without anemia
             self.daly_wts["hiv_infection_but_not_aids"] = self.sim.modules[
                 "HealthBurden"
-            ].get_daly_weight(17)
+            ].get_daly_weight(22)
 
             # AIDS with antiretroviral treatment without anemia
             self.daly_wts["hiv_infection_on_ART"] = self.sim.modules[
@@ -1181,6 +1181,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         """ options for interventions defined by scenario number """
         p = self.parameters
         updated_params_workbook = p["mihpsa_scenarios"]
+        # todo: PrEP coverage differs for FSW if oral vs injectable
+        # todo: remove drop in VS when VL monitoring stops
 
         updated_params = updated_params_workbook.set_index('parameter')['target_value'].to_dict()
 
@@ -1193,10 +1195,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
             # reduce prob VL suppression by 1/1.39 if no VL monitoring
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
-                                                                         "virally_suppressed_on_art"] * 1 / \
-                                                                     updated_params[
-                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
+            # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+            #                                                              "virally_suppressed_on_art"] * 1 / \
+            #                                                          updated_params[
+            #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
 
         # oral prep 15-24 yr old girls
         if p['select_mihpsa_scenario'] == 2:
@@ -1206,11 +1208,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
-                                                                         "virally_suppressed_on_art"] * 1 / \
-                                                                     updated_params[
-                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
+            # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+            #                                                              "virally_suppressed_on_art"] * 1 / \
+            #                                                          updated_params[
+            #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {1191: 1.0})  # oral prep
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {198: 1.0})  # infant prep
+
             p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
                 "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
@@ -1218,18 +1225,25 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 "probability_of_being_retained_on_prep_every_3_months"]
 
         # oral prep FSW
+        # target values are set for CAB-LA, Oral PrEP coverage for FSW is different
         if p['select_mihpsa_scenario'] == 3:
             # - switch other interventions off
             p["prob_circ_after_hiv_test"] = updated_params["prob_circ_after_hiv_test"]
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
-                                                                         "virally_suppressed_on_art"] * 1 / \
-                                                                     updated_params[
-                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
+            # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+            #                                                              "virally_suppressed_on_art"] * 1 / \
+            #                                                          updated_params[
+            #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
-            p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {1191: 1.0})  # oral prep
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {198: 1.0})  # infant prep
+
+            # p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
+            p["prob_prep_for_fsw_after_hiv_test"] = 0.7
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = updated_params[
                 "proportion_reduction_in_risk_of_hiv_aq_if_on_prep"]
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
@@ -1243,11 +1257,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
-                                                                         "virally_suppressed_on_art"] * 1 / \
-                                                                     updated_params[
-                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
+            # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+            #                                                              "virally_suppressed_on_art"] * 1 / \
+            #                                                          updated_params[
+            #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {1191: 1.0})  # oral prep
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {198: 1.0})  # infant prep
+
             p["prob_prep_for_agyw"] = updated_params["prob_prep_for_agyw"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
@@ -1260,11 +1279,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
-                                                                         "virally_suppressed_on_art"] * 1 / \
-                                                                     updated_params[
-                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
+            # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+            #                                                              "virally_suppressed_on_art"] * 1 / \
+            #                                                          updated_params[
+            #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {1191: 1.0})  # oral prep
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {198: 1.0})  # infant prep
+
             p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
@@ -1278,10 +1302,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
             p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
-                                                                         "virally_suppressed_on_art"] * 1 / \
-                                                                     updated_params[
-                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
+            # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+            #                                                              "virally_suppressed_on_art"] * 1 / \
+            #                                                          updated_params[
+            #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
                                                                        "annual_testing_rate_adults"] * \
@@ -1291,10 +1315,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         if p['select_mihpsa_scenario'] == 7:
             # - switch other interventions off
             p["prob_prep_for_fsw_after_hiv_test"] = 0
-            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
-                                                                         "virally_suppressed_on_art"] * 1 / \
-                                                                     updated_params[
-                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
+            # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+            #                                                              "virally_suppressed_on_art"] * 1 / \
+            #                                                          updated_params[
+            #                                                              "increase_in_VLsuppression_if_VLmonitoring"]
             # - switch on candidate intervention
             # don't need to do anything here, default value allows VMMC
 
@@ -1309,6 +1333,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
             # - switch on candidate intervention
             # don't need to do anything here, default value allows VL monitoring with prob viral suppression at default
+            p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = p["prob_start_art_or_vs"][
+                                                                         "virally_suppressed_on_art"] * updated_params[
+                                                                         "increase_in_VLsuppression_if_VLmonitoring"]
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
@@ -1999,6 +2026,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                & df.age_years.between(15, 30)
                                & (df.sex == "F")
                                & ~df.hv_is_on_prep
+                               & self.sim.date.year >= p["prep_start_year"],
                                ].index
 
             for person in give_prep:
@@ -2011,6 +2039,31 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         months=self.frequency.months
                     )
                 )
+
+            # ----------------------------------- PrEP poll for FSW -----------------------------------
+
+        def prep_for_fsw():
+            if self.sim.date.year >= p["prep_start_year"]:
+                random_draw = rng.random_sample(size=len(df))
+                eligible_fsw_idx = df.loc[df.is_alive &
+                                         (df.age_years >= 15) &
+                                         ~df.hv_diagnosed &
+                                         (df.sex == "F") &
+                                         df.li_is_sexworker &
+                                         ~df.hv_is_on_prep &
+                                        (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
+                print("eligible_fsw_idx", eligible_fsw_idx)
+
+                for person in eligible_fsw_idx:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
+                                                                module=self.module),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(
+                            months=self.frequency.months
+                        )
+                    )
 
         # ----------------------------------- SPONTANEOUS VMMC FOR <15 YRS -----------------------------------
         def vmmc_for_child():
@@ -2053,6 +2106,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # PrEP for AGYW
         prep_for_agyw()
+
+        # PrEP for FSW
+        prep_for_fsw()
 
         # VMMC for <15 yrs in the population
         vmmc_for_child()
@@ -3469,7 +3525,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         N_HIVTest_SelfTest_Dist = 0
         N_Condom_Acts = 0
 
-        N_NewVMMC = len(df[df.hv_VMMC_in_last_year])
+        N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
 
         PY_PREP_ORAL_AGYW = df["hv_days_on_prep_AGYW"].sum() / 365
 
@@ -3706,6 +3762,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "n_on_art_female_15plus": n_on_art_female_15plus,
                 "n_on_art_children": n_on_art_children,
                 "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
+                "n_fsw": n_fsw,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "prop_men_circ": prop_men_circ,
             },

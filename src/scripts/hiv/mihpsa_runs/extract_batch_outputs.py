@@ -359,9 +359,6 @@ with pd.ExcelWriter(results_folder / "summarised_tests.xlsx") as writer:
         # Write the DataFrame to the corresponding sheet
         sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=False)
 
-
-
-
 # -----------------------------------------------------------------------------------
 # VL TESTS
 
@@ -425,9 +422,6 @@ with pd.ExcelWriter(results_folder / "summarised_VLtests.xlsx") as writer:
 
         # Write the DataFrame to the corresponding sheet
         sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=False)
-
-
-
 
 
 # -----------------------------------------------------------------------------------
@@ -558,7 +552,7 @@ num_dalys_by_year_FULL = extract_results(
     do_scaling=True
 )
 aids_dalys_FULL = num_dalys_by_year_FULL[num_dalys_by_year_FULL.index.get_level_values(1) == 'AIDS']
-with pd.ExcelWriter(results_folder / 'dalys_FULL.xlsx', engine='openpyxl') as writer:
+with pd.ExcelWriter(results_folder / 'aids_dalys_FULL.xlsx', engine='openpyxl') as writer:
     aids_dalys_FULL.to_excel(writer, sheet_name='DALYs')
 
 # need to get number DALYs averted compared to minimal scenario
@@ -568,5 +562,5 @@ dalys_averted = pd.DataFrame()
 for col in aids_dalys.columns[1:]:  # Start from the second column
     dalys_averted[col] = aids_dalys[0] - aids_dalys[col]
 
-with pd.ExcelWriter(results_folder / 'dalys_averted.xlsx', engine='openpyxl') as writer:
+with pd.ExcelWriter(results_folder / 'aids_dalys_averted.xlsx', engine='openpyxl') as writer:
     dalys_averted.to_excel(writer, sheet_name='DALYs Averted')
