@@ -514,6 +514,12 @@ class Demography(Module):
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
+        if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
+            # If possible, append to the log additional information about pregnancy:
+            data_to_log_for_each_death.update({
+                'pregnancy': person['is_pregnant'],
+            })
+
         logger.info(key='death', data=data_to_log_for_each_death)
 
         # todo additional info to log for MIHPSA
@@ -525,23 +531,17 @@ class Demography(Module):
         mihpsa_data_to_log_for_each_death = {
             'age': person['age_years'],
             'sex': person['sex'],
-            'cause': cause,
+            'cause': str(cause),
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
             'hiv_status': person['hv_inf'],
             'hiv_diagnosed': person['hv_diagnosed'],
             'art_status': person['hv_art'],
-            'date_last_art': person['hv_date_last_ART'],
+            'date_treated': person['hv_date_treated'],
             'on_ART_more_than_6months': time_on_ART,
             'aids_status': has_aids,
             'aids_at_art_start': person['hv_aids_at_art_start']
         }
-
-        if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
-            # If possible, append to the log additional information about pregnancy:
-            data_to_log_for_each_death.update({
-                'pregnancy': person['is_pregnant'],
-            })
 
         logger.info(key='death_MIHPSA', data=mihpsa_data_to_log_for_each_death)
 

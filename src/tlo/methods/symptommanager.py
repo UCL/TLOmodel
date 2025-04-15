@@ -521,7 +521,8 @@ class SymptomManager(Module):
             ), "person_id must be a single integer for one particular person"
 
             df = self.sim.population.props
-            assert df.at[person_id, "is_alive"], "The person is not alive"
+            # todo this is removed as need to check aids symptoms in death logger
+            # assert df.at[person_id, "is_alive"], "The person is not alive"
 
             if disease_module is not None:
                 sy_columns = [

@@ -2005,9 +2005,9 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- SELF-TEST -----------------------------------
         def self_tests():
 
-            if p['select_mihpsa_scenario'] == 6 & (self.sim.date.year >= p["scaleup_start_year"]):
+            if (p['select_mihpsa_scenario'] == 6) & (self.sim.date.year >= p["scaleup_start_year"]):
 
-                test_rates = 0.08  # need 800,000 in population of 19m, half are children
+                test_rates = 0.08  # need 800,000 in population of 19m (0.04), half are children
 
                 random_draw = rng.random_sample(size=len(df))
                 self_tests_idx = df.loc[df.is_alive &
@@ -2032,47 +2032,41 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- PrEP poll for AGYW -----------------------------------
         def prep_for_agyw():
+            if self.sim.date.year >= p["prep_start_year"]:
 
-            # select highest risk agyw
-            agyw_idx = df.loc[
-                df.is_alive
-                & ~df.hv_diagnosed
-                & df.age_years.between(15, 30)
-                & (df.sex == "F")
-                & ~df.hv_is_on_prep
-                ].index
+                # select highest risk agyw
+                agyw_idx = df.loc[
+                    df.is_alive
+                    & ~df.hv_diagnosed
+                    & df.age_years.between(15, 30)
+                    & (df.sex == "F")
+                    & ~df.hv_is_on_prep
+                    ].index
 
-            rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
-                df.loc[agyw_idx]
-            )
-            # divide by the mean risk then multiply by prob of prep
-            # highest risk AGYW will have highest probability of getting prep
-            mean_risk = rr_of_infection_in_agyw.mean()
-            scaled_risk = rr_of_infection_in_agyw / mean_risk
-            overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
-
-            # give prep
-            give_prep = df.loc[(
-                                   self.module.rng.random_sample(len(overall_risk_and_prob_of_prep))
-                                   < overall_risk_and_prob_of_prep)
-                               & df.is_alive
-                               & ~df.hv_diagnosed
-                               & df.age_years.between(15, 30)
-                               & (df.sex == "F")
-                               & ~df.hv_is_on_prep
-                               & self.sim.date.year >= p["prep_start_year"],
-                               ].index
-
-            for person in give_prep:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
-                                                            module=self.module),
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(
-                        months=self.frequency.months
-                    )
+                rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
+                    df.loc[agyw_idx]
                 )
+                # divide by the mean risk then multiply by prob of prep
+                # highest risk AGYW will have highest probability of getting prep
+                mean_risk = rr_of_infection_in_agyw.mean()
+                scaled_risk = rr_of_infection_in_agyw / mean_risk
+                overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
+
+                # give prep
+                give_prep = agyw_idx[
+                    self.module.rng.random_sample(len(agyw_idx)) < overall_risk_and_prob_of_prep
+                    ]
+
+                for person in give_prep:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
+                                                                module=self.module),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(
+                            months=self.frequency.months
+                        )
+                    )
 
             # ----------------------------------- PrEP poll for FSW -----------------------------------
 
