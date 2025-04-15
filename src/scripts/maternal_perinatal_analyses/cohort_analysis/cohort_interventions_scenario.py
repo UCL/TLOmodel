@@ -58,7 +58,7 @@ class BaselineScenario(BaseScenario):
             return {'PregnancySupervisor': {
                     'analysis_year': 2024,
                     'interventions_analysis': True,
-                    'interventions_under_analysis': [interventions_for_analysis[draw_number]],
+                    'interventions_under_analysis': [interventions_for_analysis[draw_number - 1]],
                     'intervention_analysis_availability': avail_for_draw[draw_number]}}
 
 if __name__ == '__main__':
