@@ -132,6 +132,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
         "hv_date_treated": Property(Types.DATE, "date hiv treatment started"),
         "hv_date_last_ART": Property(Types.DATE, "date of last ART dispensation"),
+        'marital_stus': Property(values['Married', 'Single', 'Single-partener'])
+
     }
 
     PARAMETERS = {
