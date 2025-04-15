@@ -17,8 +17,6 @@ tlo batch-submit src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py
 Download result files for a completed job:
 tlo batch-download calibration_script-2022-04-12T190518Z
 
-
-
 """
 
 import os
