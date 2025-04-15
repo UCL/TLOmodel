@@ -986,3 +986,63 @@ cbar_ax.set_ylabel('Proportion of days consumable is available')
 # Save the combined heatmap
 plt.savefig(roi_plots_path / f'combined_consumable_availability_heatmap_all_levels.png', dpi=300, bbox_inches='tight')
 plt.close()
+
+
+# Create heatmap of average availability by Facility_Level across chosen scenarios
+# Pivot the DataFrame
+aggregated_df = df_for_plots[df_for_plots.item_category == 'hiv'].groupby(['Facility_Level'])[chosen_availability_columns].mean().reset_index()
+heatmap_data = aggregated_df.set_index('Facility_Level')
+
+# Calculate the aggregate row and column
+aggregate_col= df_for_plots[chosen_availability_columns].mean()
+#overall_aggregate = aggregate_col.mean()
+
+# Add aggregate row and column
+#heatmap_data['Average'] = aggregate_row
+#aggregate_col['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_col
+
+# Generate the heatmap
+sns.set(font_scale=0.8)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.title(f'Availability across scenarios')
+plt.xlabel('Scenarios')
+plt.ylabel(f'Facility Level')
+plt.xticks(rotation=90, fontsize=8)
+plt.yticks(rotation=0, fontsize=8)
+
+plt.savefig(figurespath /f'consumable_availability_heatmap_hiv_alllevels.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+
+# Create heatmap of average availability by Facility_Level across chosen scenarios
+# Pivot the DataFrame
+aggregated_df = df_for_plots[df_for_plots.item_category == 'hiv'].groupby(['item_code'])[chosen_availability_columns].mean().reset_index()
+heatmap_data = aggregated_df.set_index('item_code')
+
+# Calculate the aggregate row and column
+aggregate_col= df_for_plots[chosen_availability_columns].mean()
+#overall_aggregate = aggregate_col.mean()
+
+# Add aggregate row and column
+#heatmap_data['Average'] = aggregate_row
+#aggregate_col['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_col
+
+# Generate the heatmap
+sns.set(font_scale=0.8)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.title(f'Availability across scenarios')
+plt.xlabel('Scenarios')
+plt.ylabel(f'Item Code')
+plt.xticks(rotation=90, fontsize=8)
+plt.yticks(rotation=0, fontsize=8)
+
+plt.savefig(figurespath /f'consumable_availability_heatmap_hiv_alllevels_byconsumable.png', dpi=300, bbox_inches='tight')
+plt.close()
