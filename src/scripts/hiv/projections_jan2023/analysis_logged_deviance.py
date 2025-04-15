@@ -89,7 +89,7 @@ sim.register(
 # set the scenario
 sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 2
 sim.modules["Hiv"].parameters["scaleup_start_year"] = 2012
-# sim.modules["Hiv"].parameters["prep_start_year"] = 2011
+sim.modules["Hiv"].parameters["prep_start_year"] = 2011
 # sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
