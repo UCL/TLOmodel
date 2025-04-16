@@ -1361,7 +1361,8 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                     {'count': x['nc_n_conditions'].count()}))
                 n_comorbidities_all.loc[:, num] = col['count']
 
-            prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1), axis=0)
+            row_sums = n_comorbidities_all.sum(axis=1)
+            prop_comorbidities_all = n_comorbidities_all.div(row_sums.where(row_sums != 0), axis=0).fillna(0)
 
             logger.info(key='mm_prevalence_by_age_all',
                         description='annual summary of multi-morbidities by age for all',
@@ -1587,8 +1588,10 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
+        if condition == 'chronic_kidney_disease':
+            self.ACCEPTED_FACILITY_LEVEL = '3'
+        else:
+            self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1616,7 +1619,11 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
         # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
+        # todo adjust the dosages for diabetes second and third dosage
+
         dose = {'diabetes': 30_500,
+                'diabetes_second_dose': 5_30,
+                'diabetes_third_dose': 1,
                 'hypertension': 610,
                 'chronic_kidney_disease': 1,
                 'chronic_lower_back_pain': 73_200,
@@ -1635,7 +1642,26 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # Determine if the medication will work to prevent death
             df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
                 self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
+
+            # todo review adding diabetes switch to new medication
+            if (self.condition == 'diabetes') & (~ (df.at[person_id, f'nc_{self.condition}_medication_prevents_death'])):
+                self.get_consumables(item_codes=
+                                     {self.module.parameters[f'{self.condition}_hsi'].get(
+                                         'medication_item_code_second_line').astype(int): dose['diabetes_second_dose']})
+                df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
+                    self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works_second_line
+
+                if (self.condition == 'diabetes') & (~ (df.at[person_id, f'nc_{self.condition}_medication_prevents_death'])):
+                    self.get_consumables(item_codes=
+                                         {self.module.parameters[f'{self.condition}_hsi'].get(
+                                             'medication_item_code_third_line').astype(int): dose['diabetes_third_dose']})
+                    df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
+                        self.module.rng.rand() < self.module.parameters[
+                            f'{self.condition}_hsi'].pr_treatment_works_third_line
+
             # Schedule their next HSI for a refill of medication in one month
+
+            # todo review refill for diabetes meds
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
                                                                          condition=self.condition),
@@ -1671,8 +1697,10 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
+        if condition == 'chronic_kidney_disease':
+            self.ACCEPTED_FACILITY_LEVEL = '3'
+        else:
+            self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
