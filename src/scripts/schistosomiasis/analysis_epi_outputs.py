@@ -36,12 +36,6 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
-from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             summarize_cost_data,
-                                             do_stacked_bar_plot_of_cost_by_category,
-                                             do_line_plot_of_cost,
-                                             create_summary_treemap_by_cost_subgroup,
-                                             estimate_projected_health_spending)
 
 resourcefilepath = Path("./resources")
 
@@ -68,7 +62,6 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # %% FUNCTIONS ##################################################################
-# todo update
 TARGET_PERIOD = (Date(2024, 1, 1), Date(2040, 12, 31))
 
 
@@ -103,7 +96,32 @@ def set_param_names_as_column_index_level_0(_df):
     return _df
 
 
-# %% EXTRACT DALYS
+def find_difference_relative_to_comparison_series(
+    _ser: pd.Series,
+    comparison: str,
+    scaled: bool = False,
+    drop_comparison: bool = True,
+):
+    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+    within the runs (level 1), relative to where draw = `comparison`.
+    The comparison is `X - COMPARISON`."""
+    return _ser \
+        .unstack(level=0) \
+        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+        .drop(columns=([comparison] if drop_comparison else [])) \
+        .stack()
+
+
+def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs):
+    """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
+    return pd.concat({
+        _idx: find_difference_relative_to_comparison_series(row, **kwargs)
+        for _idx, row in _df.iterrows()
+    }, axis=1).T
+
+
+
+# %% EXTRACT DALYS ##############################################
 
 
 def get_total_num_dalys(_df):
@@ -166,30 +184,6 @@ total_num_dalys_by_label = extract_results(
 
 total_num_dalys_by_label_compute_summary_statistics = compute_summary_statistics(total_num_dalys_by_label, central_measure='median')
 total_num_dalys_by_label_compute_summary_statistics.to_csv(results_folder / f'total_num_dalys_by_label_{target_period()}.csv')
-
-
-def find_difference_relative_to_comparison_series(
-    _ser: pd.Series,
-    comparison: str,
-    scaled: bool = False,
-    drop_comparison: bool = True,
-):
-    """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
-    within the runs (level 1), relative to where draw = `comparison`.
-    The comparison is `X - COMPARISON`."""
-    return _ser \
-        .unstack(level=0) \
-        .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
-        .drop(columns=([comparison] if drop_comparison else [])) \
-        .stack()
-
-
-def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs):
-    """Apply `find_difference_relative_to_comparison_series` to each row in a dataframe"""
-    return pd.concat({
-        _idx: find_difference_relative_to_comparison_series(row, **kwargs)
-        for _idx, row in _df.iterrows()
-    }, axis=1).T
 
 
 # total number of DALYs
@@ -978,464 +972,4 @@ result.to_csv(results_folder / (f'prevalence_any_infection_all_ages_district{tar
 median_by_draw_district = result.groupby(level=['draw', 'district'], axis=1).median()
 median_by_draw_district.to_csv(results_folder / (f'median_prevalence_any_infection_all_ages_district{target_period()}.csv'))
 
-
-# %% GET PZQ USED FOR SCENARIOS -----------------------------------------------------------------------------
-
-# numbers of PZQ doses - these are 1mg doses
-# includes MDA and treatment
-def get_counts_of_items_requested(_df):
-    _df = drop_outside_period(_df)
-
-    counts_of_available = defaultdict(int)
-    counts_of_not_available = defaultdict(int)
-    counts_of_used = defaultdict(int)
-
-    for _, row in _df.iterrows():
-        for item, num in row['Item_Available'].items():
-            counts_of_available[item] += num
-        for item, num in row['Item_NotAvailable'].items():
-            counts_of_not_available[item] += num
-        for item, num in row['Item_Used'].items():
-            counts_of_used[item] += num
-
-    return pd.concat(
-        {'Item_Available': pd.Series(counts_of_available),
-         'Not_Available': pd.Series(counts_of_not_available),
-         'Item_Used': pd.Series(counts_of_used)},
-        axis=1
-    ).fillna(0).astype(int).stack()
-
-cons_req = extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem.summary',
-        key='Consumables',
-        custom_generate_series=get_counts_of_items_requested,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
-
-cons = cons_req.unstack()
-# item 286 is Praziquantel 600mg_1000_CMST
-pzq_use = cons_req.loc['286']
-
-# attach costs to PZQ: 0.0000406606 USD
-PZQ_item_cost = 0.0000406606
-pzq_cost = pd.DataFrame(pzq_use.iloc[-1] * PZQ_item_cost).T
-pzq_cost.index = ['pzq_costs']
-pzq_use = pd.concat([pzq_use, pzq_cost])
-pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
-
-summary_pzq_cost = compute_summary_statistics(pzq_use)
-
-
-## get PZQ use by year
-def get_counts_of_cons_by_year(_df):
-    """Get the counts of item 286 used within the target period, grouped by year."""
-    _df = _df.loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD)]
-    _df['Year'] = pd.to_datetime(_df['date']).dt.year
-
-    counts_by_year = (
-        _df
-        .groupby('Year')['Item_Used']
-        .apply(lambda x: sum(d.get('286', 0) for d in x))
-        .astype(int)
-    )
-
-    return counts_by_year
-
-
-pzq_req_by_year = extract_results(
-    results_folder,
-    module='tlo.methods.healthsystem.summary',
-    key='Consumables',
-    custom_generate_series=get_counts_of_cons_by_year,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
-pzq_req_by_year.to_csv(results_folder / (f'pzq_req_by_year {target_period()}.csv'))
-
-
-# attach costs to PZQ: 0.0000406606 USD
-pzq_cost_annual = pd.DataFrame(pzq_req_by_year * PZQ_item_cost)
-pzq_cost_annual.to_csv(results_folder / (f'pzq_cost_annual {target_period()}.csv'))
-
-# costs compared to comparator - WASH only
-annual_pzq_cost_annual_vs_WASH = -1.0 * find_difference_relative_to_comparison_dataframe(
-    pzq_cost_annual,
-    comparison='WASH only'
-)
-annual_pzq_cost_annual_vs_WASH.to_csv(results_folder / f'annual_pzq_cost_annual_vs_WASH{target_period()}.csv')
-
-
-
-
-
-
-def plot_simple_barplot(_df, title=None, ylab=None):
-    """
-    Plot barplot by scenario using the 'central' value for height,
-    and 'lower' and 'upper' for the error bars.
-
-    Assumes the DataFrame has a MultiIndex with 'draw' and 'stat' levels,
-    where 'stat' includes 'lower', 'central', 'upper'.
-    """
-
-    # Extract 'central', 'lower', and 'upper' columns
-    df_plot = _df['central']
-    lower = _df['lower']
-    upper = _df['upper']
-
-    # Compute error bars
-    yerr = [df_plot - lower, upper - df_plot]
-
-    # Plot
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.bar(
-        df_plot.index,
-        df_plot,
-        yerr=yerr,
-        capsize=5,
-        color='skyblue',
-        edgecolor='black'
-    )
-
-    ax.set_ylabel(ylab)
-    ax.set_title(title)
-    ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
-
-    plt.tight_layout()
-    plt.show()
-
-
-# Convert summary_pzq_cost.loc['pzq_costs'] to DataFrame with 'central', 'lower', and 'upper'
-pzq_costs2 = summary_pzq_cost.loc['pzq_costs'].unstack(level='stat')
-plot_simple_barplot(pzq_costs2, title='PZQ Costs', ylab='PZQ Costs, USD')
-
-
-
-# HSIs
-def get_total_num_treatment_episdoes(_df):
-    """Return total number of treatments within the TARGET_PERIOD."""
-    # Ensure 'date' is a datetime column if not already
-    _df['date'] = pd.to_datetime(_df['date'])
-
-    # Filter rows based on the TARGET_PERIOD (date range)
-    filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
-
-    # Sum only the numeric columns (exclude 'date' and non-numeric columns)
-    y = filtered_df.select_dtypes(include='number').sum(axis=0)
-
-    return y
-
-
-treatment_episodes = extract_results(
-        results_folder,
-        module='tlo.methods.schisto',
-        key='schisto_treatment_episodes',
-        custom_generate_series=get_total_num_treatment_episdoes,
-        do_scaling=True
-    ).pipe(set_param_names_as_column_index_level_0)
-
-
-pzq_plus_tx_episodes = pd.concat([pzq_use, treatment_episodes, total_num_dalys])
-
-pzq_plus_tx_episodes.to_csv(results_folder / (f'pzq_plus_tx_episodes {target_period()}.csv'))
-
-
-summary_treatment_episodes = compute_summary_statistics(treatment_episodes,
-                                                central_measure='median')
-df_reshaped = summary_treatment_episodes.stack(level='draw')
-df_reshaped = df_reshaped.reset_index(level=0, drop=True)
-
-plot_simple_barplot(df_reshaped,
-                    title='Number Treatment Episodes',
-                    ylab='Number treatment episodes')
-
-
-## ICERS
-
-# need the delta costs
-comparison_pzq_costs_vs_WASH = find_difference_relative_to_comparison_series(
-        pzq_plus_tx_episodes.loc['pzq_costs'],
-        comparison='WASH only'
-    )
-
-# get the delta DALYS
-num_dalys_averted_vs_WASH = -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_num_dalys,
-        comparison='WASH only'
-    )
-
-num_dalys_averted_vs_WASH = num_dalys_averted_vs_WASH.T
-
-# Step 1: Align dataset1 (costs) with dataset2 (health outcomes)
-aligned_data1 = comparison_pzq_costs_vs_WASH.reindex_like(num_dalys_averted_vs_WASH)  # Align dataset1 to dataset2's index
-
-# Step 2: Compute ICER = health_diff / cost_diff
-# Extract values from both Series (dataset1) and DataFrame (dataset2)
-cost_diff = aligned_data1.values.flatten()  # Dataset 1 (cost differences)
-health_diff = num_dalys_averted_vs_WASH.values.flatten()  # Dataset 2 (health outcomes)
-
-# Compute ICER (health difference / cost difference)
-icer = health_diff / cost_diff
-# add scenario names to the ICERs
-icer_series = pd.Series(icer, index=aligned_data1.index.get_level_values('draw'))
-icer_series.to_csv(results_folder / (f'icer_values {target_period()}.csv'))
-
-
-# Extract the 'draw' level from the MultiIndex for color coding
-draw_labels = aligned_data1.index.get_level_values('draw').values.flatten()  # Get 'draw' labels
-
-# Step 3: Create a dictionary of unique draw labels to colours
-unique_draws = np.unique(draw_labels)  # Unique draw labels
-colormap = plt.get_cmap('tab20')  # You can choose another colour map if needed
-colors = {label: colormap(i / len(unique_draws)) for i, label in enumerate(unique_draws)}
-
-# Step 4: Assign a colour to each data point based on its draw label
-point_colors = [colors[label] for label in draw_labels]
-
-# Step 5: Create the scatter plot
-plt.figure(figsize=(10, 6))
-scatter = plt.scatter(cost_diff/1_000_000, health_diff/1_000_000, c=point_colors)  # Colour by draw labels
-
-# Add the legend (position it outside the plot to the right)
-handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=colors[label], markersize=10) for label in unique_draws]
-plt.legend(handles, unique_draws, title="Scenario", bbox_to_anchor=(1.05, 0.5), loc='center left')
-
-# Labels and title
-plt.xlabel('Cost Difference, USD, millions')
-plt.ylabel('Health Difference, DALYs, millions')
-plt.title('Incremental Cost-Effectiveness Ratio \n compared to WASH only')
-plt.grid(True)
-
-plt.xlim(-40, 40)  # Extend the x-axis
-plt.ylim(-5, 5)  # Extend the y-axis
-
-# Adding quadrant guidelines (vertical and horizontal lines)
-plt.axhline(0, color='black',linewidth=1, linestyle='--')  # Horizontal line at y=0
-plt.axvline(0, color='black',linewidth=1, linestyle='--')  # Vertical line at x=0
-
-wtp = 100
-x_vals = np.linspace(min(cost_diff), max(cost_diff), 100)
-y_vals = wtp * x_vals  # slope = WTP
-plt.plot(x_vals/1_000_000, y_vals/1_000_000, color='blue', linestyle=':', label=f'WTP = ${wtp} per DALY')
-
-# Add text annotations for the quadrants
-plt.text(10, 4, 'Cost-effective and beneficial', fontsize=12, color='green', ha='left', va='top')
-plt.text(-30, 4, 'Cost-effective but harmful', fontsize=12, color='orange', ha='left', va='top')
-plt.text(-30, -4, 'Dominated', fontsize=12, color='red', ha='left', va='bottom')
-plt.text(10, -4, 'Cost-ineffective and harmful', fontsize=12, color='blue', ha='left', va='bottom')
-
-# Adjust layout to ensure the legend fits outside the plot
-plt.tight_layout()
-plt.show()
-
-
-# %% NET PRESENT VALUE
-# NPV=(DALYs_averted×WTP)−Cost
-
-# extract DALYs averted by year for each run
-def total_dalys_by_year(_df):
-    """Return total number of DALYs (Stacked) by year within the TARGET_PERIOD.
-    Throw error if not a record for every year in the TARGET_PERIOD (to guard against runs that crashed).
-    """
-    years_needed = [i.year for i in TARGET_PERIOD]
-    years_present = _df.year.unique()
-    assert set(years_present).issuperset(years_needed), "Some years are not recorded."
-
-    dalys_by_year = (
-        _df
-        .loc[_df.year.between(*years_needed)]
-        .drop(columns=['date', 'sex', 'age_range'])
-        .groupby('year')
-        .sum()
-        .sum(axis=1)  # sum across all causes (columns) within each year
-    )
-
-    return dalys_by_year
-
-
-total_dalys_by_year = extract_results(
-    results_folder,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=total_dalys_by_year,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
-
-
-total_dalys_by_year.to_csv(results_folder / f'total_dalys_by_year{target_period()}.csv')
-
-# get DALYs averted by year
-annual_num_dalys_averted_vs_WASH = -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_dalys_by_year,
-        comparison='WASH only'
-    )
-annual_num_dalys_averted_vs_WASH.to_csv(results_folder / f'annual_num_dalys_averted_vs_WASH{target_period()}.csv')
-
-
-# NET PRESENT VALUE DATAFRAME
-def calculate_npv_and_cost_per_daly(
-    annual_num_dalys_averted: pd.DataFrame,
-    annual_costs: pd.DataFrame,
-    discount_factors: pd.Series
-) -> pd.DataFrame:
-    """
-    Calculate the net present value (NPV) of DALYs averted and costs,
-    compute the net present value (NPV) of the intervention, and calculate the cost per DALY averted.
-
-    Parameters
-    ----------
-    annual_num_dalys_averted : pd.DataFrame
-        DataFrame of annual DALYs averted by scenario. Rows indexed by year (int), columns are scenarios.
-    annual_costs : pd.DataFrame
-        DataFrame of annual incremental costs by scenario. Rows indexed by year (int), columns are scenarios.
-    discount_factors : pd.Series
-        Series of discount factors for each year, indexed by year (int).
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with NPV of DALYs averted, NPV of costs, net present value of the intervention, and cost per DALY averted for each scenario.
-    """
-
-    # Ensure consistent index names for alignment
-    annual_num_dalys_averted.index.name = 'year'
-    annual_costs.index.name = 'year'
-    discount_factors.index.name = 'year'
-
-    # Apply discount factors to DALYs averted and costs
-    discounted_dalys_averted = annual_num_dalys_averted.multiply(discount_factors, axis=0)
-    discounted_costs = annual_costs.multiply(discount_factors, axis=0)
-
-    # Compute total NPV for DALYs averted and costs
-    total_dalys_averted = discounted_dalys_averted.sum()
-    total_costs = discounted_costs.sum()
-
-    # Calculate net present value (NPV) for the intervention
-    npv_intervention = total_dalys_averted - total_costs
-
-    # Calculate cost per DALY averted
-    cost_per_daly_averted = total_costs / total_dalys_averted
-
-    # Compile results into a tidy DataFrame
-    results = pd.DataFrame({
-        'NPV_DALYs_Averted': total_dalys_averted,
-        'NPV_Costs': total_costs,
-        'NPV_Intervention': npv_intervention,  # Net Present Value of the intervention
-        'Cost_per_DALY_Averted': cost_per_daly_averted
-    })
-
-    return results
-
-
-# discount rate
-discount_rate = 0.03
-
-# Define years and discount factors
-years = np.arange(2024, 2041)
-discount_factors = pd.Series(
-    1 / ((1 + discount_rate) ** (years - 2024)),
-    index=years
-)
-
-npv_results = calculate_npv_and_cost_per_daly(
-    annual_num_dalys_averted=annual_num_dalys_averted_vs_WASH,
-    annual_costs=annual_pzq_cost_annual_vs_WASH,
-    discount_factors=discount_factors
-)
-
-npv_results.to_csv(results_folder / f'npv_results{target_period()}.csv')
-
-def plot_npv_scatter(npv_df, column, yaxis_label, title):
-    """
-    Plot the Net Present Value (NPV) of interventions for each draw and scenario, showing the scatter of NPVs across draws.
-
-    Parameters
-    ----------
-    npv_df : pd.DataFrame
-        DataFrame containing the NPV of the intervention for each draw and scenario.
-        It should have a multi-index (run, draw) and the 'NPV_Intervention' column.
-    """
-    # Reset index to make 'run' and 'draw' columns for easier plotting
-    npv_df_reset = npv_df.reset_index()
-
-    # Set plot style
-    sns.set(style="whitegrid")
-
-    # Create a scatter plot for the NPV of each draw and scenario
-    plt.figure(figsize=(12, 6))
-    scatter_plot = sns.scatterplot(x='draw', y=column, hue='draw', data=npv_df_reset, palette='viridis')
-
-    # Adding labels and title
-    plt.xlabel('', fontsize=14)
-    plt.ylabel(yaxis_label, fontsize=14)
-    plt.title(title, fontsize=16)
-
-    # Rotate x-axis labels for better readability
-    plt.xticks(rotation=45, ha="right")
-    scatter_plot.legend(title=None)
-
-    # Show the plot
-    plt.tight_layout()
-    plt.show()
-
-
-plot_npv_scatter(npv_results, column='NPV_Intervention',
-                 yaxis_label='Net Present Value of Intervention',
-                 title='Net Present Value Compared with WASH only')
-
-plot_npv_scatter(npv_results, column='Cost_per_DALY_Averted',
-                 yaxis_label='Cost per DALY averted (discounted',
-                 title='Cost per DALY averted (discounted) compared with WASH only')
-
-
-def get_counts_of_hsi_by_treatment_id(_df):
-    """Get the counts of full TREATMENT_IDs occurring within the target period."""
-    _counts_by_treatment_id = _df \
-        .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
-        .apply(pd.Series) \
-        .sum() \
-        .astype(int)
-
-    return _counts_by_treatment_id
-
-
-counts_of_hsi_by_treatment_id = extract_results(
-    results_folder,
-    module='tlo.methods.healthsystem.summary',
-    key='HSI_Event',
-    custom_generate_series=get_counts_of_hsi_by_treatment_id,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0).fillna(0.0).sort_index()
-
-median_num_hsi_by_treatment_id = compute_summary_statistics(counts_of_hsi_by_treatment_id, central_measure='median')
-median_num_hsi_by_treatment_id.to_csv(results_folder / (f'median_num_hsi_by_treatment_id {target_period()}.csv'))
-
-
-
-# %% ICERS - comparator is WASH only
-
-# costs for each scenario
-
-
-# Total DALYs by scenario
-
-
-
-
-# %% todo what do you want by district?
-# above is prevalence by district - way to present this - table / figure
-# summarise across runs for each scenario
-# think about heavy infections only by district
-# person-years infected by district
-# person-years infected heavy infection only by district
-# get schisto DALYS for each scenario
-# get costs for each scenario
-
-
-
-
-
-scaling_factor_district = load_pickled_dataframes(
-                results_folder, draw=0, run=0, name='tlo.methods.population'
-            )['tlo.methods.population']['scaling_factor_district']['scaling_factor_district'].values[0]
 
