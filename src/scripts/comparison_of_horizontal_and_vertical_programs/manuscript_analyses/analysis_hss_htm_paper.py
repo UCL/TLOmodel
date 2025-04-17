@@ -1042,6 +1042,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Use the function with your data
     deaths_averted_by_cause = calculate_deaths_averted(num_deaths_by_cause)
+    num_deaths_by_cause.to_csv(results_folder / f'num_deaths_by_cause{target_period()}.csv')
     deaths_averted_by_cause.to_csv(results_folder / f'num_deaths_averted_by_cause_{target_period()}.csv')
 
 
