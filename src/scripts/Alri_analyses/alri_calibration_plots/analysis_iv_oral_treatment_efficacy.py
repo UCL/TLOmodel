@@ -3,8 +3,13 @@
 
 from pathlib import Path
 from typing import List
+import os
+import datetime
+from openpyxl import load_workbook
+import pickle
 
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
@@ -25,6 +30,7 @@ from tlo.methods.alri import (
     HSI_Alri_Treatment,
     _make_hw_diagnosis_perfect,
     _make_treatment_and_diagnosis_perfect,
+    _make_low_risk_of_death
 )
 from tlo.util import sample_outcome
 
@@ -32,13 +38,17 @@ MODEL_POPSIZE = 150_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
+# Date for saving the image for log-file
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
 _facility_level = '2'  # <-- assumes that the diagnosis/treatment occurs at this level
+seed_run_dfs = {}
 
 
 def get_sim(popsize):
     """Return a simulation (composed of only <5 years old) that has run for 0 days."""
     resourcefilepath = Path('./resources')
-    start_date = Date(2010, 1, 1)
+    start_date = Date(2024, 1, 1)
     sim = Simulation(start_date=start_date, seed=1)
 
     sim.register(
@@ -63,8 +73,8 @@ def get_sim(popsize):
     return sim
 
 
-# Create simulation (This is needed to generate a population with representative characteristics and to initialise the
-# Alri module.)
+# Create simulation (This is needed to generate a population with representative characteristics
+# and to initialise the Alri module.)
 
 # Alri module with default values
 sim0 = get_sim(popsize=MODEL_POPSIZE)
@@ -76,6 +86,7 @@ hsi_with_imperfect_diagnosis_and_imperfect_treatment = HSI_Alri_Treatment(
 sim1 = get_sim(popsize=MODEL_POPSIZE)
 alri_module_with_perfect_diagnosis = sim1.modules['Alri']
 _make_hw_diagnosis_perfect(alri_module_with_perfect_diagnosis)
+# _make_low_risk_of_death(alri_module_with_perfect_diagnosis)
 hsi_with_perfect_diagnosis = HSI_Alri_Treatment(module=alri_module_with_perfect_diagnosis, person_id=None)
 
 # Alri module with perfect diagnosis and perfect treatment
@@ -109,7 +120,8 @@ def generate_case_mix() -> pd.DataFrame:
         # under-nutrition).
         return pd.DataFrame(columns=['person_id', 'pathogen'], data=new_alri) \
             .merge(sim1.population.props[['age_exact_years', 'sex', 'hv_inf', 'hv_art',
-                                          'va_hib_all_doses', 'va_pneumo_all_doses', 'un_clinical_acute_malnutrition']],
+                                          'va_hib_all_doses', 'va_pneumo_all_doses',
+                                          'un_clinical_acute_malnutrition']],
                    right_index=True, left_on=['person_id'], how='left') \
             .drop(columns=['person_id'])
 
@@ -248,12 +260,9 @@ def treatment_efficacy_for_each_classification(
 ):
     # Decide which hsi configuration to use:
     hsi = hsi_with_perfect_diagnosis
-    # Decide which alri_module configuration to use:
-    # alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
     alri_module = alri_module_with_perfect_diagnosis  # (perfect diagnosis and normal treatment effects)
 
     def ultimate_treatment_for_classification(classification):
-
         classification_for_treatment_decision = classification
         ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
             classification_for_treatment_decision=classification_for_treatment_decision,
@@ -338,16 +347,6 @@ def generate_table():
                 all_symptoms=x.symptoms,
                 un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
             ),
-            'will_die_2': alri_module_with_perfect_diagnosis.models.will_die_of_alri(
-                age_exact_years=x.age_exact_years,
-                sex=x.sex,
-                bacterial_infection=x.pathogen,
-                disease_type=x.disease_type,
-                SpO2_level=x.oxygen_saturation,
-                complications=x.complications,
-                all_symptoms=x.symptoms,
-                un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
-            ),
 
             'treatment_efficacy_iv_antibiotics_with_oxygen':
                 treatment_efficacy_for_each_classification(
@@ -397,7 +396,9 @@ def generate_table():
                     # Information about the care that can be provided:
                     oximeter_available=False,
                     oxygen_available=False,
-                    classification_for_treatment='chest_indrawing_pneumonia'
+                    classification_for_treatment='chest_indrawing_pneumonia' if any(
+                        s in ['chest_indrawing', 'danger_signs', 'respiratory_distress'] for s in x.symptoms)
+                    else 'fast_breathing_pneumonia'
                 ),
 
             'treatment_efficacy_no_antibiotics':
@@ -427,7 +428,8 @@ def generate_table():
             'classification_for_treatment_decision_without_oximeter_perfect_accuracy':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
                     age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
-                    facility_level=_facility_level, use_oximeter=False, hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    facility_level=_facility_level, use_oximeter=False,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
                     un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition)
         })
 
@@ -439,7 +441,20 @@ if __name__ == "__main__":
     table = table.assign(
         has_danger_signs=lambda df: df['symptoms'].apply(lambda x: 'danger_signs' in x),
         needs_oxygen=lambda df: df['oxygen_saturation'] == "<90%",
+        pulmonary_complication=lambda df: df['complications'].apply(lambda x: any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x)),
+        bacteraemia=lambda df: df['complications'].apply(lambda x: any(
+            e in ['bacteraemia'] for e in x)),
+        bacterial_infection=lambda df: df[['pathogen', 'bacterial_coinfection']].apply(lambda x: (
+            (x[0] in sim0.modules['Alri'].pathogens['bacterial']) or pd.notnull(x[1])), axis=1),
+        any_complication=lambda df: df['complications'].apply(lambda x: any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia', 'hypoxaemia'] for e in x)),
+        other_complications=lambda df: df['complications'].apply(lambda x: any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x)),
+        severe_pneumonia=lambda df: df['symptoms'].apply(lambda x: any(s in ['danger_signs', 'respiratory_distress'] for s in x)),
+        all_severe=lambda df: df[['symptoms', 'oxygen_saturation']].apply(lambda x: any(s in ['danger_signs', 'respiratory_distress'] for s in x[0]) or x[1] == "<90%", axis=1),
     )
+
     # table.drop(table.loc[table['age_exact_years'] < 2.0 / 12.0].index, inplace=True)
 
     def summarize_by(df: pd.DataFrame, by: List[str], columns: [List[str]]) -> pd.DataFrame:
@@ -448,13 +463,6 @@ if __name__ == "__main__":
         return pd.DataFrame({'fraction': df.groupby(by=by).size()}).apply(lambda x: x / x.sum(), axis=0) \
             .join(df.groupby(by=by)[columns].mean())
 
-    # Examine case mix
-    case_mix_by_disease_and_pathogen = summarize_by(table,
-                                                    by=['disease_type', 'pathogen'],
-                                                    columns=['has_danger_signs', 'needs_oxygen',
-                                                             'prob_die_if_no_treatment']
-                                                    ).reset_index()
-    print(f"{case_mix_by_disease_and_pathogen=}")
 
     # Average risk of death by disease type
     table.groupby(by=['disease_type'])['prob_die_if_no_treatment'].mean()
@@ -470,15 +478,28 @@ if __name__ == "__main__":
     # "classification_for_treatment_decision_with_oximeter_perfect_accuracy")
     truth = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
 
+
     def cross_tab(truth: pd.Series, dx: pd.Series):
         """Return cross-tab between truth and dx and count number of incongruent rows."""
         print(f"% cases mis-classified is {100 * (truth != dx).mean()}%")
         return pd.crosstab(truth, dx, normalize='index')
 
-    # Treatment efficacies table
+
+    # # # Treatment efficacy table # # #
     risk_of_death = summarize_by(
         df=table,
-        by=['oxygen_saturation', 'has_danger_signs', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy', 'disease_type'],
+        # df=table[table[['complications', 'bacterial_infection']].apply(lambda x: len(x[0]) > 0 and x[1] == True, axis=1)],
+        by=[
+        'oxygen_saturation', 'has_danger_signs',
+        #     'any_complication',
+        #     'other_complications',
+        #     'all_severe',
+            # 'bacterial_infection',
+            # 'bacteraemia',
+            # 'pulmonary_complication', 'hv_inf', 'un_clinical_acute_malnutrition',
+            'classification_for_treatment_decision_without_oximeter_perfect_accuracy',
+            'disease_type'
+        ],
         columns=[
             'prob_die_if_no_treatment',
             'treatment_efficacy_iv_antibiotics_with_oxygen',
@@ -486,7 +507,6 @@ if __name__ == "__main__":
             'treatment_efficacy_oral_antibiotics_only',
             'treatment_efficacy_no_antibiotics'
         ]
-
     ).assign(
         fraction_of_deaths=lambda df: (
             (df.fraction * df.prob_die_if_no_treatment) / (df.fraction * df.prob_die_if_no_treatment).sum()
@@ -494,49 +514,29 @@ if __name__ == "__main__":
     )
     print(f"{risk_of_death=}")
 
-    will_die = table.groupby('will_die').size() / table.groupby('will_die').size().sum()
+    # -----------------------------
+    # Data to save in excel
+    df = pd.DataFrame(columns=[risk_of_death.columns])
 
-    # risk of deaths if no treatment
-    (risk_of_death.fraction * risk_of_death.prob_die_if_no_treatment).sum()  # 12.38%
+    if not os.path.exists(f'output_treatment_efficacies_reduced_mort{datestamp}.xlsx'):
+        df.to_excel(f'./output_treatment_efficacies_reduced_mort{datestamp}.xlsx', sheet_name=f'Treatment_eff', index=True)
 
-    # disease_classification = table["classification_for_treatment_decision_with_oximeter_perfect_accuracy"]
-    disease_classification = table['classification_for_treatment_decision_without_oximeter_perfect_accuracy']
-    # low_oxygen = (table["oxygen_saturation"] == "<90%").replace({True: 'SpO2<90%', False: "SpO2>=90%"})
-    low_oxygen = (table["oxygen_saturation"])
-    res = {"Treatment package": {
-            "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification, low_oxygen]).sum(),
-            "Oral antiobiotics": (
-                table['prob_die_if_no_treatment'] *
-                (1.0 -
-                 table['treatment_efficacy_oral_antibiotics_only'] / 100.0
-                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
-            "IV antibiotics only": (
-                table['prob_die_if_no_treatment'] *
-                (1.0 -
-                 table['treatment_efficacy_iv_antibiotics_without_oxygen']
-                 / 100.0
-                 )).groupby(by=[disease_classification, low_oxygen]).sum(),
-            "IV antibiotics + oxygen": (
-                table['prob_die_if_no_treatment'] *
-                (1.0 -
-                 table['treatment_efficacy_iv_antibiotics_with_oxygen']
-                 / 100.0
-                 )).groupby(by=[disease_classification, low_oxygen]).sum()}
+    # new_data = pd.DataFrame(risk_of_death.items, index=risk_of_death.index, columns=[risk_of_death.columns])
+    new_data = risk_of_death
 
-        }
+    # Properly use ExcelWriter with existing workbook
+    book = load_workbook(f'./output_treatment_efficacies_reduced_mort{datestamp}.xlsx')
 
-    results = (100_000 / len(table)) * pd.concat({k: pd.DataFrame(v) for k, v in res.items()}, axis=1)
+    with pd.ExcelWriter(f'./output_treatment_efficacies_reduced_mort{datestamp}.xlsx', engine='openpyxl') as writer:
+        writer.book = book
+        writer.sheets = {ws.title: ws for ws in book.worksheets}
+        new_data.to_excel(writer,
+                          sheet_name=f'Treatment_eff',
+                          header=True,
+                          index=True)
 
-    fig, ax = plt.subplots()
-    results.loc[:, (results.columns.levels[0], slice(None))].T.plot.bar(stacked=True, ax=ax, legend=False)
-    ax.set_xticklabels(results.loc[:, (results.columns.levels[0], slice(None))].columns.levels[1])
-    ax.set_xlabel('Treatment Assumption')
-    ax.set_ylabel('Deaths per 100,000 cases of ALRI')
-    ax.set_title(f"Treatment package applied across all case types", fontsize=10)
-    ax.grid(axis='y')
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(reversed(handles), reversed(labels), title='Case Type', loc='upper left', bbox_to_anchor=(1, 1), fontsize=7)
-    # fig.suptitle('Deaths to Alri Under Different Treatments', fontsize=14)
-    fig.tight_layout()
-    fig.show()
-    plt.close(fig)
+    # Save the table output
+    with open(f'debug_output_treatment_efficacies_reduced_mort{datestamp}.pkl', 'wb') as f:
+        pickle.dump(table, f)
+
+debug_point = 0

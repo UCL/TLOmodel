@@ -787,9 +787,14 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'Relative risk of oral antibiotic treatment failure if general danger signs'
                       ),
-        'rr_tf_oral_antibiotics_if_repiratory_distress':
+        'rr_tf_oral_antibiotics_if_respiratory_distress':
             Parameter(Types.REAL,
                       'Relative risk of oral antibiotic treatment failure if respiratory distress signs'
+                      ),
+        'rr_tf_oral_antibiotics_if_abnormal_CXR':
+            Parameter(Types.REAL,
+                      'Relative risk of oral antibiotic treatment failure if abnormal chest radiography '
+                      '(Pneumonia disease type)'
                       ),
 
         'prob_respiratory_distress_in_pneumonia':
@@ -2530,147 +2535,66 @@ class Models:
         # Get baseline odds of death given age
         odds_death = get_odds_of_death(age_in_whole_months=age_in_whole_months)
 
-        # Modify odds of death based on other factors:
+        def scale_base_odds_of_death(baseline_odds=odds_death):
+            """ Scale the baseline odds for complicated cases """
+            if 0 == len(complications):
+                # return baseline_odds
+                if bacterial_infection:
+                    return baseline_odds * 1.18
+                else:
+                    return baseline_odds
+
+            # Now with complications
+            # Adjust the natural risk of death for those complicated ALRI
+            elif 0 < len(complications):
+                # return baseline_odds
+                baseline_odds *= 3.44
+                if bacterial_infection:
+                    return baseline_odds * 1.07
+                else:
+                    return baseline_odds
+
+            else:
+                raise ValueError('Case type missing in the adjustment')
+
+        scaled_odds = scale_base_odds_of_death(baseline_odds=odds_death)
+
+        # Modify odds of death based on risk factors:
         if 'danger_signs' in all_symptoms:
-            odds_death *= p[f'or_death_ALRI_{_age_}_danger_signs']
+            scaled_odds *= p[f'or_death_ALRI_{_age_}_danger_signs']
 
         if SpO2_level == '<90%':
-            odds_death *= p[f'or_death_ALRI_{_age_}_SpO2<90%']
+            scaled_odds *= p[f'or_death_ALRI_{_age_}_SpO2<90%']
         elif SpO2_level == '90-92%':
-            odds_death *= p[f'or_death_ALRI_{_age_}_SpO2_90_92%']
+            scaled_odds *= p[f'or_death_ALRI_{_age_}_SpO2_90_92%']
 
         if not is_under_two_months_old:
             if sex == 'F':
-                odds_death *= p[f'or_death_ALRI_{_age_}_female']
+                scaled_odds *= p[f'or_death_ALRI_{_age_}_female']
 
             if un_clinical_acute_malnutrition == 'SAM':
-                odds_death *= p[f'or_death_ALRI_{_age_}_SAM']
+                scaled_odds *= p[f'or_death_ALRI_{_age_}_SAM']
 
             if 'chest_indrawing' in all_symptoms:
-                odds_death *= p[f'or_death_ALRI_{_age_}_chest_indrawing']
+                scaled_odds *= p[f'or_death_ALRI_{_age_}_chest_indrawing']
 
             if 'respiratory_distress' in all_symptoms:
-                odds_death *= p['or_death_ALRI_respiratory_distress']
+                scaled_odds *= p['or_death_ALRI_respiratory_distress']
 
         if 'bacteraemia' in complications:
-            odds_death *= p['or_death_ALRI_bacteraemia']
+            scaled_odds *= p['or_death_ALRI_bacteraemia']
 
         if disease_type == 'pneumonia':
-            odds_death *= p['or_death_ALRI_abnormal_CXR']
+            scaled_odds *= p['or_death_ALRI_abnormal_CXR']
 
         if any(pc in ['pleural_effusion', 'empyema', 'pneumothorax', 'lung_abscess'] for pc in complications):
-            odds_death *= p['or_death_ALRI_pulmonary_complications']
+            scaled_odds *= p['or_death_ALRI_pulmonary_complications']
 
-        if bacterial_infection in self.module.pathogens['bacterial']:
-            odds_death *= 4.01
+        if bacterial_infection:
+            scaled_odds *= 4.01
 
-        # return min(1.0, to_prob(odds_death))
+        return min(1.0, to_prob(scaled_odds))
 
-        # Adjustments ----------------------------------
-        if 0 == len(complications):
-            # Adjust the natural risk of death for those uncomplicated CXR- viral causes, without severe symptoms
-            if disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 0.6 * to_prob(odds_death))  # these wouldn't be be in the Lazzerini dataset
-                # or within less than 1%
-
-            # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, without severe symptoms
-            elif disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 0.8 * to_prob(odds_death))  # these wouldn't be be in the Lazzerini dataset
-                # or within less than 1%
-
-            # Adjust the natural risk of death for those uncomplicated CXR- viral causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 0.8 * to_prob(odds_death))  # antibiotic treatment has no effect on outcome
-
-            # Adjust the natural risk of death for those uncomplicated CXR- bacterial causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1 * to_prob(odds_death))  # death for these cases = with/without treatment
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.1 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ bacterial causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.2 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ viral causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.2 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those uncomplicated CXR+ bacteriral causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.3 * to_prob(odds_death))
-
-        # Now with complications
-        # Adjust the natural risk of death for those complicated CXR- viral causes, without severe symptoms
-        elif 0 < len(complications):
-            if disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.1 * to_prob(
-                    odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR- bacterial causes, without severe symptoms
-            elif disease_type == 'other_alri' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.2 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR- viral causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.2 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR- bacterial causes, with severe symptoms
-            elif disease_type == 'other_alri' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.3 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR+ viral causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.2 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR+ bacterial causes, without severe symptoms
-            elif disease_type == 'pneumonia' and not any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.3 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR+ viral causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection not in self.module.pathogens['bacterial']:
-                return min(1.0, 1.3 * to_prob(odds_death))
-
-            # Adjust the natural risk of death for those complicated CXR+ bacterial causes, with severe symptoms
-            elif disease_type == 'pneumonia' and any(symptom in [
-                'respiratory_distress', 'danger_signs'] for symptom in all_symptoms) and \
-                    bacterial_infection in self.module.pathogens['bacterial']:
-                return min(1.0, 1.4 * to_prob(odds_death))
-
-        else:
-            raise ValueError('Case type missing in the adjustment')
 
     def treatment_fails(self, **kwargs) -> bool:
         """Determine whether a treatment fails or not: Returns `True` if the treatment fails."""
@@ -2788,29 +2712,33 @@ class Models:
         def _treatment_failure_oral_antibiotics(risk_tf_oral_antibiotics):
             """Return the risk of treatment failure by oral antibiotics for non-severe pneumonia classification"""
 
-            risk_tf_oral_antibiotics = risk_tf_oral_antibiotics
+            # risk_tf_oral_antibiotics = risk_tf_oral_antibiotics
+
+            odds_tf_oral_antibiotics = to_odds(risk_tf_oral_antibiotics)
 
             if SpO2_level == '<90%':
-                risk_tf_oral_antibiotics = to_prob(
-                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_SpO2<90%'])
+                odds_tf_oral_antibiotics = \
+                    odds_tf_oral_antibiotics * p['or_tf_oral_antibiotics_if_SpO2<90%']
 
             if SpO2_level == '90-92%':
-                risk_tf_oral_antibiotics = to_prob(
-                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_SpO2_90_92%'])
+                odds_tf_oral_antibiotics = \
+                    odds_tf_oral_antibiotics * p['or_tf_oral_antibiotics_if_SpO2_90_92%']
 
             if un_clinical_acute_malnutrition == 'MAM':
-                risk_tf_oral_antibiotics = to_prob(
-                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_MAM'])
+                odds_tf_oral_antibiotics = \
+                    odds_tf_oral_antibiotics * p['or_tf_oral_antibiotics_if_MAM']
 
             if un_clinical_acute_malnutrition == 'SAM':
-                risk_tf_oral_antibiotics = to_prob(
-                    to_odds(risk_tf_oral_antibiotics) * p['or_tf_oral_antibiotics_if_SAM'])
+                odds_tf_oral_antibiotics = \
+                    risk_tf_oral_antibiotics * p['or_tf_oral_antibiotics_if_SAM']
+
+            prob_tf_oral_antibiotics = to_prob(odds_tf_oral_antibiotics)
 
             if 'danger_signs' in symptoms:
-                risk_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_danger_signs']
+                prob_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_danger_signs']
 
             if 'respiratory_distress' in symptoms:
-                risk_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_repiratory_distress']
+                prob_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_respiratory_distress']
 
             # if 'ma_is_infected' and not 'ma_tx':
             #     risk_tf_oral_antibiotics = to_prob(
@@ -2819,14 +2747,14 @@ class Models:
             # use the same RR of treatment failure of IV antibiotics for those with CXR+ (mostly pneumonia group)
             # for consistency of risk factors between the two treatment groups (oral / IV)
             if disease_type == 'pneumonia':
-                risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_abnormal_CXR']
+                prob_tf_oral_antibiotics *= p['rr_tf_oral_antibiotics_if_abnormal_CXR']
 
             # The effect of HIV
             if hiv_infected_and_not_on_art:
-                risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_HIV/AIDS']
+                prob_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_HIV/AIDS']
 
             # return risk_tf_oral_antibiotics
-            return min(1.0, risk_tf_oral_antibiotics)
+            return min(1.0, prob_tf_oral_antibiotics)
 
         def _treatment_failure_IV_antibiotics():
             """Return the risk of treatment failure by parenteral antibiotics for severe pneumonia classification"""
@@ -4398,7 +4326,6 @@ def _make_perfect_conditions(alri_module):
 
     p['referral_rate_severe_cases_from_hc'] = 1.0
     p['pulse_oximeter_usage_rate'] = 1.0
-    # p['sought_follow_up_care'] = 1.0
 
 
 def _make_high_risk_of_death(alri_module):
@@ -4407,3 +4334,9 @@ def _make_high_risk_of_death(alri_module):
     params['base_odds_death_ALRI_age<2mo'] *= 5.0
     params['base_odds_death_ALRI_age2_59mo'] *= 5.0
 
+
+def _make_low_risk_of_death(alri_module):
+    """Modify the parameters of an instance of the Alri module so that the risk of death is high."""
+    params = alri_module.parameters
+    params['base_odds_death_ALRI_age<2mo'] = 0.01164
+    params['base_odds_death_ALRI_age2_59mo'] = 0.00717
