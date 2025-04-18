@@ -706,7 +706,7 @@ class WastingAnalyses:
             self.save_fig__store_pdf_file(fig, fig_output_name)
             # plt.show()
 
-    def plot_model_gbd_deaths(self):
+    def plot_model_gbd_deaths_incl_burnin_period(self):
         """ compare model and GBD deaths 2010-2014 & 2015-2019 """
         death_compare = \
             compare_number_of_deaths(self.__log_file_path, resources_path)
@@ -733,7 +733,39 @@ class WastingAnalyses:
         fig.figure.text(0.5, 0.02,
                         "Model output against Global Burden of Diseases (GBD) study data",
                         ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
-        fig_output_name = ('model_gbd_deaths__' + self.datestamp)
+        fig_output_name = ('model_gbd_deaths_incl_burnin__' + self.datestamp)
+        self.save_fig__store_pdf_file(fig, fig_output_name)
+        # plt.show()
+
+    def plot_model_gbd_deaths_excl_burnin_period(self):
+        """ compare model and GBD deaths 2015-2019 """
+        death_compare = \
+            compare_number_of_deaths(self.__log_file_path, resources_path)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        # cause of death as of GBD 2019 'Protein-energy malnutrition' was labeled as 'Childhood Undernutrition' in
+        # wasting module
+        plot_df = death_compare.loc[(['2015-2019'],
+                                     slice(None), ['0-4'], 'Childhood Undernutrition'
+                                     )].groupby('period').sum()
+        plotting = plot_df.loc[['2015-2019']]
+        ax = plotting['model'].plot.bar(label='Model', ax=ax, rot=0)
+        ax.errorbar(x=plotting['model'].index, y=plotting.GBD_mean,
+                    yerr=[plotting.GBD_lower, plotting.GBD_upper],
+                    fmt='o', color='#000', label="GBD")
+
+        ax.set_title('Average direct deaths per year due to severe acute malnutrition in children under 5',
+                     fontsize=title_fontsize - 1)
+        ax.set_xlabel("time period")
+        ax.set_ylabel("number of deaths")
+        ax.legend(loc='upper right', fontsize=legend_fontsize)
+        fig.tight_layout()
+        # Adjust the layout to make space for the footnote
+        plt.subplots_adjust(bottom=0.15)  # Adjust the bottom margin
+        # Add footnote
+        fig.figure.text(0.5, 0.02,
+                        "Model output against Global Burden of Diseases (GBD) study data",
+                        ha="center", fontsize=10, bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
+        fig_output_name = ('model_gbd_deaths_excl_burnin__' + self.datestamp)
         self.save_fig__store_pdf_file(fig, fig_output_name)
         # plt.show()
 
@@ -812,7 +844,8 @@ if __name__ == "__main__":
         wasting_analyses.plot_wasting_prevalence_by_age_group()
 
         # plot wasting deaths as compared to GBD deaths
-        wasting_analyses.plot_model_gbd_deaths()
+        # wasting_analyses.plot_model_gbd_deaths_incl_burnin_period()
+        wasting_analyses.plot_model_gbd_deaths_excl_burnin_period()
 
         # ### Save all figures in one pdf
         outcome_figs_folder = sim_results_folder_path / '_outcome_figures'
