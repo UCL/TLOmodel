@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 10_000
+popsize = 100_000
 
 # scenario = 1
 
@@ -87,8 +87,8 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 2
-sim.modules["Hiv"].parameters["scaleup_start_year"] = 2012
+sim.modules["Hiv"].parameters["select_mihpsa_scenario"] = 6
+sim.modules["Hiv"].parameters["scaleup_start_year"] = 2011
 sim.modules["Hiv"].parameters["prep_start_year"] = 2011
 # sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)

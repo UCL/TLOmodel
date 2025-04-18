@@ -4,6 +4,8 @@ The results of the batchrun were put into the 'outputspath' results_folder
 if running locally need to parse log files:
 tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/mihpsa_runs-2025-04-14T130655Z/0/0
 
+mihpsa_runs-2025-04-15T105201Z
+
 """
 
 import datetime
@@ -37,7 +39,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 results_folder = get_scenario_outputs("mihpsa_runs.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder, draw=5)
+log = load_pickled_dataframes(results_folder, draw=6)
 
 # get basic information about the results
 info = get_scenario_info(results_folder)
@@ -139,7 +141,7 @@ for stock in stock_variables:
         collapse_columns=False,
         only_mean=True
     )
-    result = result[result.index.year >= 2021]
+    result = result[result.index.year >= 2020]
 
     for draw in result.columns:
         if draw not in stocks_output:
@@ -153,7 +155,6 @@ with pd.ExcelWriter(results_folder / "stock_outputs_workbook.xlsx", engine='open
         df = df.T  # Switch rows and columns
         # Writing each draw's DataFrame to a new sheet named after the draw
         df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
-
 
 flows_output = {}
 
@@ -170,7 +171,7 @@ for flow in flow_variables:
         collapse_columns=False,
         only_mean=True
     )
-    result = result[result.index.year >= 2021]
+    result = result[result.index.year >= 2020]
 
     for draw in result.columns:
         if draw not in flows_output:
@@ -189,7 +190,7 @@ with pd.ExcelWriter(results_folder / 'flows_output.xlsx') as writer:
 # EXTRACT DEATHS
 
 def summarise_deaths(results_folder,
-                                   label=None, age=None, sex=None):
+                     label=None, age=None, sex=None):
     """ returns mean deaths for each year of the simulation
     values are aggregated across the runs of each draw
     for the specified cause
@@ -206,7 +207,7 @@ def summarise_deaths(results_folder,
         do_scaling=True,
     )
     # removes multi-index
-    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2021]
+    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2020]
     results_deaths = results_deaths.reset_index()
 
     # select only cause specified
@@ -239,38 +240,39 @@ def summarise_deaths(results_folder,
     summed_results = summed_results.reset_index()
 
     # get mean for each draw
-    mean_deaths = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+    mean_deaths = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(
+        axis=1)
 
     return mean_deaths
 
 
 aids_deaths_children = summarise_deaths(results_folder,
-                                                      label='AIDS',
-                                                      age='children')
+                                        label='AIDS',
+                                        age='children')
 
 aids_deaths_men = summarise_deaths(results_folder,
-                                                 label='AIDS',
-                                                 age='adult',
-                                                 sex='M')
+                                   label='AIDS',
+                                   age='adult',
+                                   sex='M')
 
 aids_deaths_women = summarise_deaths(results_folder,
-                                                 label='AIDS',
-                                                 age='adult',
-                                                 sex='F')
+                                     label='AIDS',
+                                     age='adult',
+                                     sex='F')
 
 all_deaths_children = summarise_deaths(results_folder,
-                                                      label=None,
-                                                      age='children')
+                                       label=None,
+                                       age='children')
 
 all_deaths_men = summarise_deaths(results_folder,
-                                                 label=None,
-                                                 age='adult',
-                                                 sex='M')
+                                  label=None,
+                                  age='adult',
+                                  sex='M')
 
 all_deaths_women = summarise_deaths(results_folder,
-                                                 label=None,
-                                                 age='adult',
-                                                 sex='F')
+                                    label=None,
+                                    age='adult',
+                                    sex='F')
 
 # List of dataframes to include in the workbook
 dataframes = {
@@ -285,7 +287,7 @@ dataframes = {
 # Create a new Excel writer object
 with pd.ExcelWriter(results_folder / "summarised_deaths.xlsx") as writer:
     # Iterate over draws (0 to 7)
-    for draw in range(8):
+    for draw in range(9):
         # Prepare data for the current draw
         sheet_data = []
         for name, df in dataframes.items():
@@ -304,7 +306,7 @@ with pd.ExcelWriter(results_folder / "summarised_deaths.xlsx") as writer:
 # HIV TESTS
 
 
-def summarise_tests(results_folder, positive=None):
+def summarise_tests(results_folder, positive=None, self_test=False):
     """ returns mean deaths for each year of the simulation
     values are aggregated across the runs of each draw
     for the specified cause
@@ -316,43 +318,70 @@ def summarise_tests(results_folder, positive=None):
         key="hiv_test",
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "hiv_diagnosed", "adult"])["person_id"].count()
+                ["year", "hiv_diagnosed", "adult", "referred_from"])["person_id"].count()
         ),
         do_scaling=True,
     )
 
-    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2021]
+    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2020]
     results_tests = results_tests.loc[results_tests.index.get_level_values('adult') == True]
 
-    if positive == 'YES':
-        results_tests = results_tests.loc[results_tests.index.get_level_values('hiv_diagnosed') == True]
-    else:
-        results_tests = results_tests.loc[results_tests.index.get_level_values('hiv_diagnosed') == False]
+    # facility based - positive
+    if (positive == 'YES') & ~self_test:
+        results_tests = results_tests.loc[(results_tests.index.get_level_values('hiv_diagnosed') == True)
+                                          & (results_tests.index.get_level_values('referred_from').isin(
+            ['Tb', 'hsi_generic_first_appt', 'initialise_simulation', 'ANC_routine', 'HIV_poll']))]
 
+    # facility based - negative
+    elif (positive == 'NO') & ~self_test:
+        results_tests = results_tests.loc[(results_tests.index.get_level_values('hiv_diagnosed') == False)
+                                          & (results_tests.index.get_level_values('referred_from').isin(
+            ['Tb', 'hsi_generic_first_appt', 'initialise_simulation', 'ANC_routine', 'HIV_poll']))]
+
+    # self-test - positive
+    elif (positive == 'YES') & self_test:
+        results_tests = results_tests.loc[(results_tests.index.get_level_values('hiv_diagnosed') == True)
+                                          & (results_tests.index.get_level_values('referred_from').isin(
+            ['HIV_poll_self_test']))]
+
+    # self-test - all
+    elif (positive == 'ALL') & self_test:
+        results_tests = results_tests.loc[(results_tests.index.get_level_values('referred_from').isin(
+            ['HIV_poll_self_test']))]
+
+    # sum the values by year across the various test modalities
     summed_results = results_tests.groupby('year').sum()
-    # Reset the index so 'year' becomes a regular column
-    summed_results = summed_results.reset_index()
 
     # get mean for each draw
-    mean_tests = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+    mean_tests = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(
+        axis=1)
 
     return mean_tests
 
 
-positive_tests = summarise_tests(results_folder, positive='YES')
-negative_tests = summarise_tests(results_folder, positive='NO')
+positive_tests_facility = summarise_tests(results_folder, positive='YES', self_test=False)
+positive_tests_facility = positive_tests_facility.reset_index()  # Reset the index so 'year' becomes a column
+negative_tests_facility = summarise_tests(results_folder, positive='NO', self_test=False)
+negative_tests_facility = negative_tests_facility.reset_index()  # Reset the index so 'year' becomes a column
+
+positive_selftests = summarise_tests(results_folder, positive='YES', self_test=True)
+positive_selftests = positive_selftests.reset_index()  # Reset the index so 'year' becomes a column
+total_selftests = summarise_tests(results_folder, positive='ALL', self_test=True)
+total_selftests = total_selftests.reset_index()  # Reset the index so 'year' becomes a column
 
 # List of dataframes to include in the workbook
 dataframes = {
-    "negative_tests": negative_tests,
-    "positive_tests": positive_tests,
+    "negative_tests_facility": negative_tests_facility,
+    "positive_tests_facility": positive_tests_facility,
+    "positive_selftests": positive_selftests,
+    "total_selftests": total_selftests,
 }
 
 # Create a new Excel writer object
+# todo note self-tests start in 2024
 with pd.ExcelWriter(results_folder / "summarised_tests.xlsx") as writer:
-    # Iterate over draws (0 to 7)
-    for draw in range(8):
-        # Prepare data for the current draw
+    # Iterate over draws (0 to 8)
+    for draw in range(9):
         sheet_data = []
         for name, df in dataframes.items():
             # Extract the "mean" column for the current draw
@@ -363,7 +392,8 @@ with pd.ExcelWriter(results_folder / "summarised_tests.xlsx") as writer:
         sheet_df = pd.DataFrame(sheet_data)
 
         # Write the DataFrame to the corresponding sheet
-        sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=False)
+        sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=True)
+
 
 # -----------------------------------------------------------------------------------
 # VL TESTS
@@ -386,7 +416,7 @@ def summarise_vl_tests(results_folder, adult=None):
         do_scaling=True,
     )
 
-    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2021]
+    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2020]
 
     if adult == 'YES':
         results_tests = results_tests.loc[results_tests.index.get_level_values('adult') == True]
@@ -398,7 +428,8 @@ def summarise_vl_tests(results_folder, adult=None):
     summed_results = summed_results.reset_index()
 
     # get mean for each draw
-    mean_tests = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(axis=1)
+    mean_tests = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(
+        axis=1)
 
     return mean_tests
 
@@ -415,7 +446,7 @@ dataframes = {
 # Create a new Excel writer object
 with pd.ExcelWriter(results_folder / "summarised_VLtests.xlsx") as writer:
     # Iterate over draws (0 to 7)
-    for draw in range(8):
+    for draw in range(9):
         # Prepare data for the current draw
         sheet_data = []
         for name, df in dataframes.items():
@@ -499,7 +530,6 @@ def transform_full_deaths(full_deaths):
 
     # Loop over the draw values (0 to 7)
     for draw in range(8):
-
         # Select the columns for the relevant 'draw' (i.e., multi-index columns for the given draw)
         draw_columns_for_current_draw = pivoted_data_reset.columns[
             pivoted_data_reset.columns.get_level_values(0) == draw]
@@ -544,7 +574,6 @@ num_dalys_by_year = summarize(extract_results(
     do_scaling=True
 ),
     only_mean=True)
-
 
 aids_dalys = num_dalys_by_year[num_dalys_by_year.index.get_level_values(1) == 'AIDS']
 with pd.ExcelWriter(results_folder / 'dalys.xlsx', engine='openpyxl') as writer:

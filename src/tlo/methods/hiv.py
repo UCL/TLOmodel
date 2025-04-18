@@ -2004,16 +2004,23 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- SELF-TEST -----------------------------------
         def self_tests():
+            # scaled in same way as general testing using linear model
+            # can be repeat test if diagnosed already
+            # the same people may have been selected from general testing above
 
             if (p['select_mihpsa_scenario'] == 6) & (self.sim.date.year >= p["scaleup_start_year"]):
 
-                test_rates = 0.08  # need 800,000 in population of 19m (0.04), half are children
+                test_rates = 0.07  # need 800,000 in population of 19m (0.04), half are children, lm excludes on ART
 
-                random_draw = rng.random_sample(size=len(df))
-                self_tests_idx = df.loc[df.is_alive &
-                                        (df.age_years >= 15) &
-                                        ~df.hv_diagnosed &
-                                        (random_draw < test_rates)].index
+                # adult testing trends also informed by demographic characteristics
+                # relative probability of testing - this may skew testing rates higher or lower than moh reports
+                rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(df[df.is_alive & (df.age_years >= 15)])
+                mean_prob_test = (rr_of_test * test_rates).mean()
+                scaled_prob_test = (rr_of_test * test_rates) / mean_prob_test
+                overall_prob_test = scaled_prob_test * test_rates
+
+                random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years >= 15)]))
+                self_tests_idx = df.loc[df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)].index
 
                 for person_id in self_tests_idx:
                     date_test = self.sim.date + pd.DateOffset(
