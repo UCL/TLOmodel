@@ -505,6 +505,21 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'odds ratio of death from ALRI for children with bacteraemia'
                       ),
+        'scaling_factor_base_odds_death_uncomplicated_ALRI_if_bacterial_cause':
+            Parameter(Types.REAL,
+                      'scaling factor of the natural mortality applied to the baseline odds of death'
+                      'in uncomplicated ALRI with bacterial causal pathogen'
+                      ),
+        'scaling_factor_base_odds_death_if_complicated_ALRI':
+            Parameter(Types.REAL,
+                      'scaling factor of the natural mortality applied to the baseline odds of death'
+                      'in ALRI with complications'
+                      ),
+        'scaling_factor_death_complicated_ALRI_if_bacterial_cause':
+            Parameter(Types.REAL,
+                      'scaling factor of the natural mortality applied to the odds of death'
+                      'in ALRI with complications and bacterial causal pathogen'
+                      ),
 
         # Probability of symptom development -----
         'prob_cough_in_pneumonia':
@@ -993,8 +1008,6 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'Odds ratio of treatment failure for severe cases with initial treatment with oral antibiotics'
                       ),
-
-
 
         'availability_amoxicillin_tablet_by_facility_level':
             Parameter(Types.LIST,
@@ -2540,7 +2553,7 @@ class Models:
             if 0 == len(complications):
                 # return baseline_odds
                 if bacterial_infection:
-                    return baseline_odds * 1.18
+                    return baseline_odds * p['scaling_factor_base_odds_death_uncomplicated_ALRI_if_bacterial_cause']
                 else:
                     return baseline_odds
 
@@ -2548,9 +2561,9 @@ class Models:
             # Adjust the natural risk of death for those complicated ALRI
             elif 0 < len(complications):
                 # return baseline_odds
-                baseline_odds *= 3.44
+                baseline_odds *= p['scaling_factor_base_odds_death_if_complicated_ALRI']
                 if bacterial_infection:
-                    return baseline_odds * 1.07
+                    return baseline_odds * p['scaling_factor_death_complicated_ALRI_if_bacterial_cause']
                 else:
                     return baseline_odds
 
