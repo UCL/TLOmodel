@@ -52,7 +52,6 @@ class TestScenario(BaseScenario):
         self.pop_size = 100_000
         self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         self.number_of_draws = len(self.scenarios)
-        self.number_of_draws = 1
         self.runs_per_draw = 3
 
     def log_configuration(self):
