@@ -39,7 +39,7 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 results_folder = get_scenario_outputs("mihpsa_runs.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder, draw=6)
+log = load_pickled_dataframes(results_folder, draw=0)
 
 # get basic information about the results
 info = get_scenario_info(results_folder)
@@ -141,7 +141,7 @@ for stock in stock_variables:
         collapse_columns=False,
         only_mean=True
     )
-    result = result[result.index.year >= 2020]
+    result = result[result.index.year >= 2021]
 
     for draw in result.columns:
         if draw not in stocks_output:
@@ -171,7 +171,7 @@ for flow in flow_variables:
         collapse_columns=False,
         only_mean=True
     )
-    result = result[result.index.year >= 2020]
+    result = result[result.index.year >= 2021]
 
     for draw in result.columns:
         if draw not in flows_output:
@@ -207,7 +207,7 @@ def summarise_deaths(results_folder,
         do_scaling=True,
     )
     # removes multi-index
-    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2020]
+    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2021]
     results_deaths = results_deaths.reset_index()
 
     # select only cause specified
@@ -323,7 +323,7 @@ def summarise_tests(results_folder, positive=None, self_test=False):
         do_scaling=True,
     )
 
-    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2020]
+    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2021]
     results_tests = results_tests.loc[results_tests.index.get_level_values('adult') == True]
 
     # facility based - positive
@@ -416,7 +416,7 @@ def summarise_vl_tests(results_folder, adult=None):
         do_scaling=True,
     )
 
-    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2020]
+    results_tests = results_tests.loc[results_tests.index.get_level_values('year') >= 2021]
 
     if adult == 'YES':
         results_tests = results_tests.loc[results_tests.index.get_level_values('adult') == True]
@@ -483,7 +483,7 @@ def output_deaths_by_age(results_folder):
         ),
         do_scaling=True,
     )
-    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2023]
+    results_deaths = results_deaths.loc[results_deaths.index.get_level_values('year') >= 2021]
 
     # removes multi-index
     results_deaths = results_deaths.reset_index()
@@ -529,7 +529,7 @@ def transform_full_deaths(full_deaths):
     draw_dfs = {}
 
     # Loop over the draw values (0 to 7)
-    for draw in range(8):
+    for draw in range(9):
         # Select the columns for the relevant 'draw' (i.e., multi-index columns for the given draw)
         draw_columns_for_current_draw = pivoted_data_reset.columns[
             pivoted_data_reset.columns.get_level_values(0) == draw]
@@ -595,7 +595,7 @@ dalys_averted = pd.DataFrame()
 
 # Calculate differences and add to new DataFrame
 for col in aids_dalys.columns[1:]:  # Start from the second column
-    dalys_averted[col] = aids_dalys[0] - aids_dalys[col]
+    dalys_averted[col] = aids_dalys[1] - aids_dalys[col]
 
 with pd.ExcelWriter(results_folder / 'aids_dalys_averted.xlsx', engine='openpyxl') as writer:
     dalys_averted.to_excel(writer, sheet_name='DALYs Averted')

@@ -51,7 +51,7 @@ class TestScenario(BaseScenario):
         self.end_date = Date(2051, 1, 1)  # need to log to mid-year 2050
         self.pop_size = 100_000
         self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        # self.number_of_draws = len(self.scenarios)
+        self.number_of_draws = len(self.scenarios)
         self.number_of_draws = 1
         self.runs_per_draw = 3
 
@@ -92,8 +92,7 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'Hiv': {
-                # 'select_mihpsa_scenario': self.scenarios[draw_number],
-                'select_mihpsa_scenario': 6,
+                'select_mihpsa_scenario': self.scenarios[draw_number],
                 'scaleup_start_year': 2024
             },
         }

@@ -1,6 +1,6 @@
 {
   "scenario_script_path": "src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py",
-  "scenario_seed": 38430,
+  "scenario_seed": 30364,
   "arguments": [],
   "runs_per_draw": 3,
   "draws": [
@@ -8,93 +8,13 @@
       "draw_number": 0,
       "parameters": {
         "Hiv": {
-          "select_mihpsa_scenario": 0,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "0"
-    },
-    {
-      "draw_number": 1,
-      "parameters": {
-        "Hiv": {
-          "select_mihpsa_scenario": 1,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "1"
-    },
-    {
-      "draw_number": 2,
-      "parameters": {
-        "Hiv": {
-          "select_mihpsa_scenario": 2,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "2"
-    },
-    {
-      "draw_number": 3,
-      "parameters": {
-        "Hiv": {
-          "select_mihpsa_scenario": 3,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "3"
-    },
-    {
-      "draw_number": 4,
-      "parameters": {
-        "Hiv": {
-          "select_mihpsa_scenario": 4,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "4"
-    },
-    {
-      "draw_number": 5,
-      "parameters": {
-        "Hiv": {
-          "select_mihpsa_scenario": 5,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "5"
-    },
-    {
-      "draw_number": 6,
-      "parameters": {
-        "Hiv": {
           "select_mihpsa_scenario": 6,
           "scaleup_start_year": 2024
         }
       },
-      "draw_name": "6"
-    },
-    {
-      "draw_number": 7,
-      "parameters": {
-        "Hiv": {
-          "select_mihpsa_scenario": 7,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "7"
-    },
-    {
-      "draw_number": 8,
-      "parameters": {
-        "Hiv": {
-          "select_mihpsa_scenario": 8,
-          "scaleup_start_year": 2024
-        }
-      },
-      "draw_name": "8"
+      "draw_name": "0"
     }
   ],
-  "commit": "a2c39129c0d9b04a492e25e4c17fe6e1661c1535",
-  "github": "https://github.com/UCL/TLOmodel/tree/a2c39129c0d9b04a492e25e4c17fe6e1661c1535"
+  "commit": "573e4bcc47dd6a78601abf9cd94e7729c8dda6b6",
+  "github": "https://github.com/UCL/TLOmodel/tree/573e4bcc47dd6a78601abf9cd94e7729c8dda6b6"
 }

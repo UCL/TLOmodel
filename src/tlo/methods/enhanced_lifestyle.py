@@ -650,9 +650,12 @@ class LifestyleModels:
 
         :param df: The population dataframe """
         # loop through linear models dictionary and initialise each property in the population dataframe
+        # todo update this init lm with scaling factor
+        scaling_factor = 14539609 / self.module.sim.population.initial_size
         for _property_name, _model in self._models.items():
             df.loc[df.is_alive, _property_name] = _model['init'].predict(
-                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0)
+                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0,
+            scaling_factor=scaling_factor)
 
     def update_all_properties(self, df):
         """update population properties using linear models defined in LifestyleModels class. This function is to be
@@ -661,13 +664,16 @@ class LifestyleModels:
         :param df: The population dataframe """
         # get months since last poll
         now = self.module.sim.date
-        months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "m"))
+        # todo lowercase 'm' means minutes not months - this is fine is master - 'M" doesn't work for me
+        months_since_last_poll = int((now - self.date_last_run).days / 30.5)
+        scaling_factor = 14539609 / self.module.sim.population.initial_size
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
             if _model['update'] is not None:
                 df.loc[df.is_alive, _property_name] = _model['update'].predict(
                     df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
-                    months_since_last_poll=months_since_last_poll)
+                    months_since_last_poll=months_since_last_poll,
+                scaling_factor=scaling_factor)
         # update date last event run
         self.date_last_run = now
 
@@ -1118,10 +1124,13 @@ class LifestyleModels:
                                   & (df.li_mar_stat != 2)].index
 
             n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
-            target_n_sw = int(np.round(len(df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)].index)
-                                       * p["proportion_female_sex_workers"]
-                                       )
-                              )
+            # todo remove this
+            # target_n_sw = int(np.round(len(df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)].index)
+            #                            * p["proportion_female_sex_workers"]
+            #                            )
+            #                   )
+            # todo need to cap this number around 39,000
+            target_n_sw = int(39_000 / externals['scaling_factor'])
             deficit = target_n_sw - n_sw
             if deficit > 0:
                 if deficit < len(eligible_idx):
