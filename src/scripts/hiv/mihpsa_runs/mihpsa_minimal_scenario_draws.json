@@ -1,6 +1,6 @@
 {
   "scenario_script_path": "src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py",
-  "scenario_seed": 11372,
+  "scenario_seed": 46883,
   "arguments": [],
   "runs_per_draw": 3,
   "draws": [
@@ -13,8 +13,88 @@
         }
       },
       "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 1,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "1"
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 2,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 3,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "3"
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 4,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "4"
+    },
+    {
+      "draw_number": 5,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 5,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "5"
+    },
+    {
+      "draw_number": 6,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 6,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "6"
+    },
+    {
+      "draw_number": 7,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 7,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "7"
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 8,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "8"
     }
   ],
-  "commit": "7604c5ca3204bd126efd74ffcb1c6fa70804a56e",
-  "github": "https://github.com/UCL/TLOmodel/tree/7604c5ca3204bd126efd74ffcb1c6fa70804a56e"
+  "commit": "b1061130410bd0254de13ebd3eeb355243cf54df",
+  "github": "https://github.com/UCL/TLOmodel/tree/b1061130410bd0254de13ebd3eeb355243cf54df"
 }
