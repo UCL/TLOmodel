@@ -2844,30 +2844,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-    # todo - linkage to NCD, depression
-    def additional_screening(self, person_id):
-        # linkage to CMD screening
-        # if not dx
-        if "CardioMetabolicDisorders" in self.sim.modules:
-
-            individual_properties = self.sim.population.props.loc[person_id]
-
-            symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-
-            schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
-
-            self.sim.modules['CardioMetabolicDisorders'].do_at_generic_first_appt(person_id=person_id,
-                                                                                  individual_properties=individual_properties,
-                                                                                  symptoms=symptoms,
-                                                                                  schedule_hsi_event=schedule_hsi_event)
-
-
-
-        # linkage to depression screening
-        # if not dx
-
-
-
+        # todo additional screening if chronic care implemented
+        self.additional_screening(person_id)
 
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
@@ -3002,6 +2980,37 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             self.sim.modules["Tb"].consider_ipt_for_those_initiating_art(
                 person_id=person_id
             )
+
+    # todo - linkage to NCD, depression
+    def additional_screening(self, person_id):
+        df = self.sim.population.props
+
+        individual_properties = df.loc[person_id]
+        symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
+
+        # link to CMD screening - this will automatically check for current diagnoses before scheduling
+        if "CardioMetabolicDisorders" in self.sim.modules:
+
+            self.sim.modules['CardioMetabolicDisorders'].do_at_generic_first_appt(person_id=person_id,
+                                                                                  individual_properties=individual_properties,
+                                                                                  symptoms=symptoms,
+                                                                                  schedule_hsi_event=schedule_hsi_event)
+
+        # link to depression screening
+        if 'Depression' in self.sim.modules:
+            # if not dx and currently on anti-depressants
+            # call for depression check which
+            if not df.at[person_id, 'de_on_antidepr']:
+                print(f'call depression screening for person {person_id}')
+                # todo or edit _check_for_suspected_depression
+                self.sim.modules['Depression'].do_when_suspected_depression(
+                    person_id=person_id,
+                    individual_properties=individual_properties,
+                    schedule_hsi_event=schedule_hsi_event,
+                    hsi_event=self)
+
+
 
     def never_ran(self):
         """This is called if this HSI was never run.
