@@ -80,7 +80,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
 
-    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes'}
+    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes', 'CardioMetabolicDisorders'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -2843,6 +2843,31 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+
+    # todo - linkage to NCD, depression
+    def additional_screening(self, person_id):
+        # linkage to CMD screening
+        # if not dx
+        if "CardioMetabolicDisorders" in self.sim.modules:
+
+            individual_properties = self.sim.population.props.loc[person_id]
+
+            symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+
+            schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
+
+            self.sim.modules['CardioMetabolicDisorders'].do_at_generic_first_appt(person_id=person_id,
+                                                                                  individual_properties=individual_properties,
+                                                                                  symptoms=symptoms,
+                                                                                  schedule_hsi_event=schedule_hsi_event)
+
+
+
+        # linkage to depression screening
+        # if not dx
+
+
+
 
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""

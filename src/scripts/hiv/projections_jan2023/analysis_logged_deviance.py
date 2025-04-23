@@ -21,6 +21,8 @@ from tlo.methods import (  # deviance_measure,
     simplified_births,
     symptommanager,
     tb,
+    cardio_metabolic_disorders,
+    depression,
 )
 
 # Where will outputs go
@@ -35,7 +37,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
-popsize = 25000
+popsize = 2000
 
 # scenario = 1
 
@@ -83,6 +85,8 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
+    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    depression.Depression(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
