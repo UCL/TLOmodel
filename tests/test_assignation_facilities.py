@@ -13,9 +13,9 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-start_date = Date(2026, 1, 1)
-end_date = Date(2027, 1, 12)
-popsize = 10000
+start_date = Date(2010, 1, 1)
+end_date = Date(2026, 1, 12)
+popsize = 100
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 def get_dataframe_of_run_events_count(_sim):
