@@ -38,7 +38,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-popsize = 20000
+popsize = 40_000
 
 # scenario = 1
 
@@ -93,8 +93,8 @@ sim.register(
 )
 
 # set the scenario
-# sim.modules["Hiv"].parameters["do_scaleup"] = True
-# sim.modules["Hiv"].parameters["scaleup_start_year"] = 2019
+sim.modules["ServiceIntegration"].parameters["serv_int_chronic"] = True
+sim.modules["ServiceIntegration"].parameters["integration_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"

@@ -23,7 +23,7 @@ import pandas as pd
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, hiv
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
@@ -1743,17 +1743,19 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         # link to HIV testing
         # do not run if already HIV diagnosed or had test in last week
-        if not df.at[person_id, "hv_diagnosed"] or (df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=7))):
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=self.sim.modules["Hiv"].HSI_Hiv_TestAndRefer(
-                    person_id=person_id,
-                    module=self.sim.modules["Hiv"],
-                    referred_from="Integrated_CMD",
-                ),
-                priority=1,
-                topen=self.sim.date,
-                tclose=None,
-            )
+        if 'Hiv' in self.sim.modules:
+
+            if not df.at[person_id, "hv_diagnosed"] or (df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=7))):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                        person_id=person_id,
+                        module=self.sim.modules["Hiv"],
+                        referred_from="Integrated_CMD",
+                    ),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
+                )
 
         # link to depression screening
         if 'Depression' in self.sim.modules:
