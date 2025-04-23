@@ -2310,8 +2310,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 'disruption'
                             ]
                             prob_disruption = pd.DataFrame(prob_disruption)
-                            print(prob_disruption)
-                            prob_disruption = float(prob_disruption.iloc[0])
+                            prob_disruption = float(prob_disruption.iloc[0])/30 # to get average days
                             if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
                                 self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
                                                                                     priority=item.priority)
