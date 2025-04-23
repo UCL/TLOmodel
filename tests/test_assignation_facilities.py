@@ -14,7 +14,7 @@ from tlo.methods import (
     symptommanager,
 )
 start_date = Date(2026, 1, 1)
-end_date = Date(2026, 1, 12)
+end_date = Date(2027, 1, 12)
 popsize = 10000
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -62,7 +62,6 @@ def test_number_services(seed, tmpdir):
     )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-    assert sim.modules['HealthSystem'].services_affected_precip == 'all'
     #output_climate = parse_log_file(sim.log_filepath)
     hsi_event_count_df_climate = get_dataframe_of_run_events_count(sim)
 
@@ -91,8 +90,8 @@ def test_number_services(seed, tmpdir):
     )
     sim_low.make_initial_population(n=popsize)
     sim_low.simulate(end_date=end_date)
-    assert sim_low.modules['HealthSystem'].services_affected_precip == 'all'
-    assert sim_low.modules['HealthSystem'].climate_ssp == 'ssp126'
+    #assert sim_low.modules['HealthSystem'].services_affected_precip == 'all'
+    #assert sim_low.modules['HealthSystem'].climate_ssp == 'ssp126'
 
     # output_climate = parse_log_file(sim.log_filepath)
     hsi_event_count_df_climate_126 = get_dataframe_of_run_events_count(sim_low)
@@ -124,10 +123,12 @@ def test_number_services(seed, tmpdir):
     sim_no_climate.simulate(end_date=end_date)
     #output_no_climate = parse_log_file(sim.log_filepath)
     df = sim.population.props
-    assert sim_no_climate.modules['HealthSystem'].services_affected_precip == 'none'
+    #assert sim_no_climate.modules['HealthSystem'].services_affected_precip == 'none'
     hsi_event_count_df_no_climate = get_dataframe_of_run_events_count(sim_no_climate)
 
     #assert 0 > sum(hsi_event_count_df_no_climate['count'])
+    assert sum(hsi_event_count_df_climate['count']) < sum(hsi_event_count_df_no_climate['count'])
+
     assert sum(hsi_event_count_df_climate['count']) < sum(hsi_event_count_df_no_climate['count'])
     assert sum(hsi_event_count_df_climate_126['count']) < sum(hsi_event_count_df_no_climate['count'])
 

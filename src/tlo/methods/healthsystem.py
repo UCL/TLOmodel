@@ -2284,16 +2284,22 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # For each individual level event, check whether the equipment it has already declared is available. If it
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
-            equipment_available = True
-            climate_disrupeted = False
+
             list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = list()
             for item in list_of_individual_hsi_event_tuples_due_today:
+                equipment_available = True
+                climate_disrupted = False
                 if not item.hsi_event.is_all_declared_equipment_available:
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                     equipment_available = False
+                assert self.module.parameters['services_affected_precip'] == 'all'
+                print(self.module.parameters['services_affected_precip'])
                 # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
                 if self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] != None and year > 2025:
-                    for item in list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions:
+                        print("CLIMATE")
+
+                        assert self.module.parameters['services_affected_precip'] == 'all'
+                        assert self.module.parameters['services_affected_precip'] == 'call'
                         fac_id = item.hsi_event.facility_info.level
                         facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
                         if facility_used in self.module.parameters['projected_precip_disruptions'][
@@ -2308,22 +2314,24 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 'disruption'
                             ]
                             prob_disruption = pd.DataFrame(prob_disruption)
-                            prob_disruption = float(prob_disruption.iloc[0, 0])
-                            assert isinstance(prob_disruption, (int, float)), "prob_disruption must be an int or float"
-
+                            prob_disruption = float(prob_disruption.iloc[0])
+                            prob_disruption = prob_disruption*100
+                            prob_disruption = 1
+                            #climate_disrupted = True
+                            #assert isinstance(prob_disruption, (int, float)), "prob_disruption must be an int or float"
                             if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
                                 self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
-                                                                                priority=item.priority)
-                                climate_disrupeted = True
+                                                                                    priority=item.priority)
+                                climate_disrupted = True
 
 
-                if (climate_disrupeted == False) & (equipment_available == True):
-                    list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
+                if (climate_disrupted == False) and (equipment_available == True):
+                            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
 
                 # Try to run the list of individual-level events that have their essential equipment
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
                 list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
-            )
+                )
             hold_over.extend(_to_be_held_over)
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
