@@ -18,7 +18,7 @@ class ServiceIntegrationScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_250k', 'directory': './outputs',
+            'filename': 'service_integration_scenario', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
