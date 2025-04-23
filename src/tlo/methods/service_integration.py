@@ -11,12 +11,14 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.util import read_csv_files
+from tlo.lm import LinearModel, LinearModelType
+
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
@@ -25,7 +27,7 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
 
     # Declare modules that need to be registered in simulation and initialised before
     # this module
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography'}
 
 
     # Declare Metadata
@@ -64,13 +66,15 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.accepted_conditions = ['hiv', 'tb', 'htn', 'gdm', 'fp', 'cc', 'mal', 'ncds', 'depression', 'epilepsy',
+                                    'pnc', 'epi']
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         For now, we are going to hard code them explicity.
         Register the module with the health system and register the symptoms
         """
-        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'service_integration/parameter_values.csv',
+        parameter_dataframe = read_csv_files(self.resourcefilepath/'service integration',
                                              files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
@@ -139,34 +143,42 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
 
-        logger.debug(key='message', data='ServiceIntegrationParameterUpdateEvent is running')
+        logger.debug(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
+
+        for p in [params['serv_int_screening'], params['serv_int_chronic'], params['serv_int_mch']]:
+            if p:
+                assert all(item in self.module.accepted_conditions for item in p)
 
         # TODO: rebuild linear models
         # TODO: check correct service names provided
 
-        hiv_p = self.sim.modules['Hiv'].parameters
-        tb_p = self.sim.modules['Tb'].parameters
-
+        # hiv_p = self.sim.modules['Hiv'].parameters
+        # tb_p = self.sim.modules['Tb'].parameters
         # htn_p = self.sim.modules['TB'].parameters
         # dm_p = self.sim.modules['TB'].parameters
-
-        fp_p = self.sim.modules['Contraception'].parameters
-
+        # fp_p = self.sim.modules['Contraception'].parameters
         # cc_p = self.sim.modules['TB'].parameters
         # mal_p = self.sim.modules['TB'].parameters
 
         if not params['serv_int_screening'] and not params['serv_int_chronic'] and not params['serv_int_mch']:
+            logger.debug(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
             return
 
+        if 'htn' in params['serv_int_screening']:
+            pass
+            # self.sim.modules['cmd'].parameters['hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
+            # self.sim.modules['cmd'].lms_testing['hypertension'] = LinearModel(LinearModelType.MULTIPLICATIVE, 1.0)
+
+        if 'dm' in params['serv_int_screening']:
+            pass
+            # self.sim.modules['cmd'].parameters['diabetes_hsi']['pr_assessed_other_symptoms'] = 1.0
 
         if 'hiv' in params['serv_int_screening']:
             pass
         if 'tb' in params['serv_int_screening']:
             pass
-        # if 'htn' in params['serv_int_screening']:
-        #     pass
-        # if 'dm' in params['serv_int_screening']:
-        #     pass
+
+
         if 'ncd' in params['serv_int_screening']:
              pass
         if 'fp' in params['serv_int_screening']:
