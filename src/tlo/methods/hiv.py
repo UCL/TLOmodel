@@ -2845,7 +2845,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             )
 
         # todo additional screening if chronic care implemented
-        self.additional_screening(person_id)
+        if (self.sim.date >= self.sim.modules['ServiceIntegration'].parameters['integration_date']) and \
+                self.sim.modules['ServiceIntegration'].parameters['serv_int_chronic']:
+            self.additional_screening(person_id)
 
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
@@ -3004,13 +3006,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             if not df.at[person_id, 'de_on_antidepr']:
                 print(f'call depression screening for person {person_id}')
                 # todo or edit _check_for_suspected_depression
-                self.sim.modules['Depression'].do_when_suspected_depression(
-                    person_id=person_id,
-                    individual_properties=individual_properties,
-                    schedule_hsi_event=schedule_hsi_event,
-                    hsi_event=self)
 
-
+                self.sim.modules['Depression'].do_on_presentation_to_care(person_id, hsi_event=self)
 
     def never_ran(self):
         """This is called if this HSI was never run.

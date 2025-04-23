@@ -48,8 +48,7 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
     PARAMETERS = {
         'serv_int_screening': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
                                                     'which screening is increased as part of integration modelling'),
-        'serv_int_chronic': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
-                                                    'which chronic care is increased as part of integration modelling'),
+        'serv_int_chronic': Parameter(Types.BOOL, 'specify whether chronic care pathway is implemented'),
         'serv_int_mch': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
                                                     'which maternal and child health care is increased as part of'
                                               ' integration modelling'),

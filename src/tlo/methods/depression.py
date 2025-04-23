@@ -584,7 +584,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 "pr_assessed_for_depression_for_perinatal_female"
             ]:  # module labour
                 return True
-        elif treatment_id == "HSI_Hiv_StartOrContinueTreatment":
+        elif treatment_id in ("Hiv_Treatment", "CardioMetabolicDisorders_Treatment"):
             # this is only scheduled if integrated chronic care clinics are operationalised
             return True
         else:
@@ -637,7 +637,6 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
         """
-        print(f'depression screening for person {person_id}')
 
         if diagnosis_function is None:
             assert isinstance(
