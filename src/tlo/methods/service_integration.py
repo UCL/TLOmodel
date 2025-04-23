@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -8,17 +9,16 @@ import pandas as pd
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
-from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
+from tlo.lm import LinearModel, LinearModelType
+
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
@@ -27,7 +27,7 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
 
     # Declare modules that need to be registered in simulation and initialised before
     # this module
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {'Demography'}
 
 
     # Declare Metadata
@@ -46,12 +46,15 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
     }
 
     PARAMETERS = {
-        'serv_int_screening': Parameter(Types.REAL, 'Whether coverage of service integration screening '
-                                                    'interventions is being increased or not'),
-        'serv_int_chronic': Parameter(Types.REAL, 'Whether coverage of service integration chronic care '
-                                                    'interventions is being increased or not'),
-        'serv_int_mch': Parameter(Types.REAL, 'Whether coverage of service integration maternal child health '
-                                                    'interventions is being increased or not'),
+        'serv_int_screening': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
+                                                    'which screening is increased as part of integration modelling'),
+        'serv_int_chronic': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
+                                                    'which chronic care is increased as part of integration modelling'),
+        'serv_int_mch': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
+                                                    'which maternal and child health care is increased as part of'
+                                              ' integration modelling'),
+        'integration_date': Parameter(Types.DATE, 'Date on which parameters are overidden for integration '
+                                                  'modelling'),
 
     }
 
@@ -63,15 +66,17 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.accepted_conditions = ['hiv', 'tb', 'htn', 'gdm', 'fp', 'cc', 'mal', 'ncds', 'depression', 'epilepsy',
+                                    'pnc', 'epi']
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         For now, we are going to hard code them explicity.
         Register the module with the health system and register the symptoms
         """
-        self.parameters['serv_int_screening'] = False
-        self.parameters['serv_int_chronic'] = False
-        self.parameters['serv_int_mch'] = False
+        parameter_dataframe = read_csv_files(self.resourcefilepath/'service integration',
+                                             files='parameter_values')
+        self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -94,9 +99,10 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
         It is a good place to add initial events to the event queue.
         """
 
-        # add the basic event (we will implement below)
+        params = self.parameters
+
         event = ServiceIntegrationParameterUpdateEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(years=15))
+        sim.schedule_event(event, params['integration_date'])
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -137,74 +143,76 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
 
-        if params['serv_int_screening']:
+        logger.debug(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
+
+        for p in [params['serv_int_screening'], params['serv_int_chronic'], params['serv_int_mch']]:
+            if p:
+                assert all(item in self.module.accepted_conditions for item in p)
+
+        # TODO: rebuild linear models
+        # TODO: check correct service names provided
+
+        # hiv_p = self.sim.modules['Hiv'].parameters
+        # tb_p = self.sim.modules['Tb'].parameters
+        # htn_p = self.sim.modules['TB'].parameters
+        # dm_p = self.sim.modules['TB'].parameters
+        # fp_p = self.sim.modules['Contraception'].parameters
+        # cc_p = self.sim.modules['TB'].parameters
+        # mal_p = self.sim.modules['TB'].parameters
+
+        if not params['serv_int_screening'] and not params['serv_int_chronic'] and not params['serv_int_mch']:
+            logger.debug(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
+            return
+
+        if 'htn' in params['serv_int_screening']:
             pass
-        elif params['serv_int_chronic']:
+            # self.sim.modules['cmd'].parameters['hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
+            # self.sim.modules['cmd'].lms_testing['hypertension'] = LinearModel(LinearModelType.MULTIPLICATIVE, 1.0)
+
+        if 'dm' in params['serv_int_screening']:
             pass
-        elif params['serv_int_mch']:
+            # self.sim.modules['cmd'].parameters['diabetes_hsi']['pr_assessed_other_symptoms'] = 1.0
+
+        if 'hiv' in params['serv_int_screening']:
+            pass
+        if 'tb' in params['serv_int_screening']:
             pass
 
 
-        df = population.props
-        p = self.module.parameters
-        rng: np.random.RandomState = self.module.rng
+        if 'ncd' in params['serv_int_screening']:
+             pass
+        if 'fp' in params['serv_int_screening']:
+            pass
+        if 'cc' in params['serv_int_screening']:
+            pass
+        if 'mal' in params['serv_int_screening']:
+            pass
 
-        # 1. get (and hold) index of currently infected and uninfected individuals
-        # currently_cs = df.index[df.cs_has_cs & df.is_alive]
-        currently_not_cs = df.index[~df.cs_has_cs & df.is_alive]
 
-        # 2. handle new cases
-        p_aq = p['p_acquisition_per_year'] / 12.0
-        now_acquired = rng.random_sample(size=len(currently_not_cs)) < p_aq
+        if 'hiv' in params['serv_int_chronic']:
+            pass
+        if 'tb' in params['serv_int_chronic']:
+            pass
+        if 'ncd' in params['serv_int_chronic']:
+            pass
+        if 'epilepsy' in params['serv_int_chronic']:
+            pass
+        if 'depression' in params['serv_int_chronic']:
+            pass
 
-        # if any are new cases
-        if now_acquired.sum():
-            newcases_idx = currently_not_cs[now_acquired]
 
-            death_years_ahead = rng.exponential(scale=20, size=now_acquired.sum())
-            death_td_ahead = pd.to_timedelta(death_years_ahead * DAYS_IN_YEAR, unit='D')
+        if 'pnc' in params['serv_int_mch']:
+            pass
+        if 'epi' in params['serv_int_mch']:
+            pass
+        if 'mal' in params['serv_int_mch']:
+            pass
+        if 'fp' in params['serv_int_mch']:
+            pass
 
-            df.loc[newcases_idx, 'cs_has_cs'] = True
-            df.loc[newcases_idx, 'cs_status'].values[:] = 'C'
-            df.loc[newcases_idx, 'cs_date_acquired'] = self.sim.date
-            df.loc[newcases_idx, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
-            df.loc[newcases_idx, 'cs_date_cure'] = pd.NaT
 
-            # schedule death events for new cases
-            for person_index in newcases_idx:
-                death_event = ChronicSyndromeDeathEvent(self.module, person_index)
-                self.sim.schedule_event(death_event, df.at[person_index, 'cs_scheduled_date_death'])
 
-            # Assign symptoms:
-            for symp in self.module.parameters['prob_of_symptoms']:
-                # persons who will have symptoms (each can occur independently)
-                persons_id_with_symp = np.array(newcases_idx)[
-                    self.module.rng.rand(len(newcases_idx)) < self.module.parameters['prob_of_symptoms'][symp]
-                    ]
 
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=list(persons_id_with_symp),
-                    symptom_string=symp,
-                    add_or_remove='+',
-                    disease_module=self.module
-                )
 
-        # 3) Handle progression to severe symptoms
-        curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive])
-                                                  - set(
-            self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
-
-        become_severe = (
-            self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches))
-            < p['prob_dev_severe_symptoms_per_year'] / 12
-        )
-        become_severe_idx = np.array(curr_cs_but_not_craving_sandwiches)[become_severe]
-
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=list(become_severe_idx),
-            symptom_string='craving_sandwiches',
-            add_or_remove='+',
-            disease_module=self.module
-        )
 
 
