@@ -2292,14 +2292,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 if not item.hsi_event.is_all_declared_equipment_available:
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                     equipment_available = False
-                assert self.module.parameters['services_affected_precip'] == 'all'
-                print(self.module.parameters['services_affected_precip'])
+
                 # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
                 if self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] != None and year > 2025:
-                        print("CLIMATE")
-
                         assert self.module.parameters['services_affected_precip'] == 'all'
-                        assert self.module.parameters['services_affected_precip'] == 'call'
                         fac_id = item.hsi_event.facility_info.level
                         facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
                         if facility_used in self.module.parameters['projected_precip_disruptions'][
@@ -2314,15 +2310,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 'disruption'
                             ]
                             prob_disruption = pd.DataFrame(prob_disruption)
+                            print(prob_disruption)
                             prob_disruption = float(prob_disruption.iloc[0])
-                            prob_disruption = prob_disruption*100
-                            prob_disruption = 1
-                            #climate_disrupted = True
-                            #assert isinstance(prob_disruption, (int, float)), "prob_disruption must be an int or float"
                             if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
                                 self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
                                                                                     priority=item.priority)
                                 climate_disrupted = True
+                                print(climate_disrupted)
 
 
                 if (climate_disrupted == False) and (equipment_available == True):
