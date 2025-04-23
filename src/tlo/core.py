@@ -80,7 +80,7 @@ class Specifiable:
         Types.BITSET: int,
     }
 
-    def __init__(self, type_: Types, description: str, categories: List[str] = None):
+    def __init__(self, type_: Types, description: str, categories: List[str] = None, label: str = 'unassigned'):
         """Create a new Specifiable.
 
         :param type_: an instance of Types giving the type of allowed values
@@ -90,12 +90,17 @@ class Specifiable:
         assert type_ in Types
         self.type_ = type_
         self.description = description
+        self.labels = label
+        self.accepted_labels = ["unassigned", "free", "constant", "context_specific"]
 
         # Save the categories for a categorical property
         if self.type_ is Types.CATEGORICAL:
             if not categories:
                 raise ValueError("CATEGORICAL types require the 'categories' argument")
             self.categories = categories
+
+        if self.labels not in self.accepted_labels:
+            raise ValueError(f'label value should be one the following: {self.accepted_labels}')
 
     @property
     def python_type(self) -> type:
@@ -170,7 +175,7 @@ class Property(Specifiable):
         """
         Default value for this property, which will be used to fill the respective columns
         of the population dataframe, for example.
-        
+
         If not explicitly set, it will fall back on the ``PANDAS_TYPE_DEFAULT_TYPE_MAP``.
         If a value is provided, it must:
 
@@ -386,8 +391,8 @@ class Module:
 
         Modules that wish to implement this behaviour do not need to implement this method,
         it will be inherited automatically. Modules that wish to perform additional steps
-        during the initialise_population stage should reimplement this method and call 
-        
+        during the initialise_population stage should reimplement this method and call
+
         ```python
         super().initialise_population(population=population)
         ```

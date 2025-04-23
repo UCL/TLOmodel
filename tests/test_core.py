@@ -45,6 +45,14 @@ def test_dict():
     assert len(s[1]) == 0
     assert dict() == s[1] == s[2]
 
+def test_parameter_label():
+    """ test assignment of parameter labels follow accepted label values
+    (["unassigned", "free", "constant", "context_specific"])
+
+    """
+    # test defining a parameter with unaccepted parameter label value raises value error
+    with pytest.raises(ValueError):
+        Parameter(Types.REAL, 'parameter description', label='other')
 
 class TestLoadParametersFromDataframe:
     """Tests for the load_parameters_from_dataframe method
