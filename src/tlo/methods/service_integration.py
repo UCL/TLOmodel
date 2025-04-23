@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, lo
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -45,10 +47,12 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
         'serv_int_screening': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
                                                     'which screening is increased as part of integration modelling'),
         'serv_int_chronic': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
-                                                    'which chornic care is increased as part of integration modelling'),
+                                                    'which chronic care is increased as part of integration modelling'),
         'serv_int_mch': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
                                                     'which maternal and child health care is increased as part of'
                                               ' integration modelling'),
+        'integration_date': Parameter(Types.DATE, 'Date on which parameters are overidden for integration '
+                                                  'modelling'),
 
     }
 
@@ -66,9 +70,9 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
         For now, we are going to hard code them explicity.
         Register the module with the health system and register the symptoms
         """
-        self.parameters['serv_int_screening'] = []
-        self.parameters['serv_int_chronic'] = []
-        self.parameters['serv_int_mch'] = []
+        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'service_integration/parameter_values.csv',
+                                             files='parameter_values')
+        self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -91,9 +95,10 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
         It is a good place to add initial events to the event queue.
         """
 
-        # add the basic event (we will implement below)
+        params = self.parameters
+
         event = ServiceIntegrationParameterUpdateEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(years=15))
+        sim.schedule_event(event, params['integration_date'])
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -134,20 +139,67 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
 
+        logger.debug(key='message', data='ServiceIntegrationParameterUpdateEvent is running')
+
         # TODO: rebuild linear models
+        # TODO: check correct service names provided
 
+        hiv_p = self.sim.modules['Hiv'].parameters
+        tb_p = self.sim.modules['Tb'].parameters
 
-        hiv_p = self.sim.modules['HIV'].parameters
-        tb_p = self.sim.modules['TB'].parameters
+        # htn_p = self.sim.modules['TB'].parameters
+        # dm_p = self.sim.modules['TB'].parameters
+
+        fp_p = self.sim.modules['Contraception'].parameters
+
+        # cc_p = self.sim.modules['TB'].parameters
+        # mal_p = self.sim.modules['TB'].parameters
+
+        if not params['serv_int_screening'] and not params['serv_int_chronic'] and not params['serv_int_mch']:
+            return
+
 
         if 'hiv' in params['serv_int_screening']:
             pass
-
-        if params['serv_int_chronic']:
+        if 'tb' in params['serv_int_screening']:
+            pass
+        # if 'htn' in params['serv_int_screening']:
+        #     pass
+        # if 'dm' in params['serv_int_screening']:
+        #     pass
+        if 'ncd' in params['serv_int_screening']:
+             pass
+        if 'fp' in params['serv_int_screening']:
+            pass
+        if 'cc' in params['serv_int_screening']:
+            pass
+        if 'mal' in params['serv_int_screening']:
             pass
 
-        if params['serv_int_mch']:
+
+        if 'hiv' in params['serv_int_chronic']:
             pass
+        if 'tb' in params['serv_int_chronic']:
+            pass
+        if 'ncd' in params['serv_int_chronic']:
+            pass
+        if 'epilepsy' in params['serv_int_chronic']:
+            pass
+        if 'depression' in params['serv_int_chronic']:
+            pass
+
+
+        if 'pnc' in params['serv_int_mch']:
+            pass
+        if 'epi' in params['serv_int_mch']:
+            pass
+        if 'mal' in params['serv_int_mch']:
+            pass
+        if 'fp' in params['serv_int_mch']:
+            pass
+
+
+
 
 
 
