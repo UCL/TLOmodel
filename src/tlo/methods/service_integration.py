@@ -189,7 +189,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             #
             self.sim.modules['Labour'].parameters['alternative_pnc_coverage'] = True
             self.sim.modules['Labour'].parameters['pnc_availability_odds'] = 15.0
-            self.sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self), Date(self.sim.date))
+            self.sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self.sim.modules['Labour']), Date(self.sim.date))
 
         if 'fp' in params['serv_int_mch']:
             # Here we use the in-built functionality of the contraception model to increase the coverage of modern

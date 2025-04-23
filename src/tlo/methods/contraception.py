@@ -618,8 +618,11 @@ class Contraception(Module):
                 p_start_after_birth_with_interv.mul(self.parameters['Interventions_PPFP'].loc[0])
 
             # Return reduced prob of 'not_using'
-            p_start_after_birth_with_interv = pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
-                                                        index=['not_using']).append(p_start_after_birth_with_interv)
+            # p_start_after_birth_with_interv = pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
+            #                                             index=['not_using']).append(p_start_after_birth_with_interv)
+
+            p_start_after_birth_with_interv = pd.concat([pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
+                                                        index=['not_using']), p_start_after_birth_with_interv])
 
             return p_start_after_birth_with_interv
 
