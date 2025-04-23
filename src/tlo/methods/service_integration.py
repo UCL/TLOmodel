@@ -6,13 +6,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.util import read_csv_files
 from tlo.lm import LinearModel, LinearModelType
 
+from tlo.methods.labour import LabourAndPostnatalCareAnalysisEvent
+from tlo.methods.contraception import StartInterventions
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -66,7 +68,7 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.accepted_conditions = ['hiv', 'tb', 'htn', 'gdm', 'fp', 'cc', 'mal', 'ncds', 'depression', 'epilepsy',
+        self.accepted_conditions = ['hiv', 'tb', 'htn', 'dm', 'fp', 'cc', 'mal', 'ncds', 'depression', 'epilepsy',
                                     'pnc', 'epi']
 
     def read_parameters(self, data_folder):
@@ -140,7 +142,6 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         assert isinstance(module, ServiceIntegration)
 
     def apply(self, population):
-        df = self.sim.population.props
         params = self.module.parameters
 
         logger.debug(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
@@ -152,65 +153,57 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         # TODO: rebuild linear models
         # TODO: check correct service names provided
 
-        # hiv_p = self.sim.modules['Hiv'].parameters
-        # tb_p = self.sim.modules['Tb'].parameters
-        # htn_p = self.sim.modules['TB'].parameters
-        # dm_p = self.sim.modules['TB'].parameters
-        # fp_p = self.sim.modules['Contraception'].parameters
-        # cc_p = self.sim.modules['TB'].parameters
-        # mal_p = self.sim.modules['TB'].parameters
-
         if not params['serv_int_screening'] and not params['serv_int_chronic'] and not params['serv_int_mch']:
             logger.debug(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
             return
 
+        # SCREENING
         if 'htn' in params['serv_int_screening']:
-            pass
-            # self.sim.modules['cmd'].parameters['hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
-            # self.sim.modules['cmd'].lms_testing['hypertension'] = LinearModel(LinearModelType.MULTIPLICATIVE, 1.0)
+            # Annual community screening in over 50s increased to 100%
+            self.sim.modules['CardioMetabolicDisorders'].parameters['hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
+            # Probability of screening when presenting to any generic first appointment set to 100%
+            self.sim.modules['CardioMetabolicDisorders'].lms_testing['hypertension'] = LinearModel(LinearModelType.MULTIPLICATIVE, 1.0)
 
         if 'dm' in params['serv_int_screening']:
-            pass
-            # self.sim.modules['cmd'].parameters['diabetes_hsi']['pr_assessed_other_symptoms'] = 1.0
+            # Probability of screening when presenting to any generic first appointment and not sympotmatic set to 100%
+            self.sim.modules['CardioMetabolicDisorders'].parameters['diabetes_hsi']['pr_assessed_other_symptoms'] = 1.0
+
+        if 'fp' in params['serv_int_screening']:
+            # Here we use the in-built functionality of the contraception model to increase the coverage of modern
+            # methods of contraception. When 'fp' is listed in params['serv_int_screening'] the probability of
+            # initiation in the general female population is increased. See updates to contraception.py
+
+            # Todo: may need to increase coverage further!
+            self.sim.schedule_event(StartInterventions(self.sim.modules['Contraception']), Date(self.sim.date))
+
+        if 'mal' in params['serv_int_screening']:
+            self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
         if 'hiv' in params['serv_int_screening']:
             pass
         if 'tb' in params['serv_int_screening']:
             pass
 
-
-        if 'ncd' in params['serv_int_screening']:
-             pass
-        if 'fp' in params['serv_int_screening']:
-            pass
-        if 'cc' in params['serv_int_screening']:
-            pass
-        if 'mal' in params['serv_int_screening']:
-            pass
-
-
-        if 'hiv' in params['serv_int_chronic']:
-            pass
-        if 'tb' in params['serv_int_chronic']:
-            pass
-        if 'ncd' in params['serv_int_chronic']:
-            pass
-        if 'epilepsy' in params['serv_int_chronic']:
-            pass
-        if 'depression' in params['serv_int_chronic']:
-            pass
-
-
+        # Maternal and child health clinic
         if 'pnc' in params['serv_int_mch']:
-            pass
+            #
+            self.sim.modules['Labour'].parameters['alternative_pnc_coverage'] = True
+            self.sim.modules['Labour'].parameters['pnc_availability_odds'] = 15.0
+            self.sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self), Date(self.sim.date))
+
+        if 'fp' in params['serv_int_mch']:
+            # Here we use the in-built functionality of the contraception model to increase the coverage of modern
+            # methods of contraception. When 'fp' is listed in params['serv_int_mch'] the probability of
+            # initiation following birth is increased. See updates to contraception.py
+            self.sim.schedule_event(StartInterventions(self.sim.modules['Contraception']), Date(self.sim.date))
+
+        if 'mal' in params['serv_int_mch']:
+            self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
+
         if 'epi' in params['serv_int_mch']:
             pass
-        if 'mal' in params['serv_int_mch']:
-            pass
-        if 'fp' in params['serv_int_mch']:
-            pass
 
-
+        # Chronic care clinic
 
 
 

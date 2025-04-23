@@ -33,8 +33,8 @@ def test_parameter_update_event_runs_and_cancels_as_expected(tmpdir, seed):
     sim.make_initial_population(n=50)
 
     # Set parameter update event to run before end of sim
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2011, 1, 1)
-    sim.simulate(end_date=Date(2011, 1, 2))
+    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
+    sim.simulate(end_date=Date(2010, 1, 31))
 
     # Because switches are unchanged check logging occurred as expected
     # output= parse_log_file(sim.log_filepath)
@@ -42,17 +42,34 @@ def test_parameter_update_event_runs_and_cancels_as_expected(tmpdir, seed):
     # assert 'event_cancelled' in output['tlo.methods.service_integration']
 
 
-def test_parameter_update_event_runs_as_expected_when_updates_required(tmpdir, seed):
+def test_parameter_update_event_runs_as_expected_when_updates_required_screening(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
         "*": logging.DEBUG}, "directory": tmpdir})
     register_modules(sim)
-    sim.make_initial_population(n=50)
+    sim.make_initial_population(n=500)
 
     # Set parameter update event to run before end of sim
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2011, 1, 1)
-    sim.modules['ServiceIntegration'].parameters['serv_int_screening'] = ['hiv']
 
-    sim.simulate(end_date=Date(2011, 1, 2))
+    sim.modules['ServiceIntegration'].parameters['serv_int_screening'] = ['htn', 'dm', 'hiv' ,'tb', 'fp']
+    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
+    sim.simulate(end_date=Date(2010, 1, 31))
+
+    # output = parse_log_file(sim.log_filepath)
+    # assert 'event_runs' in output['tlo.methods.service_integration']
+    # assert 'event_cancelled' not in output['tlo.methods.service_integration']
+
+
+def test_parameter_update_event_runs_as_expected_when_updates_required_mch(tmpdir, seed):
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
+        "*": logging.DEBUG}, "directory": tmpdir})
+    register_modules(sim)
+    sim.make_initial_population(n=500)
+
+    # Set parameter update event to run before end of sim
+
+    sim.modules['ServiceIntegration'].parameters['serv_int_mch'] = ['pnc', 'fp', 'mal', 'epi']
+    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
+    sim.simulate(end_date=Date(2010, 1, 31))
 
     # output = parse_log_file(sim.log_filepath)
     # assert 'event_runs' in output['tlo.methods.service_integration']
