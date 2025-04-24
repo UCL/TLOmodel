@@ -29,8 +29,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=31)
-        self.pop_size = 100_000
+        self.end_date = self.start_date + pd.DateOffset(years=5)#31)
+        self.pop_size = 100#_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 10
@@ -71,9 +71,23 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         
-        self.YEAR_OF_CHANGE = 2019
+        self.YEAR_OF_CHANGE = 2011
+
+
 
         return {
+   
+            "No growth cons scenario 13":
+                mix_scenarios(
+                    self._baseline(),
+                    {
+                     "HealthSystem": {
+                        "yearly_HR_scaling_mode": "no_scaling",
+                        "year_cons_availability_switch": self.YEAR_OF_CHANGE,
+                        "cons_availability_postSwitch": "scenario13",
+                      },
+                    }
+                ),
    
             # =========== STATUS QUO ============
             "No growth status quo":
