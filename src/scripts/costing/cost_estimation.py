@@ -1577,6 +1577,7 @@ def generate_multiple_scenarios_roi_plot( _monetary_value_of_incremental_health:
                                         _y_axis_lim: Optional[float] = None,
                                         _plot_vertical_lines_at: Optional[list[int]] = None,
                                         _projected_health_spending: Optional[float] = None,
+                                        _additional_horizontal_lines_for_interpretation: Optional[list[dict]] = None,
                                         _draw_colors: Optional[dict[int, str]] = None,
                                         _value_of_life_suffix: str = '',
                                         _year_suffix: str = '',
@@ -1773,6 +1774,20 @@ def generate_multiple_scenarios_roi_plot( _monetary_value_of_incremental_health:
         ax.set_xticks(xticks)
         ax.set_xticklabels(xtick_labels, fontsize=10)
 
+    # Add manual horizontal lines if specified
+    if _additional_horizontal_lines_for_interpretation:
+        for line in _additional_horizontal_lines_for_interpretation:
+            y = line['y_value']
+            x_start = line['x_start']
+            x_end = line['x_end']
+            label = line.get('label', '')
+            color = line.get('color', 'black')
+            linestyle = line.get('linestyle', '--')
+
+            ax.hlines(y=y, xmin=x_start, xmax=x_end, colors=color, linestyles=linestyle)
+            if label:
+                ax.text((x_start + x_end)/2, y, label, va='bottom', ha='left', fontsize=10, color=color)
+
     # Set y-axis limit
     if _y_axis_lim == None:
         ax.set_ylim(0, max(max_roi) * 1.25)
@@ -1780,7 +1795,7 @@ def generate_multiple_scenarios_roi_plot( _monetary_value_of_incremental_health:
         ax.set_ylim(0, _y_axis_lim)
     ax.set_xlim(left = 0)
 
-    plt.xlabel('Implementation cost, USD millions')
+    plt.xlabel('Incremental above service level costs, USD millions')
     plt.ylabel('Return on Investment')
 
     # Show legend and title
@@ -1797,7 +1812,7 @@ def generate_multiple_scenarios_roi_plot( _monetary_value_of_incremental_health:
                 bbox_inches='tight')
     plt.close()
 
-def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
+def tabulate_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
                        _incremental_input_cost: pd.DataFrame,
                        _draws: Optional[list[int]] = None,
                        _metric: Literal['mean', 'median'] = 'mean') -> pd.DataFrame:
@@ -1900,3 +1915,104 @@ def tabulated_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
         else:
             roi_df =  pd.concat([roi_df, collapsed_data], ignore_index=True)
     return roi_df
+
+def extract_roi_at_specific_implementation_costs(_monetary_value_of_incremental_health: pd.DataFrame,
+                       _incremental_input_cost: pd.DataFrame,
+                       _draws: Optional[list[int]] = None,
+                       _non_zero_implementation_cost_proportion: float = 0.58,
+                       _metric: Literal['mean', 'median'] = 'mean') -> pd.DataFrame:
+    """
+        Compute ROI estimates in tabular form for specific implementation cost (or above service level cost) assumptions.
+
+        For each draw, calculates ROI at specified hypothetical implementation cost levels.
+        ROI is defined as: (monetary value of health gain - total cost) / total cost.
+
+        Parameters:
+        ----------
+        _monetary_value_of_incremental_health : pd.DataFrame
+            DataFrame indexed by [draw, run], with estimated monetary values of health gain.
+
+        _incremental_input_cost : pd.DataFrame
+            DataFrame indexed by [draw, run], with estimated incremental scenario costs.
+
+        _draws : list of int
+            Draw indices to include in the tabulation.
+
+        _non_zero_implementation_cost_proportion: float
+            This specifies the proportion of _incremental_input_cost which is assumed to be spent on implementation in
+            the second ROI estimate for the table. The first estimate assumes 0 implementation cost.
+            The default value is based on Opuni et al (2023)
+
+        _metric : {'mean', 'median'}, default 'mean'
+            Summary statistic to compute across runs. Also includes 2.5th and 97.5th percentiles.
+
+        Returns:
+        -------
+        pd.DataFrame
+            DataFrame with the following columns - scenario, monetised health benefits, service level cost, above
+            service level or implementation cost, ROI assuming zero above service level cost, ROI assuming non-zero
+            above service level cost
+        """
+
+    # Calculate maximum ability to pay for implementation
+    _monetary_value_of_incremental_health = _monetary_value_of_incremental_health[_monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
+    _incremental_input_cost =  _incremental_input_cost[_incremental_input_cost.index.get_level_values('draw').isin(_draws)]
+
+    def convert_results_to_dict(_df):
+        draws = _df.index.to_list()
+        values = {
+            draw: {
+                chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
+                "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
+                "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
+            }
+            for draw in draws
+        }
+        return values
+
+    _monetary_value_of_incremental_health_summary = summarize_cost_data(_monetary_value_of_incremental_health, _metric = _metric)
+    _monetary_value_of_incremental_health_summary.columns.name = None  # Remove MultiIndex name if exists
+    _incremental_input_cost_summary = summarize_cost_data(_incremental_input_cost, _metric = _metric)
+    _incremental_input_cost_summary.columns.name = None  # Remove MultiIndex name if exists
+
+    roi_df = pd.DataFrame()
+
+    roi_df['Monetised health benefits ($, billion)'] = (
+        "$" + _monetary_value_of_incremental_health_summary[_metric].div(1e9).apply("{:,.2f}".format) + " [" +
+        "$" + _monetary_value_of_incremental_health_summary['lower'].div(1e9).apply("{:,.2f}".format) + " - " +
+        "$" + _monetary_value_of_incremental_health_summary['upper'].div(1e9).apply("{:,.2f}".format) + "]"
+)
+    roi_df['Service-level costs ($, million)'] = (
+        "$" + _incremental_input_cost_summary[_metric].div(1e6).apply("{:,.2f}".format) + " [" +
+        "$" + _incremental_input_cost_summary['lower'].div(1e6).apply("{:,.2f}".format) + " - " +
+        "$" + _incremental_input_cost_summary['upper'].div(1e6).apply("{:,.2f}".format) + "]"
+    )
+
+    # Non zero implementation cost
+    roi_df['Above Service-level costs ($, million)'] = (
+        "$" + (_incremental_input_cost_summary[_metric] * (1+_non_zero_implementation_cost_proportion)).div(1e6).apply("{:,.2f}".format) + " [" +
+        "$" + (_incremental_input_cost_summary['lower'] * (1+_non_zero_implementation_cost_proportion)).div(1e6).apply("{:,.2f}".format) + " - " +
+        "$" + (_incremental_input_cost_summary['upper'] * (1+_non_zero_implementation_cost_proportion)).div(1e6).apply("{:,.2f}".format) + "]"
+    )
+
+    # ROI at 0 implementation cost
+    roi = (_monetary_value_of_incremental_health - _incremental_input_cost).div(_incremental_input_cost)
+    roi_summary =  summarize_cost_data(roi, _metric = _metric)
+
+    roi_df['ROI (assuming zero above service level costs)'] = (
+        (roi_summary[_metric]).round(2).astype(str) + " [" +
+        (roi_summary['lower']).round(2).astype(str) + " - " +
+        (roi_summary['upper']).round(2).astype(str) + "]"
+    )
+
+    # ROI at non-zero implementation cost
+    roi_non_zero_implementation_cost = (_monetary_value_of_incremental_health - _incremental_input_cost * (1+_non_zero_implementation_cost_proportion)).div(_incremental_input_cost * (1+_non_zero_implementation_cost_proportion))
+    roi_non_zero_implementation_cost_summary =  summarize_cost_data(roi_non_zero_implementation_cost, _metric = _metric)
+
+    roi_df['ROI (assuming non-zero above service level costs)'] = (
+        (roi_non_zero_implementation_cost_summary[_metric]).round(2).astype(str) + " [" +
+        (roi_non_zero_implementation_cost_summary['lower']).round(2).astype(str) + " - " +
+        (roi_non_zero_implementation_cost_summary['upper']).round(2).astype(str) + "]"
+    )
+
+    return roi_df.reset_index()

@@ -19,6 +19,7 @@ import string
 import seaborn as sns
 import numpy as np
 import pandas as pd
+from adjustText import adjust_text # For the CEA plane figure to avoid overlaps in data labels
 
 from tlo.analysis.utils import (
     extract_params,
@@ -36,7 +37,8 @@ from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              generate_multiple_scenarios_roi_plot,
                                              estimate_projected_health_spending,
                                              apply_discounting_to_cost_data,
-                                             tabulated_roi_estimates)
+                                             tabulate_roi_estimates,
+                                             extract_roi_at_specific_implementation_costs)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -79,14 +81,14 @@ chosen_metric = 'median'
 
 # Scenarios
 # Full list of scenarios used in the manuscript
-all_manuscript_scenarios = {0:"Baseline", 1: "HRH Scale-up (1%)", 2:"HRH Scale-up (4%)", 3:"HRH Scale-up (6%)",
-                            4: "Increase Capacity at Primary Care Levels", 5: "Consumables Increased to 75th Percentile",
-                            6: "Consumables Available at HIV levels", 7: "Consumables Available at EPI levels",
+all_manuscript_scenarios = {0:"Baseline", 1: "Pessimistic HRH Scale-up", 2:"Historical HRH Scale-up", 3:"Optimistic HRH Scale-up",
+                            4: "Primary Healthcare Workforce Scale-up", 5: "Consumables Increased to 75th Percentile",
+                            6: "Consumables Increased to HIV levels", 7: "Consumables Increased to EPI Levels",
                             8: "HSS Expansion Package",
-                            9: "HIV Program Scale-up Without HSS Expansion", 17: "HIV Programs Scale-up With HSS Expansion Package",
-                            18: "TB Program Scale-up Without HSS Expansion", 26: "TB Programs Scale-up With HSS Expansion Package",
-                            27: "Malaria Program Scale-up Without HSS Expansion", 35: "Malaria Programs Scale-up With HSS Expansion Package",
-                            36: "HTM Program Scale-up Without HSS Expansion", 44: "HTM Programs Scale-up With HSS Expansion Package"}
+                            9: "HIV Program Scale-up Without HSS Expansion", 17: "HIV Program Scale-up With HSS Expansion Package",
+                            18: "TB Program Scale-up Without HSS Expansion", 26: "TB Program Scale-up With HSS Expansion Package",
+                            27: "Malaria Program Scale-up Without HSS Expansion", 35: "Malaria Program Scale-up With HSS Expansion Package",
+                            36: "HTM Programs Scale-up Without HSS Expansion", 44: "HTM Programs Scale-up With HSS Expansion Package"}
 # 39: "HTM Program Scale-up With HRH Scale-up (6%)", 41: "HTM Program Scale-up With Consumables at 75th Percentile",
 
 # Use letters instead of full scenario name for figures
@@ -105,28 +107,28 @@ color_map = {
 # Baseline (single color)
     'Baseline': 'black',
 # HR scenarios
-    "HRH Scale-up (1%)": adjust_color('#9e0142', 0.5),
-    "HRH Scale-up (4%)": adjust_color('#9e0142', 0.5),
-    "HRH Scale-up (6%)": adjust_color('#9e0142', 0.5),
-    "Increase Capacity at Primary Care Levels": adjust_color('#9e0142', 0.5),
+    "Pessimistic HRH Scale-up": adjust_color('#9e0142', 0.5),
+    "Historical HRH Scale-up": adjust_color('#9e0142', 0.5),
+    "Optimistic HRH Scale-up": adjust_color('#9e0142', 0.5),
+    "Primary Healthcare Workforce Scale-up": adjust_color('#9e0142', 0.5),
 # Consumables scenarios
     "Consumables Increased to 75th Percentile": adjust_color('#9e0142', 0.5),
-    "Consumables Available at HIV levels": adjust_color('#9e0142', 0.5),
-    "Consumables Available at EPI levels": adjust_color('#9e0142', 0.5),
+    "Consumables Increased to HIV levels": adjust_color('#9e0142', 0.5),
+    "Consumables Increased to EPI Levels": adjust_color('#9e0142', 0.5),
 # HIV scenarios
-    'HIV Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.5),
-    'HIV Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.5),
+    "HIV Program Scale-up Without HSS Expansion": adjust_color('#fdae61', 0.5),
+    "HIV Program Scale-up With HSS Expansion Package": adjust_color('#66c2a5', 0.5),
 # TB scenarios
-    'TB Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.5),
-    'TB Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.5),
+    "TB Program Scale-up Without HSS Expansion": adjust_color('#fdae61', 0.5),
+    "TB Program Scale-up With HSS Expansion Package": adjust_color('#66c2a5', 0.5),
 # Malaria scenarios
-    'Malaria Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.5),
-    'Malaria Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.5),
+    "Malaria Program Scale-up Without HSS Expansion": adjust_color('#fdae61', 0.5),
+    "Malaria Program Scale-up With HSS Expansion Package": adjust_color('#66c2a5', 0.5),
 # HSS scenarios
-    'HSS Expansion Package': adjust_color('#9e0142', 0.1),  # Darker
+    "HSS Expansion Package": adjust_color('#9e0142', 0.1),  # Darker
 # HTM scenarios
-    'HTM Program Scale-up Without HSS Expansion': adjust_color('#fdae61', 0.1),
-    'HTM Programs Scale-up With HSS Expansion Package': adjust_color('#66c2a5', 0.1),
+    "HTM Programs Scale-up Without HSS Expansion": adjust_color('#fdae61', 0.1),
+    "HTM Programs Scale-up With HSS Expansion Package": adjust_color('#66c2a5', 0.1),
 }
 
 # Cost-effectiveness threshold
@@ -138,6 +140,9 @@ chosen_value_of_statistical_life_upper = 2427.31 # upper bound estimated using R
 chosen_value_of_statistical_life_lower = 425.96 # lower bound estimated using Robinson et al method (income elasticity of VSL = 1.5)
 # lomas_consumption_value_of_health = 257.472 # this value is for 2025 (converted to 2023 USD)
 # and assumed income elasticity of consumption value of health to be 1.
+
+# Above service level costs as a percentage of service level costs (This is used for the interpretation of ROI results)
+above_service_level_cost_proportion = 0.58
 
 # Define a function to create bar plots
 def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
@@ -703,9 +708,18 @@ for rates in alternative_discount_rates:
     )
     icers_summarized_subset_for_table[['scenario', 'ICER (2023 USD)']].to_csv(figurespath / 'tabulated_icers.csv', index = False)
 
+    # Create a lookup from draw to formatted ICER string
+    icer_lookup = dict(zip(
+        icers_summarized_subset_for_table['draw'],
+        icers_summarized_subset_for_table['ICER (2023 USD)']
+    ))
+
     # Plot incremental health and cost in a scatterplot
     # ----------------------------------------------------
-    def do_incremental_cost_and_health_plot(incremental_cost_df, incremental_dalys_df, figname):
+    def do_incremental_cost_and_health_plot(incremental_cost_df,
+                                            incremental_dalys_df,
+                                            figname,
+                                            draws_with_icer_labels: Optional[list[int]] = None):
         # Define colors
         color_map_scatter = {
             "Horizontal": "#9e0142",
@@ -717,7 +731,7 @@ for rates in alternative_discount_rates:
         horizontal_scenarios = [1, 2, 3, 4, 5, 6, 7, 8]
         vertical_scenarios = [9, 18, 27, 36]
         diagonal_scenarios = [17, 26, 35, 44]
-        darker_scenarios = {'HSS Expansion Package', 'HTM Program Scale-up Without HSS Expansion',
+        darker_scenarios = {'HSS Expansion Package', 'HTM Programs Scale-up Without HSS Expansion',
                             'HTM Programs Scale-up With HSS Expansion Package'}
 
         # Reorder DataFrames
@@ -772,16 +786,47 @@ for rates in alternative_discount_rates:
             )
 
             # Add letter labels above the dots
-            plt.text(x_median[draw], y_median[draw] + 3e7, scenario_labels[draw], fontsize=10, ha='right', va='bottom',
-                     color='black')
+            # Show the draw label (e.g., "A") above the dot
+            texts = []
+            # Add text with no manual offset
+
+            texts.append(
+            plt.text(
+                x_median[draw],
+                y_median[draw] + 3e7,  # adjust upward offset
+                scenario_labels[draw],
+                fontsize=8,
+                ha='center',
+                va='bottom',
+                color='white',
+                weight = 'bold',
+                bbox=dict(facecolor=color, edgecolor='none', boxstyle='round,pad=0.2', alpha=0.9)
+            ))
+
+            # If this draw should show ICER, add it below the dot
+            if draws_with_icer_labels:
+                icer_label_offset = 1.2
+                if draw in draws_with_icer_labels:
+                    icer_text = icer_lookup.get(draw, "")
+                    texts.append(plt.text(
+                        x_median[draw] + icer_label_offset,
+                        y_median[draw] + 25e7,
+                        f"$ICER_{{{scenario_labels[draw]}}} =$\n{icer_text}",
+                        fontsize=7.5,
+                        weight='bold',
+                        ha='center',
+                        va='top',
+                        color='black'
+                    ))
+        adjust_text(texts, arrowprops=dict(arrowstyle='->'))
 
         # Manually create legend
         legend_labels = []
         dummy_handles = []
         scenario_categories = {
-            "Horizontal Scenarios": horizontal_scenarios,
-            "Vertical Scenarios": vertical_scenarios,
-            "Diagonal Scenarios": diagonal_scenarios
+            "Horizontal Approach Scenarios": horizontal_scenarios,
+            "Vertical Approach Scenarios": vertical_scenarios,
+            "Diagonal Approach Scenarios": diagonal_scenarios
         }
 
         for category, draws in scenario_categories.items():
@@ -813,10 +858,12 @@ for rates in alternative_discount_rates:
         plt.grid(True)
 
         plt.savefig(figurespath / figname )
+        plt.close()
 
 
     do_incremental_cost_and_health_plot(incremental_cost_df = incremental_scenario_cost_summarised,
                                         incremental_dalys_df = num_dalys_averted_summarised,
+                                        draws_with_icer_labels=[8, 36, 44],
                                         figname = 'cea_plane.png')
 
 
@@ -878,47 +925,93 @@ for rates in alternative_discount_rates:
     else:
         legend_switch_for_main_roi_plot = True
 
-    draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
-    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life),
-                       _incremental_input_cost=incremental_scenario_cost,
-                       _draws = [8, 36, 44],
-                       _scenario_dict = all_manuscript_scenarios,
-                       _outputfilepath=figurespath,
-                       _value_of_life_suffix = 'HSS_VSL',
-                        _metric = chosen_metric,
-                        _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                        _projected_health_spending = projected_health_spending_baseline,
-                       _draw_colors = draw_colors,
-                       show_title_and_legend = legend_switch_for_main_roi_plot)
 
+    # Convert results to dictionary to write text extracts for manuscript
+    def convert_results_to_dict(_df):
+        draws = _df.index.to_list()
+        values = {
+            draw: {
+                chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
+                "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
+                "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
+            }
+            for draw in draws
+        }
+        return values
 
-    # ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS - UPPER BOUND
-    draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
-    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_upper),
-                       _incremental_input_cost=incremental_scenario_cost,
-                       _draws = [8, 36, 44],
-                       _scenario_dict = all_manuscript_scenarios,
-                       _outputfilepath=figurespath,
-                       _value_of_life_suffix = 'UPPER',
-                        _metric = chosen_metric,
-                        _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                        _projected_health_spending = projected_health_spending_baseline,
-                       _draw_colors = draw_colors,
-                       show_title_and_legend = True)
+    # Do ROI plots for different VSLY values
+    i=0
+    vsly_fig_suffixes = ['MAIN', 'LOWER', 'UPPER']
+    for vsly in [chosen_value_of_statistical_life, chosen_value_of_statistical_life_lower,
+                     chosen_value_of_statistical_life_upper]:
+        # ROI at 0 implementation costs
+        benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted,
+                                                                                    vsly) - incremental_scenario_cost
+        roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
+        roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric=chosen_metric)
+        roi_at_0_implementation_cost_dict = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
 
-    # ROI plot comparing HSS alone, HTM without HSS, and HTM with HSS -  LOWER BOUND
-    draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
-    generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = chosen_value_of_statistical_life_lower),
-                       _incremental_input_cost=incremental_scenario_cost,
-                       _draws = [8, 36, 44],
-                       _scenario_dict = all_manuscript_scenarios,
-                       _outputfilepath=figurespath,
-                       _value_of_life_suffix = 'LOWER',
-                        _metric = chosen_metric,
-                        _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                        _projected_health_spending = projected_health_spending_baseline,
-                       _draw_colors = draw_colors,
-                       show_title_and_legend = True)
+        # Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
+        # A. when additional implementation cost of HTM without HSS is 0
+        health_benefit_summarised = convert_results_to_dict(summarize_cost_data(
+            get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
+            _metric=chosen_metric))
+        incremental_scenario_cost_summarised = convert_results_to_dict(
+            summarize_cost_data(incremental_scenario_cost, _metric=chosen_metric))
+        breakeven_implementation_cost_at_0_implementation_cost = (health_benefit_summarised[44][chosen_metric] -
+                                         incremental_scenario_cost_summarised[44][chosen_metric] * (
+                                                 roi_at_0_implementation_cost_dict[36][chosen_metric] + 1)) / ((roi_at_0_implementation_cost_dict[36][chosen_metric] + 1))
+        # A. when additional implementation cost of HTM without HSS is equal to above_service_level_cost_proportion
+        implementation_cost_upper_limit = incremental_scenario_cost * above_service_level_cost_proportion
+        implementation_cost_upper_limit_dict = convert_results_to_dict(summarize_cost_data(implementation_cost_upper_limit,
+                                                                                           _metric=chosen_metric))
+        benefit_at_upper_limit_implementation_cost = (get_monetary_value_of_incremental_health(num_dalys_averted,
+                                                                                    vsly)
+                                            - incremental_scenario_cost
+                                            - implementation_cost_upper_limit)
+        roi_at_upper_limit_implementation_cost =  benefit_at_0_implementation_cost.div((incremental_scenario_cost + implementation_cost_upper_limit))
+        roi_at_upper_limit_implementation_cost_dict = convert_results_to_dict(summarize_cost_data(roi_at_upper_limit_implementation_cost, _metric = chosen_metric))
+        breakeven_implementation_cost_at_upper_limit_implementation_cost = (health_benefit_summarised[44][chosen_metric] -
+                                         incremental_scenario_cost_summarised[44][chosen_metric] * (
+                                                 roi_at_upper_limit_implementation_cost_dict[36][chosen_metric] + 1)) / ((roi_at_upper_limit_implementation_cost_dict[36][chosen_metric] + 1))
+
+        # based on the estimates generated about, create a dict representing horizontal lines to be superimposed on the ROI plot
+        label_0_implementation_cost = f'a = ${breakeven_implementation_cost_at_0_implementation_cost/1e6: .2f}m'
+        label_upper_limit_implementation_cost = f'b = ${(breakeven_implementation_cost_at_upper_limit_implementation_cost - implementation_cost_upper_limit_dict[36][chosen_metric]) /1e6: .2f}m'
+
+        additional_horizontal_lines_for_interpretation = [
+            {
+                'y_value': roi_at_0_implementation_cost_dict[36][chosen_metric],
+                'x_start' : 0 ,
+                'x_end': breakeven_implementation_cost_at_0_implementation_cost/1e6,  # where the horizontal line intersects the ROI curve of the diagonal strategy
+                'label': label_0_implementation_cost, # Breakeven incremental implementation cost\n of diagonal scenario when additional \n implementation cost of vertical \n scenario = 0
+                'color': 'black',
+                'linestyle': '--'
+            },
+            {
+                'y_value': roi_at_upper_limit_implementation_cost_dict[36][chosen_metric],
+                'x_start': implementation_cost_upper_limit_dict[36][chosen_metric]/1e6,
+                'x_end': breakeven_implementation_cost_at_upper_limit_implementation_cost/1e6,  # where the horizontal line intersects the ROI curve of the diagonal strategy
+                'label': label_upper_limit_implementation_cost, # Breakeven incremental implementation cost\n of diagonal scenario when additional \n implementation cost of vertical \n scenario = 45% of incremental input costs
+                'color': 'black',
+                'linestyle': '--'
+            }
+        ]
+
+        draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
+        generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
+                           _incremental_input_cost=incremental_scenario_cost,
+                           _draws = [8, 36, 44],
+                           _scenario_dict = all_manuscript_scenarios,
+                           _outputfilepath=figurespath,
+                           _value_of_life_suffix = vsly_fig_suffixes[i],
+                            _metric = chosen_metric,
+                            _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+                            _projected_health_spending = projected_health_spending_baseline,
+                           _additional_horizontal_lines_for_interpretation = additional_horizontal_lines_for_interpretation,
+                           _draw_colors = draw_colors,
+                           show_title_and_legend = legend_switch_for_main_roi_plot)
+        i = i+ 1
 
     # HIV scenarios with and without HSS
     draw_colors = {9: '#fdae61', 17:'#66c2a5'}
@@ -961,12 +1054,10 @@ for rates in alternative_discount_rates:
     roi_table_label = ['MAIN', 'LOWER', 'UPPER']
     i = 0
     for vsly in [chosen_value_of_statistical_life, chosen_value_of_statistical_life_lower, chosen_value_of_statistical_life_upper]:
-        roi_table = tabulated_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
+        roi_table = tabulate_roi_estimates(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
                            _incremental_input_cost=incremental_scenario_cost,
                            _draws = list(all_manuscript_scenarios.keys()),
-                           _scenario_dict = all_manuscript_scenarios,
                            _metric = 'median')
-        roi_table.to_csv(figurespath / f'tabulated_roi_{roi_table_label[i]}.csv', index = False)
 
         # Extract ROIs into a table for manuscript
         roi_table['scenario'] = roi_table['draw'].map(all_manuscript_scenarios)
@@ -984,7 +1075,19 @@ for rates in alternative_discount_rates:
         roi_pivot_table = roi_pivot_table['ROI at VSLY = $834'].unstack(level='implementation_cost')
         roi_pivot_table.columns.name = None  # Remove multi-index column name
         roi_pivot_table.index.name = 'Scenario'
-        roi_pivot_table.reset_index().drop(columns = 'draw').to_csv(figurespath / f'tabulated_roi_for_manscript_{roi_table_label[i]}.csv', index = False)
+        roi_pivot_table.reset_index().drop(columns = 'draw').to_csv(figurespath / f'tabulated_roi_for_all_implementation_costs_{roi_table_label[i]}.csv', index = False)
+
+        roi_table_small = extract_roi_at_specific_implementation_costs(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
+                           _incremental_input_cost=incremental_scenario_cost,
+                           _non_zero_implementation_cost_proportion = above_service_level_cost_proportion,
+                           _draws = list(all_manuscript_scenarios.keys()),
+                           _metric = 'median')
+        roi_table_small['scenario'] = roi_table_small['draw'].map(all_manuscript_scenarios)
+        # Drop 'draw' and move 'scenario' to the first column
+        roi_table_small = roi_table_small.drop(columns='draw')
+        cols = ['scenario'] + [col for col in roi_table_small.columns if col != 'scenario']
+        roi_table_small = roi_table_small[cols]
+        roi_table_small.to_csv(figurespath / f'tabulated_roi_for_manuscript_{roi_table_label[i]}.csv', index = False)
         i += 1
 
     # 5. Plot Maximum ability-to-pay at CET
@@ -1173,19 +1276,6 @@ do_line_plot_of_cost(_df = input_costs_for_plot_summarized, _cost_category='all'
 
 # Extracts for manuscript
 #--------------------------
-# Convert results to dictionary to write text extracts for manuscript
-def convert_results_to_dict(_df):
-    draws = _df.index.to_list()
-    values = {
-        draw: {
-            chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
-            "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
-            "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
-        }
-        for draw in draws
-    }
-    return values
-
 # ICER results
 icer_result = convert_results_to_dict(icers_summarized)
 hr_scenario_with_lowest_icer = min([1, 2, 3, 4], key=lambda k: icer_result[k][chosen_metric])
@@ -1219,17 +1309,6 @@ print(f"The ICER of vertical strategy relative to the baseline scenario was "
       f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}]), meaning it was less cost-effective.")
 
 # ROI extracts
-# ROI at 0 implementation costs
-benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life) - incremental_scenario_cost
-roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
-roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric = chosen_metric)
-roi_result = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
-
-# Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
-health_benefit_summarised = convert_results_to_dict(summarize_cost_data(get_monetary_value_of_incremental_health(num_dalys_averted, chosen_value_of_statistical_life), _metric = chosen_metric))
-incremental_scenario_cost_summarised = convert_results_to_dict(summarize_cost_data(incremental_scenario_cost, _metric = chosen_metric))
-breakeven_implementation_cost = (health_benefit_summarised[44][chosen_metric] - incremental_scenario_cost_summarised[44][chosen_metric] * (roi_result[36][chosen_metric] + 1))/((roi_result[36][chosen_metric] + 1))
-
 # Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
 breakeven_implementation_cost_tb = ((health_benefit_summarised[26][chosen_metric] * incremental_scenario_cost_summarised[18][chosen_metric]) - (health_benefit_summarised[18][chosen_metric] * incremental_scenario_cost_summarised[26][chosen_metric]))/(health_benefit_summarised[18][chosen_metric] - health_benefit_summarised[26][chosen_metric])
 breakeven_implementation_cost_malaria = ((health_benefit_summarised[35][chosen_metric] * incremental_scenario_cost_summarised[27][chosen_metric]) - (health_benefit_summarised[27][chosen_metric] * incremental_scenario_cost_summarised[35][chosen_metric]))/(health_benefit_summarised[27][chosen_metric] - health_benefit_summarised[35][chosen_metric])
@@ -1239,32 +1318,39 @@ assert(round((health_benefit_summarised[35][chosen_metric] - incremental_scenari
        round((health_benefit_summarised[27][chosen_metric] - incremental_scenario_cost_summarised[27][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27][chosen_metric] + breakeven_implementation_cost_malaria), 6))
 
 print(f"Notably, the ROI of the HIV program increased substantially to "
-      f"{roi_result[17][chosen_metric]:.2f} ({roi_result[17]['lower']:.2f} - {roi_result[17]['upper']:.2f}) "
+      f"{roi_at_0_implementation_cost_dict[17][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[17]['lower']:.2f} - {roi_at_0_implementation_cost_dict[17]['upper']:.2f}) "
       f"when integrated with HSS, compared to a negative ROI of "
-      f"{roi_result[9][chosen_metric]:.2f} ({roi_result[9]['lower']:.2f} - {roi_result[9]['upper']:.2f}) "
+      f"{roi_at_0_implementation_cost_dict[9][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[9]['lower']:.2f} - {roi_at_0_implementation_cost_dict[9]['upper']:.2f}) "
       f"without HSS. While malaria and TB initially demonstrated higher ROIs under the vertical strategy, "
       f"this trend reversed when additional implementation costs were considered. Specifically, at an additional "
       f"implementation cost threshold of "
-      f"${breakeven_implementation_cost_malaria/10e6: .2f} million "
+      f"${breakeven_implementation_cost_malaria/1e6: .2f} million "
       f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% "
       f"of the projected health spending) for malaria and "
-      f"${breakeven_implementation_cost_tb/10e6: .2f} million "
+      f"${breakeven_implementation_cost_tb/1e6: .2f} million "
       f"({breakeven_implementation_cost_tb/projected_health_spending_baseline * 100:.2f}%) for TB, "
       f"the diagonal investment strategy overtook the vertical approach in terms of ROI")
 
-print(f"At a value of a statistical life year of $834 and assuming no additional implementation costs, the return on "
-      f"investment (ROI) for the diagonal strategy (HTM integrated with HSS) was "
-      f"{(roi_result[44][chosen_metric] - roi_result[36][chosen_metric])/roi_result[36][chosen_metric] * 100:.2f}% "
-      f"higher than that of the vertical strategy, reaching "
-      f"{roi_result[44][chosen_metric]:.2f} ({roi_result[44]['lower']:.2f} - {roi_result[44]['upper']:.2f}) compared to "
-      f"{roi_result[36][chosen_metric]:.2f} ({roi_result[36]['lower']:.2f} - {roi_result[36]['upper']:.2f}) "
-      f"(Figure 3). The diagonal approach remained more favourable than the vertical approach, "
-      f"provided the additional implementation costs of the strategy did not exceed "
-      f"${breakeven_implementation_cost/10e6: .2f} million "
-      f"({breakeven_implementation_cost/projected_health_spending_baseline * 100:.2f}% "
-      f"of the total projected health spending) "
-      f"between 2025 and 2035. Furthermore, the ROI of the diagonal strategy also surpassed that of the horizontal strategy "
-      f"({roi_result[8][chosen_metric]:.2f} ({roi_result[8]['lower']:.2f} - {roi_result[8]['upper']:.2f}))")
+print(f"At a value of a statistical life year of $834 and assuming no incremental above service level costs, "
+      f"the return on investment (ROI) for the joint HTM diagonal approach was "
+      f"{(roi_at_0_implementation_cost_dict[44][chosen_metric] - roi_at_0_implementation_cost_dict[36][chosen_metric]) / roi_at_0_implementation_cost_dict[36][chosen_metric] * 100:.2f}% "
+      f"higher than that of the vertical approach, reaching "
+      f"{roi_at_0_implementation_cost_dict[44][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[44]['lower']:.2f} - {roi_at_0_implementation_cost_dict[44]['upper']:.2f}) compared to "
+      f"{roi_at_0_implementation_cost_dict[36][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[36]['lower']:.2f} - {roi_at_0_implementation_cost_dict[36]['upper']:.2f}) (Figure 3). "
+      f"Assuming zero incremental above service level costs for the vertical approach, "
+      f"the diagonal approach remained more favorable provided its own incremental above service level costs did not"
+      f" exceed "
+      f"${breakeven_implementation_cost_at_0_implementation_cost / 1e6: .2f} million—equivalent to "
+      f"{(breakeven_implementation_cost_at_0_implementation_cost) / (incremental_scenario_cost_summarised[44][chosen_metric]) * 100: .2f}%"
+      f" of the diagonal approach’s incremental service-level cost —over the  2025 and 2035 period. "
+      f"Under an alternative assumption that the vertical approach incurs incremental above service level costs equal to "
+      f"{above_service_level_cost_proportion * 100}% of its incremental service level cost (based on estimates from Opuni et al (2023)),"
+      f" the diagonal approach provided a higher ROI up to an even higher threshold of "
+      f"${(breakeven_implementation_cost_at_upper_limit_implementation_cost - implementation_cost_upper_limit_dict[36][chosen_metric]) / 1e6: .2f} million"
+      f"incremental above service level costs in comparison with the vertical apporach, "
+      f"or {breakeven_implementation_cost_at_upper_limit_implementation_cost / ((incremental_scenario_cost_summarised[44][chosen_metric]) / 100): .2f}%"
+      f" of its incremental service level cost. Furthermore, the ROI of the diagonal approach also surpassed that of the horizontal approach "
+      f"({roi_at_0_implementation_cost_dict[8][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[8]['lower']:.2f} - {roi_at_0_implementation_cost_dict[8]['upper']:.2f}).")
 
 '''
 # Extract TB costs for inspection
