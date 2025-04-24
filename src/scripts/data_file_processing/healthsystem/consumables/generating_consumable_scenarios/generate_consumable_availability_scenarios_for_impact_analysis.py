@@ -4,20 +4,23 @@ This script adds estimates of availability of consumables under different scenar
 Outputs:
 * Updated version of ResourceFile_Consumables_availability_small.csv (estimate of consumable available - smaller file for use in the
  simulation) which includes new consumable availability estimates for all scenarios. The following scenarios are generated
-1. 'default' : this is the benchmark scenario with 2018 levels of consumable availability
-2. 'scenario1' : [Level 1a + 1b] All items perform as well as consumables other than drugs/diagnostic tests
-3. 'scenario2' : [Level 1a + 1b] 1 + All items perform as well as consumables classified as 'Vital' in the Essential Medicines List
-4. 'scenario3' : [Level 1a + 1b] 2 + All facilities perform as well as those in which consumables stock is managed by pharmacists
-5. 'scenario4' : [Level 1a + 1b] 3 + Level 1a facilities perform as well as level 1b
-6. 'scenario5' : [Level 1a + 1b] 4 + All facilities perform as well as CHAM facilities
-7. 'scenario6' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 75th percentile best performing facility for each individual item
-8. 'scenario7' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 90th percentile best performing facility for each individual item
-9. 'scenario8' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
-10. 'scenario9' : [Level 1a + 1b + 2] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
-11. 'scenario10' : [Level 1a + 1b] All programs perform as well as HIV
-12. 'scenario11' : [Level 1a + 1b] All programs perform as well as EPI
-13. 'scenario12' : [Level 1a + 1b] HIV performs as well as other programs (excluding EPI)
-14. 'all': all consumable are always available - provides the theoretical maximum health gains which can be made through improving consumable supply
+0. 'default' : this is the benchmark scenario with 2018 levels of consumable availability
+1. 'scenario1' : [Level 1a + 1b] All items perform as well as consumables other than drugs/diagnostic tests
+2. 'scenario2' : [Level 1a + 1b] 1 + All items perform as well as consumables classified as 'Vital' in the Essential Medicines List
+3. 'scenario3' : [Level 1a + 1b] 2 + All facilities perform as well as those in which consumables stock is managed by pharmacists
+4. 'scenario4' : [Level 1a + 1b] 3 + Level 1a facilities perform as well as level 1b
+5. 'scenario5' : [Level 1a + 1b] 4 + All facilities perform as well as CHAM facilities
+6. 'scenario6' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 75th percentile best performing facility for each individual item
+7. 'scenario7' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 90th percentile best performing facility for each individual item
+8. 'scenario8' : [Level 1a + 1b] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
+9. 'scenario9' : [Level 1a + 1b + 2] All facilities have the same probability of consumable availability as the 99th percentile best performing facility for each individual item
+10. 'scenario10' : [Level 1a + 1b] All programs perform as well as HIV
+11. 'scenario11' : [Level 1a + 1b] All programs perform as well as EPI
+12. 'scenario12' : [Level 1a + 1b] HIV performs as well as other programs (excluding EPI and Cancer) - benchmark values at Facility_Level
+13. 'scenario13' : [all levels] HIV performs as well as other programs (excluding EPI, TB, Malaria, Cancer) - benchmark values at Facility_ID
+14. 'scenario14' : [all levels] HIV performs as well as other programs (excluding EPI, TB, Malaria, Cancer) times 1.25 - benchmark values at Facility_ID
+15. 'scenario15' : [all levels] HIV performs as well as other programs (excluding EPI, TB, Malaria, Cancer) times 0.75 - benchmark values at Facility_ID
+16. 'all': all consumable are always available - provides the theoretical maximum health gains which can be made through improving consumable supply
 
 Inputs:
 * outputs/regression_analysis/predictions/predicted_consumable_availability_regression_scenarios.csv - This file is hosted
@@ -375,8 +378,14 @@ for fac in fac_ids:
                 if not items:
                     category_recorded_at_other_facilities_of_same_level = False
                 else:
+                    # Filter only items that exist in the MultiIndex at this facility
+                    valid_items = [
+                        itm for itm in items
+                        if any((fac, m, itm) in full_set.index for m in months)
+                    ]
+
                     category_recorded_at_other_facilities_of_same_level = pd.notnull(
-                        full_set.loc[(fac, slice(None), items), col]
+                        full_set.loc[(fac, slice(None), valid_items), col]
                     ).any()
 
                 if recorded_at_other_facilities_of_same_level:
@@ -388,12 +397,13 @@ for fac in fac_ids:
                         full_set.loc[(facilities, slice(None), item), col].groupby(level=1).mean()
                     )
 
-                elif category_recorded_at_other_facilities_of_same_level:
+                elif category_recorded_at_other_facilities_of_same_level and valid_items:
                     # If it recorded at other facilities of same level, find the average availability of the item at other
                     # facilities of the same level.
-                    print("Data for item ", item, " extrapolated from other items within category - ", items)
+                    print("Data for item ", item, " extrapolated from other items within category - ", valid_items)
+
                     _monthly_records = interpolate_missing_with_mean(
-                        full_set.loc[(fac, slice(None), items), col].groupby(level=1).mean()
+                        full_set.loc[(fac, slice(None), valid_items), col].groupby(level=1).mean()
                     )
 
                 else:
@@ -500,6 +510,14 @@ df_new_1a = df[df['Facility_ID'].isin(facilities_by_level['1a'])].merge(availabi
 df_new_1b = df[df['Facility_ID'].isin(facilities_by_level['1b'])].merge(availability_dataframes[1],on = ['item_code', 'month'],
                                       how = 'left',
                                       validate = "m:1")
+
+# For scenarios 6-8, replace the new availability probabilities by the max(original availability, availability at target percentile)
+for scen in [6,7,8]:
+    df_new_1a['available_prop_scenario' + str(scen)] = df_new_1a.apply(
+        lambda row: max(row['available_prop_scenario' + str(scen) ], row['available_prop']), axis=1)
+    df_new_1b['available_prop_scenario' + str(scen)] = df_new_1b.apply(
+        lambda row: max(row['available_prop_scenario' + str(scen) ], row['available_prop']), axis=1)
+
 # 75, 90 and 99th percentile availability data for level 2
 df_new_2 = df[df['Facility_ID'].isin(facilities_by_level['2'])].merge(availability_dataframes[2],on = ['item_code', 'month'],
                                       how = 'left',
@@ -516,78 +534,100 @@ new_scenario_columns = ['available_prop_scenario6', 'available_prop_scenario7', 
 for col in new_scenario_columns:
     df_new_otherlevels[col] = df_new_otherlevels['available_prop']
 # Append the above dataframes
-df_new_scenarios6to8 = pd.concat([df_new_1a, df_new_1b, df_new_otherlevels], ignore_index = True)
+df_facility_level_benchmark_scenarios = pd.concat([df_new_1a, df_new_1b, df_new_otherlevels], ignore_index = True)
 
 
 # Generate scenario 9
 #------------------------
 # scenario 9: levels 1a, 1b and 2 changed to availability at 99th percentile for the corresponding level
-df_new_otherlevels = df_new_scenarios6to8[~df_new_scenarios6to8['Facility_ID'].isin(facilities_by_level['1a']|facilities_by_level['1b']|facilities_by_level['2'])].reset_index(drop  = True)
-df_new_1a_scenario9 =  df_new_scenarios6to8[df_new_scenarios6to8['Facility_ID'].isin(facilities_by_level['1a'])].reset_index(drop  = True)
-df_new_1b_scenario9 =  df_new_scenarios6to8[df_new_scenarios6to8['Facility_ID'].isin(facilities_by_level['1b'])].reset_index(drop  = True)
+df_new_otherlevels = df_facility_level_benchmark_scenarios[~df_facility_level_benchmark_scenarios['Facility_ID'].isin(facilities_by_level['1a']|facilities_by_level['1b']|facilities_by_level['2'])].reset_index(drop  = True)
+df_new_1a_scenario9 =  df_facility_level_benchmark_scenarios[df_facility_level_benchmark_scenarios['Facility_ID'].isin(facilities_by_level['1a'])].reset_index(drop  = True)
+df_new_1b_scenario9 =  df_facility_level_benchmark_scenarios[df_facility_level_benchmark_scenarios['Facility_ID'].isin(facilities_by_level['1b'])].reset_index(drop  = True)
 df_new_2_scenario9 =  df_new_2[df_new_2['Facility_ID'].isin(facilities_by_level['2'])].reset_index(drop  = True)
 new_scenario_columns = ['available_prop_scenario9']
 for col in new_scenario_columns:
     df_new_otherlevels[col] = df_new_otherlevels['available_prop']
     df_new_1a_scenario9[col] = df_new_1a_scenario9['available_prop_scenario8']
     df_new_1b_scenario9[col] = df_new_1b_scenario9['available_prop_scenario8']
-    df_new_2_scenario9[col] = df_new_2_scenario9['available_prop_scenario8']
+    df_new_2_scenario9[col] = df_new_2_scenario9.apply(lambda row: max(row['available_prop_scenario8'], row['available_prop']), axis=1)
+
 # Append the above dataframes
 df_new_scenarios9 = pd.concat([df_new_1a_scenario9, df_new_1b_scenario9, df_new_2_scenario9, df_new_otherlevels], ignore_index = True)
 
 # 6. Generate scenarios based on the performance of vertical programs
 #***************************************************************************************
-cond_levels1a1b = (tlo_availability_df.Facility_Level == '1a') |(tlo_availability_df.Facility_Level == '1b')
-cond_hiv = tlo_availability_df.item_category == 'hiv'
-cond_epi = tlo_availability_df.item_category == 'epi'
-#cond_not_hivorepi = (tlo_availability_df.item_category != 'hiv') & (tlo_availability_df.item_category != 'epi')
-nonhivepi_availability_df = tlo_availability_df[(~cond_hiv & ~cond_epi) & cond_levels1a1b]
-hivepi_availability_df = tlo_availability_df[(cond_hiv| cond_epi) & cond_levels1a1b]
-irrelevant_levels_availability_df = tlo_availability_df[~cond_levels1a1b]
+df_program_benchmark_scenarios = tlo_availability_df.copy()
+# Define common conditions needed for the next set of scenarios
+cond_levels1a1b = df_program_benchmark_scenarios.Facility_Level.isin(['1a', '1b'])
+cond_hiv = df_program_benchmark_scenarios.item_category == 'hiv'
+cond_epi = df_program_benchmark_scenarios.item_category == 'epi'
+cond_cancer = df_program_benchmark_scenarios.item_category == 'cancer'
+cond_malaria = df_program_benchmark_scenarios.item_category == 'malaria'
+cond_tb = df_program_benchmark_scenarios.item_category == 'tb'
+cond_non_epi_hiv_cancer = ~(cond_epi | cond_hiv | cond_cancer)
 
-hiv_availability_df = tlo_availability_df[cond_hiv & cond_levels1a1b].groupby(['Facility_ID', 'month', 'item_category'])['available_prop'].mean().reset_index()
-hiv_availability_df = hiv_availability_df.rename(columns = {'available_prop': 'available_prop_scenario10'})
-hivepi_availability_df['available_prop_scenario10'] = hivepi_availability_df['available_prop']
-irrelevant_levels_availability_df['available_prop_scenario10'] = irrelevant_levels_availability_df['available_prop']
-minimum_scenario_varlist = ['Facility_ID', 'month', 'item_code', 'available_prop_scenario10']
-hiv_scenario_df = nonhivepi_availability_df.merge(hiv_availability_df, on = ['Facility_ID', 'month'] , how = 'left', validate = 'm:1')
-hiv_scenario_df = pd.concat([hiv_scenario_df[minimum_scenario_varlist], hivepi_availability_df[minimum_scenario_varlist], irrelevant_levels_availability_df[minimum_scenario_varlist]], ignore_index = True)
+# Calculate average availabilities
+avg_hiv = df_program_benchmark_scenarios[cond_hiv & cond_levels1a1b].groupby('Facility_Level')['available_prop'].mean()
+avg_epi = df_program_benchmark_scenarios[cond_epi & cond_levels1a1b].groupby('Facility_Level')['available_prop'].mean()
+avg_other_by_level = df_program_benchmark_scenarios[cond_non_epi_hiv_cancer & cond_levels1a1b].groupby('Facility_Level')['available_prop'].mean()
+avg_other_by_facility = df_program_benchmark_scenarios[~(cond_epi | cond_hiv | cond_cancer | cond_malaria | cond_tb)].groupby('Facility_ID')['available_prop'].mean()
 
-epi_availability_df = tlo_availability_df[cond_epi].groupby(['Facility_ID', 'month', 'item_category'])['available_prop'].mean().reset_index()
-epi_availability_df = epi_availability_df.rename(columns = {'available_prop': 'available_prop_scenario11'})
-hivepi_availability_df['available_prop_scenario11'] = hivepi_availability_df['available_prop']
-irrelevant_levels_availability_df['available_prop_scenario11'] = irrelevant_levels_availability_df['available_prop']
-epi_scenario_df = nonhivepi_availability_df.merge(epi_availability_df, on = ['Facility_ID', 'month'] , how = 'left', validate = 'm:1')
-minimum_scenario_varlist = ['Facility_ID', 'month', 'item_code', 'available_prop_scenario11']
-epi_scenario_df = nonhivepi_availability_df.merge(epi_availability_df, on = ['Facility_ID', 'month'] , how = 'left', validate = 'm:1')
-epi_scenario_df = pd.concat([epi_scenario_df[minimum_scenario_varlist], hivepi_availability_df[minimum_scenario_varlist], irrelevant_levels_availability_df[minimum_scenario_varlist]], ignore_index = True)
+# Initialize scenario columns with baseline values
+for i in range(10, 16):
+    df_program_benchmark_scenarios[f'available_prop_scenario{i}'] = df_program_benchmark_scenarios['available_prop']
 
-# 7. Generate a scenario to represent HIV availability falling to that of other programs
-#***************************************************************************************
-nonhivepi_availability_average = tlo_availability_df[(~cond_hiv & ~cond_epi)].groupby(['Facility_ID', 'month'])['available_prop'].mean().reset_index()
-nonhiv_availability_df = tlo_availability_df[~cond_hiv]
-non_vertical_hiv_availability_df = tlo_availability_df[cond_hiv]
-nonhivepi_availability_average = nonhivepi_availability_average.rename(columns = {'available_prop':'available_prop_scenario12'})
-nonhiv_availability_df['available_prop_scenario12'] = nonhiv_availability_df['available_prop']
-non_vertical_hiv_availability_df = non_vertical_hiv_availability_df.merge(nonhivepi_availability_average, on = ['Facility_ID', 'month'],  how = 'left', validate = 'm:1')
-minimum_scenario_varlist = ['Facility_ID', 'month', 'item_code', 'available_prop_scenario12']
-non_vertical_hiv_scenario_df = pd.concat([non_vertical_hiv_availability_df[minimum_scenario_varlist], nonhiv_availability_df[minimum_scenario_varlist]], ignore_index = True)
+# Define update logic using a loop
+scenario_logic = {
+    10: lambda row: max(row['available_prop'], avg_hiv[row['Facility_Level']])
+        if row['Facility_Level'] in ['1a', '1b'] and row['item_category'] not in ['hiv', 'epi'] else row['available_prop'],
+    11: lambda row: max(row['available_prop'], avg_epi[row['Facility_Level']])
+        if row['Facility_Level'] in ['1a', '1b'] and row['item_category'] not in ['hiv', 'epi'] else row['available_prop'],
+    12: lambda row: min(row['available_prop'], avg_other_by_level[row['Facility_Level']])
+        if row['Facility_Level'] in ['1a', '1b'] and row['item_category'] == 'hiv' else row['available_prop'],
+    13: lambda row: min(row['available_prop'], avg_other_by_facility[row['Facility_ID']])
+        if row['item_category'] == 'hiv' else row['available_prop'],
+    14: lambda row: min(row['available_prop'], avg_other_by_facility[row['Facility_ID']] * 1.25)
+        if row['item_category'] == 'hiv' else row['available_prop'],
+    15: lambda row: min(row['available_prop'], avg_other_by_facility[row['Facility_ID']] * 0.75)
+        if row['item_category'] == 'hiv' else row['available_prop'],
+}
 
-# Add scenarios 6 to 11 to the original dataframe
+# Apply logic to each scenario
+for scen, func in scenario_logic.items():
+    df_program_benchmark_scenarios[f'available_prop_scenario{scen}'] = df_program_benchmark_scenarios.apply(func, axis=1)
+
+# Add scenarios 6 to 12 to the original dataframe
 #------------------------------------------------------
-list_of_scenario_suffixes_first_stage = list_of_scenario_suffixes + ['scenario6', 'scenario7', 'scenario8', 'scenario9']
-list_of_scenario_variables_first_stage = ['available_prop_' + item for item in list_of_scenario_suffixes_first_stage]
+# Combine all scenario suffixes into a single list
+scenario_suffixes = list_of_scenario_suffixes + [f'scenario{i}' for i in range(6, 16)]
+scenario_vars = [f'available_prop_{s}' for s in scenario_suffixes]
 old_vars = ['Facility_ID', 'month', 'item_code']
-full_df_with_scenario = df_new_scenarios6to8[old_vars + ['available_prop'] + [col for col in list_of_scenario_variables_first_stage if col != 'available_prop_scenario9']].reset_index().drop('index', axis = 1)
-full_df_with_scenario = full_df_with_scenario.merge(df_new_scenarios9[old_vars + ['available_prop_scenario9']], on = old_vars, how = 'left', validate = "1:1")
 
-list_of_scenario_suffixes_second_stage = list_of_scenario_suffixes_first_stage + ['scenario10', 'scenario11', 'scenario12']
-final_list_of_scenario_vars = ['available_prop_' + item for item in list_of_scenario_suffixes_second_stage]
-full_df_with_scenario = full_df_with_scenario.merge(hiv_scenario_df[old_vars + ['available_prop_scenario10']], on = old_vars, how = 'left', validate = "1:1")
-full_df_with_scenario = full_df_with_scenario.merge(epi_scenario_df[old_vars + ['available_prop_scenario11']], on = old_vars, how = 'left', validate = "1:1")
-full_df_with_scenario = full_df_with_scenario.merge(non_vertical_hiv_scenario_df[old_vars + ['available_prop_scenario12']], on = old_vars, how = 'left', validate = "1:1")
+# Prepare the full base dataframe from scenarios 6–8
+full_df_with_scenario = df_facility_level_benchmark_scenarios[
+    old_vars + ['available_prop'] + [f'available_prop_scenario{i}' for i in range(1, 9)]
+].reset_index(drop=True)
 
-#full_df_with_scenario = full_df_with_scenario.merge(program_item_mapping, on = 'item_code', validate = 'm:1', how = 'left')
+# Add scenario 9
+full_df_with_scenario = full_df_with_scenario.merge(
+    df_new_scenarios9[old_vars + ['available_prop_scenario9']],
+    on=old_vars, how='left', validate='1:1'
+)
+
+# Add scenarios 10–15 from the program benchmark dataframe
+full_df_with_scenario = full_df_with_scenario.merge(
+    df_program_benchmark_scenarios[old_vars + [f'available_prop_scenario{i}' for i in range(10, 16)]],
+    on=old_vars, how='left', validate='1:1'
+)
+
+# --- Check that the scenarios 6-11 always have higher prob of availability than baseline  --- #
+for scen in range(6,12):
+    assert sum(full_df_with_scenario['available_prop_scenario' + str(scen)] < full_df_with_scenario['available_prop']) == 0
+    assert sum(full_df_with_scenario['available_prop_scenario' + str(scen)] >= full_df_with_scenario['available_prop']) == len(full_df_with_scenario)
+# Check that scenarios 12-15 always have equal to or lower prob of availability than baselin --- #
+for scen in range(12,16):
+    assert sum(full_df_with_scenario['available_prop_scenario' + str(scen)] > full_df_with_scenario['available_prop']) == 0
+    assert sum(full_df_with_scenario['available_prop_scenario' + str(scen)] <= full_df_with_scenario['available_prop']) == len(full_df_with_scenario)
 
 # --- Check that the exported file has the properties required of it by the model code. --- #
 check_format_of_consumables_file(df=full_df_with_scenario, fac_ids=fac_ids)
@@ -601,19 +641,36 @@ full_df_with_scenario.to_csv(
 
 # 8. Plot new availability estimates by scenario
 #*********************************************************************************************
+full_df_with_scenario = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
+
 # Create the directory if it doesn't exist
 figurespath = outputfilepath / 'consumable_scenario_analysis'
 if not os.path.exists(figurespath):
     os.makedirs(figurespath)
 
-# Creating the line plot with ggplot
+# Prepare the availability dataframe for descriptive plots
 df_for_plots = full_df_with_scenario.merge(mfl[['Facility_ID', 'Facility_Level']], on = 'Facility_ID', how = 'left', validate = "m:1")
 df_for_plots = df_for_plots.merge(program_item_mapping, on = 'item_code', how = 'left', validate = "m:1")
+scenario_list = [1,2,3,6,7,8,10,11,12,13,14,15]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             scenario_list]
+scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'Non-therapeutic \n consumables', 'available_prop_scenario2': 'Vital medicines',
+                'available_prop_scenario3': 'Pharmacist-\n managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
+                'available_prop_scenario6': '75th percentile\n  facility', 'available_prop_scenario7': '90th percentile \n facility', 'available_prop_scenario8': 'Best \n facility',
+                'available_prop_scenario9': 'Best facility \n (including DHO)','available_prop_scenario10': 'HIV supply \n chain', 'available_prop_scenario11': 'EPI supply \n chain',
+                'available_prop_scenario12': 'HIV moved to \n Govt supply chain \n (Avg by Level)', 'available_prop_scenario13': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID)',
+                'available_prop_scenario14': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 1.25)',
+                'available_prop_scenario15': 'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 0.75)'}
+# recreate the chosen columns list based on the mapping above
+chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
+df_for_plots = df_for_plots.rename(columns = scenario_names_dict)
+
+# Generate a bar plot of average availability under each scenario by item_category and Facility_Level
 def generate_barplot_of_scenarios(_df, _x_axis_var, _filename):
-    df_for_line_plot = _df.groupby([_x_axis_var])[['available_prop'] + final_list_of_scenario_vars].mean()
-    df_for_line_plot = df_for_line_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=['available_prop'] + final_list_of_scenario_vars,
+    df_for_bar_plot = _df.groupby([_x_axis_var])[chosen_availability_columns].mean()
+    df_for_bar_plot = df_for_bar_plot.reset_index().melt(id_vars=[_x_axis_var], value_vars=chosen_availability_columns,
                         var_name='Scenario', value_name='Value')
-    plot = (ggplot(df_for_line_plot.reset_index(), aes(x=_x_axis_var, y='Value', fill = 'Scenario'))
+    plot = (ggplot(df_for_bar_plot.reset_index(), aes(x=_x_axis_var, y='Value', fill = 'Scenario'))
             + geom_bar(stat='identity', position='dodge')
             + ylim(0, 1)
             + labs(title = "Probability of availability across scenarios",
@@ -627,19 +684,15 @@ generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'item_category',
 generate_barplot_of_scenarios(_df = df_for_plots, _x_axis_var = 'Facility_Level', _filename = 'availability_by_level.png')
 
 # Create heatmaps by Facility_Level of average availability by item_category across chosen scenarios
-number_of_scenarios = 12
-availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                             range(1, number_of_scenarios + 1)]
-
 for level in fac_levels:
     # Generate a heatmap
     # Pivot the DataFrame
-    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[availability_columns].mean().reset_index()
+    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[chosen_availability_columns].mean().reset_index()
     aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin([level])]
     heatmap_data = aggregated_df.set_index('item_category').drop(columns = 'Facility_Level')
 
     # Calculate the aggregate row and column
-    aggregate_col= aggregated_df[availability_columns].mean()
+    aggregate_col= df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), chosen_availability_columns].mean()
     #overall_aggregate = aggregate_col.mean()
 
     # Add aggregate row and column
@@ -648,7 +701,7 @@ for level in fac_levels:
     heatmap_data.loc['Average'] = aggregate_col
 
     # Generate the heatmap
-    sns.set(font_scale=0.5)
+    sns.set(font_scale=0.8)
     plt.figure(figsize=(10, 8))
     sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
@@ -656,23 +709,19 @@ for level in fac_levels:
     plt.title(f'Facility Level {level}')
     plt.xlabel('Scenarios')
     plt.ylabel(f'Disease/Public health \n program')
-    plt.xticks(rotation=90)
-    plt.yticks(rotation=0)
+    plt.xticks(rotation=90, fontsize=8)
+    plt.yticks(rotation=0, fontsize=8)
 
     plt.savefig(figurespath /f'consumable_availability_heatmap_{level}.png', dpi=300, bbox_inches='tight')
-    plt.show()
     plt.close()
 
 # Create heatmap of average availability by Facility_Level across chosen scenarios
-scenario_list = [1,2,3,6,7,8,9,10,11]
-chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                             scenario_list]
 # Pivot the DataFrame
 aggregated_df = df_for_plots.groupby(['Facility_Level'])[chosen_availability_columns].mean().reset_index()
 heatmap_data = aggregated_df.set_index('Facility_Level')
 
 # Calculate the aggregate row and column
-aggregate_col= aggregated_df[chosen_availability_columns].mean()
+aggregate_col= df_for_plots[chosen_availability_columns].mean()
 #overall_aggregate = aggregate_col.mean()
 
 # Add aggregate row and column
@@ -681,7 +730,7 @@ aggregate_col= aggregated_df[chosen_availability_columns].mean()
 heatmap_data.loc['Average'] = aggregate_col
 
 # Generate the heatmap
-sns.set(font_scale=0.5)
+sns.set(font_scale=0.8)
 plt.figure(figsize=(10, 8))
 sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
@@ -689,28 +738,272 @@ sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proport
 plt.title(f'Availability across scenarios')
 plt.xlabel('Scenarios')
 plt.ylabel(f'Facility Level')
-plt.xticks(rotation=90)
-plt.yticks(rotation=0)
+plt.xticks(rotation=90, fontsize=8)
+plt.yticks(rotation=0, fontsize=8)
 
 plt.savefig(figurespath /f'consumable_availability_heatmap_alllevels.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# Create heatmap of average availability by Facility_Level and program for actual and 75th percentile (Costing paper)
+clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiometabolic Disorders',
+                        'contraception': 'Contraception', 'general': 'General', 'hiv': 'HIV', 'malaria': 'Malaria',
+                        'ncds': 'Non-communicable Diseases', 'neonatal_health': 'Neonatal Health',
+                        'other_childhood_illnesses': 'Other Childhood Illnesses', 'reproductive_health': 'Reproductive Health',
+                        'road_traffic_injuries': 'Road Traffic Injuries', 'tb': 'Tuberculosis',
+                        'undernutrition': 'Undernutrition', 'epi': 'Expanded programme on immunization'}
+df_with_cleaned_item_category = df_for_plots.copy()
+df_with_cleaned_item_category['item_category'] = df_for_plots['item_category'].map(clean_category_names)
+
+# Actual
+aggregated_df = df_with_cleaned_item_category.groupby(['Facility_Level', 'item_category'])['Actual'].mean().reset_index()
+heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='Actual')
+
+# Calculate the aggregate row and column
+aggregate_col= df_with_cleaned_item_category.groupby('item_category')['Actual'].mean()
+overall_aggregate = df_with_cleaned_item_category['Actual'].mean()
+aggregate_row =  df_with_cleaned_item_category.groupby('Facility_Level')['Actual'].mean()
+
+# Add aggregate row and column
+heatmap_data['Average'] = aggregate_col
+aggregate_row['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_row
+
+# Generate the heatmap
+sns.set(font_scale=1.2)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.xlabel('Facility Level')
+plt.ylabel(f'Program')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /f'heatmap_program_and_level_actual.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close()
 
-# Create heatmap of average availability by Facility_Level just showing scenario 12
-scenario_list = [12]
-chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                             scenario_list]
-# Pivot the DataFrame
-df_for_hiv_plot = df_for_plots
-df_for_hiv_plot['hiv_or_other'] = np.where(df_for_hiv_plot['item_category'] == 'hiv', 'hiv', 'other programs')
+# 75th percentile
+aggregated_df = df_with_cleaned_item_category.groupby(['Facility_Level', 'item_category'])['75th percentile\n  facility'].mean().reset_index()
+heatmap_data = aggregated_df.pivot(index='item_category', columns='Facility_Level', values='75th percentile\n  facility')
 
-aggregated_df = df_for_hiv_plot.groupby(['Facility_Level', 'hiv_or_other'])[chosen_availability_columns].mean().reset_index()
-aggregated_df = aggregated_df.rename(columns = {'available_prop': 'Actual', 'available_prop_scenario12': 'HIV moved to Govt supply chain'})
-heatmap_data = aggregated_df.pivot_table(index=['Facility_Level'],  # Keep other relevant columns in the index
-                                      columns='hiv_or_other',
-                                      values=['Actual', 'HIV moved to Govt supply chain'])
+# Calculate the aggregate row and column
+aggregate_col= df_with_cleaned_item_category.groupby('item_category')['75th percentile\n  facility'].mean()
+overall_aggregate = df_with_cleaned_item_category['75th percentile\n  facility'].mean()
+aggregate_row =  df_with_cleaned_item_category.groupby('Facility_Level')['75th percentile\n  facility'].mean()
+
+
+# Add aggregate row and column
+heatmap_data['Average'] = aggregate_col
+aggregate_row['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_row
+
 # Generate the heatmap
-sns.set(font_scale=1)
+sns.set(font_scale=1.2)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+# Customize the plot
+plt.xlabel('Facility Level')
+plt.ylabel(f'Program')
+plt.xticks(rotation=90)
+plt.yticks(rotation=0)
+
+plt.savefig(figurespath /f'heatmap_program_and_level_75perc.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# Create a heatmap of average availability by item_category and scenario
+# Base scenario list
+base_scenarios = [['Actual']]
+# Additional scenarios to add iteratively
+additional_scenarios = [
+    ['Non-therapeutic \n consumables', 'Vital medicines', 'Pharmacist-\n managed'],
+    ['75th percentile\n  facility', '90th percentile \n facility', 'Best \n facility'],
+    ['HIV supply \n chain', 'EPI supply \n chain',  'HIV moved to \n Govt supply chain \n (Avg by Level)']
+]
+# Generate iteratively chosen availability columns
+iteratively_chosen_availability_columns = [
+    base_scenarios[0] + sum(additional_scenarios[:i], []) for i in range(len(additional_scenarios) + 1)
+]
+
+i = 1
+for column_list in iteratively_chosen_availability_columns:
+    # Create heatmap of average availability by item_category across chosen scenarios
+    # Pivot the DataFrame
+    chosen_levels = ['1a', '1b']
+    aggregated_df = df_for_plots[df_for_plots.Facility_Level.isin(chosen_levels)]
+    aggregated_df = aggregated_df.groupby(['item_category'])[column_list].mean().reset_index()
+    heatmap_data = aggregated_df.set_index('item_category')
+
+    # Calculate the aggregate row and column
+    aggregate_col= df_for_plots.loc[df_for_plots.Facility_Level.isin(chosen_levels), column_list].mean()
+    #overall_aggregate = aggregate_col.mean()
+
+    # Add aggregate row and column
+    heatmap_data['Perfect'] = 1 # Add a column representing the perfect scenario
+    aggregate_col['Perfect'] = 1
+    heatmap_data.loc['Average'] = aggregate_col
+
+    # Ensure all scenarios are represented for consistent column widths
+    all_scenarios = chosen_availability_columns + ['Perfect']
+    heatmap_data = heatmap_data.reindex(columns=all_scenarios)
+
+    # Update column names for x-axis labels
+    # Generate the heatmap
+    sns.set(font_scale=1.2)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
+
+    # Customize the plot
+    plt.title(f'Availability across scenarios')
+    plt.xlabel('Scenarios')
+    plt.ylabel(f'Facility Level')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+
+    plt.savefig(figurespath /f'consumable_availability_heatmap_bycategory_iter{i}.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    i = i + 1
+
+# Create a barplot of average consumable availability based on the colours used in analysis_impact_of_consumable_scenarios
+average_availability = df_for_plots[chosen_availability_columns].mean().reset_index()
+average_availability.columns = ['scenario', 'average_availability']
+new_row = pd.DataFrame([['Perfect', 1]], columns=['scenario', 'average_availability']) # new row for perfect availability
+average_availability = pd.concat([average_availability, new_row], axis=0, ignore_index=True) # Concatenate the new row with the existing DataFrame
+
+# Define color mapping for each scenario
+color_mapping = {
+    'Actual': '#1f77b4',
+    'Non-therapeutic \n consumables': '#ff7f0e',
+    'Vital medicines': '#2ca02c',
+    'Pharmacist-\n managed': '#d62728',
+    '75th percentile\n  facility': '#9467bd',
+    '90th percentile \n facility': '#8c564b',
+    'Best \n facility': '#e377c2',
+    'Best facility \n (including DHO)': '#7f7f7f',
+    'HIV supply \n chain': '#bcbd22',
+    'EPI supply \n chain': '#17becf',
+    'HIV moved to \n Govt supply chain \n (Avg by Level)': '#ff6347',               # original tomato
+    'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID)': '#ff7f50',        # coral
+    'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 1.25)': '#fa8072', # salmon
+    'HIV moved to \n Govt supply chain  \n (Avg by Facility_ID times 0.75)': '#cd5c5c', # indian red
+    'Perfect': '#31a354'
+}
+
+# Create a color list for the bars
+colors = [color_mapping[scenario] for scenario in average_availability['scenario']]
+# Create the bar plot and capture the bars
+plt.figure(figsize=(10, 6))
+bars = plt.bar(average_availability['scenario'], average_availability['average_availability'], color=colors)
+plt.title('Average Availability by Scenario')
+plt.xlabel('Scenario')
+plt.ylabel('Average Availability')
+plt.xticks(rotation=90, fontsize=8)
+plt.ylim(0, 1)  # Adjust based on your data range
+plt.grid(axis='y')
+# Add data labels
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width() / 2, yval + 0.02, round(yval, 2), ha='center', va='bottom')
+
+# Save the plot
+plt.tight_layout()
+plt.tight_layout()
+plt.savefig(figurespath / 'scenarios_average_availability.png', dpi=300, bbox_inches='tight')
+
+
+# Create the directory if it doesn't exist
+roi_plots_path = outputfilepath / 'horizontal_v_vertical/roi/'
+if not os.path.exists(roi_plots_path):
+    os.makedirs(roi_plots_path)
+
+# Create a combined plot of heatmaps of average availability for levels 1a and 1b under actual, 75th percentile, HIV and EPI scenarios
+# Scenario list
+scenarios_for_roi_paper = ['Actual', '75th percentile\n  facility', 'HIV supply \n chain', 'EPI supply \n chain']
+# Define facility levels
+chosen_levels = ['1a', '1b']
+
+# Create a figure with subplots for each level
+fig, axes = plt.subplots(nrows=1, ncols=len(chosen_levels), figsize=(20, 8), sharex=True, sharey=True)
+# Create a single colorbar axis
+cbar_ax = fig.add_axes([.91, .3, .02, .4])  # Position of the colorbar
+
+for ax, level in zip(axes, chosen_levels):
+    # Filter data for the current facility level
+    aggregated_df = df_for_plots[df_for_plots.Facility_Level.isin([level])]
+    aggregated_df = aggregated_df.groupby(['item_category'])[scenarios_for_roi_paper].mean().reset_index()
+    heatmap_data = aggregated_df.set_index('item_category')
+
+    # Calculate the aggregate row
+    aggregate_col = df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), scenarios_for_roi_paper].mean()
+    heatmap_data.loc['Average'] = aggregate_col
+
+    # Generate the heatmap on the current subplot
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', vmin = 0, vmax = 1,
+                ax=ax, cbar=(ax == axes[-1]), cbar_ax=(cbar_ax if ax == axes[-1] else None),
+                annot_kws={"size": 14})
+
+    # Set labels
+    ax.set_title(f'Level {level}')
+    ax.set_xlabel('Scenarios')
+    ax.set_ylabel('Program' if ax == axes[0] else "")
+
+cbar_ax.set_ylabel('Proportion of days consumable is available')
+# Save the combined heatmap
+plt.savefig(roi_plots_path / f'combined_consumable_availability_heatmap_1a_1b.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# Create a combined plot of heatmaps of average availability for all levels under actual, 75th percentile, HIV and EPI scenarios
+chosen_levels = ['0', '1a', '1b', '2', '3']
+# Create a figure with subplots
+fig, axes = plt.subplots(nrows=1, ncols=len(chosen_levels), figsize=(20, 8), sharex=True, sharey=True)
+
+# Create a single colorbar axis
+cbar_ax = fig.add_axes([.91, .3, .02, .4])  # Position of the colorbar
+
+for ax, level in zip(axes, chosen_levels):
+    # Filter data for the current facility level
+    aggregated_df = df_for_plots[df_for_plots.Facility_Level.isin([level])]
+    aggregated_df = aggregated_df.groupby(['item_category'])[scenarios_for_roi_paper].mean().reset_index()
+    heatmap_data = aggregated_df.set_index('item_category')
+
+    # Calculate the aggregate row
+    aggregate_col = df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), scenarios_for_roi_paper].mean()
+    heatmap_data.loc['Average'] = aggregate_col
+
+    # Generate the heatmap on the current subplot
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', ax=ax, cbar=(ax == axes[-1]), cbar_ax=(cbar_ax if ax == axes[-1] else None))
+
+    # Set labels
+    ax.set_title(f'Level {level}')
+    ax.set_xlabel('Scenarios')
+    ax.set_ylabel('Program' if ax == axes[0] else "")
+
+# Adjust layout
+cbar_ax.set_ylabel('Proportion of days consumable is available')
+# Save the combined heatmap
+plt.savefig(roi_plots_path / f'combined_consumable_availability_heatmap_all_levels.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+
+# Create heatmap of average availability by Facility_Level across chosen scenarios
+# Pivot the DataFrame
+aggregated_df = df_for_plots[df_for_plots.item_category == 'hiv'].groupby(['Facility_Level'])[chosen_availability_columns].mean().reset_index()
+heatmap_data = aggregated_df.set_index('Facility_Level')
+
+# Calculate the aggregate row and column
+aggregate_col= df_for_plots[chosen_availability_columns].mean()
+#overall_aggregate = aggregate_col.mean()
+
+# Add aggregate row and column
+#heatmap_data['Average'] = aggregate_row
+#aggregate_col['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_col
+
+# Generate the heatmap
+sns.set(font_scale=0.8)
 plt.figure(figsize=(10, 8))
 sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
@@ -718,37 +1011,38 @@ sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proport
 plt.title(f'Availability across scenarios')
 plt.xlabel('Scenarios')
 plt.ylabel(f'Facility Level')
-plt.xticks(rotation=90)
-plt.yticks(rotation=0)
+plt.xticks(rotation=90, fontsize=8)
+plt.yticks(rotation=0, fontsize=8)
 
-plt.savefig(figurespath /f'consumable_availability_heatmap_hiv_v_other.png', dpi=300, bbox_inches='tight')
-plt.show()
+plt.savefig(figurespath /f'consumable_availability_heatmap_hiv_alllevels.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 
-# Scenario on the X axis, level on the Y axis
-# Scenario on the X axis, program on the Y axis
-# TODO add heat maps i. heatmap by item_category across the sceanrios
+# Create heatmap of average availability by Facility_Level across chosen scenarios
+# Pivot the DataFrame
+aggregated_df = df_for_plots[df_for_plots.item_category == 'hiv'].groupby(['item_code'])[chosen_availability_columns].mean().reset_index()
+heatmap_data = aggregated_df.set_index('item_code')
 
-'''
-# 2.3.2. Browse missingness in the availability_change_prop variable
-#------------------------------------------------------
-pivot_table = pd.pivot_table(scenario_availability_df,
-                             values=list_of_scenario_variables,
-                             index=['item_category'],
-                             columns=['Facility_Level'],
-                             aggfunc=lambda x: sum(pd.isna(x))/len(x)*100)
-pivot_table.to_csv(outputfilepath / "temp.csv")
-print(pivot_table[('change_proportion_scenario5', '0')])
+# Calculate the aggregate row and column
+aggregate_col= df_for_plots[chosen_availability_columns].mean()
+#overall_aggregate = aggregate_col.mean()
 
-a = availability_dataframes[1].reset_index()
-print(best_performing_facilities['1b'][5][str(75) + 'th percentile'])
-print(best_performing_facilities['1b'][222][str(90) + 'th percentile'])
-print(best_performing_facilities['1b'][222][str(99) + 'th percentile'])
-a[a.item_code == 222][['month', 'available_prop_scenario8']]
-item_chosen = 222
-fac_chosen = 110
-print(df[(df.item_code == item_chosen) & (df.Facility_ID == fac_chosen)][['month', 'available_prop']])
+# Add aggregate row and column
+#heatmap_data['Average'] = aggregate_row
+#aggregate_col['Average'] = overall_aggregate
+heatmap_data.loc['Average'] = aggregate_col
 
-'''
+# Generate the heatmap
+sns.set(font_scale=0.8)
+plt.figure(figsize=(10, 8))
+sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
+# Customize the plot
+plt.title(f'Availability across scenarios')
+plt.xlabel('Scenarios')
+plt.ylabel(f'Item Code')
+plt.xticks(rotation=90, fontsize=8)
+plt.yticks(rotation=0, fontsize=8)
+
+plt.savefig(figurespath /f'consumable_availability_heatmap_hiv_alllevels_byconsumable.png', dpi=300, bbox_inches='tight')
+plt.close()

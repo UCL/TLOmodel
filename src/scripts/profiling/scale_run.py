@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 from shared import print_checksum, schedule_profile_log
 
 from tlo import Date, Simulation, logging
+from tlo.analysis.utils import LogsDict
 from tlo.analysis.utils import parse_log_file as parse_log_file_fn
 from tlo.methods.fullmodel import fullmodel
 
@@ -55,13 +56,9 @@ def scale_run(
     ignore_warnings: bool = False,
     log_final_population_checksum: bool = True,
     profiler: Optional["Profiler"] = None,
-) -> Simulation:
+) -> Simulation | tuple[Simulation, LogsDict]:
     if ignore_warnings:
         warnings.filterwarnings("ignore")
-
-    # Start profiler if one has been passed
-    if profiler is not None:
-        profiler.start()
 
     # Simulation period
     start_date = Date(2010, 1, 1)
@@ -70,9 +67,14 @@ def scale_run(
     log_config = {
         "filename": log_filename,
         "directory": output_dir,
-        "custom_levels": {"*": getattr(logging, log_level)},
+        # Ensure tlo.profiling log records always recorded
+        "custom_levels": {"*": getattr(logging, log_level), "tlo.profiling": logging.INFO},
         "suppress_stdout": disable_log_output_to_stdout,
     }
+    
+    # Start profiler if one has been passed
+    if profiler is not None:
+        profiler.start()
 
     sim = Simulation(
         start_date=start_date,
@@ -102,16 +104,18 @@ def scale_run(
 
     # Run the simulation
     sim.make_initial_population(n=initial_population)
-    schedule_profile_log(sim)
+    schedule_profile_log(sim, frequency_months=1)
     sim.simulate(end_date=end_date)
+    
+    # Stop profiling session
+    if profiler is not None:
+        profiler.stop()
+
     if log_final_population_checksum:
         print_checksum(sim)
 
     if save_final_population:
         sim.population.props.to_pickle(output_dir / "final_population.pkl")
-
-    if parse_log_file:
-        parse_log_file_fn(sim.log_filepath)
 
     if record_hsi_event_details:
         with open(output_dir / "hsi_event_details.json", "w") as json_file:
@@ -124,10 +128,11 @@ def scale_run(
                 ],
                 json_file,
             )
+            
+    if parse_log_file:
+        logs_dict = parse_log_file_fn(sim.log_filepath)
+        return sim, logs_dict
 
-    # Stop profiling session
-    if profiler is not None:
-        profiler.stop()
     return sim
 
 

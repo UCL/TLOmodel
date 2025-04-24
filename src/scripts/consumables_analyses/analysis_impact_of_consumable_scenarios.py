@@ -14,6 +14,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib.ticker import FuncFormatter
 from collections import Counter, defaultdict
 import seaborn as sns
@@ -56,14 +57,14 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging,
 )
 
-outputspath = Path('./outputs/')
-figurespath = Path(outputspath / 'impact_of_consumable_scenarios')
+outputspath = Path('./outputs')
+figurespath = Path(outputspath / 'impact_of_consumable_scenarios_results')
 figurespath.mkdir(parents=True, exist_ok=True) # create directory if it doesn't exist
 resourcefilepath = Path("./resources")
 
 # Declare period for which the results will be generated (defined inclusively)
 
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2019, 12, 31))
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
@@ -79,43 +80,163 @@ def drop_outside_period(_df):
 
 def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
     """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-     extent of the error bar."""
+    extent of the error bar."""
+
     yerr = np.array([
-        (_df['mean'] - _df['lower']).values,
-        (_df['upper'] - _df['mean']).values,
+        (_df['median'] - _df['lower']).values,
+        (_df['upper'] - _df['median']).values,
     ])
 
     xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
-    colors = plt.get_cmap('tab10')(np.linspace(0, 1, len(params['value'])))  # Generate different colors for each bar
+
+    # Define color mapping based on index values
+    color_mapping = {
+          'Actual': '#1f77b4',
+          'Non-therapeutic consumables':'#ff7f0e',
+          'Vital medicines': '#2ca02c',
+          'Pharmacist-managed':'#d62728',
+          '75th percentile facility':'#9467bd',
+          '90th percentile facility':'#8c564b',
+          'Best facility': '#e377c2',
+          'Best facility (including DHO)': '#7f7f7f',
+          'HIV supply chain': '#bcbd22',
+          'EPI supply chain': '#17becf',
+          'Perfect':'#31a354'
+    }
+
+    colors = [_df.index[i] in color_mapping for i in range(len(_df.index))]
+    color_values = [color_mapping.get(idx, '#cccccc') for idx in _df.index]
 
     fig, ax = plt.subplots()
     ax.bar(
         xticks.keys(),
-        _df['mean'].values,
+        _df['median'].values,
         yerr=yerr,
         alpha=1,
-        color = colors,
+        color=color_values,
         ecolor='black',
         capsize=10,
         label=xticks.values()
     )
     if annotations:
         for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
-            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize = 9)
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=10)
+
     ax.set_xticks(list(xticks.keys()))
     if not xticklabels_horizontal_and_wrapped:
-        # xticklabels will be vertical and not wrapped
         wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs, rotation=45, ha = 'right')
+        ax.set_xticklabels(wrapped_labs, rotation=45, ha='right', fontsize=10)
     else:
         wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
-        ax.set_xticklabels(wrapped_labs)
+        ax.set_xticklabels(wrapped_labs, fontsize=10)
+
+    # Set font size for y-tick labels
+    ax.tick_params(axis='y', labelsize=10)
+    ax.tick_params(axis='x', labelsize=10)
+
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
 
     return fig, ax
+
+def do_bar_plot_with_ci_and_heatmap(_df, annotations=None, xticklabels_horizontal_and_wrapped=False, heatmap_values=None, plt_title = 'unnamed_figure'):
+    """Create a bar plot with CI and a heatmap above it."""
+    yerr = np.array([
+        (_df['median'] - _df['lower']).values,
+        (_df['upper'] - _df['median']).values,
+    ])
+
+    xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
+
+    # Define color mapping based on index values
+    color_mapping = {
+          'Actual': '#1f77b4',
+          'Non-therapeutic consumables':'#ff7f0e',
+          'Vital medicines': '#2ca02c',
+          'Pharmacist-managed':'#d62728',
+          '75th percentile facility':'#9467bd',
+          '90th percentile facility':'#8c564b',
+          'Best facility': '#e377c2',
+          'Best facility (including DHO)': '#7f7f7f',
+          'HIV supply chain': '#bcbd22',
+          'EPI supply chain': '#17becf',
+          'Perfect':'#31a354'
+    }
+
+    color_values = [color_mapping.get(idx, '#cccccc') for idx in _df.index]
+
+    # Create a figure with two axes
+    fig, (heatmap_ax, ax) = plt.subplots(
+        nrows=2, ncols=1, gridspec_kw={"height_ratios": [0.3, 2]}, figsize=(10, 7)
+    )
+
+    # Heatmap axis
+    if heatmap_values:
+        cmap = plt.cm.YlGn
+        norm = mcolors.Normalize(vmin=min(heatmap_values), vmax=max(heatmap_values))
+        heatmap_colors = [cmap(norm(value)) for value in heatmap_values]
+
+        heatmap_ax.bar(
+            xticks.keys(),
+            [1] * len(heatmap_values),  # Constant height for heatmap bars
+            color=heatmap_colors,
+            align='center',
+            width=0.8
+        )
+
+        # Add data labels to heatmap bars
+        for xpos, value in zip(xticks.keys(), heatmap_values):
+            heatmap_ax.text(
+                xpos, 0.5, f"{value:.2f}", color='black', ha='center', va='center', fontsize= 12, weight='bold'
+            )
+
+        heatmap_ax.set_xticks(list(xticks.keys()))
+        heatmap_ax.set_xticklabels([])
+        heatmap_ax.set_yticks([])
+        heatmap_ax.set_ylabel('Average consumable \n availability under \n each scenario \n (Baseline = 0.52)', fontsize=10, rotation=0, labelpad=20)
+        heatmap_ax.spines['top'].set_visible(False)
+        heatmap_ax.spines['right'].set_visible(False)
+        heatmap_ax.spines['left'].set_visible(False)
+        heatmap_ax.spines['bottom'].set_visible(False)
+
+    # Bar plot axis
+    ax.bar(
+        xticks.keys(),
+        _df['median'].values,
+        yerr=yerr,
+        alpha=1,
+        color=color_values,
+        ecolor='black',
+        capsize=10
+    )
+    if annotations:
+        for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+            ax.text(xpos, ypos * 1.05, text, horizontalalignment='center', fontsize=10)
+
+    ax.set_xticks(list(xticks.keys()))
+    if not xticklabels_horizontal_and_wrapped:
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs, rotation=45, ha='right', fontsize=10)
+    else:
+        wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+        ax.set_xticklabels(wrapped_labs, fontsize=10)
+
+    # Set font size for y-tick labels
+    ax.tick_params(axis='y', labelsize=10)
+    ax.tick_params(axis='x', labelsize=10)
+
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Add global title
+    fig.suptitle(plt_title, fontsize=16, fontweight='bold')
+
+    fig.tight_layout()
+
+    return fig, (heatmap_ax, ax)
 
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -334,7 +455,8 @@ def find_difference_relative_to_comparison(_ser: pd.Series,
 
 # Find results_folder associated with a given batch_file and get most recent
 #results_folder = get_scenario_outputs('impact_of_consumable_scenarios.py', outputspath)
-results_folder = Path(outputspath / 'sakshi.mohan@york.ac.uk/impact_of_consumables_scenarios-2024-06-11T204007Z/')
+results_folder = Path(outputspath / 'sakshi.mohan@york.ac.uk/impact_of_consumables_scenarios-2024-09-12T192454Z/')
+#results_folder = Path(outputspath / 'impact_of_consumables_scenarios-2024-09-12T155640Z/')
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -344,14 +466,15 @@ info = get_scenario_info(results_folder)
 
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-params_dict  = {'default': 'Actual', 'scenario1': 'General consumables', 'scenario2': 'Vital medicines',
+params_dict  = {'default': 'Actual', 'scenario1': 'Non-therapeutic consumables', 'scenario2': 'Vital medicines',
                 'scenario3': 'Pharmacist-managed', 'scenario4': 'Level 1b', 'scenario5': 'CHAM',
                 'scenario6': '75th percentile facility', 'scenario7': '90th percentile facility', 'scenario8': 'Best facility',
-                'all': 'Perfect'}
+                'scenario9': 'Best facility (including DHO)','scenario10': 'HIV supply chain','scenario11': 'EPI supply chain',
+                'scenario12': 'HIV moved to Govt supply chain', 'all': 'Perfect'}
 params_dict_df = pd.DataFrame.from_dict(params_dict, orient='index', columns=['name_of_scenario']).reset_index().rename(columns = {'index': 'value'})
 params = params.merge(params_dict_df, on = 'value', how = 'left', validate = '1:1')
 scenarios = params['name_of_scenario'] #range(len(params))  # X-axis values representing time periods
-drop_scenarios = ['Level 1b', 'CHAM'] # Drops scenarios which are no longer considered important for comparison
+drop_scenarios = ['Level 1b', 'CHAM', 'Best facility (including DHO)',  'HIV moved to Govt supply chain'] # Drops scenarios which are no longer considered important for comparison
 
 # %% Extracting results from run
 
@@ -372,6 +495,7 @@ num_dalys = extract_results(
 num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 num_dalys_summarized['scenario'] = scenarios.to_list()
 num_dalys_summarized = num_dalys_summarized.set_index('scenario')
+num_dalys_summarized.to_csv(figurespath/ 'num_dalys_summarized.csv')
 
 # Plot DALYS accrued (with xtickabels horizontal and wrapped)
 name_of_plot = f'Total DALYs accrued, {target_period()}'
@@ -379,7 +503,7 @@ chosen_num_dalys_summarized = num_dalys_summarized[~num_dalys_summarized.index.i
 fig, ax = do_bar_plot_with_ci(
     (chosen_num_dalys_summarized / 1e6).clip(lower=0.0),
     annotations=[
-        f"{round(row['mean']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
+        f"{round(row['median']/1e6, 1)} \n ({round(row['lower']/1e6, 1)}-{round(row['upper']/1e6, 1)})"
         for _, row in chosen_num_dalys_summarized.clip(lower=0.0).iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -404,7 +528,7 @@ num_dalys_averted = summarize(
                 comparison= 0) # sets the comparator to 0 which is the Actual scenario
         ).T
     ).iloc[0].unstack()
-num_dalys_averted['scenario'] = scenarios.to_list()[1:10]
+num_dalys_averted['scenario'] = scenarios.to_list()[1:12]
 num_dalys_averted = num_dalys_averted.set_index('scenario')
 
 # Get percentage DALYs averted
@@ -417,28 +541,31 @@ pc_dalys_averted = 100.0 * summarize(
             scaled=True)
     ).T
 ).iloc[0].unstack()
-pc_dalys_averted['scenario'] = scenarios.to_list()[1:10]
+pc_dalys_averted['scenario'] = scenarios.to_list()[1:12]
 pc_dalys_averted = pc_dalys_averted.set_index('scenario')
 
 # %% Chart of number of DALYs averted
 # Plot DALYS averted (with xtickabels horizontal and wrapped)
-name_of_plot = f'Additional DALYs Averted vs Actual, {target_period()}'
+average_availability_under_scenarios = [0.59, 0.59, 0.6, 0.57, 0.63, 0.7, 0.79, 0.91, 1]
+name_of_plot = f'Health impact of improved consumable availability\n at level 1 health facilities, {target_period()}'
 chosen_num_dalys_averted = num_dalys_averted[~num_dalys_averted.index.isin(drop_scenarios)]
 chosen_pc_dalys_averted = pc_dalys_averted[~pc_dalys_averted.index.isin(drop_scenarios)]
-fig, ax = do_bar_plot_with_ci(
-    (chosen_num_dalys_averted / 1e6).clip(lower=0.0),
+fig, (heatmap_ax, ax) = do_bar_plot_with_ci_and_heatmap(
+    (chosen_num_dalys_averted / 1e6),
     annotations=[
-        f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-        for _, row in chosen_pc_dalys_averted.clip(lower=0.0).iterrows()
+        f"{round(row['median'], 1)} % \n ({round(row['lower'], 1)}- \n {round(row['upper'], 1)}) %"
+        for _, row in chosen_pc_dalys_averted.iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
+    heatmap_values=average_availability_under_scenarios,
+    plt_title = name_of_plot
 )
-ax.set_title(name_of_plot)
-ax.set_ylim(0, 20)
-ax.set_yticks(np.arange(0, 18, 2))
+#ax.set_title(name_of_plot)
+ax.set_ylim(0, 14)
+ax.set_yticks(np.arange(0, 14, 2))
 ax.set_ylabel('Additional DALYS Averted \n(Millions)')
 fig.tight_layout()
-fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', ''))
+fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('\n', ''))
 fig.show()
 plt.close(fig)
 
@@ -454,6 +581,7 @@ num_dalys_by_cause_summarized = summarize(num_dalys_by_cause).unstack(level = 0)
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.reset_index()
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.rename(columns = {'level_2':'cause', 0: 'DALYs_accrued'})
 num_dalys_by_cause_summarized = num_dalys_by_cause_summarized.pivot(index=['draw','cause'], columns='stat', values='DALYs_accrued')
+num_dalys_by_cause_summarized.to_csv(figurespath / 'num_dalys_by_cause_summarized.csv')
 
 # Get top 10 causes until Actual
 num_dalys_by_cause_actual = num_dalys_by_cause_summarized[num_dalys_by_cause_summarized.index.get_level_values(0) == 0]
@@ -472,7 +600,7 @@ for cause in top_10_causes_of_dalys:
                     comparison= 0) # sets the comparator to 0 which is the Actual scenario
             ).T
         ).iloc[0].unstack()
-    num_dalys_averted_by_cause['scenario'] = scenarios.to_list()[1:10]
+    num_dalys_averted_by_cause['scenario'] = scenarios.to_list()[1:12]
     num_dalys_averted_by_cause = num_dalys_averted_by_cause.set_index('scenario')
 
     # Get percentage DALYs averted
@@ -485,7 +613,7 @@ for cause in top_10_causes_of_dalys:
                 scaled=True)
         ).T
     ).iloc[0].unstack()
-    pc_dalys_averted_by_cause['scenario'] = scenarios.to_list()[1:10]
+    pc_dalys_averted_by_cause['scenario'] = scenarios.to_list()[1:12]
     pc_dalys_averted_by_cause = pc_dalys_averted_by_cause.set_index('scenario')
 
     # Create a plot of DALYs averted by cause
@@ -512,9 +640,10 @@ for cause in top_10_causes_of_dalys:
     ax.set_ylabel(f'Additional DALYs averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', ''))
-    fig.show()
+    #fig.show()
     plt.close(fig)
 
+'''
 # PLot DALYs accrued by cause
 for cause in top_10_causes_of_dalys:
     name_of_plot = f'Total DALYs accrued by cause - \n {cause}, {target_period()}'
@@ -544,6 +673,7 @@ for cause in top_10_causes_of_dalys:
     plt.close(fig)
 
 # TODO Fix xticklabels in the plots above
+'''
 
 # 1.3 Total DALYs averted per person
 #----------------------------------------
@@ -562,7 +692,7 @@ num_dalys_averted_per_person_year = summarize(
                 comparison= 0) # sets the comparator to 0 which is the Actual scenario
         ).T
     ).iloc[0].unstack()
-num_dalys_averted_per_person_year['scenario'] = scenarios.to_list()[1:10]
+num_dalys_averted_per_person_year['scenario'] = scenarios.to_list()[1:12]
 num_dalys_averted_per_person_year = num_dalys_averted_per_person_year.set_index('scenario')
 
 # Get percentage DALYs averted
@@ -575,7 +705,7 @@ pct_dalys_averted_per_person_year = 100.0 * summarize(
             scaled=True)
     ).T
 ).iloc[0].unstack()
-pct_dalys_averted_per_person_year['scenario'] = scenarios.to_list()[1:10]
+pct_dalys_averted_per_person_year['scenario'] = scenarios.to_list()[1:12]
 pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year.set_index('scenario')
 
 # %% Chart of number of DALYs averted
@@ -586,7 +716,7 @@ chosen_pct_dalys_averted_per_person_year = pct_dalys_averted_per_person_year[~pc
 fig, ax = do_bar_plot_with_ci(
     (chosen_num_dalys_averted_per_person_year).clip(lower=0.0),
     annotations=[
-        f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+        f"{round(row['mean'], 1)} % \n ({round(row['lower'], 1)}- \n {round(row['upper'], 1)}) %"
         for _, row in chosen_pct_dalys_averted_per_person_year.clip(lower=0.0).iterrows()
     ],
     xticklabels_horizontal_and_wrapped=False,
@@ -621,7 +751,7 @@ for cause in top_10_causes_of_dalys:
                 comparison=0)  # sets the comparator to 0 which is the Actual scenario
         ).T
     ).iloc[0].unstack()
-    num_dalys_averted_per_person_year_by_cause['scenario'] = scenarios.to_list()[1:10]
+    num_dalys_averted_per_person_year_by_cause['scenario'] = scenarios.to_list()[1:12]
     num_dalys_averted_per_person_year_by_cause = num_dalys_averted_per_person_year_by_cause.set_index('scenario')
 
     # Get percentage DALYs averted
@@ -634,7 +764,7 @@ for cause in top_10_causes_of_dalys:
                 scaled=True)
         ).T
     ).iloc[0].unstack()
-    pct_dalys_averted_per_person_year_by_cause['scenario'] = scenarios.to_list()[1:10]
+    pct_dalys_averted_per_person_year_by_cause['scenario'] = scenarios.to_list()[1:12]
     pct_dalys_averted_per_person_year_by_cause = pct_dalys_averted_per_person_year_by_cause.set_index('scenario')
 
     # Create a plot of DALYs averted by cause
@@ -665,7 +795,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_ylabel(f'Additional DALYs averted per person')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', ''))
-    fig.show()
+    #fig.show()
     plt.close(fig)
 
 # 2. Health work time spent v DALYs accrued
@@ -704,11 +834,11 @@ capacity_used = summarize(extract_results(
 for cadre_level in capacity_used.index:
     print(cadre_level)
     name_of_plot = f'Capacity used - \n {cadre_level}, {target_period()}'
-    scenarios_to_drop = capacity_used.columns[capacity_used.columns.get_level_values(0).isin([4,5])]
+    scenarios_to_drop = capacity_used.columns[capacity_used.columns.get_level_values(0).isin([10])]
     chosen_capacity_used = capacity_used.drop(columns = scenarios_to_drop)
     chosen_capacity_used = chosen_capacity_used[chosen_capacity_used.index == cadre_level]
     chosen_capacity_used = chosen_capacity_used.unstack().reset_index().drop(columns = ['level_2']).pivot(columns ='stat', index = 'draw').droplevel(0,axis = 1)
-    chosen_capacity_used['scenario'] = [*scenarios.to_list()[0:4],*scenarios.to_list()[6:10]]
+    chosen_capacity_used['scenario'] = [*scenarios.to_list()[0:10], scenarios.to_list()[11]] # [*scenarios.to_list()[0:4],*scenarios.to_list()[6:10]]
     #TODO fix above code to be automated
     chosen_capacity_used = chosen_capacity_used.set_index('scenario')
     fig, ax = do_bar_plot_with_ci(
@@ -748,28 +878,42 @@ fac_levels = {'0', '1a', '1b', '2', '3', '4'}
 tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                     on = ['Facility_ID'], how='left')
 # Attach programs
-programs = pd.read_csv(resourcefilepath / 'healthsystem'/ 'consumables' / "ResourceFile_Consumables_availability_and_usage.csv")[['category', 'item_code', 'module_name']]
-programs = programs.drop_duplicates('item_code')
-tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], how = 'left')
-availability_scenarios = ['available_prop',
-       'available_prop_scenario1', 'available_prop_scenario2',
-       'available_prop_scenario3', 'available_prop_scenario4',
-       'available_prop_scenario5', 'available_prop_scenario6',
-       'available_prop_scenario7', 'available_prop_scenario8']
+program_item_mapping = pd.read_csv(resourcefilepath  / 'healthsystem'/ 'consumables' /  'ResourceFile_Consumables_Item_Designations.csv')[['Item_Code', 'item_category']]
+program_item_mapping = program_item_mapping.rename(columns ={'Item_Code': 'item_code'})[program_item_mapping.item_category.notna()]
+tlo_availability_df = tlo_availability_df.merge(program_item_mapping,on = ['item_code'], how='left')
+
+# First a heatmap of current availability
+fac_levels = {'0': 'Health Post', '1a': 'Health Centers', '1b': 'Rural/Community \n Hospitals', '2': 'District Hospitals', '3': 'Central Hospitals', '4': 'Mental Hospital'}
+chosen_fac_levels_for_plot = ['0', '1a', '1b', '2', '3', '4']
+correct_order_of_levels = ['Health Post', 'Health Centers', 'Rural/Community \n Hospitals', 'District Hospitals', 'Central Hospitals','Mental Hospital']
+df_for_plots = tlo_availability_df[tlo_availability_df.Facility_Level.isin(chosen_fac_levels_for_plot)]
+df_for_plots['Facility_Level'] = df_for_plots['Facility_Level'].map(fac_levels)
+
+scenario_list = [1,2,3,6,7,8,10,11]
+chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
+                                             scenario_list]
+scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General consumables', 'available_prop_scenario2': 'Vital medicines',
+                'available_prop_scenario3': 'Pharmacist- managed', 'available_prop_scenario4': 'Level 1b', 'available_prop_scenario5': 'CHAM',
+                'available_prop_scenario6': '75th percentile  facility', 'available_prop_scenario7': '90th percentile  facility', 'available_prop_scenario8': 'Best facility',
+                'available_prop_scenario9': 'Best facility (including DHO)','available_prop_scenario10': 'HIV supply  chain', 'available_prop_scenario11': 'EPI supply chain',
+                'available_prop_scenario12': 'HIV moved to Govt supply chain'}
+# recreate the chosen columns list based on the mapping above
+chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
+df_for_plots = df_for_plots.rename(columns = scenario_names_dict)
+
 i = 0
-for avail_scenario in availability_scenarios:
+for avail_scenario in chosen_availability_columns:
     # Generate a heatmap
     # Pivot the DataFrame
-    aggregated_df = tlo_availability_df.groupby(['category', 'Facility_Level'])[avail_scenario].mean().reset_index()
-    aggregated_df = aggregated_df[aggregated_df.Facility_Level.isin(['1a', '1b'])]
-    aggregated_df.loc[aggregated_df.Facility_Level == '1a','Facility_Level'] = 'Health centres'
-    aggregated_df.loc[aggregated_df.Facility_Level == '1b','Facility_Level'] = 'Hospitals'
-    heatmap_data = aggregated_df.pivot("category", "Facility_Level", avail_scenario)
+    aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[avail_scenario].mean().reset_index()
+    heatmap_data = aggregated_df.pivot("item_category", "Facility_Level", avail_scenario)
+    heatmap_data = heatmap_data[correct_order_of_levels] # Maintain the order
 
     # Calculate the aggregate row and column
     aggregate_col= aggregated_df.groupby('Facility_Level')[avail_scenario].mean()
-    aggregate_row = aggregated_df.groupby('category')[avail_scenario].mean()
-    overall_aggregate = aggregated_df[avail_scenario].mean()
+    aggregate_col = aggregate_col[correct_order_of_levels]
+    aggregate_row = aggregated_df.groupby('item_category')[avail_scenario].mean()
+    overall_aggregate = df_for_plots[avail_scenario].mean()
 
     # Add aggregate row and column
     heatmap_data['Average'] = aggregate_row
@@ -785,11 +929,11 @@ for avail_scenario in availability_scenarios:
     plt.title(scenarios[i])
     plt.xlabel('Facility Level')
     plt.ylabel(f'Disease/Public health \n program')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.yticks(rotation=0)
 
-    plt.savefig(figurespath /f'consumable_availability_heatmap_1a_2_{avail_scenario}.png', dpi=300, bbox_inches='tight')
-    plt.show()
+    plt.savefig(figurespath /f'consumable_availability_heatmap_{avail_scenario}.png', dpi=300, bbox_inches='tight')
+    #plt.show()
     plt.close()
     i = i + 1
 
@@ -969,4 +1113,3 @@ hsi_by_short_treatment_id = counts_of_hsi_by_treatment_id_short.unstack().reset_
 hsi_by_short_treatment_id = hsi_by_short_treatment_id.rename(columns = {'level_2': 'Short_Treatment_ID', 0: 'qty_of_HSIs'})
 
 # Cost of consumables?
-

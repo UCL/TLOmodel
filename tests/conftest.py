@@ -34,4 +34,4 @@ def pytest_collection_modifyitems(config, items):
 
 def pytest_generate_tests(metafunc):
     if "seed" in metafunc.fixturenames:
-        metafunc.parametrize("seed", metafunc.config.getoption("seed"))
+        metafunc.parametrize("seed", metafunc.config.getoption("seed"), scope="session")

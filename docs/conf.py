@@ -106,6 +106,9 @@ autodoc_default_options = {
     'exclude-members': '__dict__, name, rng, sim'  # , read_parameters',
 }
 
+# Include both class level and __init__ docstring content in class documentation
+autoclass_content = 'both'
+
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*',
                     'https://www.who.int/bulletin/volumes/88/8/09-068213/en/nn']
