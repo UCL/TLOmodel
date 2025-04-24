@@ -21,6 +21,9 @@ from tlo.methods import (  # deviance_measure,
     simplified_births,
     symptommanager,
     tb,
+    cardio_metabolic_disorders,
+    depression,
+    service_integration,
 )
 
 # Where will outputs go
@@ -34,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 25000
+end_date = Date(2013, 1, 1)
+popsize = 40_000
 
 # scenario = 1
 
@@ -83,13 +86,16 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
+    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    depression.Depression(resourcefilepath=resourcefilepath),
+    service_integration.ServiceIntegration(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # set the scenario
-sim.modules["Hiv"].parameters["do_scaleup"] = True
-sim.modules["Hiv"].parameters["scaleup_start_year"] = 2019
-sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
+sim.modules["ServiceIntegration"].parameters["serv_int_chronic"] = True
+sim.modules["ServiceIntegration"].parameters["integration_date"] = Date(2010, 1, 1)
+# sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"
 

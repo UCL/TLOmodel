@@ -23,7 +23,7 @@ import pandas as pd
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, hiv
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
@@ -1731,6 +1731,38 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
                     tclose=self.sim.date + pd.DateOffset(days=15),
                     priority=1
                 )
+
+        # todo additional screening if chronic care implemented
+        if (self.sim.date >= self.sim.modules['ServiceIntegration'].parameters['integration_date']) and \
+                self.sim.modules['ServiceIntegration'].parameters['serv_int_chronic']:
+            self.additional_screening(person_id)
+
+    # todo - linkage to HIV testing, depression
+    def additional_screening(self, person_id):
+        df = self.sim.population.props
+
+        # link to HIV testing
+        # do not run if already HIV diagnosed or had test in last week
+        if 'Hiv' in self.sim.modules:
+
+            if not df.at[person_id, "hv_diagnosed"] or (df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=7))):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                        person_id=person_id,
+                        module=self.sim.modules["Hiv"],
+                        referred_from="Integrated_CMD",
+                    ),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
+                )
+
+        # link to depression screening
+        if 'Depression' in self.sim.modules:
+            # if not dx and currently on anti-depressants
+            # call for depression check which
+            if not df.at[person_id, 'de_on_antidepr']:
+                self.sim.modules['Depression'].do_on_presentation_to_care(person_id, hsi_event=self)
 
     def did_not_run(self):
         # If this HSI event did not run, then the persons ceases to be taking medication
