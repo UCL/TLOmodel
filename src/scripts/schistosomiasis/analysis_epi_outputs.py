@@ -153,6 +153,39 @@ compute_summary_statistics(total_num_dalys, central_measure='median').loc[0].uns
 num_dalys_compute_summary_statistics.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
 
 
+# DALYS all-cause
+
+def round_to_nearest_100(x):
+    return 100 * round(x / 100)
+
+
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
+        .sum()
+
+
+# extract dalys by cause with mean and upper/lower intervals
+# With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
+
+daly_summary = compute_summary_statistics(
+    extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True,
+    ),
+    central_measure='median',
+)
+
+daly_summary = round_to_nearest_100(daly_summary)
+daly_summary = daly_summary.astype(int)
+daly_summary.to_csv(results_folder / (f'DALYs_by_cause {target_period()}.csv'))
+
+
 def get_total_num_dalys_by_label(_df):
     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
     y = _df \
@@ -379,39 +412,6 @@ fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')
 fig.show()
 plt.close(fig)
 
-
-# %% DALYS by ALL CAUSES-----------------------------------------------------------------------------
-# DALYS all-cause
-
-def round_to_nearest_100(x):
-    return 100 * round(x / 100)
-
-
-def num_dalys_by_cause(_df):
-    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
-    return _df \
-        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
-        .drop(columns=['date', 'sex', 'age_range', 'year']) \
-        .sum()
-
-
-# extract dalys by cause with mean and upper/lower intervals
-# With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
-
-daly_summary = compute_summary_statistics(
-    extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_stacked",
-        custom_generate_series=num_dalys_by_cause,
-        do_scaling=True,
-    ),
-    central_measure='median',
-)
-
-daly_summary = round_to_nearest_100(daly_summary)
-daly_summary = daly_summary.astype(int)
-daly_summary.to_csv(results_folder / (f'DALYs_by_cause {target_period()}.csv'))
 
 # -----------------------------------------------------------------------------
 
