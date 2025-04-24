@@ -22,7 +22,7 @@ max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
-scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167']
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.

@@ -34,7 +34,7 @@ min_year = 2020
 max_year = 2069
 spacing_of_years = 1
 
-scenario_names = ["Baseline", "Perfect World", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*target_period)])
