@@ -22,7 +22,7 @@ max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167']
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
@@ -90,7 +90,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_dalys_mean_1000 = []
     all_draws_dalys_lower_1000 = []
     all_draws_dalys_upper_1000 = []
-    for draw in range(5):
+    for draw in range(4):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_deaths_mean = {}

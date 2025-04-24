@@ -21,7 +21,7 @@ min_year = 2020
 max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
 age_standardisation = 50 #'non_age_standardization'
 
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
@@ -101,7 +101,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_prevalence_standard_years_lower = pd.DataFrame(columns = range(5))
     all_draws_prevalence_standard_years_upper = pd.DataFrame(columns = range(5))
 
-    for draw in range(5):
+    for draw in range(4):
         TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
         # Definitions of general helper functions
         make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}_{draw}.png"  # noqa: E731

@@ -25,7 +25,7 @@ PREFIX_ON_FILENAME = '1'
 min_year = "2020"
 max_year = "2069"
 scenario_colours = ['#0081a7', '#00afb9', '#ffb703', '#fed9b7', '#f07167']
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD", "Lifestyle: Cancer"]
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
@@ -94,7 +94,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 label='WPP', color=colors['WPP'])
         ax.plot(2018.5, cens_2018.sum() / 1e6,
                 marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
-        for draw in range(5):
+        for draw in range(4):
             ax.plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
                     label=scenario_names[draw], color=scenario_colours[draw])
             ax.fill_between((pop_model.index).to_numpy(),
@@ -345,7 +345,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         births_model_dict = {}
 
-        for draw in range(5):
+        for draw in range(4):
             births_results = extract_results(
                 results_folder,
                 module="tlo.methods.demography",
@@ -411,7 +411,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
 
             # Plot all draws on the same graph
-            for draw in range(5):
+            for draw in range(4):
                 ax.plot(
                     births_loc.index,
                     births_loc[f'Model_{draw}_mean'] / 1e6,
@@ -599,7 +599,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
         model_draws_list = []
-        for draw in range(5):
+        for draw in range(4):
             deaths_model_by_period = summarize(results_deaths.groupby(level=0).sum(), collapse_columns=True)[draw]
             deaths_model_by_period = deaths_model_by_period.reset_index()
             deaths_model_by_period = deaths_model_by_period.melt(
@@ -650,7 +650,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         facecolor=colors['GBD'], alpha=0.2)
 
         # Plot each model draw
-        for draw in range(5):
+        for draw in range(4):
             label_mean = f'Model_{draw}_mean'
             label_lower = f'Model_{draw}_lower'
             label_upper = f'Model_{draw}_upper'
@@ -1020,7 +1020,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 label='WPP', color=colors['WPP'])
         ax[0].plot(2018.5, cens_2018.sum() / 1e6,
                 marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
-        for draw in range(5):
+        for draw in range(4):
             ax[0].plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
                     label=scenario_names[draw], color=scenario_colours[draw])
             ax[0].fill_between((pop_model.index).to_numpy(),
@@ -1040,7 +1040,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
 
         # Panel B - Life expectancy
-        for draw in range(5):
+        for draw in range(4):
             dataframes = []
             for year in range(2010, int(max_year) + 1):
                 df = get_life_expectancy_estimates(
