@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2068
+max_year = 2069
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
@@ -91,15 +91,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """Produce standard set of plots describing the prevalence of each disease
     """
     # Set period of interest needed for helper functions
-    all_draws_prevalence_normalized = pd.DataFrame(columns = range(5)) # to save 2069 results
-    all_draws_prevalence_normalized_lower = pd.DataFrame(columns = range(5)) # to save 2069 results
-    all_draws_prevalence_normalized_upper = pd.DataFrame(columns = range(5)) # to save 2069 results
+    all_draws_prevalence_normalized = pd.DataFrame(columns = range(4)) # to save 2069 results
+    all_draws_prevalence_normalized_lower = pd.DataFrame(columns = range(4)) # to save 2069 results
+    all_draws_prevalence_normalized_upper = pd.DataFrame(columns = range(4)) # to save 2069 results
 
-    all_draws_prevalence = pd.DataFrame(columns = range(5))
+    all_draws_prevalence = pd.DataFrame(columns = range(4))
 
-    all_draws_prevalence_standard_years = pd.DataFrame(columns = range(5))
-    all_draws_prevalence_standard_years_lower = pd.DataFrame(columns = range(5))
-    all_draws_prevalence_standard_years_upper = pd.DataFrame(columns = range(5))
+    all_draws_prevalence_standard_years = pd.DataFrame(columns = range(4))
+    all_draws_prevalence_standard_years_lower = pd.DataFrame(columns = range(4))
+    all_draws_prevalence_standard_years_upper = pd.DataFrame(columns = range(4))
 
     for draw in range(4):
         TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
@@ -281,7 +281,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                   df_prevalence_standard_years.index])
         axes[0].set_title('Panel A: Prevalence by Condition')
         axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Prevalence in population')
+        axes[0].set_ylabel('Age-standardised prevalence in population')
         axes[0].grid(True)
 
         axes[0].legend().set_visible(False)
@@ -313,6 +313,49 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
         all_draws_prevalence_normalized_lower[draw] = df_all_years_prevalence_normalized_lower.iloc[:,-1]
         all_draws_prevalence_normalized_upper[draw] = df_all_years_prevalence_normalized_upper.iloc[:,-1]
+
+    # Plot across scenarios
+
+    fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    all_draws_prevalence_standard_years.T.plot.bar(
+        stacked=True, ax=axes[0],
+        color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence.index], legend=False
+    )
+    axes[0].set_ylabel('Age-standardised prevalence per 1,000')
+    axes[0].set_xlabel('Scenario')
+    axes[0].set_xticklabels(scenario_names, rotation=45)
+    y_err = [
+        all_draws_prevalence_normalized - all_draws_prevalence_normalized_lower,
+        all_draws_prevalence_normalized_upper - all_draws_prevalence_normalized
+    ]
+    for i, condition in enumerate(all_draws_prevalence_normalized.index):
+        jittered_all_draws_prevalence_normalized= all_draws_prevalence_normalized.columns + np.random.normal(0, 0.05, size=len(all_draws_prevalence_normalized.columns))
+
+        axes[1].scatter(jittered_all_draws_prevalence_normalized, all_draws_prevalence_normalized.loc[condition],
+                     marker='o',s = 10,
+                     label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
+                                             all_draws_prevalence_normalized.index][i])
+        axes[1].errorbar(
+            jittered_all_draws_prevalence_normalized,
+            all_draws_prevalence_normalized.loc[condition],
+            yerr=[abs(y_err[0].loc[condition]), abs(y_err[1].loc[condition])],
+            fmt='none',
+            ecolor=[get_color_cause_of_prevalence_label(_label) for _label in
+                                             all_draws_prevalence_normalized.index][i],
+            capsize=1,
+            alpha=0.5
+        )
+
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+
+    axes[1].legend(bbox_to_anchor=(1.05, 1.05), ncol=1)
+    axes[1].set_ylabel('Fold change in condition prevalence compared to 2020')
+    axes[1].set_xlabel('Scenario')
+    axes[1].set_xticks(all_draws_prevalence_normalized.columns)
+    axes[1].set_xticklabels(scenario_names, rotation=45)
+    fig.tight_layout()
+    fig.savefig(output_folder / f"Prevalence_by_condition_combined_{age_standardisation}_years.png")
+    plt.show()
 
 
 if __name__ == "__main__":
