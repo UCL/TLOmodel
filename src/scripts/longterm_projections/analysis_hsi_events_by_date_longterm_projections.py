@@ -40,6 +40,7 @@ def drop_outside_period(_df, target_period):
     return _df.drop(index=_df.index[~_df['date'].between(*target_period)])
 
 
+
 def table1_description_of_hsi_events(
     results_folder: Path,
     output_folder: Path,
@@ -847,6 +848,10 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     all_draws_cadre_normalised_lower = pd.DataFrame(columns=range(4))
     all_draws_cadre_normalised_upper = pd.DataFrame(columns=range(4))
 
+    all_draws_treatment = pd.DataFrame(columns=range(4))
+    all_draws_treatment_normalised = pd.DataFrame(columns=range(4))
+    all_draws_population = pd.DataFrame(columns=range(4))
+
     for draw in range(4):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig10_{stub}_{draw}.png"  # noqa: E731
         appointment_time_table = pd.read_csv(
@@ -870,11 +875,25 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         all_years_data_cadre_upper = {}
 
         all_years_data_treatment = {}
+        all_years_data_treatment_lower = {}
+        all_years_data_treatment_upper = {}
+        all_years_data_population_mean = {}
 
         scenario_info = get_scenario_info(results_folder)
         for target_year in target_year_sequence:
             target_period = (
                 Date(target_year, 1, 1), Date(target_year + spacing_of_years, 12, 31))
+
+            def get_population_for_year(_df):
+                """Returns the population in the year of interest"""
+                _df['date'] = pd.to_datetime(_df['date'])
+
+                # Filter the DataFrame based on the target period
+                filtered_df = _df.loc[_df['date'].between(*target_period)]
+                numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
+                population_sum = numeric_df.sum(numeric_only=True)
+
+                return population_sum
             # Initialize aggregation variables
             cadre_to_total_time = {}
             cadre_to_total_time_lower = {}
@@ -956,20 +975,39 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
             all_years_data_treatment[target_year] = module_id_to_total_time
 
+            result_data_population = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='population',
+                custom_generate_series=get_population_for_year,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+            all_years_data_population_mean[target_year] = result_data_population['mean']
+
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years_cadre = pd.DataFrame(all_years_data_cadre)
         df_all_years_cadre_lower = pd.DataFrame(all_years_data_cadre_lower)
         df_all_years_cadre_upper = pd.DataFrame(all_years_data_cadre_upper)
+        df_all_years_treatment = pd.DataFrame(all_years_data_treatment)
+        df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
 
         # Normalizing by the first column (first year in the sequence)
         df_normalized_cadre = df_all_years_cadre.div(df_all_years_cadre.iloc[:, 0], axis=0)
         df_normalized_cadre_lower = df_all_years_cadre_lower.div(df_all_years_cadre_lower.iloc[:, 0], axis=0)
         df_normalized_cadre_upper = df_all_years_cadre_lower.div(df_all_years_cadre_upper.iloc[:, 0], axis=0)
+        df_normalized_treatment = df_all_years_treatment.div(df_all_years_treatment.iloc[:, 0], axis=0)
 
+        # save final year
         all_draws_cadre[draw] = df_all_years_cadre.iloc[:, -1]
         all_draws_cadre_normalised[draw] = df_normalized_cadre.iloc[:, -1]
         all_draws_cadre_normalised_lower[draw] = df_normalized_cadre_lower.iloc[:, -1]
         all_draws_cadre_normalised_upper[draw] = df_normalized_cadre_upper.iloc[:, -1]
+        all_draws_treatment[draw] = df_all_years_treatment.iloc[:, -1]
+        all_draws_treatment_normalised[draw] = df_normalized_treatment.iloc[:, -1]
+        all_draws_population[draw] = df_all_years_data_population_mean.iloc[:, -1]
 
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
@@ -996,45 +1034,47 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         fig.savefig(make_graph_file_name('Time_HSI_Events_by_Cadre_All_Years_Panel_A_and_B'))
         plt.close(fig)
 
-        # Plotting
-        df_all_years_treatment_module = pd.DataFrame(all_years_data_treatment)
-        # Normalizing by the first column (first year in the sequence)
-        df_normalized_treatment_module = df_all_years_treatment_module.div(df_all_years_treatment_module.iloc[:, 0], axis=0)
-
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-        # Panel A: Raw counts = stacked
-        df_all_years_treatment_module.T.plot.bar(stacked=True, ax=axes[0],
-                                                 color=[get_color_short_treatment_id(_label) for _label in
-                                                        df_all_years_treatment_module.index])
-        axes[0].set_title('Panel A: Time Required by Treatment')
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Time Spent (Minutes)')
-        axes[0].legend().set_visible(False)
-        axes[0].grid(True)
-
-        # Panel B: Normalized counts
-        for i, treatment_id in enumerate(df_normalized_treatment_module.index):
-            axes[1].scatter(df_normalized_treatment_module.columns, df_normalized_treatment_module.loc[treatment_id],
-                            marker='o',
-                            label=treatment_id, color=[get_color_short_treatment_id(_label) for _label in
-                                                    df_normalized_treatment_module.index][i])
-
-        axes[1].set_title('Panel B: Normalized Required Time by Treatment')
-        axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Increase in Demand from 2010')
-        axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
-        axes[1].grid(True)
-
-        # Save the figure with both panels
-        fig.savefig(make_graph_file_name('Time_HSI_Events_by_Treatment_All_Years_Panel_A_and_B'))
-        plt.close(fig)
+    # Plotting - treatments
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    all_draws_treatment_per_1000 = all_draws_treatment.div(all_draws_population.loc['total'], axis=1) * 1000
 
-    all_draws_cadre.T.plot.bar(
+    all_draws_treatment_per_1000.T.plot.bar(
+        stacked=True, ax=axes[0], legend=False,  color=[get_color_short_treatment_id(_label) for _label in
+                                       all_draws_treatment_per_1000.index]
+    )
+    axes[0].set_ylabel('Time spent (Minutes) per 1,000 population')
+    axes[0].set_xlabel('Scenario')
+    axes[0].set_xticklabels(scenario_names, rotation=45)
+
+    for i, treatment_id in enumerate(all_draws_treatment_normalised.index):
+        axes[1].scatter(all_draws_treatment_normalised.columns, all_draws_treatment_normalised.loc[treatment_id],
+                        marker='o',
+                        label=treatment_id, color=[get_color_short_treatment_id(_label) for _label in
+                                       all_draws_treatment_normalised.index][i])
+        # Optionally: add error bars here if you compute lower/upper bounds
+
+    axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
+    axes[1].set_ylabel('Fold change in time spent compared to 2020')
+    axes[1].set_xlabel('Scenario')
+    axes[1].set_xticks(all_draws_treatment_normalised.columns)
+    axes[1].set_xticklabels(scenario_names, rotation=45)
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='black')
+
+    fig.tight_layout()
+    fig.savefig(output_folder / "Time_HSI_Events_by_Treatment_combined.png")
+    plt.show()
+
+    ## cadre
+    fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    print(all_draws_population)
+    print(all_draws_cadre)
+    all_draws_cadre_per_1000 = all_draws_cadre.div(all_draws_population.loc['total'], axis=1) * 1000
+
+    all_draws_cadre_per_1000.T.plot.bar(
             stacked=True, ax=axes[0], legend=False
         )
-    axes[0].set_ylabel('Time Spent (Minutes)')
+    axes[0].set_ylabel('Time Spent (Minutes) per 1,000 population')
     axes[0].set_xlabel('Scenario')
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
@@ -1055,7 +1095,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                 alpha=0.7
             )
 
-    axes[1].legend(ncol=2)
+    axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
     axes[1].set_ylabel('Fold change in time spent compared to 2020')
     axes[1].set_xlabel('Scenario')
     axes[1].set_xticks(all_draws_cadre_normalised.columns)
@@ -1065,6 +1105,8 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     fig.tight_layout()
     fig.savefig(output_folder / "Time_HSI_Events_by_Cadre_combined.png")
     plt.show()
+
+
 
     # Plot for WHO AFRO
 
