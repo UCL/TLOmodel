@@ -1625,25 +1625,57 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 'diabetes_second_dose': 5_30,
                 'diabetes_third_dose': 1,
                 'hypertension': 610,
-                'chronic_kidney_disease': 1,
+                'chronic_kidney_disease': 12, # 12 in a month: dialysis three times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
-        # todo adjust refills based on current MW situations
 
-        # Check availability of medication for condition
-        if self.get_consumables(item_codes=
-                                {self.module.parameters[f'{self.condition}_hsi'].get(
-                                    'medication_item_code').astype(int): dose[self.condition]}):
+        # todo improve reading of medication code from xlsx
+        """
+        Currently error in reading list of medications from xlsx, so we have created individual parameters
+        All medications (medication_item_code, medication_item_code_b, and medication_item_code_c) are part
+        of the initial treatment. They are not second and third line drugs.
+        """
 
+        medication_codes = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+        medication_item_code_b = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code_b')
+        medication_item_code_c = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code_c')
+
+        #todo currently equipment not documentd for CMD, but important to add within the xlsx file of parameters
+        equipment_codes = self.module.parameters[f'{self.condition}_hsi'].get('equipment_item_code')
+
+        # Normalize all item codes to be lists
+        def ensure_list(value):
+            if value is None:
+                return []
+            return value if isinstance(value, list) else [value]
+
+        medication_codes = ensure_list(medication_codes)
+        medication_item_code_b = ensure_list(medication_item_code_b)
+        medication_item_code_c = ensure_list(medication_item_code_c)
+        equipment_codes = ensure_list(equipment_codes)
+
+        all_meds = medication_codes+ medication_item_code_b + medication_item_code_c
+        med_item_codes = {int(code): dose[self.condition] for code in all_meds if  code is not None}
+        eq_item_codes = {int(code): dose[self.condition] for code in equipment_codes if code is not None}
+
+        if self.get_consumables(item_codes=med_item_codes):
+            self.add_equipment(eq_item_codes)
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
             df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
                 self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
 
-            # todo review adding diabetes switch to new medication
+            # todo review logic of diabetes second and third line drugs
+            """
+            Currently logic is that if first line does not prevent death, then they will be put on second line,
+            if second line does not prevent death, then they will move to third line.
+            Limitation is that all this is happening in the first appoinment. It must be moved to the refill section.
+            How it will work is that in each refill appointment, the individual's blood will be tested.
+            Based on the result, they will either stay on same med or they will change medication.
+            """
             if (self.condition == 'diabetes') & (~ (df.at[person_id, f'nc_{self.condition}_medication_prevents_death'])):
                 self.get_consumables(item_codes=
                                      {self.module.parameters[f'{self.condition}_hsi'].get(
@@ -1661,7 +1693,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
             # Schedule their next HSI for a refill of medication in one month
 
-            # todo review refill for diabetes meds
+            # todo review refill for diabetes meds, require a blood test before each refill
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
                                                                          condition=self.condition),
@@ -1728,11 +1760,14 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 1,
+                'chronic_kidney_disease': 12,
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
+
+        # todo update the refill to be the same medication(s) as that in
+        #  the functino HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
 
         # Check availability of medication for condition
         if self.get_consumables(
