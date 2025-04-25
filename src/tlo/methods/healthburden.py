@@ -88,7 +88,7 @@ class HealthBurden(Module):
         # Create the sex/age_range/year multi-index for YLL and YLD storage dataframes
         sex_index = ['M', 'F']
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-        wealth_index = sim.modules['Lifestyle'].PROPERTIES['district_of_residence'].categories
+        wealth_index = sim.modules['Demography'].PROPERTIES['district_of_residence'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
 
         self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(

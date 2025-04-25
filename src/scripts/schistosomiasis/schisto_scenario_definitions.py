@@ -38,7 +38,7 @@ class ScenarioDefinitions:
     def scaleup_WASH(self) -> Dict:
         return {
             'Schisto': {
-                'scaleup_WASH': 1.0,
+                'scaleup_WASH': 'scaleup',
                 "scaleup_WASH_start_year": self.YEAR_OF_CHANGE_FOR_WASH,
             }
         }

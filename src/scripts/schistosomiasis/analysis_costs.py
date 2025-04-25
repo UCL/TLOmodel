@@ -371,6 +371,8 @@ cons = cons_req.unstack()
 # item 286 is Praziquantel 600mg_1000_CMST
 pzq_use = cons_req.loc['286']
 
+# todo item 1735 is Praziquantel, 600 mg (donated)
+
 # attach costs to PZQ: 0.0000406606 USD
 PZQ_item_cost = 0.0000406606
 pzq_cost = pd.DataFrame(pzq_use.iloc[-1] * PZQ_item_cost).T

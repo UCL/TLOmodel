@@ -15,10 +15,11 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
+    healthburden,
     really_simplified_births,
     schisto,
     simplified_births,
-    symptommanager,
+    symptommanager, healthburden,
 )
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -47,13 +48,13 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 12, 31)
+    end_date = Date(2019, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
         "tlo.methods.schisto": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
-        # "tlo.methods.healthburden": logging.INFO,
+        "tlo.methods.healthburden": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.alri": logging.INFO,
         "tlo.methods.diarrhoea": logging.INFO,
@@ -68,6 +69,7 @@ def run_simulation(popsize,
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable_and_reject_all=hs_disable_and_reject_all,
                                            cons_availability='all'),
@@ -85,13 +87,11 @@ def run_simulation(popsize,
                  )
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
-    sim.modules["Schisto"].parameters["scaleup_WASH"] = 0.0  # 1.0=True
+    sim.modules["Schisto"].parameters["scaleup_WASH"] = 'pause'  # 1.0=True
     sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
     sim.modules["Schisto"].parameters['mda_coverage'] = 0.8
     sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
     sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
-
-
 
     # initialise the population
     sim.make_initial_population(n=popsize)

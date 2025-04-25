@@ -558,7 +558,7 @@ class Demography(Module):
         if 'HealthBurden' in self.sim.modules.keys():
             # report the death so that a computation of lost life-years due to this cause to be recorded
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
-                                                                    wealth=person['li_wealth'],
+                                                                    district_of_residence=person['district_of_residence'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
                                                                     cause_of_death=cause,
