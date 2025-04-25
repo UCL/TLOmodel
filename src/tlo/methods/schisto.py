@@ -235,7 +235,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             _spec.initialise_simulation(sim)
 
         # Schedule the logging event
-        sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
+        sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # annual, by district, age-group
         sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
         # over-ride availability of PZQ for MDA, MDA cons is optional in HSI so will always run
