@@ -917,9 +917,7 @@ class SchistoSpecies:
 
         # prop_susceptible = params['prop_susceptible'][district]
         # df.at[child_id, prop('susceptibility')] = 0  # Default to not susceptible
-        #
-        # # todo susceptibility is district prop_susceptible multiplied by rr_WASH if li_unimproved_sanitation
-        #
+        #        #
         # # WASH in action
         # if global_params['scaleup_WASH'] and (
         #         self.schisto_module.sim.date >= Date(int(global_params['scaleup_WASH_start_year']), 1, 1)):

@@ -43,6 +43,14 @@ class ScenarioDefinitions:
             }
         }
 
+    def pause_WASH(self) -> Dict:
+        return {
+            'Schisto': {
+                'scaleup_WASH': 'pause',
+                "scaleup_WASH_start_year": self.YEAR_OF_CHANGE_FOR_WASH,
+            }
+        }
+
     def expand_MDA_to_PSAC(self) -> Dict:
         return {
             'Schisto': {
