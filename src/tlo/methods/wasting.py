@@ -243,12 +243,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def read_parameters(self, data_folder):
         """
-        :param data_folder: path of a folder supplied to the Simulation containing data files. Typically,
-        modules would read a particular file within here.
+        :param data_folder: path to a folder supplied to the simulation containing data csv files
         """
         # Read parameters from the resource file
         self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Wasting/parameters.csv')
+            read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Wasting', files='parameters')
         )
 
         # Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
