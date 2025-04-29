@@ -155,7 +155,7 @@ class GenerateDataChains(BaseScenario):
                     self._baseline(),
                     {
                      "HealthSystem": {
-                            "Service_Availability": service_availability["No Rti_FractureCast*"],
+                            "Service_Availability": service_availability["No Rti_MinorSurgeries*"],
                       },
                     }
                 ),
