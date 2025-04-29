@@ -906,14 +906,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         num_categories = len(data.index)
         colours = sns.color_palette('cubehelix', num_categories)
 
-        y_axis_labels = ['HSS Package',
-                         'Consumables Available at EPI levels',
-                         'Consumables Available at HIV levels',
-                         'Consumables Increased to 75th Percentile',
+        y_axis_labels = ['HSS expansion package',
+                         'Consumables increased to EPI levels',
+                         'Consumables increased to HIV levels',
+                         'Consumables increased to 75th Percentile',
                          'Increase Capacity at Primary Care Levels',
-                         'HRH Scale-up (6%)',
-                         'HRH Scale-up (4%)',
-                         'HRH Scale-up (1%)',
+                         'Optimistic HRH Scale-up',
+                         'Historical HRH Scale-up',
+                         'Pessimistic HRH Scale-up',
                          'Vertical Program Only']
 
         # Iterate through panels
@@ -938,11 +938,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_ylabel('')
 
             titles = {
-                'HSS_scenarios': 'HSS Only',
+                'HSS_scenarios': 'HSS only',
                 'HIV_scenarios': 'HIV Program + HSS',
                 'TB_scenarios': 'TB Program + HSS',
                 'Malaria_scenarios': 'Malaria Program + HSS',
-                'HTM_scenarios': 'HTM Program + HSS'
+                'HTM_scenarios': 'HTM Programs + HSS'
             }
             ax.set_title(titles.get(group_name, group_name))
 

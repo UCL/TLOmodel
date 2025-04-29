@@ -132,11 +132,21 @@ step_dates = [datetime.date(y, 1, 1) for y in to_plot.index] + [datetime.date(to
 for xlim in (datetime.date(2025, 1, 1), datetime.date(2035, 1, 1)):
     fig, ax = plt.subplots()
 
+    # Plot the moderate scale-up scenario (purple)
+    ax.stairs(
+        values=to_plot['Moderate Scale-up (1%)'],
+        edges=step_dates, baseline=None,
+        label='Pessimistic HRH scale-up',
+        color='green',
+        zorder=3,
+        linewidth=3
+    )
+
     # Plot the original scale-up scenario (red)
     ax.stairs(
         values=to_plot['Scale-up'],
         edges=step_dates, baseline=None,
-        label='Scale-up Scenario',
+        label='Historical HRH scale-up',
         color='r',
         zorder=2,
         linewidth=3
@@ -146,19 +156,9 @@ for xlim in (datetime.date(2025, 1, 1), datetime.date(2035, 1, 1)):
     ax.stairs(
         values=to_plot['Accelerated Scale-up (6%)'],
         edges=step_dates, baseline=None,
-        label='Accelerated Scale-up (6%) Scenario',
+        label='Optimistic HRH scale-up',
         color='b',
         zorder=2,
-        linewidth=3
-    )
-
-    # Plot the moderate scale-up scenario (purple)
-    ax.stairs(
-        values=to_plot['Moderate Scale-up (1%)'],
-        edges=step_dates, baseline=None,
-        label='Moderate Scale-up (1%) Scenario',
-        color='green',
-        zorder=3,
         linewidth=3
     )
 
@@ -235,7 +235,7 @@ for xlim in (datetime.date(2025, 1, 1), datetime.date(2035, 1, 1)):
 
     # Tight layout and show figure
     fig.tight_layout()
-    # fig.savefig('src/scripts/comparison_of_horizontal_and_vertical_programs/global_fund_analyses/changes_in_HRH.png')
+    fig.savefig('src/scripts/comparison_of_horizontal_and_vertical_programs/manuscript_analyses/changes_in_HRH.png')
     fig.show()
 
 
