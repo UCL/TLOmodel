@@ -1061,5 +1061,4 @@ def test_no_wasting_after_recent_recovery(tmpdir):
     polling.apply(sim.population)
 
     # Check properties of this individual: should still be well
-    person = df.loc[person_id]
-    assert person['un_clinical_acute_malnutrition'] == 'well'
+    assert df.loc[person_id]['un_clinical_acute_malnutrition'] == 'well'
