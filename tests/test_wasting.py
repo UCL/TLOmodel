@@ -833,10 +833,8 @@ def test_tx_recovery_before_nat_recovery_moderate_wasting_scheduled(tmpdir):
         # Start appropriate treatment
         if am_state_expected == 'MAM':
             wmodule.do_when_am_treatment(person_id, intervention='SFP')
-            tx_length = p['tx_length_weeks_SuppFeedingMAM']
         else: # complicated SAM
             wmodule.do_when_am_treatment(person_id, intervention='ITC')
-            tx_length = p['tx_length_weeks_InpatientSAM']
         assert df.at[person_id, 'un_am_tx_start_date'] == sim.date
 
         # Check full recovery with tx is scheduled before the natural recovery
