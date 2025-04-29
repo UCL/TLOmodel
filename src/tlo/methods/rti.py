@@ -18,6 +18,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -1111,7 +1112,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
 
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
+        dfd = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_RTI', files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries
@@ -3343,12 +3344,11 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
-        if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
-
-        elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+        if 'Tomography' in self.EXPECTED_APPT_FOOTPRINT:
             self.ACCEPTED_FACILITY_LEVEL = '3'
             self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
     def did_not_run(self, *args, **kwargs):
         pass
