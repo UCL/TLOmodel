@@ -1883,7 +1883,7 @@ def tabulate_roi_estimates(_monetary_value_of_incremental_health: pd.DataFrame,
 
             # For non-negative total_costs, calculate the metric and clip at 0
             non_negative_mask = total_costs >= 0
-            run_values[non_negative_mask] = (row[run] - total_costs[non_negative_mask]) / total_costs[non_negative_mask]
+            run_values[non_negative_mask] = (row[run] - total_costs[non_negative_mask]) / abs(total_costs[non_negative_mask])
 
             # Create a DataFrame with index as (draw_index, run) and columns as implementation costs
             run_values = run_values.values # remove index and convert to array
@@ -1996,7 +1996,7 @@ def extract_roi_at_specific_implementation_costs(_monetary_value_of_incremental_
     )
 
     # ROI at 0 implementation cost
-    roi = (_monetary_value_of_incremental_health - _incremental_input_cost).div(_incremental_input_cost)
+    roi = (_monetary_value_of_incremental_health - _incremental_input_cost).div(abs(_incremental_input_cost))
     roi_summary =  summarize_cost_data(roi, _metric = _metric)
 
     roi_df['ROI (assuming zero above service level costs)'] = (
@@ -2006,7 +2006,7 @@ def extract_roi_at_specific_implementation_costs(_monetary_value_of_incremental_
     )
 
     # ROI at non-zero implementation cost
-    roi_non_zero_implementation_cost = (_monetary_value_of_incremental_health - _incremental_input_cost * (1+_non_zero_implementation_cost_proportion)).div(_incremental_input_cost * (1+_non_zero_implementation_cost_proportion))
+    roi_non_zero_implementation_cost = (_monetary_value_of_incremental_health - _incremental_input_cost * (1+_non_zero_implementation_cost_proportion)).div(abs(_incremental_input_cost * (1+_non_zero_implementation_cost_proportion)))
     roi_non_zero_implementation_cost_summary =  summarize_cost_data(roi_non_zero_implementation_cost, _metric = _metric)
 
     roi_df['ROI (assuming non-zero above service level costs)'] = (

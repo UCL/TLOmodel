@@ -941,13 +941,12 @@ for rates in alternative_discount_rates:
 
     # Do ROI plots for different VSLY values
     i=0
-    vsly_fig_suffixes = ['MAIN', 'LOWER', 'UPPER']
-    for vsly in [chosen_value_of_statistical_life, chosen_value_of_statistical_life_lower,
-                     chosen_value_of_statistical_life_upper]:
+    vsly_fig_suffixes = ['LOWER', 'UPPER', 'MAIN']
+    for vsly in [chosen_value_of_statistical_life_lower, chosen_value_of_statistical_life_upper, chosen_value_of_statistical_life]:
         # ROI at 0 implementation costs
         benefit_at_0_implementation_cost = get_monetary_value_of_incremental_health(num_dalys_averted,
                                                                                     vsly) - incremental_scenario_cost
-        roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(incremental_scenario_cost)
+        roi_at_0_implementation_cost = benefit_at_0_implementation_cost.div(abs(incremental_scenario_cost))
         roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric=chosen_metric)
         roi_at_0_implementation_cost_dict = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
 
@@ -969,7 +968,7 @@ for rates in alternative_discount_rates:
                                                                                     vsly)
                                             - incremental_scenario_cost
                                             - implementation_cost_upper_limit)
-        roi_at_upper_limit_implementation_cost =  benefit_at_0_implementation_cost.div((incremental_scenario_cost + implementation_cost_upper_limit))
+        roi_at_upper_limit_implementation_cost =  benefit_at_0_implementation_cost.div(abs(incremental_scenario_cost + implementation_cost_upper_limit))
         roi_at_upper_limit_implementation_cost_dict = convert_results_to_dict(summarize_cost_data(roi_at_upper_limit_implementation_cost, _metric = chosen_metric))
         breakeven_implementation_cost_at_upper_limit_implementation_cost = (health_benefit_summarised[44][chosen_metric] -
                                          incremental_scenario_cost_summarised[44][chosen_metric] * (
@@ -1012,6 +1011,13 @@ for rates in alternative_discount_rates:
                            _draw_colors = draw_colors,
                            show_title_and_legend = legend_switch_for_main_roi_plot)
         i = i+ 1
+
+    print(f"Under an alternative assumption that the vertical approach incurs incremental above service level costs "
+          f"equal to 58% of its incremental service level cost (based on estimates from Opuni et al (2023)), "
+          f"the diagonal approach provided a higher ROI up to an even higher threshold of "
+          f"${(breakeven_implementation_cost_at_upper_limit_implementation_cost - implementation_cost_upper_limit_dict[36][chosen_metric]) /1e6: .2f} million "
+          f"incremental above service level costs in comparison with the vertical approach, or equal to "
+          f"{breakeven_implementation_cost_at_upper_limit_implementation_cost / incremental_scenario_cost_summarised[44][chosen_metric] * 100: .2f}% of its own incremental service level cost")
 
     # HIV scenarios with and without HSS
     draw_colors = {9: '#fdae61', 17:'#66c2a5'}
