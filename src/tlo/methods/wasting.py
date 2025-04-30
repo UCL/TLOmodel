@@ -1000,7 +1000,7 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
         if self.module.person_of_interest_born_bool:
-            print("INCIDENCE")
+            print(f"INCIDENCE on {self.sim.date=}")
         # Determine who will be onset with wasting among those who
         # currently do not have acute malnutrition, are not being treated, and did not recover in the last 14 days
         not_am_or_treated_or_recently_recovered =\
