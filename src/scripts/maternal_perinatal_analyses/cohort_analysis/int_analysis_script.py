@@ -102,7 +102,7 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'cohort_scenario_working'
+scenario = 'testing_scenario_2244959'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)
@@ -126,11 +126,7 @@ if not os.path.isdir(g_path):
 #                 'ectopic_pregnancy_treatment',
 #                 ]
 
-interventions =['amtsl',  'pph_treatment_uterotonics', 'blood_transfusion',
-                'antihypertensives',  'sepsis_treatment', 'birth_kit',
-                'post_abortion_care', 'ectopic_pregnancy_treatment', 'anti_htn_mgso4',
-                'caesarean_section_oth_surg', 'pph_treatment_mrrp'
-                ]
+interventions =['caesarean_section_oth_surg']
 
 
 int_analysis = ['baseline']
