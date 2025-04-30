@@ -8,6 +8,7 @@ schisto_scenarios-2025-03-22T130153Z
 from pathlib import Path
 import datetime
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import pandas as pd
 # import lacroix
 import matplotlib.colors as colors
@@ -120,8 +121,9 @@ def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs
     }, axis=1).T
 
 
-
-# %% EXTRACT DALYS ##############################################
+########################################################################################
+# %% EXTRACT DALYS
+########################################################################################
 
 
 def get_total_num_dalys(_df):
@@ -147,10 +149,10 @@ total_num_dalys = extract_results(
     do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
 
-num_dalys_compute_summary_statistics = \
+summary_total_num_dalys = \
 compute_summary_statistics(total_num_dalys, central_measure='median').loc[0].unstack().reindex(
     param_names)
-num_dalys_compute_summary_statistics.to_csv(results_folder / f'total_num_dalys_{target_period()}.csv')
+summary_total_num_dalys.to_csv(results_folder / f'summary_total_num_dalys_{target_period()}.csv')
 
 
 # DALYS all-cause
@@ -170,27 +172,29 @@ def num_dalys_by_cause(_df):
 # extract dalys by cause with mean and upper/lower intervals
 # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
 
-daly_summary = compute_summary_statistics(
-    extract_results(
+num_dalys_by_cause = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
         key="dalys_stacked",
         custom_generate_series=num_dalys_by_cause,
         do_scaling=True,
-    ),
+).pipe(set_param_names_as_column_index_level_0)
+
+summary_dalys_by_cause = compute_summary_statistics(num_dalys_by_cause,
     central_measure='median',
 )
 
-daly_summary = round_to_nearest_100(daly_summary)
-daly_summary = daly_summary.astype(int)
-daly_summary.to_csv(results_folder / (f'DALYs_by_cause {target_period()}.csv'))
+summary_dalys_by_cause = round_to_nearest_100(summary_dalys_by_cause)
+summary_dalys_by_cause = summary_dalys_by_cause.astype(int)
+summary_dalys_by_cause.to_csv(results_folder / (f'summary_dalys_by_cause {target_period()}.csv'))
 
 
-def get_total_num_dalys_by_label(_df):
+# todo li_wealth replaced by district_of_residence in DALY logger
+def get_num_dalys_by_defined_label(_df):
     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
     y = _df \
         .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
-        .drop(columns=['date', 'year', 'li_wealth']) \
+        .drop(columns=['date', 'year', 'district_of_residence']) \
         .sum(axis=0)
 
     # define course cause mapper for HIV, TB, MALARIA and OTHER
@@ -207,114 +211,181 @@ def get_total_num_dalys_by_label(_df):
     return y.groupby(by=causes_relabels).sum()[list(causes.values())]
 
 
-total_num_dalys_by_label = extract_results(
+num_dalys_by_defined_label = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
     key="dalys_by_wealth_stacked_by_age_and_time",
-    custom_generate_series=get_total_num_dalys_by_label,
+    custom_generate_series=get_num_dalys_by_defined_label,
     do_scaling=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-total_num_dalys_by_label_compute_summary_statistics = compute_summary_statistics(total_num_dalys_by_label, central_measure='median')
-total_num_dalys_by_label_compute_summary_statistics.to_csv(results_folder / f'total_num_dalys_by_label_{target_period()}.csv')
+summary_num_dalys_by_defined_label = compute_summary_statistics(num_dalys_by_defined_label, central_measure='median')
+summary_num_dalys_by_defined_label.to_csv(results_folder / f'summary_num_dalys_by_defined_label{target_period()}.csv')
 
 
-# total number of DALYs
-total_num_dalys_averted_vs_baseline = compute_summary_statistics(
+def num_dalys_by_district(_df):
+    """Return total number of DALYs (summed across all disease columns) by district within TARGET_PERIOD, as a Series."""
+    return (
+        _df
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])]
+        .drop(columns=['date', 'year'])
+        .groupby('district_of_residence')
+        .sum()
+        .sum(axis=1)  # sum across disease columns
+    )
+
+
+summary_dalys_by_district_unscaled = compute_summary_statistics(
+    extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_by_wealth_stacked_by_age_and_time",
+        custom_generate_series=num_dalys_by_district,
+        do_scaling=False,
+    ),
+    central_measure='median',
+)
+
+summary_dalys_by_district_unscaled = round_to_nearest_100(summary_dalys_by_district_unscaled)
+summary_dalys_by_district_unscaled = summary_dalys_by_district_unscaled.astype(int)
+summary_dalys_by_district_unscaled.to_csv(results_folder / (f'summary_dalys_by_district_unscaled {target_period()}.csv'))
+
+
+########################################################################################
+# %% EXTRACT DALYS AVERTED
+########################################################################################
+
+# total number of DALYs averted, summed across all causes and all districts
+
+total_dalys_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys,
-        comparison='No WASH, no MDA'
+        comparison='Continue WASH, no MDA'
     ),
     central_measure='median'
 )
-total_num_dalys_averted_vs_baseline.to_csv(results_folder / f'total_num_dalys_averted_vs_baseline{target_period()}.csv')
+total_dalys_averted_vs_baseline.to_csv(results_folder / f'total_dalys_averted_vs_baseline{target_period()}.csv')
 
-total_num_dalys_averted_vs_baseline_vs_WASH = compute_summary_statistics(
+total_dalys_averted_vs_scaleup_WASH = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys,
-        comparison='WASH only'
+        comparison='Scale-up WASH, no MDA'
     ),
     central_measure='median'
 )
-total_num_dalys_averted_vs_baseline_vs_WASH.to_csv(results_folder / f'total_num_dalys_averted_vs_baseline_vs_WASH{target_period()}.csv')
+total_dalys_averted_vs_scaleup_WASH.to_csv(results_folder / f'total_dalys_averted_vs_scaleup_WASH{target_period()}.csv')
 
-
-# NUMBERS OF DALYS BY CAUSE
-num_dalys_by_label_averted_vs_baseline = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_num_dalys_by_label,
-        comparison='No WASH, no MDA'
-    ),
-    central_measure='median'
-)
-num_dalys_by_label_averted_vs_baseline.to_csv(results_folder / f'num_dalys_by_label_averted_vs_baseline{target_period()}.csv')
-
-
-num_dalys_by_label_averted_vs_WASH = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_num_dalys_by_label,
-        comparison='WASH only'
-    ),
-    central_measure='median'
-)
-num_dalys_by_label_averted_vs_WASH.to_csv(results_folder / f'num_dalys_by_label_averted_vs_WASH{target_period()}.csv')
-
-
-# PERCENTAGE DALYS AVERTED - TOTAL
-pc_dalys_averted_total = 100.0 * compute_summary_statistics(
+total_dalys_averted_vs_pause_WASH = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys,
-        comparison='No WASH, no MDA',
+        comparison='Pause WASH, no MDA'
+    ),
+    central_measure='median'
+)
+total_dalys_averted_vs_pause_WASH.to_csv(results_folder / f'total_dalys_averted_vs_pause_WASH{target_period()}.csv')
+
+
+# percentage DALYs averted, summed across all causes and all districts
+pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys,
+        comparison='Continue WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
-pc_dalys_averted_total.to_csv(results_folder / f'pc_dalys_averted_total{target_period()}.csv')
+pc_dalys_averted_vs_baseline.to_csv(results_folder / f'pc_dalys_averted_vs_baseline{target_period()}.csv')
 
-pc_dalys_averted_WASH_total = 100.0 * compute_summary_statistics(
+pc_dalys_averted_vs_scaleup_WASH = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         total_num_dalys,
-        comparison='WASH only',
+        comparison='Scale-up WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
-pc_dalys_averted_WASH_total.to_csv(results_folder / f'pc_dalys_averted_WASH_total{target_period()}.csv')
+pc_dalys_averted_vs_scaleup_WASH.to_csv(results_folder / f'pc_dalys_averted_vs_scaleup_WASH{target_period()}.csv')
+
+pc_dalys_averted_vs_pause_WASH = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        total_num_dalys,
+        comparison='Pause WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+pc_dalys_averted_vs_pause_WASH.to_csv(results_folder / f'pc_dalys_averted_vs_pause_WASH{target_period()}.csv')
+
+
+
+# dalys averted by cause
+
+dalys_by_label_averted_vs_baseline = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        num_dalys_by_cause,
+        comparison='Continue WASH, no MDA'
+    ),
+    central_measure='median'
+)
+dalys_by_label_averted_vs_baseline.to_csv(results_folder / f'dalys_by_label_averted_vs_baseline{target_period()}.csv')
+
+
+dalys_by_label_averted_vs_scaleup_WASH = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        num_dalys_by_cause,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='median'
+)
+dalys_by_label_averted_vs_scaleup_WASH.to_csv(results_folder / f'dalys_by_label_averted_vs_scaleup_WASH{target_period()}.csv')
+
+
+dalys_by_label_averted_vs_pause_WASH = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        num_dalys_by_cause,
+        comparison='Pause WASH, no MDA'
+    ),
+    central_measure='median'
+)
+dalys_by_label_averted_vs_pause_WASH.to_csv(results_folder / f'dalys_by_label_averted_vs_pause_WASH{target_period()}.csv')
+
 
 # PERCENTAGE DALYS AVERTED BY CAUSE
-pc_dalys_averted = 100.0 * compute_summary_statistics(
+pc_dalys_by_label_averted_vs_baseline = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_num_dalys_by_label,
-        comparison='No WASH, no MDA',
+        num_dalys_by_cause,
+        comparison='Continue WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
-pc_dalys_averted.to_csv(results_folder / f'pc_dalys_averted{target_period()}.csv')
+pc_dalys_by_label_averted_vs_baseline.to_csv(results_folder / f'pc_dalys_by_label_averted_vs_baseline{target_period()}.csv')
 
-pc_dalys_averted_WASH = 100.0 * compute_summary_statistics(
+pc_dalys_by_label_averted_vs_scaleup_WASH = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_num_dalys_by_label,
-        comparison='WASH only',
+        num_dalys_by_cause,
+        comparison='Scale-up WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
-pc_dalys_averted_WASH.to_csv(results_folder / f'pc_dalys_averted_WASH{target_period()}.csv')
+pc_dalys_by_label_averted_vs_scaleup_WASH.to_csv(results_folder / f'pc_dalys_by_label_averted_vs_scaleup_WASH{target_period()}.csv')
 
 
-# %% PLOTS DALYS RELATIVE TO WASH ONLY
+pc_dalys_by_label_averted_vs_pause_WASH = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        num_dalys_by_cause,
+        comparison='Pause WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+pc_dalys_by_label_averted_vs_pause_WASH.to_csv(results_folder / f'pc_dalys_by_label_averted_vs_pause_WASH{target_period()}.csv')
 
-order_for_plotting = [
-    'No WASH, no MDA',
-    'MDA SAC with no WASH',
-    'MDA PSAC with no WASH',
-    'MDA All with no WASH',
-    'MDA SAC with WASH',
-    'MDA PSAC with WASH',
-    'MDA All with WASH'
-]
 
+#######################################################################################
+# %% PLOTS DALYS AVERTED
+#######################################################################################
 
 def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
     """
@@ -377,11 +448,21 @@ def plot_clustered_bars_with_error_bars(df: pd.DataFrame):
 
 
 # DALYs averted vs BASELINE
-pc_dalys_averted_WASH_ordered = pc_dalys_averted_WASH.reindex(columns=order_for_plotting, level=0)
-pc_dalys_averted_WASH_ordered = pc_dalys_averted_WASH_ordered.drop(index='Other')
+order_for_plotting_vs_baseline = [
+    'Continue WASH, MDA SAC',
+    'Continue WASH, MDA PSAC',
+    'Continue WASH, MDA All',
+        'Scale-up WASH, no MDA',
+    'Scale-up WASH, MDA SAC',
+    'Scale-up WASH, MDA PSAC',
+    'Scale-up WASH, MDA All',
+]
 
-name_of_plot = f'Percentage reduction in DALYs versus WASH only {target_period()}'
-fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_WASH_ordered)
+pc_dalys_averted_baseline_ordered = pc_dalys_by_label_averted_vs_baseline.reindex(columns=order_for_plotting_vs_baseline, level=0)
+pc_dalys_averted_baseline_ordered = pc_dalys_averted_baseline_ordered.drop(index='Other')
+
+name_of_plot = f'Percentage reduction in DALYs versus continued WASH improvements {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_baseline_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in DALYs')
 fig.tight_layout()
@@ -390,21 +471,21 @@ fig.show()
 plt.close(fig)
 
 
-# DALYs averted vs BASELINE
-order_for_plotting_vs_baseline = [
-    'MDA SAC with no WASH',
-    'MDA PSAC with no WASH',
-    'MDA All with no WASH',
-    'WASH only'
-    'MDA SAC with WASH',
-    'MDA PSAC with WASH',
-    'MDA All with WASH'
+# DALYs averted vs WASH scale-up
+order_for_plotting_vs_scaleup_WASH = [
+        'Continue WASH, no MDA',
+    'Continue WASH, MDA SAC',
+    'Continue WASH, MDA PSAC',
+    'Continue WASH, MDA All',
+    'Scale-up WASH, MDA SAC',
+    'Scale-up WASH, MDA PSAC',
+    'Scale-up WASH, MDA All',
 ]
-pc_dalys_averted_ordered = pc_dalys_averted.reindex(columns=order_for_plotting_vs_baseline, level=0)
-pc_dalys_averted__ordered = pc_dalys_averted_ordered.drop(index='Other')
+pc_dalys_by_label_averted_vs_scaleup_WASH_ordered = pc_dalys_by_label_averted_vs_scaleup_WASH.reindex(columns=order_for_plotting_vs_scaleup_WASH, level=0)
+pc_dalys_by_label_averted_vs_scaleup_WASH_ordered = pc_dalys_by_label_averted_vs_scaleup_WASH_ordered.drop(index='Other')
 
-name_of_plot = f'Percentage reduction in DALYs versus Baseline {target_period()}'
-fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_averted_ordered)
+name_of_plot = f'Percentage reduction in DALYs versus scale-up WASH {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(pc_dalys_by_label_averted_vs_scaleup_WASH_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in DALYs')
 fig.tight_layout()
@@ -436,27 +517,10 @@ diarrhoea = extract_results(
 diarrhoea.to_csv(results_folder / (f'diarrhoea_incidence {target_period()}.csv'))
 
 
-diarrhoea_averted_vs_WASH = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        diarrhoea,
-        comparison='WASH only'
-    ),
-    central_measure='median'
-)
-
-diarrhoea_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        diarrhoea,
-        comparison='WASH only',
-        scaled=True
-    ),
-    central_measure='median'
-)
-
 diarrhoea_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         diarrhoea,
-        comparison='No WASH, no MDA'
+        comparison='Continue WASH, no MDA'
     ),
     central_measure='median'
 )
@@ -464,11 +528,30 @@ diarrhoea_averted_vs_baseline = compute_summary_statistics(
 diarrhoea_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         diarrhoea,
-        comparison='No WASH, no MDA',
+        comparison='Continue WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
+
+diarrhoea_averted_vs_scaleup_WASH = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        diarrhoea,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='median'
+)
+
+diarrhoea_pc_dalys_averted_vs_scaleup_WASH = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        diarrhoea,
+        comparison='Scale-up WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+
+
 
 # ALRI
 alri = extract_results(
@@ -485,27 +568,10 @@ alri = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 alri.to_csv(results_folder / (f'alri_incidence {target_period()}.csv'))
 
-alri_averted_vs_WASH = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        alri,
-        comparison='WASH only'
-    ),
-    central_measure='median'
-)
-
-alri_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        alri,
-        comparison='WASH only',
-        scaled=True
-    ),
-    central_measure='median'
-)
-
 alri_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         alri,
-        comparison='No WASH, no MDA'
+        comparison='Continue WASH, no MDA'
     ),
     central_measure='median'
 )
@@ -513,11 +579,30 @@ alri_averted_vs_baseline = compute_summary_statistics(
 alri_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         alri,
-        comparison='No WASH, no MDA',
+        comparison='Continue WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
+
+alri_averted_vs_scaleup_WASH = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        alri,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='median'
+)
+
+alri_pc_dalys_averted_vs_scaleup_WASH = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        alri,
+        comparison='Scale-up WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+
+
 
 # HIV
 hiv = extract_results(
@@ -534,28 +619,10 @@ hiv = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 hiv.to_csv(results_folder / (f'hiv_incidence {target_period()}.csv'))
 
-
-hiv_averted_vs_WASH = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        hiv,
-        comparison='WASH only'
-    ),
-    central_measure='median'
-)
-
-hiv_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        hiv,
-        comparison='WASH only',
-        scaled=True
-    ),
-    central_measure='median'
-)
-
 hiv_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         hiv,
-        comparison='No WASH, no MDA'
+        comparison='Continue WASH, no MDA'
     ),
     central_measure='median'
 )
@@ -563,11 +630,30 @@ hiv_averted_vs_baseline = compute_summary_statistics(
 hiv_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         hiv,
-        comparison='No WASH, no MDA',
+        comparison='Continue WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
+
+hiv_averted_vs_scaleup_WASH = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        hiv,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='median'
+)
+
+hiv_pc_dalys_averted_vs_scaleup_WASH = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        hiv,
+        comparison='Scale-up WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
+
+
 
 # bladder cancer
 bladder = extract_results(
@@ -584,27 +670,11 @@ bladder = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 bladder.to_csv(results_folder / (f'bladder_incidence {target_period()}.csv'))
 
-bladder_averted_vs_WASH = compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        bladder,
-        comparison='WASH only'
-    ),
-    central_measure='median'
-)
-
-bladder_pc_dalys_averted_vs_WASH = 100.0 * compute_summary_statistics(
-    -1.0 * find_difference_relative_to_comparison_dataframe(
-        bladder,
-        comparison='WASH only',
-        scaled=True
-    ),
-    central_measure='median'
-)
 
 bladder_averted_vs_baseline = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         bladder,
-        comparison='No WASH, no MDA'
+        comparison='Continue WASH, no MDA'
     ),
     central_measure='median'
 )
@@ -612,43 +682,36 @@ bladder_averted_vs_baseline = compute_summary_statistics(
 bladder_pc_dalys_averted_vs_baseline = 100.0 * compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         bladder,
-        comparison='No WASH, no MDA',
+        comparison='Continue WASH, no MDA',
         scaled=True
     ),
     central_measure='median'
 )
 
 
-# %% plot incidence of diseases with each MDR strategy vs WASH
+bladder_averted_vs_scaleup_WASH = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        bladder,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='median'
+)
 
-# combine the dataframes for plotting
-schisto_row = (pc_dalys_averted_WASH.loc['Schisto'])
-combined_df = pd.concat([schisto_row.to_frame().T,
-                         diarrhoea_pc_dalys_averted_vs_WASH,
-                         alri_pc_dalys_averted_vs_WASH,
-                         hiv_pc_dalys_averted_vs_WASH,
-                         bladder_pc_dalys_averted_vs_WASH], ignore_index=True)
-combined_df.index = ['Schistosomiasis', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer']
-combined_df.to_csv(results_folder / (f'percentage_dalys_averted_vs_WASH_{target_period()}.csv'))
-
-combined_df_ordered = combined_df.reindex(columns=order_for_plotting, level=0)
-
-
-name_of_plot = f'Percentage reduction in incidence versus WASH {target_period()}'
-fig, ax = plot_clustered_bars_with_error_bars(combined_df_ordered)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Percentage reduction in incidence')
-fig.tight_layout()
-fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-fig.show()
-plt.close(fig)
+bladder_pc_dalys_averted_vs_scaleup_WASH = 100.0 * compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        bladder,
+        comparison='Scale-up WASH, no MDA',
+        scaled=True
+    ),
+    central_measure='median'
+)
 
 
 # %% plot incidence of diseases with each MDR strategy vs Baseline
 
 
 # combine the dataframes for plotting
-schisto_row = (pc_dalys_averted.loc['Schisto'])
+schisto_row = (pc_dalys_by_label_averted_vs_baseline.loc['Schistosomiasis'])
 combined_df = pd.concat([schisto_row.to_frame().T,
                          diarrhoea_pc_dalys_averted_vs_baseline,
                          alri_pc_dalys_averted_vs_baseline,
@@ -657,10 +720,10 @@ combined_df = pd.concat([schisto_row.to_frame().T,
 combined_df.index = ['Schistosomiasis', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer']
 combined_df.to_csv(results_folder / (f'percentage_dalys_averted_vs_baseline_{target_period()}.csv'))
 
-combined_df_ordered = combined_df.reindex(columns=order_for_plotting, level=0)
+combined_df_ordered = combined_df.reindex(columns=order_for_plotting_vs_baseline, level=0)
 
 
-name_of_plot = f'Percentage reduction in incidence versus Baseline {target_period()}'
+name_of_plot = f'Percentage reduction in incidence versus continued WASH improvements {target_period()}'
 fig, ax = plot_clustered_bars_with_error_bars(combined_df_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in incidence')
@@ -670,9 +733,36 @@ fig.show()
 plt.close(fig)
 
 
-# %%  -----------------------------------------------------------------------------
 
-# PERSON-YEARS INFECTED
+# %% plot incidence of diseases with each MDR strategy vs WASH
+
+# combine the dataframes for plotting
+schisto_row = (pc_dalys_by_label_averted_vs_scaleup_WASH.loc['Schistosomiasis'])
+combined_df = pd.concat([schisto_row.to_frame().T,
+                         diarrhoea_pc_dalys_averted_vs_scaleup_WASH,
+                         alri_pc_dalys_averted_vs_scaleup_WASH,
+                         hiv_pc_dalys_averted_vs_scaleup_WASH,
+                         bladder_pc_dalys_averted_vs_scaleup_WASH], ignore_index=True)
+combined_df.index = ['Schistosomiasis', 'Diarrhoea', 'ALRI', 'HIV', 'Bladder cancer']
+combined_df.to_csv(results_folder / (f'percentage_dalys_averted_vs_scaleup_WASH_{target_period()}.csv'))
+
+combined_df_ordered = combined_df.reindex(columns=order_for_plotting_vs_scaleup_WASH, level=0)
+
+
+name_of_plot = f'Percentage reduction in incidence versus WASH scale-up {target_period()}'
+fig, ax = plot_clustered_bars_with_error_bars(combined_df_ordered)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Percentage reduction in incidence')
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
+
+
+##################################################################################
+# %%  PERSON-YEARS INFECTED
+##################################################################################
+
 # stacked bar plot for each scenario
 # not separate for mansoni and haematobium
 
@@ -695,6 +785,8 @@ def get_person_years_infected(_df):
         df_filtered = df.filter(regex='(High-infection|Moderate-infection|Low-infection)')
     if inf == 'HM':
         df_filtered = df.filter(regex='(Moderate-infection|High-infection)')
+    if inf == 'H':
+        df_filtered = df.filter(regex='(High-infection)')
     if inf == 'ML':
         df_filtered = df.filter(regex='(Moderate-infection|Low-infection)')
     if inf == 'M':
@@ -712,8 +804,8 @@ ages = ['PSAC', 'SAC', 'Adults']
 inf = 'HML'  # 'HML' or any combination
 
 # Initialise empty lists to hold the results for each age group
-num_py_averted_vs_WASH_results = []
-pc_py_averted_vs_WASH_results = []
+num_py_averted_vs_scaleup_WASH_results = []
+pc_py_averted_vs_scaleup_WASH_results = []
 
 for age in ages:
     person_years = extract_results(
@@ -729,7 +821,7 @@ for age in ages:
     num_py_averted_vs_WASH = compute_summary_statistics(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             person_years,
-            comparison='WASH only'
+            comparison='Scale-up WASH, no MDA'
         ),
         central_measure='median'
     )
@@ -737,25 +829,25 @@ for age in ages:
     pc_py_averted_vs_WASH = 100.0 * compute_summary_statistics(
         -1.0 * find_difference_relative_to_comparison_dataframe(
             person_years,
-            comparison='WASH only',
+            comparison='Scale-up WASH, no MDA',
             scaled=True
         ),
         central_measure='median'
     )
 
     # Append the results to the corresponding lists
-    num_py_averted_vs_WASH_results.append(num_py_averted_vs_WASH)
-    pc_py_averted_vs_WASH_results.append(pc_py_averted_vs_WASH)
+    num_py_averted_vs_scaleup_WASH_results.append(num_py_averted_vs_WASH)
+    pc_py_averted_vs_scaleup_WASH_results.append(pc_py_averted_vs_WASH)
 
 # Combine results into two DataFrames, with age groups as a single-level row index
-num_py_averted_vs_WASH_results = pd.concat(num_py_averted_vs_WASH_results, keys=ages, axis=0)
-pc_py_averted_vs_WASH_results = pd.concat(pc_py_averted_vs_WASH_results, keys=ages, axis=0)
+num_py_averted_vs_scaleup_WASH_results = pd.concat(num_py_averted_vs_scaleup_WASH_results, keys=ages, axis=0)
+pc_py_averted_vs_scaleup_WASH_results = pd.concat(pc_py_averted_vs_scaleup_WASH_results, keys=ages, axis=0)
 
-num_py_averted_vs_WASH_results.index = num_py_averted_vs_WASH_results.index.get_level_values(0)
-pc_py_averted_vs_WASH_results.index = pc_py_averted_vs_WASH_results.index.get_level_values(0)
+num_py_averted_vs_scaleup_WASH_results.index = num_py_averted_vs_scaleup_WASH_results.index.get_level_values(0)
+pc_py_averted_vs_scaleup_WASH_results.index = pc_py_averted_vs_scaleup_WASH_results.index.get_level_values(0)
 
-num_py_averted_vs_WASH_results.to_csv(results_folder / (f'num_py_averted_vs_WASH_results {target_period()}.csv'))
-pc_py_averted_vs_WASH_results.to_csv(results_folder / (f'pc_py_averted_vs_WASH_results {target_period()}.csv'))
+num_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'num_py_averted_vs_scaleup_WASH_results {target_period()}.csv'))
+pc_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'pc_py_averted_vs_scaleup_WASH_results {target_period()}.csv'))
 
 
 def plot_averted_points_with_errorbars(_df):
@@ -812,20 +904,22 @@ def plot_averted_points_with_errorbars(_df):
     return fig, ax
 
 
-pc_py_averted_vs_WASH_results_ordered = pc_py_averted_vs_WASH_results.reindex(columns=order_for_plotting, level=0)
+pc_py_averted_vs_WASH_results_ordered = pc_py_averted_vs_scaleup_WASH_results.reindex(columns=order_for_plotting_vs_scaleup_WASH, level=0)
 
-name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs WASH {target_period()}'
+name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs WASH scale-up {target_period()}'
 fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_WASH_results_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in Person-Years Infected')
-ax.set_ylim(-100, 100)
+ax.set_ylim(-40, 40)
 fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
 fig.show()
 plt.close(fig)
 
 
-# %% PREVALENCE OF INFECTION BY SPECIES / AGE-GROUP
+##################################################################################
+# %%  PREVALENCE OF INFECTION BY SPECIES / AGE-GROUP
+##################################################################################
 
 def get_prevalence_infection(_df):
     """Get the prevalence every year of the simulation """
@@ -870,106 +964,221 @@ def get_prevalence_infection(_df):
 
 
 age = 'All'  # SAC, Adult, all, infant, PSAC
-inf = 'H'
-prev = extract_results(
+inf = 'HML'
+
+prev_haem_HML_All = extract_results(
     results_folder,
     module="tlo.methods.schisto",
     key="infection_status_haematobium",
     custom_generate_series=get_prevalence_infection,
     do_scaling=False,
-)
-prev.index = prev.index.year
-prev.to_csv(results_folder / (f'prevalence_H_ALL_haematobium {target_period()}.csv'))
+).pipe(set_param_names_as_column_index_level_0)
+prev_haem_HML_All.index = prev_haem_HML_All.index.year
+prev_haem_HML_All.to_csv(results_folder / (f'prev_haem_HML_All {target_period()}.csv'))
 
 
-prevM = extract_results(
+prev_mansoni_HML_All = extract_results(
     results_folder,
     module="tlo.methods.schisto",
     key="infection_status_mansoni",
     custom_generate_series=get_prevalence_infection,
     do_scaling=False,
-)
-prevM.index = prevM.index.year
-prevM.to_csv(results_folder / (f'prevalence_H_ALL_mansoni {target_period()}.csv'))
+).pipe(set_param_names_as_column_index_level_0)
+prev_mansoni_HML_All.index = prev_mansoni_HML_All.index.year
+prev_mansoni_HML_All.to_csv(results_folder / (f'prev_mansoni_HML_All {target_period()}.csv'))
 
 
+age = 'All'  # SAC, Adult, all, infant, PSAC
+inf = 'H'
 
-# %% PREVALENCE OF INFECTION OVERALL (BOTH SPECIES) BY DISTRICT
-
-number_infected = extract_results(
+prev_haem_H_All = extract_results(
     results_folder,
     module="tlo.methods.schisto",
-    key="number_infected_any_species",
-    column="number_infected",
+    key="infection_status_haematobium",
+    custom_generate_series=get_prevalence_infection,
     do_scaling=False,
-)
+).pipe(set_param_names_as_column_index_level_0)
+prev_haem_H_All.index = prev_haem_H_All.index.year
+prev_haem_H_All.to_csv(results_folder / (f'prev_haem_H_All {target_period()}.csv'))
 
-number_in_district = extract_results(
+
+prev_mansoni_H_All = extract_results(
     results_folder,
     module="tlo.methods.schisto",
-    key="number_in_subgroup",
-    column="number_alive",
+    key="infection_status_mansoni",
+    custom_generate_series=get_prevalence_infection,
     do_scaling=False,
-)
+).pipe(set_param_names_as_column_index_level_0)
+
+prev_mansoni_H_All.index = prev_mansoni_H_All.index.year
+prev_mansoni_H_All.to_csv(results_folder / (f'prev_mansoni_H_All {target_period()}.csv'))
 
 
-def get_numbers_infected_any_species(_df):
-    """Return a DataFrame with one row per year, columns as multi-index (draw, run, district),
-    and values as the sum of counts across all age groups for each district in each draw/run for each year."""
+summary_prev_mansoni_H_All = compute_summary_statistics(prev_mansoni_H_All, central_measure='median')
+summary_prev_mansoni_H_All.to_csv(results_folder / (f'summary_prev_mansoni_H_All {target_period()}.csv'))
 
-    records = []
-
-    # Iterate through the rows (each year)
-    for year, row in _df.iterrows():
-        for (draw, run), entry in row.items():
-            if not entry:  # Skip if the entry is empty
-                continue
-            if isinstance(entry, dict):  # Ensure the entry is a dictionary
-                for composite_key, value in entry.items():
-                    split_keys = dict(kv.split("=") for kv in composite_key.split("|"))
-                    district = split_keys.get("district_of_residence")
-                    if district:  # Ensure district is available
-                        records.append({
-                            "year": year,
-                            "draw": draw,
-                            "run": run,
-                            "district": district,
-                            "count": value
-                        })
-
-    # Convert the flattened records into a DataFrame
-    long_df = pd.DataFrame(records)
-
-    # Group by (year, draw, run, district) and sum the counts
-    grouped = (
-        long_df
-        .groupby(["year", "draw", "run", "district"])["count"]
-        .sum()
-        .rename("summed_value")
-        .to_frame()
-    )
-
-    # Reshape the data so that we have multi-index columns (draw, run, district)
-    result = (
-        grouped
-        .unstack(["draw", "run", "district"])  # Unstack to create the multi-index columns
-        .droplevel(0, axis=1)  # Drop the 'number_infected' level
-    )
-
-    return result
+summary_prev_haem_H_All = compute_summary_statistics(prev_haem_H_All, central_measure='median')
+summary_prev_haem_H_All.to_csv(results_folder / (f'summary_prev_haem_H_All {target_period()}.csv'))
 
 
-total_number_infected = get_numbers_infected_any_species(number_infected)
-total_number_in_district = get_numbers_infected_any_species(number_in_district)
 
-if total_number_infected.columns.equals(total_number_in_district.columns):
-    # Perform element-wise division for matching columns
-    result = total_number_infected / total_number_in_district
+####################################################################################
+# %%  PLOT PREVALENCE OF INFECTION BY SPECIES OVER TIME - INDIVIDUAL RUNS
+####################################################################################
 
-result.to_csv(results_folder / (f'prevalence_any_infection_all_ages_district{target_period()}.csv'))
 
-# summarise the prevalence for each district by draw
-median_by_draw_district = result.groupby(level=['draw', 'district'], axis=1).median()
-median_by_draw_district.to_csv(results_folder / (f'median_prevalence_any_infection_all_ages_district{target_period()}.csv'))
+def plot_lines_by_draw(df: pd.DataFrame, title):
+    """
+    Plot lines by (draw, run), grouped by draw colour. Excludes draws starting with 'Pause' except 'Pause WASH, no MDA'.
+    """
+
+    # Exclude year 2010
+    df = df[df.index != 2010]
+    # df = df[df.index >= 2024]
+
+    # Desired draw order for legend
+    ordered_draws = [
+        'Pause WASH, no MDA',
+        'Continue WASH, no MDA',
+        'Continue WASH, MDA SAC',
+        'Continue WASH, MDA PSAC',
+        'Continue WASH, MDA All',
+        'Scale-up WASH, no MDA',
+        'Scale-up WASH, MDA SAC',
+        'Scale-up WASH, MDA PSAC',
+        'Scale-up WASH, MDA All'
+    ]
+
+    # Filter columns: exclude draws starting with "Pause" unless exact match
+    filtered_cols = [col for col in df.columns
+                     if (col[0] in ordered_draws)]
+
+    df = df[filtered_cols]
+
+    # Assign colours using a striking colormap
+    colours = plt.colormaps['tab10'](np.linspace(0, 1, len(ordered_draws)))
+    colour_map = dict(zip(ordered_draws, colours))
+
+    # Set up plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Plot each (draw, run) line with colour by draw
+    for (draw, run) in df.columns:
+        ax.plot(df.index, df[(draw, run)],
+                label=f"{draw} - {run}",
+                color=colour_map[draw],
+                alpha=0.8)
+
+    # One legend entry per draw, in the specified order
+    custom_lines = [Line2D([0], [0], color=colour_map[draw], lw=1) for draw in ordered_draws if draw in colour_map]
+    ax.legend(custom_lines, [draw for draw in ordered_draws if draw in colour_map],
+              title="", loc='upper right', frameon=True)
+
+    # Axis labelling
+    ax.set_xlabel("")
+    ax.set_ylabel("Prevalence")
+    ax.set_title(title)
+
+    # Layout
+    fig.tight_layout()
+
+    return fig, ax
+
+
+name_of_plot = f'Prevalence of high-intensity infections (mansoni), all ages {target_period()}'
+fig, ax = plot_lines_by_draw(prev_mansoni_H_All, title=name_of_plot)
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+plt.show()
+
+name_of_plot = f'Prevalence of high-intensity infections (haematobium), all ages {target_period()}'
+fig, ax = plot_lines_by_draw(prev_haem_H_All, title=name_of_plot)
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+plt.show()
+
+
+
+
+####################################################################################
+# %%  PLOT PREVALENCE OF INFECTION BY SPECIES OVER TIME - SUMMARY BANDS
+####################################################################################
+
+
+def plot_draws_with_ci(df: pd.DataFrame, title: str):
+    """
+    Plot median lines with shaded confidence intervals by draw.
+    Excludes draws starting with 'Pause' except 'Pause WASH, no MDA'.
+
+    Parameters:
+    df (pd.DataFrame): DataFrame with index = year, columns = MultiIndex (draw, stat)
+
+    """
+
+    # Exclude year 2010
+    df = df[df.index != 2010]
+
+    # Desired draw order for legend and colour assignment
+    ordered_draws = [
+        'Pause WASH, no MDA',
+        'Continue WASH, no MDA',
+        'Continue WASH, MDA SAC',
+        'Continue WASH, MDA PSAC',
+        'Continue WASH, MDA All',
+        'Scale-up WASH, no MDA',
+        'Scale-up WASH, MDA SAC',
+        'Scale-up WASH, MDA PSAC',
+        'Scale-up WASH, MDA All'
+    ]
+
+    # Filter draws to include only those in the specified order
+    filtered_draws = [draw for draw in df.columns.levels[0] if draw in ordered_draws]
+    df = df.loc[:, df.columns.get_level_values(0).isin(filtered_draws)]
+
+    # Assign colours
+    colours = plt.colormaps['tab10'](np.linspace(0, 1, len(ordered_draws)))
+    colour_map = dict(zip(ordered_draws, colours))
+
+    # Set up plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Plot median and CI for each draw
+    for draw in ordered_draws:
+        if draw in df.columns.get_level_values(0):
+            median = df[(draw, 'central')]
+            lower = df[(draw, 'lower')]
+            upper = df[(draw, 'upper')]
+
+            ax.plot(df.index, median, label=draw, color=colour_map[draw], lw=1)
+            ax.fill_between(df.index, lower, upper, color=colour_map[draw], alpha=0.3)
+
+    # Custom legend
+    custom_lines = [Line2D([0], [0], color=colour_map[draw], lw=1) for draw in ordered_draws if draw in colour_map]
+    ax.legend(custom_lines, [draw for draw in ordered_draws if draw in colour_map],
+              loc='upper right', frameon=True)
+
+    # Axis labelling
+    ax.set_xlabel("")
+    ax.set_ylabel("Prevalence")
+    ax.set_title(title)
+
+    fig.tight_layout()
+    return fig, ax
+
+
+name_of_plot = f'Summary prevalence of high-intensity infections (mansoni), all ages {target_period()}'
+fig, ax = plot_draws_with_ci(summary_prev_mansoni_H_All, title=name_of_plot)
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+plt.show()
+
+
+
+name_of_plot = f'Summary prevalence of high-intensity infections (haematobium), all ages {target_period()}'
+fig, ax = plot_draws_with_ci(summary_prev_haem_H_All, title=name_of_plot)
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+plt.show()
+
+
+
+
+
 
 

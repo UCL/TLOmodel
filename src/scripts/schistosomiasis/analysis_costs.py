@@ -316,6 +316,36 @@ def calculate_npv_and_cost_per_daly(
 
     return results
 
+
+def compute_discounted_nhb(df, discount_rate=0.03, threshold=150):
+    """
+    Compute discounted Net Health Benefit (NHB) from DALYs and costs.
+
+    Parameters:
+    - df: pd.DataFrame with columns ['scenario', 'year', 'dalys', 'cost']
+    - discount_rate: annual discount rate (default 3%)
+    - threshold: cost-effectiveness threshold per DALY averted (e.g. 150 USD)
+
+    Returns:
+    - pd.DataFrame with NHB for each scenario
+    """
+
+    df = df.copy()
+    df['discount_factor'] = 1 / ((1 + discount_rate) ** df['year'])
+    df['discounted_dalys'] = df['dalys'] * df['discount_factor']
+    df['discounted_cost'] = df['cost'] * df['discount_factor']
+
+    # Calculate NHB per scenario
+    results = (
+        df.groupby('scenario')
+          .agg(total_dalys=('discounted_dalys', 'sum'),
+               total_cost=('discounted_cost', 'sum'))
+          .assign(nhb=lambda d: -d['total_dalys'] - d['total_cost'] / threshold)
+    )
+
+    return results
+
+
 # ==============================================================================
 # %% ✅ PLOT FUNCTIONS
 # ==============================================================================
@@ -483,6 +513,9 @@ npv_results = calculate_npv_and_cost_per_daly(
 )
 
 npv_results.to_csv(results_folder / f'npv_results{target_period()}.csv')
+
+
+
 
 # ==============================================================================
 # 📊 GENERATE FIGURES
