@@ -37,8 +37,8 @@ def runsim(seed=0):
     # add file handler for the purpose of logging
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2010, 12, 31)
-    popsize = 500
+    end_date = Date(2020, 12, 31)
+    popsize = 50000
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
 
@@ -67,19 +67,18 @@ output = parse_log_file(sim.log_filepath)
 
 # Plot snapshot of % diagnosed and % on medication
 
-medication_df = pd.DataFrame(index=['medication_prev'])
 condition = 'chronic_kidney_disease'
+medication_df = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_medication_prevalence']
 
-medication = output['tlo.methods.cardio_metabolic_disorders'][f'{condition}_medication_prevalence']
-medication_df[f'{condition}'] = medication[f'{condition}_medication_prevalence'].iloc[-1]
-medication_df = medication_df.transpose()
-bar = plt.bar(medication_df.index, medication_df['medication_prev'],
-              alpha=0.25,
-              color='b',
-              label='Model')
-plt.xticks(rotation=90)
-plt.ylabel('Proportion Diagnosed with Condition')
-plt.title('Proportion Diagnosed with CMD Conditions in 2019')
+# Plot prevalence of medication prevalence over time
+
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.plot(medication_df['date'], medication_df[f'{condition}_medication_prevalence'], marker='o', linestyle='-')
+plt.title('CKD: Medication Prevalence Level 1b')
+plt.xlabel('Date')
+plt.ylabel('Medication Prevalence (% of diagnosed)')
+plt.grid(True)
 plt.tight_layout()
-plt.savefig(outputpath / 'medication_by_condition.pdf')
 plt.show()
+
