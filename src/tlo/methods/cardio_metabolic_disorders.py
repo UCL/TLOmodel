@@ -1598,6 +1598,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         if condition == 'chronic_kidney_disease':
             self.ACCEPTED_FACILITY_LEVEL = '3'
+            # self.ACCEPTED_FACILITY_LEVEL = '1b'
         else:
             self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.condition = condition
