@@ -145,7 +145,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         logger.debug(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
 
-        for p in [params['serv_int_screening'], params['serv_int_chronic'], params['serv_int_mch']]:
+        for p in [params['serv_int_screening'], params['serv_int_mch']]:
             if p:
                 assert all(item in self.module.accepted_conditions for item in p)
 
