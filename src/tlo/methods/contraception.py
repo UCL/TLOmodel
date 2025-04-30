@@ -1320,7 +1320,7 @@ class StartInterventions(Event, PopulationScopeEventMixin):
         # Update module parameters to enable interventions
         if 'fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening']:
             after_birth = False
-        if 'fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_chronic']:
+        if self.sim.modules['ServiceIntegration'].parameters['serv_int_chronic']:
             initiation = False
 
         self.module.processed_params = self.module.update_params_for_interventions(initiation=initiation,

@@ -143,7 +143,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         params = self.module.parameters
 
-        logger.debug(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
+        logger.info(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
 
         for p in [params['serv_int_screening'], params['serv_int_mch']]:
             if p:
@@ -153,10 +153,10 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         # TODO: check correct service names provided
 
         if not params['serv_int_screening'] and not params['serv_int_chronic'] and not params['serv_int_mch']:
-            logger.debug(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
+            logger.info(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
             return
 
-        # SCREENING
+        # ---------------------------------------------- SCREENING ----------------------------------------------------
         if 'htn' in params['serv_int_screening']:
             # Annual community screening in over 50s increased to 100%
             self.sim.modules['CardioMetabolicDisorders'].parameters['hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
@@ -178,16 +178,17 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         if 'mal' in params['serv_int_screening']:
             self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
+        # Todo: HIV and Tb screening
         if 'hiv' in params['serv_int_screening']:
             pass
         if 'tb' in params['serv_int_screening']:
             pass
 
-        # Maternal and child health clinic
+        # ------------------------------------ MATERNAL AND CHILD HEALTH CLINIC ---------------------------------------
         if 'pnc' in params['serv_int_mch']:
             #
-            self.sim.modules['Labour'].parameters['alternative_pnc_coverage'] = True
-            self.sim.modules['Labour'].parameters['pnc_availability_odds'] = 15.0
+            self.sim.modules['Labour'].current_parameters['alternative_pnc_coverage'] = True
+            self.sim.modules['Labour'].current_parameters['pnc_availability_odds'] = 15.0
             self.sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self.sim.modules['Labour']), Date(self.sim.date))
 
         if 'fp' in params['serv_int_mch']:
@@ -199,10 +200,19 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         if 'mal' in params['serv_int_mch']:
             self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
+        # Todo: EPI intervention
         if 'epi' in params['serv_int_mch']:
             pass
 
-        # Chronic care clinic
+        # ------------------------------------- CHRONIC CARE CLINIC ---------------------------------------------------
+        if params['serv_int_chronic']:
+            self.sim.modules['Hiv'].parameters['virally_suppressed_on_art'] = 1.0
+            self.sim.modules['Tb'].parameters['tb_prob_tx_success_ds'] = 0.9
+            self.sim.modules['Tb'].parameters['tb_prob_tx_success_mdr'] = 0.9
+            self.sim.modules['Tb'].parameters['tb_prob_tx_success_0_4'] = 0.9
+            self.sim.modules['Tb'].parameters['tb_prob_tx_success_5_14'] = 0.9
+            self.sim.modules['Epilepsy'].parameters['prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt'] = 1.0
+            self.sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] = 1.0
 
 
 
