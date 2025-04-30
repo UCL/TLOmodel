@@ -174,8 +174,7 @@ def convert_output(output_path):
     return output_path
 
 
-# ----------------------------------------------- CREATE PREVALENCE PLOTS ----------------------------------------------
-
+# ----------------------------------------------- CREATE PREVALENCE PLOTS --------------------------------------------
 for condition in conditions:
     # Capitalize and replace underscores with spaces for title
     condition_title = condition.replace("_", " ")
