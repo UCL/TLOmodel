@@ -398,10 +398,18 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             # Men & women without condition
             men_wo_cond = men & ~df[f'nc_{condition}']
             women_wo_cond = women & ~df[f'nc_{condition}']
-            for _age_range in self.age_cats:
-                # Select all eligible individuals (men & women w/o condition and in age range)
-                sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
-                sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
+
+            if condition == 'chronic_kidney_disease':
+                for _age_range in self.age_cats:
+                    # p[f'm_{_age_range}'] = 0.5
+                    # p[f'f_{_age_range}'] = 0.5
+                    sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
+                    sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
+            else:
+                for _age_range in self.age_cats:
+                    # Select all eligible individuals (men & women w/o condition and in age range)
+                    sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
+                    sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
 
             # ----- Set variables to false / NaT for everyone
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
