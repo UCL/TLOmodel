@@ -1,6 +1,7 @@
 import os
 import pathlib
 from io import StringIO
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -45,11 +46,36 @@ def test_dict():
     assert len(s[1]) == 0
     assert dict() == s[1] == s[2]
 
-def test_parameter_label():
+def test_parameter_label(tmpdir):
     """ test assignment of parameter labels follow accepted label values
     (["unassigned", "free", "constant", "context_specific"])
 
     """
+    dummy_data = pd.DataFrame(data={'parameter_name':['prob_inf', 'prob_death', 'rr_inf', 'rr_death'],
+                                    'value':[0.3, 0.02, 0.8, 0.9], 'label':['free', 'constant',
+                                                                            'context_specific', 'free'],
+                                    'lower':[0.002, 0.002, 0.001, 0.003], 'upper':[0.98, 0.8, 0.6, 0.7]})
+
+    # export to csv file and save in temporally directory
+    dummy_data.to_csv(tmpdir / 'dummy_data.csv')
+
+    class DummyModule(Module):
+        PARAMETERS = {
+            'prob_inf': Parameter(Types.REAL, description='Infection probability'),
+            'prob_death': Parameter(Types.REAL, description='Probability of dying from this disease'),
+            'rr_inf': Parameter(Types.REAL, description='relative rate of infection'),
+            'rr_death': Parameter(Types.REAL, description='relative rate of death')
+        }
+        def __init__(self):
+            super().__init__()
+
+        def read_parameters(self, data_folder: str | Path) -> None:
+            df = pd.read_csv(data_folder / 'dummy_data.csv')
+            self.load_parameters_from_dataframe(df)
+
+    dummy_module = DummyModule()
+    dummy_module.read_parameters(tmpdir)
+
     # test defining a parameter with unaccepted parameter label value raises value error
     with pytest.raises(ValueError):
         Parameter(Types.REAL, 'parameter description', label='other')

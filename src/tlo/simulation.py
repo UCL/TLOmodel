@@ -57,8 +57,8 @@ class Simulation:
     :ivar modules: A dictionary of the disease modules used in this simulation, keyed
        by the module name.
     :ivar population: The population being simulated.
-    :ivar rng: The simulation-level random number generator. 
-    
+    :ivar rng: The simulation-level random number generator.
+
     .. note::
        Individual modules also have their own random number generator with independent
        state.
@@ -80,7 +80,7 @@ class Simulation:
         :param seed: The seed for random number generator. class will create one if not
             supplied
         :param log_config: Dictionary specifying logging configuration for this
-            simulation. Can have entries: `filename` - prefix for log file name, final 
+            simulation. Can have entries: `filename` - prefix for log file name, final
             file name will have a date time appended, if not present default is to not
             output log to a file; `directory` - path to output directory to write log
             file to, default if not specified is to output to the `outputs` folder;
@@ -89,9 +89,9 @@ class Simulation:
             logging to standard output stream (default is `False`).
         :param show_progress_bar: Whether to show a progress bar instead of the logger
             output during the simulation.
-        :param resourcefilepath: Path to resource files folder. Assign ``None` if no 
+        :param resourcefilepath: Path to resource files folder. Assign ``None` if no
             path is provided.
-            
+
         .. note::
            The `custom_levels` entry in `log_config` argument can be used to disable
            logging on all disease modules by setting a high level to `*`, and then
@@ -114,7 +114,7 @@ class Simulation:
             log_config = {}
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
-        
+
 
         # random number generator
         seed_from = "auto" if seed is None else "user"
@@ -131,13 +131,13 @@ class Simulation:
 
     def _configure_logging(
         self,
-        filename: Optional[str] = None, 
+        filename: Optional[str] = None,
         directory: Path | str = "./outputs",
         custom_levels: Optional[dict[str, LogLevel]] = None,
         suppress_stdout: bool = False
     ):
         """Configure logging of simulation outputs.
-         
+
         Can write log output to a file in addition the default of `stdout`. Mnimum
         custom levels for each logger can be specified for filtering out messages.
 
@@ -210,7 +210,7 @@ class Simulation:
             modules to be registered. A :py:exc:`.ModuleDependencyError` exception will
             be raised if there are missing dependencies.
         :param auto_register_dependencies: Whether to register missing module dependencies
-            or not. If this argument is set to True, all module dependencies will be 
+            or not. If this argument is set to True, all module dependencies will be
             automatically registered.
         """
         if auto_register_dependencies:
@@ -424,7 +424,7 @@ class Simulation:
 
     def find_events_for_person(self, person_id: int) -> list[tuple[Date, Event]]:
         """Find the events in the queue for a particular person.
-    
+
         :param person_id: The row index of the person of interest.
         :return: List of tuples `(date_of_event, event)` for that `person_id` in the
             queue.
@@ -464,7 +464,7 @@ class Simulation:
 
         :param pickle_path: File path to load simulation state from.
         :param log_config: New log configuration to override previous configuration. If
-            `None` previous configuration (including output file) will be retained. 
+            `None` previous configuration (including output file) will be retained.
 
         :returns: Loaded :py:class:`Simulation` object.
         """
@@ -476,6 +476,22 @@ class Simulation:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
 
+    def generate_label_stats(self):
+        """ return statistics for all parameter labels used all registered disease modules """
+        column_defaults = {'label': 'unassigned', 'lower': None, 'upper': None}
+        # get all disease modules registered
+        print(self.modules)
+        store_label_stats = dict()
+        for _col, _val in column_defaults.items():
+            if _col not in resource.columns:
+                resource[_col] = _val
+
+        parameter_lb = resource.groupby(by='label')['label'].count()
+        store_label_stats[self.name] = parameter_lb
+        label_starts_df = pd.DataFrame(data=store_label_stats.values(),
+                                       index=[_module for _module in store_label_stats.keys()])
+
+        print(label_starts_df)
 
 class EventQueue:
     """A simple priority queue for events.
