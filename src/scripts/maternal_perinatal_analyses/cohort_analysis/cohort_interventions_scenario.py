@@ -13,11 +13,11 @@ class BaselineScenario(BaseScenario):
     """Scenario for cohort model"""
     def __init__(self):
         super().__init__()
-        self.seed = 562661
+        self.seed = 790213
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 3
+        self.number_of_draws = 7
         self.runs_per_draw = 60
 
     def log_configuration(self):
@@ -51,9 +51,14 @@ class BaselineScenario(BaseScenario):
                     'analysis_year': 2024}}
 
         else:
-            interventions_for_analysis = ['caesarean_section_oth_surg', 'caesarean_section_oth_surg']
+            interventions_for_analysis = ['neo_resus', 'neo_resus',
+                                          'kmc', 'kmc',
+                                          'neo_sepsis_treatment', 'neo_sepsis_treatment']
 
-            avail_for_draw = [0.0, 1.0]
+            avail_for_draw = [0.0, 1.0,
+                              0.0, 1.0,
+                              0.0, 1.0,
+                              ]
 
             return {'PregnancySupervisor': {
                     'analysis_year': 2024,

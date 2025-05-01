@@ -68,7 +68,7 @@ def generate_mnh_outcome_counter():
                 "ectopic_pregnancy_treatment", "antenatal_corticosteroids", "birth_kit", "avd",
                 "sepsis_treatment", "amtsl", "pph_treatment_uterotonics", "pph_treatment_mrrp",
                 "caesarean_section_oth_surg", "fistula_treatment", "neo_resus", "kmc",
-                "neo_sepsis_treatment_supp_care", "neo_sepsis_treatment_abx"]
+                "neo_sepsis_treatment"]
 
     interventions = []
 
