@@ -25,6 +25,7 @@ scenario_filename = 'wasting_analysis__minimal_model'
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting")
 legend_fontsize = 12
 title_fontsize = 16
+total_draws = 1 #= len(folders)
 ########################################################################################################################
 
 def create_calib_outcome_csv(sim_results_folder_path_str):
@@ -819,7 +820,7 @@ if __name__ == "__main__":
     # Analyse each draw
     # for now, we always have just one run, run 0
     run_nmb = 0
-    for draw_nmb in range(0, len(folders)):
+    for draw_nmb in range(0, total_draws):
         print(f"Analysing {draw_nmb=} ...")
         time_start = time.time()
 
