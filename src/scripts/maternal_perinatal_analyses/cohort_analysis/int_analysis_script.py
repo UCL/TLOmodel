@@ -373,8 +373,8 @@ def get_tornado_plot(data, outcome):
     plt.figure(figsize=(10, 6))
     y_positions = np.arange(len(categories))
 
-    bars_min = plt.barh(y_positions, min_values, color='lightcoral', edgecolor='black', alpha=0.7, label='Min Effect')
-    bars_max = plt.barh(y_positions, max_values, color='skyblue', edgecolor='black', alpha=0.7, label='Max Effect')
+    # bars_min = plt.barh(y_positions, min_values, color='lightcoral', edgecolor='black', alpha=0.7, label='Min Effect')
+    # bars_max = plt.barh(y_positions, max_values, color='skyblue', edgecolor='black', alpha=0.7, label='Max Effect')
 
     # Add error bars for uncertainty intervals
     plt.errorbar(min_values, y_positions, xerr=min_errors, fmt='none', ecolor='darkred', capsize=5, alpha=0.9,
