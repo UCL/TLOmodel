@@ -2,6 +2,7 @@
 This will print out the draw number for which searched parameters set was used
 '''
 import itertools
+
 # update the parameters set for the job
 parameters = {
     "base_death_rate_untreated_sam": [0.1, 0.05, 0.03, 0.01],
