@@ -232,9 +232,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             _agrp: copy.deepcopy(blank_length_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
         self.wasting_length_tracker = copy.deepcopy(self.wasting_length_tracker_blank)
 
-        self.person_of_interest_id = 31846 # debugging
-        self.person_of_interest_born_bool = False
-
         # define age groups
         self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
         self.age_gps_range_mo = []
@@ -269,25 +266,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         """
         df = population.props
         p = self.parameters
-        print("\nPARAMETERS:")
-        print(f"{p['base_death_rate_untreated_SAM']=}")
-        print(f"mod_wast_incidence__coef={p['base_overall_inc_rate_wasting']/0.019}")
-        print(f"progression_to_sev_wast__coef={p['progression_severe_wasting_monthly_by_agegp'][0]/0.3082}")
-        if p['base_death_rate_untreated_SAM'] != 0:
-            print("prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam="
-                  f"{p['prob_death_after_SAMcare']*(1-0.738)/p['base_death_rate_untreated_SAM']}")
-        print("-----------")
-        print(f"{p['base_overall_inc_rate_wasting']=}")
-        print("base inc rates by age group: "
-              f"{[s * p['base_overall_inc_rate_wasting'] for s in p['rr_inc_rate_wasting_by_agegp']]}")
-        print(f"{p['progression_severe_wasting_monthly_by_agegp']=}")
-        print(f"{p['prob_death_after_SAMcare']=}")
 
         # Adjust monthly severe wasting incidence to the duration of untreated moderate wasting
         p['progression_severe_wasting_by_agegp'] = \
             [s/30.4375*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
-        print(f"{p['progression_severe_wasting_by_agegp']=}")
-        print()
+        logger.debug(
+            key="progression_severe_wasting_by_agegp",
+            data="A progression_severe_wasting_monthly_by_agegp adjusted to the duration of untreated moderate wasting:"
+                 f" {p['progression_severe_wasting_by_agegp']}"
+        )
 
         # Set initial properties
         df.loc[df.is_alive, 'un_ever_wasted'] = False
@@ -339,19 +326,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # # # #    and, in SAM cases, determine presence of complications and eventually schedule death   # # # #
         self.clinical_signs_acute_malnutrition(under5s_index)
 
-        print(f"\n{self.person_of_interest_id=}")
-        print("###########")
-        if self.person_of_interest_id in df.index:
-            self.person_of_interest_born_bool = True
-            print(f"initial wasting: {df.loc[self.person_of_interest_id, 'un_WHZ_category']}")
-            print(f"initial MUAC: {df.loc[self.person_of_interest_id, 'un_am_MUAC_category']}")
-            print(f"initial oedema: {df.loc[self.person_of_interest_id, 'un_am_nutritional_oedema']}")
-            print(f"initial complicaions: {df.loc[self.person_of_interest_id, 'un_sam_with_complications']}")
-            print(f"initial am status: {df.loc[self.person_of_interest_id, 'un_clinical_acute_malnutrition']}")
-        else:
-            print("person_of_interest not born yet")
-        print("--------------------------------------")
-
     def initialise_simulation(self, sim):
         """Prepares for simulation. Schedules:
         * the first growth monitoring to happen straight away, scheduled monthly to detect new cases for treatment.
@@ -363,8 +337,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(Wasting_InitiateGrowthMonitoring(self), sim.date)
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=3))
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1) - DateOffset(days=1))
-        # sim.schedule_event(PrintPersonPropertiesEventIfUpdated(self, self.person_of_interest_id),
-        #                    sim.date + DateOffset(days=1))
 
         # Retrieve the consumables codes and amounts of the consumables used
         self.cons_codes = self.get_consumables_for_each_treatment()
@@ -399,11 +371,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             hsi_event=HSI_Wasting_GrowthMonitoring(module=self, person_id=child_id),
             priority=2, topen=self.sim.date + pd.DateOffset(days=1)
         )
-
-        if child_id == self.person_of_interest_id:
-            self.person_of_interest_born_bool = True
-            print(f"person_of_interest born {self.sim.date=}")
-            print("-------")
 
     def muac_cutoff_by_WHZ(self, idx, whz):
         """
@@ -557,14 +524,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         assert not ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM')
                     and (df.at[person_id, 'un_sam_with_complications'])), f'{person_id=} has MAM with complications.'
 
-        if person_id == self.person_of_interest_id:
-            print('-----')
-            print("Acute Malnutrition state ASSIGNED")
-            print(f"am state: {df.at[person_id, 'un_clinical_acute_malnutrition']}; "
-                  f"complications: {df.at[person_id, 'un_sam_with_complications']}; "
-                  f"death_date: {df.at[person_id, 'un_sam_death_date']}")
-            print("-----")
-
     def get_consumables_for_each_treatment(self):
         """Get the item_code and amount administrated for all consumables for each treatment."""
 
@@ -703,37 +662,22 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
     ) -> None:
 
         df = self.sim.population.props
-        # p = self.parameters
 
-        do_prints = False
-        if person_id == self.person_of_interest_id:
-            do_prints = True
-            print(f"NON-EMERGENCY APPT on {self.sim.date=}")
-            print(f"{symptoms=}")
-
+        # if person not under 5 or currently treated or non-emerg. appt went through today already, acute malnutrition
+        # will not be assessed during this appt
         if (individual_properties['age_years'] >= 5) or \
             (individual_properties['un_last_wasting_date_of_onset'] < individual_properties['un_am_tx_start_date'] <
              self.sim.date) or \
             (self.sim.date == individual_properties['un_last_nonemergency_appt_date']):
-            if do_prints:
-                print("not going through because")
-                if individual_properties["age_years"] >= 5:
-                    print(f"person not under 5, {individual_properties['age_years']=}")
-                if (individual_properties['un_last_wasting_date_of_onset'] < individual_properties['un_am_tx_start_date'] <
-             self.sim.date):
-                    print(f"person currently treated, {individual_properties['un_am_treatment_type']=}")
-                if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
-                    print("the non-emerg. appt did went through today already")
-                print("----------------------------------")
             if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
                 logger.debug(
-                    key="non-emergency",
+                    key="multiple non-emergency appts on same day",
                     data=f"A non-emerg. appt runs again on the same date {self.sim.date=} for the {person_id=}. "
                          "All DOs related to wasting are cancelled."
                 )
             return
 
-        # or if HSI was already scheduled due to growth monitoring, won't be checked for acute malnutrition again
+        #or if HSI was already scheduled due to growth monitoring, won't be checked for acute malnutrition again
         hsi_event_scheduled = [
             ev
             for ev in self.sim.modules["HealthSystem"].find_events_for_person(person_id)
@@ -742,8 +686,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                   HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM))
         ]
         if hsi_event_scheduled:
-            if do_prints:
-                print(f"not going through because {hsi_event_scheduled=} via growth monitoring")
             return
 
         # track the date of the last non-emergency appt
@@ -752,47 +694,33 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # get the clinical states
         clinical_am = individual_properties['un_clinical_acute_malnutrition']
         complications = individual_properties['un_sam_with_complications']
-        if do_prints:
-            print(f"{clinical_am=}, {complications=}")
 
-        # No interventions if well
+        # No intervention if well
         if clinical_am == 'well':
-            if do_prints:
-                print("person is well, hence no outcomes from the appt")
-                print("---------------------------------------------")
             return
 
-        # Interventions for MAM
+        # SFP intervention if diagnosed as MAM
         elif clinical_am == 'MAM':
             # schedule HSI for supplementary feeding program for MAM
-            if do_prints:
-                print("SFP for MAM scheduled for today")
             schedule_hsi_event(
                 hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                 priority=0, topen=self.sim.date)
 
         elif clinical_am == 'SAM':
 
-            # Interventions for uncomplicated SAM
+            # OTP intervention if diagnosed as uncomplicated SAM
             if not complications:
                 # schedule HSI for supplementary feeding program for MAM
-                if do_prints:
-                    print("OTP for SAM w\out complications scheduled for today")
                 schedule_hsi_event(
                     hsi_event=HSI_Wasting_OutpatientTherapeuticProgramme_SAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
 
-            # Interventions for complicated SAM
+            # ITC intervention if diagnosed as complicated SAM
             if complications:
                 # schedule HSI for supplementary feeding program for MAM
-                if do_prints:
-                    print("ITC for SAM w\ complications scheduled for today")
                 schedule_hsi_event(
                     hsi_event=HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(module=self, person_id=person_id),
                     priority=0, topen=self.sim.date)
-
-        if do_prints:
-            print("----------------end of non-ermerg appt-----------------------------")
 
     def do_when_am_treatment(self, person_id, intervention) -> None:
         """
@@ -803,15 +731,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         p = self.parameters
 
-        do_prints = False
-        if person_id == self.person_of_interest_id:
-            do_prints = True
-            print(f"{self.person_of_interest_id=} RECEIVING TX on {self.sim.date=}")
-
         # natural progression or recovery is cancelled with the tx and the outcome is fully driven by tx
-        self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event, do_prints=do_prints)
-        self.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event, do_prints=do_prints)
-        self.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event, do_prints=do_prints)
+        self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event)
+        self.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event)
+        self.cancel_future_event(person_id, event_type=Wasting_RecoveryToMAM_Event)
 
         # Set the date when the treatment is provided:
         df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
@@ -832,10 +755,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
 
             if mam_full_recovery:
-                # set discharge date and schedule recovery
+                # set discharge date and schedule recovery for that day
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
-                if do_prints:
-                    print(f"scheduled full recovery from MAM with SFP at {df.at[person_id, 'un_am_discharge_date']=}")
                 self.sim.schedule_event(
                     event=Wasting_FullRecovery_Event(module=self, person_id=person_id),
                     date=(df.at[person_id, 'un_am_discharge_date'])
@@ -845,9 +766,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=outcome_date)
-                if do_prints:
-                    print("remained MAM with SFP")
-                    print(f"sent for another SFP on {outcome_date=}")
                 return
 
         elif intervention in ['OTP', 'ITC']:
@@ -871,9 +789,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=outcome_date
                 )
-                if do_prints:
-                    print(f"scheduled full recovery from SAM with {intervention=} at {outcome_date=} and sent for "
-                          "follow-up MAM tx")
 
             else:
                 outcome = self.rng.choice(['recovery_to_mam', 'death'],
@@ -882,8 +797,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                               self.parameters['prob_death_after_SAMcare']
                                           ])
                 if outcome == 'death':
-                    if do_prints:
-                        print(f"death due to SAM with {intervention=} at {outcome_date=}")
                     self.sim.schedule_event(
                         event=Wasting_SevereAcuteMalnutritionDeath_Event(module=self, person_id=person_id),
                         date=outcome_date
@@ -891,21 +804,17 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     df.at[person_id, 'un_sam_death_date'] = outcome_date
                 else:  # recovery to MAM and send for treatment for MAM
                     df.at[person_id, 'un_am_discharge_date'] = outcome_date
-                    if do_prints:
-                        print(f"recovery to MAM with {intervention=} scheduled at {outcome_date=} "
-                              "and sent for MAM tx")
                     self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(module=self, person_id=person_id),
                                             date=outcome_date)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
 
-    def cancel_future_event(self, person_id, event_type, do_prints: bool) -> None:
+    def cancel_future_event(self, person_id, event_type) -> None:
         """
         This function will add dates of recovery and/or progression events that need to be canceled.
         :param person_id:
         :param event_type: which event type to cancel
-        :param do_prints: prints for person_of_interest only
         """
 
         df = self.sim.population.props
@@ -920,60 +829,11 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 Wasting_ProgressionToSevere_Event: 'un_progression_to_cancel'
             }
 
+            # add dates of natural history events to be cancelled due to tx, the health outcome will be driven by the tx
             for date in dates:
                 df.at[person_id, event_type_map[event_type]].append(date)
-                if do_prints:
-                    print(f"a natural history {event_type=} for "
-                          f"clinical_am={df.at[person_id, 'un_clinical_acute_malnutrition']}, "
-                          f"complications={df.at[person_id, 'un_sam_with_complications']} on {date=}\n"
-                          " is cancelled due to tx, the health outcome will be driven by the tx")
-                    print(f"the {event_type_map[event_type]}: {df.at[person_id, event_type_map[event_type]]}")
-        else:
-            if do_prints:
-                print(f"{event_type=} not scheduled, hence no need to cancel any")
 
-
-class PrintPersonPropertiesEventIfUpdated(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, frequency=DateOffset(months=1))
-        self.person_id = person_id
-        self.old_person_properties = None
-        self.old_person_scheduled_events = None
-        self.old_person_scheduled_hs_events = None
-
-    def apply(self, population):
-        df = population.props
-
-        print(f"{df.at[self.person_id, 'age_exact_years']=}, {df.at[self.person_id, 'is_alive']=}")
-
-        # new_person_properties = df.loc[self.person_id]
-        # new_person_scheduled_events = self.sim.find_events_for_person(self.person_id)
-        # new_person_scheduled_hs_events = self.sim.modules['HealthSystem'].find_events_for_person(self.person_id)
-        #
-        # print(f"{self.sim.date=}")
-        # if self.sim.date == Date(year=2010, month=1, day=1):
-        #     pd.set_option('display.max_columns', None)
-        #     print(f"Properties of person {self.person_id} at initiation:\n {new_person_properties.to_string()}")
-        #     self.old_person_properties = new_person_properties
-        #     print(f"Scheduled events for person {self.person_id}:\n {new_person_scheduled_events}")
-        #     self.old_person_scheduled_events = new_person_scheduled_events
-        #     print(f"HealthSystem events for person {self.person_id}:\n {new_person_scheduled_hs_events}")
-        #     self.old_person_scheduled_hs_events = new_person_scheduled_hs_events
-        #
-        # else:
-        #     if not self.old_person_properties.equals(new_person_properties):
-        #         changed_columns = new_person_properties[
-        #             (new_person_properties != self.old_person_properties) &
-        #             ~(new_person_properties.isna() & self.old_person_properties.isna())
-        #         ]
-        #         print(f"Properties of person {self.person_id} that have changed:\n {changed_columns.to_string()}")
-        #         self.old_person_properties = new_person_properties
-        #     if self.old_person_scheduled_events != new_person_scheduled_events:
-        #         print(f"Scheduled events for person {self.person_id} changed to:\n {new_person_scheduled_events}")
-        #         self.old_person_scheduled_events = new_person_scheduled_events
-        #     if self.old_person_scheduled_hs_events != new_person_scheduled_hs_events:
-        #         print(f"Scheduled events for person {self.person_id} changed to:\n {new_person_scheduled_hs_events}")
-        #         self.old_person_scheduled_hs_events = new_person_scheduled_hs_events
+        # else: event_type not scheduled, hence no need to cancel any
 
 class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
     """
@@ -999,34 +859,12 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # # # INCIDENCE OF MODERATE WASTING # # # # # # # # # # # # # # # # # # # # #
-        if self.module.person_of_interest_born_bool:
-            print(f"INCIDENCE on {self.sim.date=}")
-        # Determine who will be onset with wasting among those who
-        # currently do not have acute malnutrition, are not being treated, and did not recover in the last 14 days
+        # Determine who will be onset with wasting among those who are alive, under 5, currently do not have acute
+        # malnutrition, are not being treated, and did not recover in the last 14 days
         not_am_or_treated_or_recently_recovered =\
             df.loc[df.is_alive & (df.age_exact_years < 5) & (df.un_clinical_acute_malnutrition == 'well') &
                    (df.un_am_tx_start_date.isna()) &
                    (df.un_am_recovery_date.isna() | (df.un_am_recovery_date < self.sim.date - pd.DateOffset(days=14)))]
-        if (self.module.person_of_interest_born_bool and
-            self.module.person_of_interest_id not in not_am_or_treated_or_recently_recovered.index):
-            print("person of interest cannot become wasted, because ")
-            if not df.at[self.module.person_of_interest_id, 'is_alive']:
-                print("is dead")
-            elif df.at[self.module.person_of_interest_id, 'age_exact_years'] >= 5:
-                print("is 5+ ys old")
-            elif not df.at[self.module.person_of_interest_id, 'un_clinical_acute_malnutrition'] == 'well':
-                print("has acute malnutrition")
-            elif not pd.isna(df.at[self.module.person_of_interest_id, 'un_am_tx_start_date']):
-                print("is currently treated")
-            elif (not pd.isna(df.at[self.module.person_of_interest_id, 'un_am_recovery_date']) and
-                  (df.at[self.module.person_of_interest_id, 'un_am_recovery_date'] >=
-                   self.sim.date - pd.DateOffset(days=14))):
-                print("recovered in last 14 days")
-            else:
-                print(f"{df.at[self.module.person_of_interest_id, 'un_am_recovery_date']=}")
-                print("smt strange happening - do investigate!")
-        elif self.module.person_of_interest_born_bool:
-            print("person of interest can become wasted")
 
         incidence_of_wasting_bool = \
             self.module.wasting_models.wasting_incidence_lm.predict(not_am_or_treated_or_recently_recovered, rng=rng)
@@ -1039,27 +877,13 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         df.loc[mod_wasting_new_cases_idx, 'un_WHZ_category'] = '-3<=WHZ<-2'
         # -------------------------------------------------------------------------------------------
         # Add these incident cases to the tracker
-        do_prints = False
         for person_id in mod_wasting_new_cases_idx:
             age_group = Wasting_IncidencePoll.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
             self.module.wasting_incident_case_tracker[age_group]['-3<=WHZ<-2'].append(self.sim.date)
-            if person_id == self.module.person_of_interest_id:
-                do_prints = True
-                print(f"WASTING INCIDENCE on {self.sim.date=}")
-                print(f"{mod_wasting_new_cases_idx=}, {age_group=}")
         # Update properties related to clinical acute malnutrition
         # (MUAC, oedema, clinical state of acute malnutrition and if SAM complications and death;
         # clear symptoms if not SAM)
         self.module.clinical_signs_acute_malnutrition(mod_wasting_new_cases_idx)
-        if do_prints:
-            print(f"assigned am indicators:\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_WHZ_category']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_am_nutritional_oedema']=},\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_am_MUAC_category']=}")
-            print("am status determined and if SAM, complications and death determined:\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_clinical_acute_malnutrition']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_sam_with_complications']=},\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_sam_death_date']=}")
         # -------------------------------------------------------------------------------------------
 
         outcome_date = self.module.date_of_outcome_for_untreated_wasting(whz_category='-3<=WHZ<-2')
@@ -1069,16 +893,12 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
         progression_severe_wasting_bool = self.module.wasting_models.severe_wasting_progression_lm.predict(
             df.loc[mod_wasting_new_cases_idx], rng=rng, squeeze_single_row_output=False
         )
-        if do_prints:
-            print(f"{outcome_date=},\n {progression_severe_wasting_bool=}")
 
         for person_id in mod_wasting_new_cases_idx[progression_severe_wasting_bool]:
             # schedule severe wasting WHZ < -3 onset after duration of untreated moderate wasting
             self.sim.schedule_event(
                 event=Wasting_ProgressionToSevere_Event(module=self.module, person_id=person_id), date=outcome_date
             )
-            if person_id == self.module.person_of_interest_id:
-                print(f"scheduled progression to sev wast at {outcome_date=}")
 
         # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
         # Schedule recovery for those not progressing to severe wasting ---------
@@ -1087,20 +907,10 @@ class Wasting_IncidencePoll(RegularEvent, PopulationScopeEventMixin):
                 # schedule full recovery after duration of moderate wasting
                 self.sim.schedule_event(event=Wasting_FullRecovery_Event(
                     module=self.module, person_id=person_id), date=outcome_date)
-                if person_id == self.module.person_of_interest_id:
-                      print(f"scheduled natural full recovery at {outcome_date=} as the person has MAM: "
-                          f"{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
             else: # == SAM
                 # schedule recovery to MAM after duration of moderate wasting
                 self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(
                     module=self.module, person_id=person_id), date=outcome_date)
-                if person_id == self.module.person_of_interest_id:
-                    print(f"scheduled recovery to MAM at {outcome_date=} as the person has SAM: "
-                          f"{df.at[person_id, 'un_clinical_acute_malnutrition']=}")
-
-        if self.module.person_of_interest_born_bool:
-            print("---------------------------------")
-
 
 class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
     """
@@ -1116,11 +926,8 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"PROGRESSION TO SEV WAST on {self.sim.date=}")
-
+        # if person is already dead or not under 5 or not moderately wasted or is currently treated, the progression
+        # should not happen
         if (
             (not df.at[person_id, 'is_alive']) or
             (df.at[person_id, 'age_exact_years'] >= 5) or
@@ -1128,25 +935,11 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
             (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
                 self.sim.date)
         ):
-            if do_prints:
-                print("not going through because")
-                if not df.at[person_id, 'is_alive']:
-                    print("is already dead")
-                if df.at[person_id, 'age_exact_years'] >= 5:
-                    print(f"is not under 5, {df.at[person_id, 'age_exact_years']=}")
-                if df.at[person_id, 'un_WHZ_category'] != '-3<=WHZ<-2':
-                    print(f"not moderately wasted, {df.at[person_id, 'un_WHZ_category']=} ")
-                if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
-                self.sim.date):
-                    print("is currently treated")
-                print("----------------------------------")
             return
 
+        # if natural progression to severe wasting cancelled as person received tx, hence is not happening
         if self.sim.date in df.at[person_id, 'un_progression_to_cancel']:
             df.at[person_id, 'un_progression_to_cancel'].remove(self.sim.date)
-            if do_prints:
-                print("Natural progression to severe wasting cancelled as person received tx.")
-                print("----------------------------------")
             return
 
         # # # INCIDENCE OF SEVERE WASTING # # # # # # # # # # # # # # # # # # # # #
@@ -1156,22 +949,11 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
         # - MUAC, oedema, clinical state of acute malnutrition, complications, death
         self.module.clinical_signs_acute_malnutrition(person_id)
-        if do_prints:
-            print("assigned am indicators:\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_WHZ_category']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_am_nutritional_oedema']=},\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_am_MUAC_category']=}")
-            print("determined am status and if SAM complications and death:\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_clinical_acute_malnutrition']=}, "
-                  f"{df.at[self.module.person_of_interest_id, 'un_sam_with_complications']=},\n"
-                  f" {df.at[self.module.person_of_interest_id, 'un_sam_death_date']=}")
 
         # -------------------------------------------------------------------------------------------
         # Add this severe wasting incident case to the tracker
         age_group = Wasting_IncidencePoll.AGE_GROUPS.get(df.loc[person_id].age_years, '5+y')
         self.module.wasting_incident_case_tracker[age_group]['WHZ<-3'].append(self.sim.date)
-        if do_prints:
-            print(f"{age_group=}")
 
         if pd.isnull(df.at[person_id, 'un_sam_death_date']):
             # # # SEVERE WASTING NATURAL RECOVERY # # # # # # # # # # # # # # # #
@@ -1179,15 +961,7 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
             outcome_date = self.module.date_of_outcome_for_untreated_wasting(whz_category='WHZ<-3')
             self.sim.schedule_event(event=Wasting_RecoveryToMAM_Event(
                 module=self.module, person_id=person_id), date=outcome_date)
-            if do_prints:
-                print(f"natural recovery to MAM scheduled on {outcome_date=}")
-        else:
-            if do_prints:
-                print("death due to SAM scheduled earlier")
-
-        if do_prints:
-            print("---------------------------------------------")
-
+        # else: death due to SAM scheduled earlier, i.e. natural progression
 
 class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixin):
     """
@@ -1201,16 +975,8 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"DEATH DUE TO SAM on {self.sim.date=}")
-
-        # The event should not run if the person is not currently alive or doesn't have SAM
+        # The event should not run if the person already died
         if not df.at[person_id, 'is_alive']:
-            if do_prints:
-                print("not going through as the person is already dead")
-                print("----------------------------------")
             return
 
         # # Check if this person should still die from SAM and that it should happen now not in the future:
@@ -1220,37 +986,24 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
             not pd.isnull(df.at[person_id, 'un_sam_death_date']) and
             df.at[person_id, 'un_sam_death_date'] <= self.sim.date
         ):
+            # death is assumed only due to SAM
             assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM',\
                 f"{person_id=} dying due to SAM while \n{df.at[person_id, 'un_clinical_acute_malnutrition']=}"
-            if do_prints:
-                print("death still happening,\n ie recovery date = NaT & not (discharge_date > tx_start_date) "
-                      "& death_date != NaT and is <= sim.date)")
             # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
                 cause='Severe Acute Malnutrition',
                 originating_module=self.module)
-        else:
-            if do_prints:
-                print("death is not happening because")
-                if not pd.isnull(df.at[person_id, 'un_am_recovery_date']):
-                    print("the person already recovered and didn't get wasted again since")
-                if df.at[person_id, 'un_am_discharge_date'] > df.at[person_id, 'un_am_tx_start_date']:
-                    print("discharge_date is set, hence the person should recover due to tx, not to die")
-                if pd.isnull(df.at[person_id, 'un_sam_death_date']):
-                    print("the death was canceled due to tx")
-                if df.at[person_id, 'un_sam_death_date'] > self.sim.date:
-                    print("the death was canceled due to tx, but scheduled for later as will die with tx anyway")
-
-        if do_prints:
-            print(f"{df.at[person_id, 'un_am_recovery_date']=}, {df.at[person_id, 'un_am_discharge_date']=},\n"
-                  f"{df.at[person_id, 'un_am_tx_start_date']=}, {pd.isnull(df.at[person_id, 'un_sam_death_date'])=}")
-            print("------------------------------------------------------")
+        # else:
+            # death is not happening as the person already recovered and didn't get wasted again since,
+            # or discharge_date is set, hence the person should recover due to tx, or the death was canceled due to tx,
+            # or the death was canceled due to tx, but scheduled for later as will die with tx anyway
 
 class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
     """
-    This event sets acute malnutrition signs back to well state.
+    This event updates the clinical signs of acute malnutrition for those cases that fully recovered, i.e. person
+    recovers to well with all properties being set and SAM symptoms removed.
     """
 
     def __init__(self, module, person_id):
@@ -1266,23 +1019,13 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         else:
             recov_how = 'tx'
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"FULL RECOVERY {recov_how=} on {self.sim.date=}")
-            print(f"{df.at[person_id, 'un_am_tx_start_date']=}")
-
+        # if already died, should not recover
         if not df.at[person_id, 'is_alive']:
-            if do_prints:
-                print("not going through, because the person is already dead")
-                print("----------------------------------")
             return
 
+        # if the natural recovery was cancelled, will not recover now, the outcome will be driven by tx
         if self.sim.date in df.at[person_id, 'un_full_recov_to_cancel']:
             df.at[person_id, 'un_full_recov_to_cancel'].remove(self.sim.date)
-            if do_prints:
-                print("not going through, because the natural recovery was cancelled, the outcome will be driven by tx")
-                print("----------------------------------")
             return
 
         # if not well (i.e. NOT already fully recovered with SAM tx, and send here from follow-up MAM tx)
@@ -1322,10 +1065,6 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
                  f"when {recov_opt=}.")
             self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
 
-            if do_prints:
-                print(f"{recov_opt=}, {age_group=}, {wasted_days=} >= min_length= "
-                      f"{get_min_length(recov_how, person_id, whz)} days")
-
         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # normal WHZ
         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well' # well-nourished
@@ -1341,13 +1080,10 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
             person_id=person_id, disease_module=self.module
         )
 
-        if do_prints:
-            print("recovered to well with all properties being set and SAM symptoms removed")
-            print("-------------------------------------------------")
-
 class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
     """
-    This event updates the clinical signs of acute malnutrition for those cases that improved from SAM to MAM.
+    This event updates the clinical signs of acute malnutrition and removes SAM symptoms for those cases that improved
+    from SAM to MAM.
     """
 
     def __init__(self, module, person_id):
@@ -1364,27 +1100,13 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         else:
             recov_how = 'tx'
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"RECOVERY TO MAM {recov_how=} on {self.sim.date=}")
-
         # if died or recovered in between, should not update to MAM
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM'):
-            if do_prints:
-                print("not going through because")
-                if not df.at[person_id, 'is_alive']:
-                    print("is already dead")
-                if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
-                    print(f"not having SAM, {df.at[person_id, 'un_clinical_acute_malnutrition']=}")
-                print("----------------------------------")
             return
 
+        # if the natural recovery was cancelled, will not recover to MAM now, the outcome will be driven by tx
         if self.sim.date in df.at[person_id, 'un_recov_to_mam_to_cancel']:
             df.at[person_id, 'un_recov_to_mam_to_cancel'].remove(self.sim.date)
-            if do_prints:
-                print("not going through, because the natural recovery was cancelled, the outcome will be driven by tx")
-                print("----------------------------------")
             return
 
         # For cases with normal WHZ and other acute malnutrition signs:
@@ -1430,10 +1152,6 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
                 df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
 
-                if do_prints:
-                    print(f"{recov_opt=}, {age_group=}, {wasted_days=} >= min_length= "
-                          f"{get_min_length(recov_how, person_id, whz)} days")
-
             if mam_classification == 'mam_by_muac_and_whz':
                 df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
@@ -1456,27 +1174,16 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
             person_id=person_id, disease_module=self.module
         )
 
-        if do_prints:
-            print(f"wast indicators updated to {df.at[person_id, 'un_WHZ_category']=},"
-                  f"{df.at[person_id, 'un_am_MUAC_category']=}, and no oedema => MAM")
-
         outcome_date = self.module.date_of_outcome_for_untreated_wasting(whz_category='-3<=WHZ<-2')
         progression_severe_wasting_bool = self.module.wasting_models.severe_wasting_progression_lm.predict(
             df.loc[[person_id]], rng=rng
         )
 
+        # natural history (if not treated)
         if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2' and progression_severe_wasting_bool:
             self.sim.schedule_event(Wasting_ProgressionToSevere_Event(self.module, person_id), outcome_date)
-            if do_prints:
-                print("the person will progress to severe wasting if not treated")
         else:
             self.sim.schedule_event(Wasting_FullRecovery_Event(self.module, person_id), outcome_date)
-            if do_prints:
-                print("the person will naturally fully recover if not treated")
-
-        if do_prints:
-            print("------------------------------------------------")
-
 
 class Wasting_InitiateGrowthMonitoring(Event, PopulationScopeEventMixin):
     # TODO: maybe will be updated to integrate monitoring of < 1y old in epi module, and on birth schedule to be
@@ -1573,11 +1280,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         rng = self.module.rng
         p = self.module.parameters
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"GROWTH MONITORING on {self.sim.date=}")
-
         # TODO: Will they be monitored during the treatment? Can we assume, that after the treatment they will be
         #  always properly checked (all measurements and oedema checked), or should be the assumed "treatment outcome"
         #  be also based on equipment availability and probability of checking oedema? Maybe they should be sent for
@@ -1587,16 +1289,11 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         #  a child 2-5 old, if they were sent for treatment via growth monitoring, they will be on tx for adequate nmb
         #  of weeks, but next monitoring will be done in ~5 months after the treatment. - Or we could schedule for the
         #  treated children a monitoring sooner after the treatment.
+        # no
+        # if person already dead or not under 5, the growth monitoring is no performed
         if (not df.at[person_id, 'is_alive']) or (df.at[person_id, 'age_exact_years'] >= 5):
             # or
             # df.at[person_id, 'un_am_treatment_type'].isin(['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care']):
-            if do_prints:
-                print("not going through and no more monitoring scheduled because")
-                if not df.at[person_id, 'is_alive']:
-                    print("already dead")
-                if df.at[person_id, 'age_exact_years'] >= 5:
-                    print("not under 5")
-                print("----------------------------------")
             return
 
         def schedule_next_monitoring():
@@ -1610,22 +1307,15 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                     return p['growth_monitoring_frequency_days_agecat'][2]
 
             person_monitoring_frequency = get_monitoring_frequency_days(df.at[person_id, 'age_exact_years'])
-            if do_prints:
-                print(f"{df.at[person_id, 'age_exact_years']=}, {person_monitoring_frequency=}")
             if (df.at[person_id, 'age_exact_years'] + (person_monitoring_frequency / 365.25)) < 5:
                 # schedule next growth monitoring
-                if do_prints:
-                    print("next growth monitoring scheduled at "
-                          f"{(self.sim.date + pd.DateOffset(days=person_monitoring_frequency))=}")
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_GrowthMonitoring(module=self.module, person_id=person_id),
                     topen=self.sim.date + pd.DateOffset(days=person_monitoring_frequency),
                     tclose=None,
                     priority=2
                 )
-            else:
-                if do_prints:
-                    print("no more growth monitoring scheduled as the age will be above 5")
+            # else: no more growth monitoring scheduled as the age will be above 5 at the time
 
         # TODO: as stated above, for now we schedule next monitoring for all children, even those sent for treatment
         schedule_next_monitoring()
@@ -1634,9 +1324,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         # TODO: later could be scheduled for monitoring within the tx to use the resources
         if (df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_am_tx_start_date'] <
                 self.sim.date):
-            if do_prints:
-                print("not going through because is currently treated")
-                print("-----------------------------------------")
             return
         # or if HSI was already scheduled due to care-seeking, no need to attend the growth monitoring
         hsi_event_scheduled = [
@@ -1647,14 +1334,10 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
                                   HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM))
         ]
         if hsi_event_scheduled:
-            if do_prints:
-                print(f"not going through because {hsi_event_scheduled=} via care-seeking")
             return
 
+        # the person may not attend the appt
         if not self.attendance:
-            if do_prints:
-                print("does not attend to this growth monitoring appt")
-                print("-----------------------------------------")
             return
 
         available_equipment = []
@@ -1663,8 +1346,6 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
             if available:
                 available_equipment.append(equip)
         self.add_equipment(set(available_equipment))
-        if do_prints:
-            print(f"{available_equipment=}")
 
         def schedule_tx_by_diagnosis(hsi_event):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -1675,33 +1356,27 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
         complications = df.at[person_id, 'un_sam_with_complications']
 
         # DIAGNOSIS
-        # in future this is the place where misdiagnosing will be happening (but should be happening also in the generic
-        # first appt), however current asserts are made for the case when all equip available, hence they will need to
-        # be adjusted, see issue #1612
+        # in future this is the place where misdiagnosing due to equipment unavailability will be happening (but should
+        # be happening also in the generic first appt), however current asserts are made for the case when all equip is
+        # available, hence they will need to be adjusted, see issue #1612
         # oedema is assumed to be quite obvious if present
         # in addition, based on performed measurements (depending on what equipment is available)
+
+        # for now, perfect diagnosing is assumed
         diagnosis = df.at[person_id, 'un_clinical_acute_malnutrition']
 
+        # No intervention if diagnosed as well
         if diagnosis == 'well':
-            if do_prints:
-                print("diagnosed as being well, hence ntg else going on")
-                print("---------------------------------")
             return
+        # SFP intervention if diagnosed as MAM
         elif diagnosis == 'MAM':
-            if do_prints:
-                print("MAM diagnosed, send for SFP")
-            schedule_tx_by_diagnosis(HSI_Wasting_SupplementaryFeedingProgramme_MAM)
+             schedule_tx_by_diagnosis(HSI_Wasting_SupplementaryFeedingProgramme_MAM)
         elif (diagnosis == 'SAM') and (not complications):
-            if do_prints:
-                print("SAM w\out complications diagnosed, send for OTP")
+            # OTP intervention if diagnosed as uncomplicated SAM
             schedule_tx_by_diagnosis(HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
         else:  # (diagnosis == 'SAM') and complications:
-            if do_prints:
-                print("SAM w\ complications diagnosed, send for ITC")
+            # ITC intervention if diagnosed as complicated SAM
             schedule_tx_by_diagnosis(HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM)
-
-        if do_prints:
-            print("-------------------------------------------")
 
     def did_not_run(self):
         logger.debug(key="HSI_Wasting_GrowthMonitoring",
@@ -1733,17 +1408,9 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         assert isinstance(self.module, Wasting)
 
         df = self.sim.population.props
-        # p = self.module.parameters
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"SFP APPT on {self.sim.date=}")
-
+        # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
-            if do_prints:
-                print("is dead, hence not going through")
-                print("------------------------------")
             return
 
         # Do here whatever happens to an individual during the admission for the treatment
@@ -1756,19 +1423,10 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             logger.debug(key='debug', data='consumables are available')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
-            if do_prints:
-                print("consumables available")
             self.module.do_when_am_treatment(person_id, intervention='SFP')
         else:
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
-            if do_prints:
-                print("consumables not available, SFP tx not scheduled, should be picked up with next\n"
-                      "growth monitoring or non-emergency appt if this is not follow-up tx,\n"
-                      "or if not naturally recovered in between")
-
-        if do_prints:
-            print("-----------------------------------------------")
 
     def did_not_run(self):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
@@ -1800,15 +1458,8 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         df = self.sim.population.props
         # p = self.module.parameters
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"OTP APPT on {self.sim.date=}")
-
+        # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
-            if do_prints:
-                print("dead already, appt not going through")
-                print("---------------------------------")
             return
 
         # Do here whatever happens to an individual during the admission for the treatment
@@ -1823,19 +1474,10 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             logger.debug(key='debug', data='consumables are available.')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
-            if do_prints:
-                print("consumables available")
             self.module.do_when_am_treatment(person_id, intervention='OTP')
         else:
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
-            if do_prints:
-                print("consumables not available, OTP tx not scheduled, should be picked up with next\n"
-                      "growth monitoring or non-emergency appt if not naturally recovered or died in\n"
-                      "between")
-
-        if do_prints:
-            print("-----------------------------------------------")
 
     def did_not_run(self):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
@@ -1861,18 +1503,9 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
         assert isinstance(self.module, Wasting)
 
         df = self.sim.population.props
-        # p = self.module.parameters
 
-        do_prints = False
-        if person_id == self.module.person_of_interest_id:
-            do_prints = True
-            print(f"ITC APPT on {self.sim.date=}")
-
-        # Stop the person from dying of acute malnutrition (if they were going to die)
+        # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
-            if do_prints:
-                print("not going through because is already dead")
-                print("----------------------------------")
             return
 
         # Do here whatever happens to an individual during the admission for the treatment
@@ -1887,19 +1520,10 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
             logger.debug(key='debug', data='consumables available, so use it.')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
-            if do_prints:
-                print("consumables available")
             self.module.do_when_am_treatment(person_id, intervention='ITC')
         else:
             logger.debug(key='debug',
                          data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
-            if do_prints:
-                print("consumables not available, ITC tx not scheduled, should be picked up with next\n"
-                      "growth monitoring or non-emergency appt if not naturally recovered or died in\n"
-                      "between")
-
-        if do_prints:
-            print("-----------------------------------------------")
 
     def did_not_run(self):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
