@@ -3096,7 +3096,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             cs_delivered = pregnancy_helper_functions.check_int_deliverable(
                 self.module, int_name='caesarean_section_oth_surg', hsi_event=self,
-                q_param=[params['prob_hcw_avail_surg'], params[f'mean_hcw_competence_hp']],
+                q_param=[params['prob_hcw_avail_surg'], params['mean_hcw_competence_hp']],
                 cons=self.module.item_codes_lab_consumables['caesarean_delivery_core'],
                 opt_cons=self.module.item_codes_lab_consumables['caesarean_delivery_optional'])
 

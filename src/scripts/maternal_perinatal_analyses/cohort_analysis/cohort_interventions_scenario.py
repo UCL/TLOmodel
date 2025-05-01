@@ -1,8 +1,3 @@
-import numpy as np
-import pandas as pd
-
-from pathlib import Path
-
 from tlo import Date, logging
 from tlo.methods import mnh_cohort_module
 from tlo.methods.fullmodel import fullmodel

@@ -1,17 +1,15 @@
 from pathlib import Path
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 import os
-import scipy.stats as st
-from scipy.stats import t, norm, shapiro
+from scipy.stats import t
 
 import pandas as pd
-import tableone
 from tableone import TableOne
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize, create_pickles_locally, get_scenario_info
+from tlo.analysis.utils import extract_results, get_scenario_outputs, get_scenario_info
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
@@ -338,9 +336,6 @@ get_diff_plots(dalys_diffs, 'Maternal DALYs')
 #     plt.legend()
 #     plt.savefig(f'{g_path}/{outcome}_tornado.png', bbox_inches='tight')
 #     plt.show(bbox_inches='tight')
-
-import numpy as np
-import matplotlib.pyplot as plt
 
 
 def get_tornado_plot(data, outcome):

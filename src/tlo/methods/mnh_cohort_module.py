@@ -1,11 +1,9 @@
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Module, logging
 from tlo.methods import Metadata
-from tlo.analysis.utils import parse_log_file
-from tlo.events import Event, IndividualScopeEventMixin
+from tlo.events import IndividualScopeEventMixin
 
 
 logger = logging.getLogger(__name__)
