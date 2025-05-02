@@ -561,7 +561,8 @@ input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, reso
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate=0, summarize=False)
 
-
+# todo find costs of MDA administration and add
+# https://pmc.ncbi.nlm.nih.gov/articles/PMC9272108/?utm_source=chatgpt.com#s3
 
 
 
