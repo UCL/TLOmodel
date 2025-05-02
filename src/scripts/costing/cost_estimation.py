@@ -339,23 +339,43 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     )
 
     # Prepare capacity used dataframe to be multiplied by staff count
-    average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
+    average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(
+        ['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
+
+
     # TODO see if cadre-level combinations should be chosen by year
     # average_capacity_used_by_cadre_and_level.reset_index(drop=True)  # Flatten multi=index column
     # todo replacing the line above
-    # Step 1: Separate out the id_vars and value_vars
-    id_vars = ['OfficerType', 'FacilityLevel']
-    value_vars = [col for col in average_capacity_used_by_cadre_and_level.columns
-                  if col not in id_vars]
 
-    # Step 2: Melt using MultiIndex columns
+    fixed_columns = ['OfficerType', 'FacilityLevel']
+
+    # Flatten only the multi-index columns and preserve the fixed ones
+    average_capacity_used_by_cadre_and_level.columns = [
+        col[0] if col[0] in fixed_columns else f"{col[0]}_{col[1]}"
+        for col in average_capacity_used_by_cadre_and_level.columns
+    ]
+
     average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(
-        id_vars=id_vars,
-        value_vars=value_vars,
-        var_name=['draw', 'run'],
+        id_vars=['OfficerType', 'FacilityLevel'],
+        var_name='draw_run',
         value_name='capacity_used'
     )
 
+    # Step 3: Now split the 'draw_run' column into two separate columns (draw and run)
+    average_capacity_used_by_cadre_and_level[['draw', 'run']] = average_capacity_used_by_cadre_and_level[
+        'draw_run'].str.split('_', expand=True)
+
+    # Step 4: Drop the 'draw_run' column
+    average_capacity_used_by_cadre_and_level_melted = average_capacity_used_by_cadre_and_level.drop(
+        columns=['draw_run'])
+
+    # Step 5: Ensure 'draw' and 'run' columns are integers
+    average_capacity_used_by_cadre_and_level_melted['draw'] = average_capacity_used_by_cadre_and_level_melted[
+        'draw'].astype(int)
+    average_capacity_used_by_cadre_and_level_melted['run'] = average_capacity_used_by_cadre_and_level_melted[
+        'run'].astype(int)
+
+    # todo this is removed
     # average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(id_vars=['OfficerType', 'FacilityLevel'],
     #                         var_name=['draw', 'run'],
     #                         value_name='capacity_used')
@@ -366,9 +386,6 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # todo add this to counter errors
     # Ensure consistent types for merge keys
-    average_capacity_used_by_cadre_and_level['draw'] = average_capacity_used_by_cadre_and_level['draw'].astype(int)
-    average_capacity_used_by_cadre_and_level['run'] = average_capacity_used_by_cadre_and_level['run'].astype(int)
-
     list_of_cadre_and_level_combinations_used['draw'] = list_of_cadre_and_level_combinations_used['draw'].astype(int)
     list_of_cadre_and_level_combinations_used['run'] = list_of_cadre_and_level_combinations_used['run'].astype(int)
 
