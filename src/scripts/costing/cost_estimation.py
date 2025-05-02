@@ -103,11 +103,6 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # todo replaced this after error
     #  KeyError: "The following id_vars or value_vars are not present in the DataFrame: ['year', 'Facility_Level', 'OfficerType']"
-    # def melt_model_output_draws_and_runs(_df, id_vars):
-    #     multi_index = pd.MultiIndex.from_tuples(_df.columns)
-    #     _df.columns = multi_index
-    #     melted_df = pd.melt(_df, id_vars=id_vars).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
-    #     return melted_df
 
     def melt_model_output_draws_and_runs(_df):
         # Step 1: Reset index (gets 'year', 'Facility_Level', 'OfficerType' as columns)
@@ -401,11 +396,6 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         validate='m:m'
     )
 
-    # Subset scenario staffing level to only include cadre-level combinations used in the simulation
-    # used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(
-    #     list_of_cadre_and_level_combinations_used,
-    #     on=['draw','run','OfficerType', 'Facility_Level'], how='right', validate='m:m')
-    #
     used_staff_count_by_level_and_officer_type.rename(columns ={'value': 'staff_count'}, inplace=True)
 
     if (cost_only_used_staff):
