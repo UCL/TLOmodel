@@ -101,13 +101,31 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
         return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
 
+    # todo replaced this after error
+    #  KeyError: "The following id_vars or value_vars are not present in the DataFrame: ['year', 'Facility_Level', 'OfficerType']"
+    # def melt_model_output_draws_and_runs(_df, id_vars):
+    #     multi_index = pd.MultiIndex.from_tuples(_df.columns)
+    #     _df.columns = multi_index
+    #     melted_df = pd.melt(_df, id_vars=id_vars).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
+    #     return melted_df
+
     def melt_model_output_draws_and_runs(_df, id_vars):
-        multi_index = pd.MultiIndex.from_tuples(_df.columns)
-        _df.columns = multi_index
-        melted_df = pd.melt(_df, id_vars=id_vars).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
+        # Reset index to promote multi-index levels to columns
+        _df = _df.reset_index()
+
+        # Flatten columns if needed (in case of multi-index columns)
+        if isinstance(_df.columns, pd.MultiIndex):
+            _df.columns = ['_'.join(map(str, col)) if isinstance(col, tuple) else col for col in _df.columns]
+
+        # Clean the column names to remove any trailing underscores
+        _df.columns = _df.columns.str.replace('_$', '', regex=True)
+
+        # Melt the DataFrame using id_vars as specified
+        melted_df = pd.melt(_df, id_vars=id_vars).rename(columns={'variable': 'draw', 'value': 'run'})
+
         return melted_df
 
-    # Define a relative pathway for relavant folders
+    # Define a relative pathway for relevant folders
     path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
     # %% Gathering basic information
@@ -261,8 +279,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     available_staff_count_by_facid_and_officertype['Facility_Level'] = available_staff_count_by_facid_and_officertype['Facility_ID'].map(facility_id_levels_dict)
     idx = pd.IndexSlice
     available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(columns = [idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
-    available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(available_staff_count_by_level_and_officer_type.reset_index(), id_vars= ['year', 'Facility_Level', 'OfficerType'])
-    available_staff_count_by_level_and_officer_type['Facility_Level'] = available_staff_count_by_level_and_officer_type['Facility_Level'].astype(str) # make sure facility level is stored as string
+    available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(available_staff_count_by_level_and_officer_type.reset_index(), id_vars=['year', 'Facility_Level', 'OfficerType'])
+    available_staff_count_by_level_and_officer_type['Facility_Level'] = available_staff_count_by_level_and_officer_type['Facility_Level'].astype(str)  # make sure facility level is stored as string
     available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type['Facility_Level'] == '5'].index) # drop headquarters because we're only concerned with staff engaged in service delivery
     available_staff_count_by_level_and_officer_type.rename(columns ={'value': 'staff_count'}, inplace=True)
 

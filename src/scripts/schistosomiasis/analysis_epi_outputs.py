@@ -850,6 +850,53 @@ num_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'num_py_averted
 pc_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'pc_py_averted_vs_scaleup_WASH_results {target_period()}.csv'))
 
 
+# repeat for baseline comparator
+num_py_averted_vs_baseline_results = []
+pc_py_averted_vs_baseline_results = []
+
+for age in ages:
+    person_years = extract_results(
+        results_folder,
+        module="tlo.methods.schisto",
+        key="Schisto_person_days_infected",
+        custom_generate_series=get_person_years_infected,
+        do_scaling=False,  # switch to True for full runs
+    ).pipe(set_param_names_as_column_index_level_0)
+
+    person_years_summary = compute_summary_statistics(person_years, central_measure='median')
+
+    num_py_averted_vs_baseline = compute_summary_statistics(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            person_years,
+            comparison='Continue WASH, no MDA'
+        ),
+        central_measure='median'
+    )
+
+    pc_py_averted_vs_baseline = 100.0 * compute_summary_statistics(
+        -1.0 * find_difference_relative_to_comparison_dataframe(
+            person_years,
+            comparison='Continue WASH, no MDA',
+            scaled=True
+        ),
+        central_measure='median'
+    )
+
+    # Append the results to the corresponding lists
+    num_py_averted_vs_baseline_results.append(num_py_averted_vs_baseline)
+    pc_py_averted_vs_baseline_results.append(pc_py_averted_vs_baseline)
+
+# Combine results into two DataFrames, with age groups as a single-level row index
+num_py_averted_vs_baseline_results = pd.concat(num_py_averted_vs_baseline_results, keys=ages, axis=0)
+pc_py_averted_vs_baseline_results = pd.concat(pc_py_averted_vs_baseline_results, keys=ages, axis=0)
+
+num_py_averted_vs_baseline_results.index = num_py_averted_vs_baseline_results.index.get_level_values(0)
+pc_py_averted_vs_baseline_results.index = pc_py_averted_vs_baseline_results.index.get_level_values(0)
+
+num_py_averted_vs_baseline_results.to_csv(results_folder / (f'num_py_averted_vs_baseline_results {target_period()}.csv'))
+pc_py_averted_vs_baseline_results.to_csv(results_folder / (f'pc_py_averted_vs_baseline_results {target_period()}.csv'))
+
+
 def plot_averted_points_with_errorbars(_df):
     # Set the color palette for the age groups
     age_groups = _df.index
@@ -915,6 +962,21 @@ fig.tight_layout()
 fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
 fig.show()
 plt.close(fig)
+
+
+
+pc_py_averted_vs_baseline_ordered = pc_py_averted_vs_baseline_results.reindex(columns=order_for_plotting_vs_baseline, level=0)
+
+name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs baseline {target_period()}'
+fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_WASH_results_ordered)
+ax.set_title(name_of_plot)
+ax.set_ylabel('Percentage reduction in Person-Years Infected')
+ax.set_ylim(-40, 40)
+fig.tight_layout()
+fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+fig.show()
+plt.close(fig)
+
 
 
 ##################################################################################
@@ -1106,15 +1168,20 @@ plt.show()
 def plot_draws_with_ci(df: pd.DataFrame, title: str):
     """
     Plot median lines with shaded confidence intervals by draw.
-    Excludes draws starting with 'Pause' except 'Pause WASH, no MDA'.
+    Custom colours based on MDA category and line styles based on WASH scale.
 
     Parameters:
     df (pd.DataFrame): DataFrame with index = year, columns = MultiIndex (draw, stat)
+    title (str): Title for the plot
 
+    Returns:
+    fig, ax: matplotlib figure and axis
     """
 
     # Exclude year 2010
-    df = df[df.index != 2010]
+    # todo change this for full time-series
+    # df = df[df.index != 2010]
+    df = df[df.index >= 2023]
 
     # Desired draw order for legend and colour assignment
     ordered_draws = [
@@ -1133,9 +1200,28 @@ def plot_draws_with_ci(df: pd.DataFrame, title: str):
     filtered_draws = [draw for draw in df.columns.levels[0] if draw in ordered_draws]
     df = df.loc[:, df.columns.get_level_values(0).isin(filtered_draws)]
 
-    # Assign colours
-    colours = plt.colormaps['tab10'](np.linspace(0, 1, len(ordered_draws)))
-    colour_map = dict(zip(ordered_draws, colours))
+    # Define preset colours based on MDA type
+    mda_colours = {
+        'no MDA': '#1b9e77',
+        'MDA SAC': '#d95f02',
+        'MDA PSAC': '#7570b3',
+        'MDA All': '#e7298a'
+    }
+
+    def get_colour(draw):
+        for key in mda_colours:
+            if key in draw:
+                return mda_colours[key]
+        return '#000000'  # default black
+
+    def get_linestyle(draw):
+        if 'Scale-up WASH' in draw:
+            return '-'
+        elif 'Continue WASH' in draw:
+            return '--'
+        elif 'Pause WASH' in draw:
+            return (0, (1, 1))  # dotted
+        return '-'  # fallback
 
     # Set up plot
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -1147,12 +1233,16 @@ def plot_draws_with_ci(df: pd.DataFrame, title: str):
             lower = df[(draw, 'lower')]
             upper = df[(draw, 'upper')]
 
-            ax.plot(df.index, median, label=draw, color=colour_map[draw], lw=1)
-            ax.fill_between(df.index, lower, upper, color=colour_map[draw], alpha=0.3)
+            colour = get_colour(draw)
+            linestyle = get_linestyle(draw)
+
+            ax.plot(df.index, median, label=draw, color=colour, linestyle=linestyle, lw=1.5)
+            ax.fill_between(df.index, lower, upper, color=colour, alpha=0.3)
 
     # Custom legend
-    custom_lines = [Line2D([0], [0], color=colour_map[draw], lw=1) for draw in ordered_draws if draw in colour_map]
-    ax.legend(custom_lines, [draw for draw in ordered_draws if draw in colour_map],
+    custom_lines = [Line2D([0], [0], color=get_colour(draw), linestyle=get_linestyle(draw), lw=1.5)
+                    for draw in ordered_draws if draw in df.columns.get_level_values(0)]
+    ax.legend(custom_lines, [draw for draw in ordered_draws if draw in df.columns.get_level_values(0)],
               loc='upper right', frameon=True)
 
     # Axis labelling

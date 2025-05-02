@@ -223,7 +223,6 @@ def get_total_num_treatment_episdoes(_df):
 # ==============================================================================
 
 
-
 def compute_icer(dalys_averted, comparison_pzq_costs):
     """
     Compute the Incremental Cost-Effectiveness Ratio (ICER) comparing PZQ costs and DALYs averted
@@ -529,3 +528,38 @@ plot_npv_scatter(npv_results, column='NPV_Intervention',
 plot_npv_scatter(npv_results, column='Cost_per_DALY_Averted',
                  yaxis_label='Cost per DALY averted (discounted',
                  title='Cost per DALY averted (discounted) compared with WASH only')
+
+
+
+# ==============================================================================
+# %% ✅ COSTING MODULE
+# ==============================================================================
+
+# Period relevant for costing
+relevant_period_for_costing = [i.year for i in TARGET_PERIOD]
+list_of_relevant_years_for_costing = list(range(relevant_period_for_costing[0], relevant_period_for_costing[1] + 1))
+list_of_years_for_plot = list(range(2024, 2041))
+number_of_years_costed = relevant_period_for_costing[1] - 2024 + 1
+
+# Costing parameters
+discount_rate = 0.03
+
+# Estimate standard input costs of scenario
+# -----------------------------------------------------------------------------------------------------------------------
+# Standard 3% discount rate
+input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
+                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _discount_rate=discount_rate, summarize=True)
+
+# Undiscounted costs
+input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws=[0, 3, 5, 8],
+                                               _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
+                                               _discount_rate=0, summarize=True)
+
+
+
+
+
+
+
+
