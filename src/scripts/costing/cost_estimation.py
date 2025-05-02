@@ -109,21 +109,49 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     #     melted_df = pd.melt(_df, id_vars=id_vars).rename(columns={'variable_0': 'draw', 'variable_1': 'run'})
     #     return melted_df
 
-    def melt_model_output_draws_and_runs(_df, id_vars):
-        # Reset index to promote multi-index levels to columns
+    def melt_model_output_draws_and_runs(_df):
+        # Step 1: Reset index (gets 'year', 'Facility_Level', 'OfficerType' as columns)
         _df = _df.reset_index()
 
-        # Flatten columns if needed (in case of multi-index columns)
-        if isinstance(_df.columns, pd.MultiIndex):
-            _df.columns = ['_'.join(map(str, col)) if isinstance(col, tuple) else col for col in _df.columns]
+        new_columns = []
+        for col in _df.columns:
+            if isinstance(col, tuple):  # for columns that are tuples (draw, run)
+                # check if the tuple represents 'year', 'Facility_Level', or 'OfficerType'
+                if col[0] == 'year':
+                    new_columns.append('year')
+                elif col[0] == 'Facility_Level':
+                    new_columns.append('Facility_Level')
+                elif col[0] == 'OfficerType':
+                    new_columns.append('OfficerType')
+                else:
+                    new_columns.append(f"draw_{col[0]}_run_{col[1]}")
+            else:
+                new_columns.append(col)
 
-        # Clean the column names to remove any trailing underscores
-        _df.columns = _df.columns.str.replace('_$', '', regex=True)
+        # Assign the new column names to the DataFrame
+        _df.columns = new_columns
 
-        # Melt the DataFrame using id_vars as specified
-        melted_df = pd.melt(_df, id_vars=id_vars).rename(columns={'variable': 'draw', 'value': 'run'})
+        # Melt to long format
+        _df_long = _df.melt(
+            id_vars=['year', 'Facility_Level', 'OfficerType'],  # keeping 'year', 'Facility_Level', 'OfficerType'
+            value_vars=[col for col in _df.columns if isinstance(col, str) and col.startswith("draw")],
+            var_name='draw_run',  # this will create the 'draw_run' column
+            value_name='value'
+        )
 
-        return melted_df
+        # Step 4: Split the 'draw_run' column into two columns: 'draw' and 'run'
+        _df_long[['draw', 'run']] = _df_long['draw_run'].str.extract(r'draw_(\d+)_run_(\d+)')
+        _df_long['draw'] = _df_long['draw'].astype(int)
+        _df_long['run'] = _df_long['run'].astype(int)
+
+        # Drop the 'draw_run' column
+        _df_long = _df_long.drop(columns=['draw_run'])
+
+        return _df_long
+
+
+
+
 
     # Define a relative pathway for relevant folders
     path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
@@ -274,14 +302,23 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     )
 
     # Update above series to get staff count by Facility_Level
-    available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(columns= {'FacilityID': 'Facility_ID', 'Officer': 'OfficerType'})
+    available_staff_count_by_facid_and_officertype = available_staff_count_by_facid_and_officertype.reset_index().rename(columns={'FacilityID': 'Facility_ID', 'Officer': 'OfficerType'})
     available_staff_count_by_facid_and_officertype['Facility_ID'] = pd.to_numeric(available_staff_count_by_facid_and_officertype['Facility_ID'])
     available_staff_count_by_facid_and_officertype['Facility_Level'] = available_staff_count_by_facid_and_officertype['Facility_ID'].map(facility_id_levels_dict)
     idx = pd.IndexSlice
-    available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(columns = [idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
-    available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(available_staff_count_by_level_and_officer_type.reset_index(), id_vars=['year', 'Facility_Level', 'OfficerType'])
+    available_staff_count_by_level_and_officer_type = available_staff_count_by_facid_and_officertype.drop(
+        columns=[idx['Facility_ID']]).groupby([idx['year'], idx['Facility_Level'], idx['OfficerType']]).sum()
+
+
+    # todo fixed this
+    available_staff_count_by_level_and_officer_type = melt_model_output_draws_and_runs(
+        available_staff_count_by_level_and_officer_type)
+
+    # back to original script
     available_staff_count_by_level_and_officer_type['Facility_Level'] = available_staff_count_by_level_and_officer_type['Facility_Level'].astype(str)  # make sure facility level is stored as string
-    available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type['Facility_Level'] == '5'].index) # drop headquarters because we're only concerned with staff engaged in service delivery
+    available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(
+        available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type['Facility_Level'] == '5'].index) # drop headquarters because we're only concerned with staff engaged in service delivery
+
     available_staff_count_by_level_and_officer_type.rename(columns ={'value': 'staff_count'}, inplace=True)
 
     # Get list of cadres which were utilised in each run to get the count of staff used in the simulation
@@ -304,16 +341,54 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # Prepare capacity used dataframe to be multiplied by staff count
     average_capacity_used_by_cadre_and_level = annual_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).mean().reset_index(drop=False)
     # TODO see if cadre-level combinations should be chosen by year
-    average_capacity_used_by_cadre_and_level.reset_index(drop=True) # Flatten multi=index column
-    average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(id_vars=['OfficerType', 'FacilityLevel'],
-                            var_name=['draw', 'run'],
-                            value_name='capacity_used')
+    # average_capacity_used_by_cadre_and_level.reset_index(drop=True)  # Flatten multi=index column
+    # todo replacing the line above
+    # Step 1: Separate out the id_vars and value_vars
+    id_vars = ['OfficerType', 'FacilityLevel']
+    value_vars = [col for col in average_capacity_used_by_cadre_and_level.columns
+                  if col not in id_vars]
+
+    # Step 2: Melt using MultiIndex columns
+    average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(
+        id_vars=id_vars,
+        value_vars=value_vars,
+        var_name=['draw', 'run'],
+        value_name='capacity_used'
+    )
+
+    # average_capacity_used_by_cadre_and_level = average_capacity_used_by_cadre_and_level.melt(id_vars=['OfficerType', 'FacilityLevel'],
+    #                         var_name=['draw', 'run'],
+    #                         value_name='capacity_used')
+
     list_of_cadre_and_level_combinations_used = average_capacity_used_by_cadre_and_level[average_capacity_used_by_cadre_and_level['capacity_used'] != 0][['OfficerType', 'FacilityLevel', 'draw', 'run']]
     print(f"Out of {average_capacity_used_by_cadre_and_level.groupby(['OfficerType', 'FacilityLevel']).size().count()} cadre and level combinations available, {list_of_cadre_and_level_combinations_used.groupby(['OfficerType', 'FacilityLevel']).size().count()} are used across the simulations")
     list_of_cadre_and_level_combinations_used = list_of_cadre_and_level_combinations_used.rename(columns = {'FacilityLevel':'Facility_Level'})
 
+    # todo add this to counter errors
+    # Ensure consistent types for merge keys
+    average_capacity_used_by_cadre_and_level['draw'] = average_capacity_used_by_cadre_and_level['draw'].astype(int)
+    average_capacity_used_by_cadre_and_level['run'] = average_capacity_used_by_cadre_and_level['run'].astype(int)
+
+    list_of_cadre_and_level_combinations_used['draw'] = list_of_cadre_and_level_combinations_used['draw'].astype(int)
+    list_of_cadre_and_level_combinations_used['run'] = list_of_cadre_and_level_combinations_used['run'].astype(int)
+
+    available_staff_count_by_level_and_officer_type['draw'] = available_staff_count_by_level_and_officer_type[
+        'draw'].astype(int)
+    available_staff_count_by_level_and_officer_type['run'] = available_staff_count_by_level_and_officer_type[
+        'run'].astype(int)
+
+    used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(
+        list_of_cadre_and_level_combinations_used,
+        on=['draw', 'run', 'OfficerType', 'Facility_Level'],
+        how='right',
+        validate='m:m'
+    )
+
     # Subset scenario staffing level to only include cadre-level combinations used in the simulation
-    used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(list_of_cadre_and_level_combinations_used, on = ['draw','run','OfficerType', 'Facility_Level'], how = 'right', validate = 'm:m')
+    # used_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.merge(
+    #     list_of_cadre_and_level_combinations_used,
+    #     on=['draw','run','OfficerType', 'Facility_Level'], how='right', validate='m:m')
+    #
     used_staff_count_by_level_and_officer_type.rename(columns ={'value': 'staff_count'}, inplace=True)
 
     if (cost_only_used_staff):

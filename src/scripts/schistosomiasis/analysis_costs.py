@@ -551,6 +551,7 @@ input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
                                                _discount_rate=discount_rate, summarize=True)
 
+
 # Undiscounted costs
 input_costs_undiscounted = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _draws=[0, 3, 5, 8],
                                                _years=list_of_relevant_years_for_costing, cost_only_used_staff=True,
