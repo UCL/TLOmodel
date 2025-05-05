@@ -105,6 +105,7 @@ class Simulation:
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
+        self.param_labels_data = {}
 
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = resourcefilepath
@@ -304,6 +305,7 @@ class Simulation:
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
         self.close_output_file()
+        self.compute_label_starts()
 
     def close_output_file(self) -> None:
         """Close logging file if open."""
@@ -476,22 +478,12 @@ class Simulation:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
 
-    def generate_label_stats(self):
-        """ return statistics for all parameter labels used all registered disease modules """
-        column_defaults = {'label': 'unassigned', 'lower': None, 'upper': None}
-        # get all disease modules registered
-        print(self.modules)
-        store_label_stats = dict()
-        for _col, _val in column_defaults.items():
-            if _col not in resource.columns:
-                resource[_col] = _val
-
-        parameter_lb = resource.groupby(by='label')['label'].count()
-        store_label_stats[self.name] = parameter_lb
-        label_starts_df = pd.DataFrame(data=store_label_stats.values(),
-                                       index=[_module for _module in store_label_stats.keys()])
-
-        print(label_starts_df)
+    def compute_label_starts(self):
+        import pandas as pd
+        for _key, _val in self.param_labels_data.items():
+            self.param_labels_data[_key] = _val.groupby('param_label').size()
+        label_df = pd.DataFrame(self.param_labels_data)
+        logger.info(key='label_stats', data=label_df.to_dict())
 
 class EventQueue:
     """A simple priority queue for events.

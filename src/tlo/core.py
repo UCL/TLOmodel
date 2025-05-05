@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import json
 from enum import Enum, auto
-from operator import index
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List
 
 import numpy as np
 import pandas as pd
-from plotly.express import defaults
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -122,34 +120,6 @@ class Specifiable:
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
-    def __init__(self,
-                 type_: Types,
-                 description: str,
-                 categories: List[str] = None,
-                 *,
-                 label: str = 'unassigned',
-                 pv_min: Optional[int | float] = None,
-                 pv_max: Optional[int | float] = None):
-        super().__init__(type_, description, categories)
-        self.pv_min = pv_min
-        self.pv_max = pv_max
-        self.label = label
-        self.accepted_labels = ["unassigned", "free", "constant", "context_specific"]
-        self.accepted_types_min_max = [int, float]
-
-        if self.label not in self.accepted_labels:
-            raise ValueError(f'label value should be one the following: {self.accepted_labels}')
-
-        if self.pv_min is not None and self.pv_max is not None:
-            assert (type(self.pv_min) in
-                    self.accepted_types_min_max), f'miv values should be of type int, float or None {type(self.pv_min)}'
-
-            assert (type(self.pv_max) in
-                    self.accepted_types_min_max), f'max values should be of type int or float {type(self.pv_max)}'
-
-            # ensure minimum value is not greater than maximum value
-            assert self.pv_min < self.pv_max, \
-                f'minimum value cannot be greater than maximum value {self.pv_min} > {self.pv_max}'
 
 
 class Property(Specifiable):
@@ -351,14 +321,26 @@ class Module:
 
         :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
         """
+        def calculate_module_stats(param_df: pd.DataFrame) :
+            accepted_lbls = ["unassigned", "free", "constant", "context_specific"]
+            column_defaults = {'param_label': 'unassigned'}
+            for _col, _val in column_defaults.items():
+                if _col not in resource.columns:
+                    param_df[_col] = _val
+                else:
+                    # fill na with unassigned
+                    param_df[_col].fillna(_val)
+                    # check if value is in acceptable labels or format
+                    assert _val in accepted_lbls, f'value should be either of the following {accepted_lbls}'
+                    assert type(_val) == str, f'value should be a string and not {type(_val)}'
+
+            return param_df[['param_label']]
+
+        # update the parameter labels dictionary
+        self.sim.param_labels_data[self.name] = calculate_module_stats(resource)
+
         resource.set_index('parameter_name', inplace=True)
         skipped_data_types = ('DATA_FRAME', 'SERIES')
-
-        column_defaults = {'label': 'unassigned', 'lower': None, 'upper': None}
-        store_label_stats = dict()
-        for _col, _val in column_defaults.items():
-            if _col not in resource.columns:
-                resource[_col] = _val
 
         # for each supported parameter, convert to the correct type
         for parameter_name in resource.index[resource.index.notnull()]:
@@ -400,11 +382,6 @@ class Module:
 
             # Save the values to the parameters
             self.parameters[parameter_name] = parameter_value
-
-
-
-            # parameter_definition.label, parameter_definition.pv_min, parameter_definition.pv_max = parameter_lb_min_max
-            # print(parameter_definition.label, parameter_definition.pv_min, parameter_definition.pv_max)
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """Read parameter values from file, if required.

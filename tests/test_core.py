@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import Module, Parameter, Property, Types
+from tlo import Date, Module, Parameter, Property, Types, Simulation, Population
 
 
 def test_categorical():
@@ -52,7 +52,7 @@ def test_parameter_label(tmpdir):
 
     """
     dummy_data = pd.DataFrame(data={'parameter_name':['prob_inf', 'prob_death', 'rr_inf', 'rr_death'],
-                                    'value':[0.3, 0.02, 0.8, 0.9], 'label':['free', 'constant',
+                                    'value':[0.3, 0.02, 0.8, 0.9], 'param_label':['free', 'constant',
                                                                             'context_specific', 'free'],
                                     'lower':[0.002, 0.002, 0.001, 0.003], 'upper':[0.98, 0.8, 0.6, 0.7]})
 
@@ -66,19 +66,25 @@ def test_parameter_label(tmpdir):
             'rr_inf': Parameter(Types.REAL, description='relative rate of infection'),
             'rr_death': Parameter(Types.REAL, description='relative rate of death')
         }
-        def __init__(self):
+        def __init__(self, resourcefilepath=None):
             super().__init__()
+            self.resourcefilepath = resourcefilepath
 
         def read_parameters(self, data_folder: str | Path) -> None:
-            df = pd.read_csv(data_folder / 'dummy_data.csv')
+            df = pd.read_csv( self.resourcefilepath / 'dummy_data.csv')
             self.load_parameters_from_dataframe(df)
 
-    dummy_module = DummyModule()
-    dummy_module.read_parameters(tmpdir)
+        def initialise_population(self, population: Population) -> None:
+            pass
 
-    # test defining a parameter with unaccepted parameter label value raises value error
-    with pytest.raises(ValueError):
-        Parameter(Types.REAL, 'parameter description', label='other')
+        def initialise_simulation(self, sim: Simulation) -> None:
+            pass
+
+    resourcefilepath = tmpdir
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+    sim.register(DummyModule(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=1000)
+    sim.simulate(end_date=Date(2010, 4, 1))
 
 class TestLoadParametersFromDataframe:
     """Tests for the load_parameters_from_dataframe method
