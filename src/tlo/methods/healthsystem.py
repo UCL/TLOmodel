@@ -333,7 +333,7 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
-        'include_ringfecned_clinics': Parameter(
+        'include_ringfenced_clinics': Parameter(
             Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is
             only applicable if mode_appt_constraints is set to 2.'),
     }
@@ -362,6 +362,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        include_ringfenced_clinics: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -403,6 +404,8 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
+        :param include_ringfenced_clinics: Whether to implement ring-fencing of a portion of facility time for specific
+            appointment types. This parameter is only applicable if mode_appt_constraints is set to 2. Defaults to False.
         """
 
         super().__init__(name)
