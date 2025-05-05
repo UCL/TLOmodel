@@ -1,3 +1,4 @@
+
 import datetime
 import heapq as hp
 import itertools
@@ -332,6 +333,9 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+        'include_ringfecned_clinics': Parameter(
+            Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is
+            only applicable if mode_appt_constraints is set to 2.'),
     }
 
     PROPERTIES = {
@@ -2992,4 +2996,3 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
             description="The number of hcw_staff this year",
             data=current_staff_count,
         )
-
