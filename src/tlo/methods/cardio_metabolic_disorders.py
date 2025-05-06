@@ -15,6 +15,7 @@ from __future__ import annotations
 import math
 from itertools import combinations
 from pathlib import Path
+from random import random
 from typing import TYPE_CHECKING, List
 
 import numpy as np
@@ -1492,6 +1493,9 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         hs = self.sim.modules['HealthSystem']
         df = self.sim.population.props
         person_id = self.target
+        m = self.module
+
+        rng = m.rng
 
         # Do nothing if the condition is already diagnosed
         if df.at[person_id, f'nc_{_c}_ever_diagnosed']:
@@ -1670,6 +1674,10 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         eq_item_codes = {int(code): dose[self.condition] for code in equipment_codes if code is not None}
 
         if self.get_consumables(item_codes=med_item_codes):
+
+        # Experiment with CKD consumable availability
+        # if (self.condition != "chronic_kidney_disease" and self.get_consumables(item_codes=med_item_codes)) or \
+        #     (self.condition == "chronic_kidney_disease" and random.random() < 0.4 and self.get_consumables(item_codes=med_item_codes)):
             self.add_equipment(eq_item_codes)
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
