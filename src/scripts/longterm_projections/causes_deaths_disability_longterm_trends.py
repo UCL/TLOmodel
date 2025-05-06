@@ -505,6 +505,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     normalized_DALYs.to_csv(output_folder / f"relative_of_dalys_normalized_2020_2070.csv")
 
+    # List of selected causes
+    selected_causes = [
+        'Cancer (Bladder)',
+        'Cancer (Breast)',
+        'Cancer (Oesophagus)',
+        'Cancer (Other)',
+        'Cancer (Prostate)',
+        'Depression / Self-harm',
+        'Diabetes',
+        'Epilepsy',
+        'Heart Disease',
+        'Kidney Disease',
+        'Lower Back Pain'
+    ]
+
+    # Subset to those causes
+    df_selected_causes = df_dalys_all_draws_mean_1000.loc[selected_causes]
+
+    # Calculate percentage of total DALYs per scenario for those causes
+    dalys_total_per_scenario = df_dalys_all_draws_mean_1000.sum(axis=0)
+    df_selected_causes_pct = df_selected_causes.div(dalys_total_per_scenario) * 100
+
+    # Plot: Stacked bar chart of percentage DALYs for selected causes
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    df_selected_causes_pct.T.plot.bar(stacked=True,
+                                      ax=ax,
+                                      color=[get_color_cause_of_death_or_daly_label(cause) for cause in
+                                             selected_causes])
+
+    ax.set_xlabel('Scenario')
+    ax.set_ylabel('% of total DALYs')
+    ax.set_xticks(range(len(scenario_names)))
+    ax.set_xticklabels(scenario_names, rotation=45, ha='right')
+    ax.legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax.grid(False)
+
+    # Save figure
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(f'dalys_selected_conditions_percentage_of_total_2070'))
+    plt.close(fig)
+
+    # Save data as CSV
+    df_selected_causes_pct.to_csv(output_folder / 'dalys_selected_conditions_percentage_of_total_2070.csv')
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
