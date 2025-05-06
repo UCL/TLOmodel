@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-min_year = 2020
+min_year = 2010
 max_year = 2070
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
@@ -312,49 +312,61 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         yld_totals_mean - yld_totals_lower,
         yld_totals_upper - yld_totals_mean
     ])
-    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-    # Panel A: Total Deaths
-    axes[0].bar(yll_totals_mean.index, yll_totals_mean.values, color=scenario_colours, yerr = yll_totals_err, capsize=20)
-    axes[0].set_title('Total YLL (2020-2070)')
-    axes[0].set_xlabel('Scenario')
-    axes[0].set_ylabel('Total YLL')
-    axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].grid(False)
+    # fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    # # Panel A: Total Deaths
+    # axes[0].bar(yll_totals_mean.index, yll_totals_mean.values, color=scenario_colours, yerr = yll_totals_err, capsize=20)
+    # axes[0].set_title('Total YLL (2020-2070)')
+    # axes[0].set_xlabel('Scenario')
+    # axes[0].set_ylabel('Total YLL')
+    # axes[0].set_xticklabels(scenario_names, rotation=45)
+    # axes[0].grid(False)
+    #
+    # # Panel B: Total ylls
+    # axes[1].bar(yld_totals_mean.index, yld_totals_mean.values, color=scenario_colours, yerr = yld_totals_err, capsize=20)
+    # axes[1].set_title('Total YLD (2020-2070)')
+    # axes[1].set_xlabel('Scenario')
+    # axes[1].set_ylabel('Total YLD')
+    # axes[1].set_xticklabels(scenario_names, rotation=45)
+    # axes[1].grid(False)
+    # fig.tight_layout()
+    # fig.savefig(output_folder / "total_ylds_and_ylls_all_draws_age_standardized.png")
+    # plt.close(fig)
+    #
+    # fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+    # # Panel A: Total Deaths
+    # #axes[0].bar(df_deaths_all_draws_mean_1000.index, df_deaths_all_draws_mean_1000.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
+    # df_yll_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0])
+    # axes[0].set_title('YLLs per 1,000 2070')
+    # axes[0].set_xlabel('Scenario')
+    # axes[0].set_ylabel('YLLs per 1,000')
+    # axes[0].set_xticklabels(scenario_names, rotation=45)
+    # print(df_yll_all_draws_mean_1000)
+    #
+    # axes[0].legend().set_visible(False)
+    # # Panel B: Total ylls
+    # #axes[1].bar(df_ylls_all_draws_mean_1000.index, df_ylls_all_draws_mean_1000.values, color=scenario_colours, yerr = ylls_totals_err, capsize=20)
+    # df_yld_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],label = [label for label in df_all_years_yld_mean.index])
+    # print(df_yld_all_draws_mean_1000)
+    # axes[1].set_title('YLDs per 1,000 (2020-2070)')
+    # axes[1].set_xlabel('Scenario')
+    # axes[1].set_ylabel('YLDs per 1,000')
+    # axes[1].set_xticklabels(scenario_names, rotation=45)
+    # axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
+    #
+    # fig.tight_layout()
+    # fig.savefig(output_folder / "yll_and_yld_per_1000_all_cause_all_draws_age_standardized_50.png")
+    # plt.close(fig)
 
-    # Panel B: Total ylls
-    axes[1].bar(yld_totals_mean.index, yld_totals_mean.values, color=scenario_colours, yerr = yld_totals_err, capsize=20)
-    axes[1].set_title('Total YLD (2020-2070)')
-    axes[1].set_xlabel('Scenario')
-    axes[1].set_ylabel('Total YLD')
-    axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].grid(False)
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # Plot YLDs by cause
+    df_yld_all_draws_mean_1000.T.plot.bar(stacked=True, ax = ax,label = [label for label in df_all_years_yld_mean.index])
+    ax.set_xlabel('Scenario')
+    ax.set_xticklabels(scenario_names, rotation=45)
+    ax.set_ylabel('Total YLDs per 1,000 between 2020 and 2070')
+    ax.legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
     fig.tight_layout()
-    fig.savefig(output_folder / "total_ylds_and_ylls_all_draws_age_standardized.png")
-    plt.close(fig)
-
-    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-    # Panel A: Total Deaths
-    #axes[0].bar(df_deaths_all_draws_mean_1000.index, df_deaths_all_draws_mean_1000.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
-    df_yll_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0])
-    axes[0].set_title('YLLs per 1,000 2070')
-    axes[0].set_xlabel('Scenario')
-    axes[0].set_ylabel('YLLs per 1,000')
-    axes[0].set_xticklabels(scenario_names, rotation=45)
-    print(df_yll_all_draws_mean_1000)
-
-    axes[0].legend().set_visible(False)
-    # Panel B: Total ylls
-    #axes[1].bar(df_ylls_all_draws_mean_1000.index, df_ylls_all_draws_mean_1000.values, color=scenario_colours, yerr = ylls_totals_err, capsize=20)
-    df_yld_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],label = [label for label in df_all_years_yld_mean.index])
-    print(df_yld_all_draws_mean_1000)
-    axes[1].set_title('YLDs per 1,000 (2020-2070)')
-    axes[1].set_xlabel('Scenario')
-    axes[1].set_ylabel('YLDs per 1,000')
-    axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
-
-    fig.tight_layout()
-    fig.savefig(output_folder / "yll_and_yld_per_1000_all_cause_all_draws_age_standardized_50.png")
+    fig.savefig(make_graph_file_name('Trend_YLDs_by_condition_All_Years'))
     plt.close(fig)
 
 
