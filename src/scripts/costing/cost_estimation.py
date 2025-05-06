@@ -1782,11 +1782,59 @@ def generate_multiple_scenarios_roi_plot( _monetary_value_of_incremental_health:
             x_end = line['x_end']
             label = line.get('label', '')
             color = line.get('color', 'black')
-            linestyle = line.get('linestyle', '--')
+            # Draw double-headed arrow instead of hline
+            ax.annotate(
+                '',
+                xy=(x_end, y),
+                xytext=(x_start, y),
+                arrowprops=dict(
+                    arrowstyle='<->',
+                    color=color,
+                    lw=1.5
+                )
+            )
 
-            ax.hlines(y=y, xmin=x_start, xmax=x_end, colors=color, linestyles=linestyle)
+            # Place label slightly above the line
             if label:
-                ax.text((x_start + x_end)/2, y, label, va='bottom', ha='left', fontsize=10, color=color)
+                # Wrap label into 2 lines, add 3rd line if comparison_text exists
+                label_wrapped = label.replace('$', '\$').replace(' [', '\n[')
+
+                label_x = x_end + ax.get_xlim()[1] * 0.005
+                label_y = y
+
+                y_label_offset = line.get('y_label_offset', '')
+                if y_label_offset:
+                    label_y = y + y_label_offset
+
+                ax.text(
+                    label_x,
+                    label_y,
+                    label_wrapped,
+                    ha='left',
+                    va='center',
+                    fontsize=8,
+                    color='white',
+                    fontweight='bold',
+                    bbox=dict(
+                        boxstyle='round,pad=0.3',
+                        facecolor=color,
+                        edgecolor=color,
+                        alpha=0.9
+                    )
+                )
+
+                # Add scenario label outside the box
+                scenario_label = line.get('scenario_label', '')
+                if scenario_label:
+                    ax.text(
+                        label_x + ax.get_xlim()[1] * 0.16,  # push to the right of the box
+                        label_y,
+                        scenario_label,
+                        ha='left',
+                        va='center',
+                        fontsize=8,
+                        color=color
+                    )
 
     # Set y-axis limit
     if _y_axis_lim == None:
@@ -1800,7 +1848,7 @@ def generate_multiple_scenarios_roi_plot( _monetary_value_of_incremental_health:
 
     # Show legend and title
     if (show_title_and_legend != False):
-        plt.title(f'Return on Investment at different levels of implementation cost{_year_suffix}')
+        plt.title(f'Return on Investment at different levels of above service level cost {_year_suffix}')
         plt.legend()
 
     # Add gridlines and border

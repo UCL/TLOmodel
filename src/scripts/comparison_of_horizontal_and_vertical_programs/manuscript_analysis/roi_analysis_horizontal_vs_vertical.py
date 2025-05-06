@@ -20,6 +20,7 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 from adjustText import adjust_text # For the CEA plane figure to avoid overlaps in data labels
+from typing import Optional, Union, Literal
 
 from tlo.analysis.utils import (
     extract_params,
@@ -142,7 +143,8 @@ chosen_value_of_statistical_life_lower = 425.96 # lower bound estimated using Ro
 # and assumed income elasticity of consumption value of health to be 1.
 
 # Above service level costs as a percentage of service level costs (This is used for the interpretation of ROI results)
-above_service_level_cost_proportion = 0.58
+# As per Opuni et al (2023), service level costs were 42% of the total cost --> above service level costs were 58% of total or 138% of sevice level costs
+above_service_level_cost_proportion = 1.38
 
 # Define a function to create bar plots
 def do_standard_bar_plot_with_ci(_df, set_colors=None, annotations=None,
@@ -950,17 +952,14 @@ for rates in alternative_discount_rates:
         roi_at_0_implementation_cost_summarized = summarize_cost_data(roi_at_0_implementation_cost, _metric=chosen_metric)
         roi_at_0_implementation_cost_dict = convert_results_to_dict(roi_at_0_implementation_cost_summarized)
 
-        # Find out at what implementation costs the ROI of HTM with HSS is the same as HTM without HSS
-        # A. when additional implementation cost of HTM without HSS is 0
-        health_benefit_summarised = convert_results_to_dict(summarize_cost_data(
-            get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
-            _metric=chosen_metric))
-        incremental_scenario_cost_summarised = convert_results_to_dict(
-            summarize_cost_data(incremental_scenario_cost, _metric=chosen_metric))
-        breakeven_implementation_cost_at_0_implementation_cost = (health_benefit_summarised[44][chosen_metric] -
-                                         incremental_scenario_cost_summarised[44][chosen_metric] * (
-                                                 roi_at_0_implementation_cost_dict[36][chosen_metric] + 1)) / ((roi_at_0_implementation_cost_dict[36][chosen_metric] + 1))
-        # A. when additional implementation cost of HTM without HSS is equal to above_service_level_cost_proportion
+
+        #health_benefit_summarised = convert_results_to_dict(summarize_cost_data(
+           # get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
+           # _metric=chosen_metric))
+        #incremental_scenario_cost_summarised = convert_results_to_dict(
+       #     summarize_cost_data(incremental_scenario_cost, _metric=chosen_metric))
+
+        # ROI at implementation costs = 138% of input costs
         implementation_cost_upper_limit = incremental_scenario_cost * above_service_level_cost_proportion
         implementation_cost_upper_limit_dict = convert_results_to_dict(summarize_cost_data(implementation_cost_upper_limit,
                                                                                            _metric=chosen_metric))
@@ -970,54 +969,180 @@ for rates in alternative_discount_rates:
                                             - implementation_cost_upper_limit)
         roi_at_upper_limit_implementation_cost =  benefit_at_0_implementation_cost.div(abs(incremental_scenario_cost + implementation_cost_upper_limit))
         roi_at_upper_limit_implementation_cost_dict = convert_results_to_dict(summarize_cost_data(roi_at_upper_limit_implementation_cost, _metric = chosen_metric))
-        breakeven_implementation_cost_at_upper_limit_implementation_cost = (health_benefit_summarised[44][chosen_metric] -
-                                         incremental_scenario_cost_summarised[44][chosen_metric] * (
-                                                 roi_at_upper_limit_implementation_cost_dict[36][chosen_metric] + 1)) / ((roi_at_upper_limit_implementation_cost_dict[36][chosen_metric] + 1))
 
-        # based on the estimates generated about, create a dict representing horizontal lines to be superimposed on the ROI plot
-        label_0_implementation_cost = f'a = ${breakeven_implementation_cost_at_0_implementation_cost/1e6: .2f}m'
-        label_upper_limit_implementation_cost = f'b = ${(breakeven_implementation_cost_at_upper_limit_implementation_cost - implementation_cost_upper_limit_dict[36][chosen_metric]) /1e6: .2f}m'
 
-        additional_horizontal_lines_for_interpretation = [
-            {
-                'y_value': roi_at_0_implementation_cost_dict[36][chosen_metric],
-                'x_start' : 0 ,
-                'x_end': breakeven_implementation_cost_at_0_implementation_cost/1e6,  # where the horizontal line intersects the ROI curve of the diagonal strategy
-                'label': label_0_implementation_cost, # Breakeven incremental implementation cost\n of diagonal scenario when additional \n implementation cost of vertical \n scenario = 0
-                'color': 'black',
-                'linestyle': '--'
-            },
-            {
-                'y_value': roi_at_upper_limit_implementation_cost_dict[36][chosen_metric],
-                'x_start': implementation_cost_upper_limit_dict[36][chosen_metric]/1e6,
-                'x_end': breakeven_implementation_cost_at_upper_limit_implementation_cost/1e6,  # where the horizontal line intersects the ROI curve of the diagonal strategy
-                'label': label_upper_limit_implementation_cost, # Breakeven incremental implementation cost\n of diagonal scenario when additional \n implementation cost of vertical \n scenario = 45% of incremental input costs
-                'color': 'black',
-                'linestyle': '--'
-            }
-        ]
+        # Create a function to generate threshold (or maximum) implementation costs which the scneario with the higher ROI
+        # can incur over and above those incurred by the scenario with the lower ROI while still delivering a higher ROI
+        def compute_breakeven_with_ci(
+            roi_df: pd.DataFrame,
+            monetary_benefit_df: pd.DataFrame,
+            incremental_cost_df: pd.DataFrame,
+            implementation_cost_df: pd.DataFrame,
+            draw_target: int,
+            draw_compare: int
+        ):
+            """
+            Compute breakeven implementation costs across runs and return median and 95% CI.
 
-        draw_colors = {8: '#9e0142', 36: '#fdae61', 44:'#66c2a5'}
-        generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted, _chosen_value_of_life_year = vsly),
-                           _incremental_input_cost=incremental_scenario_cost,
-                           _draws = [8, 36, 44],
-                           _scenario_dict = all_manuscript_scenarios,
-                           _outputfilepath=figurespath,
-                           _value_of_life_suffix = vsly_fig_suffixes[i],
-                            _metric = chosen_metric,
-                            _year_suffix= f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
-                            _projected_health_spending = projected_health_spending_baseline,
-                           _additional_horizontal_lines_for_interpretation = additional_horizontal_lines_for_interpretation,
-                           _draw_colors = draw_colors,
-                           show_title_and_legend = legend_switch_for_main_roi_plot)
+            Parameters:
+            -----------
+            roi_df : pd.DataFrame
+                ROI DataFrame with index as (draw) and columns as runs.
+            monetary_benefit_df : pd.DataFrame
+                Monetised health benefits with same structure as roi_df.
+            incremental_cost_df : pd.DataFrame
+                Incremental input cost with same structure.
+
+            draw_target : int
+                The draw index for the target scenario.
+
+            draw_compare : int
+                The draw index for the scenario used to compute the threshold (e.g., vertical or HSS).
+
+            Returns:
+            --------
+            str
+                A label string in the format "$XXXM [$XX–$XXM]"
+            """
+
+            values = []
+            for run in roi_df.columns:
+                roi_val = roi_df.loc[draw_compare, run]
+                health_benefit = monetary_benefit_df.loc[draw_target, run]
+                cost = incremental_cost_df.loc[draw_target, run]
+
+                # Breakeven formula
+                val = (health_benefit - cost * (roi_val + 1)) / (roi_val + 1)
+                val = val - implementation_cost_df.loc[draw_compare, run]
+                values.append(val)
+
+            values = np.array(values) / 1e6  # Convert to millions
+            median, lower, upper = np.median(values), np.percentile(values, 2.5), np.percentile(values, 97.5)
+
+            # estimate median point on the ROI curves for the figure
+            roi_summary = convert_results_to_dict(summarize_cost_data(roi_df, chosen_metric))
+            health_summary = convert_results_to_dict(summarize_cost_data(monetary_benefit_df, chosen_metric))
+            cost_summary = convert_results_to_dict(summarize_cost_data(incremental_cost_df, chosen_metric))
+            implementation_cost_summary = convert_results_to_dict(
+                summarize_cost_data(implementation_cost_df, chosen_metric))
+            breakeven_central_value = (health_summary[draw_target][chosen_metric] - cost_summary[draw_target][
+                chosen_metric] * (roi_summary[draw_compare][chosen_metric] + 1)) / (
+                                              roi_summary[draw_compare][chosen_metric] + 1)
+            breakeven_central_value = breakeven_central_value / 1e6
+
+            return median, lower, upper, breakeven_central_value
+
+        # Breakeven implementation cost for joint HTM diagonal scenario (V joint HTM vertical scenario);
+        # Implementation cost = 0
+        breakeven_lower_v_htm = compute_breakeven_with_ci(
+            roi_df=roi_at_0_implementation_cost,
+            monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
+            incremental_cost_df=incremental_scenario_cost,
+            implementation_cost_df=0 * incremental_scenario_cost,
+            draw_target=44,
+            draw_compare=36
+        )
+        # Breakeven implementation cost for joint HTM diagonal scenario (V joint HTM vertical scenario);
+        # Implementation cost = 138% of Input costs
+        breakeven_upper_v_htm = compute_breakeven_with_ci(
+            roi_df=roi_at_upper_limit_implementation_cost,
+            monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
+            incremental_cost_df=incremental_scenario_cost,
+            implementation_cost_df=implementation_cost_upper_limit,
+            draw_target=44,
+            draw_compare=36
+        )
+        # Breakeven implementation cost for joint HTM diagonal scenario (V horizontal scenario);
+        # Implementation cost = 0
+        breakeven_lower_v_hss = compute_breakeven_with_ci(
+            roi_df=roi_at_0_implementation_cost,
+            monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
+            incremental_cost_df=incremental_scenario_cost,
+            implementation_cost_df=0 * incremental_scenario_cost,
+            draw_target=44,
+            draw_compare=8
+        )
+        # Breakeven implementation cost for joint HTM diagonal scenario (V horizontal scenario);
+        # Implementation cost = 138% of Input costs
+        breakeven_upper_v_hss = compute_breakeven_with_ci(
+            roi_df=roi_at_upper_limit_implementation_cost,
+            monetary_benefit_df=get_monetary_value_of_incremental_health(num_dalys_averted, vsly),
+            incremental_cost_df=incremental_scenario_cost,
+            implementation_cost_df=implementation_cost_upper_limit,
+            draw_target=44,
+            draw_compare=8
+        )
+
+        if (vsly_fig_suffixes[i] == 'MAIN') & (rates["discounting_scenario"] == 'MAIN (0.03,0.03)'): # The breakeven
+        # ASC costs are only plotted in th main results plot
+            # Generate data for the representation of breakeven implementation costs on the ROI plots
+            additional_horizontal_lines_for_interpretation = [
+                {
+                    'y_value': roi_at_0_implementation_cost_dict[36][chosen_metric],
+                    'x_start': 0,
+                    'x_end': breakeven_lower_v_htm[0], # where the horizontal line intersects the ROI curve of the diagonal strategy
+                    'label': f"a = ${breakeven_lower_v_htm[0]:.0f}M [${breakeven_lower_v_htm[1]:.0f}M–${breakeven_lower_v_htm[2]:.0f}M]",
+                    'color': '#fdae61',
+                    'scenario_label': 'Diagonal versus Vertical (at ASC = 0)'
+                },
+                {
+                    'y_value': roi_at_upper_limit_implementation_cost_dict[36][chosen_metric],
+                    'x_start': implementation_cost_upper_limit_dict[36][chosen_metric] / 1e6,
+                    'x_end': breakeven_upper_v_htm[0],# where the horizontal line intersects the ROI curve of the diagonal strategy
+                    'label': f"b = ${breakeven_upper_v_htm[0]:.0f}M [${breakeven_upper_v_htm[1]:.0f}M–${breakeven_upper_v_htm[2]:.0f}M]",
+                    'color': '#fdae61',
+                    'scenario_label': 'Diagonal versus Vertical (at ASC = 138% X SC)',
+                    'y_label_offset': 0.25
+                },
+                {
+                    'y_value': roi_at_0_implementation_cost_dict[8][chosen_metric],
+                    'x_start': 0,
+                    'x_end': breakeven_lower_v_hss[3], # where the horizontal line intersects the ROI curve of the diagonal strategy
+                    'label': f"c = ${breakeven_lower_v_hss[0]:.0f}M [${breakeven_lower_v_hss[1]:.0f}M–${breakeven_lower_v_hss[2]:.0f}M]",
+                    'color': '#9e0142',
+                    'scenario_label': 'Diagonal versus Horizontal (at ASC = 0)',
+                    'y_label_offset': -0.25
+                },
+                {
+                    'y_value': roi_at_upper_limit_implementation_cost_dict[8][chosen_metric],
+                    'x_start': implementation_cost_upper_limit_dict[8][chosen_metric] / 1e6,
+                    'x_end': breakeven_upper_v_hss[3], # where the horizontal line intersects the ROI curve of the diagonal strategy
+                    'label': f"d = ${breakeven_upper_v_hss[0]:.0f}M [${breakeven_upper_v_hss[1]:.0f}M–${breakeven_upper_v_hss[2]:.0f}M]",
+                    'color': '#9e0142',
+                    'scenario_label': 'Diagonal versus Horizontal (at ASC = 138% X SC)',
+                    'y_label_offset': -0.25
+                }
+            ]
+            legend_switch_for_main_roi_plot = False
+        else:
+            additional_horizontal_lines_for_interpretation = None
+            legend_switch_for_main_roi_plot = True
+
+        draw_colors = {8: '#9e0142', 36: '#fdae61', 44: '#66c2a5'}
+        generate_multiple_scenarios_roi_plot(
+            _monetary_value_of_incremental_health=get_monetary_value_of_incremental_health(num_dalys_averted,
+                                                                                           _chosen_value_of_life_year=vsly),
+            _incremental_input_cost=incremental_scenario_cost,
+            _draws=[8, 36, 44],
+            _scenario_dict=all_manuscript_scenarios,
+            _outputfilepath=figurespath,
+            _value_of_life_suffix=vsly_fig_suffixes[i],
+            _metric=chosen_metric,
+            _year_suffix=f' ({str(relevant_period_for_costing[0])} - {str(relevant_period_for_costing[1])})',
+            _projected_health_spending=projected_health_spending_baseline,
+            _additional_horizontal_lines_for_interpretation=additional_horizontal_lines_for_interpretation,
+            _draw_colors=draw_colors,
+            show_title_and_legend=legend_switch_for_main_roi_plot)
+
         i = i+ 1
 
+    incremental_scenario_cost_summarised = convert_results_to_dict(incremental_scenario_cost_summarised)
     print(f"Under an alternative assumption that the vertical approach incurs incremental above service level costs "
-          f"equal to 58% of its incremental service level cost (based on estimates from Opuni et al (2023)), "
+          f"equal to 138% of its incremental service level cost (based on estimates from Opuni et al (2023)), "
           f"the diagonal approach provided a higher ROI up to an even higher threshold of "
-          f"${(breakeven_implementation_cost_at_upper_limit_implementation_cost - implementation_cost_upper_limit_dict[36][chosen_metric]) /1e6: .2f} million "
+          f"${breakeven_upper_v_htm[0]: .2f}[${breakeven_upper_v_htm[1]: .2f} - ${breakeven_upper_v_htm[2]: .2f}] million "
           f"incremental above service level costs in comparison with the vertical approach, or equal to "
-          f"{breakeven_implementation_cost_at_upper_limit_implementation_cost / incremental_scenario_cost_summarised[44][chosen_metric] * 100: .2f}% of its own incremental service level cost")
+          f"{(breakeven_upper_v_htm[0]*1e6) / incremental_scenario_cost_summarised[44][chosen_metric] * 100: .2f}% of its own incremental service level cost")
 
     # HIV scenarios with and without HSS
     draw_colors = {9: '#fdae61', 17:'#66c2a5'}
