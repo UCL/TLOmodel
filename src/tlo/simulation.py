@@ -478,6 +478,14 @@ class Simulation:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
 
+    def get_label_data(self, lbl_data):
+        """
+        update labels data dictionary with resorcefiles data
+
+        :param lbl_data: parameter labels dictionary
+        """
+        self.param_labels_data.update(lbl_data)
+
     def compute_label_starts(self):
         import pandas as pd
         for _key, _val in self.param_labels_data.items():

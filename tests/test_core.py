@@ -51,13 +51,6 @@ def test_parameter_label(tmpdir):
     (["unassigned", "free", "constant", "context_specific"])
 
     """
-    dummy_data = pd.DataFrame(data={'parameter_name':['prob_inf', 'prob_death', 'rr_inf', 'rr_death'],
-                                    'value':[0.3, 0.02, 0.8, 0.9], 'param_label':['free', 'constant',
-                                                                            'context_specific', 'free'],
-                                    'lower':[0.002, 0.002, 0.001, 0.003], 'upper':[0.98, 0.8, 0.6, 0.7]})
-
-    # export to csv file and save in temporally directory
-    dummy_data.to_csv(tmpdir / 'dummy_data.csv')
 
     class DummyModule(Module):
         PARAMETERS = {
@@ -79,12 +72,31 @@ def test_parameter_label(tmpdir):
 
         def initialise_simulation(self, sim: Simulation) -> None:
             pass
+    def get_simulation(resource_file_path: str | Path):
+        sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
+        sim.register(DummyModule(resourcefilepath=resource_file_path))
+        sim.make_initial_population(n=1000)
+        sim.simulate(end_date=Date(2010, 2, 1))
+
+    # create some dummy data for testing
+    dummy_data = pd.DataFrame(data={'parameter_name': ['prob_inf', 'prob_death', 'rr_inf', 'rr_death'],
+                                    'value': [0.3, 0.02, 0.8, 0.9], 'param_label': ['free', 'constant',
+                                                                                    'context_specific', 'free'],
+                                    'lower': [0.002, 0.002, 0.001, 0.003], 'upper': [0.98, 0.8, 0.6, 0.7]})
+
+    # export to csv file and save in temporally directory
+    dummy_data.to_csv(tmpdir / 'dummy_data.csv')
 
     resourcefilepath = tmpdir
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
-    sim.register(DummyModule(resourcefilepath=resourcefilepath))
-    sim.make_initial_population(n=1000)
-    sim.simulate(end_date=Date(2010, 4, 1))
+    # run simulation with expected parameters labels
+    get_simulation(resourcefilepath)
+
+    # change parameter labels column to  include an unexpected value and test simulation gives an assertion error
+    dummy_data.loc[1, 'param_label'] = 0.2
+    dummy_data.to_csv(resourcefilepath / 'dummy_data.csv')
+    with pytest.raises(AssertionError):
+        get_simulation(resourcefilepath)
+
 
 class TestLoadParametersFromDataframe:
     """Tests for the load_parameters_from_dataframe method

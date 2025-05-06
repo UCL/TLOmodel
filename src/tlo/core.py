@@ -323,21 +323,19 @@ class Module:
         """
         def calculate_module_stats(param_df: pd.DataFrame) :
             accepted_lbls = ["unassigned", "free", "constant", "context_specific"]
-            column_defaults = {'param_label': 'unassigned'}
-            for _col, _val in column_defaults.items():
-                if _col not in resource.columns:
-                    param_df[_col] = _val
-                else:
-                    # fill na with unassigned
-                    param_df[_col].fillna(_val)
-                    # check if value is in acceptable labels or format
-                    assert _val in accepted_lbls, f'value should be either of the following {accepted_lbls}'
-                    assert type(_val) == str, f'value should be a string and not {type(_val)}'
+            if 'param_label' not in param_df.columns:
+                param_df['param_label'] = accepted_lbls[0]
+
+            for _val in param_df.param_label.values:
+                # fill na with unassigned
+                param_df.param_label.fillna('unassigned')
+                # check if value is in acceptable labels or format
+                assert _val in accepted_lbls, f'value should be either of the following {accepted_lbls} and not {_val}'
 
             return param_df[['param_label']]
 
         # update the parameter labels dictionary
-        self.sim.param_labels_data[self.name] = calculate_module_stats(resource)
+        self.sim.get_label_data({self.name: calculate_module_stats(resource)})
 
         resource.set_index('parameter_name', inplace=True)
         skipped_data_types = ('DATA_FRAME', 'SERIES')
