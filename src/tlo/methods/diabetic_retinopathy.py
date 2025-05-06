@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -511,7 +511,7 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if person["dr_on_treatment"] or not person["dr_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        randomly_sampled = self.module.rng.rand()
+        # randomly_sampled = self.module.rng.rand()
         # treatment_slows_progression_to_proliferative = randomly_sampled < self.module.parameters['p_medication']
 
         df.at[person_id, 'dr_blindness_investigated'] = True
