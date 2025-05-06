@@ -939,6 +939,9 @@ for ax, level in zip(axes, chosen_levels):
     # Calculate the aggregate row
     aggregate_col = df_for_plots.loc[df_for_plots.Facility_Level.isin([level]), scenarios_for_roi_paper].mean()
     heatmap_data.loc['Average'] = aggregate_col
+    heatmap_data = heatmap_data.rename(columns = {'75th percentile\n  facility': "Consumables increased \n to 75th percentile",
+                                                  'HIV supply \n chain': "Consuambles increased \n to HIV level",
+                                                  'EPI supply \n chain': "Consumables increased \n to EPI level"})
 
     # Generate the heatmap on the current subplot
     sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn', vmin = 0, vmax = 1,
