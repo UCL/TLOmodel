@@ -98,15 +98,21 @@ class DiabeticRetinopathy(Module):
         ),
         "dr_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnosis of diabetic retinopathy (pd.NaT if never diagnosed)"
+            "The date of diagnosis of diabetic retinopathy (pd.NaT if never diagnosed)"
         ),
         "dr_blindness_investigated": Property(
             Types.BOOL,
-            "whether blindness has been investigated, and diabetic retinopathy missed"
+            "Whether blindness has been investigated, and diabetic retinopathy missed"
         ),
         "dr_ever_diet_mgmt": Property(Types.BOOL,
-                                      "whether this person has ever had a diabetic retinopathy diet management"
+                                      "Whether this person has ever had a diabetic retinopathy diet management"
                                       "session in the diabetic clinic"),
+        "has_dmo": Property(Types.BOOL,
+                            "Whether this person has any form of diabetic macular oedema"),
+        "has_csdmo_or_ncsdmo": Property(Types.BOOL,
+                                        "Whether this person has clinically significant diabetic macular oedema if "
+                                        "true,"
+                                        "or person has non clinically significant diabetic macular oedema"),
 
     }
 
@@ -180,6 +186,8 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_blindness_investigated"] = False
         df.loc[list(alive_diabetes_idx), "dr_ever_diet_mgmt"] = False
+        df.loc[list(alive_diabetes_idx), "has_dmo"] = False
+        df.loc[list(alive_diabetes_idx), "has_csdmo_or_ncsdmo"] = False
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -284,6 +292,8 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_blindness_investigated'] = False
         self.sim.population.props.at[child_id, 'dr_ever_diet_mgmt'] = False
+        self.sim.population.props.at[child_id, 'has_dmo'] = False
+        self.sim.population.props.at[child_id, 'has_csdmo_or_ncsdmo'] = False
 
     def on_simulation_end(self) -> None:
         pass
