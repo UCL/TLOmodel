@@ -1291,6 +1291,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {198: 1.0})  # infant prep
 
+            # prob CAB-LA is much lower than prob oral PrEP
             p["prob_prep_for_fsw_after_hiv_test"] = updated_params["prob_prep_for_fsw_after_hiv_test"]
             p["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = 0.95
             p["probability_of_being_retained_on_prep_every_3_months"] = updated_params[
