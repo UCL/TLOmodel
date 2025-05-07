@@ -1,32 +1,17 @@
-import argparse
 from pathlib import Path
-from tlo import Date
-from collections import Counter, defaultdict
+from collections import defaultdict
 
-import calendar
 import datetime
 import os
 import textwrap
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 import numpy as np
 import pandas as pd
-import ast
-import math
 
 from tlo.analysis.utils import (
-    extract_params,
     extract_results,
-    get_scenario_info,
     get_scenario_outputs,
-    load_pickled_dataframes,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    summarize,
-    create_pickles_locally,
-    parse_log_file,
-    unflatten_flattened_multi_index_in_logging
 )
 from tlo.methods.healthsystem import get_item_code_from_item_name
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
