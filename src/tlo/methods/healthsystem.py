@@ -419,6 +419,7 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
+        assert isinstance(include_ringfenced_clinics, bool)
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -534,6 +535,7 @@ class HealthSystem(Module):
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
                 "'year', 'simulation' or None."
             )
+        self.include_ringfenced_clinics = include_ringfenced_clinics
 
     def read_parameters(self, data_folder):
 
@@ -547,6 +549,11 @@ class HealthSystem(Module):
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+        # If include_ringfenced_clinics is True, then read in the Resource file that contains the ringfenced clinics
+        if self.include_ringfenced_clinics:
+            self.parameters['Ringfenced_Clinics'] = pd.read_csv(
+                path_to_resourcefiles_for_healthsystem / 'human_resources' / 'ResourceFile_Clinics.csv'
+            )
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
