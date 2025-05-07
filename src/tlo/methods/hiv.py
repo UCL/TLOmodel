@@ -429,7 +429,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "annual_rate_selftest": Parameter(
             Types.REAL,
             "the annual rate of having an HIV self-test for those not on ART"
-        )
+        ),
+        "selftest_available": Parameter(
+            Types.BOOL,
+            "whether self-tests for HIV are available from the scale-up start date"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -1837,7 +1841,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # can be a repeat test if diagnosed already
             # the same people may have been selected from general testing above
 
-            if (p['select_mihpsa_scenario'] == 6) & (self.sim.date.year >= p["scaleup_start_year"]):
+            if p["selftest_available"] & (self.sim.date.year >= p["scaleup_start_year"]):
 
                 test_rates = p["annual_rate_selftest"]
 
