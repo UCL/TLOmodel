@@ -3544,7 +3544,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
         ) / len(df[df.is_alive & (df.age_years >= 15)]) if len(df[df.is_alive & (df.age_years >= 15)]) else 0
 
-        # ------------------------------------ PREP AMONG FSW ------------------------------------
+        # ------------------------------------ PREP AMONG FSW and AGYW ------------------------------------
         prop_fsw_on_prep = (
             0
             if n_fsw == 0
@@ -3558,12 +3558,18 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
         ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
 
+        PY_PREP_ORAL_AGYW = df["hv_days_on_prep_AGYW"].sum() / 365
+
+        PY_PREP_ORAL_FSW = df["hv_days_on_prep_FSW"].sum() / 365
+
         # ------------------------------------ MALE CIRCUMCISION ------------------------------------
         # NB. Among adult men
         prop_men_circ = len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
         ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
+
+        N_NewVMMC = len(df[df.hv_VMMC_in_last_year & (df.age_years >= 15)])
 
         logger.info(
             key="hiv_program_coverage",
@@ -3587,9 +3593,16 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "n_on_art_children": n_on_art_children,
                 "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
+                "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
+                "PY_PREP_ORAL_FSW": PY_PREP_ORAL_FSW,
                 "prop_men_circ": prop_men_circ,
+                "N_NewVMMC": N_NewVMMC,
             },
         )
+        # after logger, reset yearly logged properties
+        df["hv_VMMC_in_last_year"] = False
+        df["hv_days_on_prep_AGYW"] = 0
+        df["hv_days_on_prep_FSW"] = 0
 
         # ------------------------------------ TREATMENT DELAYS ------------------------------------
         # for every person initiated on treatment, record time from onset to treatment
