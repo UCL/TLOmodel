@@ -336,6 +336,7 @@ class HealthSystem(Module):
         'include_ringfenced_clinics': Parameter(
             Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is
             only applicable if mode_appt_constraints is set to 2.'),
+        'Ringfenced_Clinics': Parameter(Types.DATA_FRAME, 'Proportion facility time ringfenced for specific appointment types.'),
     }
 
     PROPERTIES = {
@@ -551,9 +552,18 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
         # If include_ringfenced_clinics is True, then read in the Resource file that contains the ringfenced clinics
         if self.include_ringfenced_clinics:
-            self.parameters['Ringfenced_Clinics'] = pd.read_csv(
+            df = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'ResourceFile_Clinics.csv'
             )
+            ## Check that the fractions add to 1 for each row.
+            id_col = 'Facility_ID'
+            data = df.drop(columns=[id_col])
+            row_sums = data.sum(axis=1)
+            mask = row_sums > 1.0
+            ## Rescale
+            data.loc[mask] = data.loc[mask].div(row_sums[mask], axis=0)
+            df = pd.concat([df[[id_col]], data], axis=1)
+            self.parameters['Ringfenced_Clinics'] = df
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -568,7 +578,7 @@ class HealthSystem(Module):
         self.parameters['Appt_Time_Table'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
             'ResourceFile_Appt_Time_Table.csv')
-
+        # STOP HERE
         # Load 'Daily_Capabilities' (for both actual and funded)
         for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
