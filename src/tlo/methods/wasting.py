@@ -533,7 +533,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         _cons_codes['OTP'] = {get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 20 * 7}
         _cons_codes['OTP_opt'] = {get_item_code("SAM medicines"): 1}
         _cons_codes['ITC'] = {get_item_code("F-75 therapeutic milk, 102.5 g"): 102.5 * 24,
-                              get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 3 * 4}
+                              get_item_code("Therapeutic spread, sachet 92g/CAR-150"): 3 * 4 + 20 * 7}
         _cons_codes['ITC_opt'] = {get_item_code("SAM medicines"): 1}
 
         return _cons_codes
