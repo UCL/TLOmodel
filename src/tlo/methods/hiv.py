@@ -418,6 +418,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             " the interval for viral load monitoring in months"
         ),
+        "annual_rate_selftest": Parameter(
+            Types.REAL,
+            "the annual rate of having an HIV self-test for those not on ART"
+        )
     }
 
     def read_parameters(self, data_folder):
@@ -1809,48 +1813,103 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     ),  # (to occur before next polling)
                 )
 
+        # ----------------------------------- SELF-TEST -----------------------------------
+        def self_tests():
+            # scaled in same way as general testing using linear model
+            # can be a repeat test if diagnosed already
+            # the same people may have been selected from general testing above
+
+            if (p['select_mihpsa_scenario'] == 6) & (self.sim.date.year >= p["scaleup_start_year"]):
+
+                test_rates = p["annual_rate_selftest"]
+
+                # adult testing trends also informed by demographic characteristics
+                # relative probability of testing - this may skew testing rates higher or lower than moh reports
+                rr_of_test = self.module.lm["lm_spontaneous_test_12m"].predict(
+                    df[df.is_alive & (df.age_years >= 15)])
+                mean_prob_test = (rr_of_test * test_rates).mean()
+                scaled_prob_test = (rr_of_test * test_rates) / mean_prob_test
+                overall_prob_test = scaled_prob_test * test_rates
+
+                random_draw = rng.random_sample(size=len(df[df.is_alive & (df.age_years >= 15)]))
+                self_tests_idx = df.loc[
+                    df.is_alive & (df.age_years >= 15) & (random_draw < overall_prob_test)].index
+
+                for person_id in self_tests_idx:
+                    date_test = self.sim.date + pd.DateOffset(
+                        days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls)
+                    )
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id,
+                                                       module=self.module,
+                                                       referred_from='HIV_poll_self_test'),
+                        priority=1,
+                        topen=date_test,
+                        tclose=date_test + pd.DateOffset(
+                            months=self.frequency.months
+                        ),  # (to occur before next polling)
+                    )
+
         # ----------------------------------- PrEP poll for AGYW -----------------------------------
         def prep_for_agyw():
 
-            # select highest risk agyw
-            agyw_idx = df.loc[
-                df.is_alive
-                & ~df.hv_diagnosed
-                & df.age_years.between(15, 30)
-                & (df.sex == "F")
-                & ~df.hv_is_on_prep
-                ].index
+            if self.sim.date.year >= p["prep_start_year"]:
 
-            rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
-                df.loc[agyw_idx]
-            )
-            # divide by the mean risk then multiply by prob of prep
-            # highest risk AGYW will have highest probability of getting prep
-            mean_risk = rr_of_infection_in_agyw.mean()
-            scaled_risk = rr_of_infection_in_agyw / mean_risk
-            overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
+                # select highest risk agyw
+                agyw_idx = df.loc[
+                    df.is_alive
+                    & ~df.hv_diagnosed
+                    & df.age_years.between(15, 30)
+                    & (df.sex == "F")
+                    & ~df.hv_is_on_prep
+                    ].index
 
-            # give prep
-            give_prep = df.loc[(
-                                   self.module.rng.random_sample(len(overall_risk_and_prob_of_prep))
-                                   < overall_risk_and_prob_of_prep)
-                               & df.is_alive
-                               & ~df.hv_diagnosed
-                               & df.age_years.between(15, 30)
-                               & (df.sex == "F")
-                               & ~df.hv_is_on_prep
-                               ].index
-
-            for person in give_prep:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
-                                                            module=self.module),
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(
-                        months=self.frequency.months
-                    )
+                rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
+                    df.loc[agyw_idx]
                 )
+                # divide by the mean risk then multiply by prob of prep
+                # highest risk AGYW will have highest probability of getting prep
+                mean_risk = rr_of_infection_in_agyw.mean()
+                scaled_risk = rr_of_infection_in_agyw / mean_risk
+                overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
+
+                # give prep
+                give_prep = agyw_idx[
+                    self.module.rng.random_sample(len(agyw_idx)) < overall_risk_and_prob_of_prep
+                    ]
+
+                for person in give_prep:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
+                                                                module=self.module),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(
+                            months=self.frequency.months
+                        )
+                    )
+
+        # ----------------------------------- PrEP poll for FSW -----------------------------------
+        def prep_for_fsw():
+            if self.sim.date.year >= p["prep_start_year"]:
+
+                random_draw = self.module.rng.random_sample(size=len(df))
+                eligible_fsw_idx = df.loc[df.is_alive &
+                                          ~df.hv_diagnosed &
+                                          df.li_is_sexworker &
+                                          ~df.hv_is_on_prep &
+                                          (random_draw < p["prob_prep_for_fsw_after_hiv_test"])].index
+
+                for person in eligible_fsw_idx:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueOnPrep(person_id=person,
+                                                                module=self.module),
+                        priority=1,
+                        topen=self.sim.date,
+                        tclose=self.sim.date + pd.DateOffset(
+                            months=self.frequency.months
+                        )
+                    )
 
         # ----------------------------------- SPONTANEOUS VMMC FOR <15 YRS -----------------------------------
         def vmmc_for_child():
@@ -1891,8 +1950,14 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             current_year = 2020
         spontaneous_testing(current_year=current_year)
 
+        # self-test
+        self_tests()
+
         # PrEP for AGYW
         prep_for_agyw()
+
+        # PrEP for FSW
+        prep_for_fsw()
 
         # VMMC for <15 yrs in the population
         vmmc_for_child()
