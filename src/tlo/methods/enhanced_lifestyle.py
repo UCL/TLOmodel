@@ -31,6 +31,7 @@ class Lifestyle(Module):
 
         # a pointer to the linear models class
         self.models = None
+        self.population_ratio = None
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -276,11 +277,11 @@ class Lifestyle(Module):
             Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
                         'simulation.'
         ),
-        "proportion_female_sex_workers": Parameter(
-            Types.REAL, "proportion of women aged 15-49 years who are sex workers"
-        ),
         "fsw_transition": Parameter(
             Types.REAL, "proportion of sex workers that stop being a sex worker each year"
+        ),
+        "fsw_population": Parameter(
+            Types.REAL, "number of fsw in any given year"
         )
     }
 
@@ -372,6 +373,8 @@ class Lifestyle(Module):
         # todo: express all rates per year and divide by 4 inside program
 
         # initialise all properties using linear models
+        self.population_ratio = 1 / self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
+
         self.models.initialise_all_properties(df)
 
     def initialise_simulation(self, sim):
@@ -652,7 +655,8 @@ class LifestyleModels:
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
             df.loc[df.is_alive, _property_name] = _model['init'].predict(
-                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0)
+                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0,
+                population_ratio=self.module.population_ratio)
 
     def update_all_properties(self, df):
         """update population properties using linear models defined in LifestyleModels class. This function is to be
@@ -662,12 +666,13 @@ class LifestyleModels:
         # get months since last poll
         now = self.module.sim.date
         months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "M"))
+
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
-            if _model['update'] is not None:
-                df.loc[df.is_alive, _property_name] = _model['update'].predict(
-                    df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
-                    months_since_last_poll=months_since_last_poll)
+            df.loc[df.is_alive, _property_name] = _model['init'].predict(
+                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0,
+                population_ratio=self.module.population_ratio)
+
         # update date last event run
         self.date_last_run = now
 
@@ -1118,10 +1123,9 @@ class LifestyleModels:
                                   & (df.li_mar_stat != 2)].index
 
             n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
-            target_n_sw = int(np.round(len(df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)].index)
-                                       * p["proportion_female_sex_workers"]
-                                       )
-                              )
+
+            target_n_sw = int(p['fsw_population'] / externals['population_ratio'])
+
             deficit = target_n_sw - n_sw
             if deficit > 0:
                 if deficit < len(eligible_idx):
