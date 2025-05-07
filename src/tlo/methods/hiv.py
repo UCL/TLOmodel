@@ -1863,7 +1863,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 agyw_idx = df.loc[
                     df.is_alive
                     & ~df.hv_diagnosed
-                    & df.age_years.between(15, 30)
+                    & df.age_years.between(15, 25)
                     & (df.sex == "F")
                     & ~df.hv_is_on_prep
                     ].index
@@ -2291,14 +2291,14 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
         ):
             return
 
-        # Check that there are on PrEP currently:
+        # Check that they are on PrEP currently:
         if not person["hv_is_on_prep"]:
             logger.warning(
                 key="message",
                 data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
 
         # check still eligible, person must be <30 years old or a fsw
-        if (person["age_years"] > 30) or not person["li_is_sexworker"]:
+        if (person["age_years"] >= 25) or not person["li_is_sexworker"]:
             return
 
         # Determine if this appointment is actually attended by the person who has already started on PrEP
