@@ -32,11 +32,7 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------
 class Wasting(Module, GenericFirstAppointmentsMixin):
     """
-    This module applies the prevalence of wasting at the population-level, based on the Malawi DHS Survey 2015-2016.
-    The definitions:
-    - moderate wasting: weight_for_height Z-score (WHZ) < -2 SD from the reference mean
-    - severe wasting: weight_for_height Z-score (WHZ) < -3 SD from the reference mean
-
+    This module simulates natural history, detection, and treatment of acute malnutrition in children under 5 years old.
     """
 
     INIT_DEPENDENCIES = {'Demography', 'SymptomManager', 'NewbornOutcomes', 'HealthBurden'}
@@ -139,25 +135,27 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'probability to attend the growth monitoring for age categories'),
         # recovery due to treatment/interventions
         'recovery_rate_with_soy_RUSF': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with soy RUSF'),
+            Types.REAL, 'probability of recovery from MAM following treatment with soy RUSF'),
         'recovery_rate_with_CSB++': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with CSB++'),
+            Types.REAL, 'probability of recovery from MAM following treatment with CSB++'),
         'recovery_rate_with_standard_RUTF': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with standard RUTF'),
+            Types.REAL, 'probability of recovery from uncomplicated SAM following treatment with standard'
+                        'RUTF'),
         'recovery_rate_with_inpatient_care': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with inpatient care'),
+            Types.REAL, 'probability of recovery from complicated SAM following treatment via inpatient '
+                        'care'),
         'tx_length_weeks_SuppFeedingMAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Supplementary Feeding '
                         'Programme for MAM before being discharged'),
         'tx_length_weeks_OutpatientSAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Outpatient Therapeutic '
-                        'Programme for SAM before being discharged if they do not die beforehand'),
+                        'Programme for uncomplicated SAM before being discharged if they do not die beforehand'),
         'tx_length_weeks_InpatientSAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
                         ' SAM before being discharged if they do not die beforehand'),
         # treatment/intervention outcomes
         'prob_death_after_SAMcare': Parameter(
-            Types.REAL, 'probability of dying from SAM after receiving care'),
+            Types.REAL, 'probability of dying from SAM after receiving care if not fully recovered'),
     }
 
     PROPERTIES = {
@@ -172,8 +170,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                                                       'based on WHZ and/or MUAC and/or nutritional '
                                                                       'oedema',
                                                    categories=['MAM', 'SAM', 'well']),
-        'un_am_nutritional_oedema': Property(Types.BOOL, 'bilateral pitting oedema present in wasting '
-                                                         'episode'),
+        'un_am_nutritional_oedema': Property(Types.BOOL, 'nutritional oedema present in acute malnutrition'
+                                                         ' episode'),
         'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories, based on WHO '
                                                            'cut-offs',
                                         categories=['<115mm', '[115-125)mm', '>=125mm']),
@@ -383,7 +381,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         p = self.parameters
 
-        # ----- MUAC distribution for severe wasting (WHZ < -3) ------
+        # ----- MUAC distribution among severely wasted (WHZ < -3) ------
         if whz == 'WHZ<-3':
             # for severe wasting assumed no MUAC >= 125mm
             prop_severe_wasting_with_muac_between_115and125mm = 1 - p['proportion_WHZ<-3_with_MUAC<115mm']
@@ -395,7 +393,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 axis=1
             )
 
-        # ----- MUAC distribution for moderate wasting (-3 <= WHZ < -2) ------
+        # ----- MUAC distribution among moderately wasted (-3 <= WHZ < -2) ------
         if whz == '-3<=WHZ<-2':
             prop_moderate_wasting_with_muac_over_125mm = \
                 1 - p['proportion_-3<=WHZ<-2_with_MUAC<115mm'] - p['proportion_-3<=WHZ<-2_with_MUAC_[115-125)mm']
@@ -408,7 +406,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 axis=1
             )
 
-        # ----- MUAC distribution for WHZ >= -2 -----
+        # ----- MUAC distribution among non-wasted WHZ >= -2 -----
         if whz == 'WHZ>=-2':
 
             muac_distribution_in_well_group = norm(loc=p['MUAC_distribution_WHZ>=-2'][0],
