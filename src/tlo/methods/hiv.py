@@ -384,9 +384,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "relative probability of person with HIV infection over 10 years being on ART at baseline",
         ),
-        "aids_tb_treatment_adjustment": Parameter(
+        "aids_tb_death_rate_with_tb_treatment": Parameter(
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
+        ),
+        "aids_tb_death_rate_no_tb_treatment": Parameter(
+            Types.REAL,
+            "probability of death if aids and tb, person not on treatment for tb",
         ),
         "hiv_healthseekingbehaviour_cap": Parameter(
             Types.INT,
@@ -2213,13 +2217,13 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
 
         if df.at[person_id, 'tb_on_treatment']:
 
-            risk_of_death = p["aids_tb_treatment_adjustment"]
+            risk_of_death = p["aids_tb_death_rate_with_tb_treatment"]
 
             if "CardioMetabolicDisorders" in self.sim.modules:
                 if df.at[person_id, "nc_diabetes"]:
                     risk_of_death *= self.sim.modules["Tb"].parameters["rr_death_diabetes"]
 
-            # treatment adjustment reduces probability of death
+                # treatment adjustment reduces probability of death
             if self.module.rng.rand() < risk_of_death:
                 self.sim.modules["Demography"].do_death(
                     individual_id=person_id,
@@ -2257,12 +2261,14 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                     tclose=date_of_aids_death,
                 )
 
-        # aids-tb and not on tb treatment
+                # aids-tb and not on tb treatment
         elif not df.at[person_id, 'tb_on_treatment']:
-            # Cause the death to happen immediately, cause defined by TB status
-            self.sim.modules["Demography"].do_death(
-                individual_id=person_id, cause="AIDS_TB", originating_module=self.module
-            )
+            risk_of_death = p["aids_tb_death_rate_no_tb_treatment"]
+            if self.module.rng.rand() < risk_of_death:
+                # Cause the death to happen immediately, cause defined by TB status
+                self.sim.modules["Demography"].do_death(
+                    individual_id=person_id, cause="AIDS_TB", originating_module=self.module
+                )
 
 
 class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
