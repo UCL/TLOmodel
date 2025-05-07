@@ -673,7 +673,7 @@ class LifestyleModels:
                 df.loc[df.is_alive, _property_name] = _model['update'].predict(
                     df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
                     months_since_last_poll=months_since_last_poll,
-                population_ratio=self.module.population_ratio)
+                    population_ratio=self.module.population_ratio)
 
         # update date last event run
         self.date_last_run = now
