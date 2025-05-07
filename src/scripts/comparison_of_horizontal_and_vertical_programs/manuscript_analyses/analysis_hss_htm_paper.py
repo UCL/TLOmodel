@@ -1256,6 +1256,106 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     mal_tx_coverage.to_csv(results_folder / 'mal_tx_coverage.csv')
 
 
+    # todo re-do dalys averted plot with subset of scenarios
+    HTM_and_HSS_scenarios = [
+        'HSS Expansion Package',
+        'HIV Program Scale-up Without HSS Expansion',
+        'HIV Programs Scale-up With HSS Expansion Package',
+        'TB Program Scale-up Without HSS Expansion',
+        'TB Programs Scale-up With HSS Expansion Package',
+        'Malaria Program Scale-up Without HSS Expansion',
+        'Malaria Programs Scale-up With HSS Expansion Package',
+        'HTM Program Scale-up Without HSS Expansion',
+        'HTM Programs Scale-up With HSS Expansion Package',
+    ]
+
+
+    def plot_combined_programs_scale_up(_df):
+        """
+        Generate combined plot, DALYs averted broken down by cause, exclude 'HIV_TB programs'
+        """
+        combined_plot_name = 'DALYs averted, Combined Programs Scale-up'
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        colours = sns.color_palette('cubehelix', num_categories)
+        x_labels = [
+            'HSS \nExpansion \nPackage',
+            'HIV \nwithout \nHSS',
+            'HIV \nwith \nHSS',
+            'TB \nwithout \nHSS',
+            'TB \nwith \nHSS',
+            'Malaria \nwithout \nHSS',
+            'Malaria \nwith \nHSS',
+            'HTM \nwithout \nHSS',
+            'HTM \nwith \nHSS',
+         ]
+        shared_labels = [
+            '',  # No shared label for the first bar
+            'HIV SCALE-UP',  # Shared label for the second and third bars
+            '',  # Shared label for the second and third bars
+            'TB SCALE-UP',  # Shared label for the fourth and fifth bars
+            '',  # Shared label for the fourth and fifth bars
+            'MALARIA \nSCALE-UP',  # Shared label for the sixth and seventh bars
+            '',  # Shared label for the sixth and seventh bars
+            'JOINT HTM \nSCALE-UP',  # Shared label for the eighth and ninth bars
+            '',  # Shared label for the eighth and ninth bars
+        ]
+
+        # Transpose the DataFrame to get each program as a bar (columns become x-axis categories)
+        _df = _df / 1e6  # Scale values to millions
+
+        _df.T.plot(
+            kind='bar',
+            stacked=True,
+            ax=ax,
+            color=colours,
+            rot=0
+        )
+        ax.grid(False)
+
+        # Set the title and labels
+        ax.set_title("")
+        ax.set_ylabel(f'DALYs Averted vs Baseline, {target_period()}\n(Millions)')
+        ax.set_ylim([0, 35])
+        ax.set_yticks(range(0, 36, 5))  # Tick marks from 0 to 35 with a step of 5
+        ax.tick_params(axis='y', which='both', length=5)  # Ensure tick marks are shown on y-axis
+        ax.set_xlabel("Scenarios")
+        ax.set_xticks(range(len(x_labels)))
+        ax.set_xticklabels(x_labels, ha="center")
+
+        # Add shared second-line labels
+        for i, label in enumerate(shared_labels):
+            if label:  # Only add text if there's a label
+                ax.text(i, _df.sum().max() * 1.05, label, ha='left', va='bottom', fontsize=12, rotation=0,
+                        color='black')
+
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title="Cause", fontsize=10)
+
+        # Add vertical grey lines
+        line_positions = [0, 2, 4, 6]
+        for pos in line_positions:
+            ax.axvline(x=pos + 0.5, color='grey', linestyle='--', linewidth=1)
+
+        # Adjust layout and save
+        # fig.tight_layout()
+        fig.subplots_adjust(left=0.1, right=0.85, top=0.85, bottom=0.2)  # Adjust margins for better spacing
+        fig.savefig(make_graph_file_name(combined_plot_name.replace(' ', '_').replace(',', '')))
+        fig.show()
+        plt.close(fig)
+
+    # Select only columns where second level is 'central'
+    data_for_plot = total_num_dalys_by_label_results_averted_vs_baseline.loc[
+                    :, total_num_dalys_by_label_results_averted_vs_baseline.columns.get_level_values(1) == 'central'
+                    ]
+
+    # Collapse column MultiIndex to just the first level
+    data_for_plot.columns = data_for_plot.columns.get_level_values(0)
+    data_for_plot = sort_order_of_columns(data_for_plot)
+    filtered_df_htm_hss = data_for_plot.loc[:, data_for_plot.columns.intersection(HTM_and_HSS_scenarios)]
+
+    plot_combined_programs_scale_up(filtered_df_htm_hss)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)  # outputs/horizontal_and_vertical_programs-2024-05-16
