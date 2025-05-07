@@ -670,7 +670,8 @@ class LifestyleModels:
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
             df.loc[df.is_alive, _property_name] = _model['init'].predict(
-                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0,
+                df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
+                months_since_last_poll=months_since_last_poll,
                 population_ratio=self.module.population_ratio)
 
         # update date last event run
