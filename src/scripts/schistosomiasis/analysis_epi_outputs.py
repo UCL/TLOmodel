@@ -964,11 +964,11 @@ fig.show()
 plt.close(fig)
 
 
-
+# todo replot this
 pc_py_averted_vs_baseline_ordered = pc_py_averted_vs_baseline_results.reindex(columns=order_for_plotting_vs_baseline, level=0)
 
 name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs baseline {target_period()}'
-fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_WASH_results_ordered)
+fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_baseline_ordered)
 ax.set_title(name_of_plot)
 ax.set_ylabel('Percentage reduction in Person-Years Infected')
 ax.set_ylim(-40, 40)
