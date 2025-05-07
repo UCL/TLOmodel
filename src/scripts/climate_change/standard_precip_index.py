@@ -35,3 +35,7 @@ for facility in rainfall_data.columns[0:len(rainfall_data.columns) -1]: #unsure 
 
 spi_time_facility.drop(columns='date', inplace=True)
 print(spi_time_facility)
+
+
+percent_below_1 = spi_time_facility.apply(lambda col: (col < -1).sum() / len(col) * 100)
+print(percent_below_1)
