@@ -5,7 +5,7 @@ import cdsapi
 base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data"
 os.chdir(base_dir)
 dataset = "reanalysis-era5-single-levels-monthly-means"
-years = range(1940, 1980)
+years = range(1940, 2010)
 years = [str(year) for year in range(1940, 1980)]
 
 request = {
