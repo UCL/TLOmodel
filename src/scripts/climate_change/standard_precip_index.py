@@ -23,13 +23,12 @@ for facility in rainfall_data.columns[0:len(rainfall_data.columns) -1]: #unsure 
         'date',
         'precip',
         freq="M",
-        scale=1,
+        scale=3,
         fit_type="lmom",
         dist_type="gam"
     )
-    spi_time_facility.loc[:,facility] = df_spi.loc[:,'precip_calculated_index'].values
-    spi_time_facility.rename(columns={'precip_calculated_index':facility}, inplace=True)
-
+    spi_time_facility.loc[:,facility] = df_spi.iloc[:,-1].values
+    spi_time_facility.rename(columns={df_spi.columns[-1]: facility}, inplace=True)
 
 spi_time_facility.drop(columns='date', inplace=True)
 # remove before 2011
