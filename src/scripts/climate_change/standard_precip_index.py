@@ -10,7 +10,7 @@ rainfall_data =  pd.read_csv(
                     index_col=0)
 n_rows = len(rainfall_data)
 
-dates = pd.date_range(start="2010-01-01", periods=n_rows, freq="MS")
+dates = pd.date_range(start="1940-01-01", periods=n_rows, freq="MS")
 
 rainfall_data['date'] = dates
 
@@ -34,8 +34,7 @@ for facility in rainfall_data.columns[0:len(rainfall_data.columns) -1]: #unsure 
     spi_time_facility.rename(columns={'precip_scale_3_calculated_index':facility}, inplace=True)
 
 spi_time_facility.drop(columns='date', inplace=True)
-print(spi_time_facility)
 
 
-percent_below_1 = spi_time_facility.apply(lambda col: (col < -1).sum() / len(col) * 100)
-print(percent_below_1)
+
+weather_data_monthly_original = spi_time_facility.to_csv(f"/Users/rem76/Desktop/Climate_change_health/Data/Drought_data/historical_drought_data_2010_2024.csv")
