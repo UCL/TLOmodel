@@ -845,6 +845,12 @@ def test_hsi_testandrefer_and_art(seed):
     df.at[person_id, "hv_number_tests"] = 0
     df.at[person_id, "age_years"] = 40
 
+    # schedule AIDS event - usually scheduled through HIV poll
+    sim.schedule_event(
+        event=HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'], cause='AIDS_non_TB'),
+        date=sim.date + pd.DateOffset(years=10),
+    )
+
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
     rtn = t.apply(person_id=person_id, squeeze_factor=0.0)
@@ -894,7 +900,9 @@ def test_hsi_testandrefer_and_art(seed):
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_3_months"] = 0.0
+
     decision_event.apply(person_id)
+
     assert df.at[person_id, "hv_art"] == "not"
     assert 1 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
