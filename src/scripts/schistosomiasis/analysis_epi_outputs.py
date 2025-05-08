@@ -803,179 +803,350 @@ def get_person_years_infected(_df):
 ages = ['PSAC', 'SAC', 'Adults']
 inf = 'HML'  # 'HML' or any combination
 
-# Initialise empty lists to hold the results for each age group
-num_py_averted_vs_scaleup_WASH_results = []
-pc_py_averted_vs_scaleup_WASH_results = []
-
-for age in ages:
-    person_years = extract_results(
-        results_folder,
-        module="tlo.methods.schisto",
-        key="Schisto_person_days_infected",
-        custom_generate_series=get_person_years_infected,
-        do_scaling=False,  # switch to True for full runs
-    ).pipe(set_param_names_as_column_index_level_0)
-
-    person_years_summary = compute_summary_statistics(person_years, central_measure='median')
-
-    num_py_averted_vs_WASH = compute_summary_statistics(
-        -1.0 * find_difference_relative_to_comparison_dataframe(
-            person_years,
-            comparison='Scale-up WASH, no MDA'
-        ),
-        central_measure='median'
-    )
-
-    pc_py_averted_vs_WASH = 100.0 * compute_summary_statistics(
-        -1.0 * find_difference_relative_to_comparison_dataframe(
-            person_years,
-            comparison='Scale-up WASH, no MDA',
-            scaled=True
-        ),
-        central_measure='median'
-    )
-
-    # Append the results to the corresponding lists
-    num_py_averted_vs_scaleup_WASH_results.append(num_py_averted_vs_WASH)
-    pc_py_averted_vs_scaleup_WASH_results.append(pc_py_averted_vs_WASH)
-
-# Combine results into two DataFrames, with age groups as a single-level row index
-num_py_averted_vs_scaleup_WASH_results = pd.concat(num_py_averted_vs_scaleup_WASH_results, keys=ages, axis=0)
-pc_py_averted_vs_scaleup_WASH_results = pd.concat(pc_py_averted_vs_scaleup_WASH_results, keys=ages, axis=0)
-
-num_py_averted_vs_scaleup_WASH_results.index = num_py_averted_vs_scaleup_WASH_results.index.get_level_values(0)
-pc_py_averted_vs_scaleup_WASH_results.index = pc_py_averted_vs_scaleup_WASH_results.index.get_level_values(0)
-
-num_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'num_py_averted_vs_scaleup_WASH_results {target_period()}.csv'))
-pc_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'pc_py_averted_vs_scaleup_WASH_results {target_period()}.csv'))
-
-
-# repeat for baseline comparator
-num_py_averted_vs_baseline_results = []
-pc_py_averted_vs_baseline_results = []
-
-for age in ages:
-    person_years = extract_results(
-        results_folder,
-        module="tlo.methods.schisto",
-        key="Schisto_person_days_infected",
-        custom_generate_series=get_person_years_infected,
-        do_scaling=False,  # switch to True for full runs
-    ).pipe(set_param_names_as_column_index_level_0)
-
-    person_years_summary = compute_summary_statistics(person_years, central_measure='median')
-
-    num_py_averted_vs_baseline = compute_summary_statistics(
-        -1.0 * find_difference_relative_to_comparison_dataframe(
-            person_years,
-            comparison='Continue WASH, no MDA'
-        ),
-        central_measure='median'
-    )
-
-    pc_py_averted_vs_baseline = 100.0 * compute_summary_statistics(
-        -1.0 * find_difference_relative_to_comparison_dataframe(
-            person_years,
-            comparison='Continue WASH, no MDA',
-            scaled=True
-        ),
-        central_measure='median'
-    )
-
-    # Append the results to the corresponding lists
-    num_py_averted_vs_baseline_results.append(num_py_averted_vs_baseline)
-    pc_py_averted_vs_baseline_results.append(pc_py_averted_vs_baseline)
-
-# Combine results into two DataFrames, with age groups as a single-level row index
-num_py_averted_vs_baseline_results = pd.concat(num_py_averted_vs_baseline_results, keys=ages, axis=0)
-pc_py_averted_vs_baseline_results = pd.concat(pc_py_averted_vs_baseline_results, keys=ages, axis=0)
-
-num_py_averted_vs_baseline_results.index = num_py_averted_vs_baseline_results.index.get_level_values(0)
-pc_py_averted_vs_baseline_results.index = pc_py_averted_vs_baseline_results.index.get_level_values(0)
-
-num_py_averted_vs_baseline_results.to_csv(results_folder / (f'num_py_averted_vs_baseline_results {target_period()}.csv'))
-pc_py_averted_vs_baseline_results.to_csv(results_folder / (f'pc_py_averted_vs_baseline_results {target_period()}.csv'))
-
-
-def plot_averted_points_with_errorbars(_df):
-    # Set the color palette for the age groups
-    age_groups = _df.index
-    num_age_groups = len(age_groups)
-    age_colors = sns.color_palette("Set2", num_age_groups)
-
-    # Create the plot
-    fig, ax = plt.subplots(figsize=(12, 6))
-
-    # X positions for each draw
-    x_positions = np.arange(len(_df.columns.levels[0]))
-
-    # Stagger points slightly for each age group
-    stagger = np.linspace(-0.2, 0.2, num_age_groups)
-
-    # Loop over each draw (column level 0)
-    for i, draw in enumerate(_df.columns.levels[0]):
-        mean_values = _df[(draw, 'central')]
-        lower_values = _df[(draw, 'lower')]
-        upper_values = _df[(draw, 'upper')]
-
-        # Plot each age group with staggered x positions
-        for j, age_group in enumerate(age_groups):
-            ax.errorbar(
-                x=x_positions[i] + stagger[j],
-                y=mean_values[age_group],
-                yerr=[[mean_values[age_group] - lower_values[age_group]],
-                      [upper_values[age_group] - mean_values[age_group]]],
-                fmt='o',  # Points for the mean values
-                color=age_colors[j],  # Assign color per age group
-                capsize=5,
-                label=age_group if i == 0 else ""  # Only label age groups once
-            )
-
-    # Add grey vertical dashed lines between each draw
-    for i in range(1, len(x_positions)):
-        ax.axvline(x_positions[i] - 0.5, color='grey', linestyle='--')
-
-    # Add horizontal grey line at y=0
-    ax.axhline(0, color='grey', linestyle='-')
-
-    # Customize ticks and labels
-    ax.set_xticks(x_positions)
-    ax.set_xticklabels(_df.columns.levels[0], rotation=45, ha='right')
-    ax.set_ylim(top=80)
-
-    # Add legend for age groups
-    handles = [plt.Line2D([0], [0], marker='o', color=color, linestyle='', label=age_group)
-               for age_group, color in zip(age_groups, age_colors)]
-    ax.legend(handles=handles, title="Age Group")
-
-    return fig, ax
+# # Initialise empty lists to hold the results for each age group
+# num_py_averted_vs_scaleup_WASH_results = []
+# pc_py_averted_vs_scaleup_WASH_results = []
+#
+# for age in ages:
+#     person_years = extract_results(
+#         results_folder,
+#         module="tlo.methods.schisto",
+#         key="Schisto_person_days_infected",
+#         custom_generate_series=get_person_years_infected,
+#         do_scaling=False,  # switch to True for full runs
+#     ).pipe(set_param_names_as_column_index_level_0)
+#
+#     person_years_summary = compute_summary_statistics(person_years, central_measure='median')
+#
+#     num_py_averted_vs_WASH = compute_summary_statistics(
+#         -1.0 * find_difference_relative_to_comparison_dataframe(
+#             person_years,
+#             comparison='Scale-up WASH, no MDA'
+#         ),
+#         central_measure='median'
+#     )
+#
+#     pc_py_averted_vs_WASH = 100.0 * compute_summary_statistics(
+#         -1.0 * find_difference_relative_to_comparison_dataframe(
+#             person_years,
+#             comparison='Scale-up WASH, no MDA',
+#             scaled=True
+#         ),
+#         central_measure='median'
+#     )
+#
+#     # Append the results to the corresponding lists
+#     num_py_averted_vs_scaleup_WASH_results.append(num_py_averted_vs_WASH)
+#     pc_py_averted_vs_scaleup_WASH_results.append(pc_py_averted_vs_WASH)
+#
+# # Combine results into two DataFrames, with age groups as a single-level row index
+# num_py_averted_vs_scaleup_WASH_results = pd.concat(num_py_averted_vs_scaleup_WASH_results, keys=ages, axis=0)
+# pc_py_averted_vs_scaleup_WASH_results = pd.concat(pc_py_averted_vs_scaleup_WASH_results, keys=ages, axis=0)
+#
+# num_py_averted_vs_scaleup_WASH_results.index = num_py_averted_vs_scaleup_WASH_results.index.get_level_values(0)
+# pc_py_averted_vs_scaleup_WASH_results.index = pc_py_averted_vs_scaleup_WASH_results.index.get_level_values(0)
+#
+# num_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'num_py_averted_vs_scaleup_WASH_results {target_period()}.csv'))
+# pc_py_averted_vs_scaleup_WASH_results.to_csv(results_folder / (f'pc_py_averted_vs_scaleup_WASH_results {target_period()}.csv'))
+#
+#
+# # repeat for baseline comparator
+# num_py_averted_vs_baseline_results = []
+# pc_py_averted_vs_baseline_results = []
+#
+# for age in ages:
+#     person_years = extract_results(
+#         results_folder,
+#         module="tlo.methods.schisto",
+#         key="Schisto_person_days_infected",
+#         custom_generate_series=get_person_years_infected,
+#         do_scaling=False,  # switch to True for full runs
+#     ).pipe(set_param_names_as_column_index_level_0)
+#
+#     person_years_summary = compute_summary_statistics(person_years, central_measure='median')
+#
+#     num_py_averted_vs_baseline = compute_summary_statistics(
+#         -1.0 * find_difference_relative_to_comparison_dataframe(
+#             person_years,
+#             comparison='Continue WASH, no MDA'
+#         ),
+#         central_measure='median'
+#     )
+#
+#     pc_py_averted_vs_baseline = 100.0 * compute_summary_statistics(
+#         -1.0 * find_difference_relative_to_comparison_dataframe(
+#             person_years,
+#             comparison='Continue WASH, no MDA',
+#             scaled=True
+#         ),
+#         central_measure='median'
+#     )
+#
+#     # Append the results to the corresponding lists
+#     num_py_averted_vs_baseline_results.append(num_py_averted_vs_baseline)
+#     pc_py_averted_vs_baseline_results.append(pc_py_averted_vs_baseline)
+#
+# # Combine results into two DataFrames, with age groups as a single-level row index
+# num_py_averted_vs_baseline_results = pd.concat(num_py_averted_vs_baseline_results, keys=ages, axis=0)
+# pc_py_averted_vs_baseline_results = pd.concat(pc_py_averted_vs_baseline_results, keys=ages, axis=0)
+#
+# num_py_averted_vs_baseline_results.index = num_py_averted_vs_baseline_results.index.get_level_values(0)
+# pc_py_averted_vs_baseline_results.index = pc_py_averted_vs_baseline_results.index.get_level_values(0)
+#
+# num_py_averted_vs_baseline_results.to_csv(results_folder / (f'num_py_averted_vs_baseline_results {target_period()}.csv'))
+# pc_py_averted_vs_baseline_results.to_csv(results_folder / (f'pc_py_averted_vs_baseline_results {target_period()}.csv'))
 
 
-pc_py_averted_vs_WASH_results_ordered = pc_py_averted_vs_scaleup_WASH_results.reindex(columns=order_for_plotting_vs_scaleup_WASH, level=0)
+# def plot_averted_points_with_errorbars(_df):
+#     # Set the color palette for the age groups
+#     age_groups = _df.index
+#     num_age_groups = len(age_groups)
+#     age_colors = sns.color_palette("Set2", num_age_groups)
+#
+#     # Create the plot
+#     fig, ax = plt.subplots(figsize=(12, 6))
+#
+#     # X positions for each draw
+#     x_positions = np.arange(len(_df.columns.levels[0]))
+#
+#     # Stagger points slightly for each age group
+#     stagger = np.linspace(-0.2, 0.2, num_age_groups)
+#
+#     # Loop over each draw (column level 0)
+#     for i, draw in enumerate(_df.columns.levels[0]):
+#         mean_values = _df[(draw, 'central')]
+#         lower_values = _df[(draw, 'lower')]
+#         upper_values = _df[(draw, 'upper')]
+#
+#         # Plot each age group with staggered x positions
+#         for j, age_group in enumerate(age_groups):
+#             ax.errorbar(
+#                 x=x_positions[i] + stagger[j],
+#                 y=mean_values[age_group],
+#                 yerr=[[mean_values[age_group] - lower_values[age_group]],
+#                       [upper_values[age_group] - mean_values[age_group]]],
+#                 fmt='o',  # Points for the mean values
+#                 color=age_colors[j],  # Assign color per age group
+#                 capsize=5,
+#                 label=age_group if i == 0 else ""  # Only label age groups once
+#             )
+#
+#     # Add grey vertical dashed lines between each draw
+#     for i in range(1, len(x_positions)):
+#         ax.axvline(x_positions[i] - 0.5, color='grey', linestyle='--')
+#
+#     # Add horizontal grey line at y=0
+#     ax.axhline(0, color='grey', linestyle='-')
+#
+#     # Customize ticks and labels
+#     ax.set_xticks(x_positions)
+#     ax.set_xticklabels(_df.columns.levels[0], rotation=45, ha='right')
+#     ax.set_ylim(top=80)
+#
+#     # Add legend for age groups
+#     handles = [plt.Line2D([0], [0], marker='o', color=color, linestyle='', label=age_group)
+#                for age_group, color in zip(age_groups, age_colors)]
+#     ax.legend(handles=handles, title="Age Group")
+#
+#     return fig, ax
+#
+#
+# pc_py_averted_vs_WASH_results_ordered = pc_py_averted_vs_scaleup_WASH_results.reindex(columns=order_for_plotting_vs_scaleup_WASH, level=0)
+#
+# name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs WASH scale-up {target_period()}'
+# fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_WASH_results_ordered)
+# ax.set_title(name_of_plot)
+# ax.set_ylabel('Percentage reduction in Person-Years Infected')
+# ax.set_ylim(-40, 40)
+# fig.tight_layout()
+# fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+# fig.show()
+# plt.close(fig)
+#
+#
+# # todo replot this
+# pc_py_averted_vs_baseline_ordered = pc_py_averted_vs_baseline_results.reindex(columns=order_for_plotting_vs_baseline, level=0)
+#
+# name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs baseline {target_period()}'
+# fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_baseline_ordered)
+# ax.set_title(name_of_plot)
+# ax.set_ylabel('Percentage reduction in Person-Years Infected')
+# ax.set_ylim(-40, 40)
+# fig.tight_layout()
+# fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+# fig.show()
+# plt.close(fig)
 
-name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs WASH scale-up {target_period()}'
-fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_WASH_results_ordered)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Percentage reduction in Person-Years Infected')
-ax.set_ylim(-40, 40)
-fig.tight_layout()
-fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-fig.show()
-plt.close(fig)
+
+def generate_py_averted_by_age(results_folder, comparator_scenario):
+
+    def wrap_get_person_years_infected(age_group, inf_level):
+        """
+        this makes sure that the arguments age and inf are updated within each
+        call in the loop "for age in ages:
+        """
+        def wrapper(df):
+            globals()['age'] = age_group
+            globals()['inf'] = inf_level
+            return get_person_years_infected(df)
+
+        return wrapper
+
+    num_py_averted_results = []
+    pc_py_averted_results = []
+
+    ages = ['SAC', 'PSAC', 'Adults']  # needed for get_person_years_infected
+    inf = 'HML'  # needed for get_person_years_infected
+
+    for age in ages:
+        custom_series_func = wrap_get_person_years_infected(age, inf)
+
+        # Extract age-specific person-years infected
+        person_years = extract_results(
+                    results_folder,
+                    module="tlo.methods.schisto",
+                    key="Schisto_person_days_infected",
+                    custom_generate_series=custom_series_func,
+                    do_scaling=True,
+                ).pipe(set_param_names_as_column_index_level_0)
+
+        # Compute absolute difference vs comparator
+        num_py_averted = compute_summary_statistics(
+            -1.0 * find_difference_relative_to_comparison_dataframe(
+                person_years,
+                comparison=comparator_scenario,
+            ),
+            central_measure='median'
+        )
+
+        pc_py_averted = 100.0 * compute_summary_statistics(
+            -1.0 * find_difference_relative_to_comparison_dataframe(
+                person_years,
+                comparison=comparator_scenario,
+                scaled=True
+            ),
+            central_measure='median'
+        )
+
+        # Append with age-group as row label
+        num_py_averted_results.append(num_py_averted.assign(age=age))
+        pc_py_averted_results.append(pc_py_averted.assign(age=age))
+
+    # Combine into single DataFrames with 'age' as index
+    num_py_averted_df = pd.concat(num_py_averted_results).set_index('age')
+    pc_py_averted_df = pd.concat(pc_py_averted_results).set_index('age')
+
+    # Save results
+    suffix = f"{comparator_scenario.replace(' ', '_')}_{target_period()}"
+    num_py_averted_df.to_csv(results_folder / f'num_py_averted_vs_{suffix}.csv')
+    pc_py_averted_df.to_csv(results_folder / f'pc_py_averted_vs_{suffix}.csv')
+
+    return num_py_averted_df, pc_py_averted_df
 
 
-# todo replot this
-pc_py_averted_vs_baseline_ordered = pc_py_averted_vs_baseline_results.reindex(columns=order_for_plotting_vs_baseline, level=0)
+# todo need to get three sets of comparators
+# this will generate comparisons across every scenario, then limit to those that are relevant
+py_averted_pause = generate_py_averted_by_age(results_folder, comparator_scenario='Pause WASH, no MDA')
+py_averted_continue = generate_py_averted_by_age(results_folder, comparator_scenario='Continue WASH, no MDA')
+py_averted_scaleup = generate_py_averted_by_age(results_folder, comparator_scenario='Scale-up WASH, no MDA')
 
-name_of_plot = f'Percentage reduction in person-years infected with Schistosomiasis vs baseline {target_period()}'
-fig, ax = plot_averted_points_with_errorbars(pc_py_averted_vs_baseline_ordered)
-ax.set_title(name_of_plot)
-ax.set_ylabel('Percentage reduction in Person-Years Infected')
-ax.set_ylim(-40, 40)
-fig.tight_layout()
-fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-fig.show()
-plt.close(fig)
+
+def plot_grouped_averted_points(data_dict):
+
+    row_labels = ['Pause', 'Continue', 'Scale-up']
+    scenario_keywords = ['MDA SAC', 'MDA PSAC', 'MDA All']
+    age_groups = ['SAC', 'PSAC', 'Adults']
+    palette = sns.color_palette("Set2", len(age_groups))
+    stagger = np.linspace(-0.2, 0.2, len(age_groups))
+
+    fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True)
+    plt.subplots_adjust(hspace=0)  # No space between rows
+
+    for row_idx, row_label in enumerate(row_labels):
+        ax = axes[row_idx]
+        df = data_dict[row_label]
+
+        # Extract relevant draws, exclude 'MDA None'
+        all_draws = df.columns.levels[0]
+        selected_draws = [d for d in all_draws if row_label in d and 'MDA None' not in d]
+
+        # Sort draws into groups by MDA strategy
+        grouped_draws = []
+        for keyword in scenario_keywords:
+            grouped_draws.extend([d for d in selected_draws if keyword in d])
+
+        x_positions = np.arange(len(grouped_draws))
+        group_boundaries = []
+        idx = 0
+        for keyword in scenario_keywords:
+            count = sum(keyword in d for d in grouped_draws)
+            if count > 0:
+                idx += count
+                group_boundaries.append(idx - 0.5)
+
+        # Plot each draw with staggered points for age groups
+        for i, draw in enumerate(grouped_draws):
+            for j, age_group in enumerate(age_groups):
+                mean = df.loc[age_group, (draw, 'central')]
+                lower = df.loc[age_group, (draw, 'lower')]
+                upper = df.loc[age_group, (draw, 'upper')]
+                ax.errorbar(
+                    x=i + stagger[j],
+                    y=mean,
+                    yerr=[[mean - lower], [upper - mean]],
+                    fmt='o',
+                    color=palette[j],
+                    capsize=5,
+                    label=age_group if (i == 0 and row_idx == 0) else ""
+                )
+
+        # Vertical dashed lines between MDA groups
+        for boundary in group_boundaries[:-1]:
+            ax.axvline(boundary, color='grey', linestyle='--')
+
+        ax.axhline(0, color='grey', linestyle='-')
+        ax.set_ylabel('% py averted')
+        ax.set_ylim(bottom=0, top=80)  # Cut at 0
+
+        if row_idx < 2:
+            ax.set_xticks([])
+        else:
+            # Set simplified x-axis labels for bottom row
+            label_positions = []
+            start = 0
+            for keyword in scenario_keywords:
+                count = sum(keyword in d for d in grouped_draws)
+                if count > 0:
+                    mid = start + (count - 1) / 2
+                    label_positions.append(mid)
+                    start += count
+            ax.set_xticks(label_positions)
+            ax.set_xticklabels(['MDA SAC', 'MDA PSAC', 'MDA ALL'])
+            ax.tick_params(axis='x', which='both', length=0)  # Remove tick marks
+
+        # Right-side panel label
+        ax.text(1.02, 0.5, row_label, transform=ax.transAxes,
+                rotation=270, va='center', fontsize=12, fontweight='bold')
+
+    # Legend: top left of first panel
+    handles = [plt.Line2D([0], [0], marker='o', color=palette[i], linestyle='', label=age)
+               for i, age in enumerate(age_groups)]
+    axes[0].legend(handles=handles, title='Age Group', loc='upper left', bbox_to_anchor=(0, 1))
+
+    plt.tight_layout()
+    return fig
+
+
+# todo check this plotting the correct figures as code has been updated
+fig = plot_grouped_averted_points({
+    'Pause': py_averted_pause[1],
+    'Continue': py_averted_continue[1],
+    'Scale-up': py_averted_scaleup[1]
+})
+plt.show()
+
+
+
 
 
 
