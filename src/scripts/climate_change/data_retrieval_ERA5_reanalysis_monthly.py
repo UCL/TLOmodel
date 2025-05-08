@@ -6,7 +6,7 @@ base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/H
 os.chdir(base_dir)
 dataset = "reanalysis-era5-single-levels-monthly-means"
 years = range(1940, 2010)
-years = [str(year) for year in range(1940, 2010)]
+years = [str(year) for year in range(1940, 2024)]
 
 request = {
     "product_type": ["monthly_averaged_reanalysis"],
