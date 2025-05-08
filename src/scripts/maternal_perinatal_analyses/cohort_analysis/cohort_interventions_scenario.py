@@ -12,7 +12,7 @@ class BaselineScenario(BaseScenario):
         self.start_date = Date(2024, 1, 1)
         self.end_date = Date(2025, 1, 2)
         self.pop_size = 40_000
-        self.number_of_draws = 7
+        self.number_of_draws = 6
         self.runs_per_draw = 60
 
     def log_configuration(self):
@@ -41,25 +41,25 @@ class BaselineScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        if draw_number == 0:
-            return {'PregnancySupervisor': {
-                    'analysis_year': 2024}}
+        # if draw_number == 0:
+        #     return {'PregnancySupervisor': {
+        #             'analysis_year': 2024}}
+        #
+        # else:
+        interventions_for_analysis = ['blood_transfusion', 'blood_transfusion',
+                                      'anti_htn_mgso4', 'anti_htn_mgso4',
+                                      'post_abortion_care_core', 'post_abortion_care_core']
 
-        else:
-            interventions_for_analysis = ['neo_resus', 'neo_resus',
-                                          'kmc', 'kmc',
-                                          'neo_sepsis_treatment', 'neo_sepsis_treatment']
+        avail_for_draw = [0.0, 1.0,
+                          0.0, 1.0,
+                          0.0, 1.0,
+                          ]
 
-            avail_for_draw = [0.0, 1.0,
-                              0.0, 1.0,
-                              0.0, 1.0,
-                              ]
-
-            return {'PregnancySupervisor': {
-                    'analysis_year': 2024,
-                    'interventions_analysis': True,
-                    'interventions_under_analysis': [interventions_for_analysis[draw_number - 1]],
-                    'intervention_analysis_availability': avail_for_draw[draw_number - 1]}}
+        return {'PregnancySupervisor': {
+                'analysis_year': 2024,
+                'interventions_analysis': True,
+                'interventions_under_analysis': [interventions_for_analysis[draw_number]],
+                'intervention_analysis_availability': avail_for_draw[draw_number]}}
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
