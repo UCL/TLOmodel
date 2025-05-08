@@ -13,6 +13,7 @@ ANC = True
 Inpatient = False
 multiplier = 1000
 baseline = True
+baseline_all_years = True
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
 elif Inpatient:
@@ -48,7 +49,11 @@ monthly_reporting_by_facility["facility"] = reporting_data["organisationunitname
 
 # Weather data
 if baseline:
-    directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/Baseline" # from 1940 - 1980 on
+    if baseline_all_years:
+        directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/Baseline/All_years" # from 1940 - 1980 on
+
+    else:
+        directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/Baseline" # from 1940 - 1980 on
 else:
     directory = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data" # from 2011 on
 malawi_grid = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/malawi_grid.shp")
@@ -168,8 +173,9 @@ for facility in facilities_with_location:
     expanded_facility_info['minimum_distance'] = np.nanmin(distances, axis=1)
     if baseline:
         average_precipitation_by_facility = {
-            facility: np.mean(precipitation[12: 12*(1953 - 1941)])
-            for facility, precipitation in weather_data_by_facility.items()
+            #facility: np.mean(precipitation[12: 12*(1953 - 1941)])
+            facility: np.mean(precipitation) # for the SPI, using all years
+        for facility, precipitation in weather_data_by_facility.items()
         }
     else:
         average_precipitation_by_facility = {
@@ -189,22 +195,30 @@ for facility in facilities_with_location:
     expanded_facility_info = expanded_facility_info.reindex(columns=facilities_with_location)
 
 if baseline:
-    if ANC:
-       weather_df.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv")
-       expanded_facility_info.to_csv(
-           "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv")
+    if baseline_all_years:
+        if ANC:
+            weather_df.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline_all_years.csv")
+            expanded_facility_info.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline_all_years.csv")
 
-    if Inpatient:
-        weather_df.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm_baseline.csv")
-        expanded_facility_info.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_Inpatient_baseline.csv")
     else:
-        weather_df.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm_baseline.csv")
-        expanded_facility_info.to_csv(
-            "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_baseline.csv")
+        if ANC:
+           weather_df.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline.csv")
+           expanded_facility_info.to_csv(
+               "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline.csv")
+
+        if Inpatient:
+            weather_df.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm_baseline.csv")
+            expanded_facility_info.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_Inpatient_baseline.csv")
+        else:
+            weather_df.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facility_lm_baseline.csv")
+            expanded_facility_info.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_baseline.csv")
 
 
 
