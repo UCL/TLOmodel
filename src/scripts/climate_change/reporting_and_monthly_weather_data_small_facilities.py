@@ -71,8 +71,6 @@ for file in files:
 pr_data = weather_monthly_all_grids.variables['tp'][:]  # total precipitation in kg m-2 s-1 = mm s-1 x 86400 to get to day
 lat_data = weather_monthly_all_grids.variables['latitude'][:]
 long_data = weather_monthly_all_grids.variables['longitude'][:]
-if not baseline:
-    date = weather_monthly_all_grids['date'][:]
 grid = 0
 regridded_weather_data = {}
 days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
