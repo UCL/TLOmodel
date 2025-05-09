@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from tlo import Date, Module, Parameter, Property, Types, Simulation, Population
+from tlo import Date, Module, Parameter, Population, Property, Simulation, Types
 
 
 def test_categorical():
