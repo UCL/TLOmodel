@@ -302,10 +302,16 @@ class Simulation:
         """
         for module in self.modules.values():
             module.on_simulation_end()
+            _labels_dict = module.get_label_data()
+            # get module parameter labels info
+            for _key, _val in _labels_dict.items():
+                _labels_dict[_key] = _val.groupby('param_label').size().to_dict()
+            logger.info(key='label_stats', data=_labels_dict)
+
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
         self.close_output_file()
-        self.compute_label_starts()
+
 
     def close_output_file(self) -> None:
         """Close logging file if open."""
@@ -478,20 +484,6 @@ class Simulation:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
 
-    def get_label_data(self, lbl_data):
-        """
-        update labels data dictionary with resorcefiles data
-
-        :param lbl_data: parameter labels dictionary
-        """
-        self.param_labels_data.update(lbl_data)
-
-    def compute_label_starts(self):
-        import pandas as pd
-        for _key, _val in self.param_labels_data.items():
-            self.param_labels_data[_key] = _val.groupby('param_label').size()
-        label_df = pd.DataFrame(self.param_labels_data)
-        logger.info(key='label_stats', data=label_df.to_dict())
 
 class EventQueue:
     """A simple priority queue for events.

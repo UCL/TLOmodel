@@ -288,7 +288,7 @@ class Module:
 
     # The explicit attributes of the module. We list these to distinguish dynamic
     # parameters created from the PARAMETERS specification.
-    __slots__ = ('name', 'parameters', 'rng', 'sim')
+    __slots__ = ('name', 'parameters', 'rng', 'sim', 'label_data')
 
     def __init__(self, name: Optional[str] = None) -> None:
         """Construct a new disease module ready to be included in a simulation.
@@ -302,6 +302,7 @@ class Module:
         self.rng: Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
         self.sim: Optional[Simulation] = None
+        self.label_data = {}
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame) -> None:
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary
@@ -321,21 +322,41 @@ class Module:
 
         :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
         """
-        def calculate_module_stats(param_df: pd.DataFrame) :
-            accepted_lbls = ["unassigned", "free", "constant", "context_specific"]
-            if 'param_label' not in param_df.columns:
-                param_df['param_label'] = accepted_lbls[0]
+        def param_labels_min_max(param_df: pd.DataFrame) :
+            """ assigning extra columns for specifying parameter labels, their min and max values """
+            extra_param_data = {'param_label': ["unassigned", "free", "constant", "context_specific"],
+                             'lower': None,
+                             'upper': None
+                             }
+            for _col in extra_param_data.keys():
+                if _col not in param_df.columns:
+                    param_df[_col] = extra_param_data[_col][0] \
+                        if isinstance(extra_param_data[_col], list) else extra_param_data[_col]
 
-            for _val in param_df.param_label.values:
-                # fill na with unassigned
-                param_df.param_label.fillna('unassigned')
-                # check if value is in acceptable labels or format
-                assert _val in accepted_lbls, f'value should be either of the following {accepted_lbls} and not {_val}'
+                if _col == 'param_label':
+                    # fill na with unassigned
+                    param_df[_col].fillna('unassigned')
+                    # check if value is in acceptable labels or format
+                    assert set(param_df[_col].values).issubset(set(extra_param_data[_col])), \
+                        (f'value should be either one of the following {extra_param_data["param_label"]} '
+                         f'and not {set(param_df[_col].values)}')
+                else:
+                    param_df[_col].fillna('None')
+                    for _val in param_df[_col].values:
+                        if _val is not None:
+                            try:
+                                int(_val)
+                            except ValueError:
+                                try:
+                                    float(_val)
+                                except ValueError as e:
+                                    raise ValueError(f'the value can only be an integer, float or None not {_val}') from e
+
 
             return param_df[['param_label']]
 
         # update the parameter labels dictionary
-        self.sim.get_label_data({self.name: calculate_module_stats(resource)})
+        self.label_data[self.name] = param_labels_min_max(resource)
 
         resource.set_index('parameter_name', inplace=True)
         skipped_data_types = ('DATA_FRAME', 'SERIES')
@@ -380,6 +401,10 @@ class Module:
 
             # Save the values to the parameters
             self.parameters[parameter_name] = parameter_value
+
+    def get_label_data(self):
+        """ return module parameter labels """
+        return self.label_data
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """Read parameter values from file, if required.

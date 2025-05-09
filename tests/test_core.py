@@ -92,10 +92,12 @@ def test_parameter_label(tmpdir):
     get_simulation(resourcefilepath)
 
     # change parameter labels column to  include an unexpected value and test simulation gives an assertion error
-    dummy_data.loc[1, 'param_label'] = 0.2
-    dummy_data.to_csv(resourcefilepath / 'dummy_data.csv')
-    with pytest.raises(AssertionError):
-        get_simulation(resourcefilepath)
+    unexpected_data = {'param_label': 0.2, 'upper': 'upper', 'lower': 'lower'}
+    for _col, _val in unexpected_data.items():
+        dummy_data.loc[1, _col] = _val
+        dummy_data[_col].to_csv(resourcefilepath / 'dummy_data.csv')
+        with pytest.raises((AssertionError, ValueError)):
+            get_simulation(resourcefilepath)
 
 
 class TestLoadParametersFromDataframe:
