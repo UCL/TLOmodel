@@ -119,42 +119,45 @@ def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs
 # %% 📊 DATA EXTRACTION FUNCTIONS - HEALTH
 # ==============================================================================
 
-def get_total_num_dalys(_df):
-    """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
-    Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
-    results from runs that crashed mid-way through the simulation.
-    """
-    years_needed = [i.year for i in TARGET_PERIOD]
-    assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
-    return pd.Series(
-        data=_df
-        .loc[_df.year.between(*years_needed)]
-        .drop(columns=['date', 'sex', 'age_range', 'year'])
-        .sum().sum()
-    )
+# todo get dalys by cause and year (for discounting)
+
+dalys_by_year_and_cause = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys_stacked_by_age_and_time",  # <-- for DALYS stacked by age and time
+    custom_generate_series=(
+        lambda df_: df_.drop(
+            columns=(['date', 'sex', 'age_range']),
+        ).groupby(['year']).sum().stack()
+    ),
+    do_scaling=True
+).pipe(set_param_names_as_column_index_level_0)
+dalys_by_year_and_cause.index = dalys_by_year_and_cause.index.set_names('label', level=1)
+
+# this gives schisto dalys for each run, by year
+schisto_dalys_by_year = dalys_by_year_and_cause.xs('Schistosomiasis', level='label')
 
 
-def total_dalys_by_year(_df):
-    """Return total number of DALYs (Stacked) by year within the TARGET_PERIOD.
-    Throw error if not a record for every year in the TARGET_PERIOD (to guard against runs that crashed).
-    """
-    years_needed = [i.year for i in TARGET_PERIOD]
-    years_present = _df.year.unique()
-    assert set(years_present).issuperset(years_needed), "Some years are not recorded."
-
-    dalys_by_year = (
-        _df
-        .loc[_df.year.between(*years_needed)]
-        .drop(columns=['date', 'sex', 'age_range'])
-        .groupby('year')
+def num_dalys_by_cause(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']) \
         .sum()
-        .sum(axis=1)  # sum across all causes (columns) within each year
-    )
-
-    return dalys_by_year
 
 
+# sum DALYs by cause over target period
+num_dalys_by_cause = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True,
+).pipe(set_param_names_as_column_index_level_0)
 
+total_schisto_dalys = num_dalys_by_cause.loc[num_dalys_by_cause.index == 'Schistosomiasis']
+
+summary_total_dalys = compute_summary_statistics(num_dalys_by_cause, central_measure='mean')
 
 # ==============================================================================
 # %% 📊 DATA EXTRACTION FUNCTIONS - HEALTH SYSTEM
@@ -410,6 +413,34 @@ pzq_use = pd.concat([pzq_use, pzq_cost])
 pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
 
 summary_pzq_cost = compute_summary_statistics(pzq_use)
+
+
+pzq_use_vs_PauseWASH = compute_summary_statistics(
+    find_difference_relative_to_comparison_dataframe(
+        pzq_cost,
+        comparison='Pause WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+pzq_use_vs_PauseWASH.to_csv(results_folder / f'pzq_use_vs_PauseWASH{target_period()}.csv')
+
+pzq_use_vs_ContinueWASH = compute_summary_statistics(
+    find_difference_relative_to_comparison_dataframe(
+        pzq_cost,
+        comparison='Continue WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+pzq_use_vs_ContinueWASH.to_csv(results_folder / f'pzq_use_vs_ContinueWASH{target_period()}.csv')
+
+pzq_use_vs_scaleupWASH = compute_summary_statistics(
+    find_difference_relative_to_comparison_dataframe(
+        pzq_cost,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+pzq_use_vs_scaleupWASH.to_csv(results_folder / f'pzq_use_vs_scaleupWASH{target_period()}.csv')
 
 
 
