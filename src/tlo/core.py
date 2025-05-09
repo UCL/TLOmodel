@@ -325,8 +325,8 @@ class Module:
         def param_labels_min_max(param_df: pd.DataFrame) :
             """ assigning extra columns for specifying parameter labels, their min and max values """
             extra_param_data = {'param_label': ["unassigned", "free", "constant", "context_specific"],
-                             'lower': None,
-                             'upper': None
+                             'prior_min': None,
+                             'prior_max': None
                              }
             for _col in extra_param_data.keys():
                 if _col not in param_df.columns:

@@ -80,9 +80,10 @@ def test_parameter_label(tmpdir):
 
     # create some dummy data for testing
     dummy_data = pd.DataFrame(data={'parameter_name': ['prob_inf', 'prob_death', 'rr_inf', 'rr_death'],
-                                    'value': [0.3, 0.02, 0.8, 0.9], 'param_label': ['free', 'constant',
-                                                                                    'context_specific', 'free'],
-                                    'lower': [0.002, 0.002, 0.001, 0.003], 'upper': [0.98, 0.8, 0.6, 0.7]})
+                                    'value': [0.3, 0.02, 0.8, 0.9],
+                                    'param_label': ['free', 'constant','context_specific', 'free'],
+                                    'prior_min': [0.002, 0.002, 0.001, 0.003],
+                                    'prior_max': [0.98, 0.8, 0.6, 0.7]})
 
     # export to csv file and save in temporally directory
     dummy_data.to_csv(tmpdir / 'dummy_data.csv')
@@ -92,7 +93,7 @@ def test_parameter_label(tmpdir):
     get_simulation(resourcefilepath)
 
     # change parameter labels column to  include an unexpected value and test simulation gives an assertion error
-    unexpected_data = {'param_label': 0.2, 'upper': 'upper', 'lower': 'lower'}
+    unexpected_data = {'param_label': 0.2, 'prior_min': 'lower', 'prior_max': 'upper'}
     for _col, _val in unexpected_data.items():
         dummy_data.loc[1, _col] = _val
         dummy_data[_col].to_csv(resourcefilepath / 'dummy_data.csv')
