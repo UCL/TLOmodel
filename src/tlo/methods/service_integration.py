@@ -172,7 +172,8 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             # methods of contraception. When 'fp' is listed in params['serv_int_screening'] the probability of
             # initiation in the general female population is increased. See updates to contraception.py
 
-            # Todo: may need to increase coverage further!
+            # Todo: may need to increase coverage further! (use the function from the even and not the event itself!)
+
             self.sim.schedule_event(StartInterventions(self.sim.modules['Contraception']), Date(self.sim.date))
 
         if 'mal' in params['serv_int_screening']:
