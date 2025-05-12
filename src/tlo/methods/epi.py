@@ -189,7 +189,7 @@ class Epi(Module):
         # Look up item codes for consumables
         self.get_item_codes()
 
-        # Check that the values enetered for 'prob_facility_level_for_vaccine' sum to 1.0
+        # Check that the values entered for 'prob_facility_level_for_vaccine' sum to 1.0
         probs = self.parameters['prob_facility_level_for_vaccine']
         assert all(np.isfinite(probs)) and np.isclose(sum(probs), 1.0)
 

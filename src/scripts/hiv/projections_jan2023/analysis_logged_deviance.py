@@ -37,8 +37,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 40_000
+end_date = Date(2025, 1, 1)
+popsize = 10_000
 
 # scenario = 1
 
@@ -49,9 +49,9 @@ log_config = {
     "custom_levels": {
         "*": logging.WARNING,
         # "tlo.methods.deviance_measure": logging.INFO,
-        # "tlo.methods.epi": logging.INFO,
-        "tlo.methods.hiv": logging.INFO,
-        "tlo.methods.tb": logging.INFO,
+        "tlo.methods.epi": logging.INFO,
+        # "tlo.methods.hiv": logging.INFO,
+        # "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.demography.detail": logging.WARNING,
         "tlo.methods.healthsystem.summary": logging.INFO,
@@ -84,36 +84,18 @@ sim.register(
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
-    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-    tb.Tb(resourcefilepath=resourcefilepath),
-    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-    depression.Depression(resourcefilepath=resourcefilepath),
-    service_integration.ServiceIntegration(resourcefilepath=resourcefilepath),
+    # hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+    # tb.Tb(resourcefilepath=resourcefilepath),
+    # cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    # depression.Depression(resourcefilepath=resourcefilepath),
+    # service_integration.ServiceIntegration(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # set the scenario
-sim.modules["ServiceIntegration"].parameters["serv_int_chronic"] = True
-sim.modules["ServiceIntegration"].parameters["integration_date"] = Date(2010, 1, 1)
-# sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
-# sim.modules["Tb"].parameters["scenario_SI"] = "z"
+# sim.modules["ServiceIntegration"].parameters["serv_int_chronic"] = True
+# sim.modules["ServiceIntegration"].parameters["integration_date"] = Date(2010, 1, 1)
 
-# sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
-# rr relapse if HIV+ 4.7
-# sim.modules["Tb"].parameters["rr_tb_aids"] = 26  # default 26
-
-# to cluster tests in positive people
-# sim.modules["Hiv"].parameters["rr_test_hiv_positive"] = 1.1  # default 1.5
-
-# to account for people starting-> defaulting, or not getting cons
-# this not used now if perfect referral testing->treatment
-# affects the prob of art start once diagnosed
-# sim.modules["Hiv"].parameters["treatment_initiation_adjustment"] = 1  # default 1.5
-
-# assume all defaulting is due to cons availability
-# sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
-# sim.modules["Hiv"].parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"] = 1.0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
