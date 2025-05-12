@@ -797,10 +797,10 @@ def test_hsi_testandrefer_and_prep(seed):
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 1.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_is_on_prep"]
-    date_next_hsi_event, next_hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+    assert 0 == len([
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
-    ][0]
+    ])
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI or
     # "decision" events
@@ -1262,4 +1262,4 @@ def test_baseline_hiv_prevalence(seed):
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
-    assert np.isclose(male_prev_1549, male_prev_1549_data, atol=0.12)
+    assert np.isclose(male_prev_1549, male_prev_1549_data, atol=0.01)
