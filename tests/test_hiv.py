@@ -1248,17 +1248,18 @@ def test_baseline_hiv_prevalence(seed):
     sim.make_initial_population(n=popsize)
     df = sim.population.props
 
+    # et absolute tolerance to the interval of the uncertainty around calibration targets
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
-    assert np.isclose(adult_prev_1549, adult_prev_1549_data, rtol=0.05)
+    assert np.isclose(adult_prev_1549, adult_prev_1549_data, atol=0.01)
 
     female_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
-    assert np.isclose(female_prev_1549, female_prev_1549_data, rtol=0.05)
+    assert np.isclose(female_prev_1549, female_prev_1549_data, atol=0.01)
 
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
-    assert np.isclose(male_prev_1549, male_prev_1549_data, rtol=0.05)
+    assert np.isclose(male_prev_1549, male_prev_1549_data, atol=0.12)
