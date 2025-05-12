@@ -100,7 +100,7 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'testing_scenario_2281340'
+scenario = 'pre_final_runs_cohort_05_25'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)
@@ -109,7 +109,9 @@ g_path = f'{outputspath}graphs_{scenario}'
 if not os.path.isdir(g_path):
         os.makedirs(f'{outputspath}graphs_{scenario}')
 
-interventions =['neo_resus', 'kmc', 'neo_sepsis_treatment']
+interventions =['neo_resus', 'kmc', 'neo_sepsis_treatment',
+                'blood_transfusion', 'anti_htn_mgso4', 'post_abortion_care_core']
+
 int_analysis = ['baseline']
 
 for i in interventions:
