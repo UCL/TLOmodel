@@ -2983,7 +2983,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 person_id=person_id
             )
 
-    # todo - linkage to NCD, depression
+    # linkage to NCD, depression
     def additional_screening(self, person_id):
         df = self.sim.population.props
 
@@ -3004,8 +3004,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # if not dx and currently on anti-depressants
             # call for depression check which
             if not df.at[person_id, 'de_on_antidepr']:
-                print(f'call depression screening for person {person_id}')
-                # todo or edit _check_for_suspected_depression
 
                 self.sim.modules['Depression'].do_on_presentation_to_care(person_id, hsi_event=self)
 
