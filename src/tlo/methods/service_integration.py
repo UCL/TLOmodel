@@ -181,12 +181,12 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         if 'hiv' in params['serv_int_screening']:
             # annual testing rate used in HIV scale-up scenarios, default average (2010-2020) is 0.25
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.4
+            self.sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.4
             # update exising linear models to use new scaled-up parameters
 
         if 'tb' in params['serv_int_screening']:
             # increase treatment coverage rate used to infer rate testing for active tb, default is 0.75
-            p["rate_testing_active_tb"]["treatment_coverage"] = 90
+            self.sim.modules['Tb'].parameters["rate_testing_active_tb"]["treatment_coverage"] = 90
 
         # ------------------------------------ MATERNAL AND CHILD HEALTH CLINIC ---------------------------------------
         if 'pnc' in params['serv_int_mch']:
