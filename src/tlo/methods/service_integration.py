@@ -150,7 +150,6 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                 assert all(item in self.module.accepted_conditions for item in p)
 
         # TODO: rebuild linear models
-        # TODO: check correct service names provided
 
         if not params['serv_int_screening'] and not params['serv_int_chronic'] and not params['serv_int_mch']:
             logger.info(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
@@ -173,7 +172,6 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             # initiation in the general female population is increased. See updates to contraception.py
 
             # Todo: may need to increase coverage further! (use the function from the even and not the event itself!)
-
             self.sim.schedule_event(StartInterventions(self.sim.modules['Contraception']), Date(self.sim.date))
 
         if 'mal' in params['serv_int_screening']:
@@ -192,7 +190,6 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         # ------------------------------------ MATERNAL AND CHILD HEALTH CLINIC ---------------------------------------
         if 'pnc' in params['serv_int_mch']:
-            #
             self.sim.modules['Labour'].current_parameters['alternative_pnc_coverage'] = True
             self.sim.modules['Labour'].current_parameters['pnc_availability_odds'] = 15.0
             self.sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self.sim.modules['Labour']), Date(self.sim.date))
