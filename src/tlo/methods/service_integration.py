@@ -179,11 +179,16 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         if 'mal' in params['serv_int_screening']:
             self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
-        # Todo: HIV and Tb screening
+        # todo don't need to update exising linear models in case of hiv and tb
+
         if 'hiv' in params['serv_int_screening']:
-            pass
+            # annual testing rate used in HIV scale-up scenarios, default average (2010-2020) is 0.25
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.4
+            # update exising linear models to use new scaled-up parameters
+
         if 'tb' in params['serv_int_screening']:
-            pass
+            # increase treatment coverage rate used to infer rate testing for active tb, default is 0.75
+            p["rate_testing_active_tb"]["treatment_coverage"] = 90
 
         # ------------------------------------ MATERNAL AND CHILD HEALTH CLINIC ---------------------------------------
         if 'pnc' in params['serv_int_mch']:
@@ -202,6 +207,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
         # Todo: EPI intervention
+        # no parameter governing prob of receiving vaccine
+        # child's prob of vax entirely dependent on vaccine being available (cons required)
+        # can manipulate this to induce 100% coverage rate - will need to look up the vaccines required for each
         if 'epi' in params['serv_int_mch']:
             pass
 
