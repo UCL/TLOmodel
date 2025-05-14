@@ -11,7 +11,7 @@ or execute a single run:
 tlo scenario-run src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py --draw 1 0
 
 Run on the batch system using:
-tlo batch-submit src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py
+tlo batch-submit src/scripts/hiv/mihpsa_runs/scenario_mihpsa.py
 
 
 Download result files for a completed job:
