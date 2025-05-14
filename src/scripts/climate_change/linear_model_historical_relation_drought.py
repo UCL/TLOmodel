@@ -10,8 +10,8 @@ from statsmodels.genmod.generalized_linear_model import GLM
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from functions_for_data_cleaning_lm import build_model, stepwise_selection, repeat_info
 
-ANC = True
-Inpatient = False
+ANC = False
+Inpatient = True
 if ANC:
     service = 'ANC'
 if Inpatient:
@@ -42,7 +42,7 @@ elif Inpatient:
 
 ### Read in three-month drought SPI ##
 weather_data_monthly_original = pd.read_csv(f"/Users/rem76/Desktop/Climate_change_health/Data/Drought_data/historical_drought_data_2010_2024.csv", index_col=0)
-weather_data_monthly_original = (weather_data_monthly_original < -1).astype(int)
+#weather_data_monthly_original = (weather_data_monthly_original < 0).astype(int)
 
 ##############################################################################################
 ########################## STEP 0: Tidy data ##########################

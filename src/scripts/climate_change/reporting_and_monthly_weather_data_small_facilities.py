@@ -9,8 +9,8 @@ from scipy.spatial.distance import cdist
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
-ANC = True
-Inpatient = False
+ANC = False
+Inpatient = True
 multiplier = 1000
 baseline = True
 baseline_all_years = True
@@ -199,6 +199,11 @@ if baseline:
                 "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_ANC_lm_baseline_all_years.csv")
             expanded_facility_info.to_csv(
                 "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_ANC_baseline_all_years.csv")
+        if Inpatient:
+            weather_df.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/historical_weather_by_smaller_facilities_with_Inpatient_lm_baseline_all_years.csv")
+            expanded_facility_info.to_csv(
+                "/Users/rem76/Desktop/Climate_change_health/Data/expanded_facility_info_by_smaller_facility_lm_with_Inpatient_baseline_all_years.csv")
 
     else:
         if ANC:
