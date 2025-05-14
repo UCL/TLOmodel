@@ -50,8 +50,9 @@ class TestScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2051, 1, 1)  # need to log to mid-year 2050
         self.pop_size = 100_000
-        self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        self.number_of_draws = len(self.scenarios)
+        # self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        # self.number_of_draws = len(self.scenarios)
+        self.number_of_draws = 1
         self.runs_per_draw = 3
 
     def log_configuration(self):
@@ -62,8 +63,8 @@ class TestScenario(BaseScenario):
                 '*': logging.WARNING,
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
-                "tlo.methods.tb": logging.INFO,
-                "tlo.methods.healthburden": logging.INFO,
+                # "tlo.methods.tb": logging.INFO,
+                # "tlo.methods.healthburden": logging.INFO,
             }
         }
 
@@ -89,12 +90,13 @@ class TestScenario(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return {
-            'Hiv': {
-                'select_mihpsa_scenario': self.scenarios[draw_number],
-                'scaleup_start_year': 2024
-            },
-        }
+        return
+        # return {
+        #     'Hiv': {
+        #         'select_mihpsa_scenario': self.scenarios[draw_number],
+        #         'scaleup_start_year': 2024
+        #     },
+        # }
 
 
 if __name__ == '__main__':

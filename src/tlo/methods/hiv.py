@@ -3986,7 +3986,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         on_ART_and_VLS_15_64_F = (N_VLS_15_64_F / N_ART_15_64_F) * 100
         on_ART_and_VLS_15_64 = (N_VLS_15_64 / N_ART_15_64) * 100
 
-
         logger.info(
             key="mihpsa_15_64",
             description="mihpsa_15_64",
@@ -4009,6 +4008,59 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "on_ART_and_VLS_15_64_M": on_ART_and_VLS_15_64_M,
                 "on_ART_and_VLS_15_64_F": on_ART_and_VLS_15_64_F,
                 "on_ART_and_VLS_15_64": on_ART_and_VLS_15_64,
+            },
+        )
+
+        # age-specific outputs
+        Num_HIV_15_34 = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35)]
+        )
+
+        Num_HIV_15_34_M = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'M')]
+        )
+
+        Num_HIV_15_34_F = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(15, 35) & (df.sex == 'F')]
+        )
+
+        Num_HIV_35_49 = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50)]
+        )
+
+        Num_HIV_35_49_M = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'M')]
+        )
+
+        Num_HIV_35_49_F = len(
+            df[df.hv_inf & df.is_alive & df.age_years.between(35, 50) & (df.sex == 'F')]
+        )
+
+        Num_HIV_50 = len(
+            df[df.hv_inf & df.is_alive & (df.age_years >= 50)]
+        )
+
+        Num_HIV_50_M = len(
+            df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'M')]
+        )
+
+        Num_HIV_50_F = len(
+            df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == 'F')]
+        )
+
+        logger.info(
+            key="mihpsa_age_breakdown",
+            description="mihpsa_age_breakdown",
+            data={
+                "Num_HIV_15_34": Num_HIV_15_34,
+                "Num_HIV_15_34_M": Num_HIV_15_34_M,
+                "Num_HIV_15_34_F": Num_HIV_15_34_F,
+                "Num_HIV_35_49": Num_HIV_35_49,
+                "Num_HIV_35_49_M": Num_HIV_35_49_M,
+                "Num_HIV_35_49_F": Num_HIV_35_49_F,
+                "Num_HIV_50": Num_HIV_50,
+                "Num_HIV_50_M": Num_HIV_50_M,
+                "Num_HIV_50_F": Num_HIV_50_F,
             },
         )
 
