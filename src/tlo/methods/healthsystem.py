@@ -970,7 +970,8 @@ class HealthSystem(Module):
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
 
-    def setup_daily_capabilities(self, use_funded_or_actual_staffing):
+    ## NOTE: EDit this function to accept an additional argument and redefine capabilities to fugible.
+    def setup_daily_capabilities(self, use_funded_or_actual_staffing, include_clinics=False):
         """Set up `self._daily_capabilities` and `self._officers_with_availability`.
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
@@ -981,6 +982,14 @@ class HealthSystem(Module):
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
+        # If include_clinics is True, then redefine daily_capabilities
+        if include_clinics:
+            # Merge in the ringfenced clinics
+            ringfenced_clinics = self.parameters['Ringfenced_Clinics'].set_index('Facility_ID')
+            self._daily_capabilities = self._daily_capabilities.merge(ringfenced_clinics, on='Facility_ID', how='left')
+            ## New capabilities are old_capabilities * fungible
+            self._daily_capabilities['Total_Mins_Per_Day'] = self._daily_capabilities['Total_Mins_Per_Day'] * self._daily_capabilities['fungible']
+
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
