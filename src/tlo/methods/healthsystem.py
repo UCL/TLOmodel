@@ -986,9 +986,16 @@ class HealthSystem(Module):
         if include_clinics:
             # Merge in the ringfenced clinics
             ringfenced_clinics = self.parameters['Ringfenced_Clinics'].set_index('Facility_ID')
-            self._daily_capabilities = self._daily_capabilities.merge(ringfenced_clinics, on='Facility_ID', how='left')
+            updated_capabilities = self._daily_capabilities.merge(ringfenced_clinics, on='Facility_ID', how='left')
             ## New capabilities are old_capabilities * fungible
-            self._daily_capabilities['Total_Mins_Per_Day'] = self._daily_capabilities['Total_Mins_Per_Day'] * self._daily_capabilities['fungible']
+            updated_capabilities['Total_Mins_Per_Day'] = updated_capabilities['Total_Mins_Per_Day'] * updated_capabilities['fungible']
+            ## Module specific capabilities are total time * non-fungible
+            module_cols = ringfenced_clinics.columns.difference(["Facility_ID", "non-fungible"])
+            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Mins_Per_Day'], axis=0)
+            ## Store the non-fungible capabilities
+            ## Strucutred as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
+            self._clinics_capabilities = updated_capabilities[module_cols].T.to_dict()
+            self._daily_capabilities = updated_capabilities.drop(columns=['fungible'])
 
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
