@@ -2847,7 +2847,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # todo additional screening if chronic care implemented
         if 'ServiceIntegration' in self.sim.modules:
-            if (self.sim.date >= self.sim.modules['ServiceIntegration'].parameters['integration_date']) and \
+            if (self.sim.date >= Date(self.sim.modules['ServiceIntegration'].parameters['integration_year'], 1, 1)) and \
                     self.sim.modules['ServiceIntegration'].parameters['serv_int_chronic']:
                 self.additional_screening(person_id)
 

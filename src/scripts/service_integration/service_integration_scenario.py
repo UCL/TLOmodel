@@ -46,7 +46,7 @@ class ServiceIntegrationScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        params_all = {'ServiceIntegration':{'integration_date': Date(2011, 1,1)}}
+        params_all = {'ServiceIntegration':{'integration_year': 2011}}
         params_oth = {1: {'serv_int_chronic': True},
                       2: {'serv_int_screening': ['htn']},
                       3: {'serv_int_screening': ['dm']},

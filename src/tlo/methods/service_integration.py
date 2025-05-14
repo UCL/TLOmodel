@@ -54,7 +54,7 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
         'serv_int_mch': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
                                                     'which maternal and child health care is increased as part of'
                                               ' integration modelling'),
-        'integration_date': Parameter(Types.DATE, 'Date on which parameters are overidden for integration '
+        'integration_year': Parameter(Types.INT, 'year on which parameters are overwritten for integration '
                                                   'modelling'),
 
     }
@@ -103,7 +103,7 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
         params = self.parameters
 
         event = ServiceIntegrationParameterUpdateEvent(self)
-        sim.schedule_event(event, params['integration_date'])
+        sim.schedule_event(event, Date(params['integration_year'], 1, 1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.

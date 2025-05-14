@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, List
 import numpy as np
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, hiv
@@ -1734,7 +1734,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         # todo additional screening if chronic care implemented
         if 'ServiceIntegration' in self.sim.modules:
-            if (self.sim.date >= self.sim.modules['ServiceIntegration'].parameters['integration_date']) and \
+            if (self.sim.date >= Date(self.sim.modules['ServiceIntegration'].parameters['integration_year'], 1, 1)) and \
                     self.sim.modules['ServiceIntegration'].parameters['serv_int_chronic']:
                 self.additional_screening(person_id)
 

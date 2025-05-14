@@ -33,8 +33,8 @@ def test_parameter_update_event_runs_and_cancels_as_expected(tmpdir, seed):
     sim.make_initial_population(n=50)
 
     # Set parameter update event to run before end of sim
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
-    sim.simulate(end_date=Date(2010, 1, 31))
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
+    sim.simulate(end_date=Date(2011, 1, 2))
 
     # Because switches are unchanged check logging occurred as expected
     output= parse_log_file(sim.log_filepath)
@@ -51,8 +51,8 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_screening
     # Set parameter update event to run before end of sim
 
     sim.modules['ServiceIntegration'].parameters['serv_int_screening'] = ['htn', 'dm', 'hiv' ,'tb', 'fp', 'mal']
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
-    sim.simulate(end_date=Date(2010, 1, 31))
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
+    sim.simulate(end_date=Date(2011, 1, 2))
 
     output = parse_log_file(sim.log_filepath)
     assert 'event_runs' in output['tlo.methods.service_integration']
@@ -78,8 +78,8 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_mch(tmpdi
     # Set parameter update event to run before end of sim
 
     sim.modules['ServiceIntegration'].parameters['serv_int_mch'] = ['pnc', 'fp', 'mal', 'epi']
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
-    sim.simulate(end_date=Date(2010, 1, 31))
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
+    sim.simulate(end_date=Date(2011, 1, 2))
 
     output = parse_log_file(sim.log_filepath)
     assert 'event_runs' in output['tlo.methods.service_integration']
@@ -101,8 +101,8 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_chronic(t
     # Set parameter update event to run before end of sim
 
     sim.modules['ServiceIntegration'].parameters['serv_int_chronic'] = True
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
-    sim.simulate(end_date=Date(2010, 1, 31))
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
+    sim.simulate(end_date=Date(2011, 1, 2))
 
     output = parse_log_file(sim.log_filepath)
     assert 'event_runs' in output['tlo.methods.service_integration']
@@ -126,7 +126,7 @@ def test_long_run_screening_integration(tmpdir, seed):
     # Set parameter update event to run before end of sim
 
     sim.modules['ServiceIntegration'].parameters['serv_int_screening'] = ['htn', 'dm', 'hiv' ,'tb', 'fp']
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
     sim.simulate(end_date=Date(2015, 1, 1))
 
     output = parse_log_file(sim.log_filepath)
@@ -143,7 +143,7 @@ def test_long_run_mch_integration(tmpdir, seed):
     # Set parameter update event to run before end of sim
 
     sim.modules['ServiceIntegration'].parameters['serv_int_mch'] = ['pnc', 'fp', 'mal', 'epi']
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
     sim.simulate(end_date=Date(2015, 1, 1))
 
     output = parse_log_file(sim.log_filepath)
@@ -160,7 +160,7 @@ def test_long_run_chronic_integration(tmpdir, seed):
     # Set parameter update event to run before end of sim
 
     sim.modules['ServiceIntegration'].parameters['serv_int_chronic'] = True
-    sim.modules['ServiceIntegration'].parameters['integration_date'] = Date(2010, 1, 2)
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
     sim.simulate(end_date=Date(2015, 1, 1))
 
     output = parse_log_file(sim.log_filepath)
