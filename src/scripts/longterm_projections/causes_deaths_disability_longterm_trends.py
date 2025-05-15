@@ -46,6 +46,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     _, age_grp_lookup = make_age_grp_lookup()
 
+
     def get_num_deaths_by_cause_label(_df):
         """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
         """
@@ -54,6 +55,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .groupby(_df['label']) \
             .size()
 
+    def get_num_deaths_by_cause_label_female(_df):
+        """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
+        """
+        return _df \
+            .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+            .loc[_df['sex'] == 'F'] \
+            .groupby(_df['label']) \
+            .size()
+
+    def get_num_deaths_by_cause_label_male(_df):
+        """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
+        """
+        return _df \
+            .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+            .loc[_df['sex'] == 'M'] \
+            .groupby(_df['label']) \
+            .size()
     def get_num_dalys_by_cause_label(_df):
         """Return total number of DALYS (Stacked) by label (total by age-group within the TARGET_PERIOD)
         """
@@ -69,6 +87,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Filter the DataFrame based on the target period
         filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
         numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
+        population_sum = numeric_df.sum(numeric_only=True)
+
+        return population_sum
+
+    def get_population_for_year_female(_df):
+        """Returns the population in the year of interest"""
+        _df['date'] = pd.to_datetime(_df['date'])
+
+        # Filter the DataFrame based on the target period
+        filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        numeric_df = filtered_df.drop(columns=['male'], errors='ignore')
+        population_sum = numeric_df.sum(numeric_only=True)
+
+        return population_sum
+
+    def get_population_for_year_male(_df):
+        """Returns the population in the year of interest"""
+        _df['date'] = pd.to_datetime(_df['date'])
+
+        # Filter the DataFrame based on the target period
+        filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        numeric_df = filtered_df.drop(columns=['female'], errors='ignore')
         population_sum = numeric_df.sum(numeric_only=True)
 
         return population_sum
@@ -90,6 +130,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_dalys_mean_1000 = []
     all_draws_dalys_lower_1000 = []
     all_draws_dalys_upper_1000 = []
+
+    all_draws_deaths_mean_1000_male = []
+    all_draws_deaths_mean_1000_female = []
+
     for draw in range(4):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
@@ -104,6 +148,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_years_data_population_mean = {}
         all_years_data_population_lower = {}
         all_years_data_population_upper = {}
+
+        all_years_data_deaths_mean_male= {}
+        all_years_data_deaths_mean_female = {}
+
+        all_years_data_population_mean_female = {}
+        all_years_data_population_mean_male = {}
+
 
         for target_year in target_year_sequence:
             TARGET_PERIOD = (
@@ -154,6 +205,59 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             all_years_data_population_mean[target_year] = result_data_population['mean']
             all_years_data_population_lower[target_year] = result_data_population['lower']
             all_years_data_population_upper[target_year] = result_data_population['upper']
+
+
+            # females deaths and population
+            result_data_deaths_female = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='death',
+                custom_generate_series=get_num_deaths_by_cause_label_female,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+
+            result_data_population_female = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='population',
+                custom_generate_series=get_population_for_year_female,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+            all_years_data_population_mean_female[target_year] = result_data_population_female['mean']
+            all_years_data_deaths_mean_female[target_year] = result_data_deaths_female['mean']
+
+            # males deaths and population
+            result_data_deaths_male = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='death',
+                custom_generate_series=get_num_deaths_by_cause_label_male,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+
+            result_data_population_male = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='population',
+                custom_generate_series=get_population_for_year_male,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+            all_years_data_population_mean_male[target_year] = result_data_population_male['mean']
+            all_years_data_deaths_mean_male[target_year] = result_data_deaths_male['mean']
+
+
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years_DALYS_mean = pd.DataFrame(all_years_data_dalys_mean)
         df_all_years_DALYS_lower = pd.DataFrame(all_years_data_dalys_lower)
@@ -166,6 +270,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
         df_all_years_data_population_lower = pd.DataFrame(all_years_data_population_lower)
         df_all_years_data_population_upper = pd.DataFrame(all_years_data_population_upper)
+
+        df_all_years_data_population_mean_female = pd.DataFrame(all_years_data_population_mean_female)
+        df_all_years_data_population_mean_male = pd.DataFrame(all_years_data_population_mean_male)
+
+        df_all_years_data_deaths_mean_female = pd.DataFrame(all_years_data_deaths_mean_female)
+        df_all_years_data_deaths_mean_male = pd.DataFrame(all_years_data_deaths_mean_male)
+
+        df_death_per_1000_mean_female = df_all_years_data_deaths_mean_female.div(df_all_years_data_population_mean_female.iloc[0, 0], axis=0) * 1000
+        df_death_per_1000_mean_male = df_all_years_data_deaths_mean_male.div(df_all_years_data_population_mean_male.iloc[0, 0], axis=0) * 1000
 
         # Extract total population
 
@@ -299,10 +412,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         df_death_per_1000_mean = df_all_years_deaths_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
         df_daly_per_1000_mean = df_all_years_DALYS_mean.div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
-        df_death_per_1000_lower = df_all_years_deaths_lower.div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
-        df_daly_per_1000_lower = df_all_years_DALYS_lower.div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
-        df_death_per_1000_upper = df_all_years_deaths_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
-        df_daly_per_1000_upper = df_all_years_DALYS_upper.div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
 
         # Panel A: Deaths (Stacked bar plot)
         df_death_per_1000_mean.T.plot.bar(stacked=True, ax=axes[0],
@@ -388,6 +497,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_deaths_lower_1000.append(pd.Series(df_death_per_1000_lower.iloc[:, -1], name=f'Draw {draw}'))
         all_draws_deaths_upper_1000.append(pd.Series(df_death_per_1000_upper.iloc[:, -1], name=f'Draw {draw}'))
 
+        # deaths by sex
+        all_draws_deaths_mean_1000_male.append(pd.Series(df_death_per_1000_mean_male.iloc[:, -1], name=f'Draw {draw}'))
+        all_draws_deaths_mean_1000_female.append(pd.Series(df_death_per_1000_mean_female.iloc[:, -1], name=f'Draw {draw}'))
+
     df_deaths_all_draws_mean = pd.concat(all_draws_deaths_mean, axis=1)
     df_dalys_all_draws_mean = pd.concat(all_draws_dalys_mean, axis=1)
     df_deaths_all_draws_lower = pd.concat(all_draws_deaths_lower, axis=1)
@@ -397,10 +510,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     df_deaths_all_draws_mean_1000 = pd.concat(all_draws_deaths_mean_1000, axis=1)
     df_dalys_all_draws_mean_1000 = pd.concat(all_draws_dalys_mean_1000, axis=1)
-    df_deaths_all_draws_lower_1000 = pd.concat(all_draws_deaths_lower_1000, axis=1)
-    df_dalys_all_draws_lower_1000 = pd.concat(all_draws_dalys_lower_1000, axis=1)
-    df_deaths_all_draws_upper_1000 = pd.concat(all_draws_deaths_upper_1000, axis=1)
-    df_dalys_all_draws_upper_1000 = pd.concat(all_draws_dalys_upper_1000, axis=1)
+
+    df_deaths_all_draws_mean_1000_female = pd.concat(all_draws_deaths_mean_1000_female, axis=1)
+    df_deaths_all_draws_mean_1000_male = pd.concat(all_draws_deaths_mean_1000_male, axis=1)
+
     normalized_DALYs = pd.concat(normalized_DALYs, axis = 1)
 
     # Plotting as bar charts
@@ -547,8 +660,40 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(f'dalys_selected_conditions_percentage_of_total_2070'))
     plt.close(fig)
 
+    ## Female vs Male deaths in 2070
+
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+
+    # Panel A: Males
+    df_deaths_all_draws_mean_1000_male.T.plot.bar(stacked=True, ax=axes[0],
+                                            color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                                   df_deaths_all_draws_mean_1000_male.index],
+                                            label=[label for label in df_all_years_DALYS_mean.index])
+
+    axes[0].set_xlabel('Scenario')
+    axes[0].set_ylabel('Deaths per 1,000: Males')
+    axes[0].set_xticks(range(len(scenario_names)))
+    axes[0].set_xticklabels(scenario_names, rotation=45)
+    axes[0].set_ylim(0, 25)
+    axes[0].legend_.remove()
+    # Panel B: Females
+    df_deaths_all_draws_mean_1000_female.T.plot.bar(stacked=True, ax=axes[1],
+                                            color=[get_color_cause_of_death_or_daly_label(_label) for _label in
+                                                   df_deaths_all_draws_mean_1000_female.index],
+                                            label=[label for label in df_all_years_DALYS_mean.index])
+
+    axes[1].set_xlabel('Scenario')
+    axes[1].set_ylabel('Deaths per 1,000: Females')
+    axes[1].set_xticks(range(len(scenario_names)))
+    axes[1].set_xticklabels(scenario_names, rotation=45)
+    axes[1].legend(title='Cause', bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].set_ylim(0, 25)
+
+    plt.tight_layout()
+    fig.savefig(make_graph_file_name(
+        f'deaths_all_cause_all_draws_2070_males_vs_females'))
+    plt.close(fig)
     # Save data as CSV
-    df_selected_causes_pct.to_csv(output_folder / 'dalys_selected_conditions_percentage_of_total_2070.csv')
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
