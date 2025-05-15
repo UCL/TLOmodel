@@ -3841,11 +3841,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
-        # after logger, reset yearly logged properties
-        df["hv_VMMC_in_last_year"] = False
-        df["hv_days_on_prep_AGYW"] = 0
-        df["hv_days_on_prep_FSW"] = 0
-
         # ------------------------------------ MIHPSA DEATHS OUTPUTS ------------------------------------
         POP_15_64_M = len(
             df[df.is_alive & df.age_years.between(15, 65) & (df.sex == 'M')]
@@ -4065,6 +4060,334 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "Num_HIV_50_F": Num_HIV_50_F,
             },
         )
+
+        # ------------------------------------ LONG-TERM MIHPSA OUTPUTS ------------------------------------
+
+        Total_00_14_M = len(df[df.is_alive & df.age_years.between(0, 15) & (df.sex == "M")])
+        Total_15_24_M = len(df[df.is_alive & df.age_years.between(15, 25) & (df.sex == "M")])
+        Total_25_49_M = len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")])
+        Total_50_UP_M = len(df[df.is_alive & (df.age_years >= 50) & (df.sex == "M")])
+
+        Total_00_14_F = len(df[df.is_alive & df.age_years.between(0, 15) & (df.sex == "F")])
+        Total_15_24_F = len(df[df.is_alive & df.age_years.between(15, 25) & (df.sex == "F")])
+        Total_25_49_F = len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
+        Total_50_UP_F = len(df[df.is_alive & (df.age_years >= 50) & (df.sex == "M")])
+
+        Total_FSW = n_fsw
+        Total_MSM = 0
+
+        # Male
+        PLHIV_00_14_M = len(df[df.hv_inf & df.is_alive & df.age_years.between(0, 14) & (df.sex == "M")])
+        PLHIV_15_24_M = len(df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")])
+        PLHIV_25_49_M = len(df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")])
+        PLHIV_50_UP_M = len(df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == "M")])
+
+        # Female
+        PLHIV_00_14_F = len(df[df.hv_inf & df.is_alive & df.age_years.between(0, 14) & (df.sex == "F")])
+        PLHIV_15_24_F = len(df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")])
+        PLHIV_25_49_F = len(df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")])
+        PLHIV_50_UP_F = len(df[df.hv_inf & df.is_alive & (df.age_years >= 50) & (df.sex == "F")])
+
+        PLHIV_FSW = len(df[df.hv_inf & df.is_alive & df.li_is_sexworker & (df.sex == "F")])
+        PLHIV_MSM = 0
+
+        # Male
+        Diagnosed_00_14_M = len(
+            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(0, 14) & (df.sex == "M")])
+        Diagnosed_15_24_M = len(
+            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(15, 24) & (df.sex == "M")])
+        Diagnosed_25_49_M = len(
+            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(25, 49) & (df.sex == "M")])
+        Diagnosed_50_UP_M = len(df[df.hv_inf & df.is_alive & df.hv_diagnosed & (df.age_years >= 50) & (df.sex == "M")])
+
+        # Female
+        Diagnosed_00_14_F = len(
+            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(0, 14) & (df.sex == "F")])
+        Diagnosed_15_24_F = len(
+            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(15, 24) & (df.sex == "F")])
+        Diagnosed_25_49_F = len(
+            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.age_years.between(25, 49) & (df.sex == "F")])
+        Diagnosed_50_UP_F = len(df[df.hv_inf & df.is_alive & df.hv_diagnosed & (df.age_years >= 50) & (df.sex == "F")])
+
+        Diagnosed_FSW = len(
+            df[df.hv_inf & df.is_alive & df.hv_diagnosed & df.li_is_sexworker & (df.sex == "F")])
+        Diagnosed_MSM = 0
+
+        # Define valid ART statuses
+        on_art_status = ['on_not_VL_suppressed', 'on_VL_suppressed']
+
+        # Male
+        ART_00_14_M = len(
+            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(0, 14) & (df.sex == "M")])
+        ART_15_24_M = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(15, 24) & (
+                df.sex == "M")])
+        ART_25_49_M = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(25, 49) & (
+                df.sex == "M")])
+        ART_50_UP_M = len(
+            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & (df.age_years >= 50) & (df.sex == "M")])
+
+        # Female
+        ART_00_14_F = len(
+            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(0, 14) & (df.sex == "F")])
+        ART_15_24_F = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(15, 24) & (
+                df.sex == "F")])
+        ART_25_49_F = len(df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.age_years.between(25, 49) & (
+                df.sex == "F")])
+        ART_50_UP_F = len(
+            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & (df.age_years >= 50) & (df.sex == "F")])
+
+        ART_FSW = len(
+            df[df.hv_inf & df.is_alive & df.hv_art.isin(on_art_status) & df.li_is_sexworker & (df.sex == "F")])
+        ART_MSM = 0
+
+
+        # Male
+        VLS_00_14_M = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(0,
+                                                                                                                14) & (
+                                     df.sex == "M")])
+        VLS_15_24_M = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(15,
+                                                                                                                24) & (
+                                     df.sex == "M")])
+        VLS_25_49_M = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(25,
+                                                                                                                49) & (
+                                     df.sex == "M")])
+        VLS_50_UP_M = len(
+            df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & (df.age_years >= 50) & (df.sex == "M")])
+
+        # Female
+        VLS_00_14_F = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(0,
+                                                                                                                14) & (
+                                     df.sex == "F")])
+        VLS_15_24_F = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(15,
+                                                                                                                24) & (
+                                     df.sex == "F")])
+        VLS_25_49_F = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.age_years.between(25,
+                                                                                                                49) & (
+                                     df.sex == "F")])
+        VLS_50_UP_F = len(
+            df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & (df.age_years >= 50) & (df.sex == "F")])
+
+        VLS_FSW = len(df[df.hv_inf & df.is_alive & (df.hv_art == 'on_VL_suppressed') & df.li_is_sexworker & (
+                                     df.sex == "F")])
+        VLS_MSM = 0
+
+        Birth_All = 0
+        Birth_HIV = 0
+        DeathsAll_00_14_M = 0
+        DeathsAll_15_24_M = 0
+        DeathsAll_25_49_M = 0
+        DeathsAll_50_UP_M = 0
+        DeathsAll_00_14_F = 0
+        DeathsAll_15_24_F = 0
+        DeathsAll_25_49_F = 0
+        DeathsAll_50_UP_F = 0
+
+        # Male
+        NewHIV_00_14_M = len(
+            df.loc[
+                df.age_years.between(0, 14)
+                & (df.sex == 'M')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        NewHIV_15_24_M = len(
+            df.loc[
+                df.age_years.between(15, 24)
+                & (df.sex == 'M')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        NewHIV_25_49_M = len(
+            df.loc[
+                df.age_years.between(25, 49)
+                & (df.sex == 'M')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        NewHIV_50_UP_M = len(
+            df.loc[
+                (df.age_years >= 50)
+                & (df.sex == 'M')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        # Female
+        NewHIV_00_14_F = len(
+            df.loc[
+                df.age_years.between(0, 14)
+                & (df.sex == 'F')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        NewHIV_15_24_F = len(
+            df.loc[
+                df.age_years.between(15, 24)
+                & (df.sex == 'F')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        NewHIV_25_49_F = len(
+            df.loc[
+                df.age_years.between(25, 49)
+                & (df.sex == 'F')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        NewHIV_50_UP_F = len(
+            df.loc[
+                (df.age_years >= 50)
+                & (df.sex == 'F')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+
+        NewHIV_FSW = len(
+            df.loc[
+                df.li_is_sexworker
+                & (df.sex == 'F')
+                & (df.hv_date_inf >= (now - pd.DateOffset(months=self.repeat)))
+                ]
+        )
+        NewHIV_MSM = 0
+
+        DeathsHIV_00_14_M = 0
+        DeathsHIV_15_24_M = 0
+        DeathsHIV_25_49_M = 0
+        DeathsHIV_50_UP_M = 0
+        DeathsHIV_00_14_F = 0
+        DeathsHIV_15_24_F = 0
+        DeathsHIV_25_49_F = 0
+        DeathsHIV_50_UP_F = 0
+        DALYs_Undiscounted = 0
+        TotalCost_Undiscounted = 0
+
+        Percent_circumcised = prop_men_circ
+        Percent_condom_use_GP = 0
+        PrEP_FSW = PY_PREP_ORAL_FSW
+        PrEP_MSM = 0
+        PrEP_GP = PY_PREP_ORAL_AGYW
+        PrEP_Pop_GP = 0
+        NewHIV_PrEP_Pop_GP = 0
+        Percent_FSW_reached = len(
+            df.loc[
+                df.li_is_sexworker
+                & (df.sex == 'F')
+                & (df.hv_is_on_prep)
+                ]) / len(
+            df.loc[
+                df.li_is_sexworker
+                & (df.sex == 'F')
+                ])
+
+        Percent_MSM_reached = 0
+
+        logger.info(
+            key="long_term_mihpsa",
+            description="long_term_mihpsa",
+            data={
+                "Total_00_14_M": Total_00_14_M,
+                "Total_15_24_M": Total_15_24_M,
+                "Total_25_49_M": Total_25_49_M,
+                "Total_50_UP_M": Total_50_UP_M,
+                "Total_00_14_F": Total_00_14_F,
+                "Total_15_24_F": Total_15_24_F,
+                "Total_25_49_F": Total_25_49_F,
+                "Total_50_UP_F": Total_50_UP_F,
+                "Total_FSW": Total_FSW,
+                "Total_MSM": Total_MSM,
+                "PLHIV_00_14_M": PLHIV_00_14_M,
+                "PLHIV_15_24_M": PLHIV_15_24_M,
+                "PLHIV_25_49_M": PLHIV_25_49_M,
+                "PLHIV_50_UP_M": PLHIV_50_UP_M,
+                "PLHIV_00_14_F": PLHIV_00_14_F,
+                "PLHIV_15_24_F": PLHIV_15_24_F,
+                "PLHIV_25_49_F": PLHIV_25_49_F,
+                "PLHIV_50_UP_F": PLHIV_50_UP_F,
+                "PLHIV_FSW": PLHIV_FSW,
+                "PLHIV_MSM": PLHIV_MSM,
+                "Diagnosed_00_14_M": Diagnosed_00_14_M,
+                "Diagnosed_15_24_M": Diagnosed_15_24_M,
+                "Diagnosed_25_49_M": Diagnosed_25_49_M,
+                "Diagnosed_50_UP_M": Diagnosed_50_UP_M,
+                "Diagnosed_00_14_F": Diagnosed_00_14_F,
+                "Diagnosed_15_24_F": Diagnosed_15_24_F,
+                "Diagnosed_25_49_F": Diagnosed_25_49_F,
+                "Diagnosed_50_UP_F": Diagnosed_50_UP_F,
+                "Diagnosed_FSW": Diagnosed_FSW,
+                "Diagnosed_MSM": Diagnosed_MSM,
+                "ART_00_14_M": ART_00_14_M,
+                "ART_15_24_M": ART_15_24_M,
+                "ART_25_49_M": ART_25_49_M,
+                "ART_50_UP_M": ART_50_UP_M,
+                "ART_00_14_F": ART_00_14_F,
+                "ART_15_24_F": ART_15_24_F,
+                "ART_25_49_F": ART_25_49_F,
+                "ART_50_UP_F": ART_50_UP_F,
+                "ART_FSW": ART_FSW,
+                "ART_MSM": ART_MSM,
+                "VLS_00_14_M": VLS_00_14_M,
+                "VLS_15_24_M": VLS_15_24_M,
+                "VLS_25_49_M": VLS_25_49_M,
+                "VLS_50_UP_M": VLS_50_UP_M,
+                "VLS_00_14_F": VLS_00_14_F,
+                "VLS_15_24_F": VLS_15_24_F,
+                "VLS_25_49_F": VLS_25_49_F,
+                "VLS_50_UP_F": VLS_50_UP_F,
+                "VLS_FSW": VLS_FSW,
+                "VLS_MSM": VLS_MSM,
+                "Birth_All": Birth_All,
+                "Birth_HIV": Birth_HIV,
+                "DeathsAll_00_14_M": DeathsAll_00_14_M,
+                "DeathsAll_15_24_M": DeathsAll_15_24_M,
+                "DeathsAll_25_49_M": DeathsAll_25_49_M,
+                "DeathsAll_50_UP_M": DeathsAll_50_UP_M,
+                "DeathsAll_00_14_F": DeathsAll_00_14_F,
+                "DeathsAll_15_24_F": DeathsAll_15_24_F,
+                "DeathsAll_25_49_F": DeathsAll_25_49_F,
+                "DeathsAll_50_UP_F": DeathsAll_50_UP_F,
+                "NewHIV_00_14_M": NewHIV_00_14_M,
+                "NewHIV_15_24_M": NewHIV_15_24_M,
+                "NewHIV_25_49_M": NewHIV_25_49_M,
+                "NewHIV_50_UP_M": NewHIV_50_UP_M,
+                "NewHIV_00_14_F": NewHIV_00_14_F,
+                "NewHIV_15_24_F": NewHIV_15_24_F,
+                "NewHIV_25_49_F": NewHIV_25_49_F,
+                "NewHIV_50_UP_F": NewHIV_50_UP_F,
+                "NewHIV_FSW": NewHIV_FSW,
+                "NewHIV_MSM": NewHIV_MSM,
+                "DeathsHIV_00_14_M": DeathsHIV_00_14_M,
+                "DeathsHIV_15_24_M": DeathsHIV_15_24_M,
+                "DeathsHIV_25_49_M": DeathsHIV_25_49_M,
+                "DeathsHIV_50_UP_M": DeathsHIV_50_UP_M,
+                "DeathsHIV_00_14_F": DeathsHIV_00_14_F,
+                "DeathsHIV_15_24_F": DeathsHIV_15_24_F,
+                "DeathsHIV_25_49_F": DeathsHIV_25_49_F,
+                "DeathsHIV_50_UP_F": DeathsHIV_50_UP_F,
+                "DALYs_Undiscounted": DALYs_Undiscounted,
+                "TotalCost_Undiscounted": TotalCost_Undiscounted,
+                "Percent_circumcised": Percent_circumcised,
+                "Percent_condom use_GP": Percent_condom_use_GP,
+                "PrEP_FSW": PrEP_FSW,
+                "PrEP_MSM": PrEP_MSM,
+                "PrEP_GP": PrEP_GP,
+                "PrEP_Pop_GP": PrEP_Pop_GP,
+                "NewHIV_PrEP_Pop_GP": NewHIV_PrEP_Pop_GP,
+                "Percent_FSW reached": Percent_FSW_reached,
+                "Percent_MSM reached": Percent_MSM_reached,
+            },
+        )
+
+        # after logger, reset yearly logged properties
+        df["hv_VMMC_in_last_year"] = False
+        df["hv_days_on_prep_AGYW"] = 0
+        df["hv_days_on_prep_FSW"] = 0
 
 
 # ---------------------------------------------------------------------------

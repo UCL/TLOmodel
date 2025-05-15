@@ -374,13 +374,15 @@ class Demography(Module):
                 df.at[mother_id, 'date_of_birth']
             )
         ) if mother_id >= 0 else -1  # No pregnancy for direct birth
+        _mother_has_hiv = df.at[mother_id, 'hv_inf']
 
         logger.info(
             key='on_birth',
             data={'mother': mother_id,  # Keep track of whether true or direct birth by using mother_id
                   'child': child_id,
                   'mother_age': _mother_age_at_birth,
-                  'mother_age_at_pregnancy': _mother_age_at_pregnancy}
+                  'mother_age_at_pregnancy': _mother_age_at_pregnancy,
+                  'mother_has_hiv': _mother_has_hiv}
         )
 
     def _edit_init_pop_to_prevent_persons_greater_than_max_age(self, df, max_age: int):
