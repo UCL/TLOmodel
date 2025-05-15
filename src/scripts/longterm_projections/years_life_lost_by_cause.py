@@ -17,14 +17,14 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-min_year = 2020
-max_year = 2070
+min_year = 2067
+max_year = 2068
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 age_standardisation = 50
 
 scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
-scenario_colours = ['#0081a7', '#00afb9', '#fdfcdc', '#fed9b7', '#f07167']
+scenario_colours = ['#0081a7', '#00afb9',  '#fed9b7', '#f07167']
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
@@ -84,7 +84,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return num_by_age_filtered / num_by_age
 
     param_names = get_parameter_names_from_scenario_file()
-    print(param_names)
     TARGET_PERIOD = (Date(min_year, 1, 1), Date(max_year, 12, 31))
 
     # Definitions of general helper functions
@@ -169,8 +168,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     module="tlo.methods.healthburden",
                     key="yld_by_causes_of_disability",
                     custom_generate_series=(
-                        lambda df: df.drop(
-                            columns=['date', 'sex', 'age_range', 'year']).sum()),
+                        lambda df: df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)] \
+                        .drop(columns=['date', 'sex', 'age_range']).sum()),
                     do_scaling=True),
                 only_mean=True,
                 collapse_columns=True,
@@ -209,12 +208,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
         df_all_years_data_population_lower = pd.DataFrame(all_years_data_population_lower)
         df_all_years_data_population_upper = pd.DataFrame(all_years_data_population_upper)
-        df_yll_per_1000_mean_2070 = df_all_years_yll_mean.iloc[:,-1].div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
-        df_yld_per_1000_mean_2070 = df_all_years_yld_mean.iloc[:,-1].div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
-        df_yll_per_1000_lower_2070 = df_all_years_yll_lower.iloc[:,-1].div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
-        df_yld_per_1000_lower_2070 = df_all_years_yld_lower.iloc[:,-1].div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
-        df_yll_per_1000_upper_2070 = df_all_years_yld_upper.iloc[:,-1].div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
-        df_yld_per_1000_upper_2070 = df_all_years_yll_upper.iloc[:,-1].div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
+
+        print(df_all_years_yll_mean)
+        df_yll_per_1000_mean_2070 = df_all_years_yll_mean.iloc[:,-1].div(df_all_years_data_population_mean.iloc[-1, 0], axis=0) * 1000
+        df_yld_per_1000_mean_2070 = df_all_years_yld_mean.iloc[:,-1].div(df_all_years_data_population_mean.iloc[-1, 0], axis=0) * 1000
+        df_yll_per_1000_lower_2070 = df_all_years_yll_lower.iloc[:,-1].div(df_all_years_data_population_lower.iloc[-1, 0], axis=0) * 1000
+        df_yld_per_1000_lower_2070 = df_all_years_yld_lower.iloc[:,-1].div(df_all_years_data_population_lower.iloc[-1, 0], axis=0) * 1000
+        df_yll_per_1000_upper_2070 = df_all_years_yld_upper.iloc[:,-1].div(df_all_years_data_population_upper.iloc[-1, 0], axis=0) * 1000
+        df_yld_per_1000_upper_2070 = df_all_years_yll_upper.iloc[:,-1].div(df_all_years_data_population_upper.iloc[-1, 0], axis=0) * 1000
 
         df_yll_per_1000_mean_2020 = df_all_years_yll_mean.iloc[:,0].div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
         df_yld_per_1000_mean_2020 = df_all_years_yld_mean.iloc[:,0].div(df_all_years_data_population_mean.iloc[0, 0], axis=0) * 1000
@@ -222,12 +223,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_yld_per_1000_lower_2020 = df_all_years_yld_lower.iloc[:,0].div(df_all_years_data_population_lower.iloc[0, 0], axis=0) * 1000
         df_yll_per_1000_upper_2020 = df_all_years_yld_upper.iloc[:,0].div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
         df_yld_per_1000_upper_2020 = df_all_years_yll_upper.iloc[:,0].div(df_all_years_data_population_upper.iloc[0, 0], axis=0) * 1000
+        print("df_yld_per_1000_lower_2020", df_yld_per_1000_lower_2020)
+        print("df_yld_per_1000_lower_2070", df_yld_per_1000_lower_2070)
 
         # Extract total population
 
         # Plotting
-        fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
-
         # NORMALIZED DEATHS AND yllS - TO 2020
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
@@ -268,22 +269,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-    print(df_yll_all_draws_mean_1000_2020)
+    print(df_yld_all_draws_mean_1000_2070.values)
     # Panel A: 2020
-    axes[0].bar(df_yld_all_draws_mean_1000_2020.index, df_yll_all_draws_mean_1000_2020.values, color=scenario_colours)
+
+    axes[0].bar(df_yld_all_draws_mean_1000_2020.T.index, df_yld_all_draws_mean_1000_2020.T.values.sum(), color=scenario_colours)
+
+
     axes[0].set_xlabel('Scenario')
     axes[0].set_ylabel('Total YLD in 2020')
+    axes[0].set_ylim(0,0.7)
     axes[0].set_xticklabels(scenario_names, rotation=45)
     axes[0].grid(False)
 
-    # # Panel B: Total ylls
-    axes[1].bar(df_yld_all_draws_mean_1000_2070.index, df_yll_all_draws_mean_1000_2070.values, color=scenario_colours)
+    # # Panel B: 2070
+    axes[1].bar(df_yld_all_draws_mean_1000_2070.T.index, df_yld_all_draws_mean_1000_2070.T.values.sum(), color=scenario_colours)
     axes[1].set_xlabel('Scenario')
     axes[1].set_ylabel('Total YLD in 2070')
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].grid(False)
+    axes[1].set_ylim(0,0.7)
     fig.tight_layout()
-    fig.savefig(output_folder / "total_ylds_and_ylls_all_draws_age_standardized_2020_vs_2070.png")
+    fig.savefig(output_folder / "total_ylds_and_ylls_all_draws_age_standardized_2070.png")
     plt.close(fig)
 
 
