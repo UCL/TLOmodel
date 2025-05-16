@@ -270,6 +270,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     print(HSI_ran_by_year)
     print(HSI_never_ran_by_year)
     print(HSI_total_by_year)
+    exit(-1)
     
 if __name__ == "__main__":
     rfp = Path('resources')
