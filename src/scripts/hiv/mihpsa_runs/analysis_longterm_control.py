@@ -10,11 +10,13 @@ mihpsa_runs-2025-04-19T220218Z
 
 import datetime
 from pathlib import Path
+from tlo.analysis.utils import parse_log_file
 
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import pandas as pd
+import pickle
 
 from tlo.analysis.utils import (
     compare_number_of_deaths,
@@ -30,13 +32,32 @@ from tlo import Date
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
-# outputspath = Path("./outputs/")  # for local runs
+
+outputspath = Path("./outputs/")  # for local runs
+
+
+# test runs
+# results_folder = Path('outputs/test_runs__2025-05-15T144136.log')
+output = parse_log_file('outputs/test_runs__2025-05-15T144136.log')
+
+
+with open(outputspath / "test_runs.pickle", "wb") as f:
+    # Pickle the 'data' dictionary using the highest protocol available.
+    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+
+# load the results
+with open(outputspath / "test_runs.pickle", "rb") as f:
+    output = pickle.load(f)
+
+
 
 
 # %% Analyse results of runs
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
 results_folder = get_scenario_outputs("mihpsa_runs.py", outputspath)[-1]
+
+
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder, draw=0)

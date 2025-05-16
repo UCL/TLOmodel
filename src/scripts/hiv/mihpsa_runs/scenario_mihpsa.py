@@ -2,13 +2,13 @@
 This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py
+tlo scenario-run --draw-only src/scripts/hiv/mihpsa_runs/scenario_mihpsa.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py
+tlo scenario-run src/scripts/hiv/mihpsa_runs/scenario_mihpsa.py
 
 or execute a single run:
-tlo scenario-run src/scripts/hiv/mihpsa_runs/mihpsa_minimal_scenario.py --draw 1 0
+tlo scenario-run src/scripts/hiv/mihpsa_runs/scenario_mihpsa.py --draw 1 0
 
 Run on the batch system using:
 tlo batch-submit src/scripts/hiv/mihpsa_runs/scenario_mihpsa.py
@@ -53,18 +53,18 @@ class TestScenario(BaseScenario):
         # self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         # self.number_of_draws = len(self.scenarios)
         self.number_of_draws = 1
-        self.runs_per_draw = 3
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
-            'filename': 'mihpsa_runs',
+            'filename': 'longterm_mihpsa_runs',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
                 # "tlo.methods.tb": logging.INFO,
-                # "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
             }
         }
 
