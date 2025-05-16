@@ -23,7 +23,7 @@ import statsmodels.api as sm
 import matplotlib.colors as colors
 from collections import defaultdict
 import textwrap
-from typing import Tuple
+from typing import Tuple, Optional, List
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
@@ -201,15 +201,16 @@ def get_counts_of_cons_by_year(_df):
     Return annual total of item '286' usage.
     'Item_Used' is a dictionary of {item: count}.
     """
-    _df = drop_outside_period(_df)
+    # _df = drop_outside_period(_df)
     _df['Year'] = pd.to_datetime(_df['date']).dt.year
 
-    counts_by_year = (
-        _df
-        .groupby('Year')['Item_Used']
-        .apply(lambda x: x.apply(pd.Series).sum())
-        .apply(lambda s: s.get('286', 0))
-    )
+    def sum_item_counts(series_of_dicts):
+        # Convert each dict into a Series and sum, skipping NaNs
+        df_items = series_of_dicts.dropna().apply(pd.Series)
+        summed = df_items.sum()
+        return summed.get('286', 0)  # safely retrieve item '286'
+
+    counts_by_year = _df.groupby('Year')['Item_Used'].apply(sum_item_counts)
 
     return counts_by_year.astype(int)
 
@@ -233,36 +234,61 @@ def get_total_num_treatment_episodes(_df):
 # ==============================================================================
 
 
-def compute_icer(dalys_averted, comparison_costs):
+def compute_icer(
+    dalys_averted: pd.DataFrame,
+    comparison_costs: pd.DataFrame,
+    discount_rate_dalys: float = 1.0,
+    discount_rate_costs: float = 1.0,
+    return_summary: bool = True
+) -> pd.DataFrame | pd.Series:
     """
-    Compute the Incremental Cost-Effectiveness Ratio (ICER) comparing PZQ costs and DALYs averted
-
-    ICER is computed as:
-        ICER = health_diff / cost_diff
-
-    Returns:
-    --------
-    pd.Series
-        Series of ICER values, indexed by draw.
+    Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by run and draw.
     """
+    global TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
 
-    # Transpose DALYs DataFrame to match the costs index structure
-    dalys_averted = dalys_averted.T
+    # Restrict to target period (years)
+    mask = (dalys_averted.index >= start_year.year) & (dalys_averted.index <= end_year.year)
+    dalys_period = dalys_averted.loc[mask]
+    costs_period = comparison_costs.loc[mask]
 
-    # Align cost data to match the DALYs data index
-    aligned_costs = comparison_costs.reindex_like(dalys_averted)
+    # Calculate years since start for discounting
+    years_since_start = dalys_period.index.values - start_year.year
 
-    # Flatten values for ICER calculation
-    cost_diff = aligned_costs.values.flatten()
-    health_diff = dalys_averted.values.flatten()
+    # Discount factors
+    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
+    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
 
-    # Compute ICER
-    icer_values = health_diff / cost_diff
+    # Apply discounting if discount_rate != 1
+    if discount_rate_dalys != 1.0:
+        dalys_averted = dalys_averted.multiply(discount_weights_dalys, axis=0)
 
-    # Create a Series indexed by the 'draw' level
-    icer_series = pd.Series(icer_values, index=aligned_costs.index.get_level_values('draw'))
+    if discount_rate_costs != 1.0:
+        comparison_costs = comparison_costs.multiply(discount_weights_costs, axis=0)
 
-    return icer_series
+    # Sum discounted DALYs and costs over years (rows)
+    total_dalys = dalys_averted.sum(axis=0)  # indexed by (run, draw)
+    total_costs = comparison_costs.sum(axis=0)  # indexed by (run, draw)
+
+    # Compute ICER per (run, draw) pair
+    icers = total_costs / total_dalys
+
+    # Prepare DataFrame for output
+    icers_df = icers.reset_index()
+    icers_df.columns = ['run', 'draw', 'icer']
+
+    if return_summary:
+        # Group by draw and summarise ICER over runs
+        summary = (
+            icers_df
+            .groupby('draw')['icer']
+            .agg(mean='mean', lower=lambda x: np.quantile(x, 0.025), upper=lambda x: np.quantile(x, 0.975))
+        )
+        return summary
+    else:
+        # Return all ICERs for every run and draw
+        return icers_df
+
 
 #
 # def calculate_npv_and_cost_per_daly(
@@ -388,85 +414,133 @@ def plot_npv_scatter(npv_df, column, yaxis_label, title):
 
 
 
-# Sample data: each point is an intervention scenario
-data = pd.DataFrame({
-    'intervention': ['A', 'B', 'C', 'D'],
-    'incremental_cost': [2_000_000, 3_500_000, 1_000_000, 4_000_000],
-    'incremental_dalys_averted': [5000, 7000, 3000, 4000],
-})
 
-
-
-# plot ICERs with NHB isocurves
-# isocurves allow visualisation of how NHB changes with λ and cost/DALY trade-offs,
-# but the points plotted are cost, DALYs
-def plot_nhb_isocurves(
-    df,
-    cost_col='incremental_cost',
-    daly_col='incremental_dalys_averted',
-    label_col='intervention',
-    lambdas=(200, 500, 1000),
-    nhb_levels=(-5000, 0, 5000, 10000),
-    palette='Set2'
+def plot_icers_with_nhb_isocurves(
+    dalys_averted: pd.DataFrame,
+    incremental_costs: pd.DataFrame,
+    discount_rate_dalys: float = 0.03,
+    discount_rate_costs: float = 0.03,
+    summary: bool = True,
+    lambda_values: Optional[List[float]] = None,
 ):
     """
-    Plot a cost-effectiveness plane with NHB isocurves.
-
-    Parameters:
-    - df: pd.DataFrame with cost and DALY columns
-    - cost_col: str, column name for incremental cost (x-axis)
-    - daly_col: str, column name for incremental DALYs averted (y-axis)
-    - label_col: str, column name for intervention labels
-    - lambdas: iterable of cost-effectiveness thresholds (USD/DALY)
-    - nhb_levels: iterable of constant NHB values to plot as isocurves
-    - palette: seaborn colour palette name or list
+    Plot ICERs with Net Health Benefit (NHB) isocurves using Malawi λ values.
     """
+    global TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
+
+    # Filter to target period
+    mask = (dalys_averted.index >= start_year.year) & (dalys_averted.index <= end_year.year)
+    dalys_period = dalys_averted.loc[mask]
+    costs_period = incremental_costs.loc[mask]
+
+    # Calculate years since start year for discounting
+    years_since_start = dalys_period.index.values - start_year.year
+
+    # Discount factors
+    if discount_rate_dalys != 0:
+        discount_factors_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
+        dalys_disc = dalys_period.multiply(discount_factors_dalys, axis=0)
+    else:
+        dalys_disc = dalys_period
+
+    if discount_rate_costs != 0:
+        discount_factors_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
+        costs_disc = costs_period.multiply(discount_factors_costs, axis=0)
+    else:
+        costs_disc = costs_period
+
+    # Sum discounted DALYs and costs over years
+    dalys_sum = dalys_disc.sum(axis=0)
+    costs_sum = costs_disc.sum(axis=0)
+
+    # Prepare DataFrame for plotting
+    df = pd.DataFrame({
+        'dalys_averted': dalys_sum,
+        'incremental_costs': costs_sum,
+    }).reset_index()
+
+    # Default Malawi λ values if not provided
+    if lambda_values is None:
+        lambda_values = [150, 300, 600]
+
+    # Use a punchier colour palette
+    draws = df['draw'].unique()
+    palette = sns.color_palette("bright", n_colors=len(draws))
+    color_map = dict(zip(draws, palette))
+
     plt.figure(figsize=(10, 8))
-    sns.set(style='whitegrid')
 
-    # Scatter plot of points
-    sns.scatterplot(
-        data=df,
-        x=cost_col,
-        y=daly_col,
-        hue=label_col,
-        s=150,
-        palette=palette,
-        edgecolor='black'
-    )
+    if summary:
+        summary_list = []
+        for draw in draws:
+            subset = df[df['draw'] == draw]
+            mean_dalys = subset['dalys_averted'].mean()
+            se_dalys = subset['dalys_averted'].std() / np.sqrt(len(subset))
+            ci_dalys = 1.96 * se_dalys
 
-    # Annotate each point
-    for _, row in df.iterrows():
-        plt.text(
-            row[cost_col] + df[cost_col].max() * 0.01,
-            row[daly_col],
-            row[label_col],
-            verticalalignment='center'
-        )
+            mean_costs = subset['incremental_costs'].mean()
+            se_costs = subset['incremental_costs'].std() / np.sqrt(len(subset))
+            ci_costs = 1.96 * se_costs
 
-    # Plot NHB isocurves
-    x_vals = np.linspace(0, df[cost_col].max() * 1.1, 500)
-    for lam in lambdas:
-        for nhb in nhb_levels:
-            y_vals = (x_vals / lam) + nhb
-            plt.plot(
-                x_vals,
-                y_vals,
-                linestyle='--',
-                linewidth=1,
-                alpha=0.6,
-                label=f'NHB={nhb}, λ=${lam}/DALY'
+            summary_list.append({
+                'draw': draw,
+                'mean_dalys_averted': mean_dalys,
+                'ci_dalys': ci_dalys,
+                'mean_incremental_costs': mean_costs,
+                'ci_costs': ci_costs
+            })
+
+        summary_df = pd.DataFrame(summary_list)
+
+        for _, row in summary_df.iterrows():
+            plt.errorbar(
+                row['mean_incremental_costs'], row['mean_dalys_averted'],
+                xerr=row['ci_costs'], yerr=row['ci_dalys'],
+                fmt='o', capsize=4,
+                color=color_map[row['draw']],
+                label=str(row['draw']),
+                markeredgewidth=0
+            )
+    else:
+        for draw in draws:
+            subset = df[df['draw'] == draw]
+            plt.scatter(
+                subset['incremental_costs'], subset['dalys_averted'],
+                label=str(draw),
+                color=color_map[draw],
+                alpha=0.7,
+                edgecolors='none',
+                s=50
             )
 
-    # Axis formatting
-    plt.title('Cost-effectiveness Plane with NHB Isocurves', fontsize=14)
-    plt.xlabel('Incremental Cost (USD)', fontsize=12)
-    plt.ylabel('Incremental DALYs Averted', fontsize=12)
-    plt.axhline(0, color='grey', linewidth=0.8)
-    plt.axvline(0, color='grey', linewidth=0.8)
-    plt.legend(title='Intervention / Isocurves', bbox_to_anchor=(1.05, 1), loc='upper left')
+    # Plot NHB isocurves without legend entry
+    xlims = plt.xlim()
+    xmin, xmax = max(0, xlims[0]), xlims[1]
+    xvals = np.linspace(xmin, xmax, 200)
+
+    for lam in lambda_values:
+        yvals = xvals / lam
+        plt.plot(xvals, yvals, linestyle='--', color='grey', alpha=0.8)
+
+        # Label isocurve near the right edge of the plot
+        label_x = xmax * 0.95
+        label_y = label_x / lam
+        plt.text(label_x, label_y, f'λ = {lam}', fontsize=10, color='grey',
+                 verticalalignment='bottom', horizontalalignment='right')
+
+    plt.xlabel('Incremental Costs')
+    plt.ylabel('DALYs Averted')
+    plt.title('ICERs with Net Health Benefit Isocurves')
+    plt.grid(True)
+    plt.legend(title='Draw', loc='best')
     plt.tight_layout()
+
     plt.show()
+
+
+
+
 
 
 # ==============================================================================
@@ -546,7 +620,9 @@ summary_mda_episodes.to_csv(results_folder / f'summary_mda_episodes{target_perio
 # %% ✅ GET OUTPUTS BY RUN FOR ICER / NHB CALCULATION
 # ==============================================================================
 
-
+######################
+# SCHISTO DALYS
+######################
 num_dalys_by_year_run = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
@@ -592,74 +668,101 @@ schisto_dalys_averted_by_year_run_combined = pd.concat([df1_sel, df2_sel, df3_se
 schisto_dalys_averted_by_year_run_combined.to_csv(results_folder / f'schisto_dalys_averted_by_year_run_combined{target_period()}.csv')
 
 
+######################
+# COSTS PER RUN
+######################
+# - only item 286 here
 
-# create df with PZQ use, number tx episodes and dalys
-pzq_plus_tx_episodes = pd.concat([pzq_use, treatment_episodes, total_num_dalys])
-pzq_plus_tx_episodes.to_csv(results_folder / (f'pzq_plus_tx_episodes {target_period()}.csv'))
+pzq_cons_req_by_year = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_cons_by_year,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+
+pzq_costs_req_by_year = pzq_cons_req_by_year * PZQ_item_cost
+
+# UNIT COSTS PER RUN
+unit_cost_per_mda = 2.26 - 0.05  # full cost - consumables
+
+mda_episodes_per_year = extract_results(
+        results_folder,
+        module='tlo.methods.schisto',
+        key='schisto_mda_episodes',
+        column='mda_episodes',
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0).set_index(pzq_costs_req_by_year.index)
 
 
+# unit costs applied per mda episode
+unit_cost_per_year = mda_episodes_per_year * unit_cost_per_mda
+total_cost_per_year = pzq_costs_req_by_year + unit_cost_per_year
 
-# Total DALYs per year
-dalys_per_year = extract_results(
-    results_folder,
-    module='tlo.methods.healthburden',
-    key='dalys_stacked',
-    custom_generate_series=total_dalys_by_year,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
+# COMPARISON
+costs_incurred_by_year_run_vs_pause = find_difference_relative_to_comparison_dataframe(
+    total_cost_per_year,
+    comparison='Pause WASH, no MDA'
+)
+costs_incurred_by_year_run_vs_continue = find_difference_relative_to_comparison_dataframe(
+    total_cost_per_year,
+    comparison='Continue WASH, no MDA'
+)
+costs_incurred_by_year_run_vs_scaleup = find_difference_relative_to_comparison_dataframe(
+    total_cost_per_year,
+    comparison='Scale-up WASH, no MDA'
+)
 
 
-num_dalys_averted_vs_WASH = -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_num_dalys,
-        comparison='WASH only'
-    )
+# Select desired columns from each dataframe
+df1_sel = select_draws_by_keyword(costs_incurred_by_year_run_vs_pause, 'Pause')
+df2_sel = select_draws_by_keyword(costs_incurred_by_year_run_vs_continue, 'Continue')
+df3_sel = select_draws_by_keyword(costs_incurred_by_year_run_vs_scaleup, 'Scale-up')
+
+# Concatenate the selected columns horizontally
+costs_incurred_by_year_run_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
+costs_incurred_by_year_run_combined.to_csv(results_folder / f'costs_incurred_by_year_run_combined{target_period()}.csv')
+
 
 
 # ==============================================================================
-# 📊 EXTRACT COSTS
+# 📊 CALCULATE ICERS AND NHB
 # ==============================================================================
 
+icer_no_discount_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+    comparison_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,  # no discounting
+    discount_rate_costs=0,
+    return_summary=True)
 
-# need the delta costs
-comparison_pzq_costs_vs_WASH = find_difference_relative_to_comparison_series(
-        pzq_plus_tx_episodes.loc['pzq_costs'],
-        comparison='WASH only'
-    )
+icer_no_discount_summary.to_csv(results_folder / (f'icer_no_discount_summary{target_period()}.csv'))
 
-# get the delta DALYS
-num_dalys_averted_vs_WASH = -1.0 * find_difference_relative_to_comparison_dataframe(
-        total_num_dalys,
-        comparison='WASH only'
-    )
+icer_no_discount_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+    comparison_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,  # no discounting
+    discount_rate_costs=0,
+    return_summary=False)
 
-num_dalys_averted_vs_WASH = num_dalys_averted_vs_WASH.T
-
-# Step 1: Align dataset1 (costs) with dataset2 (health outcomes)
-comparison_pzq_costs_vs_WASH = comparison_pzq_costs_vs_WASH.reindex_like(num_dalys_averted_vs_WASH)  # Align index
+icer_no_discount_by_run.to_csv(results_folder / (f'icer_no_discount_by_run{target_period()}.csv'))
 
 
-icer_WASH = compute_icer(dalys_averted=num_dalys_averted_vs_WASH, comparison_pzq_costs=comparison_pzq_costs_vs_WASH)
-icer_WASH.to_csv(results_folder / (f'icer_WASH {target_period()}.csv'))
+icer_discount_costs_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+    comparison_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,  # no discounting
+    discount_rate_costs=0.03,
+    return_summary=True)
+
+icer_discount_costs_summary.to_csv(results_folder / (f'icer_discount_costs_summary{target_period()}.csv'))
+
+icer_discount_costs_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+    comparison_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,  # no discounting
+    discount_rate_costs=0.03,
+    return_summary=False)
+
+icer_discount_costs_by_run.to_csv(results_folder / (f'icer_discount_costs_by_run{target_period()}.csv'))
 
 
-
-# discount rate
-discount_rate = 0.03
-
-# Define years and discount factors
-years = np.arange(2024, 2041)
-discount_factors = pd.Series(
-    1 / ((1 + discount_rate) ** (years - 2024)),
-    index=years
-)
-
-npv_results = calculate_npv_and_cost_per_daly(
-    annual_num_dalys_averted=annual_num_dalys_averted_vs_WASH,
-    annual_costs=annual_pzq_cost_annual_vs_WASH,
-    discount_factors=discount_factors
-)
-
-npv_results.to_csv(results_folder / f'npv_results{target_period()}.csv')
 
 
 
@@ -667,6 +770,21 @@ npv_results.to_csv(results_folder / f'npv_results{target_period()}.csv')
 # ==============================================================================
 # 📊 GENERATE FIGURES
 # ==============================================================================
+
+
+lambda_values = [500, 1000, 1500]  # willingness-to-pay per DALY averted
+# with low WTP, isocurve goes super high and data points appear all squashed
+
+plot_icers_with_nhb_isocurves(
+    dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],  # Indexed by year; columns multi-index (run, draw)
+    incremental_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0.03,
+    discount_rate_costs=0.03,
+    summary=False,
+    lambda_values=lambda_values,
+)
+
+
 
 
 plot_npv_scatter(npv_results, column='NPV_Intervention',
