@@ -414,7 +414,6 @@ def plot_npv_scatter(npv_df, column, yaxis_label, title):
 
 
 
-
 def plot_icers_with_nhb_isocurves(
     dalys_averted: pd.DataFrame,
     incremental_costs: pd.DataFrame,
@@ -422,9 +421,11 @@ def plot_icers_with_nhb_isocurves(
     discount_rate_costs: float = 0.03,
     summary: bool = True,
     lambda_values: Optional[List[float]] = None,
+    isocurves=False,
 ):
     """
-    Plot ICERs with Net Health Benefit (NHB) isocurves using Malawi λ values.
+    Plot ICERs with Net Health Benefit (NHB) isocurves using Malawi λ values,
+    adding one label per draw near the cluster of its points.
     """
     global TARGET_PERIOD
     start_year, end_year = TARGET_PERIOD
@@ -502,6 +503,20 @@ def plot_icers_with_nhb_isocurves(
                 label=str(row['draw']),
                 markeredgewidth=0
             )
+
+        # Add one label per draw at the mean point
+        # for _, row in summary_df.iterrows():
+        #     plt.text(
+        #         row['mean_incremental_costs'], row['mean_dalys_averted'],
+        #         f"{row['draw']}",
+        #         fontsize=10,
+        #         color=color_map[row['draw']],
+        #         weight='bold',
+        #         horizontalalignment='left',
+        #         verticalalignment='bottom',
+        #         alpha=0.9
+        #     )
+
     else:
         for draw in draws:
             subset = df[df['draw'] == draw]
@@ -514,20 +529,34 @@ def plot_icers_with_nhb_isocurves(
                 s=50
             )
 
+            # Add one label per draw at mean coordinates
+            # mean_x = subset['incremental_costs'].mean()
+            # mean_y = subset['dalys_averted'].mean()
+            # plt.text(
+            #     mean_x, mean_y,
+            #     f"{draw}",
+            #     fontsize=10,
+            #     color=color_map[draw],
+            #     weight='bold',
+            #     horizontalalignment='left',
+            #     verticalalignment='bottom',
+            #     alpha=0.9
+            # )
+
     # Plot NHB isocurves without legend entry
     xlims = plt.xlim()
     xmin, xmax = max(0, xlims[0]), xlims[1]
     xvals = np.linspace(xmin, xmax, 200)
 
-    for lam in lambda_values:
-        yvals = xvals / lam
-        plt.plot(xvals, yvals, linestyle='--', color='grey', alpha=0.8)
+    if isocurves:
+        for lam in lambda_values:
+            yvals = xvals / lam
+            plt.plot(xvals, yvals, linestyle='--', color='grey', alpha=0.8)
 
-        # Label isocurve near the right edge of the plot
-        label_x = xmax * 0.95
-        label_y = label_x / lam
-        plt.text(label_x, label_y, f'λ = {lam}', fontsize=10, color='grey',
-                 verticalalignment='bottom', horizontalalignment='right')
+            label_x = xmax * 0.95
+            label_y = label_x / lam
+            plt.text(label_x, label_y, f'λ = {lam}', fontsize=10, color='grey',
+                     verticalalignment='bottom', horizontalalignment='right')
 
     plt.xlabel('Incremental Costs')
     plt.ylabel('DALYs Averted')
@@ -537,8 +566,6 @@ def plot_icers_with_nhb_isocurves(
     plt.tight_layout()
 
     plt.show()
-
-
 
 
 
@@ -778,10 +805,11 @@ lambda_values = [500, 1000, 1500]  # willingness-to-pay per DALY averted
 plot_icers_with_nhb_isocurves(
     dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],  # Indexed by year; columns multi-index (run, draw)
     incremental_costs=costs_incurred_by_year_run_combined,
-    discount_rate_dalys=0.03,
-    discount_rate_costs=0.03,
-    summary=False,
+    discount_rate_dalys=0,
+    discount_rate_costs=0,
+    summary=True,
     lambda_values=lambda_values,
+    isocurves=False
 )
 
 
