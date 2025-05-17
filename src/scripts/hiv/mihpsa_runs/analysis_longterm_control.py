@@ -6,6 +6,9 @@ tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/mihpsa_runs-2025-0
 
 mihpsa_runs-2025-04-19T220218Z
 
+tlo parse-log 'outputs/longterm_mihpsa_runs-2025-05-16T131354Z/0/0'
+when running locally
+
 """
 
 import datetime
@@ -38,16 +41,16 @@ outputspath = Path("./outputs/")  # for local runs
 
 # test runs
 # results_folder = Path('outputs/test_runs__2025-05-15T144136.log')
-output = parse_log_file('outputs/test_runs__2025-05-15T144136.log')
-
-
-with open(outputspath / "test_runs.pickle", "wb") as f:
-    # Pickle the 'data' dictionary using the highest protocol available.
-    pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
-
-# load the results
-with open(outputspath / "test_runs.pickle", "rb") as f:
-    output = pickle.load(f)
+# output = parse_log_file('outputs/test_runs__2025-05-15T144136.log')
+#
+#
+# with open(outputspath / "test_runs.pickle", "wb") as f:
+#     # Pickle the 'data' dictionary using the highest protocol available.
+#     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
+#
+# # load the results
+# with open(outputspath / "test_runs.pickle", "rb") as f:
+#     output = pickle.load(f)
 
 
 
@@ -55,9 +58,7 @@ with open(outputspath / "test_runs.pickle", "rb") as f:
 # %% Analyse results of runs
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("mihpsa_runs.py", outputspath)[-1]
-
-
+results_folder = get_scenario_outputs("longterm_mihpsa_runs.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder, draw=0)
@@ -73,92 +74,109 @@ scaling_factor = log['tlo.methods.population']['scaling_factor'].scaling_factor.
 # -----------------------------------------------------------------
 # %% Population attributes
 
-stock_variables = [
-    "N_PLHIV_00_14_C",
-    "N_PLHIV_15_24_M",
-    "N_PLHIV_15_24_F",
-    "N_PLHIV_25_49_M",
-    "N_PLHIV_25_49_F",
-    "N_PLHIV_50_UP_M",
-    "N_PLHIV_50_UP_F",
-    "N_Total_00_14_C",
-    "N_Total_15_24_M",
-    "N_Total_15_24_F",
-    "N_Total_25_49_M",
-    "N_Total_25_49_F",
-    "N_Total_50_UP_M",
-    "N_Total_50_UP_F",
-    "N_Diag_00_14_C",
-    "N_Diag_15_UP_M",
-    "N_Diag_15_UP_F",
-    "N_ART_00_14_C",
-    "N_ART_15_UP_M",
-    "N_ART_15_UP_F",
-    "N_VLS_15_UP_M",
-    "N_VLS_15_UP_F",
-    "N_PLHIV_15_UP_AIDS",
-    "N_PLHIV_15_UP_NO_AIDS",
+variables = [
+    "Total_00_14_M",
+                "Total_15_24_M",
+                "Total_25_49_M",
+                "Total_50_UP_M",
+                "Total_00_14_F",
+                "Total_15_24_F",
+                "Total_25_49_F",
+                "Total_50_UP_F",
+                "Total_FSW",
+                "Total_MSM",
+                "PLHIV_00_14_M",
+                "PLHIV_15_24_M",
+                "PLHIV_25_49_M",
+                "PLHIV_50_UP_M",
+                "PLHIV_00_14_F",
+                "PLHIV_15_24_F",
+                "PLHIV_25_49_F",
+                "PLHIV_50_UP_F",
+                "PLHIV_FSW",
+                "PLHIV_MSM",
+                "Diagnosed_00_14_M",
+                "Diagnosed_15_24_M",
+                "Diagnosed_25_49_M",
+                "Diagnosed_50_UP_M",
+                "Diagnosed_00_14_F",
+                "Diagnosed_15_24_F",
+                "Diagnosed_25_49_F",
+                "Diagnosed_50_UP_F",
+                "Diagnosed_FSW",
+                "Diagnosed_MSM",
+                "ART_00_14_M",
+                "ART_15_24_M",
+                "ART_25_49_M",
+                "ART_50_UP_M",
+                "ART_00_14_F",
+                "ART_15_24_F",
+                "ART_25_49_F",
+                "ART_50_UP_F",
+                "ART_FSW",
+                "ART_MSM",
+                "VLS_00_14_M",
+                "VLS_15_24_M",
+                "VLS_25_49_M",
+                "VLS_50_UP_M",
+                "VLS_00_14_F",
+                "VLS_15_24_F",
+                "VLS_25_49_F",
+                "VLS_50_UP_F",
+                "VLS_FSW",
+                "VLS_MSM",
+                "Birth_All",
+                "Birth_HIV",
+                "DeathsAll_00_14_M",
+                "DeathsAll_15_24_M",
+                "DeathsAll_25_49_M",
+                "DeathsAll_50_UP_M",
+                "DeathsAll_00_14_F",
+                "DeathsAll_15_24_F",
+                "DeathsAll_25_49_F",
+                "DeathsAll_50_UP_F",
+                "NewHIV_00_14_M",
+                "NewHIV_15_24_M",
+                "NewHIV_25_49_M",
+                "NewHIV_50_UP_M",
+                "NewHIV_00_14_F",
+                "NewHIV_15_24_F",
+                "NewHIV_25_49_F",
+                "NewHIV_50_UP_F",
+                "NewHIV_FSW",
+                "NewHIV_MSM",
+                "DeathsHIV_00_14_M",
+                "DeathsHIV_15_24_M",
+                "DeathsHIV_25_49_M",
+                "DeathsHIV_50_UP_M",
+                "DeathsHIV_00_14_F",
+                "DeathsHIV_15_24_F",
+                "DeathsHIV_25_49_F",
+                "DeathsHIV_50_UP_F",
+                "DALYs_Undiscounted",
+                "TotalCost_Undiscounted",
+                "Percent_circumcised",
+                "Percent_condom use_GP",
+                "PrEP_FSW",
+                "PrEP_MSM",
+                "PrEP_GP",
+                "PrEP_Pop_GP",
+                "NewHIV_PrEP_Pop_GP",
+                "Percent_FSW reached",
+                "Percent_MSM reached",
 ]
-
-flow_variables = [
-    "N_BirthAll",
-    "N_BirthHIV",
-    "N_BirthART",
-    "N_NewHIV_00_14_C",
-    "N_NewHIV_15_24_M",
-    "N_NewHIV_15_24_F",
-    "N_NewHIV_25_49_M",
-    "N_NewHIV_25_49_F",
-    "N_NewHIV_50_UP_M",
-    "N_NewHIV_50_UP_F",
-    "N_DeathsHIV_00_14_C",
-    "N_DeathsHIV_15_UP_M",
-    "N_DeathsHIV_15_UP_F",
-    "N_DeathsAll_00_14_C",
-    "N_DeathsAll_15_UP_M",
-    "N_DeathsAll_15_UP_F",
-    "N_YLL_00_14_C",
-    "N_YLL_15_UP_M",
-    "N_YLL_15_UP_F",
-    "N_HIVTest_Facility_NEG_15_UP",
-    "N_HIVTest_Facility_POS_15_UP",
-    "N_HIVTest_Index_NEG_15_UP",
-    "N_HIVTest_Index_POS_15_UP",
-    "N_HIVTest_Community_NEG_15_UP",
-    "N_HIVTest_Community_POS_15_UP",
-    "N_HIVTest_SelfTest_POS_15_UP",
-    "N_HIVTest_SelfTest_Dist",
-    "N_Condom_Acts",
-    "N_NewVMMC",
-    "PY_PREP_ORAL_AGYW",
-    "PY_PREP_ORAL_FSW",
-    "PY_PREP_ORAL_MSM",
-    "PY_PREP_INJECT_AGYW",
-    "PY_PREP_INJECT_FSW",
-    "PY_PREP_INJECT_MSM",
-    "N_ART_ADH_15_UP_F",
-    "N_ART_ADH_15_UP_M",
-    "N_VL_TEST_15_UP",
-    "N_VL_TEST_00_14",
-    "N_OUTREACH_FSW",
-    "N_OUTREACH_MSM",
-    "N_EconEmpowerment",
-    "N_CSE_15_19_F",
-    "N_CSE_15_19_M"]
-
-# %% extract the intervention scenarios
 
 stocks_output = {}
 
-for stock in stock_variables:
+for var in variables:
     result = summarize(
         extract_results(
             results_folder,
             module="tlo.methods.hiv",
-            key="stock_variables",
-            column=stock,
+            key="long_term_mihpsa",
+            column=var,
             index="date",
-            do_scaling=True,
+            do_scaling=False,
         ),
         collapse_columns=False,
         only_mean=True
@@ -168,52 +186,14 @@ for stock in stock_variables:
         if draw not in stocks_output:
             stocks_output[draw] = pd.DataFrame()  # Initialise DataFrame for the draw if not exists
 
-        stocks_output[draw][stock] = result[draw]
+        stocks_output[draw][var] = result[draw]
 
-with pd.ExcelWriter(results_folder / "full_stocks_outputs.xlsx", engine='openpyxl') as writer:
+with pd.ExcelWriter(results_folder / "longterm_outputs.xlsx", engine='openpyxl') as writer:
     # Iterate over the dictionary and write each DataFrame to a new sheet
     for draw, df in stocks_output.items():
         df = df.T  # Switch rows and columns
         # Writing each draw's DataFrame to a new sheet named after the draw
         df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
-
-flows_output = {}
-
-for flow in flow_variables:
-    result = summarize(
-        extract_results(
-            results_folder,
-            module="tlo.methods.hiv",
-            key="flow_variables",
-            column=flow,
-            index="date",
-            do_scaling=True,
-        ),
-        collapse_columns=False,
-        only_mean=True
-    )
-
-    for draw in result.columns:
-        if draw not in flows_output:
-            flows_output[draw] = pd.DataFrame()  # Initialise DataFrame for the draw if not exists
-
-        flows_output[draw][flow] = result[draw]
-
-with pd.ExcelWriter(results_folder / 'full_flows_output.xlsx') as writer:
-    for sheet_name, df in flows_output.items():
-        df = df.T
-        df.to_excel(writer, sheet_name=str(sheet_name))
-
-
-num_fsw = summarize(extract_results(
-    results_folder,
-    module='tlo.methods.hiv',
-    key='hiv_program_coverage',
-    column='n_fsw',
-    do_scaling=True
-),
-    only_mean=True)
-
 
 # -----------------------------------------------------------------------------------
 
