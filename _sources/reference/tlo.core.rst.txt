@@ -3,5 +3,5 @@ tlo.core module
 
 .. automodule:: tlo.core
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

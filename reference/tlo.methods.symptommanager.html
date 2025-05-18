@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.symptommanager module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.symptommanager module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -103,7 +103,7 @@
 * The probability of spurious symptoms is not informed by data.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spurious_symptoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spurious_symptoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>This module is used to track the symptoms of persons. The addition and removal of symptoms by disease modules is</dt><dd><p>handled here. This module can also causes symptoms that are not related to any disease module (representing those
 caused by conditions not represented explicitly in the model).</p>
@@ -339,7 +339,7 @@ Returns a dict of the form {&lt;&lt;person_id&gt;&gt;, &lt;&lt;list_of_symptoms&
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_AutoOnsetEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptom_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disease_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration_in_days</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_AutoOnsetEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptom_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disease_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration_in_days</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent" title="Link to this definition"></a></dt>
 <dd><p>This utility function will add symptoms. It is scheduled by the SymptomManager to let symptoms ‘auto-onset’ on a
 particular date.</p>
 <p>Create a new event.</p>
@@ -393,7 +393,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager_AutoResolveEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_AutoResolveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptom_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disease_module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_AutoResolveEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptom_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disease_module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent" title="Link to this definition"></a></dt>
 <dd><p>This utility function will remove symptoms. It is scheduled by the SymptomManager to let symptoms ‘auto-resolve’</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
@@ -446,7 +446,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_SpuriousSymptomOnset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_SpuriousSymptomOnset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset" title="Link to this definition"></a></dt>
 <dd><p>This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model.</p>
 <p>This event occurs every day</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
@@ -475,7 +475,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_SpuriousSymptomResolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager_SpuriousSymptomResolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve" title="Link to this definition"></a></dt>
 <dd><p>This event resolves the generic symptoms that have been onset by this module.</p>
 <p>This event occurs every day</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.rti module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -94,7 +94,7 @@
 <p>Road traffic injury module.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI" title="Link to this definition"></a></dt>
 <dd><p>The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -1170,9 +1170,9 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘HealthSystem’, ‘Lifestyle’, ‘Demography’}</p>
-<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x30d8ac550&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x30d8ace10&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x30d8ae950&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x30d8acd90&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x30d8ad250&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x30d8af590&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Demography’, ‘Lifestyle’, ‘HealthSystem’}</p>
+<p>CAUSES_OF_DEATH : {‘RTI_death_without_med’: &lt;tlo.methods.causes.Cause object at 0x3403278d0&gt;, ‘RTI_death_with_med’: &lt;tlo.methods.causes.Cause object at 0x340327fd0&gt;, ‘RTI_unavailable_med’: &lt;tlo.methods.causes.Cause object at 0x340327e10&gt;, ‘RTI_imm_death’: &lt;tlo.methods.causes.Cause object at 0x340327790&gt;, ‘RTI_death_shock’: &lt;tlo.methods.causes.Cause object at 0x340324dd0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘RTI’: &lt;tlo.methods.causes.Cause object at 0x3403240d0&gt;}</p>
 <p>DATE_TO_REMOVE_DALY_COLUMNS : [‘rt_date_to_remove_daly_1’, ‘rt_date_to_remove_daly_2’, ‘rt_date_to_remove_daly_3’, ‘rt_date_to_remove_daly_4’, ‘rt_date_to_remove_daly_5’, ‘rt_date_to_remove_daly_6’, ‘rt_date_to_remove_daly_7’, ‘rt_date_to_remove_daly_8’]</p>
 <p>FRACTURE_CODES : [‘112’, ‘113’, ‘211’, ‘212’, ‘412’, ‘414’, ‘612’, ‘712’, ‘811’, ‘812’, ‘813’]</p>
 <p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthBurden’}</p>
@@ -1181,7 +1181,7 @@ generator.</p>
 <p>INJURY_COLUMNS : [‘rt_injury_1’, ‘rt_injury_2’, ‘rt_injury_3’, ‘rt_injury_4’, ‘rt_injury_5’, ‘rt_injury_6’, ‘rt_injury_7’, ‘rt_injury_8’]</p>
 <p>INJURY_DATE_COLUMN_MAP : {‘rt_injury_1’: ‘rt_date_to_remove_daly_1’, ‘rt_injury_2’: ‘rt_date_to_remove_daly_2’, ‘rt_injury_3’: ‘rt_date_to_remove_daly_3’, ‘rt_injury_4’: ‘rt_date_to_remove_daly_4’, ‘rt_injury_5’: ‘rt_date_to_remove_daly_5’, ‘rt_injury_6’: ‘rt_date_to_remove_daly_6’, ‘rt_injury_7’: ‘rt_date_to_remove_daly_7’, ‘rt_injury_8’: ‘rt_date_to_remove_daly_8’, ‘rt_date_to_remove_daly_1’: ‘rt_injury_1’, ‘rt_date_to_remove_daly_2’: ‘rt_injury_2’, ‘rt_date_to_remove_daly_3’: ‘rt_injury_3’, ‘rt_date_to_remove_daly_4’: ‘rt_injury_4’, ‘rt_date_to_remove_daly_5’: ‘rt_injury_5’, ‘rt_date_to_remove_daly_6’: ‘rt_injury_6’, ‘rt_date_to_remove_daly_7’: ‘rt_injury_7’, ‘rt_date_to_remove_daly_8’: ‘rt_injury_8’}</p>
 <p>INJURY_INDICES : range(1, 9)</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>NO_TREATMENT_RECOVERY_TIMES_IN_DAYS : {‘112’: 49, ‘113’: 49, ‘1101’: 7, ‘211’: 49, ‘212’: 49, ‘241’: 7, ‘2101’: 7, ‘291’: 7, ‘342’: 42, ‘343’: 42, ‘361’: 7, ‘363’: 14, ‘322’: 42, ‘323’: 42, ‘3101’: 7, ‘3113’: 56, ‘412’: 35, ‘414’: 365, ‘461’: 7, ‘463’: 14, ‘453a’: 84, ‘453b’: 84, ‘441’: 14, ‘442’: 14, ‘4101’: 7, ‘552’: 90, ‘553’: 90, ‘554’: 90, ‘5101’: 7, ‘5113’: 56, ‘612’: 63, ‘712a’: 70, ‘712b’: 70, ‘722’: 84, ‘7101’: 7, ‘7113’: 56, ‘813do’: 240, ‘811’: 70, ‘812’: 70, ‘813eo’: 240, ‘813bo’: 240, ‘813co’: 240, ‘822a’: 60, ‘822b’: 180, ‘8101’: 7, ‘8113’: 56}</p>
 <p>SWAPPING_CODES : [‘712b’, ‘812’, ‘3113’, ‘4113’, ‘5113’, ‘7113’, ‘8113’, ‘813a’, ‘813b’, ‘P673a’, ‘P673b’, ‘P674a’, ‘P674b’, ‘P675a’, ‘P675b’, ‘P676’, ‘P782b’, ‘P783’, ‘P883’, ‘P884’, ‘813bo’, ‘813co’, ‘813do’, ‘813eo’]</p>
 <p>__annotations__ : {}</p>
@@ -1507,7 +1507,7 @@ more appropriate source of data is found I can swap this over.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI.rti_find_and_count_injuries">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rti_find_and_count_injuries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons_injury_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injury_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI.rti_find_and_count_injuries" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rti_find_and_count_injuries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons_injury_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injury_codes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI.rti_find_and_count_injuries" title="Link to this definition"></a></dt>
 <dd><p>A function that searches a user given dataframe for a list of injuries (injury_codes). If the injury code is
 found in the dataframe, this function returns the index for who has the injury/injuries and the number of
 injuries found. This function works much faster if the dataframe is smaller, hence why the searched dataframe
@@ -1664,7 +1664,7 @@ condition.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTIPollingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTIPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTIPollingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTIPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTIPollingEvent" title="Link to this definition"></a></dt>
 <dd><dl>
 <dt>The regular RTI event which handles all the initial RTI related changes to the dataframe. It can be thought of</dt><dd><p>as the actual road traffic accident occurring. Specifically the event decides who is involved in a road traffic
 accident every month (via the linear model helper class), whether those involved in a road traffic accident die on
@@ -1725,7 +1725,7 @@ system with for treatment.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI_Check_Death_No_Med">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Check_Death_No_Med</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Check_Death_No_Med" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Check_Death_No_Med</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Check_Death_No_Med" title="Link to this definition"></a></dt>
 <dd><p>A regular event which organises whether a person who has not received medical treatment should die as a result of
 their injuries. This even makes use of the maximum AIS-military score, a trauma scoring system developed for
 injuries in a military environment, assumed here to be an indicator of the probability of mortality without
@@ -1823,7 +1823,7 @@ Surviving internal bleeding is concievably possible, these are comparitively min
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI_Recovery_Event">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Recovery_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Recovery_Event" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Recovery_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Recovery_Event" title="Link to this definition"></a></dt>
 <dd><p>A regular event which checks the recovery date determined by each injury in columns rt_injury_1 through
 rt_injury_8, which is stored in columns rt_date_to_remove_daly_1, through rt_date_to_remove_daly_8
 respectively. This event checks the dates stored in the rt_date_to_remove_daly_* columns, when the
@@ -1899,7 +1899,7 @@ date matches one of the entries, the daly weight is removed and the injury is fu
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Imaging_Event">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Imaging_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Imaging_Event" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Imaging_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Imaging_Event" title="Link to this definition"></a></dt>
 <dd><p>This HSI event is triggered by the generic first appointments. After first arriving into the health system at
 either level 0 or level 1, should the injured person require a imaging to diagnose their injuries this HSI
 event is caused and x-ray or ct scans are provided as needed</p>
@@ -1950,7 +1950,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Medical_Intervention">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Medical_Intervention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Medical_Intervention" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Medical_Intervention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Medical_Intervention" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event.
 An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through A&amp;E
 and now needs treatment.</p>
@@ -2028,7 +2028,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Shock_Treatment">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Shock_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Shock_Treatment" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Shock_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Shock_Treatment" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
 handbook for Malawi and (TODO: FIND ADULT REFERENCE)</p>
 <p>Create a new event.</p>
@@ -2078,7 +2078,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Fracture_Cast">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Fracture_Cast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Fracture_Cast" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Fracture_Cast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Fracture_Cast" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles fracture casts/giving slings for those who need it. The HSI event tests whether the injured
 person has an appropriate injury code, determines how many fractures the person and then requests fracture
 treatment as required.</p>
@@ -2147,7 +2147,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Open_Fracture_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Open_Fracture_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Open_Fracture_Treatment" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles fracture casts/giving slings for those who need it. The HSI event tests whether the injured
 person has an appropriate injury code, determines how many fractures the person and then requests fracture
 treatment as required.</p>
@@ -2207,7 +2207,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Suture">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Suture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Suture" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Suture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Suture" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles lacerations giving suture kits for those who need it. The HSI event tests whether the injured
 person has an appropriate injury code, determines how many lacerations the person and then requests suture kits</p>
 <blockquote>
@@ -2271,7 +2271,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Burn_Management">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Burn_Management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Burn_Management" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Burn_Management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Burn_Management" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles burns giving treatment for those who need it. The HSI event tests whether the injured
 person has an appropriate injury code, determines how many burns the person and then requests appropriate treatment</p>
 <blockquote>
@@ -2335,7 +2335,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Tetanus_Vaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Tetanus_Vaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Tetanus_Vaccine" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Tetanus_Vaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Tetanus_Vaccine" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles tetanus vaccine requests, the idea being that by separating these from the burn and
 laceration and burn treatments, those treatments can go ahead without the availability of tetanus stopping the event</p>
 <p>Create a new event.</p>
@@ -2385,7 +2385,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Acute_Pain_Management">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Acute_Pain_Management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Acute_Pain_Management" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Acute_Pain_Management</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Acute_Pain_Management" title="Link to this definition"></a></dt>
 <dd><p>This HSI event handles all requests for pain management here, all injuries will pass through here and the pain
 medicine required will be set to manage the level of pain they are experiencing, with mild pain being managed with
 paracetamol/NSAIDS, moderate pain being managed with tramadol and severe pain being managed with morphine.</p>
@@ -2441,7 +2441,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Major_Surgeries">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Major_Surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Major_Surgeries" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Major_Surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Major_Surgeries" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event.
 An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through
 A and E and requires major surgery.</p>
@@ -2568,7 +2568,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.HSI_RTI_Minor_Surgeries">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Minor_Surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Minor_Surgeries" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RTI_Minor_Surgeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.HSI_RTI_Minor_Surgeries" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event.
 An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through
 A and E, treatment plan organised by RTI_MedInt and requires minor surgery.</p>
@@ -2644,7 +2644,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI_Medical_Intervention_Death_Event">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Medical_Intervention_Death_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Medical_Intervention_Death_Event" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Medical_Intervention_Death_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Medical_Intervention_Death_Event" title="Link to this definition"></a></dt>
 <dd><p>This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent to occur at the end of
 the person’s determined length of stay. The risk of mortality for the person wil medical intervention is determined
 by the persons ISS score and whether they have polytrauma.</p>
@@ -2699,7 +2699,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_No_Lifesaving_Medical_Intervention_Death_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_No_Lifesaving_Medical_Intervention_Death_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_No_Lifesaving_Medical_Intervention_Death_Event" title="Link to this definition"></a></dt>
 <dd><p>This is the NoMedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
 resources required to treat that person and if they aren’t present, the person is sent here. This function is also
 called by the did not run function for rti_major_surgeries for certain injuries, implying that if life saving
@@ -2758,7 +2758,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.rti.RTI_Logging_Event">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Logging_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Logging_Event" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RTI_Logging_Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.rti.RTI_Logging_Event" title="Link to this definition"></a></dt>
 <dd><p>Produce a summary of the numbers of people with respect to the action of this module.
 This is a regular event that can output current states of people or cumulative events since last logging event.</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>

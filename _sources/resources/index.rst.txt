@@ -37,13 +37,10 @@ Resource  files used in ``TLOmodel`` simulations
     healthsystem/index.rst
     malaria/index.rst
     mapping/index.rst
-    ResourceFile_AbortionAndMiscarriage.xlsx
-    ResourceFile_Childhood_Pneumonia.xlsx
     ResourceFile_Copd.csv
     ResourceFile_DALY_Weights.csv
     ResourceFile_EPI_vaccine_coverage.csv
     ResourceFile_GenericSymptoms_and_HealthSeeking.csv
     ResourceFile_HealthSeekingBehaviour.csv
-    ResourceFile_HypertensiveDisordersOfPregnancy.xlsx
     ResourceFile_SymptomManager.csv
 

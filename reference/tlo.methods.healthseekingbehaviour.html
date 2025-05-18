@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthseekingbehaviour module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.healthseekingbehaviour module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -96,7 +96,7 @@ This module determines if care is sought once a symptom is developed.</p>
 <p>The write-up of these estimates is: Health-seeking behaviour estimates for adults and children.docx</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_any_symptom_to_lead_to_healthcareseeking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour" title="Link to this definition"></a></dt>
 <dd><p>This modules determines if the onset of symptoms will lead to that person presenting at the health
 facility for a HSI_GenericFirstAppointment.</p>
 <p>An equation gives the probability of seeking care in response to the “average” symptom. This is modified according
@@ -200,10 +200,10 @@ generator.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’, ‘Demography’}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>__annotations__ : {}</p>
-<p>force_any_symptom_to_lead_to_healthcareseeking : &lt;property object at 0x30cb6b560&gt;</p>
+<p>force_any_symptom_to_lead_to_healthcareseeking : &lt;property object at 0x32fbded90&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSeekingBehaviour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__">
@@ -268,7 +268,7 @@ condition.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviourPoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSeekingBehaviourPoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll" title="Link to this definition"></a></dt>
 <dd><p>This event occurs every day and determines if persons with newly onset symptoms will seek care.</p>
 <p>Initialise the HealthSeekingBehaviourPoll
 :param module: the module that created this event</p>
@@ -285,7 +285,7 @@ condition.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._has_any_symptoms">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_has_any_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._has_any_symptoms" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_has_any_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">persons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symptoms</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.healthseekingbehaviour.HealthSeekingBehaviourPoll._has_any_symptoms" title="Link to this definition"></a></dt>
 <dd><p>Which rows in <cite>persons</cite> have non-zero values for columns in <cite>symptoms</cite>.</p>
 </dd></dl>
 

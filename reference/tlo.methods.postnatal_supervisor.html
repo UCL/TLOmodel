@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.postnatal_supervisor module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.postnatal_supervisor module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -93,7 +93,7 @@
 <span id="tlo-methods-postnatal-supervisor-module"></span><h1>tlo.methods.postnatal_supervisor module<a class="headerlink" href="#module-tlo.methods.postnatal_supervisor" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisor">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalSupervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalSupervisor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisor" title="Link to this definition"></a></dt>
 <dd><p>This module is responsible for the key conditions/complications experienced by a mother and by a neonate
 following labour and the immediate postpartum period (this period, from birth to day +1, is covered by the labour
 module).</p>
@@ -399,11 +399,11 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘Lifestyle’, ‘PregnancySupervisor’, ‘Labour’}</p>
-<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x30ccdc650&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x30ccdcf50&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x30ccddb50&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x30ccdda50&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x30ccdf390&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x30ccdc7d0&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x30ccde990&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x30ccdef90&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘PregnancySupervisor’, ‘Labour’, ‘Lifestyle’}</p>
+<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x32ff30bd0&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x32ff339d0&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x32ff31ad0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x32ff31c90&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x32ff316d0&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x32ff31950&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x32ff30b50&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x32ff33210&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class PostnatalSupervisor):</strong></p>
 <dl class="py method">
@@ -567,7 +567,7 @@ function.
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalSupervisorEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalSupervisorEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the PostnatalSupervisorEvent. This event runs every week and is responsible for applying risk of
 complications to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of</p>
 <blockquote>
@@ -621,7 +621,7 @@ complications to mothers and newborns in the postnatal and neonatal periods. Ris
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalWeekOneMaternalEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalWeekOneMaternalEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneMaternalEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalWeekOneMaternalEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneMaternalEvent" title="Link to this definition"></a></dt>
 <dd><p>This is PostnatalWeekOneMaternalEvent. It is scheduled for all mothers who survive labour and the first 48 hours
 after birth. This event applies risk of key complications that can occur in the first week after birth. This event
 also schedules postnatal care for those women predicted to attend after 48 hours or in the situation where they have
@@ -675,7 +675,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalWeekOneNeonatalEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalWeekOneNeonatalEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneNeonatalEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PostnatalWeekOneNeonatalEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneNeonatalEvent" title="Link to this definition"></a></dt>
 <dd><dl>
 <dt>This is PostnatalWeekOneNeonatalEvent. It is scheduled for all newborns who survive labour and the first 48 hours</dt><dd><p>after birth. This event applies risk of key complications that can occur in the first week after birth. This event
 also schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they</p>
@@ -733,7 +733,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_PostnatalSupervisor_TreatmentForObstetricFistula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_PostnatalSupervisor_TreatmentForObstetricFistula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.postnatal_supervisor.HSI_PostnatalSupervisor_TreatmentForObstetricFistula" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
 <dt>This is HSI_PostnatalSupervisor_TreatmentForObstetricFistula. It is scheduled by the on_birth function of this</dt><dd><p>module for women have developed obstetric fistula and choose to seek care. Treatment delivered in this event</p>
 </dd>

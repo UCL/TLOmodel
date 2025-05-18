@@ -1,0 +1,14 @@
+ever heart attack (.csv)
+========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_events_hsi/ever_heart_attack.csv>`
+
+====  =================================  =======  ============  ====================================================================================================================================================================================================
+  ..  parameter\_name                      value  Unnamed: 2    Unnamed: 3
+====  =================================  =======  ============  ====================================================================================================================================================================================================
+   0  sensitivity\_of\_assessment          1
+   1  medication\_item\_code             226                    Aspirin 300mg\_1000\_CMST
+   2  pr\_assessed\_other\_symptoms        0
+   3  emergency\_medication\_item\_code  225                    Frusemide 40mg\_1000\_CMST
+   4  pr\_treatment\_works                 0.481                Tager et al., Comparative effectiveness of loop diuretics on mortality in the treatment of patients with chronic heart failure - A multicenter propensity score matched analysis, Int J Cardiol 2019
+====  =================================  =======  ============  ====================================================================================================================================================================================================

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.scenario module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.scenario module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -148,7 +148,7 @@ configuration except the simulation seed.</p></li>
 </ul>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.scenario.BaseScenario">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BaseScenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_population_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_draws</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_per_draw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resources_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PosixPath('resources')</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.BaseScenario" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BaseScenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Timestamp</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_population_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_draws</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_per_draw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resources_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">PosixPath('resources')</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.BaseScenario" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
 <p>An abstract base class for creating scenarios.</p>
 <p>A scenario is a configuration of a simulation. Users should subclass this class and
@@ -207,7 +207,7 @@ overridden.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.BaseScenario.log_configuration">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.BaseScenario.log_configuration" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.BaseScenario.log_configuration" title="Link to this definition"></a></dt>
 <dd><p>Implementation must return a dictionary configuring logging.</p>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="p">{</span>
@@ -224,7 +224,7 @@ overridden.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.BaseScenario.modules">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.BaseScenario.modules" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.BaseScenario.modules" title="Link to this definition"></a></dt>
 <dd><p>Implementation must return a list of instances of TLOmodel modules to
 register in the simulation.</p>
 <p>Example:</p>
@@ -299,7 +299,7 @@ the logfile contain a ‘user-friendly’ label for the draw.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.scenario.ScenarioLoader">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ScenarioLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.ScenarioLoader" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ScenarioLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.ScenarioLoader" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A utility class to load a scenario class from a file path</p>
 <dl class="py method">
@@ -311,7 +311,7 @@ the logfile contain a ‘user-friendly’ label for the draw.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.scenario.DrawGenerator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DrawGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_class</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_draws</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_per_draw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.DrawGenerator" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DrawGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_class</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_draws</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_per_draw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.DrawGenerator" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Creates and saves a JSON representation of draws from a scenario.</p>
 <dl class="py method">
@@ -331,24 +331,24 @@ the logfile contain a ‘user-friendly’ label for the draw.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.DrawGenerator.save_config">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.DrawGenerator.save_config" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.DrawGenerator.save_config" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SampleRunner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_configuration_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.SampleRunner" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SampleRunner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_configuration_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.SampleRunner" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Reads scenario draws from a JSON configuration and handles running of samples</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner.number_of_draws">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">number_of_draws</span></span><a class="headerlink" href="#tlo.scenario.SampleRunner.number_of_draws" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">number_of_draws</span></span><a class="headerlink" href="#tlo.scenario.SampleRunner.number_of_draws" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner.runs_per_draw">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">runs_per_draw</span></span><a class="headerlink" href="#tlo.scenario.SampleRunner.runs_per_draw" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">runs_per_draw</span></span><a class="headerlink" href="#tlo.scenario.SampleRunner.runs_per_draw" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -380,12 +380,12 @@ the logfile contain a ‘user-friendly’ label for the draw.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner.override_parameters">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">override_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overridden_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.SampleRunner.override_parameters" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">override_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overridden_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.SampleRunner.override_parameters" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner.low_bias_32">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">low_bias_32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.SampleRunner.low_bias_32" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">low_bias_32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.scenario.SampleRunner.low_bias_32" title="Link to this definition"></a></dt>
 <dd><p>A simple integer hash function with uniform distribution. Following description taken from
 <a class="reference external" href="https://github.com/skeeto/hash-prospector">https://github.com/skeeto/hash-prospector</a></p>
 <blockquote>

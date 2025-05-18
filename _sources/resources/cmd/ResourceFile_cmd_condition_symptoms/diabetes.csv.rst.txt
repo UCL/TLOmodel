@@ -1,0 +1,10 @@
+diabetes (.csv)
+===============
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_condition_symptoms/diabetes.csv>`
+
+====  ==================  =======
+  ..  parameter\_name       value
+====  ==================  =======
+   0  diabetes\_symptoms     0.09
+====  ==================  =======

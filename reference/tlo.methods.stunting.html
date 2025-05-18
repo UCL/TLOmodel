@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.stunting module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.stunting module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -101,7 +101,7 @@ if they have any stunting they are provided with an intervention - <cite>HSI_Stu
 </section>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.Stunting">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stunting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Stunting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.Stunting" title="Link to this definition"></a></dt>
 <dd><p>This is the disease module for Stunting</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -273,8 +273,8 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>INIT_DEPENDENCIES : {‘Wasting’, ‘NewbornOutcomes’, ‘Hiv’, ‘Demography’, ‘Diarrhoea’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Hiv’, ‘NewbornOutcomes’, ‘Demography’, ‘Diarrhoea’, ‘Wasting’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Stunting):</strong></p>
 <dl class="py method">
@@ -396,7 +396,7 @@ appointment.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPollingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPollingEvent" title="Link to this definition"></a></dt>
 <dd><p>Regular event that controls the onset of stunting, progression to severe stunting and natural recovery.</p>
 <p>Create a new regular event.</p>
 <dl class="field-list simple">
@@ -457,7 +457,7 @@ LinearModel that provides the annual risk of the event.
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingLoggingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>Logging event occurring every year</p>
 <p>Create a new regular event.</p>
 <dl class="field-list simple">
@@ -498,7 +498,7 @@ LinearModel that provides the annual risk of the event.
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Stunting_ComplementaryFeeding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Stunting_ComplementaryFeeding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding" title="Link to this definition"></a></dt>
 <dd><p>HSI for complementary feeding, either with the provision of supplementary foods or with education only.</p>
 <p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
@@ -540,7 +540,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.stunting.StuntingPropertiesOfOtherModules">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StuntingPropertiesOfOtherModules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.stunting.StuntingPropertiesOfOtherModules" title="Link to this definition"></a></dt>
 <dd><p>For the purpose of the testing, this module generates the properties upon which the Stunting module relies</p>
 <p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
@@ -604,7 +604,7 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘Wasting’, ‘Hiv’, ‘Diarrhoea’}</p>
+<p>ALTERNATIVE_TO : {‘Diarrhoea’, ‘Wasting’, ‘Hiv’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class StuntingPropertiesOfOtherModules):</strong></p>

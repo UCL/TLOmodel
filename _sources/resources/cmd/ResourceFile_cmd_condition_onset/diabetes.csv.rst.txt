@@ -1,0 +1,76 @@
+diabetes (.csv)
+===============
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_condition_onset/diabetes.csv>`
+
+====  =====================================================  ==================  =======================================
+  ..  parameter\_name                                        value               Unnamed: 2
+====  =====================================================  ==================  =======================================
+   0  baseline\_annual\_probability                          0.00028
+   1  rr\_male                                               1.15                Holden et al., 2013, UK Pop (CPRD)
+   2  rr\_0\_4                                               0.0                 Holden et al., 2013, UK Pop (CPRD)
+   3  rr\_5\_9                                               0.0                 Holden et al., 2013, UK Pop (CPRD)
+   4  rr\_10\_14                                             0.0                 Holden et al., 2013, UK Pop (CPRD)
+   5  rr\_15\_19                                             0.0                 Holden et al., 2013, UK Pop (CPRD)
+   6  rr\_20\_24                                             1.0                 Holden et al., 2013, UK Pop (CPRD)
+   7  rr\_25\_29                                             1.0                 Holden et al., 2013, UK Pop (CPRD)
+   8  rr\_30\_34                                             1.6                 Holden et al., 2013, UK Pop (CPRD)
+   9  rr\_35\_39                                             2.215384615384615   Holden et al., 2013, UK Pop (CPRD)
+  10  rr\_40\_44                                             3.0                 Holden et al., 2013, UK Pop (CPRD)
+  11  rr\_45\_49                                             4.0                 Holden et al., 2013, UK Pop (CPRD)
+  12  rr\_50\_54                                             4.5                 Holden et al., 2013, UK Pop (CPRD)
+  13  rr\_55\_59                                             6.0                 Holden et al., 2013, UK Pop (CPRD)
+  14  rr\_60\_64                                             6.5                 Holden et al., 2013, UK Pop (CPRD)
+  15  rr\_65\_69                                             7.0                 Holden et al., 2013, UK Pop (CPRD)
+  16  rr\_70\_74                                             4.0                 Holden et al., 2013, UK Pop (CPRD)
+  17  rr\_75\_79                                             3.0                 Holden et al., 2013, UK Pop (CPRD)
+  18  rr\_80\_84                                             2.0                 Holden et al., 2013, UK Pop (CPRD)
+  19  rr\_85\_89                                             2.0                 Holden et al., 2013, UK Pop (CPRD)
+  20  rr\_90\_94                                             1.0                 Holden et al., 2013, UK Pop (CPRD)
+  21  rr\_95\_99                                             1.0                 Holden et al., 2013, UK Pop (CPRD)
+  22  rr\_100                                                1.0                 Holden et al., 2013, UK Pop (CPRD)
+  23  rr\_urban
+  24  rr\_wealth\_1                                          1.0                 Bellou et al., Systematic Reviews, 2018
+  25  rr\_wealth\_2                                          0.8333333333333334  Bellou et al., Systematic Reviews, 2018
+  26  rr\_wealth\_3                                          0.7916666666666666  Bellou et al., Systematic Reviews, 2018
+  27  rr\_wealth\_4                                          0.75                Bellou et al., Systematic Reviews, 2018
+  28  rr\_wealth\_5                                          0.7083333333333334  Bellou et al., Systematic Reviews, 2018
+  29  rr\_bmi\_1                                             1.1                 Bellou et al., Systematic Reviews, 2018
+  30  rr\_bmi\_2                                             1.0                 Bellou et al., Systematic Reviews, 2018
+  31  rr\_bmi\_3                                             2.9                 Bellou et al., Systematic Reviews, 2018
+  32  rr\_bmi\_4                                             6.0                 Bellou et al., Systematic Reviews, 2018
+  33  rr\_bmi\_5                                             10.0                Bellou et al., Systematic Reviews, 2018
+  34  rr\_low\_exercise                                      1.33                Bellou et al., Systematic Reviews, 2018
+  35  rr\_high\_salt                                         1.0
+  36  rr\_high\_sugar                                        1.2                 Bellou et al., Systematic Reviews, 2018
+  37  rr\_tobacco                                            1.3                 Bellou et al., Systematic Reviews, 2018
+  38  rr\_alcohol
+  39  rr\_marital\_status\_1
+  40  rr\_marital\_status\_2
+  41  rr\_marital\_status\_3
+  42  rr\_in\_education                                      1.2                 Bellou et al., Systematic Reviews, 2018
+  43  rr\_current\_education\_level\_1                       1.2                 Bellou et al., Systematic Reviews, 2018
+  44  rr\_current\_education\_level\_2                       1.0                 Bellou et al., Systematic Reviews, 2018
+  45  rr\_current\_education\_level\_3                       0.85                Bellou et al., Systematic Reviews, 2018
+  46  rr\_unimproved\_sanitation                             1.0
+  47  rr\_no\_access\_handwashing                            1.0
+  48  rr\_no\_clean\_drinking\_water                         1.05                Estimates from Ed Gregg
+  49  rr\_wood\_burning\_stove                               1.05                Estimates from Ed Gregg
+  50  rr\_diabetes                                           1.0
+  51  rr\_hypertension                                       1.75                Bellou et al., Systematic Reviews, 2018
+  52  rr\_depression                                         1.48                Bellou et al., Systematic Reviews, 2018
+  53  rr\_chronic\_kidney\_disease                           1.0
+  54  rr\_chronic\_lower\_back\_pain                         1.0
+  55  rr\_chronic\_ischemic\_heart\_disease                  1.0
+  56  rr\_cancers                                            1.0
+  57  rr\_hiv                                                1.0
+  58  rr\_ever\_stroke                                       1.0
+  59  rr\_ever\_heart\_attack                                1.0
+  60  rr\_diabetes\_on\_medication                           1.0
+  61  rr\_hypertension\_on\_medication                       1.0
+  62  rr\_chronic\_kidney\_disease\_on\_medication           1.0
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication         1.0
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication  1.0
+  65  rr\_stroke\_on\_medication                             1.0
+  66  rr\_heart\_attack\_on\_medication                      1.0
+====  =====================================================  ==================  =======================================

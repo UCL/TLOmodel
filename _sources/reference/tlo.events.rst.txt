@@ -3,5 +3,5 @@ tlo.events module
 
 .. automodule:: tlo.events
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

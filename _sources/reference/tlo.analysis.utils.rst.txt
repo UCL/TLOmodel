@@ -3,5 +3,5 @@ tlo.analysis.utils module
 
 .. automodule:: tlo.analysis.utils
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

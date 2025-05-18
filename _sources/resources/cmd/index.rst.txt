@@ -4,20 +4,20 @@ cmd
 .. toctree::
     :maxdepth: 1
 
-    ResourceFile_cmd_condition_and_events_incidence.xlsx
-    ResourceFile_cmd_condition_death.xlsx
-    ResourceFile_cmd_condition_hsi.xlsx
-    ResourceFile_cmd_condition_incidence.xlsx
-    ResourceFile_cmd_condition_onset.xlsx
-    ResourceFile_cmd_condition_prevalence.xlsx
-    ResourceFile_cmd_condition_removal.xlsx
-    ResourceFile_cmd_condition_symptoms.xlsx
-    ResourceFile_cmd_condition_testing.xlsx
-    ResourceFile_cmd_event_incidence.xlsx
-    ResourceFile_cmd_event_prevalence.xlsx
-    ResourceFile_cmd_events.xlsx
-    ResourceFile_cmd_events_death.xlsx
-    ResourceFile_cmd_events_hsi.xlsx
-    ResourceFile_cmd_events_symptoms.xlsx
+    ResourceFile_cmd_condition_and_events_incidence/index.rst
+    ResourceFile_cmd_condition_death/index.rst
+    ResourceFile_cmd_condition_hsi/index.rst
+    ResourceFile_cmd_condition_incidence/index.rst
+    ResourceFile_cmd_condition_onset/index.rst
+    ResourceFile_cmd_condition_prevalence/index.rst
+    ResourceFile_cmd_condition_removal/index.rst
+    ResourceFile_cmd_condition_symptoms/index.rst
+    ResourceFile_cmd_condition_testing/index.rst
+    ResourceFile_cmd_event_incidence/index.rst
+    ResourceFile_cmd_event_prevalence/index.rst
+    ResourceFile_cmd_events/index.rst
+    ResourceFile_cmd_events_death/index.rst
+    ResourceFile_cmd_events_hsi/index.rst
+    ResourceFile_cmd_events_symptoms/index.rst
     ResourceFile_cmd_parameters.csv
 

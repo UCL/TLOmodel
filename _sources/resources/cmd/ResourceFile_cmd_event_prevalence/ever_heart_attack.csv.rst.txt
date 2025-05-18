@@ -1,0 +1,30 @@
+ever heart attack (.csv)
+========================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_event_prevalence/ever_heart_attack.csv>`
+
+====  =================  =======  =======  =======
+  ..  parameter\_name    value    lower    upper
+====  =================  =======  =======  =======
+   0  0-4
+   1  5-9
+   2  10-14
+   3  15-19
+   4  20-24
+   5  25-29
+   6  30-34
+   7  35-39
+   8  40-44
+   9  45-49
+  10  50-54
+  11  55-59
+  12  60-64
+  13  65-69
+  14  70-74
+  15  75-79
+  16  80-84
+  17  85-89
+  18  90-94
+  19  95-99
+  20  100+
+====  =================  =======  =======  =======

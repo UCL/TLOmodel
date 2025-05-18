@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.cardio_metabolic_disorders module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.cardio_metabolic_disorders module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -102,7 +102,7 @@
 * Chronic Lower Back Pain</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisorders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_log_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_condition_combos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisorders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_log_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">do_condition_combos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders" title="Link to this definition"></a></dt>
 <dd><p>CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary
 and individuals experience a risk of acquiring or losing a condition based on annual probability and
 demographic/lifestyle risk factors.</p>
@@ -473,10 +473,10 @@ generator.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Depression’}</p>
-<p>CAUSES_OF_DEATH : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x30da5c150&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x30da5c7d0&gt;, ‘ever_heart_attack’: &lt;tlo.methods.causes.Cause object at 0x30da5f750&gt;, ‘ever_stroke’: &lt;tlo.methods.causes.Cause object at 0x30da5e050&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x30da5cf90&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x30da5cdd0&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x30da5fa50&gt;, ‘heart_attack’: &lt;tlo.methods.causes.Cause object at 0x30da5ec10&gt;, ‘stroke’: &lt;tlo.methods.causes.Cause object at 0x30da5d390&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x30da5c8d0&gt;, ‘lower_back_pain’: &lt;tlo.methods.causes.Cause object at 0x30da5cc50&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’, ‘Lifestyle’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x32fbf3710&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x32fbf2990&gt;, ‘ever_heart_attack’: &lt;tlo.methods.causes.Cause object at 0x32fbf3190&gt;, ‘ever_stroke’: &lt;tlo.methods.causes.Cause object at 0x32fbf0a50&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x32fbf2a50&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x32fbf2a90&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x32fbf2f10&gt;, ‘heart_attack’: &lt;tlo.methods.causes.Cause object at 0x32fbf3390&gt;, ‘stroke’: &lt;tlo.methods.causes.Cause object at 0x32fbf1d90&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x32fbf1710&gt;, ‘lower_back_pain’: &lt;tlo.methods.causes.Cause object at 0x32fbf3310&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘Lifestyle’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
 <p>__annotations__ : {}</p>
 <p>condition_date_diagnosis_list : {‘nc_diabetes_date_diagnosis’: DATE === When someone has been diagnosed with diabetes, ‘nc_hypertension_date_diagnosis’: DATE === When someone has been diagnosed with hypertension, ‘nc_chronic_kidney_disease_date_diagnosis’: DATE === When someone has been diagnosed with chronic_kidney_disease, ‘nc_chronic_lower_back_pain_date_diagnosis’: DATE === When someone has been diagnosed with chronic_lower_back_pain, ‘nc_chronic_ischemic_hd_date_diagnosis’: DATE === When someone has been diagnosed with chronic_ischemic_hd}</p>
@@ -521,18 +521,21 @@ generator.</p>
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.read_parameters">
 <span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from files for condition onset, removal, deaths, and initial prevalence.</p>
-<p>ResourceFile_cmd_condition_onset.xlsx = parameters for onset of conditions
-ResourceFile_cmd_condition_removal.xlsx  = parameters for removal of conditions
-ResourceFile_cmd_condition_death.xlsx  = parameters for death rate from conditions
-ResourceFile_cmd_condition_prevalence.xlsx  = initial and target prevalence for conditions
-ResourceFile_cmd_condition_symptoms.xlsx  = symptoms for conditions
-ResourceFile_cmd_condition_hsi.xlsx  = HSI parameters for conditions
-ResourceFile_cmd_condition_testing.xlsx  = community testing parameters for conditions (currently only
+<dl class="simple">
+<dt>Folders</dt><dd><p>ResourceFile_cmd_condition_onset = parameters for onset of conditions
+ResourceFile_cmd_condition_removal  = parameters for removal of conditions
+ResourceFile_cmd_condition_death  = parameters for death rate from conditions
+ResourceFile_cmd_condition_prevalence  = initial and target prevalence for conditions
+ResourceFile_cmd_condition_symptoms  = symptoms for conditions
+ResourceFile_cmd_condition_hsi  = HSI parameters for conditions
+ResourceFile_cmd_condition_testing  = community testing parameters for conditions (currently only
 hypertension)
-ResourceFile_cmd_events.xlsx  = parameters for occurrence of events
-ResourceFile_cmd_events_death.xlsx  = parameters for death rate from events
-ResourceFile_cmd_events_symptoms.xlsx  = symptoms for events
-ResourceFile_cmd_events_hsi.xlsx  = HSI parameters for events</p>
+ResourceFile_cmd_events  = parameters for occurrence of events
+ResourceFile_cmd_events_death  = parameters for death rate from events
+ResourceFile_cmd_events_symptoms  = symptoms for events
+ResourceFile_cmd_events_hsi  = HSI parameters for events</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -652,7 +655,7 @@ condition.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisorders_MainPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval_between_polls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisorders_MainPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval_between_polls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_MainPollingEvent" title="Link to this definition"></a></dt>
 <dd><p>The Main Polling Event.
 * Establishes onset of each condition
 * Establishes removal of each condition
@@ -693,7 +696,7 @@ condition.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent" title="Link to this definition"></a></dt>
 <dd><p>This is an Cardio Metabolic Disorders event (indicating an emergency occurrence of stroke or heart attack).
 It has been scheduled to occur by the CardioMetabolicDisorders_MainPollingEvent.
 :param event: the event occurring</p>
@@ -746,7 +749,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originating_cause</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originating_cause</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>Performs the Death operation on an individual and logs it.
 :param originating_cause: the originating cause of the death, which can be a condition or an event</p>
 <p>Create a new event.</p>
@@ -806,7 +809,7 @@ that treatment will intercede in an prevent death from the event).</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersWeightLossEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisordersWeightLossEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent" title="Link to this definition"></a></dt>
 <dd><p>Gives an individual a probability of losing weight (via a reduction in li_bmi) and records the change in
 population.props</p>
 <p>Create a new event.</p>
@@ -858,7 +861,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisorders_LoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CardioMetabolicDisorders_LoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>Produce a summary of the numbers of people with respect to the action of this module.</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
@@ -886,7 +889,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_CommunityTestingForHypertension">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_CommunityTestingForHypertension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_CommunityTestingForHypertension" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_CommunityTestingForHypertension</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_CommunityTestingForHypertension" title="Link to this definition"></a></dt>
 <dd><p>This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
 This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of
 treatment for a condition.</p>
@@ -930,7 +933,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Investigations">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_Investigations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions_to_investigate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_any_cmd_symptom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Investigations" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_Investigations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditions_to_investigate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_any_cmd_symptom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Investigations" title="Link to this definition"></a></dt>
 <dd><p>This event is scheduled following presentation for care and a determination having been made about which
 conditions should be investigated for this person (either due to presentation with symptoms or a routine check).
 NB. If a treatment is needed, this does lead to multiple HSI to be scheduled for the person (relevant to each
@@ -984,7 +987,7 @@ has been scheduled.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_StartWeightLossAndMedication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_StartWeightLossAndMedication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event in which a person receives a recommendation of weight loss.
 This results in an individual having a probability of reducing their BMI by one category in the next 6-12 months.
 :param condition: the condition to start medication for</p>
@@ -1028,7 +1031,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Refill_Medication">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_Refill_Medication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Refill_Medication" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_Refill_Medication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_Refill_Medication" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event in which a person seeks a refill prescription of medication.
 The next refill of medication is also scheduled.
 If the person is flagged as not being on medication, then the event does nothing and returns a blank footprint.
@@ -1081,7 +1084,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events_to_investigate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events_to_investigate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event.
 It is the event when a person is investigated for certain condition following and emergency presentation. Treatment
 may be scheduled from this event, and this may take the form of multiple streams of HSI event if more than one

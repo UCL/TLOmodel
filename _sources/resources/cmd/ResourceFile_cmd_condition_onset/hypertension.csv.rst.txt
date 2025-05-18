@@ -1,0 +1,76 @@
+hypertension (.csv)
+===================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_condition_onset/hypertension.csv>`
+
+====  =====================================================  ===================  ===========================================================
+  ..  parameter\_name                                        value                Unnamed: 2
+====  =====================================================  ===================  ===========================================================
+   0  baseline\_annual\_probability                          0.0045
+   1  rr\_male                                               0.95
+   2  rr\_0\_4                                               0.0                  Health Survey for England Hypertension Prevalence Models
+   3  rr\_5\_9                                               0.0                  Health Survey for England Hypertension Prevalence Models
+   4  rr\_10\_14                                             0.0                  Health Survey for England Hypertension Prevalence Models
+   5  rr\_15\_19                                             0.0                  Health Survey for England Hypertension Prevalence Models
+   6  rr\_20\_24                                             0.33783783783783783  Health Survey for England Hypertension Prevalence Models
+   7  rr\_25\_29                                             1.0033783783783785   Health Survey for England Hypertension Prevalence Models
+   8  rr\_30\_34                                             1.0033783783783785   Health Survey for England Hypertension Prevalence Models
+   9  rr\_35\_39                                             1.0                  Health Survey for England Hypertension Prevalence Models
+  10  rr\_40\_44                                             1.0                  Health Survey for England Hypertension Prevalence Models
+  11  rr\_45\_49                                             1.652027027027027    Health Survey for England Hypertension Prevalence Models
+  12  rr\_50\_54                                             1.652027027027027    Health Survey for England Hypertension Prevalence Models
+  13  rr\_55\_59                                             2.135135135135135    Health Survey for England Hypertension Prevalence Models
+  14  rr\_60\_64                                             2.135135135135135    Health Survey for England Hypertension Prevalence Models
+  15  rr\_65\_69                                             2.385135135135135    Health Survey for England Hypertension Prevalence Models
+  16  rr\_70\_74                                             2.385135135135135    Health Survey for England Hypertension Prevalence Models
+  17  rr\_75\_79                                             2.679054054054054    Health Survey for England Hypertension Prevalence Models
+  18  rr\_80\_84                                             2.679054054054054    Health Survey for England Hypertension Prevalence Models
+  19  rr\_85\_89                                             2.679054054054054    Health Survey for England Hypertension Prevalence Models
+  20  rr\_90\_94                                             2.679054054054054    Health Survey for England Hypertension Prevalence Models
+  21  rr\_95\_99                                             2.679054054054054    Health Survey for England Hypertension Prevalence Models
+  22  rr\_100                                                2.679054054054054    Health Survey for England Hypertension Prevalence Models
+  23  rr\_urban
+  24  rr\_wealth\_1                                          1.0                  Coyle et al., 2019, English GP Data
+  25  rr\_wealth\_2                                          1.0396039603960396   Coyle et al., 2019, English GP Data
+  26  rr\_wealth\_3                                          1.0693069306930694   Coyle et al., 2019, English GP Data
+  27  rr\_wealth\_4                                          1.0396039603960396   Coyle et al., 2019, English GP Data
+  28  rr\_wealth\_5                                          0.9900990099009901   Coyle et al., 2019, English GP Data
+  29  rr\_bmi\_1                                             0.5263157894736842   Health Survey for England Hypertension Prevalence Models
+  30  rr\_bmi\_2                                             1.0                  Health Survey for England Hypertension Prevalence Models
+  31  rr\_bmi\_3                                             1.6894736842105265   Health Survey for England Hypertension Prevalence Models
+  32  rr\_bmi\_4                                             1.7210526315789474   Health Survey for England Hypertension Prevalence Models
+  33  rr\_bmi\_5                                             2.2052631578947373   Health Survey for England Hypertension Prevalence Models
+  34  rr\_low\_exercise                                      1.16                 Andriolo et al., 2019, EPIC-Potsdam Study
+  35  rr\_high\_salt                                         1.88                 Chen et al., 2018, Taiwan, Genetic Study
+  36  rr\_high\_sugar                                        1.03                 Estimate from Ed Greg
+  37  rr\_tobacco                                            1.04                 Andriolo et al., 2019, EPIC-Potsdam Study
+  38  rr\_alcohol                                            1.31                 Pajak et al., 2013, HAPIEE Study, Russia Poland Czech
+  39  rr\_marital\_status\_1                                 1.0                  Estimate from Ed Greg
+  40  rr\_marital\_status\_2                                 1.449                Estimate from Ed Greg
+  41  rr\_marital\_status\_3                                 1.03                 Estimate from Ed Greg
+  42  rr\_in\_education                                      1.0
+  43  rr\_current\_education\_level\_1                       1.34                 Health Survey for England Hypertension Prevalence Models
+  44  rr\_current\_education\_level\_2                       1.0                  Health Survey for England Hypertension Prevalence Models
+  45  rr\_current\_education\_level\_3                       1.42                 Health Survey for England Hypertension Prevalence Models
+  46  rr\_unimproved\_sanitation                             1.0
+  47  rr\_no\_access\_handwashing                            1.0
+  48  rr\_no\_clean\_drinking\_water                         1.0
+  49  rr\_wood\_burning\_stove                               1.0
+  50  rr\_diabetes                                           1.92                 Derakhshan et al., 2016, Iranian Study
+  51  rr\_hypertension                                       1.0
+  52  rr\_depression                                         1.42                 Lin et al., 2012, Meta-Analysis Depression and Hypertension
+  53  rr\_chronic\_kidney\_disease                           1.0
+  54  rr\_chronic\_lower\_back\_pain                         1.0
+  55  rr\_chronic\_ischemic\_heart\_disease                  1.0
+  56  rr\_cancers                                            1.0
+  57  rr\_hiv                                                1.0
+  58  rr\_ever\_stroke                                       1.0
+  59  rr\_ever\_heart\_attack                                1.0
+  60  rr\_diabetes\_on\_medication                           1.0
+  61  rr\_hypertension\_on\_medication                       1.0
+  62  rr\_chronic\_kidney\_disease\_on\_medication           1.0
+  63  rr\_chronic\_lower\_back\_pain\_on\_medication         1.0
+  64  rr\_chronic\_ischemic\_heart\_disease\_on\_medication  1.0
+  65  rr\_stroke\_on\_medication                             1.0
+  66  rr\_heart\_attack\_on\_medication                      1.0
+====  =====================================================  ===================  ===========================================================

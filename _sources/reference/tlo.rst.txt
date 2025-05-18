@@ -35,5 +35,5 @@ Module contents
 
 .. automodule:: tlo
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

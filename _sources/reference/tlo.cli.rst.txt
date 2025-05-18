@@ -3,5 +3,5 @@ tlo.cli module
 
 .. automodule:: tlo.cli
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.depression module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.depression module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -94,7 +94,7 @@
 <p>This is the Depression Module.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.Depression">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Depression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.Depression" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Depression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.Depression" title="Link to this definition"></a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -329,10 +329,10 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x30cd63b90&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x30cd60510&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘Contraception’, ‘SymptomManager’, ‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x32ff90290&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x32ff93a50&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Contraception’, ‘Lifestyle’, ‘SymptomManager’, ‘Demography’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class Depression):</strong></p>
@@ -514,7 +514,7 @@ condition.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionPollingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionPollingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionPollingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionPollingEvent" title="Link to this definition"></a></dt>
 <dd><p>The regular event that actually changes individuals’ depression status.
 It occurs every 3 months and this cannot be changed.
 The onset and resolution of depression events occurs at the polling event and synchronously for
@@ -564,7 +564,7 @@ all persons. Individual level events (HSI, self-harm/suicide events) may occur a
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionSelfHarmEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionSelfHarmEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionSelfHarmEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionSelfHarmEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionSelfHarmEvent" title="Link to this definition"></a></dt>
 <dd><p>This is a Self-Harm event. It has been scheduled to occur by the DepressionPollingEvent.
 It imposes the Injuries_From_Self_Harm symptom, which will lead to emergency care being sought</p>
 <p>Create a new event.</p>
@@ -616,7 +616,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionSuicideEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionSuicideEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionSuicideEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionSuicideEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionSuicideEvent" title="Link to this definition"></a></dt>
 <dd><p>This is a Suicide event. It has been scheduled to occur by the DepressionPollingEvent.
 It causes the immediate death of the person.</p>
 <p>Create a new event.</p>
@@ -668,7 +668,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionLoggingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionLoggingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepressionLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.DepressionLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>This is the LoggingEvent for Depression. It runs every 3 months and gives:
 * population summaries for statuses for Depression at that time.
 * counts of events of self-harm and suicide that have occurred in the 3 months prior</p>
@@ -717,7 +717,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_TalkingTherapy">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Depression_TalkingTherapy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_TalkingTherapy" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Depression_TalkingTherapy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_TalkingTherapy" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event in which a person receives a session of talking therapy. It is one
 of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen
 then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is
@@ -762,7 +762,7 @@ has not yet had 5 sessions.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Start_Antidepressant">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Depression_Start_Antidepressant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Start_Antidepressant" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Depression_Start_Antidepressant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Start_Antidepressant" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event in which a person is started on anti-depressants.
 The facility_level is modified as a input parameter.</p>
 <p>Create a new event.</p>
@@ -805,7 +805,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.depression.HSI_Depression_Refill_Antidepressant">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Depression_Refill_Antidepressant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Refill_Antidepressant" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Depression_Refill_Antidepressant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.depression.HSI_Depression_Refill_Antidepressant" title="Link to this definition"></a></dt>
 <dd><p>This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants.
 The next refill of anti-depressants is also scheduled.
 If the person is flagged as not being on antidepressants, then the event does nothing and returns a blank footprint.

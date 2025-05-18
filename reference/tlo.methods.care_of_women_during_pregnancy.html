@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.care_of_women_during_pregnancy module &mdash; TLOmodel 0.1.dev2513+gd500d75 documentation</title>
+  <title>tlo.methods.care_of_women_during_pregnancy module &mdash; TLOmodel 0.1.dev2528+gdba3dde.d20250518 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=34bb78ad" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -15,7 +15,7 @@
     <link rel="shortcut icon" href="../_static/favicon.png"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=4935aaa2"></script>
+      <script src="../_static/documentation_options.js?v=12f30d4d"></script>
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -93,7 +93,7 @@
 <span id="tlo-methods-care-of-women-during-pregnancy-module"></span><h1>tlo.methods.care_of_women_during_pregnancy module<a class="headerlink" href="#module-tlo.methods.care_of_women_during_pregnancy" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CareOfWomenDuringPregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CareOfWomenDuringPregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy" title="Link to this definition"></a></dt>
 <dd><dl>
 <dt>This is the CareOfWomenDuringPregnancy module which contains health system interaction events relevant to</dt><dd><p>pregnancy and pregnancy loss including:</p>
 <dl class="simple">
@@ -321,8 +321,8 @@ generator.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Contraception’, ‘Labour’}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘PregnancySupervisor’, ‘Demography’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Contraception’, ‘Labour’, ‘Lifestyle’}</p>
+<p>INIT_DEPENDENCIES : {‘PregnancySupervisor’, ‘Demography’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>__annotations__ : {}</p>
 <p><strong>Functions (defined or overridden in class CareOfWomenDuringPregnancy):</strong></p>
@@ -757,7 +757,7 @@ and her gestation
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>This is the  HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact which represents the first routine
 antenatal care contact (ANC1). It is scheduled by the PregnancySupervisor Event for women who choose to seek
 routine antenatal care during their pregnancy. It is recommended that this visit occur before 12 weeks gestation.
@@ -817,7 +817,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>This is the  HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact which represents the second routine
 antenatal care contact (ANC2). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact for
 women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 20
@@ -877,7 +877,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>This is the  HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact which represents the third routine
 antenatal care contact (ANC3). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact for
 women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 26
@@ -937,7 +937,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>This is the  HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact which represents the fourth routine
 antenatal care contact (ANC4). It is scheduled by the HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact for
 women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 30
@@ -997,7 +997,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>This is the  HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact which represents the fifth routine
 antenatal care contact (ANC5). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact for
 women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 34
@@ -1057,7 +1057,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>This is the  HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact which represents the sixth routine
 antenatal care contact (ANC6). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact for
 women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
@@ -1117,7 +1117,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>“This is the  HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact which represents the seventh routine
 antenatal care contact (ANC7). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact for
 women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
@@ -1177,7 +1177,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact" title="Link to this definition"></a></dt>
 <dd><p>This is the  HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact which represents the eighth routine
 antenatal care contact (ANC8). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact for
 women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
@@ -1237,7 +1237,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FocusedANCVisit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visit_number</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_FocusedANCVisit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visit_number</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FocusedANCVisit" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_CareOfWomenDuringPregnancy_FocusedANCVisit which is scheduled by the PregnancySupervisor if the
 parameter ‘anc_service_structure’ == 4. This HSI replicates the ANC service structured used within Malawi prior
 to 2016. We use this HSI to replicate the Focused ANC service structure (4 visits at approx 16, 22, 30, 36 weeks)
@@ -1283,7 +1283,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour. It is schedule by the PregnancySupervisor Event
 for women who present to the health system for induction as their labour has progressed longer than expected.</p>
 <p>Create a new event.</p>
@@ -1326,7 +1326,7 @@ constructor, but may also take further keyword arguments.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare. This HSI can be scheduled by any of the ANC HSIs
 for women who have been identified as having complications or by <a href="#id1"><span class="problematic" id="id2">HSI_CareOfWomenDuringPregnancy_</span></a>
 MaternalEmergencyAssessment or HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp.This HSI represents the
@@ -1386,7 +1386,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia" title="Link to this definition"></a></dt>
 <dd><p>HSI_CareOfWomenDuringPregnancy_AntenatalManagementOfAnaemia. It is scheduled by <a href="#id3"><span class="problematic" id="id4">HSI_CareOfWomenDuringPregnancy_</span></a>
 AntenatalWardInpatientCare for women who have developed anaemia during pregnancy. This event manages repeat blood
 testing for women who were found to be anaemic and treated. If the woman remains anaemic she is readmitted to the
@@ -1443,7 +1443,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes. It is scheduled by
 HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare for women who have developed gestational diabetes during
 pregnancy. This event manages repeat blood testing for women who were found to have GDM and treated. If the woman
@@ -1500,7 +1500,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement. It is scheduled by
 HSI_GenericEmergencyFirstApptAtFacilityLevel1 for women who have presented to hospital due to the complications of
 either induced or spontaneous abortion. This event manages interventions delivered for women who are experiencing
@@ -1557,7 +1557,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy. It is scheduled by
 HSI_GenericEmergencyFirstApptAtFacilityLevel1 for women who have presented to hospital due to ectopic pregnancy.
 This event manages interventions delivered as part of the case management of ectopic pregnancy</p>
@@ -1619,7 +1619,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CareOfWomenDuringPregnancyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CareOfWomenDuringPregnancyLoggingEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancyLoggingEvent" title="Link to this definition"></a></dt>
 <dd><p>This is CareOfWomenDuringPregnancyLoggingEvent. It runs yearly to capture the number of ANC visits which
 have ran (and interventions are delivered) for women during pregnancy.</p>
 <p>Create a new regular event.</p>

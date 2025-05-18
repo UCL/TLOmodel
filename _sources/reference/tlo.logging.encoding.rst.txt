@@ -3,5 +3,5 @@ tlo.logging.encoding module
 
 .. automodule:: tlo.logging.encoding
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:

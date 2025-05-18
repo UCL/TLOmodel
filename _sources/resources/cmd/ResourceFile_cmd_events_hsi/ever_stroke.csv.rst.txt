@@ -1,0 +1,14 @@
+ever stroke (.csv)
+==================
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_events_hsi/ever_stroke.csv>`
+
+====  =================================  =======  ============  =================================================================================
+  ..  parameter\_name                      value  Unnamed: 2    Unnamed: 3
+====  =================================  =======  ============  =================================================================================
+   0  sensitivity\_of\_assessment           1
+   1  medication\_item\_code              226                   Aspirin 300mg\_1000\_CMST
+   2  pr\_assessed\_other\_symptoms         0
+   3  emergency\_medication\_item\_code   234                   Simvastatin, 15 mg
+   4  pr\_treatment\_works                  0.59                Hong et al., Statins in Acute Ischemic Stroke: A Systematic Review, J Stroke 2015
+====  =================================  =======  ============  =================================================================================

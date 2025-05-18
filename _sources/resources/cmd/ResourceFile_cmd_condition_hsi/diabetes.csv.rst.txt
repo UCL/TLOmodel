@@ -1,0 +1,16 @@
+diabetes (.csv)
+===============
+
+:download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_condition_hsi/diabetes.csv>`
+
+====  ====================================================  ========  ============  ====================================================================================================================================================================================================================================
+  ..  parameter\_name                                          value  Unnamed: 2    Unnamed: 3
+====  ====================================================  ========  ============  ====================================================================================================================================================================================================================================
+   0  test\_item\_code                                      216                     Blood glucose level test
+   1  sensitivity\_of\_assessment                             1
+   2  medication\_item\_code                                233                     First line treatment (Metformin hydrochloride 500mg\_100\_CMST)
+   3  pr\_assessed\_other\_symptoms                           0.1
+   4  pr\_treatment\_works                                    0.42                  Prospective Diabetes Study (UKPDS) Group: Effect of intensive blood glucose control with metformin on complications in overweight patients with type 2 diabetes (UKPDS 34). Lancet. 1998, 352 (9131): 854-865.
+   5  pr\_diagnosed                                           0.3846                Price et al. Prevalence of obesity, hypertension, and diabetes, and cascade of care in sub-Saharan Africa: a cross-sectional, population-based study in rural and urban Malawi. The Lancet Diabetes and Endocrinology 2018:6 208-22.
+   6  pr\_seeking\_further\_appt\_if\_drug\_not\_available    0.8
+====  ====================================================  ========  ============  ====================================================================================================================================================================================================================================
