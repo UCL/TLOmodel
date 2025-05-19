@@ -43,8 +43,8 @@ class WastingAnalysis(BaseScenario):
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
-            number_of_draws=1,
-            runs_per_draw=1,
+            number_of_draws=4,
+            runs_per_draw=10,
         )
 
     def log_configuration(self):
@@ -79,35 +79,22 @@ class WastingAnalysis(BaseScenario):
                 stunting.Stunting(resourcefilepath=self.resources),
                 wasting.Wasting(resourcefilepath=self.resources)]
 
+    # Scaling up growth monitoring attendance scenarios
     def draw_parameters(self, draw_number, rng):
-        # Using default parameters in all cases
-        return {}
+        ### growth_monitoring_attendance_probs by age categories
+        # < 1 year
+        attendance_prob_below1y = 0.76
+        # 1-2 years
+        attendance_prob_1to2y = [0.14, 0.20, 0.25, 1.00]
+        # > 2 years
+        attendance_prob_above2y = [0.50, 0.55, 0.50, 1.00]
 
-    # def draw_parameters(self, draw_number, rng):
-    #     base_death_rate_untreated_sam__draws = [0.030, 0.023, 0.017, 0.010]
-    #     mod_wast_incidence__coef = [0.7, 0.6, 0.5, 0.4]
-    #     base_overall_mod_wast_inc_rate = 0.019
-    #     progression_to_sev_wast__coef = [1.0, 1.25, 1.5]
-    #     progression_severe_wasting_monthly_props_by_agegp = [0.3082, 0.8614, 0.4229, 0.4337, 0.2508, 0.3321]
-    #     prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.1, 0.17, 0.23, 0.3]
-    #
-    #     pars_combinations = list(itertools.product(
-    #         base_death_rate_untreated_sam__draws,
-    #         mod_wast_incidence__coef,
-    #         progression_to_sev_wast__coef,
-    #         prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam
-    #     ))
-    #
-    #     return {
-    #         'Wasting': {
-    #             'base_death_rate_untreated_SAM': pars_combinations[draw_number][0],
-    #             'base_overall_inc_rate_wasting': base_overall_mod_wast_inc_rate * pars_combinations[draw_number][1] ,
-    #             'progression_severe_wasting_monthly_by_agegp': [s * pars_combinations[draw_number][2] for \
-    #                                                s in progression_severe_wasting_monthly_props_by_agegp],
-    #             'prob_death_after_SAMcare': ((pars_combinations[draw_number][0] * pars_combinations[draw_number][3]) /
-    #                                          (1-0.738))
-    #         }
-    #     }
+        return {
+            'Wasting': {
+                'growth_monitoring_attendance_prob_agecat':
+                    [attendance_prob_below1y, attendance_prob_1to2y[draw_number], attendance_prob_above2y[draw_number]]
+            }
+        }
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
