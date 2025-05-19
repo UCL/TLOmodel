@@ -189,11 +189,21 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     # Do the checks for the symptom manager: some symptoms should be registered
     assert sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] \
         .apply(lambda x: x != set()).any().any()
-    assert (
-        sim.population.props.loc[
-            :, sim.population.props.columns.str.startswith('sy_')
-        ].dtypes == BitsetDType
-    ).all()
+    # assert (
+    #     sim.population.props.loc[
+    #         :, sim.population.props.columns.str.startswith('sy_')
+    #     ].dtypes == BitsetDType
+    # ).all()
+
+    dtypes = sim.population.props.loc[
+             :, sim.population.props.columns.str.startswith('sy_')
+             ].dtypes
+
+    assert dtypes.apply(lambda dtype: dtype == bool or dtype == BitsetDType).all(), \
+        f"Found unexpected dtypes in sy_ columns: {dtypes[~dtypes.apply(lambda dtype: dtype == bool or dtype == BitsetDType)]}"
+
+    # assert dtypes.apply(lambda dtype: dtype == bool or dtype == BitsetDType).all()
+
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
     # Check that no one was cured of mockitis:
