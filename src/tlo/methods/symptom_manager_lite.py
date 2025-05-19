@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, Dict, Set
+from typing import List, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -15,10 +15,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
-from tlo.util import BitsetHandler, BitsetDType
-
-if TYPE_CHECKING:
-    from tlo.population import IndividualProperties
+from tlo.util import BitsetDType, BitsetHandler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
