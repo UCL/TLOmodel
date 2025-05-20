@@ -22,40 +22,18 @@ total_time_start = time.time()
 
 # ####### TO SET #######################################################################################################
 scenario_filename = 'wasting_analysis__minimal_model'
-outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting")
+outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios")
+scenario_type = 'GM' # GM stands for scaling up Growth Monitoring attendance
 legend_fontsize = 12
 title_fontsize = 16
 ########################################################################################################################
 
-def create_calib_outcome_csv(sim_results_folder_path_str):
+class WastingScenarioAnalyses:
     """
-    Creates a new empty csv file with the header if it doesn't exist yet.
-    :return:
-    """
-    csv_file_name = str(sim_results_folder_path_str).replace(str(outputs_path), '').lstrip('/') + \
-                    "_model_calib-data_intersect_bool"
-    csv_file_path = sim_results_folder_path_str / f"{csv_file_name}.csv"
-
-    if not csv_file_path.exists():
-        age_groups = [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]
-        calib_ys = [2015, 2019]
-        wast_type_agegp = [f'{wast_type}_wast__{low_bound}_{high_bound}mo' for wast_type in ['any', 'sev'] for
-                           low_bound, high_bound in age_groups]
-        year_wast_age_grps = [f'{year}__{wast_age_grp}' for year in calib_ys for wast_age_grp in wast_type_agegp]
-        sum_year_prev_calib_points = [f'{year}__sum_prev_calib_points' for year in calib_ys]
-
-        with open(csv_file_path, 'w') as csv_file:
-            csv_file.write(
-                'draw,run,' + ','.join(year_wast_age_grps) + ',deaths_2010_2014,deaths_2015_2019,' +
-                ','.join(sum_year_prev_calib_points) + ',sum_prev_calib_points,sum_all_calib_points\n'
-            )
-
-class WastingAnalyses:
-    """
-    This class looks at plotting all important outputs from the wasting module
+    This class looks at plotting all important outcomes from the scenario runs.
     """
 
-    def __init__(self, sim_results_folder_path_str, in_datestamp, in_draw_nmb, in_run_nmb, in_png=False):
+    def __init__(self, in_scenario_type, sim_results_folder_path_str, in_datestamp, in_draw_nmb, in_run_nmb, in_png=False):
         self.outcomes_folder_path = sim_results_folder_path_str
         self.datestamp = in_datestamp
         self.draw_nmb = in_draw_nmb
@@ -804,56 +782,59 @@ if __name__ == "__main__":
     # Path to the resource files used by the disease and intervention methods
     resources_path = Path("./resources")
 
-    # Find sim_results_folder_path associated with a given batch_file (and get most recent [-1])
-    sim_results_folder_path = get_scenario_outputs(scenario_filename, outputs_path)[-1]
-    sim_results_folder_name = sim_results_folder_path.name
+    # Find scenario_results_folder_path associated with a given batch_file (and get most recent [-1])
+    scenario_outputs_path = Path(outputs_path / scenario_type)
+    scenario_results_folder_path = get_scenario_outputs(scenario_filename, scenario_outputs_path)[-1]
+    scenario_results_folder_name = scenario_results_folder_path.name
     # Get the datestamp
-    assert sim_results_folder_name.startswith(scenario_filename + '-'),\
+    assert scenario_results_folder_name.startswith(scenario_filename + '-'),\
         "The scenario output name does not correspond with the set scenario_filename."
-    datestamp = sim_results_folder_name[(len(scenario_filename) + 1):]
+    datestamp = scenario_results_folder_name[(len(scenario_filename) + 1):]
 
-    folders = [name for name in os.listdir(sim_results_folder_path) if \
-    os.path.isdir(os.path.join(sim_results_folder_path, name)) and name.isdigit()]
+    draws_folders = [name for name in os.listdir(scenario_results_folder_path) if \
+               os.path.isdir(os.path.join(scenario_results_folder_path, name)) and name.isdigit()]
 
-    # Create a csv to write down calibration outputs
-    #  as bool values indicating whether model outcomes and calibration data intersect
-    create_calib_outcome_csv(sim_results_folder_path)
+    draw0_folder_path = os.path.join(scenario_results_folder_path, '0')
 
-    # Analyse each draw
-    # for now, we always have just one run, run 0
-    run_nmb = 0
-    for draw_nmb in range(0, len(folders)):
+    runs_folders = [name for name in os.listdir(draw0_folder_path) if \
+                    os.path.isdir(os.path.join(draw0_folder_path, name))]
+
+    # Analyse each draw with stochasticity given by runs
+    for draw_nmb in range(0, len(draws_folders)):
         print(f"Analysing {draw_nmb=} ...")
         time_start = time.time()
 
-        # initialise the wasting class
-        wasting_analyses = WastingAnalyses(str(sim_results_folder_path), datestamp, draw_nmb, run_nmb)
+        for run_nmb in range(0, len(runs_folders)):
 
-        # plot wasting incidence
-        wasting_analyses.plot_wasting_incidence()
+            # initialise the wasting class
+            wast_scenario_analyses = \
+                WastingScenarioAnalyses(scenario_type, str(scenario_results_folder_path), datestamp, draw_nmb, run_nmb)
 
-        # plot wasting incidence mod:sev proportions
-        # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
+            # plot wasting incidence
+            wast_scenario_analyses.plot_wasting_incidence()
 
-        # plot wasting length
-        # wasting_analyses.plot_wasting_length()
+            # plot wasting incidence mod:sev proportions
+            # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
 
-        # plot initial wasting prevalence
-        wasting_analyses.plot_wasting_initial_overall_prevalence()
-        wasting_analyses.plot_wasting_initial_prevalence_by_age_group()
+            # plot wasting length
+            # wasting_analyses.plot_wasting_length()
 
-        # plot prevalence through simulation
-        wasting_analyses.plot_wasting_prevalence_per_year()
-        wasting_analyses.plot_wasting_prevalence_by_age_group()
+            # plot initial wasting prevalence
+            wast_scenario_analyses.plot_wasting_initial_overall_prevalence()
+            wast_scenario_analyses.plot_wasting_initial_prevalence_by_age_group()
 
-        # plot wasting deaths as compared to GBD deaths
-        # wasting_analyses.plot_model_gbd_deaths_incl_burnin_period()
-        wasting_analyses.plot_model_gbd_deaths_excl_burnin_period()
+            # plot prevalence through simulation
+            wast_scenario_analyses.plot_wasting_prevalence_per_year()
+            wast_scenario_analyses.plot_wasting_prevalence_by_age_group()
 
-        # ### Save all figures in one pdf
-        outcome_figs_folder = sim_results_folder_path / '_outcome_figures'
-        outcome_figs_folder.mkdir(parents=True, exist_ok=True)
-        wasting_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
+            # plot wasting deaths as compared to GBD deaths
+            # wasting_analyses.plot_model_gbd_deaths_incl_burnin_period()
+            wast_scenario_analyses.plot_model_gbd_deaths_excl_burnin_period()
+
+            # ### Save all figures in one pdf
+            outcome_figs_folder = scenario_results_folder_path / '_outcome_figures'
+            outcome_figs_folder.mkdir(parents=True, exist_ok=True)
+            wast_scenario_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
 
         time_end = time.time()
         print(f"... finished in (s): {(time_end - time_start)}")
