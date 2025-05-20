@@ -1,6 +1,8 @@
+import os
 import pickle
 from collections.abc import Mapping
 from io import StringIO
+from pathlib import Path
 
 import pandas as pd
 from pytest import fixture
@@ -8,6 +10,7 @@ from pytest import fixture
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 
+resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
 @fixture(scope="session")
 def log_input():
@@ -58,7 +61,8 @@ def log_path(tmpdir_factory, log_input, class_scoped_seed):
     # imagine we have a simulation
     sim = Simulation(start_date=Date(2010, 1, 1),
                      seed=class_scoped_seed,
-                     log_config={'filename': 'logfile', 'directory': tmpdir_factory.mktemp("logs")})
+                     log_config={'filename': 'logfile', 'directory': tmpdir_factory.mktemp("logs")},
+                     resourcefilepath=resourcefilepath)
 
     # a logger connected to that simulation
     logger = logging.getLogger('tlo.test')

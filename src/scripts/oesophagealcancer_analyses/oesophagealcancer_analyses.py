@@ -53,23 +53,22 @@ def run_sim(service_availability):
         'directory': outputpath
     }
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(service_availability=service_availability),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 labour.Labour(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 oesophagealcancer.OesophagealCancer(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 newborn_outcomes.NewbornOutcomes(),
+                 postnatal_supervisor.PostnatalSupervisor()
                  )
 
     # Run the simulation
@@ -112,7 +111,7 @@ def get_summary_stats(logfile):
 
     # 4) DEATHS wrt age (total over whole simulation)
     deaths = output['tlo.methods.demography']['death']
-    deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
+    deaths['age_group'] = deaths['age'].map(demography.Demography().AGE_RANGE_LOOKUP)
 
     x = deaths.loc[deaths.cause == 'OesophagealCancer'].copy()
     x['age_group'] = x['age_group'].astype(make_age_grp_types())
@@ -188,7 +187,7 @@ plt.show()
 deaths = results_no_healthsystem['oes_cancer_deaths']
 deaths.index = deaths.index.astype(make_age_grp_types())
 # # make a series with the right categories and zero so formats nicely in the grapsh:
-agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
+agegrps = demography.Demography().AGE_RANGE_CATEGORIES
 totdeaths = pd.Series(index=agegrps, data=np.nan)
 totdeaths.index = totdeaths.index.astype(make_age_grp_types())
 totdeaths = totdeaths.combine_first(deaths).fillna(0.0)

@@ -18,9 +18,9 @@ from tlo.methods import (
 )
 
 try:
-    resources = Path(os.path.dirname(__file__)) / "../resources"
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 except NameError:
-    resources = "resources"
+    resourcefilepath = "resources"
 
 
 def check_dtypes(simulation):
@@ -45,22 +45,21 @@ log_config = {
 @pytest.fixture
 def sim(seed):
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config=None)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=None, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
     sim.register(
-        demography.Demography(resourcefilepath=resources),
-        simplified_births.SimplifiedBirths(resourcefilepath=resources),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        symptommanager.SymptomManager(resourcefilepath=resources),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-        healthburden.HealthBurden(resourcefilepath=resources),
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
         healthsystem.HealthSystem(
-            resourcefilepath=resources,
             disable=True,  # disables the health system constraints so all HSI events run
         ),
-        epi.Epi(resourcefilepath=resources),
-        measles.Measles(resourcefilepath=resources),
+        epi.Epi(),
+        measles.Measles(),
     )
 
     return sim

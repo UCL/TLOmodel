@@ -190,9 +190,8 @@ class SymptomManager(Module):
                         'NB. This is over-ridden if a module key-word argument is provided.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=None):
+    def __init__(self, name=None, spurious_symptoms=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.spurious_symptoms = None
         self.arg_spurious_symptoms = spurious_symptoms
         self._persons_with_newly_onset_symptoms = set()
@@ -224,12 +223,12 @@ class SymptomManager(Module):
         """get the column name that corresponds to the symptom_name"""
         return f'sy_{symptom_name}'
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+            pd.read_csv(resourcefilepath / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
         self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_SymptomManager.csv'))
+            pd.read_csv(resourcefilepath / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """

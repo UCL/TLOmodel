@@ -302,10 +302,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     simulation = Simulation(
-        start_date=Date(2010, 1, 1), seed=1234, log_config={"suppress_stdout": True}
+        start_date=Date(2010, 1, 1), seed=1234, log_config={"suppress_stdout": True},
+        resourcefilepath=args.resource_file_path
     )
     status_quo_parameters = get_parameters_for_status_quo()
-    simulation.register(*fullmodel.fullmodel(args.resource_file_path))
+    simulation.register(*fullmodel.fullmodel())
     internal_link_formatter = _formatters[args.output_file_path.suffix]["internal_link"]
     character_escaper = _formatters[args.output_file_path.suffix]["character_escaper"]
     module_parameter_tables, module_structured_parameters = get_parameter_tables(
