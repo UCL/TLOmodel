@@ -87,16 +87,16 @@ class WastingAnalysis(BaseScenario):
                 wasting.Wasting(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
-        base_death_rate_untreated_sam__draws = [0.033, 0.030, 0.027]
-        mod_wast_incidence__coef = [0.45, 0.40, 0.35]
+        base_death_rate_untreated_sam__draws = [0.04, 0.03, 0.02]
+        mod_wast_incidence__coef = [0.5, 0.4, 0.3]
         # base mod wast incidence rate calibrated with bathtub model
         base_overall_mod_wast_inc_rate_bathtub = 0.019
         # relative risks for age groups of mod wast incidence rates calibrated with bathtub model
         # rr_inc_rate_wasting_by_agegp = [1.00, 1.22, 1.71, 0.30, 0.40, 0.26] --- as in RFWast/parameters
-        progression_to_sev_wast__coef = [0.88, 1.00, 1.12]
+        progression_to_sev_wast__coef = [0.75, 1.0, 1.25]
         # progression rates to severe wast calibrated with bathtub model
         progression_severe_wasting_monthly_props_by_agegp = [0.3082, 0.8614, 0.4229, 0.4337, 0.2508, 0.3321]
-        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.07, 0.10, 0.13]
+        prob_death_after_SAMcare__as_prop_of_death_rate_untreated_sam = [0.05, 0.1, 0.15]
 
         pars_combinations = list(itertools.product(
             base_death_rate_untreated_sam__draws,
