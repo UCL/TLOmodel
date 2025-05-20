@@ -33,12 +33,21 @@ class WastingScenarioAnalyses:
     This class looks at plotting all important outcomes from the scenario runs.
     """
 
-    def __init__(self, in_scenario_type, sim_results_folder_path_str, in_datestamp, in_draw_nmb, in_run_nmb, in_png=False):
-        self.outcomes_folder_path = sim_results_folder_path_str
+    def __init__(self, in_scenario_type, sim_results_folder_path_str, in_datestamp, in_draw_nmb, in_png=False):
+        self.outcomes_draw_folder_path_str = sim_results_folder_path_str
         self.datestamp = in_datestamp
         self.draw_nmb = in_draw_nmb
-        self.run_nmb = in_run_nmb
+        self.run_nmb = 0
         self.png = in_png, """bool indicating whether we want to save all figures not only as pdf, but also as png"""
+
+        draw_folder_path = os.path.join(Path(scenario_results_folder_path), str(self.draw_nmb))
+
+        runs_folders = [name for name in os.listdir(draw_folder_path) if \
+                        os.path.isdir(os.path.join(draw_folder_path, name))]
+
+        for run_nmb in range(0, len(runs_folders)):
+            print(f"{run_nmb=}")
+        print("draw analysis continues ...")
 
         sim_results_folder_draw_x_run_0_path_str = sim_results_folder_path_str + f'/{draw_nmb}/{run_nmb}/'
         sim_results_file_name_prefix = scenario_filename
@@ -88,7 +97,7 @@ class WastingScenarioAnalyses:
         }
 
     def save_fig__store_pdf_file(self, fig, fig_output_name: str) -> None:
-        full_path_and_file_name = self.outcomes_folder_path + f'/{self.draw_nmb}/{self.run_nmb}/' + fig_output_name + \
+        full_path_and_file_name = self.outcomes_draw_folder_path_str + f'/{self.draw_nmb}/{self.run_nmb}/' + fig_output_name + \
                     f'_{self.draw_nmb}_{self.run_nmb}'
         if self.png: #TODO: doesn't seem to be working
             fig.savefig(full_path_and_file_name + '.png', format='png')
@@ -794,47 +803,40 @@ if __name__ == "__main__":
     draws_folders = [name for name in os.listdir(scenario_results_folder_path) if \
                os.path.isdir(os.path.join(scenario_results_folder_path, name)) and name.isdigit()]
 
-    draw0_folder_path = os.path.join(scenario_results_folder_path, '0')
-
-    runs_folders = [name for name in os.listdir(draw0_folder_path) if \
-                    os.path.isdir(os.path.join(draw0_folder_path, name))]
-
     # Analyse each draw with stochasticity given by runs
     for draw_nmb in range(0, len(draws_folders)):
         print(f"Analysing {draw_nmb=} ...")
         time_start = time.time()
 
-        for run_nmb in range(0, len(runs_folders)):
+        # initialise the wasting class
+        wast_scenario_analyses = \
+            WastingScenarioAnalyses(scenario_type, str(scenario_results_folder_path), datestamp, draw_nmb)
 
-            # initialise the wasting class
-            wast_scenario_analyses = \
-                WastingScenarioAnalyses(scenario_type, str(scenario_results_folder_path), datestamp, draw_nmb, run_nmb)
+        # plot wasting incidence
+        wast_scenario_analyses.plot_wasting_incidence()
 
-            # plot wasting incidence
-            wast_scenario_analyses.plot_wasting_incidence()
+        # plot wasting incidence mod:sev proportions
+        # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
 
-            # plot wasting incidence mod:sev proportions
-            # wasting_analyses.plot_wasting_incidence_mod_to_sev_props()
+        # plot wasting length
+        # wasting_analyses.plot_wasting_length()
 
-            # plot wasting length
-            # wasting_analyses.plot_wasting_length()
+        # plot initial wasting prevalence
+        wast_scenario_analyses.plot_wasting_initial_overall_prevalence()
+        wast_scenario_analyses.plot_wasting_initial_prevalence_by_age_group()
 
-            # plot initial wasting prevalence
-            wast_scenario_analyses.plot_wasting_initial_overall_prevalence()
-            wast_scenario_analyses.plot_wasting_initial_prevalence_by_age_group()
+        # plot prevalence through simulation
+        wast_scenario_analyses.plot_wasting_prevalence_per_year()
+        wast_scenario_analyses.plot_wasting_prevalence_by_age_group()
 
-            # plot prevalence through simulation
-            wast_scenario_analyses.plot_wasting_prevalence_per_year()
-            wast_scenario_analyses.plot_wasting_prevalence_by_age_group()
+        # plot wasting deaths as compared to GBD deaths
+        # wasting_analyses.plot_model_gbd_deaths_incl_burnin_period()
+        wast_scenario_analyses.plot_model_gbd_deaths_excl_burnin_period()
 
-            # plot wasting deaths as compared to GBD deaths
-            # wasting_analyses.plot_model_gbd_deaths_incl_burnin_period()
-            wast_scenario_analyses.plot_model_gbd_deaths_excl_burnin_period()
-
-            # ### Save all figures in one pdf
-            outcome_figs_folder = scenario_results_folder_path / '_outcome_figures'
-            outcome_figs_folder.mkdir(parents=True, exist_ok=True)
-            wast_scenario_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
+        # ### Save all figures in one pdf
+        outcome_figs_folder = scenario_results_folder_path / '_outcome_figures'
+        outcome_figs_folder.mkdir(parents=True, exist_ok=True)
+        wast_scenario_analyses.plot_all_figs_in_one_pdf(outcome_figs_folder)
 
         time_end = time.time()
         print(f"... finished in (s): {(time_end - time_start)}")
