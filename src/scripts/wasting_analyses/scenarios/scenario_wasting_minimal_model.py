@@ -42,7 +42,7 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=30_000,
+            initial_population_size=4_000,
             number_of_draws=4,
             runs_per_draw=10,
         )
@@ -91,7 +91,7 @@ class WastingAnalysis(BaseScenario):
 
         return {
             'Wasting': {
-                'growth_monitoring_attendance_prob_agecat':
+                'interv_growth_monitoring_attendance_prob_agecat':
                     [attendance_prob_below1y, attendance_prob_1to2y[draw_number], attendance_prob_above2y[draw_number]]
             }
         }
