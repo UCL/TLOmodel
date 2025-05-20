@@ -142,7 +142,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
         'growth_monitoring_attendance_prob_agecat': Parameter(
             Types.LIST, 'probability to attend the growth monitoring for age categories'),
-        # recovery due to treatment
+        # treatment
         'recovery_rate_with_soy_RUSF': Parameter(
             Types.REAL, 'probability of recovery from MAM following treatment with soy RUSF'),
         'recovery_rate_with_CSB++': Parameter(
@@ -163,9 +163,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Therapeutic Care '
                         '(ITC) for complicated SAM---modelled to include the Rehabilitation Phase, ie to cover OTP as '
                         'well'),
-        # treatment impacts
         'prob_death_after_SAMcare': Parameter(
             Types.REAL, 'probability of dying from SAM after receiving care if not fully recovered'),
+        # interventions
+        'interv_start_year': Parameter(
+            Types.INT, 'the year when the interventions are activated by overwriting the relevant '
+                       'parameters.'),
+        'interv_growth_monitoring_attendance_prob_agecat': Parameter(
+            Types.LIST, 'probability to attend the growth monitoring for age categories  following the '
+                        'activation of the intervention(s).'),
     }
 
     PROPERTIES = {
@@ -383,6 +389,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         * the first annual logging event,
         * the first monthly incidence polling event,
         * the first growth monitoring for all children under 5.
+        * Activation ('SWITCH ON') of interventions.
 
         :param sim:
         """
@@ -390,6 +397,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=1))
         # Schedule growth monitoring for all children under 5
         self.schedule_growth_monitoring_on_initiation()
+        sim.schedule_event(Wasting_ActivateInterventionsEvent(self),
+                           Date(year=self.parameters['interv_start_year'], month=1, day=1))
 
         # Retrieve the consumables codes and amounts of the consumables used
         self.cons_codes = self.get_consumables_for_each_treatment()

@@ -27,6 +27,7 @@ from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.wasting import (
     HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM,
     HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
+    Wasting_ActivateInterventionsEvent,
     Wasting_FullRecovery_Event,
     Wasting_IncidencePoll,
     Wasting_ProgressionToSevere_Event,
@@ -1063,3 +1064,31 @@ def test_no_wasting_after_recent_recovery(tmpdir):
 
     # Check properties of this individual: should still be well
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well'
+
+def test_default_interv_pars(tmpdir):
+    """ Test that default values of intervention parameters are the same as the parameters prior the intervention. """
+    sim = get_sim(tmpdir)
+    wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
+
+    assert p['growth_monitoring_attendance_prob_agecat'] == p['interv_growth_monitoring_attendance_prob_agecat'], \
+        ("The parameters 'growth_monitoring_attendance_prob_agecat' and "
+         "'interv_growth_monitoring_attendance_prob_agecat' do not match.")
+
+def test_interventions_activation(tmpdir):
+    """ Test that Wasting_ActivateInterventionsEvent correctly overwrites parameters. """
+    sim = get_sim(tmpdir)
+    wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
+
+    # Ensure the parameters differ from original value to test overwriting
+    p['interv_growth_monitoring_attendance_prob_agecat'] = [0.9, 0.8, 0.7]
+    assert p['growth_monitoring_attendance_prob_agecat'] != p['interv_growth_monitoring_attendance_prob_agecat']
+
+    # Apply the interventions activation event
+    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
+    activation_event.apply(sim.population)
+
+    # Verify that the parameters have been overwritten
+    assert p['growth_monitoring_attendance_prob_agecat'] == p['interv_growth_monitoring_attendance_prob_agecat'], \
+        "The parameter was not correctly overwritten by the activation event."
