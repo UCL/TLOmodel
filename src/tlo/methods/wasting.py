@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -135,7 +135,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
         'growth_monitoring_attendance_prob_agecat': Parameter(
             Types.LIST, 'probability to attend the growth monitoring for age categories'),
-        # recovery due to treatment/interventions
+        # treatment
         'recovery_rate_with_soy_RUSF': Parameter(
             Types.REAL, 'probability of recovery from MAM following treatment with soy RUSF'),
         'recovery_rate_with_CSB++': Parameter(
@@ -155,9 +155,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'tx_length_weeks_InpatientSAM': Parameter(
             Types.REAL, 'number of weeks the patient receives treatment in the Inpatient Care for complicated'
                         ' SAM before being discharged if they do not die beforehand'),
-        # treatment/intervention outcomes
         'prob_death_after_SAMcare': Parameter(
             Types.REAL, 'probability of dying from SAM after receiving care if not fully recovered'),
+        # interventions
+        'interv_start_year': Parameter(
+            Types.INT, 'the year when the interventions are activated by overwriting the relevant '
+                       'parameters.'),
+        'interv_growth_monitoring_attendance_prob_agecat': Parameter(
+            Types.LIST, 'probability to attend the growth monitoring for age categories  following the '
+                        'activation of the intervention(s).'),
     }
 
     PROPERTIES = {
@@ -324,15 +330,19 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     def initialise_simulation(self, sim):
         """Prepares for simulation. Schedules:
-        * the first growth monitoring to happen straight away, scheduled monthly to detect new cases for treatment.
-        * the main incidence polling event.
-        * the main logging event.
+        * Logging of initial prevalence and population sizes.
+        * Immediate initiation of growth monitoring, with monthly scheduling to detect new cases for treatment.
+        * The main incidence polling event.
+        * The main logging event.
+        * Activation ('SWITCH ON') of interventions.
         """
 
         sim.schedule_event(Wasting_InitLoggingEvent(self), sim.date)
         sim.schedule_event(Wasting_InitiateGrowthMonitoring(self), sim.date)
         sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=3))
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1) - DateOffset(days=1))
+        sim.schedule_event(Wasting_ActivateInterventionsEvent(self),
+                           Date(year=self.parameters['interv_start_year'], month=1, day=1))
 
         # Retrieve the consumables codes and amounts of the consumables used
         self.cons_codes = self.get_consumables_for_each_treatment()
@@ -1945,3 +1955,20 @@ class Wasting_InitLoggingEvent(Event, PopulationScopeEventMixin):
         # log pop sizes
         logger.info(key='init pop sizes', data=pop_sizes_dict)
 
+class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
+    """
+    This event activates the intervention(s) by overwriting the relevant parameters with values set for draws in the
+    scenario file. The default values are set as the original parameters prior intervention(s), hence if scenario does
+    not define any 'interv_' parameter, no intervention is activated.
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+        assert isinstance(module, Wasting)
+
+    def apply(self, population):
+        p = self.module.parameters
+
+        # Overwrite growth monitoring attendance probs
+        self.module.parameters['growth_monitoring_attendance_prob_agecat'] = \
+            p['interv_growth_monitoring_attendance_prob_agecat']
