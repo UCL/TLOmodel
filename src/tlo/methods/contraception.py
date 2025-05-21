@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from numpy.core.numeric import True_
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
@@ -592,7 +593,7 @@ class Contraception(Module):
 
         return processed_params
 
-    def update_params_for_interventions(self):
+    def update_params_for_interventions(self, initiation, after_birth):
         """Updates process parameters to enable FP interventions."""
 
         processed_params = self.processed_params
@@ -617,17 +618,23 @@ class Contraception(Module):
                 p_start_after_birth_with_interv.mul(self.parameters['Interventions_PPFP'].loc[0])
 
             # Return reduced prob of 'not_using'
-            p_start_after_birth_with_interv = pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
-                                                        index=['not_using']).append(p_start_after_birth_with_interv)
+            # p_start_after_birth_with_interv = pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
+            #                                             index=['not_using']).append(p_start_after_birth_with_interv)
+
+            p_start_after_birth_with_interv = pd.concat([pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
+                                                        index=['not_using']), p_start_after_birth_with_interv])
 
             return p_start_after_birth_with_interv
 
-        processed_params['p_start_per_month'] = \
-            contraception_initiation_with_interv(processed_params['p_start_per_month'])
-        processed_params['p_start_after_birth_below30'] = \
-            contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_below30'])
-        processed_params['p_start_after_birth_30plus'] = \
-            contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_30plus'])
+        if initiation:
+            processed_params['p_start_per_month'] = \
+                contraception_initiation_with_interv(processed_params['p_start_per_month'])
+
+        if after_birth:
+            processed_params['p_start_after_birth_below30'] = \
+                contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_below30'])
+            processed_params['p_start_after_birth_30plus'] = \
+                contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_30plus'])
 
         return processed_params
 
@@ -1307,8 +1314,18 @@ class StartInterventions(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
+        initiation = True
+        after_birth = True
+
         # Update module parameters to enable interventions
-        self.module.processed_params = self.module.update_params_for_interventions()
+        if 'ServiceIntegration' in self.sim.modules:
+            if 'fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening']:
+                after_birth = False
+            if 'fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_mch']:
+                initiation = False
+
+        self.module.processed_params = self.module.update_params_for_interventions(initiation=initiation,
+                                                                                   after_birth=after_birth)
 
 
 # -----------------------------------------------------------------------------------------------------------
