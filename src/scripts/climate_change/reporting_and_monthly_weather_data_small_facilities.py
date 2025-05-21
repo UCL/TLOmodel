@@ -9,8 +9,8 @@ from scipy.spatial.distance import cdist
 
 # Data accessed from https://dhis2.health.gov.mw/dhis-web-data-visualizer/#/YiQK65skxjz
 # Reporting rate is expected reporting vs actual reporting
-ANC = False
-Inpatient = True
+ANC = True
+Inpatient = False
 multiplier = 1000
 baseline = True
 baseline_all_years = True
