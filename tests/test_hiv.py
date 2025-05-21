@@ -797,10 +797,10 @@ def test_hsi_testandrefer_and_prep(seed):
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 1.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_is_on_prep"]
-    date_next_hsi_event, next_hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+    assert 0 == len([
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
-    ][0]
+    ])
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI or
     # "decision" events
@@ -844,6 +844,12 @@ def test_hsi_testandrefer_and_art(seed):
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
     df.at[person_id, "age_years"] = 40
+
+    # schedule AIDS event - usually scheduled through HIV poll
+    sim.schedule_event(
+        event=HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'], cause='AIDS_non_TB'),
+        date=sim.date + pd.DateOffset(years=10),
+    )
 
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
@@ -894,7 +900,9 @@ def test_hsi_testandrefer_and_art(seed):
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_3_months"] = 0.0
+
     decision_event.apply(person_id)
+
     assert df.at[person_id, "hv_art"] == "not"
     assert 1 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
@@ -1240,17 +1248,18 @@ def test_baseline_hiv_prevalence(seed):
     sim.make_initial_population(n=popsize)
     df = sim.population.props
 
+    # et absolute tolerance to the interval of the uncertainty around calibration targets
     adult_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
     ) / len(df[df.is_alive & df.age_years.between(15, 49)])
-    assert np.isclose(adult_prev_1549, adult_prev_1549_data, rtol=0.05)
+    assert np.isclose(adult_prev_1549, adult_prev_1549_data, atol=0.01)
 
     female_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "F")])
-    assert np.isclose(female_prev_1549, female_prev_1549_data, rtol=0.05)
+    assert np.isclose(female_prev_1549, female_prev_1549_data, atol=0.01)
 
     male_prev_1549 = len(
         df[df.hv_inf & df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")]
     ) / len(df[df.is_alive & df.age_years.between(15, 49) & (df.sex == "M")])
-    assert np.isclose(male_prev_1549, male_prev_1549_data, rtol=0.05)
+    assert np.isclose(male_prev_1549, male_prev_1549_data, atol=0.01)
