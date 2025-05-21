@@ -48,16 +48,16 @@ class TestScenario(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2051, 1, 1)  # need to log to mid-year 2050
-        self.pop_size = 100_000
+        self.end_date = Date(2046, 1, 1)  #todo need to log to mid-year 2050
+        self.pop_size = 150_000
         # self.scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         # self.number_of_draws = len(self.scenarios)
         self.number_of_draws = 1
-        self.runs_per_draw = 1
+        self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
-            'filename': 'longterm_mihpsa_runs',
+            'filename': 'mihpsa_deaths_runs',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
