@@ -12,17 +12,15 @@ from scipy.spatial.distance import cdist
 ANC = True
 Inpatient = False
 multiplier = 1000
-baseline = True
-baseline_all_years = True
+baseline = False
+baseline_all_years = False
 if ANC:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/ANC_data/ANC_data_2011_2024.csv')
 elif Inpatient:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Inpatient_Data/HMIS_Total_Number_Admissions.csv')
 else:
     reporting_data = pd.read_csv('/Users/rem76/Desktop/Climate_change_health/Data/Reporting_Rate/Reporting_Rate_by_smaller_facilities_2011_2024.csv') #January 2011 - January 2024
-# ANALYSIS DONE IN OCTOBER 2024 - so drop October, November, December 2024
-columns_to_drop = reporting_data.columns[reporting_data.columns.str.endswith(('October 2024', 'November 2024', 'December 2024'))]
-reporting_data = reporting_data.drop(columns=columns_to_drop)
+
 # drop NAs
 reporting_data = reporting_data.dropna(subset = reporting_data.columns[3:], how='all') # drops 90 clinics
 ### now aggregate over months
@@ -40,6 +38,7 @@ dates = pd.to_datetime(months, format='%B %Y', errors='coerce')
 months = dates.sort_values().strftime('%B %Y').tolist() # puts them in ascending order
 for month in months:
     columns_of_interest_all_metrics = [reporting_data.columns[1]] + reporting_data.columns[reporting_data.columns.str.endswith(month)].tolist()
+    print(columns_of_interest_all_metrics)
     data_of_interest_by_month = reporting_data[columns_of_interest_all_metrics]
     numeric_data = data_of_interest_by_month.select_dtypes(include='number')
     monthly_mean_by_facility = numeric_data.mean(axis=1)
