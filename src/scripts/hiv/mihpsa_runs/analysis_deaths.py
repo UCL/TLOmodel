@@ -169,7 +169,7 @@ results_deaths = compute_summary_statistics(extract_results(
                     "older_adult"
                 )
             ),
-            has_had_art=df["date_treated"].notna()  # True if date_treated not NaT, else False
+            has_had_art=df["hv_date_first_ART_initiation"].notna()  # True if date_treated not NaT, else False
         )
         .query("label == 'AIDS'")
         .groupby([
@@ -195,21 +195,24 @@ with pd.ExcelWriter(results_folder / "deaths_output.xlsx", engine='openpyxl') as
     results_deaths.to_excel(writer, sheet_name='Sheet1', index=False)
 
 
+############################################################################
+# Get deaths by filters
 
-########## 15-34 ######################################
-
-
+# results already filtered by label=AIDS
 def get_deaths_by_filters(
     df,
     age_group=None,
-    art_status=None,
     hiv_diagnosed=None,
-    on_ART_more_than_6months=None,
+    art_status=None,
+    date_first_ART_initiation=None,
+    date_ART_reinitiation=None,
+    less_than_6months_since_art_start=None,
+    less_than_6months_since_art_reinitiation=None,
+    less_than_6months_since_art_start_or_reinitiation=None,
     aids_status=None,
     aids_at_art_start=None,
-    hiv_status=True,
-    label='AIDS',  # default filter to AIDS label
-    has_had_art=None  # new filter parameter
+    aids_at_art_reinitiation=None,
+    has_had_art=None
 ):
 
     df_filtered = df.copy()
@@ -226,14 +229,18 @@ def get_deaths_by_filters(
     # Combine all filters including the new one
     filters = (
         apply_filter('age_group', age_group) &
-        apply_filter('art_status', art_status) &
         apply_filter('hiv_diagnosed', hiv_diagnosed) &
-        apply_filter('on_ART_more_than_6months', on_ART_more_than_6months) &
+        apply_filter('art_status', art_status) &
+        apply_filter('date_first_ART_initiation', date_first_ART_initiation) &
+        apply_filter('date_ART_reinitiation', date_ART_reinitiation) &
+        apply_filter('less_than_6months_since_art_start', less_than_6months_since_art_start) &
+        apply_filter('less_than_6months_since_art_reinitiation', less_than_6months_since_art_reinitiation) &
+        apply_filter('less_than_6months_since_art_start_or_reinitiation',
+                     less_than_6months_since_art_start_or_reinitiation) &
         apply_filter('aids_status', aids_status) &
         apply_filter('aids_at_art_start', aids_at_art_start) &
-        apply_filter('hiv_status', hiv_status) &
-        apply_filter('label', label) &
-        apply_filter('has_had_art', has_had_art)  # new filter applied here
+        apply_filter('aids_at_art_reinitiation', aids_at_art_reinitiation) &
+        apply_filter('has_had_art', has_had_art)
     )
 
     df_filtered = df_filtered[filters]
@@ -261,262 +268,113 @@ def get_deaths_by_filters(
     return grouped
 
 
-
-
-all_young_adult = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-)
-
-deaths_no_art_no_dx = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='not',
-    hiv_diagnosed=False
-)
-
-deaths_no_art_dx = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='not',
-    hiv_diagnosed=True
-)
-
-deaths_recent_art_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=False,
-    aids_status=False,
-    aids_at_art_start=True,
-)
-
-deaths_recent_art_no_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=False,
-    aids_status=False,
-    aids_at_art_start=False,
-)
-
-
-deaths_art_notVS = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='on_not_VL_suppressed',
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=None,
-    aids_status=None,
-    aids_at_art_start=None,
-)
-
-deaths_art_VS = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='on_VL_suppressed',
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=None,
-    aids_status=None,
-    aids_at_art_start=None,
-)
-
-deaths_art_not_6Months = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='on_not_VL_suppressed',
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=False,
-    aids_status=None,
-    aids_at_art_start=None,
-)
-
-deaths_art_not_6MonthsVS = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='on_VL_suppressed',
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=False,
-    aids_status=None,
-    aids_at_art_start=None,
-)
-
-deaths_art_6Months = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='on_not_VL_suppressed',
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=True,
-    aids_status=None,
-    aids_at_art_start=None,
-)
-
-deaths_art_6MonthsVS = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='on_VL_suppressed',
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=True,
-    aids_status=None,
-    aids_at_art_start=None,
-)
-
-deaths_art_interr = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status='not',
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=None,
-    aids_status=None,
-    aids_at_art_start=None,
-    has_had_art=True
-)
-
-deaths_art_curr_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=None,
-    aids_status=True,
-    aids_at_art_start=None,
-    has_had_art=None
-)
-
-deaths_art_not_curr_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=None,
-    aids_status=False,
-    aids_at_art_start=None,
-    has_had_art=None
-)
-
-deaths_recent_art_curr_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=False,
-    aids_status=True,
-    aids_at_art_start=None,
-    has_had_art=None
-)
-
-deaths_recent_art_curr_no_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=False,
-    aids_status=False,
-    aids_at_art_start=None,
-    has_had_art=None
-)
-
-deaths_art_curr_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=True,
-    aids_status=True,
-    aids_at_art_start=None,
-    has_had_art=None
-)
-
-deaths_art_curr_no_aids = get_deaths_by_filters(
-    results_deaths,
-    age_group='young_adult',
-    art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-    hiv_diagnosed=True,
-    on_ART_more_than_6months=True,
-    aids_status=False,
-    aids_at_art_start=None,
-    has_had_art=None
-)
-
 ############
+# todo include new filter for those <6 months after 1st initiation
 # Define all filter sets as a list of tuples: (name, filter_kwargs)
 filter_definitions = [
     ('all', {}),
-    ('no_art_no_dx', dict(art_status='not', hiv_diagnosed=False)),
-    ('no_art_dx', dict(art_status='not', hiv_diagnosed=True)),
-    ('recent_art_aids', dict(
-        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-        hiv_diagnosed=True,
-        on_ART_more_than_6months=False,
-        aids_status=False,
-        aids_at_art_start=True
-    )),
-    ('recent_art_no_aids', dict(
-        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-        hiv_diagnosed=True,
-        on_ART_more_than_6months=False,
-        aids_status=False,
-        aids_at_art_start=False
-    )),
-    ('art_notVS', dict(
-        art_status='on_not_VL_suppressed',
-        hiv_diagnosed=True
-    )),
-    ('art_VS', dict(
-        art_status='on_VL_suppressed',
-        hiv_diagnosed=True
-    )),
-    ('art_not_6Months', dict(
-        art_status='on_not_VL_suppressed',
-        hiv_diagnosed=True,
-        on_ART_more_than_6months=False
-    )),
-    ('art_not_6MonthsVS', dict(
-        art_status='on_VL_suppressed',
-        hiv_diagnosed=True,
-        on_ART_more_than_6months=False
-    )),
-    ('art_6Months', dict(
-        art_status='on_not_VL_suppressed',
-        hiv_diagnosed=True,
-        on_ART_more_than_6months=True
-    )),
-    ('art_6MonthsVS', dict(
-        art_status='on_VL_suppressed',
-        hiv_diagnosed=True,
-        on_ART_more_than_6months=True
-    )),
-    ('art_interr', dict(
+
+    ('no_art_no_dx', dict(
+        hiv_diagnosed=False,
         art_status='not',
+        on_ART_more_than_6months=False,
+        has_had_art=False,)),
+
+    ('dx_without_art', dict(hiv_diagnosed=True,
+                       art_status='not',
+                       on_ART_more_than_6months=False,
+                       has_had_art=False)),
+
+    ('on_art_less_6_months_aids_at_art_start', dict(
         hiv_diagnosed=True,
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        on_ART_more_than_6months=False,
+        aids_at_art_start=True,
         has_had_art=True
     )),
-    ('art_curr_aids', dict(
-        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+
+    ('on_art_less_6_months_not_aids_at_art_start', dict(
         hiv_diagnosed=True,
-        on_ART_more_than_6months=None,
-        aids_status=True
-    )),
-    ('art_not_curr_aids', dict(
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-        hiv_diagnosed=True,
-        on_ART_more_than_6months=None,
-        aids_status=False
+        on_ART_more_than_6months=False,
+        aids_at_art_start=False,
+        has_had_art=True
     )),
-    ('recent_art_curr_aids', dict(
+
+    ('on_art_lowVL', dict(
+        hiv_diagnosed=True,
+        art_status='on_VL_suppressed',
+        has_had_art=True
+    )),
+
+    ('on_art_highVL', dict(
+        hiv_diagnosed=True,
+        art_status='on_not_VL_suppressed',
+        has_had_art=True
+    )),
+
+    ('art_less_than_6Months_lowVL', dict(
+        hiv_diagnosed=True,
+        art_status='on_VL_suppressed',
+        on_ART_more_than_6months=False,
+        has_had_art=True
+    )),
+
+    ('art_less_than_6Months_highVL', dict(
+        hiv_diagnosed=True,
+        art_status='on_not_VL_suppressed',
+        on_ART_more_than_6months=False,
+        has_had_art=True
+    )),
+
+    ('art_more_than_6Months_lowVL', dict(
+        hiv_diagnosed=True,
+        art_status='on_VL_suppressed',
+        on_ART_more_than_6months=True,
+        has_had_art=True
+    )),
+
+    ('art_more_than_6Months_highVL', dict(
+        hiv_diagnosed=True,
+        art_status='on_not_VL_suppressed',
+        on_ART_more_than_6months=True,
+        has_had_art=True
+    )),
+
+    ('art_interr', dict(
+        hiv_diagnosed=True,
+        art_status='not',
+        has_had_art=True
+    )),
+
+    ('art_curr_CD4_less_than200', dict(
+        hiv_diagnosed=True,
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        aids_status=True,
+        has_had_art=True
+    )),
+
+    ('art_curr_CD4_more_than200', dict(
+        hiv_diagnosed=True,
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        aids_status=False,
+        has_had_art=True
+    )),
+
+    ('art_less_than_6months_curr_aids', dict(
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
         hiv_diagnosed=True,
         on_ART_more_than_6months=False,
         aids_status=True
     )),
-    ('recent_art_curr_no_aids', dict(
+
+    ('art_less_than_6months_no_aids', dict(
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
         hiv_diagnosed=True,
         on_ART_more_than_6months=False,
         aids_status=False
     )),
+
     ('art_curr_no_aids', dict(
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
         hiv_diagnosed=True,

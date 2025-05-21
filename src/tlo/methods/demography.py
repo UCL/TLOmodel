@@ -525,7 +525,26 @@ class Demography(Module):
         logger.info(key='death', data=data_to_log_for_each_death)
 
         # todo additional info to log for MIHPSA
-        time_on_ART = person['hv_date_treated'] >= (self.sim.date - pd.DateOffset(months=6))
+        # less than 6 months since ART start
+        if pd.isna(person['hv_date_first_ART_initiation']):
+            less_than_6months_since_art_start = None
+        else:
+            less_than_6months_since_art_start = person['hv_date_first_ART_initiation'] >= (
+                    self.sim.date - pd.DateOffset(months=6))
+
+        # less than 6 months since ART re-initiation
+        if pd.isna(person['hv_date_ART_reinitiation']):
+            less_than_6months_since_art_reinitiation = None
+        else:
+            less_than_6months_since_art_reinitiation = person['hv_date_ART_reinitiation'] >= (
+                    self.sim.date - pd.DateOffset(months=6))
+
+        # less than 6 months on ART either since start or re-initiation
+        if less_than_6months_since_art_reinitiation is not None:
+            less_than_6months_since_art_start_or_reinitiation = less_than_6months_since_art_reinitiation
+        else:
+            less_than_6months_since_art_start_or_reinitiation = less_than_6months_since_art_start
+
         has_aids = True if "aids_symptoms" in self.sim.modules['SymptomManager'].has_what(person_id=individual_id) else False
 
         # Log the death
@@ -533,16 +552,19 @@ class Demography(Module):
         mihpsa_data_to_log_for_each_death = {
             'age': person['age_years'],
             'sex': person['sex'],
-            'cause': str(cause),
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
             'hiv_status': person['hv_inf'],
             'hiv_diagnosed': person['hv_diagnosed'],
             'art_status': person['hv_art'],
-            'date_treated': person['hv_date_treated'],
-            'on_ART_more_than_6months': time_on_ART,
+            'date_first_ART_initiation': person['hv_date_first_ART_initiation'],
+            'date_ART_reinitiation': person['hv_date_ART_reinitiation'],
+            'less_than_6months_since_art_start': less_than_6months_since_art_start,
+            'less_than_6months_since_art_reinitiation': less_than_6months_since_art_reinitiation,
+            'less_than_6months_since_art_start_or_reinitiation': less_than_6months_since_art_start_or_reinitiation,
             'aids_status': has_aids,
-            'aids_at_art_start': person['hv_aids_at_art_start']
+            'aids_at_art_start': person['hv_aids_at_art_start'],
+            'aids_at_art_reinitiation': person['hv_aids_at_art_reinitiation']
         }
 
         logger.info(key='death_MIHPSA', data=mihpsa_data_to_log_for_each_death)

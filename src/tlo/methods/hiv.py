@@ -115,6 +115,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "whether person has AIDS at time of starting ART"
         ),
+        "hv_aids_at_art_reinitiation": Property(
+            Types.BOOL,
+            "whether person has AIDS at time of re-initiating ART"
+        ),
         "hv_on_cotrimoxazole": Property(
             Types.BOOL,
             "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
@@ -134,7 +138,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Dates on which things have happened:
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
-        "hv_date_treated": Property(Types.DATE, "date hiv treatment started"),
+        "hv_date_first_ART_initiation": Property(Types.DATE, "date hiv treatment started"),
+        "hv_date_ART_reinitiation": Property(Types.DATE, "date hiv treatment restarted after default"),
         "hv_date_last_ART": Property(Types.DATE, "date of last ART dispensation"),
         "hv_VMMC_in_last_year": Property(Types.BOOL, "whether VMMC was performed in the last year"),
         "hv_days_on_prep_AGYW": Property(Types.INT, "number of days spent on prep per logger time interval for AGYW"),
@@ -652,6 +657,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "hv_inf"] = False
         df.loc[df.is_alive, "hv_art"] = "not"
         df.loc[df.is_alive, "hv_aids_at_art_start"] = False
+        df.loc[df.is_alive, "hv_aids_at_art_reinitiation"] = False
         df.loc[df.is_alive, "hv_is_on_prep"] = False
         df.loc[df.is_alive, "hv_behaviour_change"] = False
         df.loc[df.is_alive, "hv_diagnosed"] = False
@@ -660,13 +666,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Dates on which things have happened
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
-        df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
+        df.loc[df.is_alive, "hv_date_first_ART_initiation"] = pd.NaT
+        df.loc[df.is_alive, "hv_date_ART_reinitiation"] = pd.NaT
         df.loc[df.is_alive, "hv_date_last_ART"] = pd.NaT
         df.loc[df.is_alive, "hv_VMMC_in_last_year"] = False
         df.loc[df.is_alive, "hv_days_on_prep_AGYW"] = 0
         df.loc[df.is_alive, "hv_days_on_prep_FSW"] = 0
 
-        # Launch sub-routines for allocating the right number of people into each category
+         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
 
         self.initialise_baseline_art(population)  # allocate baseline art coverage
@@ -847,7 +854,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             days = self.rng.randint(low=1, high=self.parameters['dispensation_period_months'] * 30.5, dtype=np.int64)
 
             date_treated = (params['dispensation_period_months'] * 30.5) - days
-            df.at[person, "hv_date_treated"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
+            df.at[person, "hv_date_first_ART_initiation"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
             df.at[person, "hv_date_last_ART"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
 
             self.sim.schedule_event(
@@ -1356,6 +1363,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
         df.at[child_id, "hv_aids_at_art_start"] = False
+        df.at[child_id, "hv_aids_at_art_reinitiation"] = False
         df.at[child_id, "hv_on_cotrimoxazole"] = False
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_behaviour_change"] = False
@@ -1365,7 +1373,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
         df.at[child_id, "hv_last_test_date"] = pd.NaT
-        df.at[child_id, "hv_date_treated"] = pd.NaT
+        df.at[child_id, "hv_date_first_ART_initiation"] = pd.NaT
+        df.at[child_id, "hv_date_ART_reinitiation"] = pd.NaT
         df.at[child_id, "hv_date_last_ART"] = pd.NaT
         df.at[child_id, "hv_VMMC_in_last_year"] = False
         df.at[child_id, "hv_days_on_prep_AGYW"] = 0
@@ -3144,11 +3153,22 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             )
 
             df.at[person_id, "hv_art"] = vl_status
-            df.at[person_id, "hv_date_treated"] = self.sim.date
 
-            # if person has AIDS at ART initiation, change property
-            df.at[person_id, "hv_aids_at_art_start"] = True if "aids_symptoms" in self.sim.modules['SymptomManager'].has_what(
-                person_id=person_id) else False
+            # if never had ART, assign first initiation date
+            if df.at[person_id, "hv_date_first_ART_initiation"] == pd.NaT:
+                df.at[person_id, "hv_date_first_ART_initiation"] = self.sim.date
+
+                # if person has AIDS at ART initiation, change property
+                df.at[person_id, "hv_aids_at_art_start"] = True if "aids_symptoms" in self.sim.modules['SymptomManager'].has_what(
+                    person_id=person_id) else False
+
+            # if had ART before and defaulted, set re-initiation date
+            else:
+                df.at[person_id, "hv_date_ART_reinitiation"] = self.sim.date
+
+                # if person has AIDS at ART re-initiation, change property
+                df.at[person_id, "hv_aids_at_art_reinitiation"] = True if "aids_symptoms" in self.sim.modules['SymptomManager'].has_what(
+                    person_id=person_id) else False
 
             # If VL suppressed, remove any symptoms caused by this module
             if vl_status == "on_VL_suppressed":
@@ -3300,7 +3320,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"Peds": 1})  # Child
 
         if (self.sim.population.props.at[person_id, 'hv_art'] == "not") & (
-            pd.isna(self.sim.population.props.at[person_id, 'hv_date_treated'])
+            pd.isna(self.sim.population.props.at[person_id, 'hv_date_first_ART_initiation'])
         ):
             return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
         else:
@@ -3360,7 +3380,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
         now = self.sim.date
-
 
         # ------------------------------------ TESTING ------------------------------------
         # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
@@ -3534,15 +3553,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # adults
         # get index of adults starting tx in last time-period
         adult_tx_idx = df.loc[(df.age_years >= 16) &
-                              (df.hv_date_treated >= (now - DateOffset(months=self.repeat)))].index
+                              (df.hv_date_first_ART_initiation >= (now - DateOffset(months=self.repeat)))].index
         # calculate treatment_date - onset_date for each person in index
-        adult_tx_delays = (df.loc[adult_tx_idx, "hv_date_treated"] - df.loc[adult_tx_idx, "hv_date_inf"]).dt.days
+        adult_tx_delays = (df.loc[adult_tx_idx, "hv_date_first_ART_initiation"] - df.loc[adult_tx_idx, "hv_date_inf"]).dt.days
         adult_tx_delays = adult_tx_delays.tolist()
 
         # children
         child_tx_idx = df.loc[(df.age_years < 16) &
-                              (df.hv_date_treated >= (now - DateOffset(months=self.repeat)))].index
-        child_tx_delays = (df.loc[child_tx_idx, "hv_date_treated"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
+                              (df.hv_date_first_ART_initiation >= (now - DateOffset(months=self.repeat)))].index
+        child_tx_delays = (df.loc[child_tx_idx, "hv_date_first_ART_initiation"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
         child_tx_delays = child_tx_delays.tolist()
 
         # logger.info(

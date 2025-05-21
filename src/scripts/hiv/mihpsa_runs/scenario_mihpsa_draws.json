@@ -1,8 +1,8 @@
 {
   "scenario_script_path": "src/scripts/hiv/mihpsa_runs/scenario_mihpsa.py",
-  "scenario_seed": 18266,
+  "scenario_seed": 15447,
   "arguments": [],
-  "runs_per_draw": 3,
+  "runs_per_draw": 1,
   "draws": [
     {
       "draw_number": 0,
@@ -10,6 +10,6 @@
       "draw_name": "0"
     }
   ],
-  "commit": "9e4728ded7710b88f792f1c662a721f938566a0e",
-  "github": "https://github.com/UCL/TLOmodel/tree/9e4728ded7710b88f792f1c662a721f938566a0e"
+  "commit": "8187e9beda9a7808fe6353458cbe4a7620ff65b8",
+  "github": "https://github.com/UCL/TLOmodel/tree/8187e9beda9a7808fe6353458cbe4a7620ff65b8"
 }
