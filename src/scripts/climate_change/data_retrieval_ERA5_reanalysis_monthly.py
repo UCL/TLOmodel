@@ -2,11 +2,10 @@ import os
 
 import cdsapi
 
-base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/Baseline/All_years"
+base_dir = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/monthly_data/"
 os.chdir(base_dir)
 dataset = "reanalysis-era5-single-levels-monthly-means"
-years = range(1940, 2010)
-years = [str(year) for year in range(1940, 2025)]
+years = [str(year) for year in range(2024, 2025)]
 
 request = {
     "product_type": ["monthly_averaged_reanalysis"],
@@ -20,9 +19,6 @@ request = {
     # ],
     "year": years,
     "month": [
-        "01", "02", "03",
-        "04", "05", "06",
-        "07", "08", "09",
         "10", "11", "12"
     ],
     "time": ["00:00"],
