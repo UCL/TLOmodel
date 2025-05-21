@@ -11,10 +11,10 @@ class ServiceIntegrationScenario(BaseScenario):
         super().__init__()
         self.seed = 537184
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 1, 1)
-        self.pop_size = 200_000
+        self.end_date = Date(2050, 1, 1)
+        self.pop_size = 100_000
         self.number_of_draws = 13
-        self.runs_per_draw = 15
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -46,7 +46,7 @@ class ServiceIntegrationScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        params_all = {'ServiceIntegration':{'integration_year': 2011}}
+        params_all = {'ServiceIntegration':{'integration_year': 2020}}
         params_oth = {1: {'serv_int_chronic': True},
                       2: {'serv_int_screening': ['htn']},
                       3: {'serv_int_screening': ['dm']},
