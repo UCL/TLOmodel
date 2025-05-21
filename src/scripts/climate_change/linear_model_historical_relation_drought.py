@@ -10,15 +10,15 @@ from statsmodels.genmod.generalized_linear_model import GLM
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from functions_for_data_cleaning_lm import build_model, stepwise_selection, repeat_info
 
-ANC = False
-Inpatient = True
+ANC = True
+Inpatient = False
 if ANC:
     service = 'ANC'
 if Inpatient:
     service = 'Inpatient'
 
 feature_selection = True
-min_year_for_analysis = 2012
+min_year_for_analysis = 2014
 absolute_min_year = 2011
 mask_threshold = -np.inf # accounts for scaling
 #mask_threshold = 50
@@ -74,9 +74,6 @@ lag_12_month = lag_12_month[(min_year_for_analysis - absolute_min_year) * 12:].f
     # mask covid months - don't need to do on lagged data, because the removal of these entries in the model will remove all rows
 weather_data_monthly = weather_data_monthly_df # need to keep these seperate for the binary values later
 
-    #weather_data_monthly.loc[covid_months, :] = np.nan
-    #weather_data_five_day_cumulative.loc[covid_months, :] = np.nan
-    # code if years need to be dropped
 weather_data_monthly = weather_data_monthly.iloc[(min_year_for_analysis - absolute_min_year) * 12:]
 weather_data_monthly_flattened = weather_data_monthly.values.flatten()
 
@@ -87,23 +84,16 @@ monthly_reporting_by_facility.iloc[covid_months, :] = np.nan
 monthly_reporting_by_facility.loc[cyclone_freddy_months_phalombe, 'Phalombe Health Centre'] = 0
 monthly_reporting_by_facility.loc[cyclone_freddy_months_thumbwe, 'Thumbwe Health Centre'] = 0
 
-# Drop September 2024 in ANC/reporting data
-monthly_reporting_by_facility = monthly_reporting_by_facility.drop(monthly_reporting_by_facility.index[-1])
 # code if years need to be dropped
 monthly_reporting_by_facility = monthly_reporting_by_facility.iloc[(min_year_for_analysis-absolute_min_year)*12:]
 # Linear regression
 month_range = range(12)
 num_facilities = len(monthly_reporting_by_facility.columns)
 year_repeated = [y for y in year_range for _ in range(12)]
-year = year_repeated[:-4]
 month = range(1, 13)
-year_flattened = year*len(monthly_reporting_by_facility.columns) # to get flattened data
-month_repeated = [m for m in range(1,9) for _ in range(len(monthly_reporting_by_facility.columns))]
-month_repeated = month_repeated*len(year_range)
-month_repeated_abbreviated = [m for m in range(9,13) for _ in range(len(monthly_reporting_by_facility.columns))]
-month_repeated_abbreviated = month_repeated_abbreviated*(len(year_range) - 1)
-month_repeated.extend(month_repeated_abbreviated)
-month_flattened = month_repeated
+year_flattened = year_repeated*len(monthly_reporting_by_facility.columns) # to get flattened data
+month_repeated = [m for m in range(1,13) for _ in range(len(monthly_reporting_by_facility.columns))]
+month_flattened = month_repeated*len(year_range)
 
 
 facility_flattened = list(monthly_reporting_by_facility.columns) * len(month_repeated)
@@ -111,7 +101,6 @@ facility_flattened = list(monthly_reporting_by_facility.columns) * len(month_rep
 y = monthly_reporting_by_facility.values.flatten()
 if np.nanmin(y) < 1:
      y += 1  # Shift to ensure positivity as taking log
-y[y > 4e3] = np.nan
 
 # One-hot encode facilities
 facility_encoded = pd.get_dummies(facility_flattened, drop_first=True)
@@ -175,7 +164,6 @@ X_categorical = np.column_stack([
 ])
 scaler = StandardScaler()
 X_continuous_scaled = scaler.fit_transform(X_continuous)
-#X_continuous_scaled = X_continuous
 X_ANC_standardized = np.column_stack([X_continuous_scaled, X_categorical])
 #results, y_pred, mask_ANC_data, selected_features = build_model(X_ANC_standardized , y, poisson = poisson, log_y=log_y, X_mask_mm=mask_threshold, feature_selection = feature_selection)
 
@@ -333,12 +321,12 @@ indices_all_data = np.where(mask_all_data)[0]
 common_indices = np.intersect1d(indices_ANC_data, indices_all_data)
 matched_y_pred = y_pred[np.isin(indices_ANC_data, common_indices)]
 matched_y_pred_weather = y_pred_weather[np.isin(indices_all_data, common_indices)]
-monthly_weather_predictions = X_filtered[:, 0][np.isin(indices_all_data, common_indices)]
+monthly_weather_predictions = X_filtered[:, 1][np.isin(indices_all_data, common_indices)]
 
 
-axs[0].scatter(X_filtered[:, 0], y[mask_all_data], color='red', alpha=0.5, label = 'Non weather model')
+axs[0].scatter(X_filtered[:, 1], y[mask_all_data], color='red', alpha=0.5, label = 'Non weather model')
 axs[0].hlines(y = 0, xmin=plt.xlim()[0], xmax=plt.xlim()[1], color = 'black', linestyle = '--')
-axs[0].scatter(X_filtered[:, 0], np.exp(y_pred_weather), label='Weather model', color="blue", alpha = 0.5)
+axs[0].scatter(X_filtered[:, 1], np.exp(y_pred_weather), label='Weather model', color="blue", alpha = 0.5)
 axs[0].hlines(y=0, xmin=plt.xlim()[0], xmax=plt.xlim()[1], color='black', linestyle='--')
 axs[0].set_ylabel(f'{service}  visits')
 
