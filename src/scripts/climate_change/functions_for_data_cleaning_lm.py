@@ -85,12 +85,8 @@ def calculate_vif(X):
     vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
     return vif_data
 
-def repeat_info(info, num_facilities, year_range, historical):
+def repeat_info(info, num_facilities, year_range):
     # Repeat facilities in alternating order for each month and year
     repeated_info = [info[i % len(info)] for i in range(len(year_range) * 12 * num_facilities)]
-
-    if historical:
-        return repeated_info[:-4 * num_facilities]  # Exclude final 4 months for all facilities
-    else:
-        return repeated_info
+    return repeated_info
 #
