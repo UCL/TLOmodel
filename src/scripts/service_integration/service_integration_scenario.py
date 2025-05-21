@@ -12,9 +12,9 @@ class ServiceIntegrationScenario(BaseScenario):
         self.seed = 537184
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2015, 1, 1)
-        self.pop_size = 100_000
+        self.pop_size = 200_000
         self.number_of_draws = 13
-        self.runs_per_draw = 10
+        self.runs_per_draw = 15
 
     def log_configuration(self):
         return {

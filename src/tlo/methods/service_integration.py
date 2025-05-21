@@ -157,9 +157,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         # ---------------------------------------------- SCREENING ----------------------------------------------------
         if 'htn' in params['serv_int_screening']:
-            # Annual community screening in over 50s increased to 100%
-            self.sim.modules['CardioMetabolicDisorders'].parameters['hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
             # Probability of screening when presenting to any generic first appointment set to 100%
+            self.sim.modules['CardioMetabolicDisorders'].parameters['hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
+            # Annual community screening in over 50s increased to 100%
             self.sim.modules['CardioMetabolicDisorders'].lms_testing['hypertension'] = LinearModel(LinearModelType.MULTIPLICATIVE, 1.0)
 
         if 'dm' in params['serv_int_screening']:

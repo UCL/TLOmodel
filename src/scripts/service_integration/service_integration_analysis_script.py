@@ -47,7 +47,7 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'integration_scenario_2315802'
+scenario = 'integration_scenario_2340088'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 # create_pickles_locally(results_folder, compressed_file_name_prefix='service_integration_scenario')
 
@@ -104,12 +104,12 @@ num_dalys = extract_results(
 idx = pd.IndexSlice
 total_dalys_dfs = {k: num_dalys.loc[:, idx[d, :]] for k, d in zip (int_names, draws)}
 
-def get_diff_multi_index(int_name, draw):
-    diff = total_dalys_dfs[int_name][draw] - total_dalys_dfs['status_quo'][0]
-    diff.columns=total_dalys_dfs[int_name].columns
+def get_diff_multi_index(df, int_name, draw):
+    diff = df[int_name][draw] - df['status_quo'][0]
+    diff.columns=df[int_name].columns
     return diff
 
-total_dalys_diff_dfs = {k: get_diff_multi_index(k, d) for k, d in zip(int_names, draws)}
+total_dalys_diff_dfs = {k: get_diff_multi_index(total_dalys_dfs, k, d) for k, d in zip(int_names, draws)}
 
 total_dalys_summ = {k:compute_summary_statistics(total_dalys_dfs[k]) for k in int_names}
 total_dalys_diff_summ = {k:compute_summary_statistics(total_dalys_diff_dfs[k]) for k in int_names}
@@ -132,6 +132,45 @@ df_subset = all_dalys_dfs.loc[all_dalys_dfs.index.get_level_values('year').isin(
 cause_totals = df_subset.groupby('cause').sum()
 total_cause_dfs = {k: cause_totals.loc[:, idx[d, :]] for k, d in zip (int_names, draws)}
 total_cause_summ = {k:compute_summary_statistics(total_cause_dfs[k]) for k in int_names}
+
+total_cause_diff_dfs = {k: get_diff_multi_index(total_cause_dfs, k, d) for k, d in zip(int_names, draws)}
+total_cause_summ_diff = {k:compute_summary_statistics(total_cause_diff_dfs[k]) for k in int_names}
+
+
+# GRAPHS AND CSV FILES
+
+for k in total_cause_diff_dfs:
+    total_cause_diff_dfs[k].to_csv(f'{g_path}/{k}_diffs.csv')
+
+for k, d in zip(total_cause_diff_dfs, draws):
+    labels = total_cause_summ_diff[k].index
+    median = total_cause_summ_diff[k][d]['central'].values
+    lower_errors = total_cause_summ_diff[k][d]['lower'].values
+    upper_errors = total_cause_summ_diff[k][d]['upper'].values
+
+    # lower_errors = [data[k].loc[0, 'lower'] for k in labels]
+    # upper_errors = [data[k].loc[0, 'upper'] for k in labels]
+
+    # lower_errors = [data[k][d].loc[0, 'lower'] - data[k][d].loc[0, 'central']for k, d in zip(labels, draws)]
+    # upper_errors = [data[k][d].loc[0, 'upper'] - data[k][d].loc[0, 'lower'] for k, d in zip(labels, draws)]
+    # errors = [lower_errors, upper_errors]
+
+    # Compute distances from mean to bounds (must be non-negative)
+    yerr_lower = [mean - low for mean, low in zip(median, lower_errors)]
+    yerr_upper = [up - mean for mean, up in zip(median, upper_errors)]
+
+    # Create bar chart with error bars
+    fig, ax = plt.subplots()
+    ax.bar(labels, median, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black')
+    ax.set_ylabel('Difference in DALYs from SQ')
+    ax.set_title(f'{k} Vs status_quo: Difference in DALYs by cause')
+
+    # Adjust label size
+    plt.xticks(fontsize=8, rotation=90)
+    plt.tight_layout()
+    plt.savefig(f'{g_path}/{k}_diff_dalys_cause.png', bbox_inches='tight')
+    plt.show()
+
 
 def barcharts(data, y_label, title):
 
