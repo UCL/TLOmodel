@@ -174,9 +174,11 @@ results_deaths = compute_summary_statistics(extract_results(
         .query("label == 'AIDS'")
         .groupby([
             "year", "label", "age_group", "sex",
-            "hiv_status", "hiv_diagnosed", "art_status",
-            "on_ART_more_than_6months", "aids_status", "aids_at_art_start",
-            "has_had_art"  # include new column in groupby
+            "hiv_status", "hiv_diagnosed", "art_status", 'date_first_ART_initiation',
+            'date_ART_reinitiation', 'less_than_6months_since_art_start',
+            'less_than_6months_since_art_reinitiation', 'less_than_6months_since_art_start_or_reinitiation',
+            "aids_status", "aids_at_art_start", 'aids_at_art_reinitiation',
+            "has_had_art",
         ])["person_id"]
         .count()
     ),
