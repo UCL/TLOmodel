@@ -1123,4 +1123,130 @@ nhb_district = compute_nhb(
 nhb_district.to_csv(results_folder / f'nhb_district{target_period()}.csv')
 
 
-# time to elimination
+#############################################################################
+# Kaplan-Meier proportion districts reaching EPHP each year
+
+def extract_mda_label(draw_name: str) -> str:
+    # Define possible MDA labels to look for in draw name
+    mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
+    for label in mda_labels:
+        if label.replace(" ", "").lower() in draw_name.replace(" ", "").lower():
+            return label
+    # Default if none matched
+    return "Other"
+
+
+def plot_ephp_km_panels(
+    df: pd.DataFrame,
+    threshold: float = 0.015,
+    year_range: tuple = (2024, 2040),
+    alpha: float = 1.0,
+    figsize: tuple = (8, 12)
+):
+    """
+    Plot Kaplan-Meier-style curves in three vertically stacked panels showing the proportion of districts
+    reaching prevalence < threshold by year. Panels are grouped by draw naming patterns: 'Pause', 'Continue', 'Scale-up'.
+
+    Parameters:
+        df : pd.DataFrame
+            DataFrame with MultiIndex (year, district) and columns with MultiIndex (draw, run)
+        threshold : float
+            Prevalence threshold for defining EPHP
+        year_range : tuple
+            Range of years to display on x-axis
+        alpha : float
+            Transparency for individual draw lines
+        figsize : tuple
+            Size of the overall figure
+    """
+
+    def extract_mda_label(draw_name: str) -> str:
+        """Extract MDA category for legend from draw name."""
+        mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
+        draw_lower = draw_name.replace(" ", "").lower()
+        for label in mda_labels:
+            if label.replace(" ", "").lower() in draw_lower:
+                return label
+        return "Other"
+
+    # Remove pre-2024 data
+    df = df.loc[df.index.get_level_values("year") >= 2024]
+
+    # Step 1: mean across runs for each draw
+    df_mean_runs = df.groupby(axis=1, level="draw").mean()
+
+    # Step 2: identify years where prevalence < threshold
+    below = (df_mean_runs < threshold).reset_index()
+    long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
+    below_threshold = long_format[long_format["below_threshold"]]
+
+    # First year each district reaches threshold, by draw
+    first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
+
+    # Setup for panel plots
+    draw_filters = {
+        "Pause": "Pause",
+        "Continue": "Continue",
+        "Scale-up": "Scale-up"
+    }
+
+    total_districts = df.index.get_level_values("district").nunique()
+
+    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=figsize, sharex=True, sharey=True)
+
+    # Use darker palette, enough colors for up to 20 draws per panel
+    palette = sns.color_palette("dark", n_colors=20)
+
+    for ax, (title, substr) in zip(axes, draw_filters.items()):
+        # Filter draws by name substring
+        filtered = first_years[first_years["draw"].str.contains(substr)]
+
+        # Count cumulative districts reaching EPHP by year
+        ephp_counts = (
+            filtered.groupby(["draw", "year_ephp"])
+            .size()
+            .groupby(level=0)
+            .cumsum()
+            .reset_index(name="num_districts")
+        )
+        ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
+        ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
+
+        # Prepare unique draws and assign colours
+        draw_list = ephp_counts["draw"].unique()
+        color_dict = dict(zip(draw_list, palette[:len(draw_list)]))
+
+        # To avoid duplicate legend labels for same MDA category
+        plotted_labels = set()
+
+        for draw, data in ephp_counts.groupby("draw"):
+            label = extract_mda_label(draw)
+            if label not in plotted_labels:
+                plot_label = label
+                plotted_labels.add(label)
+            else:
+                plot_label = None  # Don't repeat label in legend
+
+            ax.step(
+                data["year_ephp"],
+                data["prop_districts"],
+                where="post",
+                label=plot_label,
+                color=color_dict[draw],
+                alpha=alpha,
+                linewidth=1.5,
+            )
+
+        ax.set_title(title)
+        ax.set_ylabel("Proportion < {:.1f}%".format(threshold * 100))
+        ax.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
+        ax.legend(loc="upper left", fontsize="small", title="")
+
+    axes[-1].set_xlabel("Year")
+    plt.suptitle("Progress Toward EPHP by Year and Strategy", fontsize=14)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.show()
+
+
+plot_ephp_km_panels(prev_haem_H_All_district)
+plot_ephp_km_panels(prev_mansoni_H_All_district)
