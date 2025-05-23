@@ -638,7 +638,7 @@ summary_mda_episodes_cost_excl_cons = summary_mda_episodes_cost_excl_cons.reset_
 summary_mda_episodes_cost_excl_cons.to_csv(results_folder / f'summary_mda_episodes_cost_excl_cons{target_period()}.csv')
 
 
-# calculate the costs averted from non-cons costs, i.e. HRH, implementation etc
+# calculate the costs incurred from non-cons costs, i.e. HRH, implementation etc
 costs_excl_cons_vs_PauseWASH = compute_summary_statistics(
     find_difference_relative_to_comparison_dataframe(
         mda_episodes_cost_excl_cons,

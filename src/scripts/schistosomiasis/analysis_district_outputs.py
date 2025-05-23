@@ -511,8 +511,8 @@ plot_percentage_change_heatmap(data_to_plot, title, filename_suffix="PY_")
 
 
 ###########################################################################################################
-# get DALYs by year for ICERs / NHB
-
+# get ICERs / NHB by district
+###########################################################################################################
 
 num_dalys_by_year_run_district = extract_results(
     results_folder,
@@ -526,9 +526,12 @@ num_dalys_by_year_run_district = extract_results(
     do_scaling=False
 ).pipe(set_param_names_as_column_index_level_0)
 
-# todo need to scale by district
 dalys_schisto_district = num_dalys_by_year_run_district.loc[
-    num_dalys_by_year_run_district.index.get_level_values(2) == 'Schistosomiasis']
+    num_dalys_by_year_run_district.index.get_level_values(2) == 'Schistosomiasis'].droplevel(2)
+
+# remove values stored for 2041 (all zeros)
+dalys_schisto_district = dalys_schisto_district.loc[dalys_schisto_district.index.get_level_values(0) <= 2040]
+
 
 # Extract district names from index level 1
 districts = dalys_schisto_district.index.get_level_values(1)
@@ -538,3 +541,296 @@ scaling_factors = district_scaling_factor.loc[districts].iloc[:, 0].values
 
 # Multiply df_schisto by scaling factors, broadcasting over rows
 dalys_schisto_district_scaled = dalys_schisto_district.multiply(scaling_factors, axis=0)
+
+
+# DALYs averted by district
+schisto_dalys_averted_by_year_run_district_vs_pause = -1.0 * find_difference_relative_to_comparison_dataframe(
+    dalys_schisto_district_scaled,
+    comparison='Pause WASH, no MDA'
+)
+schisto_dalys_averted_by_year_run_district_vs_continue = -1.0 * find_difference_relative_to_comparison_dataframe(
+    dalys_schisto_district_scaled,
+    comparison='Continue WASH, no MDA'
+)
+schisto_dalys_averted_by_year_run_district_vs_scaleup = -1.0 * find_difference_relative_to_comparison_dataframe(
+    dalys_schisto_district_scaled,
+    comparison='Scale-up WASH, no MDA'
+)
+
+# produce dataframe with the 3 comparators combined into one
+def select_draws_by_keyword(df, keyword):
+    """Select columns where the first level of the column MultiIndex contains the keyword (case-insensitive)."""
+    mask = df.columns.get_level_values(1).str.contains(keyword, case=False)
+    return df.loc[:, mask]
+
+# Select desired columns from each dataframe
+df1_sel = select_draws_by_keyword(schisto_dalys_averted_by_year_run_district_vs_pause, 'Pause')
+df2_sel = select_draws_by_keyword(schisto_dalys_averted_by_year_run_district_vs_continue, 'Continue')
+df3_sel = select_draws_by_keyword(schisto_dalys_averted_by_year_run_district_vs_scaleup, 'Scale-up')
+
+# Concatenate the selected columns horizontally
+schisto_dalys_averted_by_year_run_district_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
+schisto_dalys_averted_by_year_run_district_combined.to_csv(results_folder / f'schisto_dalys_averted_by_year_run_district_combined{target_period()}.csv')
+
+##########################
+# get mda episodes costs by district / year / run
+
+
+def get_counts_of_mda_by_year_district(_df):
+    """
+    Returns a Series with the count of MDA episodes per district per year,
+    ensuring all districts have an entry for every year (zeros filled where absent).
+    """
+    _df['Year'] = pd.to_datetime(_df['date']).dt.year
+
+    # Flatten the data into (Year, District, Count) triplets
+    records = []
+
+    for _, row in _df.iterrows():
+        year = row['Year']
+        district_counts = row['mda_episodes_district']['ss_MDA_treatment_counter']
+        for district, count in district_counts.items():
+            records.append((year, district, count))
+
+    df_counts = pd.DataFrame(records, columns=['Year', 'District', 'Count'])
+
+    # Aggregate counts per (Year, District)
+    grouped = df_counts.groupby(['Year', 'District'])['Count'].sum()
+
+    # Get all unique years and districts
+    all_years = df_counts['Year'].unique()
+    all_districts = df_counts['District'].unique()
+
+    # Create a complete MultiIndex of all year-district pairs
+    full_index = pd.MultiIndex.from_product(
+        [all_years, all_districts],
+        names=['Year', 'District']
+    )
+
+    # Reindex the grouped counts to the full index, filling missing with 0
+    result = grouped.reindex(full_index, fill_value=0)
+
+    return result.astype(int)
+
+
+
+mda_episodes_per_year_district = extract_results(
+        results_folder,
+        module='tlo.methods.schisto',
+        key='schisto_mda_episodes_by_district',
+        custom_generate_series=get_counts_of_mda_by_year_district,
+        do_scaling=False
+    ).pipe(set_param_names_as_column_index_level_0)
+
+# Extract district names from index level 1
+districts = mda_episodes_per_year_district.index.get_level_values(1)
+
+# Align scaling factors to the district index in df_schisto
+scaling_factors = district_scaling_factor.loc[districts].iloc[:, 0].values
+
+# Multiply df_schisto by scaling factors, broadcasting over rows
+mda_episodes_per_year_district_scaled = mda_episodes_per_year_district.multiply(scaling_factors, axis=0)
+
+# assign costs - full including consumables
+unit_cost_per_mda_incl_cons = 2.26
+
+costs_mda_episodes_per_year_district_scaled = mda_episodes_per_year_district_scaled * unit_cost_per_mda_incl_cons
+
+# costs incurred
+
+# calculate the costs averted from non-cons costs, i.e. HRH, implementation etc
+costs_district_vs_PauseWASH = find_difference_relative_to_comparison_dataframe(
+        costs_mda_episodes_per_year_district_scaled,
+        comparison='Pause WASH, no MDA'
+    )
+costs_district_vs_PauseWASH.to_csv(results_folder / f'costs_district_vs_PauseWASH{target_period()}.csv')
+
+costs_district_vs_ContinueWASH = find_difference_relative_to_comparison_dataframe(
+        costs_mda_episodes_per_year_district_scaled,
+        comparison='Continue WASH, no MDA'
+    )
+costs_district_vs_ContinueWASH.to_csv(results_folder / f'costs_district_vs_ContinueWASH{target_period()}.csv')
+
+costs_district_vs_scaleupWASH = find_difference_relative_to_comparison_dataframe(
+        costs_mda_episodes_per_year_district_scaled,
+        comparison='Scale-up WASH, no MDA'
+    )
+costs_district_vs_scaleupWASH.to_csv(results_folder / f'costs_district_vs_scaleupWASH{target_period()}.csv')
+
+# Select desired columns from each dataframe
+df1_sel = select_draws_by_keyword(costs_district_vs_PauseWASH, 'Pause')
+df2_sel = select_draws_by_keyword(costs_district_vs_ContinueWASH, 'Continue')
+df3_sel = select_draws_by_keyword(costs_district_vs_scaleupWASH, 'Scale-up')
+
+# Concatenate the selected columns horizontally
+costs_incurred_by_district_year_run_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
+costs_incurred_by_district_year_run_combined.to_csv(results_folder / f'costs_incurred_by_district_year_run_combined{target_period()}.csv')
+
+
+##########################
+# calculate ICER
+
+def compute_icer(
+    dalys_averted: pd.DataFrame,
+    comparison_costs: pd.DataFrame,
+    discount_rate_dalys: float = 0.0,
+    discount_rate_costs: float = 0.0,
+    return_summary: bool = True
+) -> pd.DataFrame | pd.Series:
+    """
+    Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and draw.
+
+    Assumes:
+    - Row MultiIndex: (year, district)
+    - Column MultiIndex: (draw, run)
+    - TARGET_PERIOD is a global tuple of (start_year, end_year) as datetime or int
+    """
+    global TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
+
+    # Filter index by year (first level)
+    years = dalys_averted.index.get_level_values(0)
+    mask = (years >= start_year.year) & (years <= end_year.year)
+    dalys_period = dalys_averted.loc[mask]
+    costs_period = comparison_costs.loc[mask]
+
+    # Extract years for discounting from index level 0
+    years_since_start = years[mask] - start_year.year
+
+    # Discount weights per year
+    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
+    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
+
+    # Apply discounting only if rates are nonzero
+    if discount_rate_dalys != 0.0:
+        # Discount dalys_period by multiplying rows by discount weights
+        dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
+
+    if discount_rate_costs != 0.0:
+        costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
+
+    # Sum over years **within each district**
+    # Group by district (level 1 of index)
+    total_dalys = dalys_period.groupby(level=1).sum()
+    total_costs = costs_period.groupby(level=1).sum()
+
+    # total_dalys and total_costs now have index = district
+    # columns = MultiIndex (draw, run)
+
+    # Compute ICER = total_costs / total_dalys for each district, run, draw
+    icers = total_costs / total_dalys
+
+    # Rearrange to long form DataFrame with columns: district, draw, run, icer
+    icers_long = (
+        icers
+        .stack([0, 1])  # stack draw, run columns to index
+        .rename('icer')
+        .reset_index()   # columns: district, draw, run, icer
+    )
+
+    if return_summary:
+        # Summarise ICER across runs for each district and draw
+        summary = (
+            icers_long
+            .groupby(['level_0', 'draw'])['icer']
+            .agg(
+                mean='mean',
+                lower=lambda x: np.quantile(x, 0.025),
+                upper=lambda x: np.quantile(x, 0.975)
+            )
+            .reset_index()
+        )
+        return summary
+    else:
+        # Return all ICERs (district, draw, run, icer)
+        return icers
+
+
+icer_district = compute_icer(
+    dalys_averted=schisto_dalys_averted_by_year_run_district_combined,
+    comparison_costs=costs_incurred_by_district_year_run_combined,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+icer_district.to_csv(results_folder / f'icer_district_{target_period()}.csv')
+
+
+def plot_icer_three_panels(df, context="Continue_WASH"):
+    """
+    Plot ICER by district for three categories ('MDA SAC', 'MDA PSAC', 'MDA All')
+    Only draws containing 'Continue WASH' are included.
+    """
+    # Filter draws containing 'Continue WASH'
+    df_filtered = df[df['draw'].str.contains(context, na=False)]
+
+    categories = ['MDA SAC', 'MDA PSAC', 'MDA All']
+    titles = {
+        'MDA SAC': f'{context} MDA SAC',
+        'MDA PSAC': 'MDA PSAC',
+        'MDA All': 'MDA All'
+    }
+
+    fig, axes = plt.subplots(3, 1, figsize=(10, 12), sharey=True)
+
+    for ax, category in zip(axes, categories):
+        subset = df_filtered[df_filtered['draw'].str.contains(category, na=False)]
+        if subset.empty:
+            ax.text(0.5, 0.5, f'No data for {category}', ha='center', va='center')
+            ax.set_title(titles[category])
+            ax.set_xticks([])
+            ax.set_yticks([])
+            continue
+
+        # Sort districts alphabetically to keep consistent order
+        subset = subset.sort_values('level_0')
+
+        # Plot points
+        sns.pointplot(
+            data=subset,
+            x='level_0',
+            y='mean',
+            join=False,
+            color='blue',
+            ax=ax
+        )
+
+        # Add error bars manually
+        x_vals = range(len(subset))
+        y_vals = subset['mean'].values
+        y_err_lower = y_vals - subset['lower'].values
+        y_err_upper = subset['upper'].values - y_vals
+
+        ax.errorbar(
+            x=x_vals,
+            y=y_vals,
+            yerr=[y_err_lower, y_err_upper],
+            fmt='none',
+            ecolor='blue',
+            elinewidth=1,
+            capsize=3,
+            alpha=0.7
+        )
+
+        ax.axhline(500, color='grey', linestyle='--', linewidth=1)
+        ax.set_ylim(0, None)
+        ax.set_title(titles[category])
+
+        # Show x-axis labels only on the bottom plot (last subplot)
+        if category != 'MDA All':
+            ax.set_xlabel('')
+            ax.set_xticklabels([])
+        else:
+            ax.set_xlabel('District')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+
+        ax.set_ylabel('ICER')
+
+    plt.tight_layout()
+    plt.show()
+
+
+plot_icer_three_panels(icer_district, context='Continue WASH')
+
+plot_icer_three_panels(icer_district, context='Scale-up WASH')
+
