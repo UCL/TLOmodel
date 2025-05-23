@@ -1510,7 +1510,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # prepare extra budget allocation
     extra_budget_allocation = extra_budget_fracs.T.reindex(num_dalys_summarized.index)
     extra_budget_allocation['Other'] = extra_budget_allocation[
-        ['Dental', 'Laboratory', 'Mental', 'Radiography']
+        ['Dental', 'Laboratory', 'Mental', 'Nutrition', 'Radiography']
     ].sum(axis=1)
     # prepare hrh increase rates in the same format for regression analysis
     increase_rate_avg_exp = avg_increase_rate_exp.T.reindex(num_dalys_summarized.index)
