@@ -3,11 +3,13 @@ Use the outputs from scenario_runs.py to produce plots
 and summary statistics for paper.
 
 JOB ID:
-schisto_scenarios-2025-03-22T130153Z
 
 PosixPath('outputs/t.mangal@imperial.ac.uk/schisto_scenarios-2025-04-25T130018Z')
 
 """
+
+# todo should use district scaling factor so everything is weighted correctly
+
 
 # ==============================================================================
 # 📦 IMPORTS
@@ -237,8 +239,8 @@ def get_total_num_treatment_episodes(_df):
 def compute_icer(
     dalys_averted: pd.DataFrame,
     comparison_costs: pd.DataFrame,
-    discount_rate_dalys: float = 1.0,
-    discount_rate_costs: float = 1.0,
+    discount_rate_dalys: float = 0.0,
+    discount_rate_costs: float = 0.0,
     return_summary: bool = True
 ) -> pd.DataFrame | pd.Series:
     """
@@ -259,11 +261,12 @@ def compute_icer(
     discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
     discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
 
-    # Apply discounting if discount_rate != 1
-    if discount_rate_dalys != 1.0:
+    # Apply discounting if discount_rate != 0
+    # todo check this works as changed from 1.0
+    if discount_rate_dalys != 0.0:
         dalys_averted = dalys_averted.multiply(discount_weights_dalys, axis=0)
 
-    if discount_rate_costs != 1.0:
+    if discount_rate_costs != 0.0:
         comparison_costs = comparison_costs.multiply(discount_weights_costs, axis=0)
 
     # Sum discounted DALYs and costs over years (rows)
@@ -290,88 +293,68 @@ def compute_icer(
         return icers_df
 
 
-#
-# def calculate_npv_and_cost_per_daly(
-#     annual_num_dalys_averted: pd.DataFrame,
-#     annual_costs: pd.DataFrame,
-#     discount_factors: pd.Series
-# ) -> pd.DataFrame:
-#     """
-#     Calculate the net present value (NPV) of DALYs averted and costs,
-#     compute the net present value (NPV) of the intervention, and calculate the cost per DALY averted.
-#
-#     Parameters
-#     ----------
-#     annual_num_dalys_averted : pd.DataFrame
-#         DataFrame of annual DALYs averted by scenario. Rows indexed by year (int), columns are scenarios.
-#     annual_costs : pd.DataFrame
-#         DataFrame of annual incremental costs by scenario. Rows indexed by year (int), columns are scenarios.
-#     discount_factors : pd.Series
-#         Series of discount factors for each year, indexed by year (int).
-#
-#     Returns
-#     -------
-#     pd.DataFrame
-#         DataFrame with NPV of DALYs averted, NPV of costs, net present value of the intervention, and cost per DALY averted for each scenario.
-#     """
-#
-#     # Ensure consistent index names for alignment
-#     annual_num_dalys_averted.index.name = 'year'
-#     annual_costs.index.name = 'year'
-#     discount_factors.index.name = 'year'
-#
-#     # Apply discount factors to DALYs averted and costs
-#     discounted_dalys_averted = annual_num_dalys_averted.multiply(discount_factors, axis=0)
-#     discounted_costs = annual_costs.multiply(discount_factors, axis=0)
-#
-#     # Compute total NPV for DALYs averted and costs
-#     total_dalys_averted = discounted_dalys_averted.sum()
-#     total_costs = discounted_costs.sum()
-#
-#     # Calculate net present value (NPV) for the intervention
-#     npv_intervention = total_dalys_averted - total_costs
-#
-#     # Calculate cost per DALY averted
-#     cost_per_daly_averted = total_costs / total_dalys_averted
-#
-#     # Compile results into a tidy DataFrame
-#     results = pd.DataFrame({
-#         'NPV_DALYs_Averted': total_dalys_averted,
-#         'NPV_Costs': total_costs,
-#         'NPV_Intervention': npv_intervention,  # Net Present Value of the intervention
-#         'Cost_per_DALY_Averted': cost_per_daly_averted
-#     })
-#
-#     return results
-
-
-def compute_discounted_nhb(df, discount_rate=0.03, threshold=150):
+def compute_nhb(
+    dalys_averted: pd.DataFrame,
+    comparison_costs: pd.DataFrame,
+    discount_rate_dalys: float = 0.03,
+    discount_rate_costs: float = 0.03,
+    threshold: float = 150,
+    return_summary: bool = True
+) -> pd.DataFrame | pd.Series:
     """
-    Compute discounted Net Health Benefit (NHB) from DALYs and costs.
+    Compute Net Health Benefit (NHB) using DALYs averted and incremental costs over TARGET_PERIOD.
 
     Parameters:
-    - df: pd.DataFrame with columns ['scenario', 'year', 'dalys', 'cost']
-    - discount_rate: annual discount rate (default 3%)
-    - threshold: cost-effectiveness threshold per DALY averted (e.g. 150 USD)
+    - dalys_averted: pd.DataFrame with index as years, columns as MultiIndex (run, draw), values = DALYs averted
+    - comparison_costs: pd.DataFrame with same structure, values = incremental costs
+    - discount_rate_dalys: annual discount rate for DALYs
+    - discount_rate_costs: annual discount rate for costs
+    - threshold: cost-effectiveness threshold (e.g. $ per DALY averted)
+    - return_summary: if True, summarise across runs for each draw
 
     Returns:
-    - pd.DataFrame with NHB for each scenario
+    - pd.Series (summary) or pd.DataFrame with NHB values
     """
+    global TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
 
-    df = df.copy()
-    df['discount_factor'] = 1 / ((1 + discount_rate) ** df['year'])
-    df['discounted_dalys'] = df['dalys'] * df['discount_factor']
-    df['discounted_cost'] = df['cost'] * df['discount_factor']
+    # Restrict to target period
+    mask = (dalys_averted.index >= start_year.year) & (dalys_averted.index <= end_year.year)
+    dalys_period = dalys_averted.loc[mask]
+    costs_period = comparison_costs.loc[mask]
 
-    # Calculate NHB per scenario
-    results = (
-        df.groupby('scenario')
-          .agg(total_dalys=('discounted_dalys', 'sum'),
-               total_cost=('discounted_cost', 'sum'))
-          .assign(nhb=lambda d: -d['total_dalys'] - d['total_cost'] / threshold)
-    )
+    # Years since start for discounting
+    years_since_start = dalys_period.index.values - start_year.year
 
-    return results
+    # Discount factors
+    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
+    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
+
+    # Apply discounting
+    if discount_rate_dalys != 0.0:
+        dalys_period = dalys_period.multiply(discount_weights_dalys, axis=0)
+
+    if discount_rate_costs != 0.0:
+        costs_period = costs_period.multiply(discount_weights_costs, axis=0)
+
+    # Total discounted DALYs and costs per (run, draw)
+    total_dalys_averted = dalys_period.sum(axis=0)
+    total_costs = costs_period.sum(axis=0)
+
+    # NHB
+    nhb = total_dalys_averted - (total_costs / threshold)
+    nhb_df = nhb.reset_index()
+    nhb_df.columns = ['run', 'draw', 'nhb']
+
+    if return_summary:
+        summary = (
+            nhb_df
+            .groupby('draw')['nhb']
+            .agg(mean='mean', lower=lambda x: np.quantile(x, 0.025), upper=lambda x: np.quantile(x, 0.975))
+        )
+        return summary
+    else:
+        return nhb_df
 
 
 # ==============================================================================
@@ -560,7 +543,7 @@ def plot_icers_with_nhb_isocurves(
 
     plt.xlabel('Incremental Costs')
     plt.ylabel('DALYs Averted')
-    plt.title('ICERs with Net Health Benefit Isocurves')
+    plt.title('ICERs')
     plt.grid(True)
     plt.legend(title='Draw', loc='best')
     plt.tight_layout()
@@ -643,6 +626,48 @@ summary_mda_episodes = summary_mda_episodes.reset_index(level=0, drop=True)
 summary_mda_episodes.to_csv(results_folder / f'summary_mda_episodes{target_period()}.csv')
 
 
+# UNIT COSTS PER RUN
+unit_cost_per_mda = 2.26 - 0.05  # full cost - consumables
+
+mda_episodes_cost_excl_cons = mda_episodes * unit_cost_per_mda
+
+summary_mda_episodes_cost_excl_cons = compute_summary_statistics(mda_episodes_cost_excl_cons,
+                                                central_measure='mean')
+summary_mda_episodes_cost_excl_cons = summary_mda_episodes_cost_excl_cons.stack(level='draw')
+summary_mda_episodes_cost_excl_cons = summary_mda_episodes_cost_excl_cons.reset_index(level=0, drop=True)
+summary_mda_episodes_cost_excl_cons.to_csv(results_folder / f'summary_mda_episodes_cost_excl_cons{target_period()}.csv')
+
+
+# calculate the costs averted from non-cons costs, i.e. HRH, implementation etc
+costs_excl_cons_vs_PauseWASH = compute_summary_statistics(
+    find_difference_relative_to_comparison_dataframe(
+        mda_episodes_cost_excl_cons,
+        comparison='Pause WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+costs_excl_cons_vs_PauseWASH.to_csv(results_folder / f'costs_excl_cons_vs_PauseWASH{target_period()}.csv')
+
+costs_excl_cons_vs_ContinueWASH = compute_summary_statistics(
+    find_difference_relative_to_comparison_dataframe(
+        mda_episodes_cost_excl_cons,
+        comparison='Continue WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+costs_excl_cons_vs_ContinueWASH.to_csv(results_folder / f'costs_excl_cons_vs_ContinueWASH{target_period()}.csv')
+
+costs_excl_cons_vs_scaleupWASH = compute_summary_statistics(
+    find_difference_relative_to_comparison_dataframe(
+        mda_episodes_cost_excl_cons,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+costs_excl_cons_vs_scaleupWASH.to_csv(results_folder / f'costs_excl_cons_vs_scaleupWASH{target_period()}.csv')
+
+
+
 # ==============================================================================
 # %% ✅ GET OUTPUTS BY RUN FOR ICER / NHB CALCULATION
 # ==============================================================================
@@ -710,8 +735,6 @@ pzq_cons_req_by_year = extract_results(
 
 pzq_costs_req_by_year = pzq_cons_req_by_year * PZQ_item_cost
 
-# UNIT COSTS PER RUN
-unit_cost_per_mda = 2.26 - 0.05  # full cost - consumables
 
 mda_episodes_per_year = extract_results(
         results_folder,
@@ -790,7 +813,15 @@ icer_discount_costs_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by
 icer_discount_costs_by_run.to_csv(results_folder / (f'icer_discount_costs_by_run{target_period()}.csv'))
 
 
-
+nhb_no_discount_150 = compute_nhb(
+    dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],
+    comparison_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,
+    discount_rate_costs=0,
+    threshold=150,
+    return_summary=True
+)
+nhb_no_discount_150.to_csv(results_folder / (f'nhb_no_discount_150_{target_period()}.csv'))
 
 
 

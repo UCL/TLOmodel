@@ -511,3 +511,30 @@ plot_percentage_change_heatmap(data_to_plot, title, filename_suffix="PY_")
 
 
 ###########################################################################################################
+# get DALYs by year for ICERs / NHB
+
+
+num_dalys_by_year_run_district = extract_results(
+    results_folder,
+    module="tlo.methods.healthburden",
+    key="dalys_by_wealth_stacked_by_age_and_time",  # <-- for DALYS stacked by age and time
+    custom_generate_series=(
+        lambda df_: df_.drop(
+            columns=(['date']),
+        ).groupby(['year', 'district_of_residence']).sum().stack()
+    ),
+    do_scaling=False
+).pipe(set_param_names_as_column_index_level_0)
+
+# todo need to scale by district
+dalys_schisto_district = num_dalys_by_year_run_district.loc[
+    num_dalys_by_year_run_district.index.get_level_values(2) == 'Schistosomiasis']
+
+# Extract district names from index level 1
+districts = dalys_schisto_district.index.get_level_values(1)
+
+# Align scaling factors to the district index in df_schisto
+scaling_factors = district_scaling_factor.loc[districts].iloc[:, 0].values
+
+# Multiply df_schisto by scaling factors, broadcasting over rows
+dalys_schisto_district_scaled = dalys_schisto_district.multiply(scaling_factors, axis=0)
