@@ -42,7 +42,6 @@ elif Inpatient:
 
 ### Read in three-month drought SPI ##
 weather_data_monthly_original = pd.read_csv(f"/Users/rem76/Desktop/Climate_change_health/Data/Drought_data/historical_drought_data_2010_2024.csv", index_col=0)
-#weather_data_monthly_original = (weather_data_monthly_original < 0).astype(int)
 
 ##############################################################################################
 ########################## STEP 0: Tidy data ##########################
@@ -54,7 +53,6 @@ monthly_reporting_by_facility = monthly_reporting_by_facility.drop(columns=zero_
 weather_data_monthly_df = weather_data_monthly_original.drop(columns=zero_sum_columns, errors='ignore')
 
 nan_indices = np.isnan(weather_data_monthly_df)
-weather_data_monthly_df = weather_data_monthly_df.drop(weather_data_monthly_df.index[-2:])
 lag_1_month = weather_data_monthly_df.shift(1).values
 lag_2_month = weather_data_monthly_df.shift(2).values
 lag_3_month = weather_data_monthly_df.shift(3).values
@@ -86,11 +84,10 @@ monthly_reporting_by_facility.loc[cyclone_freddy_months_thumbwe, 'Thumbwe Health
 
 # code if years need to be dropped
 monthly_reporting_by_facility = monthly_reporting_by_facility.iloc[(min_year_for_analysis-absolute_min_year)*12:]
+
 # Linear regression
-month_range = range(12)
 num_facilities = len(monthly_reporting_by_facility.columns)
 year_repeated = [y for y in year_range for _ in range(12)]
-month = range(1, 13)
 year_flattened = year_repeated*len(monthly_reporting_by_facility.columns) # to get flattened data
 month_repeated = [m for m in range(1,13) for _ in range(len(monthly_reporting_by_facility.columns))]
 month_flattened = month_repeated*len(year_range)
@@ -99,6 +96,7 @@ month_flattened = month_repeated*len(year_range)
 facility_flattened = list(monthly_reporting_by_facility.columns) * len(month_repeated)
 # Flatten data
 y = monthly_reporting_by_facility.values.flatten()
+
 if np.nanmin(y) < 1:
      y += 1  # Shift to ensure positivity as taking log
 
@@ -120,18 +118,18 @@ expanded_facility_info = expanded_facility_info.drop(columns=zero_sum_columns)
 
 expanded_facility_info = expanded_facility_info.T.reindex(columns=expanded_facility_info.index)
 
-zone_info_each_month = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range, historical = True)
+zone_info_each_month = repeat_info(expanded_facility_info["Zonename"], num_facilities, year_range)
 zone_encoded = pd.get_dummies(zone_info_each_month, drop_first=True)
-dist_info_each_month = repeat_info(expanded_facility_info["Dist"], num_facilities, year_range, historical = True)
+dist_info_each_month = repeat_info(expanded_facility_info["Dist"], num_facilities, year_range)
 dist_encoded = pd.get_dummies(dist_info_each_month, drop_first=True)
-resid_info_each_month = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range, historical = True)
+resid_info_each_month = repeat_info(expanded_facility_info['Resid'], num_facilities, year_range)
 resid_encoded = pd.get_dummies(resid_info_each_month, drop_first=True)
-owner_info_each_month = repeat_info(expanded_facility_info['A105'], num_facilities, year_range, historical = True)
+owner_info_each_month = repeat_info(expanded_facility_info['A105'], num_facilities, year_range)
 owner_encoded = pd.get_dummies(owner_info_each_month, drop_first=True)
-ftype_info_each_month = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range, historical = True)
+ftype_info_each_month = repeat_info(expanded_facility_info['Ftype'], num_facilities, year_range)
 ftype_encoded = pd.get_dummies(ftype_info_each_month, drop_first=True)
-altitude = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities, year_range, historical = True)]
-minimum_distance = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'], num_facilities, year_range, historical = True)]
+altitude = [float(x) for x in repeat_info(expanded_facility_info['A109__Altitude'], num_facilities, year_range)]
+minimum_distance = [float(x) for x in repeat_info(expanded_facility_info['minimum_distance'], num_facilities, year_range)]
 
 altitude = np.array(altitude)
 altitude = np.where(altitude < 0, np.nan, altitude)
@@ -266,7 +264,6 @@ X_continuous = np.column_stack([
         np.array(minimum_distance)
     ]
 )
-print(weather_data)
 X_categorical = np.column_stack([
         resid_encoded,
         zone_encoded,
