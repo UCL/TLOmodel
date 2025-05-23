@@ -834,3 +834,82 @@ plot_icer_three_panels(icer_district, context='Continue WASH')
 
 plot_icer_three_panels(icer_district, context='Scale-up WASH')
 
+########################
+# NHB
+
+
+def compute_nhb(
+    dalys_averted: pd.DataFrame,
+    comparison_costs: pd.DataFrame,
+    discount_rate_dalys: float = 0.03,
+    discount_rate_costs: float = 0.03,
+    threshold: float = 150,
+    return_summary: bool = True
+) -> pd.DataFrame | pd.Series:
+    """
+    Compute Net Health Benefit (NHB) using DALYs averted and incremental costs by district over TARGET_PERIOD.
+
+    Parameters:
+    - dalys_averted: pd.DataFrame with MultiIndex (year, district), columns MultiIndex (run, draw)
+    - comparison_costs: pd.DataFrame with same structure
+    - discount_rate_dalys: annual discount rate for DALYs
+    - discount_rate_costs: annual discount rate for costs
+    - threshold: cost-effectiveness threshold ($ per DALY averted)
+    - return_summary: if True, summarise across runs for each draw and district
+
+    Returns:
+    - pd.DataFrame or pd.Series with NHB values by draw and district
+    """
+    global TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
+
+    # Restrict to target period
+    mask = (dalys_averted.index.get_level_values(0) >= start_year.year) & (
+        dalys_averted.index.get_level_values(0) <= end_year.year
+    )
+    dalys_period = dalys_averted.loc[mask]
+    costs_period = comparison_costs.loc[mask]
+
+    # Years since start for discounting
+    years_since_start = dalys_period.index.get_level_values(0) - start_year.year
+
+    # Discount weights
+    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
+    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
+
+    # Apply discounting
+    dalys_period = dalys_period.mul(discount_weights_dalys.values[:, None], axis=0)
+    costs_period = costs_period.mul(discount_weights_costs.values[:, None], axis=0)
+
+    # Sum over time, keeping districts
+    dalys_summed = dalys_period.groupby(level=1).sum()
+    costs_summed = costs_period.groupby(level=1).sum()
+
+    # Compute NHB
+    nhb = dalys_summed - (costs_summed / threshold)
+
+    # Reshape from wide (columns: run, draw) to long
+    nhb = nhb.stack(level=[0, 1]).rename("nhb").reset_index()
+    nhb.columns = ['district', 'run', 'draw', 'nhb']
+
+    if return_summary:
+        summary = (
+            nhb.groupby(['district', 'draw'])['nhb']
+            .agg(mean='mean', lower=lambda x: np.quantile(x, 0.025), upper=lambda x: np.quantile(x, 0.975))
+        )
+        return summary
+    else:
+        return nhb
+
+
+
+nhb_district = compute_nhb(
+    dalys_averted=schisto_dalys_averted_by_year_run_district_combined,
+    comparison_costs=costs_incurred_by_district_year_run_combined,
+    discount_rate_dalys=0.0,
+    threshold=150,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district.to_csv(results_folder / f'nhb_district{target_period()}.csv')
