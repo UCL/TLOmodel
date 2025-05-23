@@ -90,15 +90,16 @@ class HealthBurden(Module):
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         wealth_index = sim.modules['Lifestyle'].PROPERTIES['li_wealth'].categories
         year_index = list(range(self.sim.start_date.year, self.sim.end_date.year + 1))
-
+        district_index = sim.modules['Demography'].PROPERTIES['district_of_residence'].categories
         self.multi_index_for_age_and_wealth_and_time = pd.MultiIndex.from_product(
-            [sex_index, age_index, wealth_index, year_index], names=['sex', 'age_range', 'li_wealth', 'year'])
+            [sex_index, age_index, wealth_index, year_index, district_index], names=['sex', 'age_range', 'li_wealth', 'year', 'district_index'])
 
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
         self.years_life_lost = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_life_lost_stacked_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_life_lost_stacked_age_and_time = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
         self.years_lived_with_disability = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
+        self.years_life_lost_stacked_age_and_time_district = pd.DataFrame(index=self.multi_index_for_age_and_wealth_and_time)
 
         # 2) Collect the module that will use this HealthBurden module
         self.recognised_modules_names = [
