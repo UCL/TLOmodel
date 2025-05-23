@@ -249,8 +249,10 @@ def compute_icer(
     global TARGET_PERIOD
     start_year, end_year = TARGET_PERIOD
 
-    # Restrict to target period (years)
+    # Restrict index to target period (years)
     mask = (dalys_averted.index >= start_year.year) & (dalys_averted.index <= end_year.year)
+
+    # Extract the target period data
     dalys_period = dalys_averted.loc[mask]
     costs_period = comparison_costs.loc[mask]
 
@@ -261,17 +263,16 @@ def compute_icer(
     discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
     discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
 
-    # Apply discounting if discount_rate != 0
-    # todo check this works as changed from 1.0
+    # Apply discounting only to target period data
     if discount_rate_dalys != 0.0:
-        dalys_averted = dalys_averted.multiply(discount_weights_dalys, axis=0)
+        dalys_period = dalys_period.multiply(discount_weights_dalys, axis=0)
 
     if discount_rate_costs != 0.0:
-        comparison_costs = comparison_costs.multiply(discount_weights_costs, axis=0)
+        costs_period = costs_period.multiply(discount_weights_costs, axis=0)
 
-    # Sum discounted DALYs and costs over years (rows)
-    total_dalys = dalys_averted.sum(axis=0)  # indexed by (run, draw)
-    total_costs = comparison_costs.sum(axis=0)  # indexed by (run, draw)
+    # Sum discounted DALYs and costs over target period (rows)
+    total_dalys = dalys_period.sum(axis=0)  # indexed by (run, draw)
+    total_costs = costs_period.sum(axis=0)  # indexed by (run, draw)
 
     # Compute ICER per (run, draw) pair
     icers = total_costs / total_dalys
@@ -285,7 +286,11 @@ def compute_icer(
         summary = (
             icers_df
             .groupby('draw')['icer']
-            .agg(mean='mean', lower=lambda x: np.quantile(x, 0.025), upper=lambda x: np.quantile(x, 0.975))
+            .agg(
+                mean='mean',
+                lower=lambda x: np.quantile(x, 0.025),
+                upper=lambda x: np.quantile(x, 0.975)
+            )
         )
         return summary
     else:
@@ -343,6 +348,9 @@ def compute_nhb(
 
     # NHB
     nhb = total_dalys_averted - (total_costs / threshold)
+    if not isinstance(nhb.index, pd.MultiIndex):
+        nhb.index = pd.MultiIndex.from_tuples(nhb.index, names=['run', 'draw'])
+
     nhb_df = nhb.reset_index()
     nhb_df.columns = ['run', 'draw', 'nhb']
 
@@ -720,6 +728,92 @@ schisto_dalys_averted_by_year_run_combined = pd.concat([df1_sel, df2_sel, df3_se
 schisto_dalys_averted_by_year_run_combined.to_csv(results_folder / f'schisto_dalys_averted_by_year_run_combined{target_period()}.csv')
 
 
+#################
+# add disability for light infections
+
+
+
+# def get_low_intensity_person_years_infected(_df):
+#     """Get the person-years for each draw, summed over every district """
+#
+#     df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]
+#
+#     df_filtered = df.filter(regex='(Low-infection)')
+#
+#     person_years = df_filtered.sum(axis=1).sum() / 365.25
+#
+#     return pd.Series(person_years)
+
+
+def get_person_years_infected_by_year(_df: pd.DataFrame) -> pd.Series:
+    """
+    Get person-years infected per year, summed over all districts, age groups, and species,
+    for infection level = Low-infection.
+    """
+    # Filter to target period
+    # df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)].copy()
+    df = _df
+    # Extract year and drop original date column
+    df['year'] = pd.to_datetime(df['date']).dt.year
+    df.drop(columns='date', inplace=True)
+
+    # Filter columns for infection_level=Low-infection only
+    df_filtered = df.filter(regex=r'infection_level=Low-infection')
+
+    # Convert columns to MultiIndex
+    columns_split = df_filtered.columns.str.extract(
+        r'species=([^|]+)\|age_group=([^|]+)\|infection_level=([^|]+)\|district=([^|]+)'
+    )
+    df_filtered.columns = pd.MultiIndex.from_frame(columns_split, names=['species', 'age_group', 'infection_level', 'district'])
+
+    # Group by year and sum over all dimensions
+    py_by_year = (
+        df_filtered
+        .groupby(df['year'])
+        .sum()
+        .sum(axis=1)  # sum over species, age group, infection level, district
+        / 365.25      # convert person-days to person-years
+    )
+
+    return py_by_year
+
+
+person_years_light_infection = extract_results(
+            results_folder,
+            module="tlo.methods.schisto",
+            key="Schisto_person_days_infected",
+            custom_generate_series=get_person_years_infected_by_year,
+            do_scaling=True,
+        ).pipe(set_param_names_as_column_index_level_0)
+
+
+# convert to years lived with disability
+disability_weight_light_inf = person_years_light_infection * 0.01  # (from updated GBD)
+
+disability_weight_light_inf_averted_by_year_run_vs_pause = -1.0 * find_difference_relative_to_comparison_dataframe(
+    disability_weight_light_inf,
+    comparison='Pause WASH, no MDA'
+)
+disability_weight_light_inf_averted_by_year_run_vs_continue = -1.0 * find_difference_relative_to_comparison_dataframe(
+    disability_weight_light_inf,
+    comparison='Continue WASH, no MDA'
+)
+disability_weight_light_inf_averted_by_year_run_vs_scaleup = -1.0 * find_difference_relative_to_comparison_dataframe(
+    disability_weight_light_inf,
+    comparison='Scale-up WASH, no MDA'
+)
+
+# Select desired columns from each dataframe
+df1_sel = select_draws_by_keyword(disability_weight_light_inf_averted_by_year_run_vs_pause, 'Pause')
+df2_sel = select_draws_by_keyword(disability_weight_light_inf_averted_by_year_run_vs_continue, 'Continue')
+df3_sel = select_draws_by_keyword(disability_weight_light_inf_averted_by_year_run_vs_scaleup, 'Scale-up')
+
+# Concatenate the selected columns horizontally
+disability_weight_light_inf_averted_by_year_run_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
+disability_weight_light_inf_averted_by_year_run_combined.to_csv(results_folder / f'disability_weight_light_inf_averted_by_year_run_combined{target_period()}.csv')
+
+
+
 ######################
 # COSTS PER RUN
 ######################
@@ -774,12 +868,42 @@ costs_incurred_by_year_run_combined = pd.concat([df1_sel, df2_sel, df3_sel], axi
 costs_incurred_by_year_run_combined.to_csv(results_folder / f'costs_incurred_by_year_run_combined{target_period()}.csv')
 
 
+## just PZQ costs only for ICER
+
+pzq_costs_incurred_by_year_run_vs_pause = find_difference_relative_to_comparison_dataframe(
+    pzq_costs_req_by_year,
+    comparison='Pause WASH, no MDA'
+)
+pzq_costs_incurred_by_year_run_vs_continue = find_difference_relative_to_comparison_dataframe(
+    pzq_costs_req_by_year,
+    comparison='Continue WASH, no MDA'
+)
+pzq_costs_incurred_by_year_run_vs_scaleup = find_difference_relative_to_comparison_dataframe(
+    pzq_costs_req_by_year,
+    comparison='Scale-up WASH, no MDA'
+)
+
+
+# Select desired columns from each dataframe
+df1_sel = select_draws_by_keyword(pzq_costs_incurred_by_year_run_vs_pause, 'Pause')
+df2_sel = select_draws_by_keyword(pzq_costs_incurred_by_year_run_vs_continue, 'Continue')
+df3_sel = select_draws_by_keyword(pzq_costs_incurred_by_year_run_vs_scaleup, 'Scale-up')
+
+# Concatenate the selected columns horizontally
+pzq_costs_incurred_by_year_run_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
+pzq_costs_incurred_by_year_run_combined.to_csv(results_folder / f'pzq_costs_incurred_by_year_run_combined{target_period()}.csv')
+
 
 # ==============================================================================
 # 📊 CALCULATE ICERS AND NHB
 # ==============================================================================
+# if adding light infection disability weight:
+# todo
+dalys_averted_including_light_inf = disability_weight_light_inf_averted_by_year_run_combined + schisto_dalys_averted_by_year_run_combined.iloc[:-1]
 
-icer_no_discount_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+
+
+icer_no_discount_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],
     comparison_costs=costs_incurred_by_year_run_combined,
     discount_rate_dalys=0,  # no discounting
     discount_rate_costs=0,
@@ -787,7 +911,27 @@ icer_no_discount_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_y
 
 icer_no_discount_summary.to_csv(results_folder / (f'icer_no_discount_summary{target_period()}.csv'))
 
-icer_no_discount_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+
+icer_no_discount_CONS_ONLY_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],
+    comparison_costs=pzq_costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,  # no discounting
+    discount_rate_costs=0,
+    return_summary=True)
+
+icer_no_discount_CONS_ONLY_summary.to_csv(results_folder / (f'icer_no_discount_CONS_ONLY_summary{target_period()}.csv'))
+
+
+icer_no_discount_LIGHT_INF_summary = compute_icer(dalys_averted=dalys_averted_including_light_inf,
+    comparison_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,  # no discounting
+    discount_rate_costs=0,
+    return_summary=True)
+
+icer_no_discount_LIGHT_INF_summary.to_csv(results_folder / (f'icer_no_discount_LIGHT_INF_summary{target_period()}.csv'))
+
+
+
+icer_no_discount_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],
     comparison_costs=costs_incurred_by_year_run_combined,
     discount_rate_dalys=0,  # no discounting
     discount_rate_costs=0,
@@ -796,7 +940,7 @@ icer_no_discount_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by_ye
 icer_no_discount_by_run.to_csv(results_folder / (f'icer_no_discount_by_run{target_period()}.csv'))
 
 
-icer_discount_costs_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+icer_discount_costs_summary = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],
     comparison_costs=costs_incurred_by_year_run_combined,
     discount_rate_dalys=0,  # no discounting
     discount_rate_costs=0.03,
@@ -804,7 +948,7 @@ icer_discount_costs_summary = compute_icer(dalys_averted=schisto_dalys_averted_b
 
 icer_discount_costs_summary.to_csv(results_folder / (f'icer_discount_costs_summary{target_period()}.csv'))
 
-icer_discount_costs_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined,
+icer_discount_costs_by_run = compute_icer(dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],
     comparison_costs=costs_incurred_by_year_run_combined,
     discount_rate_dalys=0,  # no discounting
     discount_rate_costs=0.03,
@@ -822,6 +966,27 @@ nhb_no_discount_150 = compute_nhb(
     return_summary=True
 )
 nhb_no_discount_150.to_csv(results_folder / (f'nhb_no_discount_150_{target_period()}.csv'))
+
+nhb_no_discount_150_CONS_ONLY = compute_nhb(
+    dalys_averted=schisto_dalys_averted_by_year_run_combined.iloc[:-1],
+    comparison_costs=pzq_costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,
+    discount_rate_costs=0,
+    threshold=150,
+    return_summary=True
+)
+nhb_no_discount_150_CONS_ONLY.to_csv(results_folder / (f'nhb_no_discount_150_CONS_ONLY{target_period()}.csv'))
+
+
+nhb_no_discount_150_LIGHT_INF = compute_nhb(
+    dalys_averted=dalys_averted_including_light_inf,
+    comparison_costs=costs_incurred_by_year_run_combined,
+    discount_rate_dalys=0,
+    discount_rate_costs=0,
+    threshold=150,
+    return_summary=True
+)
+nhb_no_discount_150_LIGHT_INF.to_csv(results_folder / (f'nhb_no_discount_150_LIGHT_INF_{target_period()}.csv'))
 
 
 

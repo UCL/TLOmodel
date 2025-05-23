@@ -718,26 +718,6 @@ pc_py_averted_district_vs_baseline = 100.0 * compute_summary_statistics(
 pc_py_averted_district_vs_baseline.to_csv(results_folder / f'pc_py_averted_district_vs_baseline{target_period()}.csv')
 
 
-# heatmap - vs WASH scale-up
-data_to_plot = pc_py_averted_district_vs_scaleup_WASH.xs('central', level='stat', axis=1)
-data_to_plot = data_to_plot.loc[:, ~data_to_plot.columns.get_level_values(0).str.startswith('Pause') |
-                            (data_to_plot.columns.get_level_values(0) == 'Pause WASH, no MDA')]
-
-
-title = f"Percentage change in person-years infected vs WASH scale-up \n any species, all ages {target_period()}"
-plot_percentage_change_heatmap(data_to_plot, title, filename_suffix="PY_")
-
-
-#heatmap - vs BASELINE
-data_to_plot = pc_py_averted_district_vs_baseline.xs('central', level='stat', axis=1)
-data_to_plot = data_to_plot.loc[:, ~data_to_plot.columns.get_level_values(0).str.startswith('Pause') |
-                            (data_to_plot.columns.get_level_values(0) == 'Pause WASH, no MDA')]
-
-
-title = f"Percentage change in person-years infected vs continued WASH improvements \n any species, all ages {target_period()}"
-plot_percentage_change_heatmap(data_to_plot, title, filename_suffix="PY_")
-
-
 
 
 
@@ -944,9 +924,6 @@ def compute_icer(
     # Group by district (level 1 of index)
     total_dalys = dalys_period.groupby(level=1).sum()
     total_costs = costs_period.groupby(level=1).sum()
-
-    # total_dalys and total_costs now have index = district
-    # columns = MultiIndex (draw, run)
 
     # Compute ICER = total_costs / total_dalys for each district, run, draw
     icers = total_costs / total_dalys
