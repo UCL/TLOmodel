@@ -38,14 +38,17 @@ class DiabeticRetinopathy(Module):
         "rate_moderate_to_severe": Parameter(Types.REAL,
                                              "Probability of people who get diagnosed with severe diabetic retinopathy"),
         "rate_severe_to_proliferative": Parameter(Types.REAL,
-                                                  "Probability of people who get diagnosed with proliferative diabetic retinopathy"),
+                                                  "Probability of people who get diagnosed with proliferative "
+                                                  "diabetic retinopathy"),
         'prob_fast_dr': Parameter(Types.REAL,
                                   "Probability of people who get diagnosed from none phase to proliferative diabetic "
                                   "retinopathy stage"),
-        #TODO Change init_prob_any_dr to LIST
+        # TODO Change init_prob_any_dr to LIST
         "init_prob_any_dr": Parameter(Types.LIST, "Initial probability of anyone with diabetic retinopathy"),
-        # "init_prob_proliferative_dr": Parameter(Types.REAL,
-        #                                "Initial probability of people with diabetic retinopathy in the proliferative stage"),
+        "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having Diabetic "
+                                              "Macular Oedema (DMO)"),
+        # "init_prob_proliferative_dr": Parameter(Types.REAL, "Initial probability of people with diabetic
+        # retinopathy in the proliferative stage"),
         "p_medication": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
         "init_prob_ever_diet_mgmt_if_diagnosed": Parameter(
             Types.REAL, "Initial probability of ever having had a diet management session if ever diagnosed "
@@ -72,6 +75,8 @@ class DiabeticRetinopathy(Module):
         'effectiveness_of_laser_photocoagulation_in_severe_regression': Parameter(
             Types.REAL,
             'Probability of severe diabetic retinopathy regressing to moderate.'),
+        "probs_for_dmo_non": Parameter(
+            Types.LIST, "probability of no DMO moving between states: mild, moderate, severe, proliferative "),
     }
 
     PROPERTIES = {
@@ -79,6 +84,11 @@ class DiabeticRetinopathy(Module):
             Types.CATEGORICAL,
             "DR status",
             categories=["none", "mild", "moderate", "severe", "proliferative"],
+        ),
+        "dmo_status": Property(
+            Types.CATEGORICAL,
+            "DMO status. Only occurs to people with any type of DIabetic Retinopathy.",
+            categories=["none", "clinically_significant", "non_clnincally_significant"],
         ),
         "dr_on_treatment": Property(
             Types.BOOL, "Whether this person is on diabetic retinopathy treatment",
@@ -107,12 +117,6 @@ class DiabeticRetinopathy(Module):
         "dr_ever_diet_mgmt": Property(Types.BOOL,
                                       "Whether this person has ever had a diabetic retinopathy diet management"
                                       "session in the diabetic clinic"),
-        "has_dmo": Property(Types.BOOL,
-                            "Whether this person has any form of diabetic macular oedema"),
-        "has_csdmo_or_ncsdmo": Property(Types.BOOL,
-                                        "Whether this person has clinically significant diabetic macular oedema if "
-                                        "true,"
-                                        "or person has non clinically significant diabetic macular oedema"),
 
     }
 
@@ -137,6 +141,10 @@ class DiabeticRetinopathy(Module):
 
         self.parameters['prob_fast_dr'] = 0.5
         self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.2]
+        self.parameters['prob_any_dmo'] = [0.1, 0.2, 0.3, 0.4]
+
+        self.parameters['probs_for_dmo_non'] = [0.9, 0.1, 0.0, 0.0]
+
         # self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.15, 0.05]
         # self.parameters['init_prob_proliferative_dr'] = 0.09
         self.parameters['p_medication'] = 0.8
@@ -179,6 +187,7 @@ class DiabeticRetinopathy(Module):
 
         # write to property:
         df.loc[df.is_alive & ~df.nc_diabetes, 'dr_status'] = 'none'
+        df.loc[df.is_alive & ~df.nc_diabetes, 'dmo_status'] = 'none'
 
         df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
@@ -186,8 +195,6 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_blindness_investigated"] = False
         df.loc[list(alive_diabetes_idx), "dr_ever_diet_mgmt"] = False
-        df.loc[list(alive_diabetes_idx), "has_dmo"] = False
-        df.loc[list(alive_diabetes_idx), "has_csdmo_or_ncsdmo"] = False
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -286,14 +293,13 @@ class DiabeticRetinopathy(Module):
         :param child_id: the new child
         """
         self.sim.population.props.at[child_id, 'dr_status'] = 'none'
+        self.sim.population.props.at[child_id, 'dmo_status'] = 'none'
         self.sim.population.props.at[child_id, 'dr_on_treatment'] = False
         self.sim.population.props.at[child_id, 'dr_date_treatment'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_blindness_investigated'] = False
         self.sim.population.props.at[child_id, 'dr_ever_diet_mgmt'] = False
-        self.sim.population.props.at[child_id, 'has_dmo'] = False
-        self.sim.population.props.at[child_id, 'has_csdmo_or_ncsdmo'] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -395,6 +401,18 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # severe_to_proliferative_idx = mild_to_moderate[severe_to_proliferative].index
         severe_to_proliferative_idx = df.index[np.where(severe_to_proliferative)[0]]
         df.loc[severe_to_proliferative_idx, 'dr_status'] = 'proliferative'
+
+        # Setting DMO status
+        # Get people with any DR (i.e., not none) in index, since DMO is only for people with DR
+
+        prob_matrix = pd.DataFrame(
+            columns=df.dmo_status,
+            index=df.loc[df.dr_status != 'none', 'dr_status']
+        )
+
+        prob_matrix['none'] = self.parameters['probs_for_dmo_non']
+        prob_matrix['clinically_significant'] = [0.2, 0.2, 0.6, 0.0]
+        prob_matrix['non_clinically_significant'] = [0.0, 0.2, 0.6, 0.2]
 
         # fast_dr = self.module.lm['onset_fast_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
         # # fast_dr_idx = fast_dr[fast_dr].index
