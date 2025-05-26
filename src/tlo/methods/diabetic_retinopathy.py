@@ -43,7 +43,7 @@ class DiabeticRetinopathy(Module):
         'prob_fast_dr': Parameter(Types.REAL,
                                   "Probability of people who get diagnosed from none phase to proliferative diabetic "
                                   "retinopathy stage"),
-        # TODO Change init_prob_any_dr to LIST
+
         "init_prob_any_dr": Parameter(Types.LIST, "Initial probability of anyone with diabetic retinopathy"),
         "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having Diabetic "
                                               "Macular Oedema (DMO)"),
