@@ -120,6 +120,17 @@ class Specifiable:
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
+    def __init__(self,
+                 type_: Types,
+                 description: str,
+                 categories: List[str] = None,
+                 *,
+                 metadata: Optional[Dict[str, Any]] = None):
+        super().__init__(type_, description, categories)
+        self.metadata = metadata or {}
+
+    def set_metadata(self, **kwargs):
+        self.metadata.update(kwargs)
 
 
 class Property(Specifiable):
@@ -288,7 +299,7 @@ class Module:
 
     # The explicit attributes of the module. We list these to distinguish dynamic
     # parameters created from the PARAMETERS specification.
-    __slots__ = ('name', 'parameters', 'rng', 'sim', 'label_data')
+    __slots__ = ('name', 'parameters', 'rng', 'sim')
 
     def __init__(self, name: Optional[str] = None) -> None:
         """Construct a new disease module ready to be included in a simulation.
@@ -302,7 +313,6 @@ class Module:
         self.rng: Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
         self.sim: Optional[Simulation] = None
-        self.label_data = {}
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame) -> None:
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary
@@ -322,57 +332,30 @@ class Module:
 
         :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
         """
-        def param_labels_min_max(param_df: pd.DataFrame) :
-            """ assigning extra columns for specifying parameter labels, their min and max values """
-            extra_param_data = {'param_label': ["unassigned", "free", "constant", "context_specific"],
-                             'prior_min': None,
-                             'prior_max': None
-                             }
-            for _col in extra_param_data.keys():
-                if _col not in param_df.columns:
-                    param_df[_col] = extra_param_data[_col][0] \
-                        if isinstance(extra_param_data[_col], list) else extra_param_data[_col]
-
-                if _col == 'param_label':
-                    # fill na with unassigned
-                    param_df[_col].fillna('unassigned')
-                    # check if value is in acceptable labels or format
-                    assert set(param_df[_col].values).issubset(set(extra_param_data[_col])), \
-                        (f'value should be either one of the following {extra_param_data["param_label"]} '
-                         f'and not {set(param_df[_col].values)}')
-                else:
-                    param_df[_col].fillna('None')
-                    for _val in param_df[_col].values:
-                        if _val is not None:
-                            try:
-                                int(_val)
-                            except ValueError:
-                                try:
-                                    float(_val)
-                                except ValueError as e:
-                                    raise ValueError(f'the value can only be an integer, float or None not {_val}') from e
-
-
-            return param_df[['param_label']]
-
-        # update the parameter labels dictionary
-        self.label_data[self.name] = param_labels_min_max(resource)
 
         resource.set_index('parameter_name', inplace=True)
         skipped_data_types = ('DATA_FRAME', 'SERIES')
+        acceptable_labels = ['unassigned', 'undetermined', 'universal', 'local', 'scenario']
+        param_defaults = {'param_label': 'unassigned', 'prior_min': None, 'prior_max': None }
 
+        for _col in param_defaults.keys():
+            if _col not in resource.columns:
+                resource[_col] = param_defaults[_col]
         # for each supported parameter, convert to the correct type
         for parameter_name in resource.index[resource.index.notnull()]:
             parameter_definition = self.PARAMETERS[parameter_name]
-
             if parameter_definition.type_.name in skipped_data_types:
                 continue
 
             # For each parameter, raise error if the value can't be coerced
-            parameter_value = resource.at[parameter_name, 'value']
+            parameter_value, prior_min, prior_max = resource.loc[parameter_name, ['value', 'prior_min', 'prior_max']]
+            parameter_label = resource.at[parameter_name, 'param_label']
+            assert parameter_label in acceptable_labels, f'unrecognised parameter label {parameter_label}'
+
             error_message = (
-                f"The value of '{parameter_value}' for parameter '{parameter_name}' "
-                f"could not be parsed as a {parameter_definition.type_.name} data type"
+                f"some values are not of type {parameter_definition.type_.name} and "
+                f"could not be parsed as a {parameter_definition.type_.name} data type. "
+                f"parameter name is {parameter_name}, values {[parameter_value, prior_min, prior_max]}"
             )
             if parameter_definition.python_type is list:
                 try:
@@ -380,6 +363,10 @@ class Module:
                     # because it raises error instead of joining two strings without a comma
                     parameter_value = json.loads(parameter_value)
                     assert isinstance(parameter_value, list)
+                    if pd.notnull(prior_min):
+                        assert isinstance(json.loads(prior_min), list)
+                    if pd.notnull(prior_max):
+                        assert isinstance(json.loads(prior_max), list)
                 except (json.decoder.JSONDecodeError, TypeError, AssertionError) as exception:
                     raise ValueError(error_message) from exception
             elif parameter_definition.python_type == pd.Categorical:
@@ -396,15 +383,22 @@ class Module:
                 # All other data types, assign to the python_type defined in Parameter class
                 try:
                     parameter_value = parameter_definition.python_type(parameter_value)
+                    if not isinstance(parameter_definition.python_type, pd.Timestamp):
+                        if pd.notnull(prior_min):
+                            parameter_definition.python_type(prior_min)
+                        if pd.notnull(prior_max):
+                            parameter_definition.python_type(prior_max)
                 except Exception as exception:
                     raise ValueError(error_message) from exception
 
             # Save the values to the parameters
             self.parameters[parameter_name] = parameter_value
-
-    def get_label_data(self):
-        """ return module parameter labels """
-        return self.label_data
+            # Assign metadata to the Parameter object
+            parameter_definition.set_metadata(
+                param_label=parameter_label,
+                prior_min=prior_min,
+                prior_max=prior_max
+                )
 
     def read_parameters(self, data_folder: str | Path) -> None:
         """Read parameter values from file, if required.

@@ -1,12 +1,11 @@
 import os
 import pathlib
 from io import StringIO
-from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from tlo import Date, Module, Parameter, Population, Property, Simulation, Types
+from tlo import Module, Parameter, Property, Types
 
 
 def test_categorical():
@@ -45,60 +44,6 @@ def test_dict():
     assert 'name' in s[0] and s[0]['name'] == 'world'
     assert len(s[1]) == 0
     assert dict() == s[1] == s[2]
-
-def test_parameter_label(tmpdir):
-    """ test assignment of parameter labels follow accepted label values
-    (["unassigned", "free", "constant", "context_specific"])
-
-    """
-
-    class DummyModule(Module):
-        PARAMETERS = {
-            'prob_inf': Parameter(Types.REAL, description='Infection probability'),
-            'prob_death': Parameter(Types.REAL, description='Probability of dying from this disease'),
-            'rr_inf': Parameter(Types.REAL, description='relative rate of infection'),
-            'rr_death': Parameter(Types.REAL, description='relative rate of death')
-        }
-        def __init__(self, resourcefilepath=None):
-            super().__init__()
-            self.resourcefilepath = resourcefilepath
-
-        def read_parameters(self, data_folder: str | Path) -> None:
-            df = pd.read_csv( self.resourcefilepath / 'dummy_data.csv')
-            self.load_parameters_from_dataframe(df)
-
-        def initialise_population(self, population: Population) -> None:
-            pass
-
-        def initialise_simulation(self, sim: Simulation) -> None:
-            pass
-    def get_simulation(resource_file_path: str | Path):
-        sim = Simulation(start_date=Date(2010, 1, 1), seed=0)
-        sim.register(DummyModule(resourcefilepath=resource_file_path))
-        sim.make_initial_population(n=1000)
-        sim.simulate(end_date=Date(2010, 2, 1))
-
-    # create some dummy data for testing
-    dummy_data = pd.DataFrame(data={'parameter_name': ['prob_inf', 'prob_death', 'rr_inf', 'rr_death'],
-                                    'value': [0.3, 0.02, 0.8, 0.9],
-                                    'param_label': ['free', 'constant','context_specific', 'free'],
-                                    'prior_min': [0.002, 0.002, 0.001, 0.003],
-                                    'prior_max': [0.98, 0.8, 0.6, 0.7]})
-
-    # export to csv file and save in temporally directory
-    dummy_data.to_csv(tmpdir / 'dummy_data.csv')
-
-    resourcefilepath = tmpdir
-    # run simulation with expected parameters labels
-    get_simulation(resourcefilepath)
-
-    # change parameter labels column to  include an unexpected value and test simulation gives an assertion error
-    unexpected_data = {'param_label': 0.2, 'prior_min': 'lower', 'prior_max': 'upper'}
-    for _col, _val in unexpected_data.items():
-        dummy_data.loc[1, _col] = _val
-        dummy_data[_col].to_csv(resourcefilepath / 'dummy_data.csv')
-        with pytest.raises((AssertionError, ValueError)):
-            get_simulation(resourcefilepath)
 
 
 class TestLoadParametersFromDataframe:
@@ -220,6 +165,43 @@ class TestLoadParametersFromDataframe:
         self.module.load_parameters_from_dataframe(self.resource)
         assert self.module.parameters['bool_true'] is True
         assert self.module.parameters['bool_false'] is False
+
+    def test_unacceptable_labels(self):
+        """ label not acceptable for parameter label
+
+        should raise an assertion error """
+        resource = self.resource.copy()
+        resource['param_label'] = 'free'
+        with pytest.raises(AssertionError, match="unrecognised parameter label"):
+            self.module.load_parameters_from_dataframe(resource)
+
+    def test_unacceptable_lower_value(self):
+        """ check unacceptable for lower value
+
+        should raise a value error """
+        resource = self.resource.copy()
+        resource['prior_min'] = 'a'
+        with pytest.raises(ValueError):
+            self.module.load_parameters_from_dataframe(resource)
+
+    def test_unacceptable_upper_value(self):
+        """ check unacceptable for upper value
+
+        should raise a value error """
+        resource = self.resource.copy()
+        resource['prior_max'] = 'b'
+        with pytest.raises(ValueError):
+            self.module.load_parameters_from_dataframe(resource)
+
+    def test_list_type_parameter_value_has_list_type_lower_upper_value(self):
+        """ assign integer and float values to lower and upper values respectively.
+
+        should raise a value error for parameter values of type list """
+        resource = self.resource.copy()
+        resource['prior_min'] = 1
+        resource['prior_max'] = 2.0
+        with pytest.raises(ValueError, match='some values are not of type LIST'):
+            self.module.load_parameters_from_dataframe(resource)
 
 
 class TestLoadParametersFromDataframe_Bools_From_Csv:

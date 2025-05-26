@@ -6,7 +6,7 @@ import datetime
 import heapq
 import itertools
 import time
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -300,13 +300,20 @@ class Simulation:
         :param wall_clock_time: Optional argument specifying total time taken to
             simulate, to be written out to log before closing.
         """
+        labels_metadata = {}
         for module in self.modules.values():
             module.on_simulation_end()
-            _labels_dict = module.get_label_data()
-            # get module parameter labels info
-            for _key, _val in _labels_dict.items():
-                _labels_dict[_key] = _val.groupby('param_label').size().to_dict()
-            logger.info(key='label_stats', data=_labels_dict)
+            # log module parameter labels statistics
+            # NB: The `not_init_via_load_param` count indicates parameters in that disease module that
+            # were initialised outside `load_parameters_from_dataframe` method
+            for module_name, module in self.modules.items():
+                if hasattr(module, "PARAMETERS"):
+                    labels = []
+                    for param_obj in module.PARAMETERS.values():
+                        label = param_obj.metadata.get("param_label", "not_init_via_load_param")
+                        labels.append(label)
+                    labels_metadata[module_name] = Counter(labels)
+        logger.info(key='parameter_stats', data=labels_metadata)
 
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
