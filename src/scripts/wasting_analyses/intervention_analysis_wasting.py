@@ -1,5 +1,6 @@
 """
-An analysis file for the wasting module (so far only for 1 run, 1 draw)
+This is a preliminary analysis script for the wasting module, displaying outcomes separately for each run and draw.
+The full analysis is conducted using the run_interventions_analysis_wasting.py script.
 """
 # %% Import statements
 import glob
