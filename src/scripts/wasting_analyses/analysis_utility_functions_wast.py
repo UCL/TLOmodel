@@ -9,6 +9,26 @@ plt.style.use('seaborn-darkgrid')
 """This file contains functions used for wasting analyses to extract data, derive outcomes and generate plots.
 (It is based on analysis_utility_function prepared by Joe for maternal_perinatal_analyses.)"""
 
+def extract_death_data_frames_and_outcomes(folder, birth_df):
+    print(f"{folder=}")
+    # All deaths occurring during the first 28 days of life are extracted
+
+    # neonatal_mortality = extract_results(
+    #     folder,
+    #     module="tlo.methods.demography.detail",
+    #     key="properties_of_deceased_persons",
+    #     custom_generate_series=(
+    #         lambda df: df.loc[(df['age_days'] < 29)].assign(
+    #             year=df['date'].dt.year).groupby(['year'])['year'].count()),
+    #     do_scaling=True)
+    # neo_deaths = nd.fillna(0)
+    # neo_deaths_int = neo_deaths.loc[intervention_years[0]: intervention_years[-1]]
+    # return
+
+################################################### ABOVE my functions #################################################
+
+################################################### BELOW Joe's functions ###############################################
+
 
 def return_95_CI_across_runs(df, sim_years):
     """Returns a list of lists from an outcome DF containing the mean and 95%CI values for that outcome over time.
