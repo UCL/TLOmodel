@@ -516,7 +516,7 @@ class Demography(Module):
                     zip(relevant_facilities["A109__Longitude"], relevant_facilities["A109__Latitude"]))
                 facility_tree = cKDTree(facility_coords)
                 distances, indices = facility_tree.query(individual_coords, k=1, workers=-1)
-                df[level] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"]
+                df[level] = relevant_facilities.iloc[indices].reset_index(drop=True)["Fname"].astype("category")
         df.drop("coordinate_of_residence", inplace=True, axis=1)
         self.sim.population.props = df
 
