@@ -72,7 +72,12 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     }
 
     # ---------------------------------------- NEONATAL AND UNDER-5 MORTALITY ---------------------------------------- #
-    # Extract outcome data
+    # Extract neonatal and under-5 death data from each of the scenario files
+    print()
+    empty_df = pd.DataFrame() # TODO need to be replaced by births_dict[scen_folder]['births_data_frame'])
+    death_data = {scen_name: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(scen_folder, empty_df)
+                  for interv, scenarios in scenario_folders.items() for scen_name, scen_folder in scenarios.items()}
+
 
 
 # ---------------- #
