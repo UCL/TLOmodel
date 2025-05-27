@@ -636,6 +636,7 @@ class Demography(Module):
             'cause': str(cause),
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
+            'district_of_residence': person['district_of_residence'],
             'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
@@ -664,6 +665,7 @@ class Demography(Module):
                                                                     wealth=person['li_wealth'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
+                                                                    district_of_residence=person['district_of_residence'],
                                                                     cause_of_death=cause,
                                                                     )
 
