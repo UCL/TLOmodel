@@ -185,15 +185,21 @@ def plot_dr_incidence(incidence_by_stage, title):
     plt.tight_layout()
     plt.show()
 
-logfile_with_healthsystem = run_sim(service_availability=['*'])
-results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
-logfile_no_healthsystem = run_sim(service_availability=[])
-results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
+try:
+    logfile_with_healthsystem = run_sim(service_availability=['*'])
+    results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
-plot_dr_progression(results_with_healthsystem['total_counts_by_stage_over_time'], "DR Progression Over Time (With Health System)")
-plot_dr_progression(results_no_healthsystem['total_counts_by_stage_over_time'], "DR Progression Over Time (No Health System)")
-plot_treatment_cascade(results_with_healthsystem['counts_by_cascade'], "Treatment Status Over Time (With Health System)")
-plot_treatment_cascade(results_no_healthsystem['counts_by_cascade'], "Treatment Status Over Time (No Health System)")
-# plot_dr_incidence(results_with_healthsystem['incidence_by_stage'], "DR Incidence Over Time (With Health System)")
-# plot_dr_incidence(results_no_healthsystem['incidence_by_stage'], "DR Incidence Over Time (No Health System)")
+    logfile_no_healthsystem = run_sim(service_availability=[])
+    results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
+
+    plot_dr_progression(results_with_healthsystem['total_counts_by_stage_over_time'], "DR Progression Over Time (With Health System)")
+    plot_dr_progression(results_no_healthsystem['total_counts_by_stage_over_time'], "DR Progression Over Time (No Health System)")
+    plot_treatment_cascade(results_with_healthsystem['counts_by_cascade'], "Treatment Status Over Time (With Health System)")
+    plot_treatment_cascade(results_no_healthsystem['counts_by_cascade'], "Treatment Status Over Time (No Health System)")
+    # plot_dr_incidence(results_with_healthsystem['incidence_by_stage'], "DR Incidence Over Time (With Health System)")
+    # plot_dr_incidence(results_no_healthsystem['incidence_by_stage'], "DR Incidence Over Time (No Health System)")
+
+except Exception as e:
+    print(f"Error running simulation: {str(e)}")
+    raise

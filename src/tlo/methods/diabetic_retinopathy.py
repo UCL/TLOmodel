@@ -12,6 +12,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
+from tlo.util import transition_states
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -75,8 +76,14 @@ class DiabeticRetinopathy(Module):
         'effectiveness_of_laser_photocoagulation_in_severe_regression': Parameter(
             Types.REAL,
             'Probability of severe diabetic retinopathy regressing to moderate.'),
-        "probs_for_dmo_non": Parameter(
-            Types.LIST, "probability of no DMO moving between states: mild, moderate, severe, proliferative "),
+        "probs_for_dmo_when_dr_status_mild": Parameter(
+            Types.LIST, "probability of having a DMO state when an individual has mild Diabetic Retinopathy "),
+        "probs_for_dmo_when_dr_status_moderate": Parameter(
+            Types.LIST, "probability of having a DMO state when an individual has mild Diabetic Retinopathy "),
+        "probs_for_dmo_when_dr_status_severe": Parameter(
+            Types.LIST, "probability of having a DMO state when an individual has severe Diabetic Retinopathy "),
+        "probs_for_dmo_when_dr_status_proliferative": Parameter(
+            Types.LIST, "probability of having a DMO state when an individual has proliferative Diabetic Retinopathy "),
     }
 
     PROPERTIES = {
@@ -87,8 +94,8 @@ class DiabeticRetinopathy(Module):
         ),
         "dmo_status": Property(
             Types.CATEGORICAL,
-            "DMO status. Only occurs to people with any type of DIabetic Retinopathy.",
-            categories=["none", "clinically_significant", "non_clnincally_significant"],
+            "DMO status. Only occurs to people with any type of Diabetic Retinopathy.",
+            categories=["none", "clinically_significant", "non_clinically_significant"],
         ),
         "dr_on_treatment": Property(
             Types.BOOL, "Whether this person is on diabetic retinopathy treatment",
@@ -143,7 +150,10 @@ class DiabeticRetinopathy(Module):
         self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.2]
         self.parameters['prob_any_dmo'] = [0.1, 0.2, 0.3, 0.4]
 
-        self.parameters['probs_for_dmo_non'] = [0.9, 0.1, 0.0, 0.0]
+        self.parameters['probs_for_dmo_when_dr_status_mild'] = [0.7, 0.1, 0.2]
+        self.parameters['probs_for_dmo_when_dr_status_moderate'] = [0.5, 0.3, 0.2]
+        self.parameters['probs_for_dmo_when_dr_status_severe'] = [0.3, 0.5, 0.2]
+        self.parameters['probs_for_dmo_when_dr_status_proliferative'] = [0.1, 0.7, 0.2]
 
         # self.parameters['init_prob_any_dr'] = [0.2, 0.3, 0.3, 0.15, 0.05]
         # self.parameters['init_prob_proliferative_dr'] = 0.09
@@ -364,6 +374,52 @@ class DiabeticRetinopathy(Module):
         if prob_success > self.rng.random_sample():
             self.do_recovery([person_id])
 
+    def update_dmo_status(self):
+        """Update DMO status for people with diabetic retinopathy.
+        Ensures dmo_status is none when dr_status is none/nan."""
+        df = self.sim.population.props
+
+        # First reset dmo_status to 'none' for anyone without DR
+        no_dr_mask = (df.dr_status == 'none') | df.dr_status.isna()
+        df.loc[no_dr_mask, 'dmo_status'] = 'none'
+
+        # Now only process people with valid DR status
+        valid_dr_statuses = ['mild', 'moderate', 'severe', 'proliferative']
+        dr_idx = df.loc[df.is_alive & df.dr_status.isin(valid_dr_statuses)].index
+
+        if not dr_idx.empty:
+            for person in dr_idx:
+                dr_stage = df.at[person, 'dr_status']
+
+                if dr_stage == 'mild':
+                    probs = self.parameters['probs_for_dmo_when_dr_status_mild']
+                elif dr_stage == 'moderate':
+                    probs = self.parameters['probs_for_dmo_when_dr_status_moderate']
+                elif dr_stage == 'severe':
+                    probs = self.parameters['probs_for_dmo_when_dr_status_severe']
+                elif dr_stage == 'proliferative':
+                    probs = self.parameters['probs_for_dmo_when_dr_status_proliferative']
+
+                df.at[person, 'dmo_status'] = self.rng.choice(
+                    ['none', 'clinically_significant', 'non_clinically_significant'],
+                    p=probs
+                )
+
+            # verification for some people. To be deleted
+            sample_people = dr_idx[:5] if len(dr_idx) >= 5 else dr_idx
+            for person in sample_people:
+                print(
+                    f"Person {person}: dr_status={df.at[person, 'dr_status']}, dmo_status={df.at[person, 'dmo_status']}")
+
+        invalid_cases = df[
+            ((df.dr_status == 'none') | df.dr_status.isna()) &
+            (df.dmo_status.isin(['clinically_significant', 'non_clinically_significant']))
+            ]
+        assert len(invalid_cases) == 0, (
+            f"Found {len(invalid_cases)} cases where people with no DR "
+            f"have DMO status: {invalid_cases[['dr_status', 'dmo_status']].to_dict()}"
+        )
+
 
 class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     """An event that controls the development process of Diabetes Retinopathy (DR) and logs current states. DR diagnosis
@@ -402,17 +458,8 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         severe_to_proliferative_idx = df.index[np.where(severe_to_proliferative)[0]]
         df.loc[severe_to_proliferative_idx, 'dr_status'] = 'proliferative'
 
-        # Setting DMO status
-        # Get people with any DR (i.e., not none) in index, since DMO is only for people with DR
-
-        prob_matrix = pd.DataFrame(
-            columns=df.dmo_status,
-            index=df.loc[df.dr_status != 'none', 'dr_status']
-        )
-
-        prob_matrix['none'] = self.parameters['probs_for_dmo_non']
-        prob_matrix['clinically_significant'] = [0.2, 0.2, 0.6, 0.0]
-        prob_matrix['non_clinically_significant'] = [0.0, 0.2, 0.6, 0.2]
+        # Update DMO status
+        self.module.update_dmo_status()
 
         # fast_dr = self.module.lm['onset_fast_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
         # # fast_dr_idx = fast_dr[fast_dr].index
