@@ -302,7 +302,7 @@ class HealthBurden(Module):
 
         return daly_wt
 
-    def report_live_years_lost(self, sex=None, wealth=None, date_of_birth=None, age_range=None, district_of_residence=None,cause_of_death=None):
+    def report_live_years_lost(self, sex=None, wealth=None, date_of_birth=None, age_range=None, district_of_residence=None, cause_of_death=None):
         """
         Calculate and store the period for which there is 'years of lost life' when someone dies (assuming that the
         person has died on today's date in the simulation).
@@ -317,10 +317,10 @@ class HealthBurden(Module):
         def _format_for_multi_index(_yll: pd.Series):
             """Returns pd.Series which is the same as in the argument `_yll` except that the multi-index has been
             expanded to include sex and li_wealth and rearranged so that it matched the expected multi-index format
-            (sex/age_range/li_wealth/year)."""
+            (sex/age_range/li_wealth/district_of_residence/year)."""
             return pd.DataFrame(_yll)\
-                     .assign(sex=sex, li_wealth=wealth)\
-                     .set_index(['sex', 'li_wealth'], append=True)\
+                     .assign(sex=sex, li_wealth=wealth, district_of_residence=district_of_residence)\
+                     .set_index(['sex', 'li_wealth', 'district_of_residence'], append=True)\
                      .reorder_levels(['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year'])[_yll.name]
 
         assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time_and_region)
@@ -358,7 +358,7 @@ class HealthBurden(Module):
         # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
         # `yll_stacked_by_time` onto the age(-range) of death.
         age_range_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum())\
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3, 4]).sum())\
                                         .assign(age_range=age_range_to_stack_to)\
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'district_of_residence', 'year'])
@@ -407,7 +407,6 @@ class HealthBurden(Module):
         period['person_years'] = (period['days'] / 365).clip(lower=0.0, upper=1.0)
 
         period.drop(columns=['days'], axis=1, inplace=True)
-
         return period
 
     def write_to_log(self, year: int):
