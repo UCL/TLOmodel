@@ -412,7 +412,12 @@ class Demography(Module):
         _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
         _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
         _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
-
+        _level_0 = df.at[_id_inherit_from, 'level_0']
+        _level_1a = df.at[_id_inherit_from, 'level_1a']
+        _level_1b = df.at[_id_inherit_from, 'level_1b']
+        _level_2 = df.at[_id_inherit_from, 'level_2']
+        _level_3 = df.at[_id_inherit_from, 'level_3']
+        print("NEW LEVEL 0", df.at[_id_inherit_from, 'level_0'])
         child = {
             'is_alive': True,
             'date_of_birth': self.sim.date,
@@ -425,7 +430,12 @@ class Demography(Module):
             'region_of_residence': _region_of_residence,
             'age_exact_years': 0.0,
             'age_years': 0,
-            'age_range': self.AGE_RANGE_LOOKUP[0]
+            'age_range': self.AGE_RANGE_LOOKUP[0],
+            'level_0': _level_0,
+            'level_1a': _level_1a,
+            'level_1b': _level_1b,
+            'level_2': _level_2,
+            'level_3': _level_3,
         }
         df.loc[child_id, child.keys()] = child.values()
 
@@ -491,7 +501,7 @@ class Demography(Module):
             assign_coordinate_by_population_weight)
         facility_info  =pd.read_csv(Path(self.resourcefilepath) / 'climate_change_impacts' / "facilities_with_lat_long_region.csv")# these are ones that were included in the regression model
 
-        facility_levels = {
+        facility_levels_types = {
             "level_0": ["Health Post", "Village Health Committee", "Community Health Station", "Village Clinic", "Mobile Clinic", "Outreach Clinic"],
             "level_1a": [
                 "Dispensary", "Rural Health Centre", "Urban Health Centre", "Private Clinic", "Special Clinic",
@@ -509,7 +519,7 @@ class Demography(Module):
             for point in df["coordinate_of_residence"]
         ])
 
-        for level, facility_types in facility_levels.items():
+        for level, facility_types in facility_levels_types.items():
             relevant_facilities = facility_info[facility_info["Ftype"].isin(facility_types)]
             if not relevant_facilities.empty:
                 facility_coords = list(
