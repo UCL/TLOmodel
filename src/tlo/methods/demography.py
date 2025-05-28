@@ -417,7 +417,7 @@ class Demography(Module):
         _level_1b = df.at[_id_inherit_from, 'level_1b']
         _level_2 = df.at[_id_inherit_from, 'level_2']
         _level_3 = df.at[_id_inherit_from, 'level_3']
-        print("NEW LEVEL 0", df.at[_id_inherit_from, 'level_0'])
+
         child = {
             'is_alive': True,
             'date_of_birth': self.sim.date,
@@ -475,16 +475,6 @@ class Demography(Module):
         malawi_admin2 = gpd.read_file(Path(self.resourcefilepath/'mapping'/'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp'))
         worldpop_gdf = gpd.read_file(Path(self.resourcefilepath / 'climate_change_impacts' / 'worldpop_density_with_districts.shp'))
         worldpop_gdf['Z_prop'] = pd.to_numeric(worldpop_gdf['Z_prop'], errors='coerce') # even when saved as numeric, read in as string
-
-        # Create a lookup from district name to its polygon
-        district_to_geometry = {row["ADM2_EN"]: row["geometry"] for _, row in malawi_admin2.iterrows()}
-        def sample_point_within_polygon(polygon):
-            """Randomly sample a point within a given polygon."""
-            minx, miny, maxx, maxy = polygon.bounds
-            while True:
-                random_point = Point(random.uniform(minx, maxx), random.uniform(miny, maxy))
-                if polygon.contains(random_point):
-                    return random_point
 
         def assign_coordinate_by_population_weight(district_name):
             """Assigns a coordinate within the district, weighted by population density (Z_proportion)."""
