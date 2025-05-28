@@ -970,7 +970,7 @@ class HealthSystem(Module):
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
 
-    ## NOTE: EDit this function to accept an additional argument and redefine capabilities to fugible.
+
     def setup_daily_capabilities(self, use_funded_or_actual_staffing, include_clinics=False):
         """Set up `self._daily_capabilities` and `self._officers_with_availability`.
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
@@ -992,11 +992,18 @@ class HealthSystem(Module):
             ## Module specific capabilities are total time * non-fungible
             module_cols = ringfenced_clinics.columns.difference(["Facility_ID", "non-fungible"])
             updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Mins_Per_Day'], axis=0)
-            ## Store the non-fungible capabilities
-            ## Strucutred as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
+            ## Store the non-fungible capabilities strucutred as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
             self._clinics_capabilities = updated_capabilities[module_cols].T.to_dict()
             self._daily_capabilities = updated_capabilities.drop(columns=['fungible'])
 
+
+    def get_clinic_eligibility(str): -> bool:
+        """
+        Returns TRUE if clinics capabilities have been set up, FALSE otherwise
+        """
+        df = self.parameters['Ringfenced_Clinics']
+        eligible = str in df
+        return eligible
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
