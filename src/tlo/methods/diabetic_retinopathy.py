@@ -7,7 +7,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Population, Property, Simulation, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, cardio_metabolic_disorders
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.methods.symptommanager import Symptom
@@ -405,12 +405,6 @@ class DiabeticRetinopathy(Module):
                     p=probs
                 )
 
-            # verification for some people. To be deleted
-            sample_people = dr_idx[:5] if len(dr_idx) >= 5 else dr_idx
-            for person in sample_people:
-                print(
-                    f"Person {person}: dr_status={df.at[person, 'dr_status']}, dmo_status={df.at[person, 'dmo_status']}")
-
         invalid_cases = df[
             ((df.dr_status == 'none') | df.dr_status.isna()) &
             (df.dmo_status.isin(['clinically_significant', 'non_clinically_significant']))
@@ -501,9 +495,16 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Interventions for MAM
         elif dr_stage == 'mild' or dr_stage == 'moderate':
             # schedule HSI for mild and moderate
-            schedule_hsi_event(
-                hsi_event=HSI_Dr_DietManagement(module=self, person_id=person_id),
-                priority=0, topen=self.sim.date)
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=cardio_metabolic_disorders.HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                    person_id=person_id,
+                    module=self.sim.modules["CardioMetabolicDisorders"],
+                    condition='diabetes',
+                ),
+                priority=0,
+                topen=self.sim.date
+            )
+
 
         elif dr_stage == 'severe' or dr_stage == 'proliferative':
             # Interventions for severe and proliferative
