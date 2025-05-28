@@ -533,7 +533,7 @@ class HealthBurden(Module):
             force_cols=self._causes_of_dalys,
         )
 
-        # 5) Log total DALYS (Stacked by Age and Time), broken down by wealth only (with the YLL stacked by age and
+        # 5) Log total DALYS (Stacked by Age and Time), broken down by district only (with the YLL stacked by age and
         # time)
         yld_by_district = summarise_results_for_this_year(
             self.years_lived_with_disability, level=3
