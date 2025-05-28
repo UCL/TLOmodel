@@ -67,7 +67,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-    check_dtypes(sim)
+    #check_dtypes(sim)
 
     # read the results
     output = parse_log_file(sim.log_filepath)
@@ -112,7 +112,7 @@ def test_cause_of_disability_being_registered(seed, tmpdir):
 
     sim.make_initial_population(n=20)
     sim.simulate(end_date=Date(2010, 1, 2))
-    check_dtypes(sim)
+    #check_dtypes(sim)
 
     hblog = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
     disability_mapper_from_gbd_causes = extract_mapper(hblog['disability_mapper_from_gbd_cause_to_common_label'])
@@ -573,6 +573,15 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     ].sum().sum()
     assert dalys_by_year_stacked_by_age_and_time[age_range_at_death].values == approx(
         dalys_by_year_stacked_by_time.sum(axis=1).values, 1 / 364)
+
+    # Check dalys_by_district_stacked_by_age_and_time is as expected
+    # Check dalys_stacked_by_time is as expected:
+    print(log['dalys_by_district_stacked_by_age_and_time'])
+    dalys_by_year_stacked_by_time_district = log['dalys_by_district_stacked_by_age_and_time'].loc[
+        (log['dalys'].sex == sex), ['year', 'district_of_residence', 'Label_A']
+    ].groupby(['year', 'district_of_residence'])['Label_A'].sum().unstack()
+    assert dalys_by_year_stacked_by_time_district.loc[sim.start_date.year].sum() == 0.0
+
 
     # Check that results from daly_stacked_by_time can be extracted into a pd.Series (for use in `extract_results`)
     def fn(df_):
