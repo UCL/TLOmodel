@@ -39,7 +39,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
-outputspath = Path("./outputs/")  # for local runs
+# outputspath = Path("./outputs/")  # for local runs
 
 
 # test runs
@@ -54,8 +54,6 @@ outputspath = Path("./outputs/")  # for local runs
 # # load the results
 # with open(outputspath / "test_runs.pickle", "rb") as f:
 #     output = pickle.load(f)
-
-
 
 
 # %% Analyse results of runs
@@ -79,95 +77,124 @@ scaling_factor = log['tlo.methods.population']['scaling_factor'].scaling_factor.
 
 variables = [
     "Total_00_14_M",
-                "Total_15_24_M",
-                "Total_25_49_M",
-                "Total_50_UP_M",
-                "Total_00_14_F",
-                "Total_15_24_F",
-                "Total_25_49_F",
-                "Total_50_UP_F",
-                "Total_FSW",
-                "Total_MSM",
-                "PLHIV_00_14_M",
-                "PLHIV_15_24_M",
-                "PLHIV_25_49_M",
-                "PLHIV_50_UP_M",
-                "PLHIV_00_14_F",
-                "PLHIV_15_24_F",
-                "PLHIV_25_49_F",
-                "PLHIV_50_UP_F",
-                "PLHIV_FSW",
-                "PLHIV_MSM",
-                "Diagnosed_00_14_M",
-                "Diagnosed_15_24_M",
-                "Diagnosed_25_49_M",
-                "Diagnosed_50_UP_M",
-                "Diagnosed_00_14_F",
-                "Diagnosed_15_24_F",
-                "Diagnosed_25_49_F",
-                "Diagnosed_50_UP_F",
-                "Diagnosed_FSW",
-                "Diagnosed_MSM",
-                "ART_00_14_M",
-                "ART_15_24_M",
-                "ART_25_49_M",
-                "ART_50_UP_M",
-                "ART_00_14_F",
-                "ART_15_24_F",
-                "ART_25_49_F",
-                "ART_50_UP_F",
-                "ART_FSW",
-                "ART_MSM",
-                "VLS_00_14_M",
-                "VLS_15_24_M",
-                "VLS_25_49_M",
-                "VLS_50_UP_M",
-                "VLS_00_14_F",
-                "VLS_15_24_F",
-                "VLS_25_49_F",
-                "VLS_50_UP_F",
-                "VLS_FSW",
-                "VLS_MSM",
-                "Birth_All",
-                "Birth_HIV",
-                "DeathsAll_00_14_M",
-                "DeathsAll_15_24_M",
-                "DeathsAll_25_49_M",
-                "DeathsAll_50_UP_M",
-                "DeathsAll_00_14_F",
-                "DeathsAll_15_24_F",
-                "DeathsAll_25_49_F",
-                "DeathsAll_50_UP_F",
-                "NewHIV_00_14_M",
-                "NewHIV_15_24_M",
-                "NewHIV_25_49_M",
-                "NewHIV_50_UP_M",
-                "NewHIV_00_14_F",
-                "NewHIV_15_24_F",
-                "NewHIV_25_49_F",
-                "NewHIV_50_UP_F",
-                "NewHIV_FSW",
-                "NewHIV_MSM",
-                "DeathsHIV_00_14_M",
-                "DeathsHIV_15_24_M",
-                "DeathsHIV_25_49_M",
-                "DeathsHIV_50_UP_M",
-                "DeathsHIV_00_14_F",
-                "DeathsHIV_15_24_F",
-                "DeathsHIV_25_49_F",
-                "DeathsHIV_50_UP_F",
-                "DALYs_Undiscounted",
-                "TotalCost_Undiscounted",
-                "Percent_circumcised",
-                "Percent_condom use_GP",
-                "PrEP_FSW",
-                "PrEP_MSM",
-                "PrEP_GP",
-                "PrEP_Pop_GP",
-                "NewHIV_PrEP_Pop_GP",
-                "Percent_FSW reached",
-                "Percent_MSM reached",
+    "Total_15_24_M",
+    "Total_25_49_M",
+    "Total_50_UP_M",
+    "Total_00_14_F",
+    "Total_15_24_F",
+    "Total_25_49_F",
+    "Total_50_UP_F",
+    "Total_FSW",
+    "Total_MSM",
+    "PLHIV_00_14_M",
+    "PLHIV_15_24_M",
+    "PLHIV_25_49_M",
+    "PLHIV_50_UP_M",
+    "PLHIV_00_14_F",
+    "PLHIV_15_24_F",
+    "PLHIV_25_49_F",
+    "PLHIV_50_UP_F",
+    "PLHIV_FSW",
+    "PLHIV_MSM",
+    "Diagnosed_00_14_M",
+    "Diagnosed_15_24_M",
+    "Diagnosed_25_49_M",
+    "Diagnosed_50_UP_M",
+    "Diagnosed_00_14_F",
+    "Diagnosed_15_24_F",
+    "Diagnosed_25_49_F",
+    "Diagnosed_50_UP_F",
+    "Diagnosed_FSW",
+    "Diagnosed_MSM",
+    "ART_00_14_M",
+    "ART_15_24_M",
+    "ART_25_49_M",
+    "ART_50_UP_M",
+    "ART_00_14_F",
+    "ART_15_24_F",
+    "ART_25_49_F",
+    "ART_50_UP_F",
+    "ART_FSW",
+    "ART_MSM",
+    "VLS_00_14_M",
+    "VLS_15_24_M",
+    "VLS_25_49_M",
+    "VLS_50_UP_M",
+    "VLS_00_14_F",
+    "VLS_15_24_F",
+    "VLS_25_49_F",
+    "VLS_50_UP_F",
+    "VLS_FSW",
+    "VLS_MSM",
+    "Birth_All",
+    "Birth_HIV",
+    "DeathsAll_00_14_M",
+    "DeathsAll_15_24_M",
+    "DeathsAll_25_49_M",
+    "DeathsAll_50_UP_M",
+    "DeathsAll_00_14_F",
+    "DeathsAll_15_24_F",
+    "DeathsAll_25_49_F",
+    "DeathsAll_50_UP_F",
+    "NewHIV_00_14_M",
+    "NewHIV_15_24_M",
+    "NewHIV_25_49_M",
+    "NewHIV_50_UP_M",
+    "NewHIV_00_14_F",
+    "NewHIV_15_24_F",
+    "NewHIV_25_49_F",
+    "NewHIV_50_UP_F",
+    "NewHIV_FSW",
+    "NewHIV_MSM",
+    "DeathsHIV_00_14_M",
+    "DeathsHIV_15_24_M",
+    "DeathsHIV_25_49_M",
+    "DeathsHIV_50_UP_M",
+    "DeathsHIV_00_14_F",
+    "DeathsHIV_15_24_F",
+    "DeathsHIV_25_49_F",
+    "DeathsHIV_50_UP_F",
+    "DALYs_Undiscounted",
+    "TotalCost_Undiscounted",
+    "Percent_circumcised",
+    "Percent_condom use_GP",
+    "PrEP_FSW",
+    "PrEP_MSM",
+    "PrEP_GP",
+    "PrEP_Pop_GP",
+    "NewHIV_PrEP_Pop_GP",
+    "Percent_FSW reached",
+    "Percent_MSM reached",
 ]
+
+stocks_output = {}
+
+for var in variables:
+    result = summarize(
+        extract_results(
+            results_folder,
+            module="tlo.methods.hiv",
+            key="long_term_mihpsa",
+            column=var,
+            index="date",
+            do_scaling=True,
+        ),
+        collapse_columns=False,
+        only_mean=True
+    )
+
+    for draw in result.columns:
+        if draw not in stocks_output:
+            stocks_output[draw] = pd.DataFrame()  # Initialise DataFrame for the draw if not exists
+
+        stocks_output[draw][var] = result[draw]
+
+with pd.ExcelWriter(results_folder / "longterm_outputs_scaled.xlsx", engine='openpyxl') as writer:
+    # Iterate over the dictionary and write each DataFrame to a new sheet
+    for draw, df in stocks_output.items():
+        df = df.T  # Switch rows and columns
+        # Writing each draw's DataFrame to a new sheet named after the draw
+        df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
 
 stocks_output = {}
 
@@ -191,142 +218,268 @@ for var in variables:
 
         stocks_output[draw][var] = result[draw]
 
-with pd.ExcelWriter(results_folder / "longterm_outputs.xlsx", engine='openpyxl') as writer:
+with pd.ExcelWriter(results_folder / "longterm_outputs_unscaled.xlsx", engine='openpyxl') as writer:
     # Iterate over the dictionary and write each DataFrame to a new sheet
     for draw, df in stocks_output.items():
         df = df.T  # Switch rows and columns
         # Writing each draw's DataFrame to a new sheet named after the draw
         df.to_excel(writer, sheet_name=f'Draw_{draw}', index=True)
 
+
 # -----------------------------------------------------------------------------------
 
 # EXTRACT DEATHS
+#
+# def summarise_deaths(results_folder,
+#                      label=None, age=None, sex=None):
+#     """ returns mean deaths for each year of the simulation
+#     values are aggregated across the runs of each draw
+#     for the specified cause
+#     """
+#
+#     results_deaths = extract_results(
+#         results_folder,
+#         module="tlo.methods.demography",
+#         key="death",
+#         custom_generate_series=(
+#             lambda df: df.assign(year=df["date"].dt.year).groupby(
+#                 ["year", "label", "age", "sex"])["person_id"].count()
+#         ),
+#         do_scaling=True,
+#     )
+#     # removes multi-index
+#     results_deaths = results_deaths.reset_index()
+#
+#     # select only cause specified
+#     if label == 'AIDS':
+#         tmp = results_deaths.loc[
+#             (results_deaths.label == label)
+#         ]
+#     # otherwise all deaths
+#     else:
+#         tmp = results_deaths
+#
+#     if age == 'children':
+#         tmp = tmp.loc[tmp.age < 15]
+#     else:
+#         tmp = tmp.loc[tmp.age >= 15]
+#
+#     if sex == 'M':
+#         tmp = tmp.loc[tmp.sex == 'M']
+#     elif sex == 'F':
+#         tmp = tmp.loc[tmp.sex == 'F']
+#
+#     # group deaths by year
+#     # Identify only the draw/run columns (MultiIndex level names as numeric)
+#     draw_run_columns = [col for col in tmp.columns if isinstance(col[0], int)]
+#
+#     # Group by year and sum only the draw/run columns
+#     summed_results = tmp.groupby('year')[draw_run_columns].sum()
+#
+#     # Reset the index so 'year' becomes a regular column
+#     summed_results = summed_results.reset_index()
+#
+#     # get mean for each draw
+#     mean_deaths = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(
+#         axis=1)
+#
+#     return mean_deaths
+#
 
-def summarise_deaths(results_folder,
-                     label=None, age=None, sex=None):
-    """ returns mean deaths for each year of the simulation
-    values are aggregated across the runs of each draw
-    for the specified cause
+
+def summarise_deaths(results_folder, label=None, age=None, sex=None, age_group_label=None):
+    """
+    Returns mean deaths for each year of the simulation.
+    Values are aggregated across runs of each draw for the specified cause and subgroup.
     """
 
+    # Load death results with grouped series
     results_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "label", "age", "sex"])["person_id"].count()
+                ["year", "label", "age", "sex"]
+            )["person_id"].count()
         ),
         do_scaling=True,
-    )
-    # removes multi-index
-    results_deaths = results_deaths.reset_index()
+    ).reset_index()
 
-    # select only cause specified
+    # Filter for cause of death if specified
     if label == 'AIDS':
-        tmp = results_deaths.loc[
-            (results_deaths.label == label)
-        ]
-    # otherwise all deaths
+        tmp = results_deaths.loc[results_deaths.label == label]
     else:
         tmp = results_deaths
 
-    if age == 'children':
-        tmp = tmp.loc[tmp.age < 15]
+    # Apply age and sex filtering
+    if age_group_label is not None:
+        # Map string labels to age and sex filters
+        age_sex_criteria = {
+            'Deaths_00_14_M': (0, 14, 'M'),
+            'Deaths_15_24_M': (15, 24, 'M'),
+            'Deaths_25_49_M': (25, 49, 'M'),
+            'Deaths_50_UP_M': (50, None, 'M'),
+            'Deaths_00_14_F': (0, 14, 'F'),
+            'Deaths_15_24_F': (15, 24, 'F'),
+            'Deaths_25_49_F': (25, 49, 'F'),
+            'Deaths_50_UP_F': (50, None, 'F'),
+        }
+
+        if age_group_label not in age_sex_criteria:
+            raise ValueError(f"Invalid age_group_label: {age_group_label}")
+
+        age_min, age_max, sex_val = age_sex_criteria[age_group_label]
+        if age_max is not None:
+            tmp = tmp.loc[(tmp.age >= age_min) & (tmp.age <= age_max) & (tmp.sex == sex_val)]
+        else:
+            tmp = tmp.loc[(tmp.age >= age_min) & (tmp.sex == sex_val)]
+
     else:
-        tmp = tmp.loc[tmp.age >= 15]
+        # Retain existing logic if no age_group_label specified
+        if age == 'children':
+            tmp = tmp.loc[tmp.age < 15]
+        elif age == 'adults':
+            tmp = tmp.loc[tmp.age >= 15]
 
-    if sex == 'M':
-        tmp = tmp.loc[tmp.sex == 'M']
-    elif sex == 'F':
-        tmp = tmp.loc[tmp.sex == 'F']
+        if sex == 'M':
+            tmp = tmp.loc[tmp.sex == 'M']
+        elif sex == 'F':
+            tmp = tmp.loc[tmp.sex == 'F']
 
-    # group deaths by year
-    # Identify only the draw/run columns (MultiIndex level names as numeric)
-    draw_run_columns = [col for col in tmp.columns if isinstance(col[0], int)]
+    # Identify draw/run columns by checking for tuple column names where first element is int
+    draw_run_columns = [col for col in tmp.columns if isinstance(col, tuple) and isinstance(col[0], int)]
 
-    # Group by year and sum only the draw/run columns
-    summed_results = tmp.groupby('year')[draw_run_columns].sum()
+    # Group by year and sum across selected draw columns
+    summed_results = tmp.groupby('year')[draw_run_columns].sum().reset_index()
 
-    # Reset the index so 'year' becomes a regular column
-    summed_results = summed_results.reset_index()
-
-    # get mean for each draw
-    mean_deaths = pd.concat({'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()}, axis=1).swaplevel(
-        axis=1)
+    # Compute mean across runs for each draw
+    mean_deaths = pd.concat(
+        {'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()},
+        axis=1
+    ).swaplevel(axis=1)
 
     return mean_deaths
 
 
-aids_deaths_children_M = summarise_deaths(results_folder,
-                                        label='AIDS',
-                                        age='children',
-                                        sex='M')
-
-aids_deaths_children_F = summarise_deaths(results_folder,
-                                        label='AIDS',
-                                        age='children',
-                                        sex='F')
-
-aids_deaths_men = summarise_deaths(results_folder,
-                                   label='AIDS',
-                                   age='adult',
-                                   sex='M')
-
-aids_deaths_women = summarise_deaths(results_folder,
-                                     label='AIDS',
-                                     age='adult',
-                                     sex='F')
-
 all_deaths_children_M = summarise_deaths(results_folder,
-                                       label=None,
-                                       age='children',
+                                         label=None,
+                                         age='children',
                                          sex='M')
 
+all_deaths_15_24_M = summarise_deaths(results_folder,
+                                      label=None,
+                                      age_group_label='Deaths_15_24_M')
+
+all_deaths_25_49_M = summarise_deaths(results_folder,
+                                      label=None,
+                                      age_group_label='Deaths_25_49_M')
+
+all_deaths_50_M = summarise_deaths(results_folder,
+                                   label=None,
+                                   age_group_label='Deaths_50_UP_M')
+
 all_deaths_children_F = summarise_deaths(results_folder,
-                                       label=None,
-                                       age='children',
+                                         label=None,
+                                         age='children',
                                          sex='F')
 
-all_deaths_men = summarise_deaths(results_folder,
-                                  label=None,
-                                  age='adult',
-                                  sex='M')
+all_deaths_15_24_F = summarise_deaths(results_folder,
+                                      label=None,
+                                      age_group_label='Deaths_15_24_F')
 
-all_deaths_women = summarise_deaths(results_folder,
-                                    label=None,
-                                    age='adult',
-                                    sex='F')
+all_deaths_25_49_F = summarise_deaths(results_folder,
+                                      label=None,
+                                      age_group_label='Deaths_25_49_F')
+
+all_deaths_50_F = summarise_deaths(results_folder,
+                                   label=None,
+                                   age_group_label='Deaths_50_UP_F')
+
+aids_deaths_children_M = summarise_deaths(results_folder,
+                                          label='AIDS',
+                                          age='children',
+                                          sex='M')
+
+aids_deaths_15_24_M = summarise_deaths(results_folder,
+                                       label='AIDS',
+                                       age_group_label='Deaths_15_24_M')
+
+aids_deaths_25_49_M = summarise_deaths(results_folder,
+                                       label='AIDS',
+                                       age_group_label='Deaths_25_49_M')
+
+aids_deaths_50_M = summarise_deaths(results_folder,
+                                    label='AIDS',
+                                    age_group_label='Deaths_50_UP_M')
+
+aids_deaths_children_F = summarise_deaths(results_folder,
+                                          label='AIDS',
+                                          age='children',
+                                          sex='F')
+
+aids_deaths_15_24_F = summarise_deaths(results_folder,
+                                       label='AIDS',
+                                       age_group_label='Deaths_15_24_F')
+
+aids_deaths_25_49_F = summarise_deaths(results_folder,
+                                       label='AIDS',
+                                       age_group_label='Deaths_25_49_F')
+
+aids_deaths_50_F = summarise_deaths(results_folder,
+                                    label='AIDS',
+                                    age_group_label='Deaths_50_UP_F')
 
 # List of dataframes to include in the workbook
 dataframes = {
-    "aids_deaths_children_M": aids_deaths_children_M,
-    "aids_deaths_children_F": aids_deaths_children_F,
-    "aids_deaths_men": aids_deaths_men,
-    "aids_deaths_women": aids_deaths_women,
-    "all_deaths_children_M": all_deaths_children_M,
-    "all_deaths_children_F": all_deaths_children_F,
-    "all_deaths_men": all_deaths_men,
-    "all_deaths_women": all_deaths_women,
+    "DeathsAll_00_14_M": all_deaths_children_M,
+    "DeathsAll_15_24_M": all_deaths_15_24_M,
+    "DeathsAll_25_49_M": all_deaths_25_49_M,
+    "DeathsAll_50_UP_M": all_deaths_50_M,
+    "DeathsAll_00_14_F": all_deaths_children_F,
+    "DeathsAll_15_24_F": all_deaths_15_24_F,
+    "DeathsAll_25_49_F": all_deaths_25_49_F,
+    "DeathsAll_50_UP_F": all_deaths_50_F,
+
+    "DeathsHIV_00_14_M": aids_deaths_children_M,
+    "DeathsHIV_15_24_M": aids_deaths_15_24_M,
+    "DeathsHIV_25_49_M": aids_deaths_25_49_M,
+    "DeathsHIV_50_UP_M": aids_deaths_50_M,
+    "DeathsHIV_00_14_F": aids_deaths_children_F,
+    "DeathsHIV_15_24_F": aids_deaths_15_24_F,
+    "DeathsHIV_25_49_F": aids_deaths_25_49_F,
+    "DeathsHIV_50_UP_F": aids_deaths_50_F,
 }
 
-# Create a new Excel writer object
 with pd.ExcelWriter(results_folder / "full_summarised_deaths.xlsx") as writer:
-    # Iterate over draws (0 to 7)
-    for draw in range(9):
-        # Prepare data for the current draw
-        sheet_data = []
+    wrote_at_least_one_sheet = False
+
+    for draw in range(info['number_of_draws']):
+        rows = []
+        column_labels = None  # Will hold the column names (e.g., years)
+
         for name, df in dataframes.items():
-            # Extract the "mean" column for the current draw
-            row_data = [name] + df[(draw, "mean")].tolist()
-            sheet_data.append(row_data)
+            try:
+                values = df[(draw, 'mean')]
+                column_labels = values.index
+            except KeyError:
+                # Column (draw, 'mean') not present
+                values = pd.Series([None] * df.shape[1])
+                if column_labels is None:
+                    column_labels = [f"col{i}" for i in range(df.shape[1])]
 
-        # Convert the sheet data to a DataFrame
-        sheet_df = pd.DataFrame(sheet_data)
+            # Combine scenario name with values
+            row = pd.concat([pd.Series([name], index=["Scenario"]), values])
+            rows.append(row)
 
-        # Write the DataFrame to the corresponding sheet
-        sheet_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False, header=False)
+        if rows:
+            combined_df = pd.DataFrame(rows)
+            combined_df.columns = ["Scenario"] + list(column_labels)
+            combined_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False)
+            wrote_at_least_one_sheet = True
 
+    if not wrote_at_least_one_sheet:
+        raise ValueError("No sheets were written: verify (draw, 'mean') columns exist in your dataframes.")
 
 # -----------------------------------------------------------------------------------
 
@@ -386,3 +539,86 @@ for col in aids_dalys.columns[1:]:  # Start from the second column
 
 with pd.ExcelWriter(results_folder / 'full_aids_dalys_averted.xlsx', engine='openpyxl') as writer:
     dalys_averted.to_excel(writer, sheet_name='DALYs Averted')
+
+
+# ---------------------------------------------------------------------------------------------
+
+
+def summarise_births(results_folder, mother_has_hiv=None):
+    """
+    Returns mean births for each year of the simulation.
+    Values are aggregated across runs of each draw for the specified cause and subgroup.
+    """
+
+    # Load death results with grouped series
+    results_births = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="on_birth",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "mother_has_hiv"]
+            )["child"].count()
+        ),
+        do_scaling=True,
+    ).reset_index()
+
+    # Filter for cause of death if specified
+    if mother_has_hiv:
+        tmp = results_births.loc[results_births.mother_has_hiv == True]
+    else:
+        tmp = results_births
+
+    # Identify draw/run columns by checking for tuple column names where first element is int
+    draw_run_columns = [col for col in tmp.columns if isinstance(col, tuple) and isinstance(col[0], int)]
+
+    # Group by year and sum across selected draw columns
+    summed_results = tmp.groupby('year')[draw_run_columns].sum().reset_index()
+
+    # Compute mean across runs for each draw
+    mean_births = pd.concat(
+        {'mean': summed_results.iloc[:, 1:].groupby(level=0, axis=1).mean()},
+        axis=1
+    ).swaplevel(axis=1)
+
+    return mean_births
+
+
+all_births = summarise_births(results_folder, mother_has_hiv=False)
+hiv_births = summarise_births(results_folder, mother_has_hiv=True)
+
+# List of dataframes to include in the workbook
+dataframes = {
+    "Birth_All": all_births,
+    "Birth_HIV": hiv_births,
+}
+
+with pd.ExcelWriter(results_folder / "full_summarised_births.xlsx") as writer:
+    wrote_at_least_one_sheet = False
+
+    for draw in range(info['number_of_draws']):
+        rows = []
+        column_labels = None  # Will hold the column names (e.g., years)
+
+        for name, df in dataframes.items():
+            try:
+                values = df[(draw, 'mean')]
+                column_labels = values.index
+            except KeyError:
+                # Column (draw, 'mean') not present
+                values = pd.Series([None] * df.shape[1])
+                if column_labels is None:
+                    column_labels = [f"col{i}" for i in range(df.shape[1])]
+
+            # Combine scenario name with values
+            row = pd.concat([pd.Series([name], index=["Scenario"]), values])
+            rows.append(row)
+
+        if rows:
+            combined_df = pd.DataFrame(rows)
+            combined_df.columns = ["Scenario"] + list(column_labels)
+            combined_df.to_excel(writer, sheet_name=f"Draw {draw}", index=False)
+            wrote_at_least_one_sheet = True
+
+    if not wrote_at_least_one_sheet:
+        raise ValueError("No sheets were written: verify (draw, 'mean') columns exist in your dataframes.")
