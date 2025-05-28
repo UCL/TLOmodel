@@ -3155,7 +3155,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "hv_art"] = vl_status
 
             # if never had ART, assign first initiation date
-            if df.at[person_id, "hv_date_first_ART_initiation"] == pd.NaT:
+            if pd.isna(df.at[person_id, "hv_date_first_ART_initiation"]):
+
                 df.at[person_id, "hv_date_first_ART_initiation"] = self.sim.date
 
                 # if person has AIDS at ART initiation, change property

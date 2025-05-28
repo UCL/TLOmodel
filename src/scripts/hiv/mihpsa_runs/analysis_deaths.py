@@ -169,28 +169,28 @@ results_deaths = compute_summary_statistics(extract_results(
                     "older_adult"
                 )
             ),
-            has_had_art=df["hv_date_first_ART_initiation"].notna()  # True if date_treated not NaT, else False
+            has_had_art=~df["date_first_ART_initiation"].isna(),  # True if date_treated not NaT, else False
+            has_reinitiated_art=~df["date_ART_reinitiation"].isna(),
         )
         .query("label == 'AIDS'")
         .groupby([
             "year", "label", "age_group", "sex",
-            "hiv_status", "hiv_diagnosed", "art_status", 'date_first_ART_initiation',
-            'date_ART_reinitiation', 'less_than_6months_since_art_start',
+            "hiv_status", "hiv_diagnosed", "art_status",
+            'less_than_6months_since_art_start',
             'less_than_6months_since_art_reinitiation', 'less_than_6months_since_art_start_or_reinitiation',
             "aids_status", "aids_at_art_start", 'aids_at_art_reinitiation',
-            "has_had_art",
-        ])["person_id"]
-        .count()
+            "has_had_art", "has_reinitiated_art",
+        ], dropna=False)
+        .size()
+
     ),
     do_scaling=True,
-), central_measure='mean')
+), central_measure='mean', only_central=True)
 
 # remove multi-index on columns
 results_deaths = results_deaths.reset_index()
+results_deaths = results_deaths.rename(columns={0: "num_deaths"})
 
-
-# Flatten MultiIndex columns
-results_deaths.columns = ['_'.join([str(level) for level in col if level != '']).strip() for col in results_deaths.columns.values]
 
 # Then write to Excel
 with pd.ExcelWriter(results_folder / "deaths_output.xlsx", engine='openpyxl') as writer:
@@ -206,15 +206,14 @@ def get_deaths_by_filters(
     age_group=None,
     hiv_diagnosed=None,
     art_status=None,
-    date_first_ART_initiation=None,
-    date_ART_reinitiation=None,
     less_than_6months_since_art_start=None,
     less_than_6months_since_art_reinitiation=None,
     less_than_6months_since_art_start_or_reinitiation=None,
     aids_status=None,
     aids_at_art_start=None,
     aids_at_art_reinitiation=None,
-    has_had_art=None
+    has_had_art=None,
+    has_reinitiated_art=None,
 ):
 
     df_filtered = df.copy()
@@ -233,8 +232,6 @@ def get_deaths_by_filters(
         apply_filter('age_group', age_group) &
         apply_filter('hiv_diagnosed', hiv_diagnosed) &
         apply_filter('art_status', art_status) &
-        apply_filter('date_first_ART_initiation', date_first_ART_initiation) &
-        apply_filter('date_ART_reinitiation', date_ART_reinitiation) &
         apply_filter('less_than_6months_since_art_start', less_than_6months_since_art_start) &
         apply_filter('less_than_6months_since_art_reinitiation', less_than_6months_since_art_reinitiation) &
         apply_filter('less_than_6months_since_art_start_or_reinitiation',
@@ -242,7 +239,8 @@ def get_deaths_by_filters(
         apply_filter('aids_status', aids_status) &
         apply_filter('aids_at_art_start', aids_at_art_start) &
         apply_filter('aids_at_art_reinitiation', aids_at_art_reinitiation) &
-        apply_filter('has_had_art', has_had_art)
+        apply_filter('has_had_art', has_had_art) &
+        apply_filter('has_reinitiated_art', has_reinitiated_art)
     )
 
     df_filtered = df_filtered[filters]
@@ -252,7 +250,7 @@ def get_deaths_by_filters(
 
     # Group by year and sex and sum deaths
     grouped = (
-        df_filtered.groupby(['year', 'sex'])['0_central']
+        df_filtered.groupby(['year', 'sex'])['num_deaths']
         .sum()
         .unstack(fill_value=0)
         .rename(columns={'F': 'Female', 'M': 'Male'})
@@ -271,7 +269,6 @@ def get_deaths_by_filters(
 
 
 ############
-# todo include new filter for those <6 months after 1st initiation
 # Define all filter sets as a list of tuples: (name, filter_kwargs)
 filter_definitions = [
     ('all', {}),
@@ -279,116 +276,230 @@ filter_definitions = [
     ('no_art_no_dx', dict(
         hiv_diagnosed=False,
         art_status='not',
-        on_ART_more_than_6months=False,
-        has_had_art=False,)),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=False,
+        has_reinitiated_art=False)),
 
-    ('dx_without_art', dict(hiv_diagnosed=True,
-                       art_status='not',
-                       on_ART_more_than_6months=False,
-                       has_had_art=False)),
+    ('dx_without_art', dict(
+        hiv_diagnosed=True,
+        art_status='not',
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=False,
+        has_reinitiated_art=False)),
 
-    ('on_art_less_6_months_aids_at_art_start', dict(
+    ('on_art_less_6_months_aids', dict(
         hiv_diagnosed=True,
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-        on_ART_more_than_6months=False,
+        less_than_6months_since_art_start=True,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
         aids_at_art_start=True,
-        has_had_art=True
-    )),
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
-    ('on_art_less_6_months_not_aids_at_art_start', dict(
+    ('on_art_less_6_months_no_aids', dict(
         hiv_diagnosed=True,
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-        on_ART_more_than_6months=False,
+        less_than_6months_since_art_start=True,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
         aids_at_art_start=False,
-        has_had_art=True
-    )),
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
+
+    ('on_art_less_6_months_reinitiation_aids', dict(
+        hiv_diagnosed=True,
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=True,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=True,
+        has_had_art=True,
+        has_reinitiated_art=True)),
+
+    ('on_art_less_6_months_reinitiation_no_aids', dict(
+        hiv_diagnosed=True,
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=True,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=False,
+        has_had_art=True,
+        has_reinitiated_art=True)),
 
     ('on_art_lowVL', dict(
         hiv_diagnosed=True,
         art_status='on_VL_suppressed',
-        has_had_art=True
-    )),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('on_art_highVL', dict(
         hiv_diagnosed=True,
         art_status='on_not_VL_suppressed',
-        has_had_art=True
-    )),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_less_than_6Months_lowVL', dict(
         hiv_diagnosed=True,
         art_status='on_VL_suppressed',
-        on_ART_more_than_6months=False,
-        has_had_art=True
-    )),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=True,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_less_than_6Months_highVL', dict(
         hiv_diagnosed=True,
         art_status='on_not_VL_suppressed',
-        on_ART_more_than_6months=False,
-        has_had_art=True
-    )),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=True,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_more_than_6Months_lowVL', dict(
         hiv_diagnosed=True,
         art_status='on_VL_suppressed',
-        on_ART_more_than_6months=True,
-        has_had_art=True
-    )),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=False,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_more_than_6Months_highVL', dict(
         hiv_diagnosed=True,
         art_status='on_not_VL_suppressed',
-        on_ART_more_than_6months=True,
-        has_had_art=True
-    )),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=False,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_interr', dict(
         hiv_diagnosed=True,
         art_status='not',
-        has_had_art=True
-    )),
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=None,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_curr_CD4_less_than200', dict(
         hiv_diagnosed=True,
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
         aids_status=True,
-        has_had_art=True
-    )),
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_curr_CD4_more_than200', dict(
         hiv_diagnosed=True,
         art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=None,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
         aids_status=False,
-        has_had_art=True
-    )),
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_less_than_6months_curr_aids', dict(
-        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
         hiv_diagnosed=True,
-        on_ART_more_than_6months=False,
-        aids_status=True
-    )),
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=True,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=True,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_less_than_6months_no_aids', dict(
-        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
         hiv_diagnosed=True,
-        on_ART_more_than_6months=False,
-        aids_status=False
-    )),
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=True,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=False,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 
     ('art_curr_no_aids', dict(
-        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
         hiv_diagnosed=True,
-        on_ART_more_than_6months=True,
-        aids_status=False
-    )),
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=False,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=True,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
+
     ('art_curr_aids', dict(
-            art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
-            hiv_diagnosed=True,
-            on_ART_more_than_6months=True,
-            aids_status=True
-    )),
+        hiv_diagnosed=True,
+        art_status=['on_not_VL_suppressed', 'on_VL_suppressed'],
+        less_than_6months_since_art_start=False,
+        less_than_6months_since_art_reinitiation=None,
+        less_than_6months_since_art_start_or_reinitiation=None,
+        aids_status=False,
+        aids_at_art_start=None,
+        aids_at_art_reinitiation=None,
+        has_had_art=True,
+        has_reinitiated_art=None)),
 ]
 
 
@@ -420,8 +531,12 @@ def generate_wide_deaths_table(age_group_label):
     return combined
 
 #  Create outputs
+combined_young_adult = generate_wide_deaths_table('young_adult')
 combined_mid_adult = generate_wide_deaths_table('mid_adult')
 combined_older_adult = generate_wide_deaths_table('older_adult')
+
+with pd.ExcelWriter(results_folder / "young_adult_deaths_output.xlsx", engine='openpyxl') as writer:
+    combined_young_adult.to_excel(writer, sheet_name='Sheet1', index=False)
 
 with pd.ExcelWriter(results_folder / "mid_adult_deaths_output.xlsx", engine='openpyxl') as writer:
     combined_mid_adult.to_excel(writer, sheet_name='Sheet1', index=False)
