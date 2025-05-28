@@ -331,7 +331,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         sim.schedule_event(Wasting_InitLoggingEvent(self), sim.date)
         sim.schedule_event(Wasting_InitiateGrowthMonitoring(self), sim.date)
-        sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=3))
+        sim.schedule_event(Wasting_IncidencePoll(self), sim.date + DateOffset(months=1))
         sim.schedule_event(Wasting_LoggingEvent(self), sim.date + DateOffset(years=1) - DateOffset(days=1))
 
         # Retrieve the consumables codes and amounts of the consumables used
