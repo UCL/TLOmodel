@@ -334,8 +334,8 @@ class HealthSystem(Module):
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
         'include_ringfenced_clinics': Parameter(
-            Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is
-            only applicable if mode_appt_constraints is set to 2.'),
+            Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is'
+            'only applicable if mode_appt_constraints is set to 2.'),
         'Ringfenced_Clinics': Parameter(Types.DATA_FRAME, 'Proportion facility time ringfenced for specific appointment types.'),
     }
 
@@ -997,7 +997,7 @@ class HealthSystem(Module):
             self._daily_capabilities = updated_capabilities.drop(columns=['fungible'])
 
 
-    def get_clinic_eligibility(str): -> bool:
+    def get_clinic_eligibility(str):
         """
         Returns TRUE if clinics capabilities have been set up, FALSE otherwise
         """
