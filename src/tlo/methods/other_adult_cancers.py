@@ -574,14 +574,36 @@ class OtherAdultCancer(Module, GenericFirstAppointmentsMixin):
             ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
-    def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of other adult cancer for all individuals
-        df = self.sim.population.props
-        total_prev = len(
-            df[(df['is_alive']) & (df['oac_status'] != 'none')]
-        ) / len(df[df['is_alive']])
 
-        return {'Other Adult Cancers': total_prev}
+    def report_prevalence(self):
+        # This reports age- and sex-specific prevalence of other adult cancers for all individuals
+        df = self.sim.population.props
+
+        oac_df = df[(df['is_alive']) & (df['oac_status'] != 'none')]
+
+        prevalence_by_age_group_sex = {}
+
+        if oac_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = oac_df[
+                        (oac_df['age_years'].between(age_range[0], age_range[1])) &
+                        (oac_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Other Adult Cancers': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

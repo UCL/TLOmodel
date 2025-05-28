@@ -555,19 +555,41 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         return av_daly_wt_last_month
 
     def report_prevalence(self):
-        # This reports on the prevalence of depression for all individuals
-
+        # This reports age- and sex-specific prevalence of depression for all individuals
         df = self.sim.population.props
-        any_depr_in_the_last_month = df[((df['is_alive']) & (
-            ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
-        ) & (
-                                         pd.isnull(df['de_date_depr_resolved']) |
-                                         (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-                                     ))]
-        total_prev = len(
-            any_depr_in_the_last_month
-        ) / len(df[df.is_alive])
-        return {'Depression': total_prev}
+        any_depr_in_the_last_month = df[
+            (df['is_alive']) &
+            (~pd.isnull(df['de_date_init_most_rec_depr'])) &
+            (df['de_date_init_most_rec_depr'] <= self.sim.date) &
+            (
+                (pd.isnull(df['de_date_depr_resolved'])) |
+                (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+            )
+            ]
+
+        prevalence_by_age_group_sex = {}
+
+        if any_depr_in_the_last_month.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = any_depr_in_the_last_month[
+                        (any_depr_in_the_last_month['age_years'].between(age_range[0], age_range[1])) &
+                        (any_depr_in_the_last_month['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Depression': prevalence_by_age_group_sex}
     def _check_for_suspected_depression(
         self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool
     ):

@@ -2443,19 +2443,37 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
         df = self.sim.population.props
         df_valid_dates = df[df['rt_date_inj'].notna()]
+        prevalence_by_age_group_sex = {}
+
         if df_valid_dates.empty:
-            total_prev = 0  # or you could use np.nan if you prefer
+            pass
         else:
             # Calculate total prevalence for individuals with non-NaT injury dates
-            total_prev = len(
-                df_valid_dates[
-                    (df_valid_dates['is_alive']) &
-                    (df_valid_dates['rt_inj_severity'] != 'none') &
-                    (df_valid_dates['rt_date_inj'] >= (self.sim.date - DateOffset(months=1)))
-                    ]
-            ) / len(df[df['is_alive']])
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
 
-        return {'RTI': total_prev}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = df_valid_dates[
+                        (df_valid_dates['age_years'].between(age_range[0], age_range[1])) &
+                        (df_valid_dates['sex'] == sex)
+                        ]
+
+                    total_prev = len(
+                        subset[
+                            (subset['is_alive']) &
+                            (subset['rt_inj_severity'] != 'none') &
+                            (subset['rt_date_inj'] >= (self.sim.date - DateOffset(months=1)))
+                            ]
+                    ) / total_alive if total_alive > 0 else float('nan')
+
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+        return {'RTI': prevalence_by_age_group_sex}
 
     def rti_assign_injuries(self, number):
         """

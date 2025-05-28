@@ -650,11 +650,33 @@ class Diarrhoea(Module, GenericFirstAppointmentsMixin):
         return average_daly_weight_in_last_month.reindex(index=df.loc[df.is_alive].index, fill_value=0.0)
 
     def report_prevalence(self):
+        # This reports age- and sex-specific prevalence of diarrhoea for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[df.gi_has_diarrhoea & df.is_alive]
-        ) / len(df[df.is_alive])
-        return {'Diarrhoea': total_prev}
+        diarrhoea_df = df[(df['gi_has_diarrhoea']) & (df['is_alive'])]
+
+        prevalence_by_age_group_sex = {}
+
+        if diarrhoea_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = diarrhoea_df[
+                        (diarrhoea_df['age_years'].between(age_range[0], age_range[1])) &
+                        (diarrhoea_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Diarrhoea': prevalence_by_age_group_sex}
 
     def look_up_consumables(self):
         """Look up and store the consumables item codes used in each of the HSI."""

@@ -808,15 +808,37 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         return dw
 
     def report_prevalence(self):
-        """Report prevalence of disease to the HealthBurden module"""
+        """Report age- and sex-specific prevalence of diseases to the HealthBurden module"""
         df = self.sim.population.props
         prevalence_dict = {}
 
-        for condition in self.conditions:
-            prevalence = df[f'nc_{condition}'].sum() / len(df)
-            prevalence_dict[condition] = prevalence
+        age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+        sexes = ['male', 'female']
+        total_alive = len(df[df['is_alive']])
 
-        # Create a DataFrame from the prevalence dictionary
+        for condition in self.conditions:
+            prevalence_by_age_group_sex = {}
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = df[
+                        (df['is_alive']) &
+                        (df['age_years'].between(age_range[0], age_range[1])) &
+                        (df['sex'] == sex)
+                        ]
+
+                    if total_alive > 0 and not subset.empty:
+                        total_prev = subset[f'nc_{condition}'].sum() / total_alive
+                    else:
+                        total_prev = float('nan')
+
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+            prevalence_dict[condition] = prevalence_by_age_group_sex
+
         return prevalence_dict
 
     def on_hsi_alert(self, person_id, treatment_id):

@@ -251,14 +251,34 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
         return df.loc[df.is_alive, 'ep_disability']
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of epilepsy for all individuals
+        # This reports age- and sex-specific prevalence of epilepsy for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[(df['is_alive']) & (df['ep_seiz_stat'] != '0')]
-        ) / len(df[df['is_alive']])
 
-        return {'Epilepsy': total_prev}
+        epilepsy_df = df[(df['is_alive']) & (df['ep_seiz_stat'] != '0')]
 
+        prevalence_by_age_group_sex = {}
+
+        if epilepsy_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = epilepsy_df[
+                        (epilepsy_df['age_years'].between(age_range[0], age_range[1])) &
+                        (epilepsy_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Epilepsy': prevalence_by_age_group_sex}
 
     def transition_seizure_stat(self):
         """

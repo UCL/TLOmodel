@@ -742,19 +742,38 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
 
         return health_values.loc[df.is_alive]  # returns the series
 
-
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of malaria for all individuals
+        # This reports age- and sex-specific prevalence of malaria for all individuals
         df = self.sim.population.props
-        total_clin = len(
-            df[
-                df.is_alive
-                & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'severe'))
-                ]
-        )
-        total_prev = total_clin/ len(df[df.is_alive])
 
-        return {'Malaria': total_prev}
+        malaria_df = df[
+            (df['is_alive']) &
+            ((df['ma_inf_type'] == 'clinical') | (df['ma_inf_type'] == 'severe'))
+            ]
+
+        prevalence_by_age_group_sex = {}
+
+        if malaria_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = malaria_df[
+                        (malaria_df['age_years'].between(age_range[0], age_range[1])) &
+                        (malaria_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Malaria': prevalence_by_age_group_sex}
 
     def check_if_fever_is_caused_by_malaria(
         self,

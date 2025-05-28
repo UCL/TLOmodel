@@ -193,13 +193,34 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         return health_values
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of measles for all individuals
+        # This reports age- and sex-specific prevalence of measles for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[df.is_alive & df.me_has_measles]
-        ) / len(df[df.is_alive])
 
-        return {'Measles': total_prev}
+        measles_df = df[(df['is_alive']) & (df['me_has_measles'])]
+
+        prevalence_by_age_group_sex = {}
+
+        if measles_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = measles_df[
+                        (measles_df['age_years'].between(age_range[0], age_range[1])) &
+                        (measles_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Measles': prevalence_by_age_group_sex}
 
     def process_parameters(self):
         """Process the parameters (following being read-in) prior to the simulation starting.

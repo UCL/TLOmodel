@@ -578,12 +578,36 @@ class OesophagealCancer(Module, GenericFirstAppointmentsMixin):
         return disability_series_for_alive_persons
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of oesophageal cancer for all individuals
+        # This reports age- and sex-specific prevalence of oesophageal cancer for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[(df['is_alive']) & (df['oc_status'] != 'none')]) / len(df[df['is_alive']])
 
-        return {'Oesophageal Cancer': total_prev}
+        # Select alive individuals with oesophageal cancer (status not 'none')
+        oesophageal_df = df[(df['is_alive']) & (df['oc_status'] != 'none')]
+
+        prevalence_by_age_group_sex = {}
+
+        if oesophageal_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = oesophageal_df[
+                        (oesophageal_df['age_years'].between(age_range[0], age_range[1])) &
+                        (oesophageal_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Oesophageal Cancer': prevalence_by_age_group_sex}
+
     def do_at_generic_first_appt(
         self,
         person_id: int,

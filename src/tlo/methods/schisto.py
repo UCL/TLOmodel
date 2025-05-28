@@ -217,13 +217,36 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                                                     fill_value=0.0)
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of schisto for all individuals
+        # This returns age- and sex-specific prevalence of schisto for all individuals
         df = self.sim.population.props
-        is_infected = (df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection'])).any()
-        total_prev = len(is_infected)/ len(df[df['is_alive']])
 
-        return {'Schisto': total_prev}
+        # Identify individuals currently infected
+        is_infected = df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection']).any(axis=1)
+        infected_df = df[(df['is_alive']) & (is_infected)]
 
+        prevalence_by_age_group_sex = {}
+
+        if infected_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = infected_df[
+                        (infected_df['age_years'].between(age_range[0], age_range[1])) &
+                        (infected_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Schisto': prevalence_by_age_group_sex}
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
