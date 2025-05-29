@@ -12,7 +12,6 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
 from tlo.methods.symptommanager import Symptom
 from tlo.population import IndividualProperties
-from tlo.util import transition_states
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -353,7 +352,7 @@ class DiabeticRetinopathy(Module):
             get_item_codes('Gloves, exam, latex, disposable, pair'): 4,
             get_item_codes('Contact lens'): 7
         }
-        self.cons_item_codes['eye_injection'] = {
+        self.cons_item_codes['anti_vegf_injection'] = {
             get_item_codes("Anesthetic Eye drops, 15ml"): 1,
             get_item_codes('Aflibercept, 2mg'): 3
         }
@@ -505,45 +504,11 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 topen=self.sim.date
             )
 
-
         elif dr_stage == 'severe' or dr_stage == 'proliferative':
             # Interventions for severe and proliferative
             schedule_hsi_event(
                 hsi_event=HSI_Dr_StartTreatment(module=self, person_id=person_id),
                 priority=0, topen=self.sim.date)
-
-
-class HSI_Dr_DietManagement(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event in which a person receives a session of diet management in the
-    diabetes clinic. It is one of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen
-    then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is
-    reflects ever having had one session of talking therapy."""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = 'Dr_DietManagement'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.num_of_sessions_had = 0  # A counter for the number of diet management sessions had
-
-    def apply(self, person_id, squeeze_factor):
-        """Set the property `dr_ever_diet_mgmt` to be True and schedule the next session in the course if the person
-        has not yet had 5 sessions."""
-
-        self.num_of_sessions_had += 1
-
-        df = self.sim.population.props
-        if not df.at[person_id, 'dr_ever_diet_mgmt']:
-            df.at[person_id, 'dr_ever_diet_mgmt'] = True
-
-        if self.num_of_sessions_had < 5:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=self,
-                topen=self.sim.date + pd.DateOffset(months=6),
-                tclose=None,
-                priority=1
-            )
 
 
 class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -620,6 +585,53 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             #     # If medication is not effective, progression happens as usual
             #     df.at[person_id, 'dr_on_treatment'] = True
             #     df.at[person_id, 'dr_status'] = 'proliferative'
+
+
+class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is the event when a person undergoes the optical coherence topography before being given the anti-vegf
+    injection
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, DiabeticRetinopathy)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Dr_Advanced_Treatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug',
+                     data=f'This is HSI_Dr_Dmo_AdvancedTreatment for person {person_id}')
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            # The person is not alive, the event did not happen: so return a blank footprint
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # if person already on treatment or not yet diagnosed, do nothing
+        if person["dr_on_treatment"] or not person["dr_diagnosed"]:
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        df.at[person_id, 'dr_blindness_investigated'] = True
+
+        is_cons_available = self.get_consumables(
+            self.module.cons_item_codes['anti_vegf_injection']
+        )
+
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='optical_coherence_topography_dr_dmo',
+            hsi_event=self
+        )
+
+        if dx_result and is_cons_available:
+            # Will probably slow progression to proliferative if severe.
+            pass
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
