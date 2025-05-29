@@ -346,8 +346,8 @@ class Demography(Module):
                 _logger.warning(
                     key='scaling_factor_district',
                     data={'scaling_factor_district': scaling_factor_district.to_dict()},
-                    description='The data-to-model scaling factor (based on the initial population size, used to '
-                                'multiply-up results so that they correspond to the real population size.'
+                    description='The data-to-model district_level scaling factor (based on the initial population size,'
+                                'used to multiply-up results so that they correspond to the real population size.'
                 )
 
         # Check that the simulation does not run too long
