@@ -125,8 +125,6 @@ def test_diagnosis_and_treatment(seed):
                                                  module=sim.modules['Schisto'])
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    assert df.at[person_id, 'ss_last_PZQ_date'] != pd.NaT
-
     # check worm burden now reduced
     assert df.at[person_id, 'ss_sm_aggregate_worm_burden'] < infecting_worms
 

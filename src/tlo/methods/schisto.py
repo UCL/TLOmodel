@@ -332,20 +332,23 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             low_intensity_threshold = p[f'{spec_prefix}_low_intensity_threshold']
 
             worm_burden_col = f'{self.module_prefix}_{spec_prefix}_aggregate_worm_burden'
+
             infection_status_col = f'{self.module_prefix}_{spec_prefix}_infection_status'
 
             # reduce the worm burden
-            df.loc[person_id, worm_burden_col] *= (1 - pzq_efficacy)
-
-            # clip to 0 and preserve int
-            df.loc[person_id, worm_burden_col] = df.loc[person_id, worm_burden_col].clip(lower=0).astype(int)
+            df.loc[person_id, worm_burden_col] = (
+                (df.loc[person_id, worm_burden_col] * (1 - pzq_efficacy))
+                .clip(lower=0)
+                .round()
+                .astype(int)
+            )
 
             # if worm burden >=1, still infected
             mask = df.loc[person_id, worm_burden_col] < 1
             df.loc[mask.index, infection_status_col] = 'Non-infected'
-
             # update the infection status after changing worm burden
             aggregate_worm_burden = df.loc[person_id, worm_burden_col]
+
             age = df.loc[person_id, 'age_years']
 
             high_group = ((age < 5) & (aggregate_worm_burden >= high_intensity_threshold_PSAC)) | (
@@ -1344,8 +1347,12 @@ class SchistoWormDeathEvent(RegularEvent, PopulationScopeEventMixin):
             this kills a proportion of the adult worms according to the average lifespan in years
             which varies by species
             """
-            df[species_column_aggregate] -= df[species_column_aggregate] * worm_lifespan
-            df[species_column_aggregate] = df[species_column_aggregate].clip(lower=0).astype('int64')
+            df[species_column_aggregate] = (
+                (df[species_column_aggregate] * (1 - worm_lifespan))
+                .clip(lower=0)
+                .round()
+                .astype(int)
+            )
 
             species = 'mansoni' if species_column_aggregate.startswith('ss_sm') else 'haematobium'
             clear_species_symptoms(species)
