@@ -91,8 +91,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                                       'Sensitivity of KK in detecting moderate WB'),
         'kato_katz_sensitivity_highWB': Parameter(Types.REAL,
                                                   'Sensitivity of KK in detecting high WB'),
-        'scaleup_WASH': Parameter(Types.INT,
-                                  'Boolean whether to scale-up WASH during simulation'),
+        'scaleup_WASH': Parameter(Types.STRING,
+                                  'Whether to scale-up WASH during simulation, pause fixes values at 2024 '
+                                  'levels with no further improvement, continue allows historical trends to continue, '
+                                  'scaleup switches everyone to having access to WASH'),
         'scaleup_WASH_start_year': Parameter(Types.INT,
                                              'Start date to scale-up WASH, years after sim start date'),
         'mda_coverage': Parameter(Types.REAL,
@@ -264,7 +266,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, f'{self.module_prefix}_MDA_treatment_counter'] = 0
 
         # WASH in action, update property li_unimproved_sanitation=False for all new births
-        if self.parameters['scaleup_WASH'] and (
+        if (self.parameters['scaleup_WASH'] == 'scaleup') and (
                 self.sim.date >= Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1)):
             df.at[child_id, 'li_unimproved_sanitation'] = False
             df.at[child_id, 'li_no_clean_drinking_water'] = False
@@ -302,7 +304,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
                                                                     fill_value=0.0)
 
-    def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
+    def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]], mda=False) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
          Mass Drug Administration. The burden and effects of any species are alleviated by a successful treatment."""
@@ -335,7 +337,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             # reduce the worm burden
             df.loc[person_id, worm_burden_col] *= (1 - pzq_efficacy)
 
-            # clip whole column to 0 and preserve int
+            # clip to 0 and preserve int
             df.loc[person_id, worm_burden_col] = df.loc[person_id, worm_burden_col].clip(lower=0).astype(int)
 
             # if worm burden >=1, still infected
@@ -365,6 +367,16 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # HSI and treatment params:
         param_list = workbook['Parameters'].set_index("Parameter")['Value']
 
+        def try_cast_to_float(val):
+            try:
+                # Don't convert strings that contain alphabetic characters
+                if isinstance(val, str) and any(c.isalpha() for c in val):
+                    return val
+                return float(val)
+            except (ValueError, TypeError):
+                return val  # Fall back to original value
+
+        # parameters are all converted to strings if any strings are present
         for _param_name in (
             'delay_till_hsi_a_repeated',
             'delay_till_hsi_b_repeated',
@@ -384,12 +396,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             'baseline_risk',
         ):
             value = param_list[_param_name]
-
-            # Convert to float if possible, otherwise store as is
-            try:
-                parameters[_param_name] = float(value)
-            except ValueError:
-                parameters[_param_name] = value
+            parameters[_param_name] = try_cast_to_float(value)
 
         # MDA coverage - historic
         # this is updated now with the EPSEN data
@@ -707,9 +714,12 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         # Find the number of individuals with currently susceptible to species and no sanitation
-        # susceptible_no_sanitation = df.index[(df[species_column] == 1) & (df['li_unimproved_sanitation'] == True)]
+        # susceptible_no_sanitation = df.query(f"{species_column} == 1 and li_unimproved_sanitation").index
+        recent_sanitation = df['li_date_acquire_improved_sanitation'] >= (self.sim.date - pd.DateOffset(years=1))
 
-        susceptible_no_sanitation = df.query(f"{species_column} == 1 and li_unimproved_sanitation").index
+        # Restrict to those who are susceptible, had no sanitation before, and recently acquired sanitation
+        condition = (df[species_column] == 1) & df['li_unimproved_sanitation'] & recent_sanitation
+        susceptible_no_sanitation = df.index[condition]
 
         # Calculate the number to be reduced
         n_to_reduce = int(p['rr_WASH'] * len(susceptible_no_sanitation))
@@ -892,37 +902,17 @@ class SchistoSpecies:
 
         # Determine if individual should be susceptible to each species
         # susceptibility depends on district
-        prop_susceptible = params['prop_susceptible'][district]
-        df.at[child_id, prop('susceptibility')] = 0  # Default to not susceptible
+        # Get base susceptibility for the child's district
+        prop_susceptible = params['prop_susceptible'][df.at[child_id, 'district_of_residence']]
 
-        # WASH in action
-        if global_params['scaleup_WASH'] and (
-                self.schisto_module.sim.date >= Date(int(global_params['scaleup_WASH_start_year']), 1, 1)):
+        # Adjust for sanitation status
+        if df.at[child_id, 'li_unimproved_sanitation']:  # if true, child has full risk of susceptibility
+            susceptibility_probability = prop_susceptible
+        else:  # if false, child has access to improved sanitation so reduce risk
+            susceptibility_probability = prop_susceptible * global_params['rr_WASH']
 
-            # if the child has sanitation, apply risk mitigated by rr_WASH
-            if not df.at[child_id, 'li_unimproved_sanitation']:
-                if rng.random_sample() < (prop_susceptible * (1 - global_params['rr_WASH'])):
-                    df.at[child_id, prop('susceptibility')] = 1
-            # if no sanitation, apply full risk
-            elif df.at[child_id, 'li_unimproved_sanitation']:
-                if rng.random_sample() < prop_susceptible:
-                    df.at[child_id, prop('susceptibility')] = 1
-
-        else:
-            # WASH not implemented
-            prop_population_without_sanitation = 0.11
-            p_no_san = prop_susceptible / (prop_population_without_sanitation + (
-                1 - prop_population_without_sanitation) * global_params['rr_WASH'])
-            p_with_san = p_no_san * global_params['rr_WASH']
-
-            # Determine the probability based on sanitation status
-            # property li_unimproved_sanitation if False, person HAS improved sanitation
-            if not df.at[child_id, 'li_unimproved_sanitation']:
-                susceptibility_probability = p_with_san
-            else:
-                susceptibility_probability = p_no_san
-
-            df.at[child_id, prop('susceptibility')] = 1 if rng.random_sample() < susceptibility_probability else 0
+        # Draw from Bernoulli to determine susceptibility
+        df.at[child_id, prop('susceptibility')] = 1 if rng.random_sample() < susceptibility_probability else 0
 
     def update_parameters_from_schisto_module(self) -> None:
         """Update the internally-held parameters from the `Schisto` module that are specific to this species."""
@@ -991,6 +981,8 @@ class SchistoSpecies:
         params = self.params  # these are species-specific
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
+
+        global_params = self.schisto_module.parameters
 
         for district in districts:
             in_the_district = df.index[df['district_of_residence'] == district]
@@ -1158,9 +1150,9 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         baseline_mean_worm_burden = params['baseline_mean_worm_burden']  # baseline MWB for species in 2010
 
-        # this returns positive value if current_MWB lower than baseline_MWB and
+        # this returns positive value if current_prevalence lower than baseline_prevalence and
         # increases baseline_risk value
-        # if current_MWB > baseline_MWB value returned is 0 and no additional risk applied
+        # if current_prevalence > baseline_prevalence, value returned is 0 and no additional risk applied
         background_risk = max(0, global_params['baseline_risk'] * (
             1 + global_params['scaling_factor_baseline_risk'] * (current_mean_worm_burden - baseline_mean_worm_burden)))
 
@@ -1302,7 +1294,7 @@ class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
             this is called separately for each species
             """
             # all new juvenile infections will have same infection date
-            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=2)).any():
+            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=1)).any():
                 df[species_column_aggregate] += df[species_column_juvenile]
 
                 # Set 'juvenile' column to zeros
@@ -1618,7 +1610,7 @@ class HSI_Schisto_TreatmentFollowingDiagnosis(HSI_Event, IndividualScopeEventMix
         dosage = self.module.calculate_praziquantel_dosage(person_id)
 
         if self.get_consumables(item_codes={self.module.item_code_for_praziquantel: dosage}):
-            self.module.do_effect_of_treatment(person_id=person_id)
+            self.module.do_effect_of_treatment(person_id=person_id, mda=False)
 
 
 class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
@@ -1669,7 +1661,7 @@ class HSI_Schisto_MDA(HSI_Event, IndividualScopeEventMixin):
         if self.get_consumables(
             optional_item_codes={self.module.item_code_for_praziquantel_MDA: total_dosage}
         ):
-            self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive)
+            self.module.do_effect_of_treatment(person_id=beneficiaries_still_alive, mda=True)
 
         # Return the update appointment that reflects the actual number of beneficiaries.
         return self.make_appt_footprint({'ConWithDCSA': len(beneficiaries_still_alive) * 0.5})
