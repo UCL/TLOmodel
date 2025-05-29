@@ -747,8 +747,6 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
         logger.debug(key='debug', data='This is DummyDisease reporting my prevalence ')
 
         df = self.sim.population.props
-
-        # Select alive individuals with DummyDisease (dm_is_infected == True)
         dummy_df = df[(df['is_alive']) & (df['dm_is_infected'])]
 
         prevalence_by_age_group_sex = {}
