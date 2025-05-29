@@ -982,8 +982,6 @@ class SchistoSpecies:
         districts = self.schisto_module.districts
         rng = self.schisto_module.rng
 
-        global_params = self.schisto_module.parameters
-
         for district in districts:
             in_the_district = df.index[df['district_of_residence'] == district]
 
