@@ -90,9 +90,10 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                             'Whether MDA events are scheduled'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.mda_execute = mda_execute
 
         # Create pointer that will be to dict of disability weights
         self.disability_weights = None
