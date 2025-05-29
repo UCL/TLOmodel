@@ -64,7 +64,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
     module_prefix = 'ss'
 
     PROPERTIES = {
-        f'{module_prefix}_last_PZQ_date': Property(Types.DATE, 'Day of the most recent treatment with PZQ')
+        f'{module_prefix}_MDA_treatment_counter': Property(Types.INT,
+                                                           'Counter for number of MDA treatments received '
+                                                           'in logging interval')
     }
 
     PARAMETERS = {
@@ -158,6 +160,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         workbook = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Schisto', files=None)
         self.parameters = self._load_parameters_from_workbook(workbook)
 
+        # check WASH scaleup specified correctly
+        assert self.parameters['scaleup_WASH'] in ['pause', 'continue', 'scaleup']
+
         # load species-specific parameters
         for _spec in self.species.values():
             self.parameters.update(_spec.load_parameters_from_workbook(workbook))
@@ -189,7 +194,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         """Set the property values for the initial population."""
 
         df = population.props
-        df.loc[df.is_alive, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
+        df.loc[df.is_alive, f'{self.module_prefix}_MDA_treatment_counter'] = 0
 
         # reset all to one district if doing calibration or test runs
         # choose Zomba as it has ~10% prev of both species
@@ -206,10 +211,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start."""
-
-        # Initialise the simulation for each species
-        for _spec in self.species.values():
-            _spec.initialise_simulation(sim)
 
         # Look-up DALY weights
         if 'HealthBurden' in self.sim.modules:
@@ -232,7 +233,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             _spec.initialise_simulation(sim)
 
         # Schedule the logging event
-        sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # monthly, by district, age-group
+        sim.schedule_event(SchistoLoggingEvent(self), sim.date)  # annual, by district, age-group
         sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
         # over-ride availability of PZQ for MDA, MDA cons is optional in HSI so will always run
@@ -250,9 +251,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             self._schedule_mda_events()
 
         # schedule WASH scale-up
-        if self.parameters['scaleup_WASH']:
-            sim.schedule_event(SchistoWashScaleUp(self),
-                               Date(int(self.parameters['scaleup_WASH_start_year']), 1, 1))
+        sim.schedule_event(SchistoWashScaleUp(self), sim.date + pd.DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -262,7 +261,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         :param child_id: the new child
         """
         df = self.sim.population.props
-        df.at[child_id, f'{self.module_prefix}_last_PZQ_date'] = pd.NaT
+        df.at[child_id, f'{self.module_prefix}_MDA_treatment_counter'] = 0
 
         # WASH in action, update property li_unimproved_sanitation=False for all new births
         if self.parameters['scaleup_WASH'] and (
@@ -319,8 +318,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # Clear any symptoms caused by this module (i.e., Schisto of any species)
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self)
 
-        # Record the date of last treatment
-        df.loc[person_id, 'ss_last_PZQ_date'] = self.sim.date
+        # Record the treatment
+        if mda:
+            df.loc[person_id, 'ss_MDA_treatment_counter'] += 1
 
         # Update properties after PZQ treatment
         for spec_prefix in [_spec.prefix for _spec in self.species.values()]:
@@ -336,7 +336,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             df.loc[person_id, worm_burden_col] *= (1 - pzq_efficacy)
 
             # clip whole column to 0 and preserve int
-            df[worm_burden_col] = df[worm_burden_col].clip(lower=0).astype('int64')
+            df.loc[person_id, worm_burden_col] = df.loc[person_id, worm_burden_col].clip(lower=0).astype(int)
 
             # if worm burden >=1, still infected
             mask = df.loc[person_id, worm_burden_col] < 1
@@ -1302,7 +1302,7 @@ class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
             this is called separately for each species
             """
             # all new juvenile infections will have same infection date
-            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=1)).any():
+            if (df[juvenile_infection_date] <= self.sim.date - pd.DateOffset(months=2)).any():
                 df[species_column_aggregate] += df[species_column_juvenile]
 
                 # Set 'juvenile' column to zeros
@@ -1443,6 +1443,10 @@ class SchistoMDAEvent(Event, PopulationScopeEventMixin):
 
 class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
     """
+    This has two functions:
+    *1 update the susceptibility of individuals if their WASH properties have changed
+    *2 change WASH properties if scale-up WASH scenario is implemented
+
     When WASH is implemented, two processes will occur:
     *1 scale the proportion of the population susceptible to schisto infection
     assuming that WASH reduces individual risk of infection by 0.6
@@ -1450,33 +1454,41 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
     sanitation and clean drinking water
 
     Event is initially scheduled by initialise_simulation on specified date
-    This is a one-off event
     """
 
     def __init__(self, module):
         super().__init__(
-            module, frequency=DateOffset(years=100)
+            module, frequency=DateOffset(years=1)
         )
 
     def apply(self, population):
         df = population.props
+        p = self.module.parameters
 
+        if (p['scaleup_WASH'] == 'scaleup') & (self.sim.date.year == p['scaleup_WASH_start_year']):
+
+            # scale-up properties related to WASH
+            # set the properties to False for everyone
+            df['li_unimproved_sanitation'] = False
+            df['li_no_clean_drinking_water'] = False
+            df['li_no_access_handwashing'] = False
+            df['li_date_acquire_improved_sanitation'] = self.sim.date
+            df['li_date_acquire_access_handwashing'] = self.sim.date
+            df['li_date_acquire_clean_drinking_water'] = self.sim.date
+
+        # wash improvements being paused
+        if (p['scaleup_WASH'] == 'pause') & (self.sim.date.year >= p['scaleup_WASH_start_year']):
+            self.sim.modules['Lifestyle'].parameters['r_improved_sanitation'] = 0
+            self.sim.modules['Lifestyle'].parameters['r_clean_drinking_water'] = 0
+            self.sim.modules['Lifestyle'].parameters['r_access_handwashing'] = 0
+
+        # access to WASH constantly changing through lifestyle module
         # need to reduce proportion susceptible by 60% for both species
-
         # Reduce susceptibility for mansoni
         self.module.reduce_susceptibility(df, species_column='ss_sm_susceptibility')
 
         # Reduce susceptibility for haematobium
         self.module.reduce_susceptibility(df, species_column='ss_sh_susceptibility')
-
-        # scale-up properties related to WASH
-        # set the properties to False for everyone
-        df['li_unimproved_sanitation'] = False
-        df['li_no_clean_drinking_water'] = False
-        df['li_no_access_handwashing'] = False
-        df['li_date_acquire_improved_sanitation'] = self.sim.date
-        df['li_date_acquire_access_handwashing'] = self.sim.date
-        df['li_date_acquire_clean_drinking_water'] = self.sim.date
 
 
 class HSI_Schisto_TestingFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
@@ -1735,23 +1747,40 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             _spec.log_infection_status()
             # _spec.log_mean_worm_burden()  # revert this if needed
 
-        # PZQ treatment episodes
+        #PZQ MDA episodes
         df = population.props
-        now = self.sim.date
 
-        # this is logging MDA as well as treatment
-        new_tx = sum(df.ss_last_PZQ_date >= (now - DateOffset(months=self.repeat)))
+        # this is logging MDA only
+        new_mda = df[
+            'ss_MDA_treatment_counter'
+        ].sum()
 
-        # treatment logger
-        treatment_episodes = {
-            'treatment_episodes': new_tx,
+        mda_episodes = {
+            'mda_episodes': new_mda,
         }
         logger.info(
-            key='schisto_treatment_episodes',
-            data=treatment_episodes,
-            description='Counts of treatment occurring in timeperiod'
+            key='schisto_mda_episodes',
+            data=mda_episodes,
+            description='Counts of mda occurring in timeperiod'
         )
 
+        mda_by_district = df.groupby('district_of_residence', observed=False).agg({'ss_MDA_treatment_counter': 'sum'})
+
+        mda_episodes_district = {
+            'mda_episodes_district': mda_by_district.to_dict()
+        }
+
+        logger.info(
+            key='schisto_mda_episodes_by_district',
+            data=mda_episodes_district,
+            description='Counts of mda occurring in timeperiod by district'
+        )
+
+        # reset the counter
+        df['ss_MDA_treatment_counter'] = 0
+
+
+        # PERSON-DAYS OF INFECTION
         # log person-days of infection by low, moderate and high for all, SAC and PSAC separately
         logger.info(
             key='Schisto_person_days_infected',
@@ -1761,6 +1790,8 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the daily counts for the next month
         self.module.log_person_days.loc[:, 'person_days'] = 0
 
+
+        # NUMBERS INFECTED
         # extract and map age groups for those alive
         age_grp = df['age_years'].map(self.module.age_group_mapper)
 
@@ -1778,6 +1809,16 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Rename index directly
         infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
 
+        # repeat above but for high-intensity infections only
+        high_infection_mask = (df['ss_sm_infection_status'] == 'High-infection') | (
+                df['ss_sh_infection_status'] == 'High-infection')
+
+        high_infected = df[alive_mask & high_infection_mask].groupby(
+            by=['district_of_residence', age_grp],
+            observed=False
+        ).size()
+        high_infected.index.rename(['district_of_residence', 'age_group'], inplace=True)
+
         # Apply mask for just the alive individuals and calculate alive count
         alive = df[alive_mask].groupby(
             by=['district_of_residence', age_grp],
@@ -1789,9 +1830,16 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(
             key='number_infected_any_species',
-            description='Counts of infection status with this species by age-group and district.',
+            description='Counts of infection status by age-group and district.',
             data={
                 'number_infected': flatten_multi_index_series_into_dict_for_logging(infected),
+            },
+        )
+        logger.info(
+            key='number_high_infected_any_species',
+            description='Counts of high infection status by age-group and district.',
+            data={
+                'number_high_infected': flatten_multi_index_series_into_dict_for_logging(high_infected),
             },
         )
         logger.info(
@@ -1822,4 +1870,44 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             key='Schisto_wash_properties',
             data=wash,
             description='Proportion of population with each wash-related property'
+        )
+
+        # General function to calculate the proportion of any property for people who are alive
+        def calculate_wash_proportion(group, property_column):
+            total_alive = group['is_alive'].sum()
+
+            if total_alive > 0:
+                # Calculate the sum of the property (e.g., li_unimproved_sanitation or li_access_water) for alive people
+                property_sum = (group[property_column] * group['is_alive']).sum()
+                property_proportion = property_sum / total_alive
+            else:
+                property_proportion = 0
+
+            return property_proportion
+
+        # For 'li_unimproved_sanitation'
+        unimproved_sanitation_by_district = df.groupby('district_of_residence').apply(calculate_wash_proportion,
+                                                                                      property_column='li_unimproved_sanitation')
+
+        no_access_handwashing_by_district = df.groupby('district_of_residence').apply(calculate_wash_proportion,
+                                                                             property_column='li_no_access_handwashing')
+
+        no_clean_drinking_water_by_district = df.groupby('district_of_residence').apply(calculate_wash_proportion,
+                                                                             property_column='li_no_clean_drinking_water')
+
+        # Convert the results into dictionaries
+        unimproved_sanitation_by_district = unimproved_sanitation_by_district.to_dict()
+        no_access_handwashing_by_district = no_access_handwashing_by_district.to_dict()
+        no_clean_drinking_water_by_district = no_clean_drinking_water_by_district.to_dict()
+
+        wash_district = {
+            'unimproved_sanitation_district': unimproved_sanitation_by_district,
+            'no_access_handwashing_district': no_access_handwashing_by_district,
+            'no_clean_drinking_water_district': no_clean_drinking_water_by_district,
+        }
+
+        logger.info(
+            key='Schisto_wash_properties_by_district',
+            data=wash_district,
+            description='Proportion of population with each wash-related property by district'
         )
