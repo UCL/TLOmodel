@@ -53,11 +53,11 @@ class HSIEventQueueItem(NamedTuple):
     Ensure priority is above topen in order for held-over events with low priority not
     to jump ahead higher priority ones which were opened later.
 
-    clinic_access is now set before setting priority so that it is checked before anything else
+    clinic_access is set last as it has been given a default value for backward compatibility
+    and apparently properties with defaults should come after those without defaults.
 
     """
 
-    clinic_eligibility: bool  # True if the event is for a clinic access, False if it is for a hospital
     priority: int
     topen: Date
     rand_queue_counter: (
@@ -70,7 +70,9 @@ class HSIEventQueueItem(NamedTuple):
     # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
     # later in module (see https://stackoverflow.com/a/36286947/4798943)
     hsi_event: "HSI_Event"
+    clinic_eligibility: bool = False
 
+    """Set the clinic eligibility for this HSI event."""
     def set_clinic_eligibility(self, clinic_access: bool) -> None:
         self.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
 
