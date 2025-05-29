@@ -320,7 +320,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # Clear any symptoms caused by this module (i.e., Schisto of any species)
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self)
 
-        # Record the date of last treatment
+        # Record the treatment
         if mda:
             df.loc[person_id, 'ss_MDA_treatment_counter'] += 1
 
@@ -338,7 +338,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             df.loc[person_id, worm_burden_col] *= (1 - pzq_efficacy)
 
             # clip to 0 and preserve int
-            df.loc[person_id, worm_burden_col] = df[worm_burden_col].clip(lower=0).astype('int64')
+            df.loc[person_id, worm_burden_col] = df.loc[person_id, worm_burden_col].clip(lower=0).astype(int)
 
             # if worm burden >=1, still infected
             mask = df.loc[person_id, worm_burden_col] < 1
@@ -1559,9 +1559,7 @@ class SchistoWashScaleUp(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         p = self.module.parameters
 
-
-        # todo if scale-up wash happening add conditional date
-        if (p['scaleup_WASH'] == 'scaleup') & (self.sim.date.year >= p['scaleup_WASH_start_year']):
+        if (p['scaleup_WASH'] == 'scaleup') & (self.sim.date.year == p['scaleup_WASH_start_year']):
 
             # scale-up properties related to WASH
             # set the properties to False for everyone
