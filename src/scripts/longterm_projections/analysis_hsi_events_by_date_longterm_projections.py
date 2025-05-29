@@ -4,9 +4,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 import squarify
 from matplotlib import pyplot as plt
-import scipy.stats as st
 
 from tlo import Date
 from tlo.analysis.utils import (

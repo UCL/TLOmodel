@@ -5,9 +5,9 @@ from pathlib import Path
 import imageio
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-import scipy.stats as st
 
 from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 from tlo.analysis.utils import (
