@@ -996,14 +996,24 @@ class HealthSystem(Module):
             self._clinics_capabilities = updated_capabilities[module_cols].T.to_dict()
             self._daily_capabilities = updated_capabilities.drop(columns=['fungible'])
 
+    """Set the clinic eligibility for this HSI event."""
+    def set_clinic_eligibility(self, clinic_access: bool) -> None:
+        self.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
 
     def get_clinic_eligibility(str):
         """
-        Returns TRUE if clinics capabilities have been set up, FALSE otherwise
+        Returns the name of the module if the module is eligible for clinic access.
+        If not, returns 'fungible'. Notes for future implementation:
+        this implementation is likely to change in the future to break the one-to-one relationship between
+        modules and clinics.
         """
         df = self.parameters['Ringfenced_Clinics']
         eligible = str in df
-        return eligible
+
+        if eligible:
+            return str
+        else:
+            return 'fungible'
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
@@ -1406,8 +1416,9 @@ class HealthSystem(Module):
         else:
             rand_queue = self.hsi_event_queue_counter
 
+         clinic_eligibility = self.get_clinic_eligibility(hsi_event.module.name)
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
+            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
