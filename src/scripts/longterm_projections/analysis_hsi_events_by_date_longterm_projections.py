@@ -851,7 +851,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     all_draws_treatment = pd.DataFrame(columns=range(4))
     all_draws_treatment_normalised = pd.DataFrame(columns=range(4))
     all_draws_population = pd.DataFrame(columns=range(4))
-
+    all_draws_population_normalised = pd.DataFrame(columns=range(4))
     for draw in range(4):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig10_{stub}_{draw}.png"  # noqa: E731
         appointment_time_table = pd.read_csv(
@@ -999,6 +999,8 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         df_normalized_cadre_lower = df_all_years_cadre_lower.div(df_all_years_cadre_lower.iloc[:, 0], axis=0)
         df_normalized_cadre_upper = df_all_years_cadre_lower.div(df_all_years_cadre_upper.iloc[:, 0], axis=0)
         df_normalized_treatment = df_all_years_treatment.div(df_all_years_treatment.iloc[:, 0], axis=0)
+        df_normalized_population = df_all_years_data_population_mean.div(df_all_years_data_population_mean.iloc[:, 0],
+                                                                         axis=0)
 
         # save final year
         all_draws_cadre[draw] = df_all_years_cadre.iloc[:, -1]
@@ -1008,7 +1010,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         all_draws_treatment[draw] = df_all_years_treatment.iloc[:, -1]
         all_draws_treatment_normalised[draw] = df_normalized_treatment.iloc[:, -1]
         all_draws_population[draw] = df_all_years_data_population_mean.iloc[:, -1]
-
+        all_draws_population_normalised[draw] = df_normalized_population.iloc[:, -1]
         # Plotting
         fig, axes = plt.subplots(1, 2, figsize=(25, 10))  # Two panels side by side
 
@@ -1018,16 +1020,20 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Time Spent (Minutes)')
         axes[0].legend().set_visible(False)
-        axes[0].grid(True)
+        axes[0].grid(False)
 
         # Panel B: Normalized counts
         for i, treatment_id in enumerate(df_normalized_cadre.index):
             axes[1].plot(df_normalized_cadre.columns, df_normalized_cadre.loc[treatment_id], marker='o', label=treatment_id)
+        print(df_normalized_population)
+        axes[1].plot(df_normalized_population.columns,
+                         df_normalized_population.iloc[0],
+                         color='black', linestyle='--', marker='s', linewidth=2, label='Population')
         axes[1].set_title('Panel B: Normalized Time Required by Cadre')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Increase in Demand from 2020')
         axes[1].legend(title='Cadre', bbox_to_anchor=(1, 1), loc='upper left')
-        axes[1].grid(True)
+        axes[1].grid(False)
         df_normalized_cadre.to_csv(output_folder/f"HSI_time_per_cadre_normalized_2020_{draw}.csv")
 
         # Save the figure with both panels
@@ -1067,8 +1073,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
     ## cadre
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
-    print(all_draws_population)
-    print(all_draws_cadre)
+
     all_draws_cadre_per_1000 = all_draws_cadre.div(all_draws_population.loc['total'], axis=1) * 1000
 
     all_draws_cadre_per_1000.T.plot.bar(
@@ -1094,6 +1099,10 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                 capsize=3,
                 alpha=0.7
             )
+    print(all_draws_population_normalised)
+    axes[1].scatter(all_draws_population_normalised.columns,
+                 all_draws_population_normalised.iloc[0,:],
+                 color='black', marker='s', label='Population')
 
     axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
     axes[1].set_ylabel('Fold change in time spent compared to 2020')

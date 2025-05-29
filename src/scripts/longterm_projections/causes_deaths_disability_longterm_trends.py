@@ -134,7 +134,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_deaths_mean_1000_male = []
     all_draws_deaths_mean_1000_female = []
 
-    for draw in range(4):
+    for draw in range(1):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_deaths_mean = {}
@@ -490,17 +490,49 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         all_draws_deaths_upper.append(pd.Series(all_years_data_deaths_upper, name=f'Draw {draw}'))
         all_draws_dalys_upper.append(pd.Series(all_years_data_dalys_upper, name=f'Draw {draw}'))
         # only include 2070 as can't have cumulative per 1000?
-        all_draws_dalys_mean_1000.append(pd.Series(df_daly_per_1000_mean.iloc[:,-1], name=f'Draw {draw}'))
-        all_draws_dalys_lower_1000.append(pd.Series(df_daly_per_1000_lower.iloc[:,-1], name=f'Draw {draw}'))
-        all_draws_dalys_upper_1000.append(pd.Series(df_daly_per_1000_upper.iloc[:,-1], name=f'Draw {draw}'))
-        all_draws_deaths_mean_1000.append(pd.Series(df_death_per_1000_mean.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_deaths_lower_1000.append(pd.Series(df_death_per_1000_lower.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_deaths_upper_1000.append(pd.Series(df_death_per_1000_upper.iloc[:, -1], name=f'Draw {draw}'))
+        all_draws_dalys_mean_1000.append(
+            df_daly_per_1000_mean.iloc[:, [0, -1]].rename(
+                columns={df_daly_per_1000_mean.columns[0]: 'First', df_daly_per_1000_mean.columns[-1]: 'Last'}).assign(
+                Draw=f'Draw {draw}')
+        )
+        all_draws_dalys_lower_1000.append(
+            df_daly_per_1000_lower.iloc[:, [0, -1]].rename(columns={df_daly_per_1000_lower.columns[0]: 'First',
+                                                                    df_daly_per_1000_lower.columns[-1]: 'Last'}).assign(
+                Draw=f'Draw {draw}')
+        )
+        all_draws_dalys_upper_1000.append(
+            df_daly_per_1000_upper.iloc[:, [0, -1]].rename(columns={df_daly_per_1000_upper.columns[0]: 'First',
+                                                                    df_daly_per_1000_upper.columns[-1]: 'Last'}).assign(
+                Draw=f'Draw {draw}')
+        )
+
+        all_draws_deaths_mean_1000.append(
+            df_death_per_1000_mean.iloc[:, [0, -1]].rename(columns={df_death_per_1000_mean.columns[0]: 'First',
+                                                                    df_death_per_1000_mean.columns[-1]: 'Last'}).assign(
+                Draw=f'Draw {draw}')
+        )
+        all_draws_deaths_lower_1000.append(
+            df_death_per_1000_lower.iloc[:, [0, -1]].rename(columns={df_death_per_1000_lower.columns[0]: 'First',
+                                                                     df_death_per_1000_lower.columns[
+                                                                         -1]: 'Last'}).assign(Draw=f'Draw {draw}')
+        )
+        all_draws_deaths_upper_1000.append(
+            df_death_per_1000_upper.iloc[:, [0, -1]].rename(columns={df_death_per_1000_upper.columns[0]: 'First',
+                                                                     df_death_per_1000_upper.columns[
+                                                                         -1]: 'Last'}).assign(Draw=f'Draw {draw}')
+        )
 
         # deaths by sex
-        all_draws_deaths_mean_1000_male.append(pd.Series(df_death_per_1000_mean_male.iloc[:, -1], name=f'Draw {draw}'))
-        all_draws_deaths_mean_1000_female.append(pd.Series(df_death_per_1000_mean_female.iloc[:, -1], name=f'Draw {draw}'))
-
+        all_draws_deaths_mean_1000_male.append(
+            df_death_per_1000_mean_male.iloc[:, [0, -1]].rename(
+                columns={df_death_per_1000_mean_male.columns[0]: 'First',
+                         df_death_per_1000_mean_male.columns[-1]: 'Last'}).assign(Draw=f'Draw {draw}')
+        )
+        all_draws_deaths_mean_1000_female.append(
+            df_death_per_1000_mean_female.iloc[:, [0, -1]].rename(
+                columns={df_death_per_1000_mean_female.columns[0]: 'First',
+                         df_death_per_1000_mean_female.columns[-1]: 'Last'}).assign(Draw=f'Draw {draw}')
+        )
     df_deaths_all_draws_mean = pd.concat(all_draws_deaths_mean, axis=1)
     df_dalys_all_draws_mean = pd.concat(all_draws_dalys_mean, axis=1)
     df_deaths_all_draws_lower = pd.concat(all_draws_deaths_lower, axis=1)
@@ -553,35 +585,42 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
 
-    # per 1000 in 2070
+    ## Per 1000 in 2020 and 2070
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
-    # Panel A: Total Deaths
-    #axes[0].bar(df_deaths_all_draws_mean_1000.index, df_deaths_all_draws_mean_1000.values, color=scenario_colours, yerr = deaths_totals_err, capsize=20)
-    df_deaths_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0],
-                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                            df_deaths_all_draws_mean_1000.index])
-    axes[0].set_title('Deaths per 1,000 (2070)')
-    axes[0].set_xlabel('Scenario')
+
+    # Prep Deaths Data (transpose so scenarios are rows, causes are columns, then select 2020 and 2070 columns)
+    deaths_plot_data = df_deaths_all_draws_mean_1000.loc[:, ['First','Last']].T
+    deaths_plot_data.index = ['2020', '2070']
+    print(df_deaths_all_draws_mean_1000)
+    print(deaths_plot_data)
+    # Plot Panel A: Total Deaths
+    deaths_plot_data.plot.bar(ax=axes[0],
+                              color=[get_color_cause_of_death_or_daly_label(cause) for cause in deaths_plot_data.columns],
+                              width=0.8)
+
+    axes[0].set_title('Deaths per 1,000 (2020 vs 2070)')
+    axes[0].set_xlabel('Year')
     axes[0].set_ylabel('Deaths per 1,000')
-    axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].legend().set_visible(False)
-    # Panel B: Total DALYs
-    #axes[1].bar(df_dalys_all_draws_mean_1000.index, df_dalys_all_draws_mean_1000.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
-    df_dalys_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[1],
-                                     color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                            df_dalys_all_draws_mean_1000.index], label = [label for label in df_all_years_DALYS_mean.index])
-    axes[1].set_title('DALYS per 1,000 (2070)')
-    axes[1].set_xlabel('Scenario')
-    axes[1].set_ylabel('DALYS per 1,000')
-    axes[1].set_xticklabels(scenario_names, rotation=45)
+    axes[0].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
+
+    # Prep DALYs Data
+    dalys_plot_data = df_dalys_all_draws_mean_1000.loc[:, ['First','Last']]
+    dalys_plot_data.index = ['2020', '2070']
+
+    # Plot Panel B: Total DALYs
+    dalys_plot_data.T.plot.bar(ax=axes[1],
+                             color=[get_color_cause_of_death_or_daly_label(cause) for cause in dalys_plot_data.columns],
+                             width=0.8)
+
+    axes[1].set_title('DALYs per 1,000 (2020 vs 2070)')
+    axes[1].set_xlabel('Year')
+    axes[1].set_ylabel('DALYs per 1,000')
     axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
 
     fig.tight_layout()
-    fig.savefig(output_folder / "deaths_and_dalys_per_1000_all_cause_all_draws_2070.png")
+    fig.savefig(output_folder / "deaths_and_dalys_per_1000_all_cause_all_draws_2020_vs_2070_baseline.png")
     plt.close(fig)
 
-
-    ## Normalize to 2020
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
 
     # Panel A: DALYs per 1,000 in 2070
