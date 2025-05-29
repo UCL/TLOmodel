@@ -435,7 +435,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             sample_eligible_treatment_success(on_med, p_treatment_works, condition)
 
             # ----- Impose the symptom on random sample of those with each condition to have:
-            # TODO: @britta make linear model data-specific and add in needed complexity
+            #TODO: @britta make linear model data-specific and add in needed complexity
             for symptom in self.prob_symptoms[condition].keys():
                 lm_init_symptoms = LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -1633,7 +1633,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
         # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
-        # todo adjust the dosages for diabetes second and third dosage
+        #todo adjust the dosages for diabetes second and third dosage
 
         dose = {'diabetes': 30_500,
                 'diabetes_second_dose': 5_30,
@@ -1645,7 +1645,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
 
-        # todo improve reading of medication code from xlsx
+        #todo improve reading of medication code from xlsx
         """
         Currently error in reading list of medications from xlsx, so we have created individual parameters
         All medications (medication_item_code, medication_item_code_b, and medication_item_code_c) are part
@@ -1686,7 +1686,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
                 self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
 
-            # todo review logic of diabetes second and third line drugs
+            #todo review logic of diabetes second and third line drugs
             """
             Currently logic is that if first line does not prevent death, then they will be put on second line,
             if second line does not prevent death, then they will move to third line.
@@ -1711,7 +1711,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
             # Schedule their next HSI for a refill of medication in one month
 
-            # todo review refill for diabetes meds, require a blood test before each refill
+            #todo review refill for diabetes meds, require a blood test before each refill
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
                                                                          condition=self.condition),
@@ -1784,7 +1784,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
 
-        # todo update the refill to be the same medication(s) as that in
+        #todo update the refill to be the same medication(s) as that in
         #  the functino HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
 
         # Check availability of medication for condition
