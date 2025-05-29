@@ -15,6 +15,7 @@ from __future__ import annotations
 import math
 from itertools import combinations
 from pathlib import Path
+from random import random
 from typing import TYPE_CHECKING, List
 
 import numpy as np
@@ -399,10 +400,18 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             # Men & women without condition
             men_wo_cond = men & ~df[f'nc_{condition}']
             women_wo_cond = women & ~df[f'nc_{condition}']
-            for _age_range in self.age_cats:
-                # Select all eligible individuals (men & women w/o condition and in age range)
-                sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
-                sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
+
+            if condition == 'chronic_kidney_disease':
+                for _age_range in self.age_cats:
+                    # p[f'm_{_age_range}'] = 0.5
+                    # p[f'f_{_age_range}'] = 0.5
+                    sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
+                    sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
+            else:
+                for _age_range in self.age_cats:
+                    # Select all eligible individuals (men & women w/o condition and in age range)
+                    sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
+                    sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
 
             # ----- Set variables to false / NaT for everyone
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
@@ -1362,7 +1371,8 @@ class CardioMetabolicDisorders_LoggingEvent(RegularEvent, PopulationScopeEventMi
                     {'count': x['nc_n_conditions'].count()}))
                 n_comorbidities_all.loc[:, num] = col['count']
 
-            prop_comorbidities_all = n_comorbidities_all.div(n_comorbidities_all.sum(axis=1), axis=0)
+            row_sums = n_comorbidities_all.sum(axis=1)
+            prop_comorbidities_all = n_comorbidities_all.div(row_sums.where(row_sums != 0), axis=0).fillna(0)
 
             logger.info(key='mm_prevalence_by_age_all',
                         description='annual summary of multi-morbidities by age for all',
@@ -1484,6 +1494,9 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         hs = self.sim.modules['HealthSystem']
         df = self.sim.population.props
         person_id = self.target
+        m = self.module
+
+        rng = m.rng
 
         # Do nothing if the condition is already diagnosed
         if df.at[person_id, f'nc_{_c}_ever_diagnosed']:
@@ -1588,8 +1601,11 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
+        if condition == 'chronic_kidney_disease':
+            self.ACCEPTED_FACILITY_LEVEL = '3'
+            # self.ACCEPTED_FACILITY_LEVEL = '1b'
+        else:
+            self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1617,25 +1633,85 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         # Monthly doses of medications as follows. Diabetes - 1000mg metformin daily (1000*30.5),
         # hypertension - 25mg hydrochlorothiazide daily (25*30.5), CKD 1 dialysis bag (estimate),
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
+        # todo adjust the dosages for diabetes second and third dosage
+
         dose = {'diabetes': 30_500,
+                'diabetes_second_dose': 5_30,
+                'diabetes_third_dose': 1,
                 'hypertension': 610,
-                'chronic_kidney_disease': 1,
+                'chronic_kidney_disease': 12, # 12 in a month: dialysis three times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
 
-        # Check availability of medication for condition
-        if self.get_consumables(item_codes=
-                                {self.module.parameters[f'{self.condition}_hsi'].get(
-                                    'medication_item_code').astype(int): dose[self.condition]}):
+        # todo improve reading of medication code from xlsx
+        """
+        Currently error in reading list of medications from xlsx, so we have created individual parameters
+        All medications (medication_item_code, medication_item_code_b, and medication_item_code_c) are part
+        of the initial treatment. They are not second and third line drugs.
+        """
 
+        medication_codes = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code')
+        medication_item_code_b = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code_b')
+        medication_item_code_c = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code_c')
+
+        #todo currently equipment not documentd for CMD, but important to add within the xlsx file of parameters
+        equipment_codes = self.module.parameters[f'{self.condition}_hsi'].get('equipment_item_code')
+
+        # Normalize all item codes to be lists
+        def ensure_list(value):
+            if value is None:
+                return []
+            return value if isinstance(value, list) else [value]
+
+        medication_codes = ensure_list(medication_codes)
+        medication_item_code_b = ensure_list(medication_item_code_b)
+        medication_item_code_c = ensure_list(medication_item_code_c)
+        equipment_codes = ensure_list(equipment_codes)
+
+        all_meds = medication_codes+ medication_item_code_b + medication_item_code_c
+        med_item_codes = {int(code): dose[self.condition] for code in all_meds if  code is not None}
+        eq_item_codes = {int(code): dose[self.condition] for code in equipment_codes if code is not None}
+
+        if self.get_consumables(item_codes=med_item_codes):
+
+        # Experiment with CKD consumable availability
+        # if (self.condition != "chronic_kidney_disease" and self.get_consumables(item_codes=med_item_codes)) or \
+        #     (self.condition == "chronic_kidney_disease" and random.random() < 0.4 and self.get_consumables(item_codes=med_item_codes)):
+            self.add_equipment(eq_item_codes)
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
             # Determine if the medication will work to prevent death
             df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
                 self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works
+
+            # todo review logic of diabetes second and third line drugs
+            """
+            Currently logic is that if first line does not prevent death, then they will be put on second line,
+            if second line does not prevent death, then they will move to third line.
+            Limitation is that all this is happening in the first appoinment. It must be moved to the refill section.
+            How it will work is that in each refill appointment, the individual's blood will be tested.
+            Based on the result, they will either stay on same med or they will change medication.
+            """
+            if (self.condition == 'diabetes') & (~ (df.at[person_id, f'nc_{self.condition}_medication_prevents_death'])):
+                self.get_consumables(item_codes=
+                                     {self.module.parameters[f'{self.condition}_hsi'].get(
+                                         'medication_item_code_second_line').astype(int): dose['diabetes_second_dose']})
+                df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
+                    self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works_second_line
+
+                if (self.condition == 'diabetes') & (~ (df.at[person_id, f'nc_{self.condition}_medication_prevents_death'])):
+                    self.get_consumables(item_codes=
+                                         {self.module.parameters[f'{self.condition}_hsi'].get(
+                                             'medication_item_code_third_line').astype(int): dose['diabetes_third_dose']})
+                    df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
+                        self.module.rng.rand() < self.module.parameters[
+                            f'{self.condition}_hsi'].pr_treatment_works_third_line
+
             # Schedule their next HSI for a refill of medication in one month
+
+            # todo review refill for diabetes meds, require a blood test before each refill
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_Refill_Medication(person_id=person_id, module=self.module,
                                                                          condition=self.condition),
@@ -1671,8 +1747,10 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
+        if condition == 'chronic_kidney_disease':
+            self.ACCEPTED_FACILITY_LEVEL = '3'
+        else:
+            self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.condition = condition
 
     def apply(self, person_id, squeeze_factor):
@@ -1700,11 +1778,14 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 1,
+                'chronic_kidney_disease': 12,
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
                 'ever_heart_attack': 2288}
+
+        # todo update the refill to be the same medication(s) as that in
+        #  the functino HSI_CardioMetabolicDisorders_StartWeightLossAndMedication
 
         # Check availability of medication for condition
         if self.get_consumables(
