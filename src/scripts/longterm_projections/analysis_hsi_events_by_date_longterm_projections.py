@@ -817,7 +817,6 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         df_all_years.T.plot.bar(stacked=True, ax=axes[0],
                                 color=[get_color_short_treatment_id(_label) for _label in
                                        df_all_years.index])
-        axes[0].set_title('Panel A: HSI Events by TREATMENT_ID (Short) All Years Trend')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Counts of HSI Events')
         axes[0].legend().set_visible(False)
@@ -828,7 +827,6 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
             axes[1].plot(df_normalized.columns, df_normalized.loc[treatment_id], marker='o', label=treatment_id,
                          color=[get_color_short_treatment_id(_label) for _label in
                                 df_all_years.index][i])
-        axes[1].set_title('Panel B: Normalized HSI Events by TREATMENT_ID (Short) All Years Trend')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Normalized Counts (First Year = 2020)')
         axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
@@ -1016,7 +1014,6 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
         # Panel A: Raw counts = stacked
         df_all_years_cadre.T.plot.bar(stacked=True, ax=axes[0])
-        axes[0].set_title('Panel A: Time Required by Cadre')
         axes[0].set_xlabel('Year')
         axes[0].set_ylabel('Time Spent (Minutes)')
         axes[0].legend().set_visible(False)
@@ -1025,11 +1022,9 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         # Panel B: Normalized counts
         for i, treatment_id in enumerate(df_normalized_cadre.index):
             axes[1].plot(df_normalized_cadre.columns, df_normalized_cadre.loc[treatment_id], marker='o', label=treatment_id)
-        print(df_normalized_population)
         axes[1].plot(df_normalized_population.columns,
                          df_normalized_population.iloc[0],
                          color='black', linestyle='--', marker='s', linewidth=2, label='Population')
-        axes[1].set_title('Panel B: Normalized Time Required by Cadre')
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Increase in Demand from 2020')
         axes[1].legend(title='Cadre', bbox_to_anchor=(1, 1), loc='upper left')
@@ -1058,8 +1053,15 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                         marker='o',
                         label=treatment_id, color=[get_color_short_treatment_id(_label) for _label in
                                        all_draws_treatment_normalised.index][i])
-        # Optionally: add error bars here if you compute lower/upper bounds
-
+        axes[1].plot(
+            all_draws_treatment_normalised.columns,
+            all_draws_treatment_normalised.loc[treatment_id],
+            color=[get_color_short_treatment_id(_label) for _label in all_draws_treatment_normalised.index][i],
+            alpha=0.5
+        )
+    axes[1].scatter(all_draws_population_normalised.columns,
+                 all_draws_population_normalised.iloc[0,:],
+                 color='black', marker='s', label='Population')
     axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
     axes[1].set_ylabel('Fold change in time spent compared to 2020')
     axes[1].set_xlabel('Scenario')
@@ -1091,15 +1093,12 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
             axes[1].scatter(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
                             marker='o',
                             label=cadre)
-            axes[1].errorbar(
+            axes[1].plot(
                 all_draws_cadre_normalised.columns,
                 all_draws_cadre_normalised.loc[cadre],
-                yerr=[abs(y_err[0].loc[cadre]), abs(y_err[1].loc[cadre])],
-                fmt='none',
-                capsize=3,
-                alpha=0.7
+                alpha=0.5
             )
-    print(all_draws_population_normalised)
+
     axes[1].scatter(all_draws_population_normalised.columns,
                  all_draws_population_normalised.iloc[0,:],
                  color='black', marker='s', label='Population')
