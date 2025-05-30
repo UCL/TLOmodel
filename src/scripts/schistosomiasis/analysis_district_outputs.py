@@ -295,58 +295,53 @@ def compute_icer_district(
     return_summary: bool = True
 ) -> pd.DataFrame | pd.Series:
     """
-    Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and draw.
+    Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and scenario.
 
     Assumes:
-    - Row MultiIndex: (year, district)
-    - Column MultiIndex: (draw, run)
+    - Row MultiIndex: ['year', 'District']
+    - Column MultiIndex: ['wash_strategy', 'comparison', 'run']
     - TARGET_PERIOD is a global tuple of (start_year, end_year) as datetime or int
     """
     global TARGET_PERIOD
     start_year, end_year = TARGET_PERIOD
 
-    # Filter index by year (first level)
-    years = dalys_averted.index.get_level_values(0)
+    # Filter index by year
+    years = dalys_averted.index.get_level_values('year')
     mask = (years >= start_year.year) & (years <= end_year.year)
     dalys_period = dalys_averted.loc[mask]
     costs_period = comparison_costs.loc[mask]
 
-    # Extract years for discounting from index level 0
+    # Discounting
     years_since_start = years[mask] - start_year.year
-
-    # Discount weights per year
     discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
     discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
 
-    # Apply discounting only if rates are nonzero
     if discount_rate_dalys != 0.0:
-        # Discount dalys_period by multiplying rows by discount weights
         dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
 
     if discount_rate_costs != 0.0:
         costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
 
-    # Sum over years **within each district**
-    # Group by district (level 1 of index)
-    total_dalys = dalys_period.groupby(level=1).sum()
-    total_costs = costs_period.groupby(level=1).sum()
+    # Sum over years within each district
+    total_dalys = dalys_period.groupby(level='district_of_residence').sum()
+    total_costs = costs_period.groupby(level='District').sum()
 
-    # Compute ICER = total_costs / total_dalys for each district, run, draw
+    # Compute ICERs
     icers = total_costs / total_dalys
 
-    # Rearrange to long form DataFrame with columns: district, draw, run, icer
+    # Convert to long format
     icers_long = (
         icers
-        .stack([0, 1])  # stack draw, run columns to index
+        .stack(['wash_strategy', 'comparison', 'run'])
         .rename('icer')
-        .reset_index()   # columns: district, draw, run, icer
+        .reset_index()
+        .rename(columns={'level_0': 'District'})
     )
 
     if return_summary:
-        # Summarise ICER across runs for each district and draw
         summary = (
             icers_long
-            .groupby(['level_0', 'draw'])['icer']
+            .groupby(['District', 'wash_strategy', 'comparison'])['icer']
             .agg(
                 mean='mean',
                 lower=lambda x: np.quantile(x, 0.025),
@@ -356,9 +351,7 @@ def compute_icer_district(
         )
         return summary
     else:
-        # Return all ICERs (district, draw, run, icer)
-        return icers
-
+        return icers_long
 
 
 def compute_icer_national(
@@ -890,6 +883,16 @@ dalys_averted_district_compared_noMDA = compute_number_averted_within_wash_strat
 incremental_dalys_averted_district = -1 * compute_stepwise_effects_by_wash_strategy(dalys_schisto_district_scaled)
 incremental_dalys_averted_district.to_excel(results_folder / f'stepwise_dalys_averted_year_district{target_period()}.xlsx')
 
+years = incremental_dalys_averted_district.index.get_level_values('year')
+mask = (years >= TARGET_PERIOD[0].year) & (years <= TARGET_PERIOD[1].year)
+
+sum_incremental_dalys_averted_district = (
+    incremental_dalys_averted_district.loc[mask]
+    .groupby('district_of_residence')
+    .sum()
+)
+sum_incremental_dalys_averted_district.to_excel(results_folder / f'sum_incremental_dalys_averted_district{target_period()}.xlsx')
+
 
 # === DALYs averted national =========================================================
 
@@ -1014,6 +1017,11 @@ cons_costs_per_year_national_summary = compute_summary_statistics(cons_costs_per
 fmt = format_summary_for_output(cons_costs_per_year_national_summary, filename='cons_costs_per_year_national')
 
 
+#################################################################################
+# %% COSTS RELATIVE TO COMPARATOR
+#################################################################################
+
+
 # === Costs incurred relative to comparators NATIONAL =========================================================
 
 full_costs_relative_noMDA = compute_number_averted_within_wash_strategies(
@@ -1027,7 +1035,6 @@ full_costs_relative_noMDA = compute_number_averted_within_wash_strategies(
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_full_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_national)
 incremental_full_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_national{target_period()}.xlsx')
-
 
 # --- Cons costs incurred relative to comparator ---
 
@@ -1044,10 +1051,54 @@ incremental_cons_costs_incurred_per_year_national = compute_stepwise_effects_by_
 incremental_cons_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_cons_costs_incurred_per_year_national{target_period()}.xlsx')
 
 
-
-
 # === Costs incurred relative to comparators DISTRICT =========================================================
 
+full_costs_relative_noMDA_district = compute_number_averted_within_wash_strategies(
+    full_costs_per_year_district,
+    results_path=results_folder,
+    filename_prefix='full_costs_per_year_district_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+
+# incremental costs incurred - compare each prog in turn to the last one
+incremental_full_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_district)
+incremental_full_costs_incurred_per_year_district.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_district{target_period()}.xlsx')
+
+years = incremental_full_costs_incurred_per_year_district.index.get_level_values('year')
+mask = (years >= TARGET_PERIOD[0].year) & (years <= TARGET_PERIOD[1].year)
+
+sum_incremental_full_costs_incurred_district = (
+    incremental_full_costs_incurred_per_year_district.loc[mask]
+    .groupby('District')
+    .sum()
+)
+sum_incremental_full_costs_incurred_district.to_excel(results_folder / f'sum_incremental_full_costs_incurred_district{target_period()}.xlsx')
+
+
+# --- Cons costs incurred relative to comparator ---
+cons_costs_relative_noMDA_district = compute_number_averted_within_wash_strategies(
+    cons_costs_per_year_district,
+    results_path=results_folder,
+    filename_prefix='cons_costs_per_year_district_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+
+# incremental costs incurred - compare each prog in turn to the last one
+incremental_cons_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(cons_costs_per_year_district)
+incremental_cons_costs_incurred_per_year_district.to_excel(results_folder / f'incremental_cons_costs_incurred_per_year_district{target_period()}.xlsx')
+
+
+years = incremental_cons_costs_incurred_per_year_district.index.get_level_values('year')
+mask = (years >= TARGET_PERIOD[0].year) & (years <= TARGET_PERIOD[1].year)
+
+sum_incremental_cons_costs_incurred_district = (
+    incremental_cons_costs_incurred_per_year_district.loc[mask]
+    .groupby('District')
+    .sum()
+)
+sum_incremental_cons_costs_incurred_district.to_excel(results_folder / f'sum_incremental_cons_costs_incurred_district{target_period()}.xlsx')
 
 
 
@@ -1083,6 +1134,40 @@ icer_national_cons_only["formatted"] = icer_national_cons_only.apply(
     lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
 icer_national_cons_only.to_excel(results_folder / f'icer_national_cons_only_{target_period()}.xlsx')
+
+
+# --- ICERS district ---
+
+icer_district = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_full_costs_incurred_per_year_district,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_district["formatted"] = icer_district.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_district.to_excel(results_folder / f'icer_district_{target_period()}.xlsx')
+
+# --- ICERS district for consumables costs only ---
+
+icer_district_cons_only = compute_icer_district(
+    dalys_averted=incremental_dalys_averted_district,
+    comparison_costs=incremental_cons_costs_incurred_per_year_district,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+icer_district_cons_only["formatted"] = icer_district_cons_only.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_district_cons_only.to_excel(results_folder / f'icer_district_cons_only_{target_period()}.xlsx')
+
+
+
 
 
 ########################
@@ -1166,130 +1251,3 @@ nhb_district = compute_nhb(
 nhb_district.to_csv(results_folder / f'nhb_district{target_period()}.csv')
 
 
-#############################################################################
-# Kaplan-Meier proportion districts reaching EPHP each year
-
-def extract_mda_label(draw_name: str) -> str:
-    # Define possible MDA labels to look for in draw name
-    mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
-    for label in mda_labels:
-        if label.replace(" ", "").lower() in draw_name.replace(" ", "").lower():
-            return label
-    # Default if none matched
-    return "Other"
-
-
-def plot_ephp_km_panels(
-    df: pd.DataFrame,
-    threshold: float = 0.015,
-    year_range: tuple = (2024, 2040),
-    alpha: float = 1.0,
-    figsize: tuple = (8, 12)
-):
-    """
-    Plot Kaplan-Meier-style curves in three vertically stacked panels showing the proportion of districts
-    reaching prevalence < threshold by year. Panels are grouped by draw naming patterns: 'Pause', 'Continue', 'Scale-up'.
-
-    Parameters:
-        df : pd.DataFrame
-            DataFrame with MultiIndex (year, district) and columns with MultiIndex (draw, run)
-        threshold : float
-            Prevalence threshold for defining EPHP
-        year_range : tuple
-            Range of years to display on x-axis
-        alpha : float
-            Transparency for individual draw lines
-        figsize : tuple
-            Size of the overall figure
-    """
-
-    def extract_mda_label(draw_name: str) -> str:
-        """Extract MDA category for legend from draw name."""
-        mda_labels = ["no MDA", "MDA SAC", "MDA PSAC", "MDA All"]
-        draw_lower = draw_name.replace(" ", "").lower()
-        for label in mda_labels:
-            if label.replace(" ", "").lower() in draw_lower:
-                return label
-        return "Other"
-
-    # Remove pre-2024 data
-    df = df.loc[df.index.get_level_values("year") >= 2024]
-
-    # Step 1: mean across runs for each draw
-    df_mean_runs = df.groupby(axis=1, level="draw").mean()
-
-    # Step 2: identify years where prevalence < threshold
-    below = (df_mean_runs < threshold).reset_index()
-    long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
-    below_threshold = long_format[long_format["below_threshold"]]
-
-    # First year each district reaches threshold, by draw
-    first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
-
-    # Setup for panel plots
-    draw_filters = {
-        "Pause": "Pause",
-        "Continue": "Continue",
-        "Scale-up": "Scale-up"
-    }
-
-    total_districts = df.index.get_level_values("district").nunique()
-
-    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=figsize, sharex=True, sharey=True)
-
-    # Use darker palette, enough colors for up to 20 draws per panel
-    palette = sns.color_palette("dark", n_colors=20)
-
-    for ax, (title, substr) in zip(axes, draw_filters.items()):
-        # Filter draws by name substring
-        filtered = first_years[first_years["draw"].str.contains(substr)]
-
-        # Count cumulative districts reaching EPHP by year
-        ephp_counts = (
-            filtered.groupby(["draw", "year_ephp"])
-            .size()
-            .groupby(level=0)
-            .cumsum()
-            .reset_index(name="num_districts")
-        )
-        ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
-        ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
-
-        # Prepare unique draws and assign colours
-        draw_list = ephp_counts["draw"].unique()
-        color_dict = dict(zip(draw_list, palette[:len(draw_list)]))
-
-        # To avoid duplicate legend labels for same MDA category
-        plotted_labels = set()
-
-        for draw, data in ephp_counts.groupby("draw"):
-            label = extract_mda_label(draw)
-            if label not in plotted_labels:
-                plot_label = label
-                plotted_labels.add(label)
-            else:
-                plot_label = None  # Don't repeat label in legend
-
-            ax.step(
-                data["year_ephp"],
-                data["prop_districts"],
-                where="post",
-                label=plot_label,
-                color=color_dict[draw],
-                alpha=alpha,
-                linewidth=1.5,
-            )
-
-        ax.set_title(title)
-        ax.set_ylabel("Proportion < {:.1f}%".format(threshold * 100))
-        ax.grid(True, color="grey", linestyle="-", linewidth=0.5, alpha=0.15)
-        ax.legend(loc="upper left", fontsize="small", title="")
-
-    axes[-1].set_xlabel("Year")
-    plt.suptitle("Progress Toward EPHP by Year and Strategy", fontsize=14)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.show()
-
-
-plot_ephp_km_panels(prev_haem_H_All_district)
-plot_ephp_km_panels(prev_mansoni_H_All_district)
