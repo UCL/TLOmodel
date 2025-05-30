@@ -566,8 +566,9 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
             )
             ]
-
+        
         if any_depr_in_the_last_month.empty:
+            prevalence_by_age_group_sex = {}
             pass
         else:
             alive_df = df[df['is_alive']]
