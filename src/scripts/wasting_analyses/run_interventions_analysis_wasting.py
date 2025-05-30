@@ -1,6 +1,7 @@
 """
 An analysis file for the wasting module to compare outcomes of one intervention under multiple assumptions.
 """
+
 # %% Import statements
 import analysis_utility_functions_wast
 import glob
@@ -23,9 +24,10 @@ total_time_start = time.time()
 
 # ####### TO SET #######################################################################################################
 # Create dicts for the intervention scenarios. 'Interv_abbrev': {'Intervention scenario title/abbreviation': draw_nmb}
-scenarios_dict = {'GM': {'Status Quo': 0, 'GM_all': 1, 'GM_1-2': 2, 'GM_FullAttend': 3}}
+scenarios_dict = {'GM': {'Status Quo': 0, 'GM_all': 1, 'GM_1-2': 2, 'GM_FullAttend': 3},
+                  'GM2': {'GM_all': 1, 'GM_1-2': 2, 'GM_FullAttend': 3}}
 # Set the intervention to be analysed, and for which years they were simulated
-intervs_of_interest = ['GM']
+intervs_of_interest = ['GM', 'GM2']
 intervention_years = list(range(2026, 2031))
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2031))
@@ -71,14 +73,37 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         for interv in intervs_of_interest
     }
 
+    pd.set_option('display.max_columns', None)  # Show all columns
+    pd.set_option('display.max_rows', None)  # Show all rows
+    pd.set_option('display.max_colwidth', None)  # Show full content of each row
     # ---------------------------------------- NEONATAL AND UNDER-5 MORTALITY ---------------------------------------- #
-    # Extract neonatal and under-5 death data from each of the scenario files
+    # Extract birth outcomes for each intervention to calculate mortality as number of deaths per 1,000 live births
+    birth_outcomes = {
+        interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(iterv_folders_dict[interv],
+                                                                                       plotyears, interventionyears)
+        for interv in scenario_folders
+    }
+    # TODO: rm
+    # print("\nBIRTH OUTCOMES")
+    # for interv in birth_outcomes.keys():
+    #     print(f"### {interv=}")
+    #     for outcome in birth_outcomes[interv]:
+    #         print(f"{outcome}:\n{birth_outcomes[interv][outcome]}")
+    #
+    # Extract neonatal and under-5 death data for each intervention
     print()
-    empty_df = pd.DataFrame() # TODO need to be replaced by births_dict[scen_folder]['births_data_frame'])
-    death_data = {scen_name: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(scen_folder, empty_df)
-                  for interv, scenarios in scenario_folders.items() for scen_name, scen_folder in scenarios.items()}
-
-
+    death_outcomes = {
+        interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
+            iterv_folders_dict[interv], birth_outcomes[interv]['births_df'], plotyears, interventionyears
+        ) for interv in scenario_folders
+    }
+    # TODO: rm
+    # print("\nDEATH OUTCOMES")
+    # for interv in death_outcomes.keys():
+    #     print(f"### {interv=}")
+    #     for outcome in death_outcomes[interv]:
+    #         print(f"{outcome}:\n{death_outcomes[interv][outcome]}")
+    #
 
 # ---------------- #
 # RUN THE ANALYSIS #
