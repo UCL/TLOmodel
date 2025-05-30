@@ -565,6 +565,8 @@ def plot_icers_with_nhb_isocurves(
 # %% ✅ EXTRACTED RESULTS (HEALTH SYSTEM)
 # ==============================================================================
 
+# this gets the total over the target period
+
 cons_req = extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
@@ -587,6 +589,7 @@ pzq_use = pd.concat([pzq_use, pzq_cost])
 pzq_use.to_csv(results_folder / (f'pzq_use {target_period()}.csv'))
 
 summary_pzq_cost = compute_summary_statistics(pzq_use)
+summary_pzq_cost.to_csv(results_folder / f'summary_pzq_cost{target_period()}.csv')
 
 
 pzq_use_vs_PauseWASH = compute_summary_statistics(
@@ -635,7 +638,7 @@ summary_mda_episodes.to_csv(results_folder / f'summary_mda_episodes{target_perio
 
 
 # UNIT COSTS PER RUN
-unit_cost_per_mda = 2.26 - 0.05  # full cost - consumables
+unit_cost_per_mda = 0.38  # financial and opportunity costs for drug delivery
 
 mda_episodes_cost_excl_cons = mda_episodes * unit_cost_per_mda
 
@@ -730,20 +733,6 @@ schisto_dalys_averted_by_year_run_combined.to_csv(results_folder / f'schisto_dal
 
 #################
 # add disability for light infections
-
-
-
-# def get_low_intensity_person_years_infected(_df):
-#     """Get the person-years for each draw, summed over every district """
-#
-#     df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]
-#
-#     df_filtered = df.filter(regex='(Low-infection)')
-#
-#     person_years = df_filtered.sum(axis=1).sum() / 365.25
-#
-#     return pd.Series(person_years)
-
 
 def get_person_years_infected_by_year(_df: pd.DataFrame) -> pd.Series:
     """

@@ -136,211 +136,113 @@ def find_difference_relative_to_comparison_dataframe(_df: pd.DataFrame, **kwargs
     }, axis=1).T
 
 
+def select_draws_by_keyword(df, keyword, level):
+    """Select columns where the first level of the column MultiIndex contains the keyword (case-insensitive)."""
+    mask = df.columns.get_level_values(level).str.contains(keyword, case=False)
+    return df.loc[:, mask]
+
+
+def sum_by_year_all_districts(df: pd.DataFrame, target_period: tuple) -> pd.DataFrame:
+    """
+    Restrict to years within TARGET_PERIOD and sum across all districts.
+    Returns a DataFrame indexed by year with columns as (draw, run).
+    """
+    # Filter to years in TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
+
+    df_filtered = df.loc[start_year.year:end_year.year]
+
+    # Sum across districts (i.e. group by year)
+    df_yearly = df_filtered.groupby(level='year').sum()
+
+    return df_yearly
+
+
+def compute_stepwise_effects_by_wash_strategy(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    For each WASH strategy, compute stepwise comparisons:
+    - MDA SAC vs no MDA
+    - MDA PSAC vs MDA SAC
+    - MDA All vs MDA PSAC
+
+    Returns a DataFrame with same index as input and columns for each comparison.
+    """
+    wash_strategies = ['Pause WASH', 'Continue WASH', 'Scale-up WASH']
+    mda_steps = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All']
+    comparisons = [
+        ('MDA SAC', 'no MDA'),
+        ('MDA PSAC', 'MDA SAC'),
+        ('MDA All', 'MDA PSAC'),
+    ]
+
+    result_frames = []
+
+    for wash in wash_strategies:
+        for comp_to, comp_from in comparisons:
+            draw_from = f'{wash}, {comp_from}'
+            draw_to = f'{wash}, {comp_to}'
+            # Ensure both draws exist in df
+            if draw_from in df.columns.get_level_values('draw') and draw_to in df.columns.get_level_values('draw'):
+                diff = df.xs(draw_to, level='draw', axis=1) - df.xs(draw_from, level='draw', axis=1)
+                # Add informative column names
+                diff.columns = pd.MultiIndex.from_product(
+                    [[wash], [f"{comp_to} vs {comp_from}"], diff.columns],
+                    names=['wash_strategy', 'comparison', 'run']
+                )
+                result_frames.append(diff)
+
+    if not result_frames:
+        raise ValueError("No matching comparisons could be computed. Check input column structure.")
+
+    # Concatenate all comparison results along columns
+    return pd.concat(result_frames, axis=1)
+
+
+
+def compute_number_averted_within_wash_strategies(
+    df: pd.DataFrame,
+    wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
+    results_path: Path = None,
+    filename_prefix: str = 'dalys_averted_by_year_run_district',
+    target_period: tuple = None
+) -> pd.DataFrame:
+    """
+    Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
+    to the corresponding 'no MDA' baseline within the same strategy group.
+    """
+    comparator_results = []
+
+    for strategy in wash_strategies:
+        comparator_draw = f"{strategy}, no MDA"
+        # Skip the comparator in selection
+        relevant_draws = [col for col in df.columns.get_level_values(0).unique()
+                          if strategy in col and col != comparator_draw]
+        if not relevant_draws:
+            continue
+
+        # Filter to relevant columns for this strategy
+        df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+
+        # Compute difference relative to the strategy's 'no MDA' comparator
+        diff_df = -1.0 * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+
+        # Select only the relevant MDA draws
+        comparator_results.append(diff_df)
+
+    # Concatenate results across all strategies
+    combined_df = pd.concat(comparator_results, axis=1)
+
+    if results_path:
+        period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
+        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+        combined_df.to_excel(output_file)
+
+    return combined_df
+
+
 #################################################################################
-# %% DISTRICT FUNCTIONS
+# %% DISTRICT FUNCTIONS - PREVALENCE
 #################################################################################
-#
-# def get_district_prevalence(_df, year, age_group='All', infection_types=None):
-#     """
-#     Compute prevalence (proportion infected) for each district.
-#
-#     Parameters:
-#     - _df: pd.DataFrame with datetime index and columns formatted as 'infection_status|district|age_group'
-#     - year: int, year to filter
-#     - age_group: str, one of ['SAC', 'PSAC', 'Adult', 'Infant', 'All']
-#     - infection_types: list of str, e.g. ['High-infection', 'Moderate-infection']
-#
-#     Returns:
-#     - pd.Series with index as district and values as proportion infected
-#     """
-#     if infection_types is None:
-#         infection_types = ['High-infection', 'Moderate-infection', 'Low-infection']
-#
-#     df = _df.copy()
-#
-#     if 'date' in df.columns:
-#         df['date'] = pd.to_datetime(df['date'])
-#         df = df.set_index('date')
-#     else:
-#         df.index = pd.to_datetime(df.index)
-#
-#     # Filter by year
-#     df_year = df[df.index.year == year]
-#
-#     # Parse multi-index columns
-#     df_year.columns = pd.MultiIndex.from_tuples(
-#         [tuple(col.split('|')) for col in df_year.columns],
-#         names=['infection_status', 'district_of_residence', 'age_years']
-#     )
-#
-#     # Determine age group filter
-#     age_group_map = {
-#         'SAC': ['SAC'],
-#         'PSAC': ['PSAC', 'SAC'],
-#         'Adult': ['Adults'],
-#         'Infant': ['Infant'],
-#         'All': ['Adults', 'Infant', 'PSAC', 'SAC']
-#     }
-#     age_group_filter = age_group_map.get(age_group, age_group_map['All'])
-#
-#     # Get total population by district
-#     total_cols = [col for col in df_year.columns if col[2] in age_group_filter]
-#     df_total = df_year[total_cols]
-#     district_sums = df_total.groupby(level='district_of_residence', axis=1).sum()
-#
-#     # Get infected population by district
-#     infected_cols = [
-#         col for col in df_year.columns
-#         if col[0] in infection_types and col[2] in age_group_filter
-#     ]
-#     df_infected = df_year[infected_cols]
-#     infected_sums = df_infected.groupby(level='district_of_residence', axis=1).sum()
-#
-#     # Proportion infected = infected / total
-#     prevalence = infected_sums.sum(axis=0) / district_sums.sum(axis=0)
-#
-#     return prevalence
-#
-#
-# def extract_district_prevalence() -> pd.DataFrame:
-#     """ for each run/draw combination, extract the prevalence by district
-#     using the custom arguments for age-group and infection status
-#     """
-#
-#     # get number of draws and numbers of runs
-#     info = get_scenario_info(results_folder)
-#     module = 'tlo.methods.schisto'
-#     key = 'number_infected_any_species'
-#
-#     # Collect results from each draw/run
-#     res = dict()
-#     for draw in range(info['number_of_draws']):
-#         for run in range(info['runs_per_draw']):
-#
-#             draw_run = (draw, run)
-#
-#             try:
-#                 _df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-#                 output_from_eval: pd.Series = get_district_prevalence(_df)
-#                 assert isinstance(output_from_eval, pd.Series), (
-#                     'Custom command does not generate a pd.Series'
-#                 )
-#
-#                 res[draw_run] = output_from_eval
-#
-#             except KeyError:
-#                 # Some logs could not be found - probably because this run failed.
-#                 res[draw_run] = None
-#
-#     # Use pd.concat to compile results (skips dict items where the values is None)
-#     _concat = pd.concat(res, axis=1)
-#     _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
-#     return _concat
-#
-#
-# def analyse_and_plot_schisto_prevalence_change(keys, year_start, year_end, age_group, infection_types):
-#     for key in keys:
-#         print(f"Processing: {key}")
-#
-#         # Set global key
-#         globals()['key'] = key  # Required because extract_district_prevalence uses it
-#
-#         # Extract data for start year
-#         globals()['year'] = year_start
-#         prev_start = extract_district_prevalence()
-#         median_prev_start = prev_start.groupby('draw', axis=1).median()
-#
-#         # Extract data for end year
-#         globals()['year'] = year_end
-#         prev_end = extract_district_prevalence()
-#         median_prev_end = prev_end.groupby('draw', axis=1).median()
-#
-#         # Calculate percentage change
-#         percentage_change = ((median_prev_end - median_prev_start) / median_prev_start) * 100
-#         percentage_change.index = percentage_change.index.str.replace('district_of_residence=', '', case=False)
-#         percentage_change.columns = param_names
-#
-#         # Plot full heatmap
-#         plot_percentage_change_heatmap(
-#             df=percentage_change,
-#             title=f"Percentage Change in Prevalence ({key}, {year_start} to {year_end})",
-#             filename_suffix=f"{key}_ALL_SCENARIOS"
-#         )
-#
-#         # Filtered subset for specific scenarios
-#         ordered_draws = [
-#             'Pause WASH, no MDA',
-#             'Pause WASH, MDA SAC',
-#             'Pause WASH, MDA PSAC',
-#             'Pause WASH, MDA All',
-#             'Continue WASH, no MDA',
-#             'Continue WASH, MDA SAC',
-#             'Continue WASH, MDA PSAC',
-#             'Continue WASH, MDA All',
-#             'Scale-up WASH, no MDA',
-#             'Scale-up WASH, MDA SAC',
-#             'Scale-up WASH, MDA PSAC',
-#             'Scale-up WASH, MDA All'
-#         ]
-#         filtered_cols = [col for col in ordered_draws if col in percentage_change.columns]
-#         percentage_change_subset = percentage_change[filtered_cols]
-#
-#         # Plot filtered heatmap
-#         plot_percentage_change_heatmap(
-#             df=percentage_change_subset,
-#             title=f"Percentage Change in Prevalence ({key}, {year_start} to {year_end})",
-#             filename_suffix=f"{key}"
-#         )
-#
-#         # Export to Excel
-#         export_to_excel(
-#             filename=f"prevalence_HML_{age_group}_{key} {target_period()}.xlsx",
-#             prev_start=median_prev_start,
-#             prev_end=median_prev_end,
-#             change_df=percentage_change
-#         )
-#
-#
-# def plot_percentage_change_heatmap(df, title, filename_suffix):
-#     plt.figure(figsize=(12, 8))
-#     sns.heatmap(
-#         df, xticklabels=df.columns, yticklabels=df.index,
-#         annot=False, cmap='coolwarm', linewidths=0.5,  # coolwarm
-#         cbar_kws={'label': 'Percentage Change (%)'}
-#     )
-#     plt.title(title, fontsize=16)
-#     plt.ylabel('', fontsize=14)
-#     plt.xlabel('', fontsize=14)
-#     plt.tight_layout()
-#     name_of_plot = f'{title} {target_period()}'
-#     plt.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-#     plt.show()
-#
-#
-# def export_to_excel(filename, prev_start, prev_end, change_df):
-#     file_path = results_folder / filename
-#     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-#         prev_start.to_excel(writer, sheet_name='Prev_Start', index=True)
-#         prev_end.to_excel(writer, sheet_name='Prev_End', index=True)
-#         change_df.to_excel(writer, sheet_name='Percentage_Change', index=True)
-#
-#
-# # call plots
-#
-# infection_keys = ['infection_status_haematobium', 'infection_status_mansoni']
-# year_start = 2023
-# year_end = 2040
-# age_group = 'All'
-# infection_types = ['High-infection', 'Moderate-infection', 'Low-infection']
-#
-# analyse_and_plot_schisto_prevalence_change(
-#     keys=infection_keys,
-#     year_start=year_start,
-#     year_end=year_end,
-#     age_group=age_group,
-#     infection_types=infection_types
-# )
-#
 
 def get_prevalence_infection_all_ages_by_district(_df):
     """Return yearly prevalence of infection (any age) by district as a pd.Series indexed by (year, district)."""
@@ -405,7 +307,7 @@ prev_haem_H_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_haem_H_All_district.to_csv(results_folder / (f'prev_haem_H_All_district {target_period()}.csv'))
+prev_haem_H_All_district.to_excel(results_folder / (f'prev_haem_H_year_district {target_period()}.xlsx'))
 
 prev_mansoni_H_All_district = extract_results(
     results_folder,
@@ -415,157 +317,7 @@ prev_mansoni_H_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_mansoni_H_All_district.to_csv(results_folder / (f'prev_mansoni_H_All_district {target_period()}.csv'))
-
-###########################
-# plot
-
-#
-#
-# def reorder_draws(draw_labels):
-#     """
-#     Reorder draws by the groups and sub-groups you specified.
-#     Expected format: draw labels contain keywords indicating group and MDA type.
-#     """
-#
-#     # Define orderings
-#     main_order = ['Pause', 'Continue', 'Scale-up']
-#     mda_order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All']
-#
-#     def sort_key(label):
-#         # Find main group in label
-#         main_group_idx = next((i for i, g in enumerate(main_order) if g in label), len(main_order))
-#         # Find MDA type in label
-#         mda_idx = next((i for i, m in enumerate(mda_order) if m in label), len(mda_order))
-#         return (main_group_idx, mda_idx, label)
-#
-#     sorted_labels = sorted(draw_labels, key=sort_key)
-#     return sorted_labels
-#
-
-
-def plot_prevalence_heatmap(df, year=2040, threshold=1.5, filename=None):
-    # Extract data for the given year
-    df_year = df.loc[year]
-
-    # Mean over runs if columns have a 'run' level
-    if isinstance(df_year.columns, pd.MultiIndex) and 'run' in df_year.columns.names:
-        mean_df = df_year.groupby(level='draw', axis=1).mean()
-    else:
-        mean_df = df_year.copy()
-
-    draw_labels = mean_df.columns.tolist()
-
-    # Parse draw labels into Phase and MDA parts
-    phase_labels = []
-    mda_labels = []
-
-    for label in draw_labels:
-        try:
-            phase_part, mda_part = label.split(', ')
-        except Exception:
-            phase_part, mda_part = label, ''
-        # Strip " WASH" suffix from phase for cleaner label
-        phase_clean = phase_part.replace(' WASH', '')
-        phase_labels.append(phase_clean)
-        mda_labels.append(mda_part)
-
-    # Define desired orders
-    phase_order = ['Pause', 'Continue', 'Scale-up']
-    mda_order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All']
-
-    # Create DataFrame with these two levels to help sorting
-    col_df = pd.DataFrame({'phase': phase_labels, 'mda': mda_labels, 'orig': draw_labels})
-    col_df['phase_order'] = col_df['phase'].apply(lambda x: phase_order.index(x) if x in phase_order else 99)
-    col_df['mda_order'] = col_df['mda'].apply(lambda x: mda_order.index(x) if x in mda_order else 99)
-
-    col_df = col_df.sort_values(by=['phase_order', 'mda_order']).reset_index(drop=True)
-
-    multi_cols = pd.MultiIndex.from_arrays(
-        [col_df['phase'], col_df['mda']],
-        names=['Phase', 'MDA']
-    )
-
-    mean_df = mean_df[col_df['orig']]
-    mean_df.columns = multi_cols
-
-    plt.figure(figsize=(14, 10))
-    ax = sns.heatmap(
-        mean_df,
-        cmap='coolwarm',
-        cbar_kws={'label': 'Mean prevalence'},
-        linewidths=0.5,
-        linecolor='gray'
-    )
-
-    # add red outline if value < threshold
-    # for y in range(mean_df.shape[0]):
-    #     for x in range(mean_df.shape[1]):
-    #         val = mean_df.iloc[y, x]
-    #         if val < threshold:
-    #             ax.add_patch(plt.Rectangle((x, y), 1, 1, fill=False, edgecolor='red', lw=2))
-
-    for y in range(mean_df.shape[0]):
-        for x in range(mean_df.shape[1]):
-            val = mean_df.iloc[y, x]
-            if val < threshold:
-                ax.add_patch(
-                    plt.Rectangle(
-                        (x, y),
-                        1, 1,
-                        fill=False,
-                        edgecolor='black',
-                        lw=1.5,
-                        hatch='//'
-                    )
-                )
-
-    ax.set_ylabel('District')
-    plt.title(f'Mean Prevalence by District, Year {year}')
-
-    # ----------- Fix x-axis labels ------------------
-
-    n_mda = len(mda_order)
-
-    # Show MDA labels for every draw
-    tick_positions = [i + 0.5 for i in range(len(mean_df.columns))]
-    tick_labels = col_df['mda'].tolist()
-
-    ax.set_xticks(tick_positions)
-    ax.set_xticklabels(tick_labels, rotation=45, ha='right')
-    ax.set_xlabel('')  # remove the x-axis label
-
-    # Add vertical lines after every 4th draw
-    for idx in range(n_mda, len(mean_df.columns), n_mda):
-        ax.axvline(idx, color='white', linestyle='-', linewidth=4)
-
-    # Add phase labels below MDA labels, centred below each group of 4 draws (each phase)
-    for i, phase in enumerate(phase_order):
-        start = i * n_mda
-        end = start + n_mda - 1
-        mid = (start + end) / 2 + 0.5
-
-        ax.text(
-            x=mid,
-            y=-0.15,  # axis fraction coordinates, slightly below the x-axis labels
-            s=phase,
-            ha='center',
-            va='top',
-            fontsize=12,
-            fontweight='bold',
-            color='black',
-            transform=ax.get_xaxis_transform()  # x: data, y: axis fraction
-        )
-    plt.subplots_adjust(bottom=0.2, top=0.9)  # more bottom space for two level labels
-    plt.savefig(make_graph_file_name(filename))
-
-    plt.show()
-
-
-plot_prevalence_heatmap(prev_haem_H_All_district, year=2040, threshold=0.015, filename='prev_haem_H_All_district.png')
-plot_prevalence_heatmap(prev_mansoni_H_All_district, year=2040, threshold=0.015, filename='prev_mansoni_H_All_district.png')
-
-
+prev_mansoni_H_All_district.to_excel(results_folder / (f'prev_mansoni_H_year_district {target_period()}.xslx'))
 
 
 #################################################################################
@@ -642,21 +394,17 @@ if total_number_infected.columns.equals(total_number_in_district.columns):
     # Perform element-wise division for matching columns
     result = total_number_infected / total_number_in_district
 
-result.to_csv(results_folder / (f'prevalence_any_infection_all_ages_district{target_period()}.csv'))
+result.index = pd.Index(range(2010, 2041), name="year")
+result.to_excel(results_folder / f'prevalence_any_infection_all_ages_district{target_period()}.xlsx')
 
 # summarise the prevalence for each district by draw
 median_by_draw_district = result.groupby(level=['draw', 'district'], axis=1).median()
-median_by_draw_district.to_csv(results_folder / (f'median_prevalence_any_infection_all_ages_district{target_period()}.csv'))
-
-
-
+median_by_draw_district.to_excel(results_folder / (f'median_prevalence_any_infection_all_ages_by_year_district{target_period()}.xlsx'))
 
 
 #################################################################################
 # %% PERSON-YEARS INFECTED BY DISTRICT
 #################################################################################
-
-
 
 def get_person_years_infected_by_district(_df: pd.DataFrame) -> pd.Series:
     """
@@ -689,40 +437,188 @@ py_district = extract_results(
         module="tlo.methods.schisto",
         key="Schisto_person_days_infected",
         custom_generate_series=get_person_years_infected_by_district,
-        do_scaling=False,  # todo need to scale
+        do_scaling=False,
     ).pipe(set_param_names_as_column_index_level_0)
 
 
 # need to multiply by district-level scaling factor
 scaled_py_district = py_district.mul(district_scaling_factor['scaling_factor'], axis=0)
+scaled_py_district.to_excel(results_folder / f'num_py_infected_by_district_{target_period()}.xlsx')
 
-pc_py_averted_district_vs_scaleup_WASH = 100.0 * compute_summary_statistics(
+# summarise the py infected for each district by draw
+median_py_district = scaled_py_district.groupby(level=['draw'], axis=1).median()
+median_py_district.to_excel(results_folder / (f'median_py_any_infection_by_year_district{target_period()}.xlsx'))
+
+
+num_py_averted_pause = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         scaled_py_district,
-        comparison='Scale-up WASH, no MDA',
-        scaled=True
+        comparison='Pause WASH, no MDA'
     ),
-    central_measure='median'
+    central_measure='mean'
 )
-pc_py_averted_district_vs_scaleup_WASH.to_csv(results_folder / f'pc_py_averted_district_vs_scaleup_WASH{target_period()}.csv')
-
-
-pc_py_averted_district_vs_baseline = 100.0 * compute_summary_statistics(
+num_py_averted_continue = compute_summary_statistics(
     -1.0 * find_difference_relative_to_comparison_dataframe(
         scaled_py_district,
-        comparison='Continue WASH, no MDA',
-        scaled=True
+        comparison='Continue WASH, no MDA'
     ),
-    central_measure='median'
+    central_measure='mean'
 )
-pc_py_averted_district_vs_baseline.to_csv(results_folder / f'pc_py_averted_district_vs_baseline{target_period()}.csv')
+num_py_averted_scaleup = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        scaled_py_district,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+
+# Select desired columns from each dataframe
+df1_sel = select_draws_by_keyword(num_py_averted_pause, 'Pause', level=0)
+df2_sel = select_draws_by_keyword(num_py_averted_continue, 'Continue', level=0)
+df3_sel = select_draws_by_keyword(num_py_averted_scaleup, 'Scale-up', level=0)
+
+# Concatenate the selected columns horizontally
+num_py_averted_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
+num_py_averted_combined.to_csv(results_folder / f'num_py_averted_by_district{target_period()}.xlsx')
+
+# to get total national-level py averted weighted by district
+# sum the total py across all districts
+num_py_summed_series = pd.DataFrame(scaled_py_district.sum(axis=0)).T
+
+py_averted_national_pause = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        num_py_summed_series,
+        comparison='Pause WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+py_averted_national_continue = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        num_py_summed_series,
+        comparison='Continue WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+py_averted_national_scaleup = compute_summary_statistics(
+    -1.0 * find_difference_relative_to_comparison_dataframe(
+        num_py_summed_series,
+        comparison='Scale-up WASH, no MDA'
+    ),
+    central_measure='mean'
+)
+df1_sel = select_draws_by_keyword(py_averted_national_pause, 'Pause', level=0)
+df2_sel = select_draws_by_keyword(py_averted_national_continue, 'Continue', level=0)
+df3_sel = select_draws_by_keyword(py_averted_national_scaleup, 'Scale-up', level=0)
+
+# Concatenate the selected columns horizontally
+num_py_averted_combined_national = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
+num_py_averted_combined_national.to_excel(results_folder / f'num_py_averted_national{target_period()}.xlsx')
 
 
+#################################################################################
+# %% PERSON-YEARS INFECTED BY AGE AND DISTRICT
+#################################################################################
 
+
+def get_person_years_infected_by_district_and_age(_df: pd.DataFrame) -> pd.Series:
+    """
+    Get person-years infected by district and age group, summed over the specified time period and infection levels.
+    """
+    # Filter to target period
+    df = _df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)].drop(columns='date')
+
+    # Filter columns by infection level
+    pattern = '|'.join(infection_levels)
+    df_filtered = df.filter(regex=f'infection_level=({pattern})')
+
+    # Convert column names to a MultiIndex
+    columns_split = df_filtered.columns.str.extract(
+        r'species=([^|]+)\|age_group=([^|]+)\|infection_level=([^|]+)\|district=([^|]+)'
+    )
+    df_filtered.columns = pd.MultiIndex.from_frame(columns_split, names=['species', 'age_group', 'infection_level', 'district'])
+
+    # Sum across time (i.e., sum values for each column over the period)
+    summed_by_time = df_filtered.sum(axis=0)
+
+    # Group by district and age_group, summing over infection levels and species
+    py_by_district_age = summed_by_time.groupby(['district', 'age_group']).sum() / 365.25
+
+    return py_by_district_age
+
+
+py_district_age = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="Schisto_person_days_infected",
+    custom_generate_series=get_person_years_infected_by_district_and_age,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+# Multiply by district scaling factor (broadcasting across age_groups)
+scaled_py_district_age = py_district_age.mul(
+    district_scaling_factor['scaling_factor'],
+    axis=0,
+    level='district'  # ensures correct alignment on the first level of the index
+)
+
+scaled_py_district_age.to_excel(results_folder / f'num_py_infected_by_district_and_age_{target_period()}.xlsx')
+
+summary_py_by_district_age = compute_summary_statistics(scaled_py_district_age,
+                                                        central_measure='mean')
+
+summary_py_by_district_age.to_excel(results_folder / f'summary_num_py_infected_by_district_and_age_{target_period()}.xlsx')
+
+
+# format into nice table for output
+df_million = summary_py_by_district_age / 1_000_000
+
+# Rearrange into long format: rows = (district, age_group, draw), columns = stat
+df_long = df_million.stack(level='draw')  # columns now: lower, central, upper
+formatted = df_long.apply(
+    lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+# Return to wide format: rows = (district, age_group), columns = draw
+formatted_df = formatted.unstack(level=-1)
+
+output_path = results_folder / f'table_summary_py_by_district_age_{target_period()}.xlsx'
+formatted_df.to_excel(output_path)
+
+
+# get the total py infected nationally by age-group
+by_age_group = scaled_py_district_age.groupby(level='age_group').sum()
+
+# Step 2: Aggregate the age groups
+adults_total = by_age_group.loc['Adults']
+infants_psac_total = by_age_group.loc[['Infant', 'PSAC']].sum()
+sac_total = by_age_group.loc['SAC']
+
+# Step 3: Combine into single DataFrame and convert to millions
+age_group_summary = pd.DataFrame({
+    'Adults': adults_total,
+    'Infants+PSAC': infants_psac_total,
+    'SAC': sac_total
+}).T
+
+age_group_summary2 = compute_summary_statistics(age_group_summary,
+                                                central_measure='mean')
+
+# format into nice table for output
+tmp = age_group_summary2 / 1_000_000
+
+# Rearrange into long format: rows = (district, age_group, draw), columns = stat
+df_long = tmp.stack(level='draw')  # columns now: lower, central, upper
+formatted = df_long.apply(
+    lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+# Return to wide format: rows = (district, age_group), columns = draw
+formatted_df = formatted.unstack(level=-1)
+
+output_path = results_folder / f'table_summary_py_national_age_{target_period()}.xlsx'
+formatted_df.to_excel(output_path)
 
 
 ###########################################################################################################
-# get ICERs / NHB by district
+# get DALYs by district
 ###########################################################################################################
 
 num_dalys_by_year_run_district = extract_results(
@@ -743,7 +639,6 @@ dalys_schisto_district = num_dalys_by_year_run_district.loc[
 # remove values stored for 2041 (all zeros)
 dalys_schisto_district = dalys_schisto_district.loc[dalys_schisto_district.index.get_level_values(0) <= 2040]
 
-
 # Extract district names from index level 1
 districts = dalys_schisto_district.index.get_level_values(1)
 
@@ -752,36 +647,56 @@ scaling_factors = district_scaling_factor.loc[districts].iloc[:, 0].values
 
 # Multiply df_schisto by scaling factors, broadcasting over rows
 dalys_schisto_district_scaled = dalys_schisto_district.multiply(scaling_factors, axis=0)
+dalys_schisto_district_scaled.to_excel(results_folder / f'schisto_dalys_by_year_run_district{target_period()}.xlsx')
 
 
-# DALYs averted by district
-schisto_dalys_averted_by_year_run_district_vs_pause = -1.0 * find_difference_relative_to_comparison_dataframe(
-    dalys_schisto_district_scaled,
-    comparison='Pause WASH, no MDA'
+# === national total DALYs  =========================================================
+
+# get the total national level DALYs incurred 2024-2040 weighted by district
+dalys_summed_by_year = sum_by_year_all_districts(dalys_schisto_district_scaled, TARGET_PERIOD)
+dalys_summed_by_year.to_excel(results_folder / f'schisto_dalys_by_year_run_national{target_period()}.xlsx')
+
+# get the total dalys nationally
+dalys_national = pd.DataFrame(dalys_summed_by_year.sum()).T
+dalys_national_summary = compute_summary_statistics(dalys_national,
+                                                central_measure='mean')
+
+# format into nice table for output
+tmp = dalys_national_summary / 1_000_000
+
+# Rearrange into long format: rows = (district, age_group, draw), columns = stat
+df_long = tmp.stack(level='draw')  # columns now: lower, central, upper
+formatted = df_long.apply(
+    lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
 )
-schisto_dalys_averted_by_year_run_district_vs_continue = -1.0 * find_difference_relative_to_comparison_dataframe(
+# Return to wide format: rows = (district, age_group), columns = draw
+formatted_df = formatted.unstack(level=-1)
+
+output_path = results_folder / f'table_summary_dalys_national_{target_period()}.xlsx'
+formatted_df.to_excel(output_path)
+
+
+# === DALYs averted by district =========================================================
+
+schisto_dalys_combined = compute_number_averted_within_wash_strategies(
     dalys_schisto_district_scaled,
-    comparison='Continue WASH, no MDA'
-)
-schisto_dalys_averted_by_year_run_district_vs_scaleup = -1.0 * find_difference_relative_to_comparison_dataframe(
-    dalys_schisto_district_scaled,
-    comparison='Scale-up WASH, no MDA'
+    results_path=results_folder,
+    filename_prefix='schisto_dalys_averted_by_year_run_district',
+    target_period=TARGET_PERIOD
 )
 
-# produce dataframe with the 3 comparators combined into one
-def select_draws_by_keyword(df, keyword):
-    """Select columns where the first level of the column MultiIndex contains the keyword (case-insensitive)."""
-    mask = df.columns.get_level_values(1).str.contains(keyword, case=False)
-    return df.loc[:, mask]
 
-# Select desired columns from each dataframe
-df1_sel = select_draws_by_keyword(schisto_dalys_averted_by_year_run_district_vs_pause, 'Pause')
-df2_sel = select_draws_by_keyword(schisto_dalys_averted_by_year_run_district_vs_continue, 'Continue')
-df3_sel = select_draws_by_keyword(schisto_dalys_averted_by_year_run_district_vs_scaleup, 'Scale-up')
+# --- Incremental DALYs averted by district ---
 
-# Concatenate the selected columns horizontally
-schisto_dalys_averted_by_year_run_district_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
-schisto_dalys_averted_by_year_run_district_combined.to_csv(results_folder / f'schisto_dalys_averted_by_year_run_district_combined{target_period()}.csv')
+# incremental dalys averted - compare each prog in turn to the last one
+comparison_df = -1 * compute_stepwise_effects_by_wash_strategy(dalys_schisto_district_scaled)
+comparison_df.to_excel(results_folder / f'stepwise_dalys_averted_year_district{target_period()}.xlsx')
+
+
+
+
+
+
 
 ##########################
 # get mda episodes costs by district / year / run
