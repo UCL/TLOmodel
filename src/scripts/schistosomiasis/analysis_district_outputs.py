@@ -618,7 +618,7 @@ formatted_df.to_excel(output_path)
 
 
 ###########################################################################################################
-# get DALYs by district
+# %% get DALYs by district
 ###########################################################################################################
 
 num_dalys_by_year_run_district = extract_results(
@@ -693,14 +693,9 @@ comparison_df = -1 * compute_stepwise_effects_by_wash_strategy(dalys_schisto_dis
 comparison_df.to_excel(results_folder / f'stepwise_dalys_averted_year_district{target_period()}.xlsx')
 
 
-
-
-
-
-
-##########################
-# get mda episodes costs by district / year / run
-
+#################################################################################
+# %% COSTS FOR MDA
+#################################################################################
 
 def get_counts_of_mda_by_year_district(_df):
     """
@@ -739,7 +734,6 @@ def get_counts_of_mda_by_year_district(_df):
     return result.astype(int)
 
 
-
 mda_episodes_per_year_district = extract_results(
         results_folder,
         module='tlo.methods.schisto',
@@ -756,9 +750,38 @@ scaling_factors = district_scaling_factor.loc[districts].iloc[:, 0].values
 
 # Multiply df_schisto by scaling factors, broadcasting over rows
 mda_episodes_per_year_district_scaled = mda_episodes_per_year_district.multiply(scaling_factors, axis=0)
+# change index name for function sum_by_year_all_districts
+mda_episodes_per_year_district_scaled.index = mda_episodes_per_year_district_scaled.index.set_names(
+    ['year' if name == 'Year' else name for name in mda_episodes_per_year_district_scaled.index.names])
 
 # assign costs - full including consumables
-unit_cost_per_mda_incl_cons = 2.26
+full_cost_per_mda = 1.32
+prog_delivery_cost_per_mda = 1.27
+cons_cost_per_mda = 0.05
+
+
+# === Costs incurred =========================================================
+
+
+# --- Full costs ---
+full_costs_per_year_district = mda_episodes_per_year_district_scaled * full_cost_per_mda
+full_costs_per_year_national = sum_by_year_all_districts(full_costs_per_year_district, TARGET_PERIOD)
+
+
+# --- Program costs only ---
+prog_costs_per_year_district = mda_episodes_per_year_district_scaled * prog_delivery_cost_per_mda
+prog_costs_per_year_national = sum_by_year_all_districts(prog_costs_per_year_district, TARGET_PERIOD)
+
+
+# --- Cons costs only ---
+cons_costs_per_year_district = mda_episodes_per_year_district_scaled * cons_cost_per_mda
+cons_costs_per_year_national = sum_by_year_all_districts(cons_costs_per_year_district, TARGET_PERIOD)
+
+
+
+
+
+
 
 costs_mda_episodes_per_year_district_scaled = mda_episodes_per_year_district_scaled * unit_cost_per_mda_incl_cons
 
