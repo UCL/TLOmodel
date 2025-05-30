@@ -590,13 +590,21 @@ class ProstateCancer(Module, GenericFirstAppointmentsMixin):
         return disability_series_for_alive_persons
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of prostate cancer for all individuals
+        # This reports age- and sex-specific prevalence of prostate cancer for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[(df['is_alive']) & (df['pc_status'] != 'none')]
-        ) / len(df[df['is_alive']])
 
-        return {'Prostate Cancer': total_prev}
+        # Select alive individuals with prostate cancer
+        pc_df = df[(df['is_alive']) & (df['pc_status'] != 'none')]
+
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            pc_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'Prostate Cancer': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

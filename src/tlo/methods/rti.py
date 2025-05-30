@@ -2443,19 +2443,20 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
         df = self.sim.population.props
         df_valid_dates = df[df['rt_date_inj'].notna()]
-        if df_valid_dates.empty:
-            total_prev = 0  # or you could use np.nan if you prefer
-        else:
-            # Calculate total prevalence for individuals with non-NaT injury dates
-            total_prev = len(
-                df_valid_dates[
-                    (df_valid_dates['is_alive']) &
-                    (df_valid_dates['rt_inj_severity'] != 'none') &
-                    (df_valid_dates['rt_date_inj'] >= (self.sim.date - DateOffset(months=1)))
-                    ]
-            ) / len(df[df['is_alive']])
 
-        return {'RTI': total_prev}
+        if df_valid_dates.empty:
+            prevalence_by_age_group_sex = {}
+            pass
+        else:
+            alive_df = df[df['is_alive']]
+
+            prevalence_counts = (
+                df_valid_dates.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+            )
+
+            prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'RTI': prevalence_by_age_group_sex}
 
     def rti_assign_injuries(self, number):
         """

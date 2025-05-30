@@ -555,19 +555,31 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         return av_daly_wt_last_month
 
     def report_prevalence(self):
-        # This reports on the prevalence of depression for all individuals
-
+        # This reports age- and sex-specific prevalence of depression for all individuals
         df = self.sim.population.props
-        any_depr_in_the_last_month = df[((df['is_alive']) & (
-            ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
-        ) & (
-                                         pd.isnull(df['de_date_depr_resolved']) |
-                                         (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-                                     ))]
-        total_prev = len(
-            any_depr_in_the_last_month
-        ) / len(df[df.is_alive])
-        return {'Depression': total_prev}
+        any_depr_in_the_last_month = df[
+            (df['is_alive']) &
+            (~pd.isnull(df['de_date_init_most_rec_depr'])) &
+            (df['de_date_init_most_rec_depr'] <= self.sim.date) &
+            (
+                (pd.isnull(df['de_date_depr_resolved'])) |
+                (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+            )
+            ]
+        
+        if any_depr_in_the_last_month.empty:
+            prevalence_by_age_group_sex = {}
+            pass
+        else:
+            alive_df = df[df['is_alive']]
+
+            prevalence_counts = (
+                any_depr_in_the_last_month.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+            )
+
+            prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'Depression': prevalence_by_age_group_sex}
     def _check_for_suspected_depression(
         self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool
     ):

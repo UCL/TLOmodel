@@ -1045,13 +1045,20 @@ class Tb(Module):
         return health_values.loc[df.is_alive]
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of malaria for all individuals
-
+        # This reports age- and sex-specific prevalence of active TB for all individuals
         df = self.sim.population.props
-        df_tmp = df.loc[df.is_alive]
-        num_active_tb_cases = len(df_tmp[(df_tmp.tb_inf == "active") & df_tmp.is_alive])
-        total_prev = num_active_tb_cases / len(df_tmp)
-        return {'TB': total_prev}
+
+        # Select alive individuals with active TB
+        tb_df = df[(df['is_alive']) & (df['tb_inf'] == 'active')]
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            tb_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'TB': prevalence_by_age_group_sex}
 
     def calculate_untreated_proportion(self, population, strain):
         """

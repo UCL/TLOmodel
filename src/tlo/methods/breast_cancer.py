@@ -572,13 +572,20 @@ class BreastCancer(Module, GenericFirstAppointmentsMixin):
         return disability_series_for_alive_persons
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of breast cancer for all individuals
+        # This reports age- and sex-specific prevalence of breast cancer for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[(df['is_alive']) & (df['brc_status'] != 'none')]
-        ) / len(df[df['is_alive']])
 
-        return {'Breast Cancer': total_prev}
+        brc_df = df[(df['is_alive']) & (df['brc_status'] != 'none')]
+
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            brc_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'Breast Cancer': prevalence_by_age_group_sex}
     def do_at_generic_first_appt(
         self,
         person_id: int,

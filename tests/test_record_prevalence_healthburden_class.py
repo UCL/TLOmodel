@@ -108,6 +108,14 @@ def test_structure_logging_dummy_disease(tmpdir, seed):
 
     prevalence_healthburden_log = output['tlo.methods.healthburden']['prevalence_of_diseases']['DummyDisease']
     prevalence_dummy_log = output['tlo.methods.mockitis']["summary"]["PropInf"]
+    totals_from_prevalence_logger = []
+    for row in range(len(prevalence_healthburden_log) - 1):  # has extra log for first day
+        total = sum(
+            val
+            for age_group in prevalence_healthburden_log.iloc[row + 1].values()
+            for val in age_group.values()
+        )
+        totals_from_prevalence_logger.append(total)
 
-    for row in range(len(prevalence_healthburden_log) -1): # has extra log for first day
-        assert prevalence_healthburden_log[row + 1] == prevalence_dummy_log[row]
+    for row in range(len(totals_from_prevalence_logger)):
+        assert totals_from_prevalence_logger[row] == prevalence_dummy_log[row], f"Mismatch at row {row}"

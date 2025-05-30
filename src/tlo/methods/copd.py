@@ -183,13 +183,21 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         return df.loc[df.is_alive, 'ch_lungfunction'].map(self.models.disability_weight_given_lungfunction)
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of COPD for all individuals
+        # This reports age- and sex-specific prevalence of COPD for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[(df['is_alive']) & (df['ch_lungfunction'] > 3)] # 3 is mild COPD
-        ) / len(df[df['is_alive']])
 
-        return {'COPD': total_prev}
+        # Select alive individuals with COPD (lung function score > 3)
+        copd_df = df[(df['is_alive']) & (df['ch_lungfunction'] > 3)]
+
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            copd_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'COPD': prevalence_by_age_group_sex}
 
     def define_symptoms(self):
         """Define and register Symptoms"""

@@ -997,13 +997,20 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         return daly_values_by_pathogen
 
     def report_prevalence(self):
-        # This returns dataframe that reports on the prevalence of ALRI for all individuals
+        # This reports age- and sex-specific prevalence of ALRI for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[(df['is_alive']) & (df['ri_current_infection_status'])]
-        ) / len(df[df['is_alive']])
 
-        return {'ALRI': total_prev}
+        # Select alive individuals with current ALRI infection
+        alri_df = df[(df['is_alive']) & (df['ri_current_infection_status'])]
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            alri_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'ALRI': prevalence_by_age_group_sex}
 
     def over_ride_availability_of_certain_consumables(self):
         """Over-ride the availability of certain consumables, according the parameter values provided."""

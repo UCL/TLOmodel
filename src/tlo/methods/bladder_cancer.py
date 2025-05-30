@@ -595,13 +595,20 @@ class BladderCancer(Module, GenericFirstAppointmentsMixin):
         return disability_series_for_alive_persons
 
     def report_prevalence(self):
-        # This reports on the prevalence of bladder cancer for all individuals
-
+        # This reports age- and sex-specific prevalence of bladder cancer for all individuals
         df = self.sim.population.props
-        total_prev = len(
-            df[(df.bc_status != 'none') & (df.is_alive)]
-        ) / len(df[df.is_alive])
-        return {'Bladder Cancer': total_prev}
+
+        bc_df = df[(df['bc_status'] != 'none') & (df['is_alive'])]
+
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            bc_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'Bladder Cancer': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt(
         self,

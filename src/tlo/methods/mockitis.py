@@ -297,9 +297,33 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
         logger.debug(key='debug', data='This is mockitis reporting my prevalence ')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
-        total_prev = df.loc[df.is_alive, 'mi_is_infected'].sum() / len(df[df['is_alive']])
-        print(total_prev)
-        return {'Mockitis': total_prev}
+
+        # Select alive individuals with Mockitis infection
+        mockitis_df = df[(df['is_alive']) & (df['mi_is_infected'])]
+
+        prevalence_by_age_group_sex = {}
+
+        if mockitis_df.empty:
+            pass
+        else:
+            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            sexes = ['male', 'female']
+            total_alive = len(df[df['is_alive']])
+
+            for age_group in age_groups:
+                age_range = age_groups[age_group]
+                prevalence_by_age_group_sex[age_group] = {}
+
+                for sex in sexes:
+                    subset = mockitis_df[
+                        (mockitis_df['age_years'].between(age_range[0], age_range[1])) &
+                        (mockitis_df['sex'] == sex)
+                        ]
+
+                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
+                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+
+        return {'Mockitis': prevalence_by_age_group_sex}
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -722,9 +746,17 @@ class DummyDisease(Module, GenericFirstAppointmentsMixin):
     def report_prevalence(self):
         logger.debug(key='debug', data='This is DummyDisease reporting my prevalence ')
 
-        df = self.sim.population.props  # shortcut to population properties dataframe
-        total_prev = df.loc[df.is_alive, 'dm_is_infected'].sum() / len(df[df['is_alive']])
-        return {'DummyDisease': total_prev}
+        df = self.sim.population.props
+        for prop in df:
+            print(prop)
+        dummy_df = df[(df['is_alive']) & (df['dm_is_infected'])]
+
+        prevalence_counts = (
+            dummy_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+        prevalence_by_age_group_sex = (prevalence_counts / len(df['is_alive'])).to_dict(orient='index')
+
+        return {'DummyDisease': prevalence_by_age_group_sex}
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
