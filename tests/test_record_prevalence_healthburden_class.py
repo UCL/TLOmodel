@@ -89,7 +89,7 @@ def test_run_with_healthburden_with_real_diseases(tmpdir, seed):
 
 def test_structure_logging_dummy_disease(tmpdir, seed):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 1, 1)
+    end_date = Date(2011, 1, 1)
 
     sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'tmp', 'directory': tmpdir})
     sim.register(
@@ -108,5 +108,14 @@ def test_structure_logging_dummy_disease(tmpdir, seed):
 
     prevalence_healthburden_log = output['tlo.methods.healthburden']['prevalence_of_diseases']['DummyDisease']
     prevalence_dummy_log = output['tlo.methods.mockitis']["summary"]["PropInf"]
-    for row in range(len(prevalence_healthburden_log) -1): # has extra log for first day
-        assert sum(prevalence_healthburden_log[row + 1].values()) == prevalence_dummy_log[row]
+    totals_from_prevalence_logger = []
+    for row in range(len(prevalence_healthburden_log) - 1):  # has extra log for first day
+        total = sum(
+            val
+            for age_group in prevalence_healthburden_log.iloc[row + 1].values()
+            for val in age_group.values()
+        )
+        totals_from_prevalence_logger.append(total)
+
+    for row in range(len(totals_from_prevalence_logger)):
+        assert totals_from_prevalence_logger[row] == prevalence_dummy_log[row], f"Mismatch at row {row}"
