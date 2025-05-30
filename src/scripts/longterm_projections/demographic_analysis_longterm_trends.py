@@ -1034,7 +1034,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ],
             capsize=5,
             label='Male',
-            color="##C6BBDD"
+            color="#C6BBDD"
         )
 
         # Female bars
