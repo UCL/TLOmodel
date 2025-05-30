@@ -184,3 +184,87 @@ prev_mansoni_H_All_district = pd.read_csv(path, index_col=[0, 1])  # assuming fi
 plot_prevalence_heatmap(prev_haem_H_All_district, year=2040, threshold=0.015, filename='prev_haem_H_district2040.png')
 plot_prevalence_heatmap(prev_mansoni_H_All_district, year=2040, threshold=0.015, filename='prev_mansoni_H_district2040.png')
 
+
+
+
+#################################################################################
+# %% ICERS
+#################################################################################
+
+def plot_icer_three_panels(df, context="Continue_WASH"):
+    """
+    Plot ICER by district for three categories ('MDA SAC', 'MDA PSAC', 'MDA All')
+    Only draws containing 'Continue WASH' are included.
+    """
+    # Filter draws containing 'Continue WASH'
+    df_filtered = df[df['draw'].str.contains(context, na=False)]
+
+    categories = ['MDA SAC', 'MDA PSAC', 'MDA All']
+    titles = {
+        'MDA SAC': f'{context} MDA SAC',
+        'MDA PSAC': 'MDA PSAC',
+        'MDA All': 'MDA All'
+    }
+
+    fig, axes = plt.subplots(3, 1, figsize=(10, 12), sharey=True)
+
+    for ax, category in zip(axes, categories):
+        subset = df_filtered[df_filtered['draw'].str.contains(category, na=False)]
+        if subset.empty:
+            ax.text(0.5, 0.5, f'No data for {category}', ha='center', va='center')
+            ax.set_title(titles[category])
+            ax.set_xticks([])
+            ax.set_yticks([])
+            continue
+
+        # Sort districts alphabetically to keep consistent order
+        subset = subset.sort_values('level_0')
+
+        # Plot points
+        sns.pointplot(
+            data=subset,
+            x='level_0',
+            y='mean',
+            join=False,
+            color='blue',
+            ax=ax
+        )
+
+        # Add error bars manually
+        x_vals = range(len(subset))
+        y_vals = subset['mean'].values
+        y_err_lower = y_vals - subset['lower'].values
+        y_err_upper = subset['upper'].values - y_vals
+
+        ax.errorbar(
+            x=x_vals,
+            y=y_vals,
+            yerr=[y_err_lower, y_err_upper],
+            fmt='none',
+            ecolor='blue',
+            elinewidth=1,
+            capsize=3,
+            alpha=0.7
+        )
+
+        ax.axhline(500, color='grey', linestyle='--', linewidth=1)
+        ax.set_ylim(0, None)
+        ax.set_title(titles[category])
+
+        # Show x-axis labels only on the bottom plot (last subplot)
+        if category != 'MDA All':
+            ax.set_xlabel('')
+            ax.set_xticklabels([])
+        else:
+            ax.set_xlabel('District')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+
+        ax.set_ylabel('ICER')
+
+    plt.tight_layout()
+    plt.show()
+
+
+plot_icer_three_panels(icer_district, context='Continue WASH')
+
+plot_icer_three_panels(icer_district, context='Scale-up WASH')

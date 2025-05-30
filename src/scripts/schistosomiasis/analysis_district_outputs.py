@@ -204,12 +204,18 @@ def compute_number_averted_within_wash_strategies(
     wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
     results_path: Path = None,
     filename_prefix: str = 'dalys_averted_by_year_run_district',
-    target_period: tuple = None
+    target_period: tuple = None,
+    averted_or_incurred: str = 'averted',
 ) -> pd.DataFrame:
     """
     Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
     to the corresponding 'no MDA' baseline within the same strategy group.
     """
+    if averted_or_incurred == 'averted':
+        scale = -1.0
+    else:
+        scale = 1.0
+
     comparator_results = []
 
     for strategy in wash_strategies:
@@ -224,7 +230,7 @@ def compute_number_averted_within_wash_strategies(
         df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
 
         # Compute difference relative to the strategy's 'no MDA' comparator
-        diff_df = -1.0 * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+        diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
 
         # Select only the relevant MDA draws
         comparator_results.append(diff_df)
@@ -238,6 +244,209 @@ def compute_number_averted_within_wash_strategies(
         combined_df.to_excel(output_file)
 
     return combined_df
+
+
+def format_summary_for_output(
+    df: pd.DataFrame,
+    stack_level: str = 'draw',
+    scale_factor: float = 1_000_000,
+    stat_central: str = 'central',
+    stat_lower: str = 'lower',
+    stat_upper: str = 'upper',
+    filename_prefix: str = 'table',
+    filename: str = None,
+) -> pd.DataFrame:
+    """
+    Format a DataFrame with uncertainty statistics into a readable table and save as Excel.
+
+    Returns
+    -------
+    pd.DataFrame
+        Formatted DataFrame with formatted strings showing central (lower–upper).
+    """
+
+    # Scale the data
+    scaled_df = df / scale_factor
+
+    # Stack to long format on the specified level
+    long_df = scaled_df.stack(level=stack_level)
+
+    # Apply formatting per row
+    formatted = long_df.apply(
+        lambda row: f"{row[stat_central]:.2f} ({row[stat_lower]:.2f}–{row[stat_upper]:.2f})",
+        axis=1
+    )
+
+    # Unstack to wide format, columns = stack_level values
+    formatted_df = formatted.unstack(level=-1)
+
+    # Save to Excel
+    output_path = results_folder / f'{filename_prefix}_{filename}_{target_period()}.xlsx'
+    formatted_df.to_excel(output_path)
+
+    return formatted_df
+
+
+def compute_icer_district(
+    dalys_averted: pd.DataFrame,
+    comparison_costs: pd.DataFrame,
+    discount_rate_dalys: float = 0.0,
+    discount_rate_costs: float = 0.0,
+    return_summary: bool = True
+) -> pd.DataFrame | pd.Series:
+    """
+    Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and draw.
+
+    Assumes:
+    - Row MultiIndex: (year, district)
+    - Column MultiIndex: (draw, run)
+    - TARGET_PERIOD is a global tuple of (start_year, end_year) as datetime or int
+    """
+    global TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
+
+    # Filter index by year (first level)
+    years = dalys_averted.index.get_level_values(0)
+    mask = (years >= start_year.year) & (years <= end_year.year)
+    dalys_period = dalys_averted.loc[mask]
+    costs_period = comparison_costs.loc[mask]
+
+    # Extract years for discounting from index level 0
+    years_since_start = years[mask] - start_year.year
+
+    # Discount weights per year
+    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
+    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
+
+    # Apply discounting only if rates are nonzero
+    if discount_rate_dalys != 0.0:
+        # Discount dalys_period by multiplying rows by discount weights
+        dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
+
+    if discount_rate_costs != 0.0:
+        costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
+
+    # Sum over years **within each district**
+    # Group by district (level 1 of index)
+    total_dalys = dalys_period.groupby(level=1).sum()
+    total_costs = costs_period.groupby(level=1).sum()
+
+    # Compute ICER = total_costs / total_dalys for each district, run, draw
+    icers = total_costs / total_dalys
+
+    # Rearrange to long form DataFrame with columns: district, draw, run, icer
+    icers_long = (
+        icers
+        .stack([0, 1])  # stack draw, run columns to index
+        .rename('icer')
+        .reset_index()   # columns: district, draw, run, icer
+    )
+
+    if return_summary:
+        # Summarise ICER across runs for each district and draw
+        summary = (
+            icers_long
+            .groupby(['level_0', 'draw'])['icer']
+            .agg(
+                mean='mean',
+                lower=lambda x: np.quantile(x, 0.025),
+                upper=lambda x: np.quantile(x, 0.975)
+            )
+            .reset_index()
+        )
+        return summary
+    else:
+        # Return all ICERs (district, draw, run, icer)
+        return icers
+
+
+
+def compute_icer_national(
+    dalys_averted: pd.DataFrame,
+    comparison_costs: pd.DataFrame,
+    discount_rate_dalys: float = 0.0,
+    discount_rate_costs: float = 0.0,
+    return_summary: bool = True
+) -> pd.DataFrame | pd.Series:
+    """
+    Compute ICERs comparing costs and DALYs averted over TARGET_PERIOD.
+
+    Assumes:
+    - Row index: year (single-level)
+    - Column MultiIndex: (wash_strategy, comparison, run)
+    - TARGET_PERIOD is a global tuple (start_year, end_year), with year as int or datetime
+    """
+    global TARGET_PERIOD
+    start_year, end_year = TARGET_PERIOD
+
+    # Check row index
+    if not dalys_averted.index.name == "year":
+        raise ValueError("dalys_averted must have a single-level index named 'year'")
+
+    # Filter by year
+    mask = (dalys_averted.index >= start_year.year) & (dalys_averted.index <= end_year.year)
+    dalys_period = dalys_averted.loc[mask]
+    costs_period = comparison_costs.loc[mask]
+
+    # Discounting
+    years = dalys_period.index
+    years_since_start = years - start_year.year
+    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
+    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
+
+    if discount_rate_dalys != 0.0:
+        dalys_period = dalys_period.mul(discount_weights_dalys.values[:, None])
+    if discount_rate_costs != 0.0:
+        costs_period = costs_period.mul(discount_weights_costs.values[:, None])
+
+    # Sum over years
+    total_dalys = dalys_period.sum(axis=0)
+    total_costs = costs_period.sum(axis=0)
+
+    # ICER calculation
+    icer = total_costs / total_dalys  # Result: Series with MultiIndex (wash_strategy, comparison, run)
+
+    # Format
+    icer = icer.rename("icer").reset_index()
+
+    if return_summary:
+        summary = (
+            icer.groupby(["wash_strategy", "comparison"])["icer"]
+            .agg(
+                mean="mean",
+                lower=lambda x: np.quantile(x, 0.025),
+                upper=lambda x: np.quantile(x, 0.975)
+            )
+            .reset_index()
+        )
+        return summary
+    else:
+        return icer
+
+
+
+def combine_on_keyword(df1: pd.DataFrame, df2: pd.DataFrame, keyword: str = "MDA All") -> pd.DataFrame:
+    """
+    Combine two DataFrames with identical MultiIndex columns (draw, run),
+    taking columns containing `keyword` from df2 and all others from df1.
+    """
+    # Ensure the column MultiIndex names
+    if df1.columns.names != df2.columns.names:
+        raise ValueError("df1 and df2 must have the same column MultiIndex names")
+
+    # Identify which columns to take from df2
+    draw_level = df1.columns.names.index("draw")
+    draws = df1.columns.get_level_values(draw_level)
+    mask = draws.str.contains(keyword)
+
+    # Build the result
+    result = df1.copy(deep=False)  # shallow copy of values will be overwritten
+    # Overwrite only the masked columns with df2's values
+    cols_to_replace = df1.columns[mask]
+    result.loc[:, cols_to_replace] = df2.loc[:, cols_to_replace]
+
+    return result
+
 
 
 #################################################################################
@@ -618,7 +827,7 @@ formatted_df.to_excel(output_path)
 
 
 ###########################################################################################################
-# %% get DALYs by district
+# %% get DALYs by district / national
 ###########################################################################################################
 
 num_dalys_by_year_run_district = extract_results(
@@ -661,36 +870,40 @@ dalys_national = pd.DataFrame(dalys_summed_by_year.sum()).T
 dalys_national_summary = compute_summary_statistics(dalys_national,
                                                 central_measure='mean')
 
-# format into nice table for output
-tmp = dalys_national_summary / 1_000_000
-
-# Rearrange into long format: rows = (district, age_group, draw), columns = stat
-df_long = tmp.stack(level='draw')  # columns now: lower, central, upper
-formatted = df_long.apply(
-    lambda row: f"{row['central']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
-)
-# Return to wide format: rows = (district, age_group), columns = draw
-formatted_df = formatted.unstack(level=-1)
-
-output_path = results_folder / f'table_summary_dalys_national_{target_period()}.xlsx'
-formatted_df.to_excel(output_path)
+formatted_table = format_summary_for_output(dalys_national_summary, filename='summary_dalys_national')
 
 
 # === DALYs averted by district =========================================================
 
-schisto_dalys_combined = compute_number_averted_within_wash_strategies(
+dalys_averted_district_compared_noMDA = compute_number_averted_within_wash_strategies(
     dalys_schisto_district_scaled,
     results_path=results_folder,
     filename_prefix='schisto_dalys_averted_by_year_run_district',
-    target_period=TARGET_PERIOD
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='averted'
 )
 
 
 # --- Incremental DALYs averted by district ---
 
 # incremental dalys averted - compare each prog in turn to the last one
-comparison_df = -1 * compute_stepwise_effects_by_wash_strategy(dalys_schisto_district_scaled)
-comparison_df.to_excel(results_folder / f'stepwise_dalys_averted_year_district{target_period()}.xlsx')
+incremental_dalys_averted_district = -1 * compute_stepwise_effects_by_wash_strategy(dalys_schisto_district_scaled)
+incremental_dalys_averted_district.to_excel(results_folder / f'stepwise_dalys_averted_year_district{target_period()}.xlsx')
+
+
+# === DALYs averted national =========================================================
+
+dalys_averted_national_compared_noMDA = compute_number_averted_within_wash_strategies(
+    dalys_summed_by_year,
+    results_path=results_folder,
+    filename_prefix='schisto_dalys_averted_by_year_run_national',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='averted'
+)
+
+# incremental dalys averted - compare each prog in turn to the last one
+incremental_dalys_averted_national = -1 * compute_stepwise_effects_by_wash_strategy(dalys_summed_by_year)
+incremental_dalys_averted_national.to_excel(results_folder / f'stepwise_dalys_averted_year_national{target_period()}.xlsx')
 
 
 #################################################################################
@@ -755,16 +968,22 @@ mda_episodes_per_year_district_scaled.index = mda_episodes_per_year_district_sca
     ['year' if name == 'Year' else name for name in mda_episodes_per_year_district_scaled.index.names])
 
 # assign costs - full including consumables
-full_cost_per_mda = 1.32
+cons_cost_per_mda = 0.05  # assuming all children
+cons_cost_per_mda_incl_adults = 0.081  # weighted mean across children and adults
 prog_delivery_cost_per_mda = 1.27
-cons_cost_per_mda = 0.05
+
+full_cost_per_mda = prog_delivery_cost_per_mda + cons_cost_per_mda  # assuming all children
+full_cost_per_mda_incl_adults = prog_delivery_cost_per_mda + cons_cost_per_mda_incl_adults
 
 
 # === Costs incurred =========================================================
 
-
 # --- Full costs ---
-full_costs_per_year_district = mda_episodes_per_year_district_scaled * full_cost_per_mda
+full_costs_per_year_district_child = mda_episodes_per_year_district_scaled * full_cost_per_mda
+full_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * full_cost_per_mda_incl_adults
+full_costs_per_year_district = combine_on_keyword(full_costs_per_year_district_child,
+                                                  full_costs_per_year_district_adults, keyword="MDA All")
+
 full_costs_per_year_national = sum_by_year_all_districts(full_costs_per_year_district, TARGET_PERIOD)
 
 
@@ -772,213 +991,99 @@ full_costs_per_year_national = sum_by_year_all_districts(full_costs_per_year_dis
 prog_costs_per_year_district = mda_episodes_per_year_district_scaled * prog_delivery_cost_per_mda
 prog_costs_per_year_national = sum_by_year_all_districts(prog_costs_per_year_district, TARGET_PERIOD)
 
+# sum across target period
+prog_costs_per_year_national_sum = pd.DataFrame(prog_costs_per_year_national.sum(axis=0)).T
+prog_costs_per_year_national_summary = compute_summary_statistics(prog_costs_per_year_national_sum,
+                                                central_measure='mean')
+fmt = format_summary_for_output(prog_costs_per_year_national_summary, filename='prog_costs_per_year_national')
+
 
 # --- Cons costs only ---
-cons_costs_per_year_district = mda_episodes_per_year_district_scaled * cons_cost_per_mda
+cons_costs_per_year_district_child = mda_episodes_per_year_district_scaled * cons_cost_per_mda
+cons_costs_per_year_district_adults = mda_episodes_per_year_district_scaled * cons_cost_per_mda_incl_adults
+cons_costs_per_year_district = combine_on_keyword(cons_costs_per_year_district_child,
+                                                  cons_costs_per_year_district_adults, keyword="MDA All")
+
+
 cons_costs_per_year_national = sum_by_year_all_districts(cons_costs_per_year_district, TARGET_PERIOD)
 
+# sum across target period
+cons_costs_per_year_national_sum = pd.DataFrame(cons_costs_per_year_national.sum(axis=0)).T
+cons_costs_per_year_national_summary = compute_summary_statistics(cons_costs_per_year_national_sum,
+                                                central_measure='mean')
+fmt = format_summary_for_output(cons_costs_per_year_national_summary, filename='cons_costs_per_year_national')
+
+
+# === Costs incurred relative to comparators NATIONAL =========================================================
+
+full_costs_relative_noMDA = compute_number_averted_within_wash_strategies(
+    full_costs_per_year_national,
+    results_path=results_folder,
+    filename_prefix='full_costs_per_year_national_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+
+# incremental costs incurred - compare each prog in turn to the last one
+incremental_full_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_national)
+incremental_full_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_national{target_period()}.xlsx')
+
+
+# --- Cons costs incurred relative to comparator ---
+
+cons_costs_relative_noMDA = compute_number_averted_within_wash_strategies(
+    cons_costs_per_year_national,
+    results_path=results_folder,
+    filename_prefix='cons_costs_per_year_national_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+
+# incremental costs incurred - compare each prog in turn to the last one
+incremental_cons_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(cons_costs_per_year_national)
+incremental_cons_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_cons_costs_incurred_per_year_national{target_period()}.xlsx')
 
 
 
 
+# === Costs incurred relative to comparators DISTRICT =========================================================
 
 
-costs_mda_episodes_per_year_district_scaled = mda_episodes_per_year_district_scaled * unit_cost_per_mda_incl_cons
-
-# costs incurred
-
-# calculate the costs averted from non-cons costs, i.e. HRH, implementation etc
-costs_district_vs_PauseWASH = find_difference_relative_to_comparison_dataframe(
-        costs_mda_episodes_per_year_district_scaled,
-        comparison='Pause WASH, no MDA'
-    )
-costs_district_vs_PauseWASH.to_csv(results_folder / f'costs_district_vs_PauseWASH{target_period()}.csv')
-
-costs_district_vs_ContinueWASH = find_difference_relative_to_comparison_dataframe(
-        costs_mda_episodes_per_year_district_scaled,
-        comparison='Continue WASH, no MDA'
-    )
-costs_district_vs_ContinueWASH.to_csv(results_folder / f'costs_district_vs_ContinueWASH{target_period()}.csv')
-
-costs_district_vs_scaleupWASH = find_difference_relative_to_comparison_dataframe(
-        costs_mda_episodes_per_year_district_scaled,
-        comparison='Scale-up WASH, no MDA'
-    )
-costs_district_vs_scaleupWASH.to_csv(results_folder / f'costs_district_vs_scaleupWASH{target_period()}.csv')
-
-# Select desired columns from each dataframe
-df1_sel = select_draws_by_keyword(costs_district_vs_PauseWASH, 'Pause')
-df2_sel = select_draws_by_keyword(costs_district_vs_ContinueWASH, 'Continue')
-df3_sel = select_draws_by_keyword(costs_district_vs_scaleupWASH, 'Scale-up')
-
-# Concatenate the selected columns horizontally
-costs_incurred_by_district_year_run_combined = pd.concat([df1_sel, df2_sel, df3_sel], axis=1)
-costs_incurred_by_district_year_run_combined.to_csv(results_folder / f'costs_incurred_by_district_year_run_combined{target_period()}.csv')
 
 
-##########################
-# calculate ICER
-
-def compute_icer(
-    dalys_averted: pd.DataFrame,
-    comparison_costs: pd.DataFrame,
-    discount_rate_dalys: float = 0.0,
-    discount_rate_costs: float = 0.0,
-    return_summary: bool = True
-) -> pd.DataFrame | pd.Series:
-    """
-    Compute ICERs comparing costs and DALYs averted over a TARGET_PERIOD by district, run, and draw.
-
-    Assumes:
-    - Row MultiIndex: (year, district)
-    - Column MultiIndex: (draw, run)
-    - TARGET_PERIOD is a global tuple of (start_year, end_year) as datetime or int
-    """
-    global TARGET_PERIOD
-    start_year, end_year = TARGET_PERIOD
-
-    # Filter index by year (first level)
-    years = dalys_averted.index.get_level_values(0)
-    mask = (years >= start_year.year) & (years <= end_year.year)
-    dalys_period = dalys_averted.loc[mask]
-    costs_period = comparison_costs.loc[mask]
-
-    # Extract years for discounting from index level 0
-    years_since_start = years[mask] - start_year.year
-
-    # Discount weights per year
-    discount_weights_dalys = 1 / ((1 + discount_rate_dalys) ** years_since_start)
-    discount_weights_costs = 1 / ((1 + discount_rate_costs) ** years_since_start)
-
-    # Apply discounting only if rates are nonzero
-    if discount_rate_dalys != 0.0:
-        # Discount dalys_period by multiplying rows by discount weights
-        dalys_period = dalys_period.mul(discount_weights_dalys.values, axis=0)
-
-    if discount_rate_costs != 0.0:
-        costs_period = costs_period.mul(discount_weights_costs.values, axis=0)
-
-    # Sum over years **within each district**
-    # Group by district (level 1 of index)
-    total_dalys = dalys_period.groupby(level=1).sum()
-    total_costs = costs_period.groupby(level=1).sum()
-
-    # Compute ICER = total_costs / total_dalys for each district, run, draw
-    icers = total_costs / total_dalys
-
-    # Rearrange to long form DataFrame with columns: district, draw, run, icer
-    icers_long = (
-        icers
-        .stack([0, 1])  # stack draw, run columns to index
-        .rename('icer')
-        .reset_index()   # columns: district, draw, run, icer
-    )
-
-    if return_summary:
-        # Summarise ICER across runs for each district and draw
-        summary = (
-            icers_long
-            .groupby(['level_0', 'draw'])['icer']
-            .agg(
-                mean='mean',
-                lower=lambda x: np.quantile(x, 0.025),
-                upper=lambda x: np.quantile(x, 0.975)
-            )
-            .reset_index()
-        )
-        return summary
-    else:
-        # Return all ICERs (district, draw, run, icer)
-        return icers
+#################################################################################
+# %% ICERS
+#################################################################################
 
 
-icer_district = compute_icer(
-    dalys_averted=schisto_dalys_averted_by_year_run_district_combined,
-    comparison_costs=costs_incurred_by_district_year_run_combined,
+icer_national = compute_icer_national(
+    dalys_averted=incremental_dalys_averted_national,
+    comparison_costs=incremental_full_costs_incurred_per_year_national,
     discount_rate_dalys=0.0,
     discount_rate_costs=0.0,
     return_summary=True
 )
-icer_district.to_csv(results_folder / f'icer_district_{target_period()}.csv')
 
+icer_national["formatted"] = icer_national.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_national.to_excel(results_folder / f'icer_national_{target_period()}.xlsx')
 
-def plot_icer_three_panels(df, context="Continue_WASH"):
-    """
-    Plot ICER by district for three categories ('MDA SAC', 'MDA PSAC', 'MDA All')
-    Only draws containing 'Continue WASH' are included.
-    """
-    # Filter draws containing 'Continue WASH'
-    df_filtered = df[df['draw'].str.contains(context, na=False)]
+# --- ICERS for consumables costs only ---
 
-    categories = ['MDA SAC', 'MDA PSAC', 'MDA All']
-    titles = {
-        'MDA SAC': f'{context} MDA SAC',
-        'MDA PSAC': 'MDA PSAC',
-        'MDA All': 'MDA All'
-    }
+icer_national_cons_only = compute_icer_national(
+    dalys_averted=incremental_dalys_averted_national,
+    comparison_costs=incremental_cons_costs_incurred_per_year_national,
+    discount_rate_dalys=0.0,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
 
-    fig, axes = plt.subplots(3, 1, figsize=(10, 12), sharey=True)
+icer_national_cons_only["formatted"] = icer_national_cons_only.apply(
+    lambda row: f"{row['mean']:.2f} ({row['lower']:.2f}–{row['upper']:.2f})", axis=1
+)
+icer_national_cons_only.to_excel(results_folder / f'icer_national_cons_only_{target_period()}.xlsx')
 
-    for ax, category in zip(axes, categories):
-        subset = df_filtered[df_filtered['draw'].str.contains(category, na=False)]
-        if subset.empty:
-            ax.text(0.5, 0.5, f'No data for {category}', ha='center', va='center')
-            ax.set_title(titles[category])
-            ax.set_xticks([])
-            ax.set_yticks([])
-            continue
-
-        # Sort districts alphabetically to keep consistent order
-        subset = subset.sort_values('level_0')
-
-        # Plot points
-        sns.pointplot(
-            data=subset,
-            x='level_0',
-            y='mean',
-            join=False,
-            color='blue',
-            ax=ax
-        )
-
-        # Add error bars manually
-        x_vals = range(len(subset))
-        y_vals = subset['mean'].values
-        y_err_lower = y_vals - subset['lower'].values
-        y_err_upper = subset['upper'].values - y_vals
-
-        ax.errorbar(
-            x=x_vals,
-            y=y_vals,
-            yerr=[y_err_lower, y_err_upper],
-            fmt='none',
-            ecolor='blue',
-            elinewidth=1,
-            capsize=3,
-            alpha=0.7
-        )
-
-        ax.axhline(500, color='grey', linestyle='--', linewidth=1)
-        ax.set_ylim(0, None)
-        ax.set_title(titles[category])
-
-        # Show x-axis labels only on the bottom plot (last subplot)
-        if category != 'MDA All':
-            ax.set_xlabel('')
-            ax.set_xticklabels([])
-        else:
-            ax.set_xlabel('District')
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-
-        ax.set_ylabel('ICER')
-
-    plt.tight_layout()
-    plt.show()
-
-
-plot_icer_three_panels(icer_district, context='Continue WASH')
-
-plot_icer_three_panels(icer_district, context='Scale-up WASH')
 
 ########################
 # NHB
