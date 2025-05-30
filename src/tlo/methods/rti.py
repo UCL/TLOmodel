@@ -2443,36 +2443,18 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         # This returns dataframe that reports on the prevalence of RTIs for all individuals
         df = self.sim.population.props
         df_valid_dates = df[df['rt_date_inj'].notna()]
-        prevalence_by_age_group_sex = {}
 
         if df_valid_dates.empty:
             pass
         else:
-            # Calculate total prevalence for individuals with non-NaT injury dates
-            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
+            alive_df = df[df['is_alive']]
 
-            sexes = ['male', 'female']
-            total_alive = len(df[df['is_alive']])
+            prevalence_counts = (
+                df_valid_dates.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+            )
 
-            for age_group in age_groups:
-                age_range = age_groups[age_group]
-                prevalence_by_age_group_sex[age_group] = {}
+            prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-                for sex in sexes:
-                    subset = df_valid_dates[
-                        (df_valid_dates['age_years'].between(age_range[0], age_range[1])) &
-                        (df_valid_dates['sex'] == sex)
-                        ]
-
-                    total_prev = len(
-                        subset[
-                            (subset['is_alive']) &
-                            (subset['rt_inj_severity'] != 'none') &
-                            (subset['rt_date_inj'] >= (self.sim.date - DateOffset(months=1)))
-                            ]
-                    ) / total_alive if total_alive > 0 else float('nan')
-
-                    prevalence_by_age_group_sex[age_group][sex] = total_prev
         return {'RTI': prevalence_by_age_group_sex}
 
     def rti_assign_injuries(self, number):

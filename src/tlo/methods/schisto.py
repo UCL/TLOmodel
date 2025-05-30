@@ -223,28 +223,13 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         # Identify individuals currently infected
         is_infected = df[self.cols_of_infection_status].isin(['Low-infection', 'High-infection']).any(axis=1)
         infected_df = df[(df['is_alive']) & (is_infected)]
+        alive_df = df[df['is_alive']]
 
-        prevalence_by_age_group_sex = {}
+        prevalence_counts = (
+            infected_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
 
-        if infected_df.empty:
-            pass
-        else:
-            age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
-            sexes = ['male', 'female']
-            total_alive = len(df[df['is_alive']])
-
-            for age_group in age_groups:
-                age_range = age_groups[age_group]
-                prevalence_by_age_group_sex[age_group] = {}
-
-                for sex in sexes:
-                    subset = infected_df[
-                        (infected_df['age_years'].between(age_range[0], age_range[1])) &
-                        (infected_df['sex'] == sex)
-                        ]
-
-                    total_prev = len(subset) / total_alive if total_alive > 0 else float('nan')
-                    prevalence_by_age_group_sex[age_group][sex] = total_prev
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
         return {'Schisto': prevalence_by_age_group_sex}
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:

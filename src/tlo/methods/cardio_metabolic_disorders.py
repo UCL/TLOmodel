@@ -812,32 +812,15 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         prevalence_dict = {}
 
-        age_groups = {f'{start}-{start + 4}': (start, start + 4) for start in range(0, 100, 5)}
-        sexes = ['male', 'female']
-        total_alive = len(df[df['is_alive']])
+        alive_df = df[df['is_alive']]
 
         for condition in self.conditions:
-            prevalence_by_age_group_sex = {}
+                prevalence_counts = (
+                    alive_df.groupby(['age_range', 'sex'])[f'nc_{condition}'].sum().unstack(fill_value=0)
+                )
+                prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
 
-            for age_group in age_groups:
-                age_range = age_groups[age_group]
-                prevalence_by_age_group_sex[age_group] = {}
-
-                for sex in sexes:
-                    subset = df[
-                        (df['is_alive']) &
-                        (df['age_years'].between(age_range[0], age_range[1])) &
-                        (df['sex'] == sex)
-                        ]
-
-                    if total_alive > 0 and not subset.empty:
-                        total_prev = subset[f'nc_{condition}'].sum() / total_alive
-                    else:
-                        total_prev = float('nan')
-
-                    prevalence_by_age_group_sex[age_group][sex] = total_prev
-
-            prevalence_dict[condition] = prevalence_by_age_group_sex
+                prevalence_dict[condition] = prevalence_by_age_group_sex
 
         return prevalence_dict
 
