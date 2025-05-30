@@ -2445,6 +2445,7 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         df_valid_dates = df[df['rt_date_inj'].notna()]
 
         if df_valid_dates.empty:
+            prevalence_by_age_group_sex = {}
             pass
         else:
             alive_df = df[df['is_alive']]
