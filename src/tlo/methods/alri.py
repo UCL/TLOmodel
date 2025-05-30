@@ -50,6 +50,7 @@ logger.setLevel(logging.INFO)
 to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
 to_prob = lambda odds: odds / (1.0 + odds)  # noqa: E731
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITION
 # ---------------------------------------------------------------------------------------------------------
@@ -995,6 +996,22 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         daly_values_by_pathogen = daly_values_by_pathogen.add_prefix('ALRI_')
         return daly_values_by_pathogen
 
+    def report_prevalence(self):
+        # This reports age- and sex-specific prevalence of ALRI for all individuals
+        df = self.sim.population.props
+
+        # Select alive individuals with current ALRI infection
+        alri_df = df[(df['is_alive']) & (df['ri_current_infection_status'])]
+        alive_df = df[df['is_alive']]
+
+        prevalence_counts = (
+            alri_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
+        )
+
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+
+        return {'ALRI': prevalence_by_age_group_sex}
+
     def over_ride_availability_of_certain_consumables(self):
         """Over-ride the availability of certain consumables, according the parameter values provided."""
         p = self.parameters
@@ -1120,7 +1137,6 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         self.consumables_used_in_hsi['Inhaled_Brochodilator'] = {
             get_item_code(item='Salbutamol sulphate 1mg/ml, 5ml_each_CMST'): 2
         }
-
 
     def end_episode(self, person_id):
         """End the episode infection for a person (i.e. reset all properties to show no current infection or
@@ -1336,7 +1352,7 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         elif classification_for_treatment_decision == 'chest_indrawing_pneumonia':
             return {
                 'antibiotic_indicated': (
-                    'Amoxicillin_tablet_or_suspension_5days',   # <-- # <-- First choice antibiotic
+                    'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
                 ),
                 'oxygen_indicated': False
             }
@@ -1441,11 +1457,11 @@ class Models:
                         'age_years',
                         conditions_are_mutually_exclusive=True,
                         conditions_are_exhaustive=True).when(0, age_effects[0])
-                                                       .when(1, age_effects[1])
-                                                       .when(2, age_effects[2])
-                                                       .when(3, age_effects[3])
-                                                       .when(4, age_effects[4])
-                                                       .when('>= 5', 0.0),
+                    .when(1, age_effects[1])
+                    .when(2, age_effects[2])
+                    .when(3, age_effects[3])
+                    .when(4, age_effects[4])
+                    .when('>= 5', 0.0),
                     Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
                     Predictor().when('(va_measles_all_doses == False) & (age_years >= 1)',
                                      p['rr_ALRI_incomplete_measles_immunisation']),
@@ -1675,13 +1691,14 @@ class Models:
 
         def get_odds_of_death(age_in_whole_months):
             """Returns odds of death given age in whole months."""
+
             def get_odds_of_death_for_under_two_month_old(age_in_whole_months):
                 return p[f'base_odds_death_ALRI_{_age_}'] * \
-                       (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** age_in_whole_months)
+                    (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** age_in_whole_months)
 
             def get_odds_of_death_for_over_two_month_old(age_in_whole_months):
                 return p[f'base_odds_death_ALRI_{_age_}'] * \
-                       (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** (age_in_whole_months - 2))
+                    (p[f'or_death_ALRI_{_age_}_by_month_increase_in_age'] ** (age_in_whole_months - 2))
 
             return get_odds_of_death_for_under_two_month_old(age_in_whole_months=age_in_whole_months) \
                 if age_in_whole_months < 2 \
@@ -1886,6 +1903,7 @@ class Models:
 
         else:
             raise ValueError('Unrecognised imci_symptom_based_classification.')
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -3040,7 +3058,8 @@ class AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia(AlriIncidentCase):
 
         assert 'fast_breathing_pneumonia' == \
                self.module.get_imci_classification_based_on_symptoms(
-                   child_is_younger_than_2_months=False, symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+                   child_is_younger_than_2_months=False,
+                   symptoms=self.sim.modules['SymptomManager'].has_what(person_id=person_id)
                )
 
 
