@@ -12,9 +12,9 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2070, 1, 12)
+        self.end_date = Date(2071, 1, 12)
         self.pop_size = 100_000
-        self.runs_per_draw = 5
+        self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -50,8 +50,8 @@ class LongRun(BaseScenario):
         return {'Baseline': self._baseline(),
                 'Perfect World': self._perfect_world(),
                 'HTM Scale-up': self._htm_scaleup(),
-                'Lifestyle Changes CMD': self._lifestyle_factors_CMD(),
-                'Lifestyle Changes Cancer': self._lifestyle_factors_cancer()}
+                'Lifestyle Changes CMD Bad': self._lifestyle_factors_CMD_bad(),
+                'Lifestyle Changes CMD Good': self._lifestyle_factors_CMD_good()}
 
     def _baseline(self) -> Dict:
         return get_parameters_for_status_quo()
@@ -109,17 +109,23 @@ class LongRun(BaseScenario):
                 }
             )
 
-    def _lifestyle_factors_CMD(self) -> Dict:
+    def _lifestyle_factors_CMD_bad(self) -> Dict:
         return mix_scenarios(
             get_parameters_for_status_quo(),
             {"Lifestyle": {
-                'r_urban': 0.0005 * 1.5,
                 'r_higher_bmi': 0.0005 * 1.5,
                 'r_high_salt_urban': 0.003 * 1.5,
                 'r_high_sugar': 0.0001 * 1.5,
                 'r_low_ex':0.001 * 1.5,
-                'r_tob': 0.0004 / 1.5, # as if there was a cessation programme/public awareness
+                'r_tob': 0.0004 * 1.5,
                 'r_ex_alc': 0.003 * 1.5,
+            }}
+        )
+
+    def _lifestyle_factors_CMD_good(self) -> Dict:
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {"Lifestyle": {
                 'r_non_wood_burn_stove': 0.001 * 1.5,
                 'r_clean_drinking_water': 0.001 * 1.5,
                 'r_improved_sanitation':0.001 * 1.5,
@@ -127,14 +133,6 @@ class LongRun(BaseScenario):
             }}
         )
 
-    def _lifestyle_factors_cancer(self) -> Dict:
-        return mix_scenarios(
-            get_parameters_for_status_quo(),
-            {"Lifestyle": {
-                'r_tob': 0.0004 * 1.5,
-                'r_ex_alc': 0.003 * 1.5,
-            }}
-        )
 
 
 if __name__ == '__main__':
