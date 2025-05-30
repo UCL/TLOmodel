@@ -963,58 +963,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # 5) Pop size and Life Expectancy
 
-        fig, ax = plt.subplots(1, 2, figsize=(15, 7.5))
-        # ax[0].plot(
-        #     deaths_by_period.index,
-        #     deaths_by_period['WPP_continuous'] / 1e6,
-        #     label='WPP',
-        #     color=colors['WPP'])
-        # ax[0].fill_between(
-        #     (deaths_by_period.index).to_numpy(),
-        #     (deaths_by_period['WPP_Low variant'] / 1e6).to_numpy(),
-        #     (deaths_by_period['WPP_High variant'] / 1e6).to_numpy(),
-        #     facecolor=colors['WPP'], alpha=0.2)
-        # ax[0].plot(
-        #     deaths_by_period.index,
-        #     deaths_by_period['GBD_Est'] / 1e6,
-        #     label='GBD',
-        #     color=colors['GBD']
-        # )
-        # ax[0].fill_between(
-        #     (deaths_by_period.index).to_numpy(),
-        #     (deaths_by_period['GBD_Lower'] / 1e6).to_numpy(),
-        #     (deaths_by_period['GBD_Upper'] / 1e6).to_numpy(),
-        #     facecolor=colors['GBD'], alpha=0.2)
-        # #GBD goes up to 2020 so can use this to show where differences in scenarios start
-        # ax[0].axvline(x=deaths_by_period.index[-1], color='black', linestyle='--', linewidth=1)
-        # for draw in range(5):
-        #     ax[0].plot(
-        #         deaths_by_period.index,
-        #         deaths_by_period[f'Model_{draw}_mean'] / 1e6,
-        #         label=scenario_names[draw],
-        #         color=scenario_colours[draw]
-        #     )
-        # ax[0].fill_between(
-        #     (deaths_by_period.index).to_numpy(),
-        #     (deaths_by_period[f'Model_{draw}_lower'] / 1e6).to_numpy(),
-        #     (deaths_by_period[f'Model_{draw}_upper'] / 1e6).to_numpy(),
-        #     facecolor=scenario_colours[draw], alpha=0.2)
-        #
-        # max_index = find_index_with_string(deaths_by_period.index)
-        # min_index = find_index_with_string(deaths_by_period.index, '2000')
-        # period_labels = deaths_by_period.index[min_index:max_index].astype(str)
-        # ax[0].set_title('Panel A: Number of Deaths')
-        # ax[0].legend(loc='upper left')
-        # ax[0].set_xlabel('Calendar Period')
-        # ax[0].set_ylabel('Number per period (millions)')
-        # ax[0].set_xlim(left=min_index, right=max_index - 1)
-        # xticks = [tick for tick in ax[0].get_xticks() if min_index <= tick <= max_index - 1]
-        # ax[0].set_xticks(xticks[::2])
-        # # xticklabels = deaths_by_period.index[::2]
-        # # ax[0].set_xticklabels(xticklabels)
-        # fig.tight_layout()
-
-
         fig, ax = plt.subplots(1, 2, figsize=(14, 6))
 
         # --- Panel A: Population size over time (as before)
@@ -1073,12 +1021,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         final_df = pd.DataFrame(final_values)
 
-        # bar positions
-        x = np.arange(len(final_df))  # 4 scenarios
-        width = 0.35  # width of the bars
-
-    # Scenario colours
-
         x = np.arange(len(final_df))  # 4 scenarios
         width = 0.35  # width of the bars
 
@@ -1092,7 +1034,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ],
             capsize=5,
             label='Male',
-            color="#645E9D"
+            color="##C6BBDD"
         )
 
         # Female bars
@@ -1105,7 +1047,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ],
             capsize=5,
             label='Female',
-            color="#392B58"
+            color="#8169B5"
         )
         # Labels + formatting
         ax[1].set_xticks(x)
@@ -1117,6 +1059,97 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # --- Final Layout and Save ---
         fig.tight_layout()
         plt.savefig(make_graph_file_name("Pop_size_and_final_Life_expectancy_grouped"))
+        plt.close(fig)
+
+        # 6) Population size and life expectancy -- only baseline scenario
+
+
+        fig, ax = plt.subplots(1, 2, figsize=(14, 6))
+
+        # --- Panel A: Population size over time (as before)
+        ax[0].plot(wpp_ann_total.index, wpp_ann_total / 1e6, label='WPP', color=colors['WPP'])
+        ax[0].plot(2018.5, cens_2018.sum() / 1e6, marker='o', markersize=10, linestyle='none',
+                   label='Census', zorder=10, color=colors['Census'])
+
+        for draw in range(1):
+            ax[0].plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
+                       label=scenario_names[draw], color=scenario_colours[draw])
+            ax[0].fill_between(
+                pop_model.index,
+                pop_model[draw]['lower'] / 1e6,
+                pop_model[draw]['upper'] / 1e6,
+                color=scenario_colours[draw],
+                alpha=0.2,
+                zorder=5
+            )
+
+        ax[0].set_title("Population Size 2010-2060")
+        ax[0].set_xlabel("Year")
+        ax[0].set_ylabel("Population Size (millions)")
+        ax[0].set_xlim(2010, int(max_year))
+        ax[0].xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+        ax[0].set_ylim(0, 60)
+        ax[0].legend()
+
+        # --- Panel B: Final life expectancy grouped bars ---
+        final_values = []
+
+        for draw in range(1):
+                dataframes = []
+                for year in range(2010, int(max_year) + 1):
+                    df = get_life_expectancy_estimates(
+                        results_folder=args.results_folder,
+                        target_period=(datetime.date(year, 1, 1), datetime.date(year, 12, 31)),
+                        summary=False,
+                    )
+                    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+                    df = summarize(results=df, only_mean=False, collapse_columns=False)[draw]  #
+                    df['Year'] = year  # Add a new column for the year
+                    dataframes.append(df)
+                # Concatenate all dataframes
+                le_all_years = pd.concat(dataframes, ignore_index=True)
+                le_all_years.set_index('Year', inplace=True)
+                ax[1].axvline(x=2020, color='black', linestyle='--', linewidth=1)
+                ax[1].plot(
+                    le_all_years.index[1::2],
+                    le_all_years.iloc[1::2]['mean'],
+                    marker='o',
+                    markersize=4,
+                    color=scenario_colours[draw],
+                    label=f"{scenario_names[draw]} - F"
+                )
+                ax[1].fill_between(
+                    le_all_years.index[1::2],
+                    le_all_years.iloc[1::2]['lower'],
+                    le_all_years.iloc[1::2]['upper'],
+                    color=scenario_colours[draw],
+                    alpha=0.3
+                )
+
+                ax[1].plot(
+                    le_all_years.index[0::2],
+                    le_all_years.iloc[0::2]['mean'],
+                    alpha=0.6,
+                    color=scenario_colours[draw],
+                    label=f"{scenario_names[draw]} - M"
+                )
+
+                ax[1].fill_between(
+                    le_all_years.index[0::2],
+                    le_all_years.iloc[0::2]['lower'],
+                    le_all_years.iloc[0::2]['upper'],
+                    color=scenario_colours[draw],
+                    alpha=0.1
+                )
+        ax[1].plot(wpp_le['Time'], wpp_le['Value'], marker='o', color=colors['WPP'], label="WPP")
+
+        ax[1].legend(loc='lower right')
+        ax[1].set_xlabel('Year')
+        ax[1].set_ylim(50, 80)
+        ax[1].set_ylabel('Life Expectancy (Years)')
+        ax[1].set_title('Panel B: Life Expectancy')
+        fig.tight_layout()
+        plt.savefig(make_graph_file_name("Pop_size_Life_expectancy_over_years_baseline"))
         plt.close(fig)
 
 
