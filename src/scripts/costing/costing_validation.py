@@ -102,39 +102,6 @@ def get_calibration_relevant_subset_of_costs(_df, _col, _col_value, _calibration
     _df['calibration_category'] = _calibration_category
     return _df.groupby(['calibration_category' ,'stat'])['cost'].sum()
 
-'''
-def get_calibration_relevant_subset_of_consumables_cost(_df, item):
-    for col in ['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)', 'excess_stock_proportion_of_dispensed','item_code']:
-        try:
-            _df = _df.drop(columns = col)
-        except:
-            pass
-    _df.columns = pd.MultiIndex.from_tuples(_df.columns)
-    _df = _df.melt(id_vars = ['year', 'Item_Code'], var_name=['draw', 'stat'], value_name='value')
-    _df = _df[_df['Item_Code'].isin(item)]
-    _df = _df.groupby(['year', 'draw', 'stat'])['value'].sum()
-    return _df.reset_index()
-def merged_calibration_relevant_consumables_costs(item, category):
-    merged_df = pd.merge(get_calibration_relevant_subset_of_consumables_cost(cost_of_consumables_dispensed, item),
-                         get_calibration_relevant_subset_of_consumables_cost(cost_of_excess_consumables_stocked, item),
-                         on=['year', 'draw', 'stat'], how='outer', suffixes=('_dispensed', '_excess_stock'))
-    # Fill any missing values in the value columns with 0 (for cases where only one dataframe has a value)
-    # and sum to get total consumable cost
-    merged_df['value'] = merged_df['value_dispensed'].fillna(0) + merged_df['value_excess_stock'].fillna(0)
-    merged_df['calibration_category'] = category
-    return merged_df.set_index(['calibration_category', 'stat'])['value']
-
-def first_positive(series):
-    return next((x for x in series if pd.notna(x) and x > 0), np.nan)
-
-def get_calibration_relevant_subset_of_other_costs(_df, _subcategory, _calibration_category):
-    new_data = get_calibration_relevant_subset(_df[_df['Cost_Sub-category'].isin(_subcategory)]).groupby('stat')['value'].sum()
-    new_data = new_data.reset_index()
-    new_data['calibration_category'] = _calibration_category
-    new_data = new_data.rename(columns =  {'value':'model_cost'})
-    return new_data.set_index(['calibration_category', 'stat'])['model_cost']
-'''
-
 # Consumables
 #-----------------------------------------------------------------------------------------------------------------------
 calibration_data['model_cost'] = np.nan
@@ -407,35 +374,45 @@ calibration_categories_dict = {'Other Drugs, medical supplies, and commodities':
 'Unclassified': 'Not represented in TLO model'}
 calibration_data_extract['cost_category'] = calibration_data_extract['calibration_category'].map(calibration_categories_dict)
 
-calibration_data_extract['deviation_from_expenditure'] = abs(
+# Obtain the magnitude of deviation of model estimate from expenditure or budget estimate, whichever is closer
+# Step 1: Calculate signed deviations
+calibration_data_extract['dev_from_expenditure'] = (
     (calibration_data_extract['model_cost'] - calibration_data_extract['actual_expenditure_2019'])
-    /calibration_data_extract['actual_expenditure_2019'])
-calibration_data_extract['deviation_from_budget'] = abs(
+    / calibration_data_extract['actual_expenditure_2019']
+)
+
+calibration_data_extract['dev_from_budget'] = (
     (calibration_data_extract['model_cost'] - calibration_data_extract['max_annual_budget_2020-22'])
-    /calibration_data_extract['max_annual_budget_2020-22'])
-calibration_data_extract['Absolute deviation of estimated cost from data (%)'] = (
-    calibration_data_extract[['deviation_from_expenditure', 'deviation_from_budget']]
-    .min(axis=1, skipna=True)  # Use axis=1 to compute the minimum row-wise.
+    / calibration_data_extract['max_annual_budget_2020-22']
+)
+
+# Step 2: For each row, pick the value (signed) with the minimum absolute deviation
+calibration_data_extract['Deviation of estimated cost from nearest benchmark (%)'] = calibration_data_extract.apply(
+    lambda row: min(
+        [row['dev_from_expenditure'], row['dev_from_budget']],
+        key=lambda x: abs(x) if pd.notna(x) else float('inf')
+    ),
+    axis=1
 )
 
 # Format the deviation as a percentage with 2 decimal points
-calibration_data_extract['Absolute deviation of estimated cost from data (%)'] = (
-    calibration_data_extract['Absolute deviation of estimated cost from data (%)']
+calibration_data_extract['Deviation of estimated cost from nearest benchmark (%)'] = (
+    calibration_data_extract['Deviation of estimated cost from nearest benchmark (%)']
     .map(lambda x: f"{x * 100:.2f}%")
 )
-calibration_data_extract.loc[calibration_data_extract['Absolute deviation of estimated cost from data (%)'] == 'nan%', 'Absolute deviation of estimated cost from data (%)'] = 'NA'
+calibration_data_extract.loc[calibration_data_extract['Deviation of estimated cost from nearest benchmark (%)'] == 'nan%', 'Deviation of estimated cost from nearest benchmark (%)'] = 'NA'
 # Replace if calibration is fine
 calibration_condition_met = ((calibration_data_extract['model_cost'] > calibration_data_extract[['actual_expenditure_2019', 'max_annual_budget_2020-22']].min(axis=1)) &
     (calibration_data_extract['model_cost'] < calibration_data_extract[['actual_expenditure_2019', 'max_annual_budget_2020-22']].max(axis=1)))
 
 calibration_data_extract.loc[calibration_condition_met,
-    'Absolute deviation of estimated cost from data (%)'
-] = 'Within target range'
+    'Deviation of estimated cost from nearest benchmark (%)'
+] = 'Within expenditure-budget range'
 
 calibration_data_extract.loc[calibration_data_extract['model_cost'].isna(), 'model_cost'] = 'NA'
 
 calibration_data_extract = calibration_data_extract.sort_values(by=['cost_category', 'calibration_category'])
-calibration_data_extract = calibration_data_extract[['cost_category', 'calibration_category', 'actual_expenditure_2019', 'max_annual_budget_2020-22', 'model_cost', 'Absolute deviation of estimated cost from data (%)']]
+calibration_data_extract = calibration_data_extract[['cost_category', 'calibration_category', 'actual_expenditure_2019', 'max_annual_budget_2020-22', 'model_cost', 'Deviation of estimated cost from nearest benchmark (%)']]
 calibration_data_extract = calibration_data_extract.rename(columns = {'cost_category': 'Cost Category',
                                                             'calibration_category': 'Relevant RM group',
                                                             'actual_expenditure_2019': 'Recorded Expenditure (FY 2018/19)',
