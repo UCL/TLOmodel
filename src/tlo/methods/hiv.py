@@ -458,11 +458,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
-            # Chronic infection but not AIDS (including if on ART)
-            # (taken to be equal to "Symptomatic HIV without anaemia")
+            # Symptomatic HIV without anemia
             self.daly_wts["hiv_infection_but_not_aids"] = self.sim.modules[
                 "HealthBurden"
             ].get_daly_weight(17)
+
+            # AIDS with antiretroviral treatment without anemia
+            self.daly_wts["hiv_infection_on_ART"] = self.sim.modules[
+                "HealthBurden"
+            ].get_daly_weight(20)
 
             #  AIDS without anti-retroviral treatment without anemia
             self.daly_wts["aids"] = self.sim.modules["HealthBurden"].get_daly_weight(19)
@@ -1293,7 +1297,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         dalys = pd.Series(data=0, index=df.loc[df.is_alive].index)
 
         # All those infected get the 'infected but not AIDS' daly_wt:
-        dalys.loc[df.hv_inf] = self.daly_wts["hiv_infection_but_not_aids"]
+        dalys.loc[df.hv_inf & (df.hv_art == "not")] = self.daly_wts["hiv_infection_but_not_aids"]
+
+        # infected and on ART and virally suppressed
+        dalys.loc[df.hv_inf & (df.hv_art == "on_VL_suppressed")] = self.daly_wts["hiv_infection_on_ART"]
 
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[
