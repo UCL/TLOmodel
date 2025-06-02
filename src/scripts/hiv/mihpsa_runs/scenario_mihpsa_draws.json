@@ -1,15 +1,30 @@
 {
   "scenario_script_path": "src/scripts/hiv/mihpsa_runs/scenario_mihpsa.py",
-  "scenario_seed": 28066,
+  "scenario_seed": 41104,
   "arguments": [],
   "runs_per_draw": 4,
   "draws": [
     {
       "draw_number": 0,
-      "parameters": null,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 1,
+          "scaleup_start_year": 2024
+        }
+      },
       "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Hiv": {
+          "select_mihpsa_scenario": 7,
+          "scaleup_start_year": 2024
+        }
+      },
+      "draw_name": "1"
     }
   ],
-  "commit": "cd2cf932806f5fe177fb41685e5c01d868537f6b",
-  "github": "https://github.com/UCL/TLOmodel/tree/cd2cf932806f5fe177fb41685e5c01d868537f6b"
+  "commit": "72e445b14db7b03bb5c41bd1b77cde2c5f6a2569",
+  "github": "https://github.com/UCL/TLOmodel/tree/72e445b14db7b03bb5c41bd1b77cde2c5f6a2569"
 }

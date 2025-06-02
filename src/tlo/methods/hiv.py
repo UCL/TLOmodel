@@ -2771,6 +2771,10 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         """ Do the circumcision for this man. If he is already circumcised, this is a follow-up appointment."""
+
+        if (self.module.parameters['select_mihpsa_scenario'] == 7) and self.sim.date.year >= 2030:
+            return
+
         self.number_of_occurrences += 1  # The current appointment is included in the count.
         df = self.sim.population.props  # shortcut to the dataframe
 
