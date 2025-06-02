@@ -76,6 +76,7 @@ stock_variables = [
     "N_VLS_15_UP_F",
     "N_PLHIV_15_UP_AIDS",
     "N_PLHIV_15_UP_NO_AIDS",
+    "N_Circumcised_15_49_M"
 ]
 
 flow_variables = [

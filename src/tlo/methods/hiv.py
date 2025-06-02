@@ -3514,6 +3514,10 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ MALE CIRCUMCISION ------------------------------------
         # NB. Among adult men
+        num_men_circ = len(
+            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
+        )
+
         prop_men_circ = len(
             df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
         ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
@@ -3683,6 +3687,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "N_VLS_15_UP_F": N_VLS_15_UP_F,
                 "N_PLHIV_15_UP_AIDS": N_PLHIV_15_UP_AIDS,
                 "N_PLHIV_15_UP_NO_AIDS": N_PLHIV_15_UP_NO_AIDS,
+                "N_Circumcised_15_49_M": num_men_circ,
             },
         )
 
