@@ -369,16 +369,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                     odds_ratio_health_seeking_in_adults=1.00)
         )
 
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='chosen_via_screening_for_cin_cervical_cancer',
-                    odds_ratio_health_seeking_in_adults=100.00)
-        )
-
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='chosen_xpert_screening_for_hpv_cervical_cancer',
-                    odds_ratio_health_seeking_in_adults=100.00)
-        )
-
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
