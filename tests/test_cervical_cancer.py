@@ -450,7 +450,6 @@ def test_check_all_cin_removed(seed):
     df = sim.population.props[population_of_interest]
     df_screened_cin = df[
         (df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])
-        & df['ce_hpv_cc_status'].isin(['none'])
     ]
     assert (
         df_screened_cin["ce_date_cin_removal"].notna()
