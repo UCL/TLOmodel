@@ -451,10 +451,11 @@ def test_check_all_cin_removed(seed):
     df_screened_cin = df[
         (df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])
     ]
+    assert len(df_screened_cin)
     assert (
-        df_screened_cin["ce_date_cin_removal"].notna()
-        & ((~df_screened_cin["ce_date_cryotherapy"].isna()) | (~df_screened_cin["ce_date_thermoabl"].isna()))
-        & df_screened_cin["ce_hpv_cc_status"].isin(['none'])
+        df_screened_cin["ce_date_cin_removal"].notnull()
+        & (df_screened_cin["ce_date_cryotherapy"].notnull() | df_screened_cin["ce_date_thermoabl"].notnull())
+        & (df_screened_cin["ce_hpv_cc_status"] == 'none')
     ).all(), "Some individuals with detected CIN have not had it removed ."
 
 
