@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, Set
 
 import numpy as np
 import pandas as pd
@@ -219,6 +219,7 @@ class SymptomManager(Module):
 
         self.recognised_module_names = None
         self.spurious_symptom_resolve_event = None
+        self.symptom_tracker = defaultdict(set)
 
     def get_column_name_for_symptom(self, symptom_name):
         """get the column name that corresponds to the symptom_name"""
@@ -331,6 +332,9 @@ class SymptomManager(Module):
         for property in self.PROPERTIES:
             df.at[child_id, property] = 0
 
+        # Clear bookkeeping dictionary
+        self.symptom_tracker.pop(child_id, None)
+
     def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
                        duration_in_days=None, date_of_onset=None):
         """
@@ -396,6 +400,11 @@ class SymptomManager(Module):
             self.bsh.set(person_id, disease_module.name, columns=sy_columns)
             self._persons_with_newly_onset_symptoms = self._persons_with_newly_onset_symptoms.union(person_id)
 
+            # Update symptom tracker
+            for pid in person_id:
+                for sym in symptom_string:
+                    self._symptom_tracker[pid].add(sym)
+
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
                 auto_resolve_event = SymptomManager_AutoResolveEvent(self,
@@ -417,6 +426,15 @@ class SymptomManager(Module):
 
             # Do the remove:
             self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
+
+            # Update symptom tracker. Remove if no other module is causing this symptom.
+            for pid in person_id:
+                for sym in symptom_string:
+                    if not self.bsh.has([pid], columns=self.get_column_name_for_symptom(sym)).any().any():
+                        self.symptom_tracker[pid].discard(sym)
+                # Delete person’s entry entirely if it becomes empty
+                if not self.symptom_tracker[pid]:
+                    del self.symptom_tracker[pid]
 
     def who_has(self, list_of_symptoms):
         """
@@ -600,6 +618,10 @@ class SymptomManager(Module):
 
     def reset_persons_with_newly_onset_symptoms(self):
         self._persons_with_newly_onset_symptoms.clear()
+
+    def get_current_symptoms(self, person_id: int) -> Set[str]:
+        """Get the current symptoms for a person. Works with bookkeeping dictionary"""
+        return self.symptom_tracker.get(person_id, set())
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
