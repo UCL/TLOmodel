@@ -421,9 +421,9 @@ def test_screening_age_conditions(seed):
     ]
     assert (hv_screened.dropna() >= 25).all(), "Some individuals diagnosed with HIV were screened below age 25."
 
-    # If have HIV, screening 30+
+    # If do not have HIV, screening 30+
     hv_non_screened = df.loc[
-        (df["hv_diagnosed"].eq(False)) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
+        (~df["hv_diagnosed"]) & (~df["age_at_last_screen"].isna()), "age_at_last_screen"
     ]
     assert (hv_non_screened.dropna() >= 30).all(), "Some individuals without HIV were screened below age 30."
 
