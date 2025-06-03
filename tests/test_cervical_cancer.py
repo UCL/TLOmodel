@@ -441,8 +441,7 @@ def test_check_all_cin_removed(seed):
     sim.make_initial_population(n=popsize)
 
     population_of_interest = get_population_of_interest_30_to_50(sim)
-    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'cin2'
-    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status_original"] = sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"]
+    sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'cin2'  # everyone has cin2
     check_configuration_of_population(sim)
 
     # Simulate
@@ -451,7 +450,6 @@ def test_check_all_cin_removed(seed):
     df = sim.population.props[population_of_interest]
     df_screened_cin = df[
         (df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])
-        & df['ce_hpv_cc_status_original'].isin(hpv_cin_options)
         & df['ce_hpv_cc_status'].isin(['none'])
     ]
     assert (
