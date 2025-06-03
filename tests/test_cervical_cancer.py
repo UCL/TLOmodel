@@ -386,9 +386,8 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     assert len(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F'), "ce_hpv_cc_status"]) > 0
     assert (df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F'), "ce_hpv_cc_status"].isin(["none", "hpv",
                                 "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"])).all()
-    # this list of stages incluides "late stages", so the test is not testing for stoppin progression to late stages
     yll = sim.modules['HealthBurden'].years_life_lost
-    assert 'YLL_CervicalCancer_CervicalCancer' not in yll.columns  # should address to column be yll['CervicalCancer'] as above?
+    assert 'YLL_CervicalCancer_CervicalCancer' not in yll.columns
 
 @pytest.mark.slow
 def test_screening_age_conditions(seed):
