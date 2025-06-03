@@ -76,6 +76,38 @@ def load_unit_cost_assumptions(resourcefilepath: Path) -> dict[str, dict]:
 
     return cost_inputs
 
+# Define a helper function to load necessary simulation metadata
+def load_simulation_metadata(results_folder: Path) -> tuple[dict, list[int], tuple[Date, Date]]:
+    """
+    Load simulation scenario metadata and derive key parameters.
+
+    Parameters
+    ----------
+    results_folder : Path
+        Path to the folder containing TLO model simulation results.
+
+    Returns
+    -------
+    info : dict
+        Scenario metadata including number of draws and runs per draw.
+    years : list of int
+        Full list of simulation years.
+    target_period : tuple of Date
+        Simulation date range from first to last year as TLO Date objects.
+    """
+    # Load a sample log to derive time bounds
+    log = load_pickled_dataframes(results_folder, 0, 0)
+    dates = log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']
+    first_year = min(dates).year
+    last_year = max(dates).year
+    years = list(range(first_year, last_year + 1))
+    target_period = (Date(first_year, 1, 1), Date(last_year, 12, 31))
+
+    # Get simulation info (number of draws, runs, etc.)
+    info = get_scenario_info(results_folder)
+
+    return info, years, target_period
+
 # Define a function to discount and summarise costs by cost_category
 def apply_discounting_to_cost_data(_df: pd.DataFrame,
                                     _discount_rate: Union[float, dict[int, float]] = 0,
@@ -184,16 +216,12 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     # %% Gathering basic information
     # Load basic simulation parameters
     #-------------------------------------
-    log = load_pickled_dataframes(results_folder, 0, 0)  # read from 1 draw and run
-    info = get_scenario_info(results_folder)  # get basic information about the results
+    info, years, TARGET_PERIOD = load_simulation_metadata(results_folder)
+
     if _draws is None:
         _draws = range(0, info['number_of_draws'])
     if _runs is None:
         _runs = range(0, info['runs_per_draw'])
-    final_year_of_simulation = max(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
-    first_year_of_simulation = min(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
-    years = list(range(first_year_of_simulation, final_year_of_simulation + 1)) # this is the full period of the simulation but at the end of the function, years not needed for the final cost estimate are dropped
-    TARGET_PERIOD = (Date(first_year_of_simulation, 1, 1), Date(final_year_of_simulation, 12, 31)) # Declare period for which the results will be generated (defined inclusively)
 
     # Load cost input files
     #------------------------
@@ -939,16 +967,12 @@ def estimate_projected_health_spending(resourcefilepath: Path,
     # %% Gathering basic information
     # Load basic simulation parameters
     #-------------------------------------
-    log = load_pickled_dataframes(results_folder, 0, 0)  # read from 1 draw and run
-    info = get_scenario_info(results_folder)  # get basic information about the results
+    info, years, TARGET_PERIOD = load_simulation_metadata(results_folder)
+
     if _draws is None:
         _draws = range(0, info['number_of_draws'])
     if _runs is None:
         _runs = range(0, info['runs_per_draw'])
-    final_year_of_simulation = max(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
-    first_year_of_simulation = min(log['tlo.methods.healthsystem.summary']['hsi_event_counts']['date']).year
-    if _years == None:
-        _years = list(range(first_year_of_simulation, final_year_of_simulation + 1))
 
     # Load health spending per capita projections
     #----------------------------------------
