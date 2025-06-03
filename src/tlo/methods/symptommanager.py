@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, Set
+from typing import TYPE_CHECKING, List, Optional, Sequence, Set, Union
 
 import numpy as np
 import pandas as pd
@@ -403,7 +403,7 @@ class SymptomManager(Module):
             # Update symptom tracker
             for pid in person_id:
                 for sym in symptom_string:
-                    self._symptom_tracker[pid].add(sym)
+                    self.symptom_tracker[pid].add(sym)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
@@ -430,11 +430,12 @@ class SymptomManager(Module):
             # Update symptom tracker. Remove if no other module is causing this symptom.
             for pid in person_id:
                 for sym in symptom_string:
-                    if not self.bsh.has([pid], columns=self.get_column_name_for_symptom(sym)).any().any():
+                    symptom_col = self.get_column_name_for_symptom(sym)
+                    if self.bsh.is_empty(pid, columns=symptom_col):
                         self.symptom_tracker[pid].discard(sym)
-                # Delete person’s entry entirely if it becomes empty
-                if not self.symptom_tracker[pid]:
-                    del self.symptom_tracker[pid]
+                        # Delete person’s entry entirely if it becomes empty
+                        if not self.symptom_tracker[pid]:
+                            del self.symptom_tracker[pid]
 
     def who_has(self, list_of_symptoms):
         """
@@ -600,6 +601,16 @@ class SymptomManager(Module):
         )
         sy_columns = [self.get_column_name_for_symptom(sym) for sym in self.symptom_names]
         self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
+
+        # Update bookkeeping
+        for pid in person_id:
+            for sym in self.symptom_names:
+                symptom_col = self.get_column_name_for_symptom(sym)
+                if self.bsh.is_empty(pid, columns=symptom_col):
+                    self.symptom_tracker[pid].discard(sym)
+            # Clean up if person has no symptoms left
+            if not self.symptom_tracker[pid]:
+                del self.symptom_tracker[pid]
 
     def caused_by(self, disease_module: Module):
         """Find the persons experiencing symptoms due to a particular module.
