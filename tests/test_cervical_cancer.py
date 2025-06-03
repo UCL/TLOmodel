@@ -449,8 +449,16 @@ def test_check_all_cin_removed(seed):
     sim.simulate(end_date=Date(2010, 6, 1))
 
     df = sim.population.props[population_of_interest]
-    df_screened_cin = df[(df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"]) & df['ce_hpv_cc_status_original'].isin(hpv_cin_options) & df['ce_hpv_cc_status'].isin(['none'])]
-    assert all (df_screened_cin["ce_date_cin_removal"].notna() & ((~df_screened_cin["ce_date_cryotherapy"].isna()) | (~df_screened_cin["ce_date_thermoabl"].isna())) & df_screened_cin["ce_hpv_cc_status"].isin(['none'])), "Some individuals with detected CIN have not had it removed ."
+    df_screened_cin = df[
+        (df["ce_xpert_hpv_ever_pos"] | df["ce_via_cin_ever_detected"])
+        & df['ce_hpv_cc_status_original'].isin(hpv_cin_options)
+        & df['ce_hpv_cc_status'].isin(['none'])
+    ]
+    assert (
+        df_screened_cin["ce_date_cin_removal"].notna()
+        & ((~df_screened_cin["ce_date_cryotherapy"].isna()) | (~df_screened_cin["ce_date_thermoabl"].isna()))
+        & df_screened_cin["ce_hpv_cc_status"].isin(['none'])
+    ).all(), "Some individuals with detected CIN have not had it removed ."
 
 
 def test_transition_year_logic(seed):
