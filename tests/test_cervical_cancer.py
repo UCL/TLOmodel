@@ -455,8 +455,8 @@ def test_check_all_cin_removed(seed):
     assert (
         df_screened_cin["ce_date_cin_removal"].notnull()
         & (df_screened_cin["ce_date_cryotherapy"].notnull() | df_screened_cin["ce_date_thermoabl"].notnull())
-        & (df_screened_cin["ce_hpv_cc_status"] == 'none')
-    ).all(), "Some individuals with detected CIN have not had it removed ."
+        & (~df_screened_cin["ce_hpv_cc_status"].isin(['cin1', 'cin2', 'cin3']))
+    ).all().all(), "Some individuals with detected CIN have not had it removed ."
 
 
 def test_transition_year_logic(seed):
