@@ -484,7 +484,6 @@ def test_transition_year_logic(seed):
 
     # If the screen happened after transition-year it must have been xpert
     assert screened.loc[date_screened.dt.year >= transition_year, 'ce_date_xpert'].notnull().all()
-    # assert screened.loc[date_screened.dt.year >= transition_year, 'ce_date_via'].isnull().all() ... # and not VIA (but this fails)
 
     # All VIA before transition_year unless it is a confirmation test following XPERT
     screened_by_via = df.loc[df['ce_date_via'].notnull()]
