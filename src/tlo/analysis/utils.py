@@ -241,7 +241,10 @@ def extract_draw_names(results_folder: Path) -> dict[int, str]:
     draws = [f for f in os.scandir(results_folder) if f.is_dir()]
     return {
         int(d.name):
-            load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
+            load_pickled_dataframes(results_folder,
+                                    d.name,
+                                    0,
+                                    name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
         for d in draws
     }
 
@@ -388,7 +391,8 @@ def compute_summary_statistics(
 
     if use_standard_error:
         if not central_measure == 'mean':
-            warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
+            warnings.warn(
+                "When using 'standard-error' the central measure in the summary statistics is always the mean.")
             central_measure = 'mean'
     elif central_measure is None:
         # If no argument is provided for 'central_measure' (and not using standard-error), default to using 'median'

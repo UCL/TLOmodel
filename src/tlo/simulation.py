@@ -128,7 +128,8 @@ class Simulation:
 
         if resourcefilepath is not None:
             self.resourcefilepath = Path(resourcefilepath)
-            assert self.resourcefilepath.exists(), f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
+            assert self.resourcefilepath.exists(), \
+                f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
         else:
             self.resourcefilepath = None
 

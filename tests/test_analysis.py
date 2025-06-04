@@ -646,7 +646,9 @@ def test_compute_summary_statistics():
 
     # Check that summarize() produces the expected legacy behaviour (i.e., uses mean)
     pd.testing.assert_frame_equal(
-        compute_summary_statistics(results_multiple_draws, central_measure='mean').rename(columns={'central': 'mean'}, level=1),
+        compute_summary_statistics(
+            results_multiple_draws, central_measure='mean'
+        ).rename(columns={'central': 'mean'}, level=1),
         summarize(results_multiple_draws)
     )
     pd.testing.assert_frame_equal(
@@ -654,7 +656,9 @@ def test_compute_summary_statistics():
         summarize(results_multiple_draws, only_mean=True)
     )
     pd.testing.assert_frame_equal(
-        compute_summary_statistics(results_one_draw, central_measure='mean', collapse_columns=True).rename(columns={'central': 'mean'}, level=0),
+        compute_summary_statistics(
+            results_one_draw, central_measure='mean', collapse_columns=True
+        ).rename(columns={'central': 'mean'}, level=0),
         summarize(results_one_draw, collapse_columns=True)
     )
 

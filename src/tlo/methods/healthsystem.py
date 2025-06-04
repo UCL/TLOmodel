@@ -1687,7 +1687,9 @@ class HealthSystem(Module):
         # If the current store is too small, replace it
         if len(footprints_per_event) > len(self._get_squeeze_factors_store):
             # The new array size is a multiple of `grow`
-            new_size = math.ceil(len(footprints_per_event) / self._get_squeeze_factors_store_grow) * self._get_squeeze_factors_store_grow
+            new_size = math.ceil(
+                len(footprints_per_event) / self._get_squeeze_factors_store_grow
+            ) * self._get_squeeze_factors_store_grow
             self._get_squeeze_factors_store = np.zeros(new_size)
 
         for i, footprint in enumerate(footprints_per_event):
@@ -2943,7 +2945,14 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 # If it's different
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
-                    event = HSIEventQueueItem(enforced_priority, event.topen, event.rand_queue_counter, event.queue_counter, event.tclose, event.hsi_event)
+                    event = HSIEventQueueItem(
+                        enforced_priority,
+                        event.topen,
+                        event.rand_queue_counter,
+                        event.queue_counter,
+                        event.tclose,
+                        event.hsi_event
+                    )
 
                 # Save it
                 updated_events[offset] = event
