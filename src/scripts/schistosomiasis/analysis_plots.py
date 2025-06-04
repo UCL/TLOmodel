@@ -280,7 +280,6 @@ plot_icer_three_panels(icer_district_df, context='Scale-up WASH')
 #################################################################################
 
 
-
 def plot_dalys_vs_costs_by_district(
     dalys_district_df: pd.DataFrame,
     costs_district_df: pd.DataFrame,
@@ -290,10 +289,10 @@ def plot_dalys_vs_costs_by_district(
     threshold: float = 500.0
 ):
     """
-    Plot DALYs averted vs incremental costs by district for a specified WASH strategy and comparison.
-    Points are coloured by cost-effectiveness based on a threshold ICER.
+    Plot DALYs averted (x-axis) vs incremental costs (y-axis) by district
+    for a specified WASH strategy and comparison. Points are coloured by
+    cost-effectiveness based on a threshold ICER.
     """
-
     try:
         dalys_sub = dalys_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
         costs_sub = costs_district_df.xs(wash_strategy, axis=1, level='wash_strategy')[comparison]
@@ -312,60 +311,71 @@ def plot_dalys_vs_costs_by_district(
         se_costs = costs_sub.std(axis=1, ddof=1) / np.sqrt(costs_sub.shape[1])
         ci_costs = 1.96 * se_costs
 
-        # Compute ICERs
         icers = mean_costs / mean_dalys
         cost_effective = icers < threshold
 
-        # Plot with colouring based on cost-effectiveness
-        for i, district in enumerate(districts):
+        for district in districts:
             colour = 'blue' if cost_effective[district] else 'red'
             plt.errorbar(
-                mean_costs[district], mean_dalys[district],
-                xerr=ci_costs[district], yerr=ci_dalys[district],
+                mean_dalys[district], mean_costs[district],
+                xerr=ci_dalys[district], yerr=ci_costs[district],
                 fmt='o', capsize=5, markersize=6,
                 ecolor='grey', elinewidth=1.5,
                 markerfacecolor=colour, markeredgecolor='black'
             )
-            plt.text(mean_costs[district], mean_dalys[district], district,
+            plt.text(mean_dalys[district], mean_costs[district], district,
                      fontsize=9, alpha=0.8, ha='right', va='bottom')
 
-        # Plot ICER threshold line
-        x_vals = plt.xlim()
-        x_line = np.linspace(*x_vals, 100)
-        y_line = x_line / threshold
-        plt.plot(x_line, y_line, linestyle='--', color='grey', label=f"ICER = ${threshold:.0f}/DALY")
+        # Axis range padding
+        x_min, x_max = mean_dalys.min(), mean_dalys.max()
+        y_min, y_max = mean_costs.min(), mean_costs.max()
+        x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
+        y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
+        plt.xlim(x_min - x_pad, x_max + x_pad)
+        plt.ylim(y_min - y_pad, y_max + y_pad)
 
+        # ICER threshold line: cost = threshold × DALY
+        x_line = np.linspace(*plt.xlim(), 100)
+        y_line = threshold * x_line
+        plt.plot(x_line, y_line, linestyle='--', color='grey', label=f"ICER = ${threshold:.0f}/DALY")
         plt.legend(loc='best')
 
     else:
         num_runs = dalys_sub.shape[1]
-        colors = plt.cm.viridis(np.linspace(0, 1, num_runs))
+        colours = plt.cm.viridis(np.linspace(0, 1, num_runs))
 
         for run_idx in range(num_runs):
             plt.scatter(
-                costs_sub.iloc[:, run_idx],
                 dalys_sub.iloc[:, run_idx],
+                costs_sub.iloc[:, run_idx],
                 label=f'Run {run_idx + 1}',
-                color=colors[run_idx],
+                color=colours[run_idx],
                 alpha=0.7,
                 s=40,
                 edgecolors='none'
             )
 
-        mean_costs = costs_sub.mean(axis=1)
         mean_dalys = dalys_sub.mean(axis=1)
-        for district, x, y in zip(districts, mean_costs, mean_dalys):
+        mean_costs = costs_sub.mean(axis=1)
+        for district, x, y in zip(districts, mean_dalys, mean_costs):
             plt.text(x, y, district, fontsize=9, alpha=0.8,
                      horizontalalignment='right', verticalalignment='bottom')
 
-        # plt.legend(title='Simulation Runs', bbox_to_anchor=(1.05, 1), loc='upper left')
+        x_min, x_max = dalys_sub.values.min(), dalys_sub.values.max()
+        y_min, y_max = costs_sub.values.min(), costs_sub.values.max()
+        x_pad = 0.1 * (x_max - x_min) if x_max > x_min else 1
+        y_pad = 0.1 * (y_max - y_min) if y_max > y_min else 1
+        plt.xlim(x_min - x_pad, x_max + x_pad)
+        plt.ylim(y_min - y_pad, y_max + y_pad)
 
-    plt.xlabel('Incremental Costs (USD)')
-    plt.ylabel('DALYs Averted')
-    plt.title(f'DALYs vs Incremental Costs by District\nStrategy: {wash_strategy} | Comparison: {comparison}')
+    plt.xlabel('DALYs Averted')
+    plt.ylabel('Incremental Costs (USD)')
+    plt.title(f'Incremental Costs vs DALYs Averted by District\nStrategy: {wash_strategy} | Comparison: {comparison}')
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     plt.show()
+
+
 
 
 file_path = results_folder / f'sum_incremental_dalys_averted_district2024-2040.xlsx'
@@ -423,7 +433,7 @@ plot_dalys_vs_costs_by_district(
     wash_strategy='Continue WASH',
     comparison='MDA PSAC vs MDA SAC',
     plot_summary=True,
-    threshold=120
+    threshold=61
 )
 
 plot_dalys_vs_costs_by_district(
