@@ -97,9 +97,17 @@ cost_by_draw = input_costs.groupby(['draw', 'stat'])['cost'].sum()
 undiscounted_cost_by_draw = input_costs_undiscounted.groupby(['draw', 'stat'])['cost'].sum()
 
 # Abstract
+consumable_cost_by_draw = input_costs[(input_costs.cost_category == 'medical consumables') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
 print(f"Under current system capacity, total healthcare delivery costs for 2023–2030 were estimated at \$"
       f"{cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], averaging \$"
-      f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] annually.")
+      f"{undiscounted_cost_by_draw[0,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[0,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[0,'upper']/1e6/number_of_years_costed:,.2f}m] annually."
+      f" Scenario analysis revealed the importance of health system interdependencies: improving consumable availability alone led to a modest "
+      f"{(consumable_cost_by_draw[5]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f" increase in consumables cost due to constraints in the health workforce. In contrast, expanding human resources for health (HRH) increased consumables costs by "
+      f"{(consumable_cost_by_draw[3]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%"
+      f", while jointly expanding HRH and consumable availability raised consumables costs by "
+      f"{(consumable_cost_by_draw[8]/consumable_cost_by_draw[0] - 1) * 100:.2f}\%, "
+      f"illustrating how bottlenecks in one component limit the effect of changes in another.")
 # Results 1
 print(f"The total cost of healthcare delivery in Malawi between 2023 and 2030 was estimated to be "
       f"\${cost_by_draw[0,'mean']/1e9:,.2f} billion [95\% confidence interval (CI), \${cost_by_draw[0,'lower']/1e9:,.2f}b - \${cost_by_draw[0,'upper']/1e9:,.2f}b], under the actual scenario, and increased to "
@@ -113,7 +121,6 @@ print(f"This translates to an average annual cost of "
       f"\${undiscounted_cost_by_draw[3,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[3,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[3,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH scenario and finally "
       f"\${undiscounted_cost_by_draw[8,'mean']/1e6/number_of_years_costed:,.2f} million [\${undiscounted_cost_by_draw[8,'lower']/1e6/number_of_years_costed:,.2f}m - \${undiscounted_cost_by_draw[8,'upper']/1e6/number_of_years_costed:,.2f}m] under the expanded HRH + improved consumable availability scenario.")
 # Results 3
-consumable_cost_by_draw = input_costs[(input_costs.cost_category == 'medical consumables') & (input_costs.stat == 'mean')].groupby(['draw'])['cost'].sum()
 print(f"Notably, improving consumable availability alone increases the cost of medical consumables by just "
       f"{(consumable_cost_by_draw[5]/consumable_cost_by_draw[0] - 1) * 100:.2f}\% "
       f"because the limited health workforce (HRH) restricts the number of feasible appointments and, consequently, the quantity of consumables dispensed. "
@@ -362,11 +369,4 @@ plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district', _outputfilepat
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'item_code', _outputfilepath = figurespath)
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'category', _outputfilepath = figurespath)
 
-print(f"Inflow to Outflow ratio by consumable varies from "
-      f"{round(min(inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean()),2)} "
-      f"to {round(max(inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean()),2)}")
-
-inflow_to_outflow_ratio_by_item = inflow_to_outflow_ratio.groupby('item_code')['inflow_to_outflow_ratio'].mean().reset_index().rename(columns = {0: 'inflow_to_outflow_ratio'})
-inflow_to_outflow_ratio_by_item[inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio == min(inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio)]['item_code']
-inflow_to_outflow_ratio_by_item[inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio == max(inflow_to_outflow_ratio_by_item.inflow_to_outflow_ratio)]['item_code']
-
+print(f"Inflow to Outflow
