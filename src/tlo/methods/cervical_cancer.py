@@ -17,12 +17,11 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.cancer_consumables import get_consumable_item_codes_cancers
 from tlo.methods.causes import Cause
-from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -973,8 +972,30 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         for person_id in selected_to_die:
             random_death_date = pd.Timestamp(rng.uniform(date_min.value, date_max.value), unit='ns')
             self.sim.schedule_event(
-                InstantaneousDeath(self.module, person_id, "CervicalCancer"), random_death_date
+                CervicalCancer_DeathInStage4(self.module, person_id), random_death_date
             )
+
+# ---------------------------------------------------------------------------------------------------------
+#   NATURAL HISTORY EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class CervicalCancer_DeathInStage4(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+
+        person = self.sim.population.props.loc[person_id, ['is_alive', 'ce_hpv_cc_status']]
+
+        # Only kill the person is they are alive and still in stage4
+        if not (person['is_alive'] and (person['ce_hpv_cc_status'] == 'stage4')):
+            return
+
+        self.sim.modules['Demography'].do_death(individual_id=person_id,
+                                                originating_module=self.module,
+                                                cause='CervicalCancer')
+
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -1267,7 +1288,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "ce_biopsy"] = True
 
             # If biopsy confirms that individual does not have cervical cancer but CIN is detected, then individual is sent for CIN treatment
-            if (not dx_result) and (df.at[person_id, 'ce_hpv_cc_status'] in (p['hpv_cin_options']) ):
+            if (not dx_result) and (df.at[person_id, 'ce_hpv_cc_status'] in (p['hpv_cin_options'])):
                 self.module.perform_cin_procedure(self, person_id)
 
             # If biopsy confirms that individual has cervical cancer, register diagnosis and either refer to treatment or palliative care
@@ -1334,7 +1355,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, "ce_hpv_cc_status"] == 'stage4':
             logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_CervicalCancer_StartTreatment,"
                                                "scheduling HSI_CervicalCancer_PalliativeCare")
-
             hs.schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_PalliativeCare(
                      module=self.module,
@@ -1366,11 +1386,16 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes=self.module.item_codes_cervical_can['cervical_cancer_treatment_chemotherapy_cisplatin'],
                 optional_item_codes=self.module.item_codes_cervical_can['iv_drug_cons']
             )
+
             if not chemo_cons_available:
-                chemo_cons_available = self.get_consumables(
-                    item_codes=self.module.item_codes_cervical_can['cervical_cancer_treatment_chemotherapy_fluorouracil'],
+                # attempt to get second_lines (if they are not available, there will be no treatment
+                chemo_cons_available_second_line = self.get_consumables(
+                    item_codes=self.module.item_codes_cervical_can[
+                        'cervical_cancer_treatment_chemotherapy_fluorouracil'],
                     optional_item_codes=self.module.item_codes_cervical_can['iv_drug_cons']
                 )
+                if not chemo_cons_available_second_line:
+                    return
 
             # Record date and stage of starting treatment
             df.at[person_id, "ce_date_treatment"] = self.sim.date
@@ -1386,39 +1411,25 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
             # cure individual based on corresponding probabilities
-            random_value = rng.random()
+            current_stage = df.at[person_id, "ce_hpv_cc_status"]
+            if current_stage == "stage1":
+                prob_cure_at_this_stage = p['prob_cure_stage1']
+            elif current_stage == "stage2a":
+                prob_cure_at_this_stage = p['prob_cure_stage2a']
+            elif current_stage == "stage2b":
+                prob_cure_at_this_stage = p['prob_cure_stage2b']
+            elif current_stage == "stage3":
+                prob_cure_at_this_stage = p['prob_cure_stage3']
+            else:
+                prob_cure_at_this_stage = 1.0
 
-            if (random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_hpv_cc_status"] == "stage1"
-                and df.at[person_id, "ce_date_treatment"] == self.sim.date):
-                df.at[person_id, "ce_hpv_cc_status"] = 'none'
+            treatment_will_be_successful = rng.random() <= prob_cure_at_this_stage
+
+            if treatment_will_be_successful:
+                # Reset properties for this person at this episode is, in effect, over.
+                df.at[person_id, "ce_hpv_cc_status"] = 'none'  # <-- this will prevent the DeathInStage4 Event doing anything
                 df.at[person_id, 'ce_current_cc_diagnosed'] = False
                 df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
-            else:
-                df.at[person_id, "ce_hpv_cc_status"] = 'stage1'
-
-            if (random_value <= p['prob_cure_stage2a'] and df.at[person_id, "ce_hpv_cc_status"] == "stage2a"
-                and df.at[person_id, "ce_date_treatment"] == self.sim.date):
-                df.at[person_id, "ce_hpv_cc_status"] = 'none'
-                df.at[person_id, 'ce_current_cc_diagnosed'] = False
-                df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
-            else:
-                df.at[person_id, "ce_hpv_cc_status"] = 'stage2a'
-
-            if (random_value <= p['prob_cure_stage2b'] and df.at[person_id, "ce_hpv_cc_status"] == "stage2b"
-                and df.at[person_id, "ce_date_treatment"] == self.sim.date):
-                df.at[person_id, "ce_hpv_cc_status"] = 'none'
-                df.at[person_id, 'ce_current_cc_diagnosed'] = False
-                df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
-            else:
-                df.at[person_id, "ce_hpv_cc_status"] = 'stage2b'
-
-            if (random_value <= p['prob_cure_stage3'] and df.at[person_id, "ce_hpv_cc_status"] == "stage3"
-                and df.at[person_id, "ce_date_treatment"] == self.sim.date):
-                df.at[person_id, "ce_hpv_cc_status"] = 'none'
-                df.at[person_id, 'ce_current_cc_diagnosed'] = False
-                df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
-            else:
-                df.at[person_id, "ce_hpv_cc_status"] = 'stage3'
 
             # Schedule a post-treatment check for 3 months:
             hs.schedule_hsi_event(
@@ -1450,13 +1461,8 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
 
-        if pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
-            logger.warning(key="warning", data="Person treated for cervical cancer does not have diagnosis date")
-        if pd.isnull(df.at[person_id, "ce_date_treatment"]):
-            logger.warning(key="warning", data="Person treated for cervical cancer does not have treatment date")
-
         if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
-            # If has progressed to stage4, then start Palliative Care immediately:
+            # If person has progressed to stage4, then start Palliative Care immediately:
             hs.schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_PalliativeCare(
                     module=self.module,
@@ -1468,38 +1474,25 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            if df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(years=1)):
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
-                    module=self.module,
-                    person_id=person_id
-                    ),
-                    topen=self.sim.date + DateOffset(months=3),
-                    tclose=None,
-                    priority=0
-                )
-            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(years=1)) \
-                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(years=3)):
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
-                    module=self.module,
-                    person_id=person_id
-                    ),
-                    topen=self.sim.date + DateOffset(months=6),
-                    tclose=None,
-                    priority=0
-                )
-            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(years=3)) \
-                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(years=5)):
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
-                    module=self.module,
-                    person_id=person_id
-                    ),
-                    topen=self.sim.date + DateOffset(months=12),
-                    tclose=None,
-                    priority=0
-                )
+            months_since_treatment = int((self.sim.date - df.at[person_id, 'ce_date_treatment']) // pd.Timedelta(days=30))
+
+            if months_since_treatment < 12:
+                months_to_next_appt = 3
+            elif 12 <= months_since_treatment < 36:
+                months_to_next_appt = 6
+            elif 36 <= months_since_treatment < 60:
+                months_to_next_appt = 12
+            else:
+                return  # no more follow-up appointments
+
+            hs.schedule_hsi_event(
+                self,
+                topen=self.sim.date + DateOffset(months=months_to_next_appt),
+                tclose=None,
+                priority=0
+            )
+
+
 
 class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1519,6 +1512,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': int(p['palliative_care_bed_days'])})
+        self.item_codes = self.module.item_codes_cervical_can['palliation']
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1529,8 +1523,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             logger.warning(key="warning", data="Person with palliative care not in stage 4.")
 
         # Check consumables are available
-        cons_available = self.get_consumables(
-            item_codes=self.module.item_codes_cervical_can['palliation'])
+        cons_available = self.get_consumables(item_codes=self.cons_item_codes)
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
@@ -1542,10 +1535,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
             # Schedule another instance of the event for one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_PalliativeCare(
-                    module=self.module,
-                    person_id=person_id
-                ),
+                self,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=None,
                 priority=0
