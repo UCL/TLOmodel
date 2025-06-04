@@ -87,7 +87,8 @@ class SimplifiedBirths(Module):
 
     def __init__(self, name=None, force_one_birth_for_one_death: bool = False):
         super().__init__(name)
-        self.force_one_birth_for_one_death = force_one_birth_for_one_death  # Whether to use the _really_ simplified mode, whereby number of births is just equal to number of deaths
+        # Whether to use the _really_ simplified mode, whereby number of births is just equal to number of deaths
+        self.force_one_birth_for_one_death = force_one_birth_for_one_death
         self.asfr = dict()
 
         # Define defaults for properties:
@@ -198,16 +199,19 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
                     ]
 
                 num_of_deaths_since_last_poll = len(df.loc[
-                    ~df.is_alive & df.date_of_birth.notnull() & df.date_of_death.between(self.date_of_last_poll, self.sim.date, inclusive='left')
+                    ~df.is_alive & df.date_of_birth.notnull() & df.date_of_death.between(
+                        self.date_of_last_poll, self.sim.date, inclusive='left')
                 ])
 
-                return self.module.rng.choice(eligible_for_pregnancy.index, size=num_of_deaths_since_last_poll, replace=False, p=None)
+                return self.module.rng.choice(
+                    eligible_for_pregnancy.index, size=num_of_deaths_since_last_poll, replace=False, p=None)
 
             else:
-                # Rate of pregnancy is based on age-specific fertility rates under assumption that every pregnancy results in a birth.
+                # Rate of pregnancy is based on age-specific fertility rates under
+                # assumption that every pregnancy results in a birth.
 
-
-                # find probability of becoming pregnant (using asfr for the year, limiting to alive, non-pregnant females)
+                # find probability of becoming pregnant
+                # (using asfr for the year, limiting to alive, non-pregnant females)
                 prob_preg = df.loc[
                     (df.sex == 'F') & df.is_alive & ~df.is_pregnant
                     ]['age_range'].map(self.asfr[self.sim.date.year]).fillna(0)
