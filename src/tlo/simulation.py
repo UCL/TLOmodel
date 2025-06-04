@@ -106,7 +106,6 @@ class Simulation:
         self.end_date = None
         self.output_file = None
         self.population: Optional[Population] = None
-        self.param_labels_data = {}
 
         self.show_progress_bar = show_progress_bar
         self.resourcefilepath = Path(resourcefilepath)
