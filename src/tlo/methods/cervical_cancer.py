@@ -224,13 +224,13 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "palliative_care_bed_days"
         ),
         "stage_1_3_daly_wt": Parameter(
-            Types.REAL, "stage_1_3_daly_wt"
+            Types.REAL, "GBD sequalae code corresponding to stage_1_3_daly_wt"
         ),
         "stage_1_3_treated_daly_wt": Parameter(
-            Types.REAL, "stage_1_3_treated_daly_wt"
+            Types.REAL, "GBD sequalae code corresponding to stage_1_3_treated_daly_wt"
         ),
         "stage4_daly_wt": Parameter(
-            Types.REAL, "stage4_daly_wt"
+            Types.REAL, "GBD sequalae code corresponding tostage4_daly_wt"
         ),
         "min_yrs_between_screening_if_cin_treated": Parameter(
             Types.REAL, "minimum years between screening if individual has been treated for CIN previously"
