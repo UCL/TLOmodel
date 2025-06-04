@@ -1291,7 +1291,7 @@ def get_parameters_for_standard_mode2_runs() -> Dict:
             "spurious_symptoms": True,
         },
         "HealthSystem": {
-            'Service_Availability': ['*'],
+            'service_availability': ['*'],
             "use_funded_or_actual_staffing": "actual",
             "mode_appt_constraints": 1,
             "mode_appt_constraints_postSwitch": 2, # <-- Include a transition to mode 2, to pick up any issues with this
@@ -1330,7 +1330,7 @@ def get_parameters_for_hrh_historical_scaling_and_rescaling_for_mode2() -> Dict:
             "spurious_symptoms": True,
         },
         "HealthSystem": {
-            'Service_Availability': ['*'],
+            'service_availability': ['*'],
             "use_funded_or_actual_staffing": "actual",
             "mode_appt_constraints": 1,
             "mode_appt_constraints_postSwitch": 2,
