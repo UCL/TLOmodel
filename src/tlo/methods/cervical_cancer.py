@@ -935,9 +935,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # vaginal bleeding.  Once the symptom is developed it never resolves naturally. It may trigger
         # health-care-seeking behaviour.
         onset_vaginal_bleeding = self.module.lm_onset_vaginal_bleeding.predict(
-            df.loc[
-                np.bitwise_and(df.is_alive, df.ce_stage_at_diagnosis == 'none')
-            ],
+            df.loc[df.is_alive &  (df.ce_stage_at_diagnosis == 'none')],
             rng
         )
 
