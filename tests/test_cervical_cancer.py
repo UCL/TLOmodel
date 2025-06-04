@@ -36,7 +36,8 @@ hpv_stage_options = ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']
 # %% Construction of simulation objects:
 def make_simulation_healthsystemdisabled(seed):
     """Make the simulation with:
-    * the demography module with the OtherDeathsPoll not running
+    * All HSI occur
+    * All Consumables available
     """
     sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
@@ -45,13 +46,13 @@ def make_simulation_healthsystemdisabled(seed):
                  cervical_cancer.CervicalCancer(),
                  simplified_births.SimplifiedBirths(),
                  enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=True),
+                 healthsystem.HealthSystem(disable=True, cons_availability='all'),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  healthburden.HealthBurden(),
                  epi.Epi(),
-                 tb.Tb(run_with_checks=False),
-                 hiv.Hiv(run_with_checks=False)
+                 tb.DummyTbModule(),
+                 hiv.DummyHivModule(),
                  )
 
     return sim
@@ -73,8 +74,8 @@ def make_simulation_nohsi(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  healthburden.HealthBurden(),
                  epi.Epi(),
-                 tb.Tb(run_with_checks=False),
-                 hiv.Hiv(run_with_checks=False)
+                 tb.DummyTbModule(),
+                 hiv.DummyHivModule(),
                  )
 
     return sim
@@ -140,13 +141,22 @@ def make_vaginal_bleeding_referral_perfect(sim):
     sim.modules['CervicalCancer'].parameters['prob_referral_biopsy_given_vaginal_bleeding']  = 1.0
     return sim
 
+def make_biopsy_accuracy_perfect(sim):
+    # Biopsy is perfectly sensitive
+    sim.modules['CervicalCancer'].parameters['sensitivity_of_biopsy_for_cervical_cancer'] = 1.0
+    return sim
+
 def make_treamtment_perfectly_effective(sim):
     # All get symptoms and treatment effect of 1.0 will stop progression
-    sim.modules['CervicalCancer'].parameters['r_vaginal_bleeding_cc_stage1'] = 1.0
     sim.modules['CervicalCancer'].parameters['prob_cure_stage1'] = 1.0
     sim.modules['CervicalCancer'].parameters['prob_cure_stage2a'] = 1.0
     sim.modules['CervicalCancer'].parameters['prob_cure_stage2b'] = 1.0
     sim.modules['CervicalCancer'].parameters['prob_cure_stage3'] = 1.0
+    return sim
+
+def make_perfect_healthcare_seeking(sim):
+    # Force that everyone seeks care with onset of a symptom
+    sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = True
     return sim
 
 
@@ -287,6 +297,10 @@ def test_check_progression_through_stages_is_happening(seed):
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
+    # Look at distribution of status:
+    distr = sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"].value_counts(normalize=True)
+    assert (distr.loc[['stage2a', 'stage2b', 'stage3', 'stage4']] > 0.0).all()
+
     # check that some people have died of cervical cancer
     yll = sim.modules['HealthBurden'].years_life_lost
     assert yll['CervicalCancer'].sum() > 0
@@ -322,7 +336,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"] = 'stage1'
 
     # Simulate
-    sim.simulate(end_date=Date(2010, 7, 1))
+    sim.simulate(end_date=Date(2010, 8, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
@@ -341,7 +355,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
 
 
 @pytest.mark.slow
-def test_check_progression_through_stages_is_blocked_by_treatment(seed):
+def test_check_progression_to_death_is_blocked_by_treatment(seed):
     """Put all people into the first stage but on treatment, let progression happen, and check that people do move into
     a late stage or die"""
     sim = make_simulation_healthsystemdisabled(seed=seed)
@@ -352,7 +366,16 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     # no incidence of new cases
     sim = zero_rate_of_onset_lgd(sim)
 
-    # remove effect of treatment:
+    # make everyone with a symptom seek care
+    sim = make_perfect_healthcare_seeking(sim)
+
+    # make all persons with symptoms be perfectly referred to care
+    sim = make_vaginal_bleeding_referral_perfect(sim)
+
+    # make biopsy perfect
+    sim = make_biopsy_accuracy_perfect(sim)
+
+    # make treatment percectly effective:
     sim = make_treamtment_perfectly_effective(sim)
 
     # increase progression rates:
@@ -373,17 +396,13 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
         add_or_remove='+',
         disease_module=sim.modules['CervicalCancer']
     )
-
     check_configuration_of_population(sim)
 
     # Simulate
-    sim.simulate(end_date=Date(2010, 7, 1))
+    sim.simulate(end_date=Date(2010, 8, 1))
     check_dtypes(sim)
 
-    df = sim.population.props
-    assert len(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F'), "ce_hpv_cc_status"]) > 0
-    assert (df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F'), "ce_hpv_cc_status"].isin(["none", "hpv",
-                                "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"])).all()
+    # there should have been no year of live lost to cervical cancer
     yll = sim.modules['HealthBurden'].years_life_lost
     assert 'CervicalCancer' not in yll.columns
 
