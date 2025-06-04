@@ -85,9 +85,9 @@ class SimplifiedBirths(Module):
                                             categories=['none', 'non_exclusive', 'exclusive']),
     }
 
-    def __init__(self, name=None, one_for_one_births_and_deaths: bool = False):
+    def __init__(self, name=None, force_one_birth_for_one_death: bool = False):
         super().__init__(name)
-        self.one_for_one_births_and_deaths = one_for_one_births_and_deaths  # Whether to use the _really_ simplified mode, whereby number of births is just equal to number of deaths
+        self.force_one_birth_for_one_death = force_one_birth_for_one_death  # Whether to use the _really_ simplified mode, whereby number of births is just equal to number of deaths
         self.asfr = dict()
 
         # Define defaults for properties:
@@ -186,15 +186,15 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
             df.loc[ids, 'si_date_of_last_delivery'] = \
                 self.sim.date + pd.DateOffset(months=months_between_pregnancy_and_delivery)
 
-        def _choose_women_to_make_pregnant(one_for_one_births_and_deaths: bool, df: pd.DataFrame) -> List[int]:
+        def _choose_women_to_make_pregnant(one_birth_for_one_death: bool, df: pd.DataFrame) -> List[int]:
             """Choose women to make pregnant, depending on mode."""
 
-            if one_for_one_births_and_deaths:
+            if one_birth_for_one_death:
                 # Rate of pregnancy matches number of deaths: simple assumption and induces stable population size
-                # Non-pregnant women aged 15-35 are selected randomly for pregnancy:
+                # Non-pregnant women aged [15, 35) are selected randomly for pregnancy:
 
                 eligible_for_pregnancy = df.loc[
-                    (df.sex == 'F') & df.is_alive & ~df.is_pregnant & df.age_exact_years.between(15, 35)
+                    (df.sex == 'F') & df.is_alive & ~df.is_pregnant & df.age_years.between(15, 35, inclusive='left')
                     ]
 
                 num_of_deaths_since_last_poll = len(df.loc[
@@ -218,7 +218,7 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
                 ]
 
         df = self.sim.population.props  # get the population dataframe
-        women_to_make_pregnant = _choose_women_to_make_pregnant(self.module.one_for_one_births_and_deaths, df)
+        women_to_make_pregnant = _choose_women_to_make_pregnant(self.force_one_birth_for_one_death, df)
         _make_pregnant(ids=women_to_make_pregnant,
                        df=df,
                        months_between_pregnancy_and_delivery=self.module.parameters['months_between_pregnancy_and_delivery'])
