@@ -68,8 +68,7 @@ def make_simulation_nohsi(seed):
                  cervical_cancer.CervicalCancer(),
                  simplified_births.SimplifiedBirths(),
                  enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=False,
-                                           service_availability=[]),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
                  symptommanager.SymptomManager(),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  healthburden.HealthBurden(),
@@ -386,7 +385,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment(seed):
     assert (df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'F'), "ce_hpv_cc_status"].isin(["none", "hpv",
                                 "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"])).all()
     yll = sim.modules['HealthBurden'].years_life_lost
-    assert 'YLL_CervicalCancer_CervicalCancer' not in yll.columns
+    assert 'CervicalCancer' not in yll.columns
 
 @pytest.mark.slow
 def test_screening_age_conditions(seed):
