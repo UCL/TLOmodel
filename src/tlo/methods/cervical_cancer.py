@@ -1,11 +1,6 @@
 """
 Cervical Cancer Disease Module
 
-Limitations to note:
-At some point we may need to specify the treatment eg total hysterectomy plus or minus chemotherapy
-but we agree not now
-Consider in future making hpv acquisition risk depend on current prevalence of hpv
-
 """
 
 from __future__ import annotations
@@ -243,10 +238,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "minimum years between screening if individual has been treated for CIN previously"
         )
     }
-
-    """
-    note: hpv vaccination is in epi.py
-    """
 
     PROPERTIES = {
         "ce_hpv_cc_status": Property(
