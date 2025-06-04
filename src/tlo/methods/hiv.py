@@ -3591,6 +3591,8 @@ class DummyHivModule(Module):
         "hv_inf": Property(Types.BOOL, "DUMMY version of the property for hv_inf"),
         "hv_art": Property(Types.CATEGORICAL, "DUMMY version of the property for hv_art.",
                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
+        "hv_diagnosed": Property(Types.BOOL, "DUMMY version of the property for hv_diagnosed.",
+                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
     }
 
     def __init__(self, name=None, hiv_prev=0.1, art_cov=0.75):
@@ -3607,6 +3609,7 @@ class DummyHivModule(Module):
         df.loc[(df.is_alive & df.hv_inf), "hv_art"] = pd.Series(
             self.rng.rand(sum(df.is_alive & df.hv_inf)) < self.art_cov).replace(
             {True: "on_VL_suppressed", False: "not"}).values
+        df.loc[(df.is_alive & df.hv_inf), "hv_diagnosed"] = self.rng.random_sample(len(df.loc[(df.is_alive & df.hv_inf)])) < 0.5
 
     def initialise_simulation(self, sim):
         pass
@@ -3617,3 +3620,4 @@ class DummyHivModule(Module):
 
         if df.at[child, "hv_inf"]:
             df.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
+            df.at[child, "hv_diagnosed"] = self.rng.rand() < 0.5
