@@ -38,20 +38,20 @@ def make_simulation_healthsystemdisabled(seed):
     """Make the simulation with:
     * the demography module with the OtherDeathsPoll not running
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath, run_with_checks=False),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
+    sim.register(demography.Demography(),
+                 cervical_cancer.CervicalCancer(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 epi.Epi(),
+                 tb.Tb(run_with_checks=False),
+                 hiv.Hiv(run_with_checks=False)
                  )
 
     return sim
@@ -61,22 +61,21 @@ def make_simulation_nohsi(seed):
     """Make the simulation with:
     * the healthsystem enable but with no service availabilty (so no HSI run)
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
+    sim.register(demography.Demography(),
+                 cervical_cancer.CervicalCancer(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False,
                                            service_availability=[]),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath, run_with_checks=False),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 epi.Epi(),
+                 tb.Tb(run_with_checks=False),
+                 hiv.Hiv(run_with_checks=False)
                  )
 
     return sim

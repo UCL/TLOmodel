@@ -11,7 +11,7 @@ Consider in future making hpv acquisition risk depend on current prevalence of h
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -354,12 +354,12 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         )
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, now including disability weights"""
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            read_csv_files(Path(self.resourcefilepath) / "ResourceFile_Cervical_Cancer",
+            read_csv_files(Path(resourcefilepath) / "ResourceFile_Cervical_Cancer",
                            files="parameter_values")
         )
 
