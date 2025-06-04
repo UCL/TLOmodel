@@ -20,7 +20,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.util import read_csv_files
+from tlo.util import read_csv_files, random_date
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -930,7 +930,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 tclose=None
             )
 
-    # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
+        # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
         # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
         # vaginal bleeding.  Once the symptom is developed it never resolves naturally. It may trigger
         # health-care-seeking behaviour.
@@ -957,7 +957,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         date_min = self.sim.date
         date_max = self.sim.date + pd.DateOffset(days=days_spread)
         for person_id in selected_to_die:
-            random_death_date = pd.Timestamp(rng.uniform(date_min.value, date_max.value), unit='ns')
+            random_death_date = random_date(date_min, date_max, rng)
             self.sim.schedule_event(
                 CervicalCancer_DeathInStage4(self.module, person_id), random_death_date
             )
@@ -1030,16 +1030,10 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
                 df.at[person_id, 'ce_via_cin_ever_detected'] = True
 
                 # CIN removal if suspected CIN2 or CIN3
-                if (df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
-                            ):
+                if df.at[person_id, 'ce_hpv_cc_status'] in ['cin2', 'cin3']:
                     self.module.perform_cin_procedure(self,person_id)
                 # Biopsy if suspected Stage 1 to Stage 4
-                elif (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
+                elif df.at[person_id, 'ce_hpv_cc_status'] in ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']:
                     hs.schedule_hsi_event(
                         hsi_event=HSI_CervicalCancer_Biopsy(
                             module=self.module,
@@ -1279,11 +1273,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
                 self.module.perform_cin_procedure(self, person_id)
 
             # If biopsy confirms that individual has cervical cancer, register diagnosis and either refer to treatment or palliative care
-            elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
-                            or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
+            elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']):
                 # Record date of diagnosis:
                 df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
                 df.at[person_id, 'ce_stage_at_diagnosis'] = df.at[person_id, 'ce_hpv_cc_status']
@@ -1304,8 +1294,8 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
                         topen=self.sim.date,
                         tclose=None
                     )
-
-                if in_stage4:
+                else:
+                    # person is in_stage4:
                     # start palliative care:
                     hs.schedule_hsi_event(
                         hsi_event=HSI_CervicalCancer_PalliativeCare(
