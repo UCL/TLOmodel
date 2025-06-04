@@ -252,17 +252,14 @@ class Demography(Module):
             init_pop,
             max_age=self.parameters['max_age_initial']
         )
-
         if self.equal_allocation_by_district:
-            init_pop_scaled = self._edit_init_pop_so_that_equal_number_in_each_district(init_pop)
-        else:
-            init_pop_scaled = init_pop
+            init_pop = self._edit_init_pop_so_that_equal_number_in_each_district(init_pop)
 
         # randomly pick from the init_pop sheet, to allocate characteristic to each person in the df
-        demog_char_to_assign = init_pop_scaled.iloc[self.rng.choice(init_pop_scaled.index.values,
+        demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
                                                              size=len(df),
                                                              replace=True,
-                                                             p=init_pop_scaled.prob)][
+                                                             p=init_pop.prob)][
             ['District', 'District_Num', 'Region', 'Sex', 'Age']] \
             .reset_index(drop=True)
 
