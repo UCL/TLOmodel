@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -332,9 +333,6 @@ class SymptomManager(Module):
         for property in self.PROPERTIES:
             df.at[child_id, property] = 0
 
-        # Clear bookkeeping dictionary
-        self.symptom_tracker.pop(child_id, None)
-
     def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
                        duration_in_days=None, date_of_onset=None):
         """
@@ -402,8 +400,7 @@ class SymptomManager(Module):
 
             # Update symptom tracker
             for pid in person_id:
-                for sym in symptom_string:
-                    self.symptom_tracker[pid].add(sym)
+                self.symptom_tracker[pid] |= set(symptom_string)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
@@ -482,7 +479,7 @@ class SymptomManager(Module):
             & self.bsh.is_empty(
                 slice(None), columns=self.get_column_name_for_symptom(symptom_string)
             )
-        ]
+            ]
 
     def has_what(
         self,
@@ -523,10 +520,10 @@ class SymptomManager(Module):
                     symptom
                     for symptom in self.symptom_names
                     if individual_details[
-                        self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
-                    ]
-                    & int_repr
-                    != 0
+                           self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
+                       ]
+                       & int_repr
+                       != 0
                 ]
             else:
                 return [
@@ -634,6 +631,7 @@ class SymptomManager(Module):
         """Get the current symptoms for a person. Works with bookkeeping dictionary"""
         return self.symptom_tracker.get(person_id, set())
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -730,7 +728,6 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
             do_not_have_symptom = self.module.who_not_have(symptom_string=symp)
 
             for group in ['children', 'adults']:
-
                 p = self.generic_symptoms['prob_per_day'][group][symp]
                 dur = self.generic_symptoms['duration_in_days'][group][symp]
                 persons_eligible_to_get_symptom = group_indices[group][
@@ -738,14 +735,14 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
                 ]
                 persons_to_onset_with_this_symptom = persons_eligible_to_get_symptom[
                     self.rand(len(persons_eligible_to_get_symptom)) < p
-                ]
+                    ]
 
                 # Do onset
                 self.sim.modules['SymptomManager'].change_symptom(
                     symptom_string=symp,
                     add_or_remove='+',
                     person_id=persons_to_onset_with_this_symptom,
-                    duration_in_days=None,   # <- resolution for these is handled by the SpuriousSymptomsResolve Event
+                    duration_in_days=None,  # <- resolution for these is handled by the SpuriousSymptomsResolve Event
                     disease_module=self.module,
                 )
 
