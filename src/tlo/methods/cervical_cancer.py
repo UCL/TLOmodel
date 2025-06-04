@@ -338,7 +338,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "ce_biopsy": Property(
             Types.BOOL,
-            "ce biopsy done"
+            "ce biopsy done ever"
         )
     }
 
@@ -369,6 +369,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_date_treatment"] = pd.NaT
         df.loc[df.is_alive, "ce_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "ce_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_cin_removal"] = pd.NaT
         df.loc[df.is_alive, "ce_new_stage_this_month"] = False
         df.loc[df.is_alive, "ce_stage_at_diagnosis"] = "none"
         df.loc[df.is_alive, "ce_ever_treated"] = False
