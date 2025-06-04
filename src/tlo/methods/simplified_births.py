@@ -198,10 +198,10 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
                     ]
 
                 num_of_deaths_since_last_poll = len(df.loc[
-                    ~df.is_alive & df.date_of_birth.notnull() & df.date_of_death.between(self.date_of_last_poll, self.sim.date)
+                    ~df.is_alive & df.date_of_birth.notnull() & df.date_of_death.between(self.date_of_last_poll, self.sim.date, inclusive='left')
                 ])
 
-                return self.module.rng.choie(eligible_for_pregnancy.index, size=num_of_deaths_since_last_poll, replace=False, p=None)
+                return self.module.rng.choice(eligible_for_pregnancy.index, size=num_of_deaths_since_last_poll, replace=False, p=None)
 
             else:
                 # Rate of pregnancy is based on age-specific fertility rates under assumption that every pregnancy results in a birth.
