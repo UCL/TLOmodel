@@ -308,20 +308,15 @@ class Simulation:
         :param wall_clock_time: Optional argument specifying total time taken to
             simulate, to be written out to log before closing.
         """
-        labels_metadata = {}
-        for module in self.modules.values():
+        all_parameter_labels = {}
+        for module_name, module in self.modules.items():
             module.on_simulation_end()
-            # log module parameter labels statistics
-            # NB: The `not_init_via_load_param` count indicates parameters in that disease module that
-            # were initialised outside `load_parameters_from_dataframe` method
-            for module_name, module in self.modules.items():
-                if hasattr(module, "PARAMETERS"):
-                    labels = []
-                    for param_obj in module.PARAMETERS.values():
-                        label = param_obj.metadata.get("param_label", "not_init_via_load_param")
-                        labels.append(label)
-                    labels_metadata[module_name] = Counter(labels)
-        logger.info(key='parameter_stats', data=labels_metadata)
+            if hasattr(module, "PARAMETERS"):
+                # collect the module's parameter labels
+                labels = [p.metadata.get("param_label", "not_init_via_load_param") for p in module.PARAMETERS.values()]
+                all_parameter_labels[module_name] = Counter(labels)
+
+        logger.info(key='parameter_stats', data=all_parameter_labels)
 
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
