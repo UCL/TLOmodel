@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -44,9 +45,8 @@ class CareOfWomenDuringPregnancy(Module):
     Individual interventions are stored as functions within the module to prevent repetition.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020)
@@ -176,8 +176,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                    'caesarean_now', 'caesarean_future', 'avd_now']),
     }
 
-    def read_parameters(self, data_folder):
-        parameter_dataframe = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare',
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_AntenatalCare',
                                             files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
@@ -485,21 +485,24 @@ class CareOfWomenDuringPregnancy(Module):
 
         if df.at[mother_id, 'is_alive']:
 
+            anc_count = df.at[mother_id, "ac_total_anc_visits_current_pregnancy"]
+
             #  run a check at birth to make sure no women exceed 8 visits
-            if df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] > 9:
+            if anc_count > 9:
                 logger.info(key='error', data=f'Mother {mother_id} attended >8 ANC visits during her pregnancy')
 
-            # We log the total number of ANC contacts a woman has undergone at the time of birth via this dictionary
+            if anc_count > 8:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['anc8+'] += 1
+            else:
+                self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'anc{anc_count}'] += 1
+
+            # We log the gestational age at first ANC
             if 'ga_anc_one' in mni[mother_id]:
                 ga_anc_one = float(mni[mother_id]['ga_anc_one'])
             else:
                 ga_anc_one = 0.0
 
-            total_anc_visit_count = {'person_id': mother_id,
-                                     'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'],
-                                     'ga_anc_one': ga_anc_one}
-
-            logger.info(key='anc_count_on_birth', data=total_anc_visit_count,
+            logger.info(key='ga_at_anc1', data={'person_id': mother_id, 'ga_anc_one': ga_anc_one},
                         description='A dictionary containing the number of ANC visits each woman has on birth')
 
     def on_hsi_alert(self, person_id, treatment_id):

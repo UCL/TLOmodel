@@ -25,7 +25,7 @@ from tlo.methods import (
 
 # %%
 outputpath = Path("./outputs")
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 
 no_existing_logfile = True
 
@@ -52,16 +52,17 @@ if not os.path.exists(log_filename):
     }
 
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config,
+                     show_progress_bar=True, resourcefilepath=resourcefilepath)
 
     # run the simulation
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthsystem.HealthSystem(disable=True),
+                 diarrhoea.Diarrhoea(),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
 

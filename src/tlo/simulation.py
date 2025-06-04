@@ -71,7 +71,7 @@ class Simulation:
         seed: Optional[int] = None,
         log_config: Optional[dict] = None,
         show_progress_bar: bool = False,
-        resourcefilepath: Optional[Path] = None,
+        resourcefilepath: Optional[str | Path] = None,
     ):
         """Create a new simulation.
 
@@ -97,6 +97,7 @@ class Simulation:
            logging on all disease modules by setting a high level to `*`, and then
            enabling logging on one module of interest by setting a low level, for
            example ``{'*': logging.CRITICAL 'tlo.methods.hiv': logging.INFO}``.
+
         """
         # simulation
         self.date = self.start_date = start_date
@@ -108,7 +109,7 @@ class Simulation:
         self.param_labels_data = {}
 
         self.show_progress_bar = show_progress_bar
-        self.resourcefilepath = resourcefilepath
+        self.resourcefilepath = Path(resourcefilepath)
 
         # logging
         if log_config is None:
@@ -126,6 +127,13 @@ class Simulation:
             data=f"Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}",
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
+
+        if resourcefilepath is not None:
+            self.resourcefilepath = Path(resourcefilepath)
+            assert self.resourcefilepath.exists(), \
+                f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
+        else:
+            self.resourcefilepath = None
 
         # Whether simulation has been initialised
         self._initialised = False
@@ -217,7 +225,7 @@ class Simulation:
         if auto_register_dependencies:
             modules = [
                 *modules,
-                *initialise_missing_dependencies(modules, resourcefilepath=self.resourcefilepath)
+                *initialise_missing_dependencies(modules)
             ]
 
         if sort_modules:
@@ -243,7 +251,8 @@ class Simulation:
 
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters("")
+
+            module.read_parameters(self.resourcefilepath)
 
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)
@@ -318,7 +327,6 @@ class Simulation:
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
         self.close_output_file()
-
 
     def close_output_file(self) -> None:
         """Close logging file if open."""
