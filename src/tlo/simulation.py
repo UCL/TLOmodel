@@ -64,7 +64,6 @@ class Simulation:
        state.
     """
 
-
     def __init__(
         self,
         *,
@@ -117,7 +116,6 @@ class Simulation:
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
 
-
         # random number generator
         seed_from = "auto" if seed is None else "user"
         self._seed = seed
@@ -130,7 +128,8 @@ class Simulation:
 
         if resourcefilepath is not None:
             self.resourcefilepath = Path(resourcefilepath)
-            assert self.resourcefilepath.exists(), f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
+            assert self.resourcefilepath.exists(), \
+                f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
         else:
             self.resourcefilepath = None
 
@@ -451,7 +450,6 @@ class Simulation:
 
         return person_events
 
-
     def save_to_pickle(self, pickle_path: Path) -> None:
         """Save simulation state to a pickle file using :py:mod:`dill`.
 
@@ -485,7 +483,6 @@ class Simulation:
         if log_config is not None:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
-
 
 
 class EventQueue:

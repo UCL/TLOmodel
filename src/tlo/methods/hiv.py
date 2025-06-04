@@ -1134,10 +1134,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # prep poll for AGYW - target to the highest risk
         # increase retention to 75% for FSW and AGYW
         p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_prep_every_3_months"
+        ]
 
         # perfect retention on ART
-        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_art_every_3_months"
+        ]
 
         # increase probability of VMMC after hiv test
         p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
@@ -2901,7 +2905,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
+        if (self.module.rng.random_sample(size=1) <
+            p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
@@ -2935,11 +2940,20 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required[
-                                'First line ART regimen: young child']: dispensation_days * 2},
-                optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 240},
-                return_individual_results=True)
+                item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child"
+                    ]: dispensation_days
+                    * 2
+                },
+                optional_item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child: cotrimoxazole"
+                    ]: dispensation_days
+                    * 240
+                },
+                return_individual_results=True,
+            )
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
