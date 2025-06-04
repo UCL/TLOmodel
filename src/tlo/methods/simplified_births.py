@@ -161,12 +161,13 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         self.months_between_polls = 1
-        self.date_of_last_poll = self.sim.date
         super().__init__(module, frequency=DateOffset(months=self.months_between_polls))
         self.asfr = get_medium_variant_asfr_from_wpp_resourcefile(
             dat=self.module.parameters['age_specific_fertility_rates'], months_exposure=self.months_between_polls)
 
     def apply(self, population):
+        self.date_of_last_poll = self.sim.date
+
         # Set new pregnancies:
         self.set_new_pregnancies()
 
