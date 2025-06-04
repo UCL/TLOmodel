@@ -48,8 +48,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'HealthSeekingBehaviour'}
 
-    ADDITIONAL_DEPENDENCIES = {'Tb'}
-
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -358,7 +356,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Symptom(name='vaginal_bleeding',
                     odds_ratio_health_seeking_in_adults=1.00)
         )
-
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -1503,7 +1500,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': int(p['palliative_care_bed_days'])})
-        self.item_codes = self.module.item_codes_cervical_can['palliation']
+        self.cons_item_codes = self.module.item_codes_cervical_can['palliation']
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

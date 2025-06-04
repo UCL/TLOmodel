@@ -51,7 +51,6 @@ def make_simulation_healthsystemdisabled(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  healthburden.HealthBurden(),
                  epi.Epi(),
-                 tb.DummyTbModule(),
                  hiv.DummyHivModule(),
                  )
 
@@ -74,7 +73,6 @@ def make_simulation_nohsi(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  healthburden.HealthBurden(),
                  epi.Epi(),
-                 tb.DummyTbModule(),
                  hiv.DummyHivModule(),
                  )
 
