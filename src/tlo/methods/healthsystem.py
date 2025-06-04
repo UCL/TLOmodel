@@ -223,7 +223,7 @@ class HealthSystem(Module):
         ),
 
         # Service Availability
-        'Service_Availability': Parameter(
+        'service_availability': Parameter(
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
                         ' to the module initialiser.'),
 
