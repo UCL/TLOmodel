@@ -770,7 +770,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                 unit_cost_column = cost_category + '_annual_unit'
                 equipment_cost = equipment_cost.rename(columns = {cost_category + '_annual':unit_cost_column })
                 equipment_cost[cost_category + '_annual_total'] = equipment_cost[cost_category + '_annual_unit'] * equipment_cost['whether_item_was_used'] * equipment_cost['Quantity'] * equipment_cost['Facility_Count']
-            equipment_cost['year'] = final_year_of_simulation - 1
+            equipment_cost['year'] = max(years) - 1
             if equipment_cost_across_sim.empty:
                 equipment_cost_across_sim = equipment_cost.groupby(['year', 'Facility_Level', 'Equipment_tlo'])[[item  + '_annual_total' for item in categories_of_equipment_cost]].sum()
                 equipment_cost_across_sim['draw'] = d
