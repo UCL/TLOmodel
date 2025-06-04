@@ -222,7 +222,7 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
                 ]
 
         df = self.sim.population.props  # get the population dataframe
-        women_to_make_pregnant = _choose_women_to_make_pregnant(self.force_one_birth_for_one_death, df)
+        women_to_make_pregnant = _choose_women_to_make_pregnant(self.module.force_one_birth_for_one_death, df)
         _make_pregnant(ids=women_to_make_pregnant,
                        df=df,
                        months_between_pregnancy_and_delivery=self.module.parameters['months_between_pregnancy_and_delivery'])
