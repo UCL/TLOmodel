@@ -33,7 +33,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
+resourcefilepath = './resources'
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
@@ -50,20 +50,19 @@ log_config = {
 }
 
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             # contraception.Contraception(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       disable=True),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             # labour.Labour(resourcefilepath=resourcefilepath),
-             # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+sim.register(demography.Demography(),
+             # contraception.Contraception(),
+             enhanced_lifestyle.Lifestyle(),
+             healthsystem.HealthSystem(disable=True),
+             symptommanager.SymptomManager(),
+             healthseekingbehaviour.HealthSeekingBehaviour(),
+             healthburden.HealthBurden(),
+             # labour.Labour(),
+             # pregnancy_supervisor.PregnancySupervisor(),
+             oesophagealcancer.OesophagealCancer()
              )
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
