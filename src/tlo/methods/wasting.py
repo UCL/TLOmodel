@@ -1886,7 +1886,7 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 assert not np.isnan(length_df.loc[age_grp, 'sev_not_yet_recovered']), \
                     f"The avg {length_df.loc[age_grp, 'sev_not_yet_recovered']=} for {age_grp=} is empty."
 
-            logger.info(key='wasting_length_avg', data=length_df.to_dict())
+        logger.debug(key='wasting_length_avg', data=length_df.to_dict())
 
         # ----- PREVALENCE LOG ----------------
         # Wasting totals (prevalence & pop size at logging time)
