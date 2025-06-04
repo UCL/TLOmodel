@@ -849,7 +849,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
 
-        for stage, lm in self.module.linear_models_for_progression_of_hpv_cc_status.items():
+        for stage, lm in reversed(list(self.module.linear_models_for_progression_of_hpv_cc_status.items())):
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng)
 
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
