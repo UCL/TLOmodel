@@ -5,7 +5,7 @@ Road traffic injury module.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -36,10 +37,9 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.ASSIGN_INJURIES_AND_DALY_CHANGES = None
         self.cons_item_codes = None  # (Will store consumable item codes)
 
@@ -1107,11 +1107,11 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'RTI': Cause(gbd_causes='Road injuries', label='Transport Injuries')
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
 
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
+        dfd = read_csv_files(resourcefilepath / 'ResourceFile_RTI', files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries
@@ -3343,12 +3343,11 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
-        if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
-
-        elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+        if 'Tomography' in self.EXPECTED_APPT_FOOTPRINT:
             self.ACCEPTED_FACILITY_LEVEL = '3'
             self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('X-ray'))
 
     def did_not_run(self, *args, **kwargs):
         pass

@@ -9,6 +9,7 @@ import pytest
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.analysis.utils import (
     colors_in_matplotlib,
+    compute_summary_statistics,
     flatten_multi_index_series_into_dict_for_logging,
     get_coarse_appt_type,
     get_color_cause_of_death_or_daly_label,
@@ -63,7 +64,7 @@ def test_parse_log_levels(tmpdir):
     class Dummy(Module):
         PROPERTIES = {"dummy": Property(Types.INT, description="dummy")}
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -79,7 +80,7 @@ def test_parse_log_levels(tmpdir):
 
     # test parsing when log level is INFO
     sim = Simulation(
-        start_date=start_date, log_config={"filename": "temp", "directory": tmpdir}
+        start_date=start_date, log_config={"filename": "temp", "directory": tmpdir}, resourcefilepath=resourcefilepath
     )
     sim.register(Dummy())
     logger.setLevel(logging.INFO)
@@ -98,7 +99,8 @@ def test_parse_log_levels(tmpdir):
 
     # test parsing when log level is DEBUG
     sim = Simulation(
-        start_date=start_date, log_config={"filename": "temp2", "directory": tmpdir}
+        start_date=start_date,
+        log_config={"filename": "temp2", "directory": tmpdir}, resourcefilepath=resourcefilepath
     )
     sim.register(Dummy())
     logger.setLevel(logging.DEBUG)
@@ -132,7 +134,7 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
         logger.setLevel(logging.INFO)
 
         class DummyModule(Module):
-            def read_parameters(self, data_folder):
+            def read_parameters(self, resourcefilepath=None):
                 pass
 
             def initialise_population(self, population):
@@ -150,9 +152,11 @@ def test_flattening_and_unflattening_multiindex(tmpdir):
             start_date=sim_start_date,
             seed=0,
             log_config={"filename": "temp", "directory": tmpdir, },
+            resourcefilepath=resourcefilepath
         )
         sim.register(
-            demography.Demography(resourcefilepath=resourcefilepath), DummyModule()
+            demography.Demography(),
+            DummyModule()
         )
         sim.make_initial_population(n=100)
         sim.simulate(end_date=sim_start_date)
@@ -304,9 +308,9 @@ def test_colormap_cause_of_death_label(seed):
     def get_all_cause_of_death_labels(seed=0) -> List[str]:
         """Return list of all the causes of death defined in the full model."""
         start_date = Date(2010, 1, 1)
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         sim.register(
-            *fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=False)
+            *fullmodel(use_simplified_births=False)
         )
         sim.make_initial_population(n=1_000)
         sim.simulate(end_date=start_date)
@@ -333,7 +337,7 @@ def test_get_parameter_functions(seed):
     """Check that the functions that provide updated parameter values provide recognised parameter names and values
     of the appropriate type."""
 
-    # Function that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
+    # Functions that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
     funcs = [
         get_parameters_for_status_quo,
         lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
@@ -354,8 +358,8 @@ def test_get_parameter_functions(seed):
     ]
 
     # Create simulation
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(*fullmodel())
 
     for fn in funcs:
 
@@ -492,7 +496,7 @@ def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
             self.module.check_parameters()  # Checks parameters are as expected
 
     class DummyModule(Module):
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -539,14 +543,12 @@ def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
             hcs = sim.modules["HealthSeekingBehaviour"].force_any_symptom_to_lead_to_healthcareseeking
             assert isinstance(hcs, bool) and (hcs is max_healthcare_seeking[phase_of_simulation])
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
         *(
-                fullmodel(resourcefilepath=resourcefilepath)
+                fullmodel()
                 + [
-                    ImprovedHealthSystemAndCareSeekingScenarioSwitcher(
-                        resourcefilepath=resourcefilepath
-                    ),
+                    ImprovedHealthSystemAndCareSeekingScenarioSwitcher(),
                     DummyModule(),
                 ]
         )
@@ -572,7 +574,7 @@ def test_improved_healthsystem_and_care_seeking_scenario_switcher(seed):
     sim.simulate(end_date=Date(year_of_change + 2, 1, 1))
 
 
-def test_summarize():
+def test_compute_summary_statistics():
     """Check that the summarize utility function works as expected."""
 
     results_multiple_draws = pd.DataFrame(
@@ -603,10 +605,10 @@ def test_summarize():
             columns=pd.MultiIndex.from_tuples(
                 [
                     ("DrawA", "lower"),
-                    ("DrawA", "mean"),
+                    ("DrawA", "central"),
                     ("DrawA", "upper"),
                     ("DrawB", "lower"),
-                    ("DrawB", "mean"),
+                    ("DrawB", "central"),
                     ("DrawB", "upper"),
                 ],
                 names=("draw", "stat"),
@@ -619,7 +621,7 @@ def test_summarize():
                 ]
             ),
         ),
-        summarize(results_multiple_draws),
+        compute_summary_statistics(results_multiple_draws, central_measure='mean'),
     )
 
     # Without collapsing and only mean
@@ -629,18 +631,77 @@ def test_summarize():
             index=["TimePoint0", "TimePoint1"],
             data=np.array([[10.0, 1500.0], [10.0, 1500.0]]),
         ),
-        summarize(results_multiple_draws, only_mean=True),
+        compute_summary_statistics(results_multiple_draws, central_measure='mean', only_central=True),
     )
 
     # With collapsing (as only one draw)
     pd.testing.assert_frame_equal(
         pd.DataFrame(
-            columns=pd.Index(["lower", "mean", "upper"], name="stat"),
+            columns=pd.Index(["lower", "central", "upper"], name="stat"),
             index=["TimePoint0", "TimePoint1"],
             data=np.array([[0.5, 10.0, 19.5], [0.5, 10.0, 19.5], ]),
         ),
-        summarize(results_one_draw, collapse_columns=True),
+        compute_summary_statistics(results_one_draw, central_measure='mean', collapse_columns=True),
     )
+
+    # Check that summarize() produces the expected legacy behaviour (i.e., uses mean)
+    pd.testing.assert_frame_equal(
+        compute_summary_statistics(results_multiple_draws, central_measure='mean').rename(columns={'central': 'mean'}, level=1),
+        summarize(results_multiple_draws)
+    )
+    pd.testing.assert_frame_equal(
+        compute_summary_statistics(results_multiple_draws, central_measure='mean', only_central=True),
+        summarize(results_multiple_draws, only_mean=True)
+    )
+    pd.testing.assert_frame_equal(
+        compute_summary_statistics(results_one_draw, central_measure='mean', collapse_columns=True).rename(columns={'central': 'mean'}, level=0),
+        summarize(results_one_draw, collapse_columns=True)
+    )
+
+
+def test_compute_summary_statistics_use_standard_error():
+    """Check computation of standard error statistics."""
+
+    results_multiple_draws = pd.DataFrame(
+        columns=pd.MultiIndex.from_tuples(
+            [
+                ("DrawA", "DrawA_Run1"),
+                ("DrawA", "DrawA_Run2"),
+                ("DrawB", "DrawB_Run1"),
+                ("DrawB", "DrawB_Run2"),
+                ("DrawC", "DrawC_Run1"),
+                ("DrawC", "DrawC_Run2"),
+            ],
+            names=("draw", "run"),
+        ),
+        index=["TimePoint0", "TimePoint1", "TimePoint2", "TimePoint3"],
+        data=np.array([[0, 21, 1000, 2430, 111, 30],   # <-- randomly chosen numbers
+                       [9, 22, 10440, 1960, 2222, 40],
+                       [4, 23, 10200, 1989, 3333, 50],
+                       [555, 24, 1000, 2022, 4444, 60]
+                       ]),
+    )
+
+    # Compute summary using standard error
+    summary = compute_summary_statistics(results_multiple_draws, use_standard_error=True)
+
+    # Compute expectation for what the standard should be for Draw A
+    mean = results_multiple_draws['DrawA'].mean(axis=1)
+    se = results_multiple_draws['DrawA'].std(axis=1) / np.sqrt(2)
+    expectation_for_draw_a = pd.DataFrame(
+            columns=pd.Index(["lower", "central", "upper"], name="stat"),
+            index=["TimePoint0", "TimePoint1", "TimePoint2", "TimePoint3"],
+            data=np.array(
+                [
+                    mean - 1.96 * se,
+                    mean,
+                    mean + 1.96 * se,
+                ]
+            ).T,
+        )
+
+    # Check actual computation matches expectation
+    pd.testing.assert_frame_equal(expectation_for_draw_a, summary['DrawA'], rtol=1e-3)
 
 
 def test_control_loggers_from_same_module_independently(seed, tmpdir):
@@ -661,7 +722,7 @@ def test_control_loggers_from_same_module_independently(seed, tmpdir):
 
     def run_simulation_and_cause_one_death(sim):
         """Register demography in the simulations, runs it and causes one death; return the resulting log."""
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+        sim.register(demography.Demography())
         sim.make_initial_population(n=100)
         sim.simulate(end_date=sim.start_date)
         # Cause one death to occur
@@ -682,7 +743,8 @@ def test_control_loggers_from_same_module_independently(seed, tmpdir):
         assert 'tlo.methods.demography.detail' not in log.keys()
 
     # 1) Provide custom_logs argument when creating Simulation object
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim = Simulation(start_date=Date(2010, 1, 1),
+                     seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
     check_log(run_simulation_and_cause_one_death(sim))
 
 

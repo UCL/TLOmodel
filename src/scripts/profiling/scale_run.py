@@ -81,12 +81,12 @@ def scale_run(
         seed=seed,
         log_config=log_config,
         show_progress_bar=show_progress_bar,
+        resourcefilepath=resources_dir,
     )
 
     # Register the appropriate modules with the arguments passed through
     sim.register(
         *fullmodel(
-            resourcefilepath=resources_dir,
             use_simplified_births=False,
             module_kwargs={
                 "HealthSystem": {

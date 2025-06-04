@@ -23,6 +23,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.util import read_csv_files
 
 # %%
 resourcefilepath = Path("./resources")
@@ -40,20 +41,19 @@ def runsim(seed=0):
     end_date = Date(2019, 12, 31)
     popsize = 500000
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config,
+                     show_progress_bar=True, resourcefilepath=resourcefilepath)
 
     # run the simulation
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=False,
-                                           cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath,
-                                                                     do_condition_combos=True),
-                 depression.Depression(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 simplified_births.SimplifiedBirths(),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(do_condition_combos=True),
+                 depression.Depression(),
                  )
 
     sim.make_initial_population(n=popsize)
@@ -189,7 +189,7 @@ for condition in conditions:
     )
 
     # get prevalence + lower and upper values
-    prev_range = pd.read_excel(resourcefilepath / "cmd" / "ResourceFile_cmd_condition_prevalence.xlsx", sheet_name=None)
+    prev_range = read_csv_files(resourcefilepath / "cmd" / "ResourceFile_cmd_condition_prevalence", files=None)
     baseline_error = [(prev_range[f'{condition}']['value'].values - prev_range[f'{condition}']['lower'].values),
                       (prev_range[f'{condition}']['upper'].values - prev_range[f'{condition}']['value'].values)]
     if 'gbd_value' in prev_range[f'{condition}']:
@@ -494,10 +494,10 @@ def make_incidence_plot(condition, type):
     condition_title = condition_title.title()
 
     if type == 'incidence':
-        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_condition_and_events_{type}.xlsx",
-                                  sheet_name=None)
+        inc_range = read_csv_files(resourcefilepath / "cmd" / f"ResourceFile_cmd_condition_and_events_{type}",
+                                  files=None)
     else:
-        inc_range = pd.read_excel(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}.xlsx", sheet_name=None)
+        inc_range = read_csv_files(resourcefilepath / "cmd" / f"ResourceFile_cmd_event_{type}", files=None)
     asymptomatic_error = [(inc_range[f'{condition}']['value'].values - inc_range[f'{condition}']['lower'].values),
                           (inc_range[f'{condition}']['upper'].values - inc_range[f'{condition}']['value'].values)]
 

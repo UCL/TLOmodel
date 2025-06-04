@@ -190,9 +190,8 @@ class SymptomManager(Module):
                         'NB. This is over-ridden if a module key-word argument is provided.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=None):
+    def __init__(self, name=None, spurious_symptoms=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.spurious_symptoms = None
         self.arg_spurious_symptoms = spurious_symptoms
         self._persons_with_newly_onset_symptoms = set()
@@ -224,12 +223,12 @@ class SymptomManager(Module):
         """get the column name that corresponds to the symptom_name"""
         return f'sy_{symptom_name}'
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+            pd.read_csv(resourcefilepath / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
         self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_SymptomManager.csv'))
+            pd.read_csv(resourcefilepath / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -530,16 +529,9 @@ class SymptomManager(Module):
                 person_has = self.bsh.has(
                     [person_id], disease_module.name, first=True, columns=sy_columns
                 )
-                return [s for s in self.symptom_names if person_has[f"sy_{s}"]]
+                return [s for s in self.symptom_names if person_has[self.get_column_name_for_symptom(s)]]
             else:
-                symptom_cols = df.loc[
-                    person_id, [f"sy_{s}" for s in self.symptom_names]
-                ]
-                return (
-                    symptom_cols.index[symptom_cols > 0]
-                    .str.removeprefix("sy_")
-                    .to_list()
-                )
+                return [s for s in self.symptom_names if df.at[person_id, self.get_column_name_for_symptom(s)] > 0]
 
     def have_what(self, person_ids: Sequence[int]):
         """Find the set of symptoms for a list of person_ids.
@@ -757,8 +749,7 @@ class SymptomManager_SpuriousSymptomResolve(RegularEvent, PopulationScopeEventMi
         for symp in self.to_resolve.keys():
             if date_today in self.to_resolve[symp]:
                 person_ids = self.to_resolve[symp].pop(date_today)
-                persons = df.loc[sorted(person_ids)]
-                person_ids_alive = persons[persons.is_alive].index
+                person_ids_alive = df.index[df.index.isin(person_ids) & df.is_alive]
                 self.module.change_symptom(
                     person_id=person_ids_alive,
                     add_or_remove='-',

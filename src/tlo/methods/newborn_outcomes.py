@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_hel
 from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
-from tlo.util import BitsetHandler
+from tlo.util import BitsetHandler, read_csv_files
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,9 +26,8 @@ class NewbornOutcomes(Module):
     of prematurity (respiratory distress syndrome and retinopathy) This module also manages any interventions that are
     delivered as part of postnatal care via HSI_NewbornOutcomes_ReceivesPostnatalCheck.
     """
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020) and the linear models
@@ -309,10 +309,10 @@ class NewbornOutcomes(Module):
         'nb_pnc_check': Property(Types.INT, 'Number of postnatal checks received in the postnatal period'),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx',
-                                            sheet_name='parameter_values')
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_NewbornOutcomes',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
         # Here we map 'disability' parameters to associated DALY weights to be passed to the health burden module
@@ -523,28 +523,23 @@ class NewbornOutcomes(Module):
 
         if self.rng.random_sample() < params['prob_congenital_heart_anomaly']:
             self.congeintal_anomalies.set(child_id, 'heart')
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'congenital_heart_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['congenital_heart_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_limb_musc_skeletal_anomaly']:
             self.congeintal_anomalies.set(child_id, 'limb_musc_skeletal')
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'limb_or_musculoskeletal_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['limb_or_musculoskeletal_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_urogenital_anomaly']:
             self.congeintal_anomalies.set(child_id, 'urogenital')
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'urogenital_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['urogenital_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_digestive_anomaly']:
             self.congeintal_anomalies.set(child_id, 'digestive')
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'digestive_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['digestive_anomaly'] += 1
 
         if self.rng.random_sample() < params['prob_other_anomaly']:
             self.congeintal_anomalies.set(child_id, 'other')
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'other_anomaly'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['other_anomaly'] += 1
 
     def apply_risk_of_neonatal_infection_and_sepsis(self, child_id):
         """
@@ -558,9 +553,7 @@ class NewbornOutcomes(Module):
         # The linear model calculates the individuals probability of early_onset_neonatal_sepsis
         if self.eval(self.nb_linear_models['early_onset_neonatal_sepsis'], child_id):
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
-
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'early_onset_sepsis'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['early_onset_sepsis'] += 1
 
     def apply_risk_of_encephalopathy(self, child_id, timing):
         """
@@ -592,8 +585,7 @@ class NewbornOutcomes(Module):
             else:
                 df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
 
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': f'{df.at[child_id, "nb_encephalopathy"]}'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter[f'{df.at[child_id, "nb_encephalopathy"]}'] += 1
 
             # Check all encephalopathy cases receive a grade
             if df.at[child_id, 'nb_encephalopathy'] == 'none':
@@ -616,9 +608,7 @@ class NewbornOutcomes(Module):
         # Use the linear model to calculate individual risk and make changes
         if self.eval(self.nb_linear_models['rds_preterm'], child_id):
             df.at[child_id, 'nb_preterm_respiratory_distress'] = True
-
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'respiratory_distress_syndrome'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['respiratory_distress_syndrome'] += 1
 
     def apply_risk_of_not_breathing_at_birth(self, child_id):
         """
@@ -638,9 +628,7 @@ class NewbornOutcomes(Module):
         # explicitly modelled
         elif self.rng.random_sample() < params['prob_failure_to_transition']:
             df.at[child_id, 'nb_not_breathing_at_birth'] = True
-
-            logger.info(key='newborn_complication', data={'newborn': child_id,
-                                                          'type': 'not_breathing_at_birth'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['not_breathing_at_birth'] += 1
 
     def scheduled_week_one_postnatal_event(self, individual_id):
         """
@@ -1021,6 +1009,7 @@ class NewbornOutcomes(Module):
                       'date_of_delivery': self.sim.date}
 
         logger.info(key='twin_birth', data=twin_birth, description='A record of each birth of twin pairs')
+        self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['twin_birth'] += 1
 
         # Finally we log the second live birth and add another to the womans parity
         df.at[mother_id, 'la_parity'] += 1
@@ -1157,14 +1146,14 @@ class NewbornOutcomes(Module):
         if (df.at[child_id, 'nb_low_birth_weight_status'] == 'low_birth_weight') or\
             (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or\
            (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
-            logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'low_birth_weight'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['low_birth_weight'] += 1
 
         elif df.at[child_id, 'nb_low_birth_weight_status'] == 'macrosomia':
-            logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'macrosomia'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['macrosomia'] += 1
 
         df.at[child_id, 'nb_size_for_gestational_age'] = mni[mother_id]['birth_size']
         if df.at[child_id, 'nb_size_for_gestational_age'] == 'small_for_gestational_age':
-            logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'small_for_gestational_age'})
+            self.sim.modules['PregnancySupervisor'].mnh_outcome_counter['small_for_gestational_age'] += 1
 
         df.at[child_id, 'nb_early_init_breastfeeding'] = False
         df.at[child_id, 'nb_breastfeeding_status'] = 'none'

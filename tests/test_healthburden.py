@@ -52,15 +52,15 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir, seed):
     """
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={'filename': 'test_log', 'directory': tmpdir}, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable_and_reject_all=True),
+                 symptommanager.SymptomManager(),
+                 healthburden.HealthBurden(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())
 
@@ -96,12 +96,10 @@ def test_cause_of_disability_being_registered(seed, tmpdir):
     and gbd causes of disability can be created correctly and that these make sense with respect to the corresponding
     mappers for deaths."""
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed,
+                     log_config={'filename': 'test_log', 'directory': tmpdir}, resourcefilepath=resourcefilepath)
     sim.register(
         *fullmodel(
-            resourcefilepath=rfp,
             module_kwargs={"HealthSystem": {"disable": True}},
         )
     )
@@ -128,7 +126,6 @@ def test_cause_of_disability_being_registered(seed, tmpdir):
 
 def test_arithmetic_of_disability_aggregation_calcs(seed):
     """Check that disability from different modules are being combined and computed in the correct way"""
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
 
     class ModuleWithPersonsAffected(Module):
 
@@ -142,7 +139,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         CAUSES_OF_DISABILITY = {'A': Cause(label='A')}
         daly_wt = 0.2
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -163,7 +160,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         CAUSES_OF_DISABILITY = {'B': Cause(label='B')}
         daly_wt = 0.05
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -207,7 +204,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         CAUSES_OF_DISABILITY = {'C': Cause(label='C')}
         daly_wt = 0.95
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -227,7 +224,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         CAUSES_OF_DEATH = {}
         CAUSES_OF_DISABILITY = {}
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -240,11 +237,11 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=rfp),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthburden.HealthBurden(),
         DiseaseThatCausesA(persons_affected=0),
         DiseaseThatCausesB(persons_affected=1),
         DiseaseThatCausesAandB(persons_affected=2),
@@ -287,8 +284,6 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
 def test_arithmetic_of_dalys_calcs(seed):
     """Check that life-years lost are being computed and combined with years lived with disability correctly"""
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
     class DiseaseThatCausesA(Module):
         """Disease that will:
           * impose disability on person_id=0 at the point 25% through the year;
@@ -299,7 +294,7 @@ def test_arithmetic_of_dalys_calcs(seed):
         CAUSES_OF_DISABILITY = {'cause_of_disability_A': Cause(label='Label_A')}
         daly_wt = 0.5
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -327,11 +322,11 @@ def test_arithmetic_of_dalys_calcs(seed):
             self.module.has_disease = True
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=rfp),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthburden.HealthBurden(),
         DiseaseThatCausesA(),
     )
     sim.make_initial_population(n=1)
@@ -359,14 +354,12 @@ def test_airthmetic_of_lifeyearslost(seed, tmpdir):
     """Check that a death causes the right number of life-years-lost to be logged and in the right age-groups (when
     there is no stacking by age or time)."""
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=rfp),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthburden.HealthBurden(),
     )
     sim.make_initial_population(n=1)
 
@@ -404,8 +397,6 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
     future life-years lost are allocated to the year of death (stacked by time); or when all future life-year lost are
     allocated to the year of death and age of death (stacked by age and time)."""
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
     class DiseaseThatCausesA(Module):
         """Disease that will:
           * impose a disability on person_id=0 on a given date
@@ -418,7 +409,7 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         disability_onset_date = Date(2011, 1, 1)
         death_date = Date(2012, 1, 1)
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -445,12 +436,12 @@ def test_arithmetic_of_stacked_lifeyearslost(tmpdir, seed):
         'filename': 'tmp',
         'directory': tmpdir,
         'custom_levels': {
-            "tlo.methods.healthburden": logging.INFO}}
+            "tlo.methods.healthburden": logging.INFO}}, resourcefilepath=resourcefilepath
                      )
     sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-        healthburden.HealthBurden(resourcefilepath=rfp),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthburden.HealthBurden(),
         DiseaseThatCausesA()
     )
     sim.make_initial_population(n=1)
@@ -594,7 +585,7 @@ def test_mapper_for_dalys_created(tmpdir, seed):
         }
         CAUSES_OF_DISABILITY = {}
 
-        def read_parameters(self, data_folder):
+        def read_parameters(self, resourcefilepath=None):
             pass
 
         def initialise_population(self, population):
@@ -604,11 +595,12 @@ def test_mapper_for_dalys_created(tmpdir, seed):
             pass
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, log_config={'filename': 'test_log', 'directory': tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={'filename': 'test_log', 'directory': tmpdir}, resourcefilepath=resourcefilepath)
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        healthburden.HealthBurden(),
         DiseaseThatCausesDeathOnly(),
         sort_modules=False
     )
