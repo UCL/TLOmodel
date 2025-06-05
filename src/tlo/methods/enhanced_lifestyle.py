@@ -272,8 +272,8 @@ class Lifestyle(Module):
                         'The men are assumed to be circumcised at birth.'
         ),
         'proportion_of_men_circumcised_at_initiation': Parameter(
-            Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
-                        'simulation.'
+            Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the '
+                        'initiation of the simulation.'
         ),
         "proportion_female_sex_workers": Parameter(
             Types.REAL, "proportion of women aged 15-49 years who are sex workers"
@@ -288,7 +288,8 @@ class Lifestyle(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
-        'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
+        'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)',
+                              categories=[1, 2, 3, 4, 5]),
         'li_bmi': Property(
             Types.CATEGORICAL, 'bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)'
                                'bmi is np.nan until age 15', categories=[1, 2, 3, 4, 5], ordered=True
@@ -1979,3 +1980,72 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 key=_property,
                 data=flatten_multi_index_series_into_dict_for_logging(data)
             )
+
+        # ---------------------- log properties associated with WASH
+
+        # unimproved sanitation
+        # NOTE: True = no sanitation
+        li_no_clean_drinking_water = len(
+            df[df.li_unimproved_sanitation & df.is_alive & (df.age_years < 5)]
+        ) / len(df[df.is_alive & (df.age_years < 5)]
+                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
+
+        no_sanitation_SAC = len(
+            df[df.li_unimproved_sanitation & df.is_alive & df.age_years.between(5, 15)]
+        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
+            df[df.is_alive & df.age_years.between(5, 15)]) else 0
+
+        no_sanitation_ALL = len(
+            df[df.li_unimproved_sanitation & df.is_alive]
+        ) / len(df[df.is_alive]
+                ) if len(df[df.is_alive]) else 0
+
+        # no access hand-washing
+        # NOTE: True = no access hand-washing
+        no_handwashing_PSAC = len(
+            df[df.li_no_access_handwashing & df.is_alive & (df.age_years < 5)]
+        ) / len(df[df.is_alive & (df.age_years < 5)]
+                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
+
+        no_handwashing_SAC = len(
+            df[df.li_no_access_handwashing & df.is_alive & df.age_years.between(5, 15)]
+        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
+            df[df.is_alive & df.age_years.between(5, 15)]) else 0
+
+        no_handwashing_ALL = len(
+            df[df.li_no_access_handwashing & df.is_alive]
+        ) / len(df[df.is_alive]
+                ) if len(df[df.is_alive]) else 0
+
+        # no clean drinking water
+        # NOTE: True = no clean drinking water
+        no_drinkingwater_PSAC = len(
+            df[df.li_no_clean_drinking_water & df.is_alive & (df.age_years < 5)]
+        ) / len(df[df.is_alive & (df.age_years < 5)]
+                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
+
+        no_drinkingwater_SAC = len(
+            df[df.li_no_clean_drinking_water & df.is_alive & df.age_years.between(5, 15)]
+        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
+            df[df.is_alive & df.age_years.between(5, 15)]) else 0
+
+        no_drinkingwater_ALL = len(
+            df[df.li_no_clean_drinking_water & df.is_alive]
+        ) / len(df[df.is_alive]
+                ) if len(df[df.is_alive]) else 0
+
+        logger.info(
+            key="summary_WASH_properties",
+            description="Summary of current status of WASH properties",
+            data={
+                "no_sanitation_PSAC": li_no_clean_drinking_water,
+                "no_sanitation_SAC": no_sanitation_SAC,
+                "no_sanitation_ALL": no_sanitation_ALL,
+                "no_handwashing_PSAC": no_handwashing_PSAC,
+                "no_handwashing_SAC": no_handwashing_SAC,
+                "no_handwashing_ALL": no_handwashing_ALL,
+                "no_drinkingwater_PSAC": no_drinkingwater_PSAC,
+                "no_drinkingwater_SAC": no_drinkingwater_SAC,
+                "no_drinkingwater_ALL": no_drinkingwater_ALL,
+            },
+        )
