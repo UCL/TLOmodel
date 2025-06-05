@@ -259,7 +259,7 @@ def _check_parsed_logs_are_equal(
             if key == "_metadata":
                 assert module_logs_1[key] == module_logs_2[key]
             elif (module_name, key) not in module_name_key_pairs_to_skip:
-                assert module_logs_1[key].equals(module_logs_2[key])
+                assert module_logs_1[key].equals(module_logs_2[key]), f"{module_name} log {key} not equal"
 
 
 @pytest.mark.slow
