@@ -394,7 +394,7 @@ class Module:
             # Save the values to the parameters
             self.parameters[parameter_name] = parameter_value
             # Assign metadata to the Parameter object
-            parameter_definition.set_metadata(
+            parameter_definition.metadata.update(
                 param_label=parameter_label,
                 prior_min=prior_min,
                 prior_max=prior_max
