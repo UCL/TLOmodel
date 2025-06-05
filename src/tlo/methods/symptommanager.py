@@ -429,9 +429,6 @@ class SymptomManager(Module):
                     symptom_col = self.get_column_name_for_symptom(sym)
                     if self.bsh.is_empty(pid, columns=symptom_col):
                         self.symptom_tracker[pid].discard(sym)
-                        # Delete person’s entry entirely if it becomes empty
-                        if not self.symptom_tracker[pid]:
-                            del self.symptom_tracker[pid]
 
     def who_has(self, list_of_symptoms):
         """
@@ -507,6 +504,9 @@ class SymptomManager(Module):
             if disease_module is not None
             else True
         ), "Disease Module Name is not recognised"
+
+        if disease_module is None and person_id is not None:
+            return list(self.get_current_symptoms(person_id))
 
         if individual_details is not None:
             # We are working in an IndividualDetails context, avoid lookups to the
@@ -604,9 +604,6 @@ class SymptomManager(Module):
                 symptom_col = self.get_column_name_for_symptom(sym)
                 if self.bsh.is_empty(pid, columns=symptom_col):
                     self.symptom_tracker[pid].discard(sym)
-            # Clean up if person has no symptoms left
-            if not self.symptom_tracker[pid]:
-                del self.symptom_tracker[pid]
 
     def caused_by(self, disease_module: Module):
         """Find the persons experiencing symptoms due to a particular module.
