@@ -223,7 +223,7 @@ class HealthSystem(Module):
         ),
 
         # Service Availability
-        'Service_Availability': Parameter(
+        'service_availability': Parameter(
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
                         ' to the module initialiser.'),
 
@@ -1134,7 +1134,7 @@ class HealthSystem(Module):
         was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_service_availability is None:
-            service_availability = self.parameters['Service_Availability']
+            service_availability = self.parameters['service_availability']
         else:
             service_availability = self.arg_service_availability
 
