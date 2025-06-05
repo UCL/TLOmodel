@@ -129,9 +129,6 @@ class Parameter(Specifiable):
         super().__init__(type_, description, categories)
         self.metadata = metadata or {}
 
-    def set_metadata(self, **kwargs):
-        self.metadata.update(kwargs)
-
 
 class Property(Specifiable):
     """Used to specify properties of individuals."""
