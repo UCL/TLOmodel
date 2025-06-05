@@ -1713,7 +1713,9 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
             tclose=None,
             priority=sim.modules['DummyModule'].rng.randint(0, 3))
 
-    list_of_individual_hsi_event_tuples_due_today = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
+    list_of_individual_hsi_event_tuples_due_today = (
+        sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
+    )
 
     # Check that HealthSystemScheduler is recovering the correct number of events for today
     assert len(list_of_individual_hsi_event_tuples_due_today) == Ntoday
@@ -2530,8 +2532,12 @@ def test_scaling_up_HRH_using_yearly_scaling_and_scaling_by_level_together(seed)
     assert caps_scaling_by_both > caps_only_scaling_by_year
 
     # - When there is also rescaling as we go from Mode 2 into Mode 1
-    caps_only_scaling_by_level_with_rescaling = get_capabilities(yearly_scaling=False, scaling_by_level=True, rescaling=True)
-    caps_only_scaling_by_year_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=False, rescaling=True)
+    caps_only_scaling_by_level_with_rescaling = get_capabilities(
+        yearly_scaling=False, scaling_by_level=True, rescaling=True
+    )
+    caps_only_scaling_by_year_with_rescaling = get_capabilities(
+        yearly_scaling=True, scaling_by_level=False, rescaling=True
+    )
     caps_scaling_by_both_with_rescaling = get_capabilities(yearly_scaling=True, scaling_by_level=True, rescaling=True)
     assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_level_with_rescaling
     assert caps_scaling_by_both_with_rescaling > caps_only_scaling_by_year_with_rescaling
@@ -2545,8 +2551,8 @@ def test_logging_of_only_hsi_events_with_non_blank_footprints(tmpdir):
 
     def run_simulation_and_return_healthsystem_summary_log(tmpdir: Path, blank_footprint: bool) -> dict:
         """Return the `healthsystem.summary` logger for a simulation. In that simulation, there is HSI_Event run on the
-        first day of the simulation and its `EXPECTED_APPT_FOOTPRINT` may or may not be blank. The simulation is run for one
-        year in order that the summary logger is active (it runs annually)."""
+        first day of the simulation and its `EXPECTED_APPT_FOOTPRINT` may or may not be blank. The simulation is run for
+        one year in order that the summary logger is active (it runs annually)."""
 
         class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
             def __init__(self, module, person_id, _is_footprint_blank):
