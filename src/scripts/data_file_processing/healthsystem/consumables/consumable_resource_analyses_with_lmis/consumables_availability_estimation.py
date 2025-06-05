@@ -1,9 +1,11 @@
 """
 This script generates estimates of availability of consumables used by disease modules:
 
-* ResourceFile_Consumables_availability_and_usage.csv (a large file that gives consumable availability and usage).
-* ResourceFile_Consumables_availability_small.csv (estimate of consumable available - smaller file for use in the
+* ResourceFile_Consumables_availability_small.csv (estimate of consumable available - file for use in the
  simulation).
+* ResourceFile_Consumables_Inflow_Outflow_Ratio.csv (a file that gives the ratio of inflow of consumables to outflow to
+* capture the extent of wastage as a proportion of use for each consumable by month, district and level.
+
 
 N.B. The file uses `ResourceFile_Consumables_matched.csv` as an input.
 
@@ -32,7 +34,7 @@ from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local shared folder source
 path_to_share = Path(  # <-- point to the shared folder
-    '/Users/sm2511/Library/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
+    '/Users/sm2511/CloudStorage/OneDrive-SharedLibraries-ImperialCollegeLondon/TLOModel - WP - Documents/'
 )
 
 path_to_files_in_the_tlo_shared_drive = path_to_share / "07 - Data/Consumables data/"
@@ -661,6 +663,35 @@ for var in ['district', 'fac_name', 'month']:
 # --- 6.6 Export final stockout dataframe --- #
 # stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # <-- this line commented out as the file is very large.
+
+# Create a smaller file with the ratio of inflow to outflow of consumables for the purpose of costing, i.e. to cost
+# the stock lost to waste/theft/expiryetc.
+# Estimate the stock to dispensed ratio from OpenLMIS data
+lmis_consumable_usage = stkout_df.copy()
+# TODO Generate a smaller version of this file
+# Collapse individual facilities
+def get_inflow_to_outflow_ratio_by_item_level_month(_df):
+    df_by_item_level_month = \
+    _df.groupby(['item_code', 'district', 'fac_type_tlo', 'month'])[
+        ['closing_bal', 'dispensed', 'received']].sum()
+    df_by_item_level_month = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') != "Aggregate"]
+    # Opening balance in January is the closing balance for the month minus what was received during the month plus what was dispensed
+    opening_bal_january = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'January', 'closing_bal'] + \
+                          df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'January', 'dispensed'] - \
+                          df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'January', 'received']
+    closing_bal_december = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'December', 'closing_bal']
+    # the consumable inflow during the year is the opening balance in January + what was received throughout the year - what was transferred to the next year (i.e. closing bal of December)
+    total_consumables_inflow_during_the_year = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
+                                             opening_bal_january.reset_index(level='month', drop=True) -\
+                                             closing_bal_december.reset_index(level='month', drop=True)
+    total_consumables_outflow_during_the_year  = df_by_item_level_month['dispensed'].groupby(level=[0,1,2,3]).sum()
+    inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
+    inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1  # Ratio can't be less than 1
+
+    return inflow_to_outflow_ratio
+
+inflow_to_outflow_ratio = get_inflow_to_outflow_ratio_by_item_level_month(lmis_consumable_usage)
+inflow_to_outflow_ratio.reset_index().to_csv(resourcefilepath / 'costing/ResourceFile_Consumables_Inflow_Outflow_Ratio.csv', index = False)
 
 # Final checks
 stkout_df = stkout_df.drop(index=stkout_df.index[pd.isnull(stkout_df.available_prop)])
