@@ -51,20 +51,18 @@ def find_and_return_hsi_events_list(sim, individual_id):
 def register_modules(sim):
     """Register all modules that are required for newborn outcomes to run"""
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
-                                           cons_availability='all'),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 healthsystem.HealthSystem(service_availability=['*'], cons_availability='all'),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 symptommanager.SymptomManager(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  hiv.DummyHivModule(),
                  )
 
@@ -74,7 +72,8 @@ def register_modules(sim):
 @pytest.mark.slow
 def test_run_and_check_dtypes(tmpdir, seed):
     """Run the sim for five years and check dtypes at the end """
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={"filename": "log", "directory": tmpdir}, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=1000)
     sim.simulate(end_date=Date(2015, 1, 1))
@@ -88,7 +87,7 @@ def test_run_and_check_dtypes(tmpdir, seed):
 def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(seed):
     """Test that babies that are born at home and develop complications will have care sought for them as expected
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -128,7 +127,7 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
 
 def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     """Test that for women who experience a single twin stillbirth only produce one newborn child as expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -171,7 +170,7 @@ def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
 def test_care_seeking_for_twins_delivered_at_home_who_develop_complications(seed):
     """Test that for twin births, if both develop a complication and care is sought for one twin, care will be received
     by both"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -226,7 +225,7 @@ def test_care_seeking_for_twins_delivered_at_home_who_develop_complications(seed
 def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_delivered_at_home_correctly(seed):
     """Test that for neonates born at home that develop complications, care seeking and risk of death is applied as
     expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -291,7 +290,7 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
 def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_delivered_at_home_correctly(seed):
     """Test that for preterm neonates (who are at risk of a different complication set) that born at home and develop
      complications, care seeking and risk of death is applied as expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -333,7 +332,7 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
 def test_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
     """ Test that resuscitation treatment is delivered as expected to newborns in respiratory distress who deliver in
     facilities """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -382,7 +381,7 @@ def test_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
 
 def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     """ Test that interventions delivered as part of PNC are delivered as expected to newborns with complications"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
 
