@@ -308,15 +308,14 @@ class Simulation:
         :param wall_clock_time: Optional argument specifying total time taken to
             simulate, to be written out to log before closing.
         """
-        all_parameter_labels = {}
         for module_name, module in self.modules.items():
             module.on_simulation_end()
             if hasattr(module, "PARAMETERS"):
                 # collect the module's parameter labels
                 labels = [p.metadata.get("param_label", "not_init_via_load_param") for p in module.PARAMETERS.values()]
-                all_parameter_labels[module_name] = Counter(labels)
-
-        logger.info(key='parameter_stats', data=all_parameter_labels)
+                labels = Counter(labels)
+                for label, count in labels.items():
+                    logger.info(key="parameter_stats", data={"module": module_name, "label": label, "count": count})
 
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
