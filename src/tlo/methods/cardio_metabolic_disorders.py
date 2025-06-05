@@ -1496,7 +1496,6 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         person_id = self.target
         m = self.module
 
-        rng = m.rng
 
         # Do nothing if the condition is already diagnosed
         if df.at[person_id, f'nc_{_c}_ever_diagnosed']:
@@ -1694,22 +1693,30 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             How it will work is that in each refill appointment, the individual's blood will be tested.
             Based on the result, they will either stay on same med or they will change medication.
             """
-            if (self.condition == 'diabetes') & (~ (df.at[person_id, f'nc_{self.condition}_medication_prevents_death'])):
-                self.get_consumables(item_codes=
-                                     {self.module.parameters[f'{self.condition}_hsi'].get(
-                                         'medication_item_code_second_line').astype(int): dose['diabetes_second_dose']})
-                df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
-                    self.module.rng.rand() < self.module.parameters[f'{self.condition}_hsi'].pr_treatment_works_second_line
-
-                if (self.condition == 'diabetes') & (~ (df.at[person_id, f'nc_{self.condition}_medication_prevents_death'])):
-                    self.get_consumables(item_codes=
-                                         {self.module.parameters[f'{self.condition}_hsi'].get(
-                                             'medication_item_code_third_line').astype(int): dose['diabetes_third_dose']})
-                    df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = \
+            if self.condition == 'diabetes':
+                # Try second line if first fails
+                second_line_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code_second_line')
+                if (not df.at[person_id, f'nc_{self.condition}_medication_prevents_death']) and second_line_code:
+                    self.get_consumables(
+                        item_codes={int(second_line_code): dose['diabetes_second_dose']}
+                    )
+                    df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = (
                         self.module.rng.rand() < self.module.parameters[
-                            f'{self.condition}_hsi'].pr_treatment_works_third_line
+                        f'{self.condition}_hsi'].pr_treatment_works_second_line
+                    )
 
-            # Schedule their next HSI for a refill of medication in one month
+                # Try third line if second fails
+                third_line_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code_third_line')
+                if (not df.at[person_id, f'nc_{self.condition}_medication_prevents_death']) and third_line_code:
+                    self.get_consumables(
+                        item_codes={int(third_line_code): dose['diabetes_third_dose']}
+                    )
+                    df.at[person_id, f'nc_{self.condition}_medication_prevents_death'] = (
+                        self.module.rng.rand() < self.module.parameters[
+                        f'{self.condition}_hsi'].pr_treatment_works_third_line
+                    )
+
+                # Schedule their next HSI for a refill of medication in one month
 
             #todo review refill for diabetes meds, require a blood test before each refill
             self.sim.modules['HealthSystem'].schedule_hsi_event(
