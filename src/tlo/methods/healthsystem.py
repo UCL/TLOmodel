@@ -559,10 +559,12 @@ class HealthSystem(Module):
             id_col = 'Facility_ID'
             data = df.drop(columns=[id_col])
             row_sums = data.sum(axis=1)
-            mask = row_sums > 1.0
-            ## Rescale
-            data.loc[mask] = data.loc[mask].div(row_sums[mask], axis=0)
-            df = pd.concat([df[[id_col]], data], axis=1)
+            mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
+            if mask.any():
+                raise ValueError(
+                    f"Row(s) {df[mask][id_col].values} in the ringfenced clinics file do not sum to 1.0. "
+                    "Please ensure that the fractions for each appointment type sum to 1.0."
+                )
             self.parameters['Ringfenced_Clinics'] = df
 
         # Load ResourceFiles that define appointment and officer types
