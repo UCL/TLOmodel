@@ -163,7 +163,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "sensitivity of xpert for presence of hpv, cin or cervical cancer"
         ),
         "sensitivity_of_via_for_cin_cc": Parameter(
-            Types.REAL, "sensitivity of via for cin and cervical cancer bu stage"
+            Types.REAL, "sensitivity of via for cin and cervical cancer"
         ),
         "prob_xpert_screen": Parameter(
             Types.REAL, "probability of xpert screening"
