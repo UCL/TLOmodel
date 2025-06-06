@@ -1,3 +1,4 @@
+
 import datetime
 import heapq as hp
 import itertools
@@ -332,6 +333,10 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+        'include_ringfenced_clinics': Parameter(
+            Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is'
+            'only applicable if mode_appt_constraints is set to 2.'),
+        'Ringfenced_Clinics': Parameter(Types.DATA_FRAME, 'Proportion facility time ringfenced for specific appointment types.'),
     }
 
     PROPERTIES = {
@@ -357,6 +362,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        include_ringfenced_clinics: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -397,6 +403,8 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
+        :param include_ringfenced_clinics: Whether to implement ring-fencing of a portion of facility time for specific
+            appointment types. This parameter is only applicable if mode_appt_constraints is set to 2. Defaults to False.
         """
 
         super().__init__(name)
@@ -409,6 +417,7 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
+        assert isinstance(include_ringfenced_clinics, bool)
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -524,6 +533,7 @@ class HealthSystem(Module):
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
                 "'year', 'simulation' or None."
             )
+        self.include_ringfenced_clinics = include_ringfenced_clinics
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
@@ -537,6 +547,22 @@ class HealthSystem(Module):
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+        # If include_ringfenced_clinics is True, then read in the Resource file that contains the ringfenced clinics
+        if self.include_ringfenced_clinics:
+            df = pd.read_csv(
+                path_to_resourcefiles_for_healthsystem / 'human_resources' / 'ResourceFile_Clinics.csv'
+            )
+            ## Check that the fractions add to 1 for each row.
+            id_col = 'Facility_ID'
+            data = df.drop(columns=[id_col])
+            row_sums = data.sum(axis=1)
+            mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
+            if mask.any():
+                raise ValueError(
+                    f"Row(s) {df[mask][id_col].values} in the ringfenced clinics file do not sum to 1.0. "
+                    "Please ensure that the fractions for each appointment type sum to 1.0."
+                )
+            self.parameters['Ringfenced_Clinics'] = df
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -551,7 +577,7 @@ class HealthSystem(Module):
         self.parameters['Appt_Time_Table'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
             'ResourceFile_Appt_Time_Table.csv')
-
+        # STOP HERE
         # Load 'Daily_Capabilities' (for both actual and funded)
         for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
@@ -943,7 +969,8 @@ class HealthSystem(Module):
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
 
-    def setup_daily_capabilities(self, use_funded_or_actual_staffing):
+
+    def setup_daily_capabilities(self, use_funded_or_actual_staffing, include_clinics=False):
         """Set up `self._daily_capabilities` and `self._officers_with_availability`.
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
@@ -956,6 +983,38 @@ class HealthSystem(Module):
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
+        # If include_clinics is True, then redefine daily_capabilities
+        if include_clinics:
+            # Merge in the ringfenced clinics
+            ringfenced_clinics = self.parameters['Ringfenced_Clinics'].set_index('Facility_ID')
+            updated_capabilities = self._daily_capabilities.merge(ringfenced_clinics, on='Facility_ID', how='left')
+            ## New capabilities are old_capabilities * fungible
+            updated_capabilities['Total_Mins_Per_Day'] = updated_capabilities['Total_Mins_Per_Day'] * updated_capabilities['fungible']
+            ## Module specific capabilities are total time * non-fungible
+            module_cols = ringfenced_clinics.columns.difference(['Facility_ID', 'fungible'])
+            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Mins_Per_Day'], axis=0)
+            ## Store the non-fungible capabilities strucutred as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
+            self._clinics_capabilities = updated_capabilities[module_cols].T.to_dict()
+            self._daily_capabilities = updated_capabilities.drop(columns=['fungible'])
+
+    """Set the clinic eligibility for this HSI event."""
+    def set_clinic_eligibility(self, clinic_access: bool) -> None:
+        self.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
+
+    def get_clinic_eligibility(str):
+        """
+        Returns the name of the module if the module is eligible for clinic access.
+        If not, returns 'fungible'. Notes for future implementation:
+        this implementation is likely to change in the future to break the one-to-one relationship between
+        modules and clinics.
+        """
+        df = self.parameters['Ringfenced_Clinics']
+        eligible = str in df
+
+        if eligible:
+            return str
+        else:
+            return 'fungible'
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
@@ -1358,8 +1417,9 @@ class HealthSystem(Module):
         else:
             rand_queue = self.hsi_event_queue_counter
 
+         clinic_eligibility = self.get_clinic_eligibility(hsi_event.module.name)
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
+            clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
