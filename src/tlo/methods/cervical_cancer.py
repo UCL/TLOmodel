@@ -847,6 +847,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[has_cin1, 'ce_hpv_cc_status']
         )
 
+        # Update the ce_cc_ever property
         df.loc[
             (df['is_alive']) & (~df['ce_cc_ever']),  # Apply only if is_alive is True and ce_cc_ever is not True
             'ce_cc_ever'
@@ -858,8 +859,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------------------- SCREENING FOR CERVICAL CANCER USING XPERT HPV TESTING AND VIA---------------
         # A subset of women will receive a screening test. Age of eligibility for screening depending on HIV status
 
-        df.ce_selected_for_via_this_month = False
-        df.ce_selected_for_xpert_this_month = False
+        df.loc[df.is_alive, 'ce_selected_for_via_this_month'] = False
+        df.loc[df.is_alive, 'ce_selected_for_xpert_this_month'] = False
 
         days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
 
@@ -984,7 +985,6 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
     CIN HSI is called if individual is diagnosed with CIN2 or CIN3
     Biopsy HSI is called if individual is believed to have severe cervical dysplasia (stage 1 to 4) based on observation of lesions in screening
 
-    May in future want to modify to reflect facility capacity
     """
 
     def __init__(self, module, person_id):
