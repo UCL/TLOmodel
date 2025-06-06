@@ -215,8 +215,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             self.sim.modules['Hiv'].parameters['virally_suppressed_on_art'] = 1.0
             self.sim.modules['Tb'].parameters['tb_prob_tx_success_ds'] = 0.9
             self.sim.modules['Tb'].parameters['tb_prob_tx_success_mdr'] = 0.9
-            self.sim.modules['Tb'].parameters['tb_prob_tx_success_0_4'] = 0.9
-            self.sim.modules['Tb'].parameters['tb_prob_tx_success_5_14'] = 0.9
+            # commented out because tx_success higher than 0.9 already in these groups
+            # self.sim.modules['Tb'].parameters['tb_prob_tx_success_0_4'] = 0.9
+            # self.sim.modules['Tb'].parameters['tb_prob_tx_success_5_14'] = 0.9
             self.sim.modules['Epilepsy'].parameters['prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt'] = 1.0
             self.sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] = 1.0
 

@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, get_scenario_outputs, compute_summary_statistics, create_pickles_locally, get_scenario_info
+from tlo.analysis.utils import (extract_results, get_scenario_outputs, compute_summary_statistics,
+make_age_grp_types, get_scenario_info, make_calendar_period_lookup, make_calendar_period_type)
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
 
@@ -47,7 +48,7 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'integration_scenario_2340088'
+scenario = 'service_integration_scenario-2025-05-21T150139Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 # create_pickles_locally(results_folder, compressed_file_name_prefix='service_integration_scenario')
 
@@ -76,7 +77,7 @@ if not os.path.isdir(g_path):
         os.makedirs(f'{outputspath}graphs_{scenario}')
 
 
-TARGET_PERIOD = (Date(2011, 1, 1), Date(2015, 1, 1))
+TARGET_PERIOD = (Date(2020, 1, 1), Date(2050, 1, 1))
 
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -123,7 +124,7 @@ all_dalys_dfs = extract_results(
                     columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=False)
 all_dalys_dfs.index.names = ['year', 'cause']
-years_to_sum = [2011, 2012, 2013, 2014]
+years_to_sum = list(range(2020, 2051))
 
 # Filter the DataFrame to include only those years
 df_subset = all_dalys_dfs.loc[all_dalys_dfs.index.get_level_values('year').isin(years_to_sum)]
@@ -162,6 +163,7 @@ for k, d in zip(total_cause_diff_dfs, draws):
     # Create bar chart with error bars
     fig, ax = plt.subplots()
     ax.bar(labels, median, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black')
+    ax.axhline(0, color='gray', linestyle='--', linewidth=1)
     ax.set_ylabel('Difference in DALYs from SQ')
     ax.set_title(f'{k} Vs status_quo: Difference in DALYs by cause')
 
@@ -241,8 +243,10 @@ for key, draw in zip(keys[1:], draws[1:]):
            yerr=[comp_err_lower, comp_err_upper],
            capsize=5, label=key, alpha=0.8)
 
+    ax.axhline(0, color='gray', linestyle='--', linewidth=1)
+
     ax.set_title(f"Comparison: {key} vs {baseline_key}")
-    ax.set_ylabel("Value")
+    ax.set_ylabel("DALYs")
     ax.set_xticks(x)
     ax.set_xticklabels(categories, rotation=45, ha='right')
     ax.legend()
@@ -250,3 +254,81 @@ for key, draw in zip(keys[1:], draws[1:]):
     plt.tight_layout()
     plt.savefig(f'{g_path}/{key}_dalys_cause.png', bbox_inches='tight')
     plt.show()
+
+
+
+
+def get_dalys_by_period_sex_agegrp_label(df):
+    """Sum the dalys by period, sex, age-group and label"""
+    df['age_grp'] = df['age_range'].astype(make_age_grp_types())
+    df = df.drop(columns=['date', 'age_range', 'sex'])
+    df = df.groupby(by=["year", "age_grp"]).sum().stack()
+    df.index = df.index.set_names('label', level=2)
+    return df
+
+dalys = extract_results(
+                results_folder,
+                module="tlo.methods.healthburden",
+                key="dalys_stacked_by_age_and_time",  # <-- for DALYS stacked by age and time
+                custom_generate_series=get_dalys_by_period_sex_agegrp_label,
+                do_scaling=False
+            )
+
+def get_pop_by_agegrp_label(df):
+    """Sum the dalys by period, sex, age-group and label"""
+    df['year'] = df['date'].dt.year
+    df_melted = df.melt(id_vars=['year'], value_vars=[col for col in df.columns if col not in ['date', 'year']],
+                        var_name='age_group', value_name='count')
+    series_multi = df_melted.set_index(['year', 'age_group'])['count'].sort_index()
+
+    return series_multi
+
+
+pop_f = extract_results(
+                results_folder,
+                module="tlo.methods.demography",
+                key="age_range_f",  # <-- for DALYS stacked by age and time
+                custom_generate_series=get_pop_by_agegrp_label,
+                do_scaling=False
+            )
+
+pop_m = extract_results(
+                results_folder,
+                module="tlo.methods.demography",
+                key="age_range_m",  # <-- for DALYS stacked by age and time
+                custom_generate_series=get_pop_by_agegrp_label,
+                do_scaling=False
+            )
+
+pop = pop_f + pop_m
+
+# def get_mean_pop_by_age_for_sex_and_year(sex):
+#     years_needed = [i.year for i in TARGET_PERIOD]
+#
+#     if sex == 'F':
+#         key = "age_range_f"
+#     else:
+#         key = "age_range_m"
+#
+#     num_by_age = compute_summary_statistics(
+#         extract_results(results_folder,
+#                         module="tlo.methods.demography",
+#                         key=key,
+#                         custom_generate_series=(
+#
+#                             lambda df_: df_.drop(
+#                                 columns=['date']
+#                             ).melt(
+#                                 var_name='age_grp'
+#                             ).set_index('age_grp')['value']
+#                         ),
+#                         do_scaling=False
+#                         ),
+#         collapse_columns=True,
+#     )
+#     print(num_by_age.index[num_by_age.index.duplicated()])
+#     # num_by_age = num_by_age.reindex(make_age_grp_types().categories)
+#     return num_by_age
+#
+# model_m = get_mean_pop_by_age_for_sex_and_year('M')
+# model_f = get_mean_pop_by_age_for_sex_and_year('F')
