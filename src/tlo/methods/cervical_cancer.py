@@ -138,6 +138,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "probability per month of death from cervical cancer amongst people with stage 4 cervical cancer",
         ),
+        "p_vaginal_bleeding_if_no_cc": Parameter(
+            Types.REAL,
+            "Probability of vaginal bleeding onset if not in stage 1/2/3/4"
+        ),
         "r_vaginal_bleeding_cc_stage1": Parameter(
             Types.REAL, "probability of vaginal bleeding if have stage 1 cervical cancer"
         ),
@@ -327,13 +331,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        self.hpv_cin_options = ["hpv", "cin1", "cin2", "cin3"]
+        self.hpv_stage_options = ["stage1", "stage2a", "stage2b", "stage3", "stage4"]
+
         self.linear_models_for_progression_of_hpv_cc_status = dict()
         self.lm_onset_vaginal_bleeding = None
         self.daly_wts = dict()
         self.item_codes_cervical_can = dict()
 
-        self.hpv_cin_options = ["hpv", "cin1", "cin2", "cin3"]
-        self.hpv_stage_options = ["stage1", "stage2a", "stage2b", "stage3", "stage4"]
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Setup parameters used by the module, now including disability weights"""
@@ -408,6 +414,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
 
+        df = self.sim.population.props
+        p = self.parameters
+        sim = self.sim
+
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
         sim.schedule_event(CervicalCancerMainPollingEvent(self), sim.date)
@@ -419,12 +429,87 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         # Look-up consumable item codes
         self.item_codes_cervical_can = get_consumable_item_codes_cancers(self)
 
+        # Build linear models
+        self.build_linear_models()
+
+        # ----- DX TESTS -----
+        # Create the diagnostic test representing screening and the use of a biopsy
+        # in future could add different sensitivity according to target category
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            biopsy_for_cervical_cancer=DxTest(
+                property='ce_hpv_cc_status',
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_cervical_cancer'],
+                target_categories=["stage1", "stage2a", "stage2b", "stage3", "stage4"]
+            )
+        )
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            screening_with_xpert_for_cin_and_cervical_cancer =DxTest(
+                property='ce_hpv_cc_status',
+                sensitivity=self.parameters['sensitivity_of_xpert_for_hpv_cin_cc'],
+                target_categories=["hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
+            )
+        )
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            screening_with_via_for_cin_and_cervical_cancer=DxTest(
+                property='ce_hpv_cc_status',
+                sensitivity=self.parameters['sensitivity_of_via_for_cin_cc'],
+                target_categories=["cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
+            )
+        )
+
+        # ----- DISABILITY-WEIGHT -----
+        if "HealthBurden" in self.sim.modules:
+            # For those with cancer (any stage prior to stage 4) and never treated
+            self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code=p['stage_1_3_daly_wt']
+                # "Diagnosis and primary therapy phase of cervical cancer":
+                #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
+            )
+
+            # For those with cancer (any stage prior to stage 4) and has been treated
+            self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code=p['stage_1_3_treated_daly_wt']
+                # "Controlled phase of cervical cancer,Generic uncomplicated disease":
+                # "worry and daily medication,has a chronic disease that requires medication every day and causes some
+                #   worry but minimal interference with daily activities".
+            )
+
+            # For those in stage 4: no palliative care
+            self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                sequlae_code = p['stage4_daly_wt']
+                # "Metastatic phase of cervical cancer:
+                # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
+            )
+
+            # For those in stage 4: with palliative care
+            self.daly_wts["stage4_palliative_care"] = self.daly_wts["stage_1_3"]
+            # By assumption, we say that the weight for those in stage 4 with palliative care is the same as
+            # that for those with stage 1-3 cancers.
+
+        # ----- HSI FOR PALLIATIVE CARE -----
+        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.ce_date_palliative_care)]
+
+        self.sim.modules['HealthSystem'].schedule_batch_of_individual_hsi_events(
+            hsi_event_class=HSI_CervicalCancer_PalliativeCare,
+            person_ids=sorted(on_palliative_care_at_initiation),
+            priority=0,
+            topen=self.sim.date + DateOffset(months=1),
+            tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1),
+            module=self.sim.modules["HealthSystem"]
+        )
+
+
+    def build_linear_models(self) -> None:
+        """Build linear models"""
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 1 month period
         # NB. The effect being produced is that treatment only has the effect in the stage at which the
         # treatment was received.
 
-        df = sim.population.props
+        df = self.sim.population.props
         p = self.parameters
         lm = self.linear_models_for_progression_of_hpv_cc_status
 
@@ -578,6 +663,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         # Create variables for used to predict the onset of vaginal bleeding at
         # various stages of the disease
 
+
+        # Build linear model of vaginal bleeding
+        p_vaginal_bleeding_if_no_cc = p['p_vaginal_bleeding_if_no_cc']
         stage1 = p['r_vaginal_bleeding_cc_stage1']
         stage2a = p['rr_vaginal_bleeding_cc_stage2a'] * p['r_vaginal_bleeding_cc_stage1']
         stage2b = p['rr_vaginal_bleeding_cc_stage2b'] * p['r_vaginal_bleeding_cc_stage1']
@@ -585,90 +673,21 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         stage4 = p['rr_vaginal_bleeding_cc_stage4'] * p['r_vaginal_bleeding_cc_stage1']
 
         self.lm_onset_vaginal_bleeding = LinearModel.multiplicative(
-            Predictor('sex').when('M', 0.0),
+            Predictor('sex', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True).when('M', 0.0).when('F', 1.0),
             Predictor(
                 'ce_hpv_cc_status',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
-            .when('none', 0.00001)
-            .when('cin1', 0.00001)
-            .when('cin2', 0.00001)
-            .when('cin3', 0.00001)
+            .when('none', p_vaginal_bleeding_if_no_cc)
+            .when('cin1', p_vaginal_bleeding_if_no_cc)
+            .when('cin2', p_vaginal_bleeding_if_no_cc)
+            .when('cin3', p_vaginal_bleeding_if_no_cc)
             .when('stage1', stage1)
             .when('stage2a', stage2a)
             .when('stage2b', stage2b)
             .when('stage3', stage3)
             .when('stage4', stage4)
-        )
-
-        # ----- DX TESTS -----
-        # Create the diagnostic test representing screening and the use of a biopsy
-        # in future could add different sensitivity according to target category
-
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_cervical_cancer=DxTest(
-                property='ce_hpv_cc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_cervical_cancer'],
-                target_categories=["stage1", "stage2a", "stage2b", "stage3", "stage4"]
-            )
-        )
-
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            screening_with_xpert_for_cin_and_cervical_cancer =DxTest(
-                property='ce_hpv_cc_status',
-                sensitivity=self.parameters['sensitivity_of_xpert_for_hpv_cin_cc'],
-                target_categories=["hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
-            )
-        )
-
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            screening_with_via_for_cin_and_cervical_cancer=DxTest(
-                property='ce_hpv_cc_status',
-                sensitivity=self.parameters['sensitivity_of_via_for_cin_cc'],
-                target_categories=["cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
-            )
-        )
-
-        # ----- DISABILITY-WEIGHT -----
-        if "HealthBurden" in self.sim.modules:
-            # For those with cancer (any stage prior to stage 4) and never treated
-            self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=p['stage_1_3_daly_wt']
-                # "Diagnosis and primary therapy phase of cervical cancer":
-                #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
-            )
-
-            # For those with cancer (any stage prior to stage 4) and has been treated
-            self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=p['stage_1_3_treated_daly_wt']
-                # "Controlled phase of cervical cancer,Generic uncomplicated disease":
-                # "worry and daily medication,has a chronic disease that requires medication every day and causes some
-                #   worry but minimal interference with daily activities".
-            )
-
-            # For those in stage 4: no palliative care
-            self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code = p['stage4_daly_wt']
-                # "Metastatic phase of cervical cancer:
-                # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
-            )
-
-            # For those in stage 4: with palliative care
-            self.daly_wts["stage4_palliative_care"] = self.daly_wts["stage_1_3"]
-            # By assumption, we say that the weight for those in stage 4 with palliative care is the same as
-            # that for those with stage 1-3 cancers.
-
-        # ----- HSI FOR PALLIATIVE CARE -----
-        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.ce_date_palliative_care)]
-
-        self.sim.modules['HealthSystem'].schedule_batch_of_individual_hsi_events(
-            hsi_event_class=HSI_CervicalCancer_PalliativeCare,
-            person_ids=sorted(on_palliative_care_at_initiation),
-            priority=0,
-            topen=self.sim.date + DateOffset(months=1),
-            tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1),
-            module=self.sim.modules["HealthSystem"]
         )
 
     def on_birth(self, mother_id, child_id):
