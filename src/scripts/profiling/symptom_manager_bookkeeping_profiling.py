@@ -89,7 +89,7 @@ print("Setting up simulation...")
 sim = setup_simulation(pop_size=100_000, num_symptoms=50)
 
 print("Assigning random symptoms...")
-assign_random_symptoms(sim, symptom_prob=0.2)
+assign_random_symptoms(sim, symptom_prob=0.6)
 
 print("\nProfiling has_what...")
 avg_time = profile_has_what(sim, num_tests=1000000)
