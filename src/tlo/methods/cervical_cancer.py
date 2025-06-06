@@ -763,8 +763,9 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 topen=self.sim.date,
                 tclose=None)
 
-    def perform_cin_procedure(self, hsi_event, person_id):
-        """Function to decide treatment for individuals with CIN based on year. If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
+    def choose_cin_procedure_and_schedule_it(self, hsi_event, person_id):
+        """Function to decide treatment for individuals with CIN based on year and to schedule the relevnt HSI.
+        If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
         :param hsi_event: HSI Event (required to pass in order to register equipment)
         :param person_id: person of interest
         """
@@ -1019,7 +1020,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
 
                 # CIN removal if suspected CIN2 or CIN3
                 if df.at[person_id, 'ce_hpv_cc_status'] in ['cin2', 'cin3']:
-                    self.module.perform_cin_procedure(self,person_id)
+                    self.module.choose_cin_procedure_and_schedule_it(self,person_id)
                 # Biopsy if suspected Stage 1 to Stage 4
                 elif df.at[person_id, 'ce_hpv_cc_status'] in ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']:
                     hs.schedule_hsi_event(
@@ -1092,7 +1093,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
             else:
                 if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in (self.module.hpv_cin_options + self.module.hpv_stage_options)
                                 ):
-                    self.module.perform_cin_procedure(self,person_id)
+                    self.module.choose_cin_procedure_and_schedule_it(self,person_id)
 
 class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1258,7 +1259,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
 
             # If biopsy confirms that individual does not have cervical cancer but CIN is detected, then individual is sent for CIN treatment
             if (not dx_result) and (df.at[person_id, 'ce_hpv_cc_status'] in self.module.hpv_cin_options):
-                self.module.perform_cin_procedure(self, person_id)
+                self.module.choose_cin_procedure_and_schedule_it(self, person_id)
 
             # If biopsy confirms that individual has cervical cancer, register diagnosis and either refer to treatment or palliative care
             elif dx_result and (df.at[person_id, 'ce_hpv_cc_status'] in ['stage1', 'stage2a', 'stage2b', 'stage3', 'stage4']):
