@@ -929,8 +929,9 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
         # vaginal bleeding.  Once the symptom is developed it never resolves naturally. It may trigger
         # health-care-seeking behaviour.
+        already_has_vaginal_bleeding = self.sim.modules['SymptomManager'].who_has('vaginal_bleeding')
         onset_vaginal_bleeding = self.module.lm_onset_vaginal_bleeding.predict(
-            df.loc[df.is_alive &  (df.ce_stage_at_diagnosis == 'none')],
+            df.loc[df.is_alive & ~df.index.isin(already_has_vaginal_bleeding)],
             rng
         )
 
