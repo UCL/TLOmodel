@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, List, Optional
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, DAYS_IN_YEAR
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -275,10 +275,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "ever diagnosed with cervical cancer (even if now cured)"
         ),
-        "ce_new_stage_this_month": Property(
-            Types.BOOL,
-            "new_stage_this month"
-        ),
         "ce_xpert_hpv_ever_pos": Property(
             Types.BOOL,
             "hpv positive on xpert test ever"
@@ -311,14 +307,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.BOOL,
             "currently has diagnosed cervical cancer (which until now has not been cured)"
         ),
-        "ce_selected_for_via_this_month": Property(
-            Types.BOOL,
-            "selected for screening with via this month"
-        ),
-        "ce_selected_for_xpert_this_month": Property(
-            Types.BOOL,
-            "selected for screening with xpert this month"
-        ),
         "ce_biopsy": Property(
             Types.BOOL,
             "ce biopsy done ever"
@@ -328,6 +316,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        self.polling_event = None  # Will store the regular polling event
 
         self.hpv_cin_options = ["hpv", "cin1", "cin2", "cin3"]
         self.hpv_stage_options = ["stage1", "stage2a", "stage2b", "stage3", "stage4"]
@@ -363,7 +353,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "ce_date_palliative_care"] = pd.NaT
         df.loc[df.is_alive, "ce_date_cin_removal"] = pd.NaT
-        df.loc[df.is_alive, "ce_new_stage_this_month"] = False
         df.loc[df.is_alive, "ce_stage_at_diagnosis"] = "none"
         df.loc[df.is_alive, "ce_ever_treated"] = False
         df.loc[df.is_alive, "ce_cc_ever"] = False
@@ -374,8 +363,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_date_via"] = pd.NaT
         df.loc[df.is_alive, "ce_date_xpert"] = pd.NaT
         df.loc[df.is_alive, 'ce_current_cc_diagnosed'] = False
-        df.loc[df.is_alive, "ce_selected_for_via_this_month"] = False
-        df.loc[df.is_alive, "ce_selected_for_xpert_this_month"] = False
         df.loc[df.is_alive, "ce_biopsy"] = False
         df.loc[df.is_alive, "ce_ever_screened"] = False
         df.loc[df.is_alive, "ce_ever_diagnosed"] = False
@@ -417,7 +404,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(CervicalCancerMainPollingEvent(self), sim.date)
+        self.polling_event = CervicalCancerMainPollingEvent(self)
+        sim.schedule_event(self.polling_event, sim.date)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -517,7 +505,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['cin1'] = LinearModel(
@@ -532,7 +519,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['cin2'] = LinearModel(
@@ -547,7 +533,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['cin3'] = LinearModel(
@@ -562,7 +547,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage1'] = LinearModel(
@@ -577,7 +561,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage2a'] = LinearModel(
@@ -592,7 +575,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage2b'] = LinearModel(
@@ -607,7 +589,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage3'] = LinearModel(
@@ -622,7 +603,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage4'] = LinearModel(
@@ -637,7 +617,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
-            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of ce_hpv_cc_status
@@ -685,7 +664,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "ce_date_treatment"] = pd.NaT
         df.at[child_id, "ce_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "ce_date_diagnosis"] = pd.NaT
-        df.at[child_id, "ce_new_stage_this_month"] = False
         df.at[child_id, "ce_date_palliative_care"] = pd.NaT
         df.at[child_id, "ce_date_cin_removal"] = pd.NaT
         df.at[child_id, "ce_stage_at_diagnosis"] = 'none'
@@ -698,8 +676,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[child_id, "ce_date_via"] = pd.NaT
         df.loc[child_id, "ce_date_xpert"] = pd.NaT
         df.at[child_id, "ce_current_cc_diagnosed"] = False
-        df.at[child_id, "ce_selected_for_via_this_month"] = False
-        df.at[child_id, "ce_selected_for_xpert_this_month"] = False
         df.at[child_id, "ce_biopsy"] = False
         df.at[child_id, "ce_ever_screened"] = False
         df.at[child_id, "ce_ever_diagnosed"] = False
@@ -806,9 +782,9 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        polling_frequency = 1
-        super().__init__(module, frequency=DateOffset(months=polling_frequency))
+        super().__init__(module, frequency=DateOffset(months=1))
         # scheduled to run every 1 month: do not change as this is hard-wired into the values of all the parameters.
+        self.selected_for_screening_last_month = {}  # Will store number screened for logging purposes.
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
@@ -824,22 +800,17 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         for stage, lm in reversed(list(self.module.linear_models_for_progression_of_hpv_cc_status.items())):
             # Note (1): terms in the LinearModels make the progression only applicable in the "origin" class.
             # Note (2): stages are iterated in reverse order to prevent a person progressing through all stages in one time-step
-
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng)
-
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
 
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
-            df['ce_new_stage_this_month'] = df.index.isin(idx_gets_new_stage)
 
-        # Identify rows where the status is 'cin1'
-        has_cin1 = (
-            (df.is_alive) &
+        # Apply the reversion probability to change some 'cin1' to 'none'
+        has_cin1 = (        # Identify rows where the status is 'cin1'
+            df.is_alive &
             (df.sex == 'F') &
             (df.ce_hpv_cc_status == 'cin1')
         )
-
-        # Apply the reversion probability to change some 'cin1' to 'none'
         df.loc[has_cin1, 'ce_hpv_cc_status'] = np.where(
             self.module.rng.random(size=len(df[has_cin1])) < p['prob_revert_from_cin1'],
             'none',
@@ -858,65 +829,60 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------------------- SCREENING FOR CERVICAL CANCER USING XPERT HPV TESTING AND VIA---------------
         # A subset of women will receive a screening test. Age of eligibility for screening depending on HIV status
 
-        df.loc[df.is_alive, 'ce_selected_for_via_this_month'] = False
-        df.loc[df.is_alive, 'ce_selected_for_xpert_this_month'] = False
-
-        days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
-
         # Define screening age and interval criteria based on HIV status
         # Individuals with HIV are recommended for screening earlier (age 25 v. 30) and with more frequency (3yrs v. 5yrs)
         # Individuals who have been treated for CIN previously are recommended for screening with more frequency (1yr)
+        age_min_to_be_eligible_for_screening = np.where(df.hv_diagnosed, p['screening_min_age_hv_pos'], p['screening_min_age_hv_neg'])
+        age_max_to_be_eligible_for_screening = np.where(df.hv_diagnosed, p['screening_max_age_hv_pos'], p['screening_max_age_hv_neg'])
+        screening_interval_in_days = (np.where(df.hv_diagnosed, p['yrs_between_screen_hv_pos'], p['yrs_between_screen_hv_neg']) * DAYS_IN_YEAR).astype(int)
+        days_since_last_screen = (self.sim.date - df.ce_date_last_screened).dt.days
 
-        age_min = np.where(df.hv_diagnosed, p['screening_min_age_hv_pos'], p['screening_min_age_hv_neg'])
-        age_max = np.where(df.hv_diagnosed, p['screening_max_age_hv_pos'], p['screening_max_age_hv_neg'])
-        screening_interval = np.where(df.hv_diagnosed, p['yrs_between_screen_hv_pos'], p['yrs_between_screen_hv_neg']) * 365
-
-        # Define the eligible population
+        # Define the eligible population for screening
         eligible_population = (
-                (df.is_alive) &
+                df.is_alive &
                 (df.sex == 'F') &
                 (~df.ce_current_cc_diagnosed) &
-                (df.age_years.between(age_min, age_max, inclusive="left"))  &
+                (df.age_years.between(age_min_to_be_eligible_for_screening, age_max_to_be_eligible_for_screening, inclusive="left"))  &
                 (
-                        pd.isna(df.ce_date_last_screened) |
-                        (days_since_last_screen > screening_interval) |
-                        (
-                            ((~df["ce_date_cryotherapy"].isna()) | (
-                            ~df["ce_date_thermoabl"].isna())) &
-                                (days_since_last_screen > p['min_yrs_between_screening_if_cin_treated'] * 365)
-                        )
+                        df.ce_date_last_screened.isnull()   # Never screened
+                        | (days_since_last_screen > screening_interval_in_days)  # ... or, due a screen
+                        | (                                                        # .... time since cin treatment
+                            (df["ce_date_cryotherapy"].notnull() | df["ce_date_thermoabl"].notnull())
+                             & (days_since_last_screen > (p['min_yrs_between_screening_if_cin_treated'] * DAYS_IN_YEAR))
+                          )
                 )
         )
+        eligible_idx = eligible_population[eligible_population].index
 
         # Screen eligible population
         screening_methods = {
             'VIA': {
-                'prob_key': 'prob_via_screen',
+                'prob': 'prob_via_screen',
                 'event_class': HSI_CervicalCancer_AceticAcidScreening,
-                'selected_column': 'ce_selected_for_via_this_month'
             },
             'Xpert': {
-                'prob_key': 'prob_xpert_screen',
+                'prob': 'prob_xpert_screen',
                 'event_class': HSI_CervicalCancer_XpertHPVScreening,
-                'selected_column': 'ce_selected_for_xpert_this_month'
             }
         }
-        selected_method = 'VIA' if year < p['transition_screening_year'] else 'Xpert'
-        method_info = screening_methods[selected_method]
+        selected_screening_method = 'VIA' if year < p['transition_screening_year'] else 'Xpert'
+        method_info = screening_methods[selected_screening_method]
 
         # Randomly select for screening
-        df.loc[eligible_population, method_info['selected_column']] = (
-            rng.random(size=len(df[eligible_population])) < p[method_info['prob_key']]
-        )
+        selected_for_screening = eligible_idx[rng.random(size=len(eligible_idx)) < p[method_info['prob']]]
 
         # Schedule HSI events
-        for idx in df.index[df[method_info['selected_column']]]:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=method_info['event_class'](module=self.module, person_id=idx),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
+        self.sim.modules['HealthSystem'].schedule_batch_of_individual_hsi_events(
+            hsi_event_class=method_info['event_class'],
+            person_ids=selected_for_screening,
+            priority=0,
+            topen=self.sim.date,
+            tclose=None,
+            module=self.module,
+        )
+
+        # store number of those screened on this Event, for logging purposes.
+        self.selected_for_screening_last_month = {selected_screening_method: len(selected_for_screening)}
 
         # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
         # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
@@ -927,7 +893,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df.is_alive & ~df.index.isin(already_has_vaginal_bleeding)],
             rng
         )
-
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_vaginal_bleeding[onset_vaginal_bleeding].index.tolist(),
             symptom_string='vaginal_bleeding',
@@ -1593,8 +1558,10 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             prop_cc_hiv = np.nan
 
 
-        n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month ).sum()
-        n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month ).sum()
+        screened_last_month = self.module.polling_event.selected_for_screening_last_month
+        n_screened_via_this_month = screened_last_month.get("VIA", 0)
+        n_screened_xpert_this_month = screened_last_month.get("Xpert", 0)
+
         n_ever_screened = (
             (df['is_alive']) &
             (df['ce_ever_screened']) &
