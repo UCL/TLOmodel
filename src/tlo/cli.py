@@ -2,12 +2,12 @@
 import configparser
 import datetime
 import json
-import math
 import os
 import pickle
 import tempfile
 from collections import defaultdict
 from pathlib import Path
+from shutil import copytree
 from typing import Dict
 
 import click
@@ -40,6 +40,7 @@ def cli(ctx, config_file, verbose):
     * submit scenarios to batch system
     * query batch system about job and tasks
     * download output results for completed job
+    * combine runs from multiple batch jobs with same draws
     """
     ctx.ensure_object(dict)
     ctx.obj["config_file"] = config_file
@@ -175,9 +176,8 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive, i
         vm_size = config["BATCH"]["POOL_VM_SIZE_MORE_MEMORY"]
     else:
         vm_size = config["BATCH"]["POOL_VM_SIZE"]
-    # TODO: cap the number of nodes in the pool?  Take the number of nodes in
-    # input from the user, but always at least 2?
-    pool_node_count = max(2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw))
+
+    pool_node_count = scenario.number_of_draws * scenario.runs_per_draw
 
     # User identity in the Batch tasks
     auto_user = batch_models.AutoUserSpecification(
@@ -746,20 +746,20 @@ def create_job(
     print("Creating job.")
 
     # From https://docs.microsoft.com/en-us/azure/batch/batch-docker-container-workloads#linux-support
-    # We require Ubuntu image with container support (publisher microsoft-azure-batch; offer microsoft-azure-batch)
+    # We require Ubuntu image with container support
     # Get the latest SKU by inspecting output of `az batch pool supported-images list` for publisher+offer
     # Update node_agent_sku_id (below), if necessary
     image_reference = batch_models.ImageReference(
-        publisher="microsoft-azure-batch",
-        offer="ubuntu-server-container",
-        sku="20-04-lts",
+        publisher="microsoft-dsvm",
+        offer="ubuntu-hpc",
+        sku="2204",
         version="latest",
     )
 
     virtual_machine_configuration = batch_models.VirtualMachineConfiguration(
         image_reference=image_reference,
         container_configuration=container_conf,
-        node_agent_sku_id="batch.node.ubuntu 20.04",
+        node_agent_sku_id="batch.node.ubuntu 22.04",
     )
 
     auto_scale_formula = f"""
@@ -844,5 +844,69 @@ def add_tasks(batch_service_client, user_identity, job_id,
     batch_service_client.task.add_collection(job_id, tasks)
 
 
-if __name__ == '__main__':
+@cli.command()
+@click.argument(
+    "output_results_directory",
+    type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
+)
+@click.argument(
+    "additional_result_directories",
+    nargs=-1,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+def combine_runs(output_results_directory: Path, additional_result_directories: tuple[Path]) -> None:
+    """Combine runs from multiple batch jobs locally.
+
+    Merges runs from each draw in one or more additional results directories in
+    to corresponding draws in output results directory.
+
+    All results directories must contain same draw numbers and the draw numbers
+    must be consecutive integers starting from 0. All run numbers in the output
+    result directory draw directories must be consecutive integers starting
+    from 0.
+    """
+    if len(additional_result_directories) == 0:
+        msg = "One or more additional results directories to merge must be specified"
+        raise click.UsageError(msg)
+    results_directories = (output_results_directory,) + additional_result_directories
+    draws_per_directory = [
+        sorted(
+            int(draw_directory.name)
+            for draw_directory in results_directory.iterdir()
+            if draw_directory.is_dir()
+        )
+        for results_directory in results_directories
+    ]
+    for draws in draws_per_directory:
+        if not draws == list(range(len(draws_per_directory[0]))):
+            msg = (
+                "All results directories must contain same draws, "
+                "consecutively numbered from 0."
+            )
+            raise click.UsageError(msg)
+    draws = draws_per_directory[0]
+    runs_per_draw = [
+        sorted(
+            int(run_directory.name)
+            for run_directory in (output_results_directory / str(draw)).iterdir()
+            if run_directory.is_dir()
+        )
+        for draw in draws
+    ]
+    for runs in runs_per_draw:
+        if not runs == list(range(len(runs))):
+            msg = "All runs in output directory must be consecutively numbered from 0."
+            raise click.UsageError(msg)
+    for results_directory in additional_result_directories:
+        for draw in draws:
+            run_counter = len(runs_per_draw[draw])
+            for source_path in sorted((results_directory / str(draw)).iterdir()):
+                if not source_path.is_dir():
+                    continue
+                destination_path = output_results_directory / str(draw) / str(run_counter)
+                run_counter = run_counter + 1
+                copytree(source_path, destination_path)
+
+
+if __name__ == "__main__":
     cli(obj={})

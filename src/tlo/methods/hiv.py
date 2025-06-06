@@ -25,8 +25,8 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-import os
-from typing import TYPE_CHECKING, List
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -40,7 +40,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -54,9 +54,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     The HIV Disease Module
     """
 
-    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
+    def __init__(self, name=None, run_with_checks=False):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         assert isinstance(run_with_checks, bool)
         self.run_with_checks = run_with_checks
@@ -339,6 +338,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "Probability that a male will be circumcised, if HIV-negative, following testing",
         ),
+        "increase_in_prob_circ_2019": Parameter(
+            Types.REAL,
+            "increase in probability that a male will be circumcised, if HIV-negative, following testing"
+            "from 2019 onwards",
+        ),
         "prob_circ_for_child_before_2020": Parameter(
             Types.REAL,
             "Probability that a male aging <15 yrs will be circumcised before year 2020",
@@ -410,9 +414,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
+        "interval_for_viral_load_measurement_months": Parameter(
+            Types.REAL,
+            " the interval for viral load monitoring in months"
+        ),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * 1) Reads the ResourceFiles
         * 2) Declare the Symptoms
@@ -423,10 +431,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_HIV.xlsx"),
-            sheet_name=None,
-        )
+        workbook = read_csv_files(resourcefilepath/'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
@@ -453,11 +458,15 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
-            # Chronic infection but not AIDS (including if on ART)
-            # (taken to be equal to "Symptomatic HIV without anaemia")
+            # Symptomatic HIV without anemia
             self.daly_wts["hiv_infection_but_not_aids"] = self.sim.modules[
                 "HealthBurden"
             ].get_daly_weight(17)
+
+            # AIDS with antiretroviral treatment without anemia
+            self.daly_wts["hiv_infection_on_ART"] = self.sim.modules[
+                "HealthBurden"
+            ].get_daly_weight(20)
 
             #  AIDS without anti-retroviral treatment without anemia
             self.daly_wts["aids"] = self.sim.modules["HealthBurden"].get_daly_weight(19)
@@ -597,6 +606,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_circ_after_hiv_test"],
             Predictor("hv_inf").when(False, 1.0).otherwise(0.0),
             Predictor("sex").when("M", 1.0).otherwise(0.0),
+            Predictor("year",
+                      external=True,
+                      conditions_are_mutually_exclusive=True).when("<2019", 1)
+            .otherwise(p["increase_in_prob_circ_2019"])
         )
 
         # Linear model for circumcision for male and aging <15 yrs who spontaneously presents for VMMC
@@ -1121,10 +1134,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # prep poll for AGYW - target to the highest risk
         # increase retention to 75% for FSW and AGYW
         p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_prep_every_3_months"
+        ]
 
         # perfect retention on ART
-        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_art_every_3_months"
+        ]
 
         # increase probability of VMMC after hiv test
         p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
@@ -1284,7 +1301,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         dalys = pd.Series(data=0, index=df.loc[df.is_alive].index)
 
         # All those infected get the 'infected but not AIDS' daly_wt:
-        dalys.loc[df.hv_inf] = self.daly_wts["hiv_infection_but_not_aids"]
+        dalys.loc[df.hv_inf & (df.hv_art == "not")] = self.daly_wts["hiv_infection_but_not_aids"]
+
+        # infected and on ART and virally suppressed
+        dalys.loc[df.hv_inf & (df.hv_art == "on_VL_suppressed")] = self.daly_wts["hiv_infection_on_ART"]
 
         # Overwrite the value for those that currently have symptoms of AIDS with the 'AIDS' daly_wt:
         dalys.loc[
@@ -2418,7 +2438,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a man, and not circumcised, then consider referring to VMMC
                     if (person["sex"] == "M") & (~person["li_is_circ"]):
                         x = self.module.lm["lm_circ"].predict(
-                            df.loc[[person_id]], self.module.rng
+                            df.loc[[person_id]], self.module.rng,
+                            year=self.sim.date.year,
                         )
                         if x:
                             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2877,13 +2898,16 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+        p = self.module.parameters
 
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+        if (self.module.rng.random_sample(size=1) <
+            p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
+            _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
@@ -2916,11 +2940,20 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required[
-                                'First line ART regimen: young child']: dispensation_days * 2},
-                optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 240},
-                return_individual_results=True)
+                item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child"
+                    ]: dispensation_days
+                    * 2
+                },
+                optional_item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child: cotrimoxazole"
+                    ]: dispensation_days
+                    * 240
+                },
+                return_individual_results=True,
+            )
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
@@ -3565,7 +3598,7 @@ class DummyHivModule(Module):
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):

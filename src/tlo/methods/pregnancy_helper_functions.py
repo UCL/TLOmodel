@@ -53,8 +53,8 @@ def generate_mnh_outcome_counter():
                     'early_onset_sepsis_n_death', 'late_onset_sepsis_n_death', 'encephalopathy_n_death',
                     'neonatal_respiratory_depression_n_death', 'preterm_other_n_death',
                     'respiratory_distress_syndrome_n_death', 'congenital_heart_anomaly_n_death',
-                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death', 'digestive_anomaly_n_death',
-                    'other_anomaly_n_death',
+                    'limb_or_musculoskeletal_anomaly_n_death', 'urogenital_anomaly_n_death',
+                    'digestive_anomaly_n_death', 'other_anomaly_n_death',
 
                     # service coverage outcomes
                     'anc0', 'anc1', 'anc2', 'anc3', 'anc4', 'anc5', 'anc6', 'anc7', 'anc8', 'anc8+',

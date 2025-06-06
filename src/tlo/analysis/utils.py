@@ -18,11 +18,16 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 import squarify
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
-from tlo.util import create_age_range_lookup
+from tlo.util import (
+    create_age_range_lookup,
+    parse_csv_values_for_columns_with_mixed_datatypes,
+    read_csv_files,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -236,7 +241,10 @@ def extract_draw_names(results_folder: Path) -> dict[int, str]:
     draws = [f for f in os.scandir(results_folder) if f.is_dir()]
     return {
         int(d.name):
-            load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
+            load_pickled_dataframes(results_folder,
+                                    d.name,
+                                    0,
+                                    name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
         for d in draws
     }
 
@@ -360,8 +368,9 @@ def extract_results(results_folder: Path,
 
 def compute_summary_statistics(
     results: pd.DataFrame,
-    central_measure: Literal["mean", "median"] = "median",
+    central_measure: Union[Literal["mean", "median"], None] = None,
     width_of_range: float = 0.95,
+    use_standard_error: bool = False,
     only_central: bool = False,
     collapse_columns: bool = False,
 ) -> pd.DataFrame:
@@ -371,13 +380,24 @@ def compute_summary_statistics(
      measure of the median and a 95% interval range.
 
     :param results: The dataframe of results to compute summary statistics of.
-    :param central_measure: The name of the central measure to use - either 'mean' or 'median'.
+    :param central_measure: The name of the central measure to use - either 'mean' or 'median' (defaults to 'median')
     :param width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
+    :param use_standard_error: Whether the range should represent the standard error; otherwise it is just a
+     description of the variation of runs. If selected, then the central measure is always the mean.
     :param collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise).
     :param only_central: Whether to only report the central value (dropping the range).
     :return: A dataframe with computed summary statistics.
-
     """
+
+    if use_standard_error:
+        if not central_measure == 'mean':
+            warnings.warn(
+                "When using 'standard-error' the central measure in the summary statistics is always the mean.")
+            central_measure = 'mean'
+    elif central_measure is None:
+        # If no argument is provided for 'central_measure' (and not using standard-error), default to using 'median'
+        central_measure = 'median'
+
     stats = dict()
     grouped_results = results.groupby(axis=1, by='draw', sort=False)
 
@@ -388,9 +408,19 @@ def compute_summary_statistics(
     else:
         raise ValueError(f"Unknown stat: {central_measure}")
 
-    lower_quantile = (1. - width_of_range) / 2.
-    stats["lower"] = grouped_results.quantile(lower_quantile)
-    stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+    if not use_standard_error:
+        lower_quantile = (1. - width_of_range) / 2.
+        stats["lower"] = grouped_results.quantile(lower_quantile)
+        stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+    else:
+        #  Use standard error concept whereby we're using the intervals to express a 95% CI on the value of the mean.
+        #  This will make width of uncertainty become narrower with more runs.
+        std_deviation = grouped_results.std()
+        num_runs_per_draw = grouped_results.size().T
+        std_error = std_deviation.div(np.sqrt(num_runs_per_draw))
+        z_value = st.norm.ppf(1 - (1. - width_of_range) / 2.)
+        stats["lower"] = stats['central'] - z_value * std_error
+        stats["upper"] = stats['central'] + z_value * std_error
 
     summary = pd.concat(stats, axis=1)
     summary.columns = summary.columns.swaplevel(1, 0)
@@ -441,8 +471,13 @@ def summarize(
         only_central=only_mean,
         collapse_columns=collapse_columns,
     )
-    if output.columns.nlevels > 1:
-        output = output.rename(columns={'central': 'mean'}, level=1)  # rename 'central' to 'mean'
+    # rename 'central' to 'mean' if needed
+    if isinstance(output, pd.DataFrame):
+        output = output.rename(columns={'central': 'mean'},
+                               level=0 if output.columns.nlevels == 1 else 1)
+    else:
+        output.name = 'mean'  # rename the series to mean
+
     return output
 
 
@@ -1176,10 +1211,11 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
     fullmodel."""
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': outputpath})
+    sim = Simulation(start_date=start_date, seed=0,
+                     log_config={'filename': 'test_log', 'directory': outputpath}, resourcefilepath=resourcefilepath)
 
     from tlo.methods.fullmodel import fullmodel
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.register(*fullmodel())
 
     sim.make_initial_population(n=10_000)
     sim.simulate(end_date=start_date)
@@ -1367,7 +1403,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
                 squeeze_single_col_df_to_series(
                     drop_extra_columns(
                         construct_multiindex_if_implied(
-                            pd.read_excel(workbook, sheet_name=sheet_name))))
+                            workbook[sheet_name])))
 
         elif isinstance(_value, str) and _value.startswith("["):
             # this looks like its intended to be a list
@@ -1375,11 +1411,11 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
         else:
             return _value
 
-    workbook = pd.ExcelFile(
-        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
+    workbook = read_csv_files(
+        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking', files=None)
 
     # Load the ResourceFile for the list of parameters that may change
-    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
+    mainsheet = workbook['main'].set_index(['Module', 'Parameter'])
 
     # Select which columns for parameter changes to extract
     cols = []
@@ -1392,6 +1428,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     # Collect parameters that will be changed (collecting the first encountered non-NAN value)
     params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
                                       .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+    params_to_change = params_to_change.apply(parse_csv_values_for_columns_with_mixed_datatypes)
 
     # Convert to dictionary
     params = defaultdict(lambda: defaultdict(dict))

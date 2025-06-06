@@ -423,6 +423,7 @@ class SampleRunner:
                 start_date=self.scenario.start_date,
                 seed=sample["simulation_seed"],
                 log_config=log_config,
+                resourcefilepath=self.scenario.resources,
             )
             sim.register(*self.scenario.modules())
             logger.info(key="draw_name", data={'draw_name': draw['draw_name']}, description="The draw name")

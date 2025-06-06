@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
-from tlo.util import BitsetHandler
+from tlo.util import BitsetHandler, read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -52,9 +52,8 @@ class Labour(Module, GenericFirstAppointmentsMixin):
       PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal period.
       """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         # First we define dictionaries which will store the current parameters of interest (to allow parameters to
         # change between 2010 and 2020) and the linear models
@@ -617,10 +616,10 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                                                              'the postnatal period'),
     }
 
-    def read_parameters(self, data_folder):
-        parameter_dataframe = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirth'
-                                                                          'Attendance.xlsx',
-                                            sheet_name='parameter_values')
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+        parameter_dataframe = read_csv_files(resourcefilepath / 'ResourceFile_LabourSkilledBirth'
+                                                                          'Attendance',
+                                            files='parameter_values')
         self.load_parameters_from_dataframe(parameter_dataframe)
 
     def initialise_population(self, population):
