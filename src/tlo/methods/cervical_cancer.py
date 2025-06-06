@@ -1319,8 +1319,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # If the status is already in `stage4`, start palliative care (instead of treatment)
         if df.at[person_id, "ce_hpv_cc_status"] == 'stage4':
-            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_CervicalCancer_StartTreatment,"
-                                               "scheduling HSI_CervicalCancer_PalliativeCare")
             hs.schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_PalliativeCare(
                      module=self.module,
@@ -1347,7 +1345,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Log the use of adjuvant chemotherapy: try cisplatin first, if not available try fluorouracil
-            # Currently just documenting chemo consumbale, treatement not dependent on availability
+            # Currently just documenting chemo consumbale, treatment not dependent on availability
             chemo_cons_available = self.get_consumables(
                 item_codes=self.module.item_codes_cervical_can['cervical_cancer_treatment_chemotherapy_cisplatin'],
                 optional_item_codes=self.module.item_codes_cervical_can['iv_drug_cons']
