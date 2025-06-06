@@ -489,18 +489,6 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             # By assumption, we say that the weight for those in stage 4 with palliative care is the same as
             # that for those with stage 1-3 cancers.
 
-        # ----- HSI FOR PALLIATIVE CARE -----
-        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.ce_date_palliative_care)]
-
-        self.sim.modules['HealthSystem'].schedule_batch_of_individual_hsi_events(
-            hsi_event_class=HSI_CervicalCancer_PalliativeCare,
-            person_ids=sorted(on_palliative_care_at_initiation),
-            priority=0,
-            topen=self.sim.date + DateOffset(months=1),
-            tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1),
-            module=self.sim.modules["HealthSystem"]
-        )
-
 
     def build_linear_models(self) -> None:
         """Build linear models"""
