@@ -178,10 +178,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "probability of cryotherapy treatment successful in removing CIN (ce_hpv_cc_status set to none)"
         ),
         "transition_testing_year": Parameter(
-            Types.REAL, "year testing recommendation switches from VIA to Xpert"
+            Types.REAL, "year testing switches from VIA to Xpert"
         ),
         "transition_screening_year": Parameter(
-            Types.REAL, "year screening recommendation switches from Cryo to Thermo"
+            Types.REAL, "year screening switches from Cryo to Thermo"
         ),
         "min_age_hpv": Parameter(
             Types.REAL, "minimum age individual can be diagnosed with HPV"
@@ -238,7 +238,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "ce_date_cin_removal": Property(
             Types.DATE,
-            "the date of last cin removal (pd.NaT if never diagnosed)"
+            "the date of last cin removal (pd.NaT if never had cin removal)"
         ),
         "ce_date_treatment": Property(
             Types.DATE,
