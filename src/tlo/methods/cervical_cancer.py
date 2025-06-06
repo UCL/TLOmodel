@@ -107,16 +107,16 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             "probability per month of incident stage4 cervical cancer amongst people with stage3",
         ),
         "rr_progress_cc_hiv": Parameter(
-            Types.REAL, "rate ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv"
+            Types.REAL, "risk ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv"
         ),
         "rr_hpv_vaccinated": Parameter(
             Types.REAL,
-            "rate ratio for hpv if vaccinated - this is combined effect of probability the hpv is "
+            "risk ratio for hpv if vaccinated - this is combined effect of probability the hpv is "
             "vaccine-preventable and vaccine efficacy against vaccine-preventable hpv ",
         ),
         "rr_hpv_age50plus": Parameter(
             Types.REAL,
-            "rate ratio for hpv if age 50 plus"
+            "risk ratio for hpv if age 50 plus"
         ),
         "prob_cure_stage1": Parameter(
             Types.REAL,
@@ -139,19 +139,19 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             "probability per month of death from cervical cancer amongst people with stage 4 cervical cancer",
         ),
         "r_vaginal_bleeding_cc_stage1": Parameter(
-            Types.REAL, "rate of vaginal bleeding if have stage 1 cervical cancer"
+            Types.REAL, "probability of vaginal bleeding if have stage 1 cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage2a": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 2a cervical cancer"
+            Types.REAL, "risk ratio for vaginal bleeding if have stage 2a cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage2b": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 2b cervical cancer"
+            Types.REAL, "risk ratio for vaginal bleeding if have stage 2b cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage3": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 3 cervical cancer"
+            Types.REAL, "risk ratio for vaginal bleeding if have stage 3 cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage4": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 4 cervical cancer"
+            Types.REAL, "risk ratio for vaginal bleeding if have stage 4 cervical cancer"
         ),
         "prob_referral_biopsy_given_vaginal_bleeding": Parameter(
             Types.REAL, "probability of being referred for a biopsy if presenting with vaginal bleeding"
