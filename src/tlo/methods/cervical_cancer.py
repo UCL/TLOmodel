@@ -268,7 +268,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.CATEGORICAL,
             "the cancer stage at which treatment was given (because the treatment only has an effect during the stage"
             "at which it is given). (Note treatment only initiated in stage1/2a/2b/3",
-            categories=["not treated", "stage1", "stage2a", "stage2b", "stage3",],
+            categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
         ),
         "ce_date_palliative_care": Property(
             Types.DATE,
@@ -363,7 +363,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_hpv_cc_status"] = "none"
         df.loc[df.is_alive, "ce_date_diagnosis"] = pd.NaT
         df.loc[df.is_alive, "ce_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "ce_stage_at_which_treatment_given"] = "not treated"
+        df.loc[df.is_alive, "ce_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "ce_date_palliative_care"] = pd.NaT
         df.loc[df.is_alive, "ce_date_cin_removal"] = pd.NaT
         df.loc[df.is_alive, "ce_new_stage_this_month"] = False
@@ -686,7 +686,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         df.at[child_id, "ce_hpv_cc_status"] = "none"
         df.at[child_id, "ce_date_treatment"] = pd.NaT
-        df.at[child_id, "ce_stage_at_which_treatment_given"] = "not treated"
+        df.at[child_id, "ce_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "ce_date_diagnosis"] = pd.NaT
         df.at[child_id, "ce_new_stage_this_month"] = False
         df.at[child_id, "ce_date_palliative_care"] = pd.NaT
