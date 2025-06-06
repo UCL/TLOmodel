@@ -719,25 +719,15 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
         # Assign daly_wt to those with cancer stages before stage4 and have either never been treated or are no longer
         # in the stage in which they were treated
-        disability_series_for_alive_persons.loc[
-            (
-                (df.ce_hpv_cc_status == "stage1") |
-                (df.ce_hpv_cc_status == "stage2a") |
-                (df.ce_hpv_cc_status == "stage2b") |
-                (df.ce_hpv_cc_status == "stage3")
-            )
-        ] = self.daly_wts['stage_1_3']
+        disability_series_for_alive_persons.loc[df.ce_hpv_cc_status.isin(['stage1', 'stage2a', 'stage2b', 'stage3'])] = self.daly_wts['stage_1_3']
 
         # Assign daly_wt to those with cancer stages before stage4 and who have been treated and who are still in the
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.ce_date_treatment) & (
-                    (df.ce_hpv_cc_status == "stage1") |
-                    (df.ce_hpv_cc_status == "stage2a") |
-                    (df.ce_hpv_cc_status == "stage2b") |
-                    (df.ce_hpv_cc_status == "stage3")
-                ) & (df.ce_hpv_cc_status == df.ce_stage_at_which_treatment_given)
+                pd.notnull(df.ce_date_treatment)
+                & df.ce_hpv_cc_status.isin(['stage1', 'stage2a', 'stage2b', 'stage3'])
+                & (df.ce_hpv_cc_status == df.ce_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['stage_1_3_treated']
 
