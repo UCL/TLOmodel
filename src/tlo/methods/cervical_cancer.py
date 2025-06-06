@@ -312,11 +312,11 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         ),
         "ce_selected_for_via_this_month": Property(
             Types.BOOL,
-            "selected for via this period"
+            "selected for screening with via this month"
         ),
         "ce_selected_for_xpert_this_month": Property(
             Types.BOOL,
-            "selected for xpert this month"
+            "selected for screening with xpert this month"
         ),
         "ce_biopsy": Property(
             Types.BOOL,
@@ -344,11 +344,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                            files="parameter_values")
         )
 
-        # note that health seeking probability quite high even though or =1
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='vaginal_bleeding',
-                    odds_ratio_health_seeking_in_adults=1.00)
-        )
+        # Declare symptom (with typical healthcare seeking)
+        self.sim.modules['SymptomManager'].register_symptom(Symptom(name='vaginal_bleeding'))
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -390,11 +387,11 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
         )
 
-        women_over_15_hiv_idx = df.index[(df["age_years"] > p['min_age_hpv']) & (df["sex"] == 'F') & df["hv_inf"]]
+        women_15plus_hiv_idx = df.index[(df["age_years"] >= p['min_age_hpv']) & (df["sex"] == 'F') & df["hv_inf"]]
 
-        df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+        df.loc[women_15plus_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
             ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_over_15_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
+            size=len(women_15plus_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
         )
 
         # -------------------- symptoms, diagnosis, treatment  -----------
