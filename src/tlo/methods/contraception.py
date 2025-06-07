@@ -1171,6 +1171,8 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                 stacklevel=3,
             )
             return self.make_appt_footprint({})
+            warnings.warn(UserWarning("Assumed empty footprint for Contraception Routine appt because couldn't find"
+                                      "actual case."))
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""

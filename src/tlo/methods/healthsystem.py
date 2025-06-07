@@ -948,7 +948,9 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities, self._daily_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
+        self._daily_capabilities, self._daily_capabilities_per_staff = (
+            self.format_daily_capabilities(use_funded_or_actual_staffing)
+        )
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
@@ -958,11 +960,12 @@ class HealthSystem(Module):
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to:
-        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
-        is available.
+        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no
+        capacity is available.
         2. Give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
         (This is so that its easier to track where demands are being placed where there is no capacity)
-        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent of assumed efficiency.
+        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent
+        of assumed efficiency.
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
@@ -973,7 +976,6 @@ class HealthSystem(Module):
 
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
-
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
@@ -1685,7 +1687,9 @@ class HealthSystem(Module):
         # If the current store is too small, replace it
         if len(footprints_per_event) > len(self._get_squeeze_factors_store):
             # The new array size is a multiple of `grow`
-            new_size = math.ceil(len(footprints_per_event) / self._get_squeeze_factors_store_grow) * self._get_squeeze_factors_store_grow
+            new_size = math.ceil(
+                len(footprints_per_event) / self._get_squeeze_factors_store_grow
+            ) * self._get_squeeze_factors_store_grow
             self._get_squeeze_factors_store = np.zeros(new_size)
 
         for i, footprint in enumerate(footprints_per_event):
@@ -2941,7 +2945,14 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 # If it's different
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
-                    event = HSIEventQueueItem(enforced_priority, event.topen, event.rand_queue_counter, event.queue_counter, event.tclose, event.hsi_event)
+                    event = HSIEventQueueItem(
+                        enforced_priority,
+                        event.topen,
+                        event.rand_queue_counter,
+                        event.queue_counter,
+                        event.tclose,
+                        event.hsi_event
+                    )
 
                 # Save it
                 updated_events[offset] = event
@@ -2989,4 +3000,3 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
             description="The number of hcw_staff this year",
             data=current_staff_count,
         )
-

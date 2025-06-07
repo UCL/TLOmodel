@@ -6,7 +6,7 @@ import datetime
 import heapq
 import itertools
 import time
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -63,7 +63,6 @@ class Simulation:
        Individual modules also have their own random number generator with independent
        state.
     """
-
 
     def __init__(
         self,
@@ -130,7 +129,8 @@ class Simulation:
 
         if resourcefilepath is not None:
             self.resourcefilepath = Path(resourcefilepath)
-            assert self.resourcefilepath.exists(), f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
+            assert self.resourcefilepath.exists(), \
+                f"The provided resourcefilepath does not exist: {self.resourcefilepath}"
         else:
             self.resourcefilepath = None
 
@@ -308,8 +308,15 @@ class Simulation:
         :param wall_clock_time: Optional argument specifying total time taken to
             simulate, to be written out to log before closing.
         """
-        for module in self.modules.values():
+        for module_name, module in self.modules.items():
             module.on_simulation_end()
+            if hasattr(module, "PARAMETERS"):
+                # collect the module's parameter labels
+                labels = [p.metadata.get("param_label", "not_init_via_load_param") for p in module.PARAMETERS.values()]
+                labels = Counter(labels)
+                for label, count in labels.items():
+                    logger.info(key="parameter_stats", data={"module": module_name, "label": label, "count": count})
+
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
         self.close_output_file()
@@ -451,7 +458,6 @@ class Simulation:
 
         return person_events
 
-
     def save_to_pickle(self, pickle_path: Path) -> None:
         """Save simulation state to a pickle file using :py:mod:`dill`.
 
@@ -485,7 +491,6 @@ class Simulation:
         if log_config is not None:
             simulation._log_filepath = simulation._configure_logging(**log_config)
         return simulation
-
 
 
 class EventQueue:
