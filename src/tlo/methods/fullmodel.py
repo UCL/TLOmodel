@@ -34,7 +34,7 @@ from tlo.methods import (
     stunting,
     symptommanager,
     tb,
-    wasting,
+    wasting, cervical_cancer,
 )
 
 
@@ -103,6 +103,7 @@ def fullmodel(
         #  - Cancers
         bladder_cancer.BladderCancer,
         breast_cancer.BreastCancer,
+        cervical_cancer.CervicalCancer,
         oesophagealcancer.OesophagealCancer,
         other_adult_cancers.OtherAdultCancer,
         prostate_cancer.ProstateCancer,
