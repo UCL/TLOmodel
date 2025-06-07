@@ -1440,18 +1440,19 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': int(p['palliative_care_bed_days'])})
-        self.cons_item_codes = self.module.item_codes_cervical_can['palliation']
+
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        cons_item_codes = self.module.item_codes_cervical_can['palliation']
 
         # Check that the person is in stage4
         if not (df.at[person_id, "ce_hpv_cc_status"] == 'stage4'):
             logger.warning(key="warning", data="Person with palliative care not in stage 4.")
 
         # Check consumables are available
-        cons_available = self.get_consumables(item_codes=self.cons_item_codes)
+        cons_available = self.get_consumables(item_codes=cons_item_codes)
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
