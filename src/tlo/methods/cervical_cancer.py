@@ -35,7 +35,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     """Cervical Cancer Disease Module"""
 
     INIT_DEPENDENCIES = {
-        'Demography', 'SimplifiedBirths', 'HealthSystem', 'Lifestyle', 'SymptomManager', 'Hiv'
+        'Demography', 'HealthSystem', 'Lifestyle', 'SymptomManager', 'Hiv',
     }
 
     OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'HealthSeekingBehaviour'}
