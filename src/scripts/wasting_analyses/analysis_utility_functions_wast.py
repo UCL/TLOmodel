@@ -49,11 +49,11 @@ def extract_birth_data_frames_and_outcomes(folder, years_of_interest, interventi
                 year=df['date'].dt.year).groupby(['year'])['year'].count()),
         do_scaling=True
     ).fillna(0)
-    births_df = births_df.loc[years_of_interest[0]:years_of_interest[-1]]
+    births_df = births_df.loc[years_of_interest]
 
     births_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(births_df)
 
-    interv_births_df = births_df.loc[intervention_years[0]:intervention_years[-1]]
+    interv_births_df = births_df.loc[intervention_years]
     interv_births_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_births_df)
 
     return {'births_df': births_df,
@@ -72,17 +72,16 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
             lambda df: df.loc[(df['age_days'] < 29)].assign(
                 year=df['date'].dt.year).groupby(['year'])['year'].count()),
         do_scaling=True).fillna(0)
-    neonatal_deaths_df = neonatal_deaths_df.loc[years_of_interest[0]:years_of_interest[-1]]
+    neonatal_deaths_df = neonatal_deaths_df.loc[years_of_interest]
 
     neo_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_deaths_df)
 
-    interv_neo_deaths_df = neonatal_deaths_df.loc[intervention_years[0]:intervention_years[-1]]
+    interv_neo_deaths_df = neonatal_deaths_df.loc[intervention_years]
     interv_neo_deaths_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_neo_deaths_df)
 
     # NEONATAL MORTALITY RATE (NMR), i.e. the number of deaths of infants up to 28 days old per 1,000 live births
     nmr_df = (neonatal_deaths_df / births_df) * 1000
     nmr_per_year_per_draw_df = return_mean_95_CI_across_runs(nmr_df)
-
 
     # # TODO: rm prints when no longer needed
     # print("\nYears, and (Draws, Runs) with no neonatal death:")
@@ -101,11 +100,11 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
             lambda df: df.loc[(df['age_exact_years'] < 5)].assign(
                 year=df['date'].dt.year).groupby(['year'])['year'].count()),
         do_scaling=True).fillna(0)
-    under5_deaths_df = under5_deaths_df.loc[years_of_interest[0]:years_of_interest[-1]]
+    under5_deaths_df = under5_deaths_df.loc[years_of_interest]
 
     under5_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_deaths_df)
 
-    interv_under5_deaths_df = under5_deaths_df.loc[intervention_years[0]:intervention_years[-1]]
+    interv_under5_deaths_df = under5_deaths_df.loc[intervention_years]
     interv_under5_deaths_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_deaths_df)
 
     # UNDER-5 MORTALITY RATE, i.e. the number of deaths of children under 5 years old per 1,000 live births
