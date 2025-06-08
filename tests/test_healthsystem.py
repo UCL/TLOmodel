@@ -74,7 +74,7 @@ def test_using_parameter_or_argument_to_set_service_availability(seed):
         demography.Demography(),
         healthsystem.HealthSystem()
     )
-    sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability_params
+    sim.modules['HealthSystem'].parameters['service_availability'] = service_availability_params
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=0))
     assert sim.modules['HealthSystem'].service_availability == service_availability_params
@@ -87,7 +87,7 @@ def test_using_parameter_or_argument_to_set_service_availability(seed):
         demography.Demography(),
         healthsystem.HealthSystem(service_availability=service_availability_arg)
     )
-    sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability_params
+    sim.modules['HealthSystem'].parameters['service_availability'] = service_availability_params
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=0))
     assert sim.modules['HealthSystem'].service_availability == service_availability_arg
@@ -1491,7 +1491,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
         }, resourcefilepath=resourcefilepath)
 
         sim.register(*fullmodel())
-        sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability  # Change parameter
+        sim.modules['HealthSystem'].parameters['service_availability'] = service_availability  # Change parameter
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
         sim.simulate(end_date=start_date + pd.DateOffset(days=7))
@@ -2231,7 +2231,7 @@ def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir
             }
         }, resourcefilepath=resourcefilepath)
         sim.register(*fullmodel())
-        sim.modules['HealthSystem'].parameters['Service_Availability'] = ["*"]
+        sim.modules['HealthSystem'].parameters['service_availability'] = ["*"]
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=1_000)
 
@@ -2278,7 +2278,7 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
             }
         }, resourcefilepath=resourcefilepath)
         sim.register(*fullmodel(module_kwargs={'HealthSystem': {'randomise_queue': randomise_hsi_queue}}))
-        sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability
+        sim.modules['HealthSystem'].parameters['service_availability'] = service_availability
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
 
