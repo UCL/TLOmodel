@@ -150,13 +150,15 @@ def get_scen_colour(scen_name: str) -> str:
         'FS_plus10': '#D4898E'
     }.get(scen_name)
 
-def plot_mortality__by_interv_multiple_settings(cohort: str, scenarios_dict: dict, intervs_of_interest: list,
-                                                plot_years: list, data_dict: dict, outputs_path: Path) -> None:
+def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_dict: dict, scenarios_dict: dict,
+                                                intervs_of_interest: list, plot_years: list, data_dict: dict,
+                                                outputs_path: Path) -> None:
 
-    def plot_scenarios(scenarios_to_plot):
+    def plot_scenarios(plot_interv, plot_outcome):
+        scenarios_to_plot = scenarios_dict[plot_interv]
         for scen_name, draw in scenarios_to_plot.items():
             scen_colour = get_scen_colour(scen_name)
-            scen_data = data_dict[interv][outcome][draw]
+            scen_data = data_dict[plot_interv][plot_outcome][draw]
 
             means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
 
@@ -171,20 +173,21 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, scenarios_dict: dic
     if cohort == 'Neonatal':
         outcome = 'neo_mort_rate_mean_ci_df'
         target = 12
-        ylim_top = 270 #25
+        ylim_top = 30 # 25
     else: #cohort == 'Under-5':
         outcome = 'under5_mort_rate_mean_ci_df'
         target = 25
-        ylim_top = 270 #60
+        ylim_top = 100 #60
 
     for interv in intervs_of_interest:
 
         fig, ax = plt.subplots()
-        plot_scenarios(scenarios_dict[interv])
-        plot_scenarios(scenarios_dict['SQ'])
+        plot_scenarios(interv, outcome)
+        plot_scenarios('SQ', outcome)
 
         plt.axhline(y=target, color='black', linestyle='--', linewidth=1)
         plt.text(x=plot_years[-1] + 1, y=target, s='SDG\n3.2 target', color='black', va='center', ha='left', fontsize=8)
+        plt.text(x=plot_years[0] - 1, y=target, s=target, color='black', va='center', ha='right', fontsize=8)
         plt.ylabel(f'{cohort} Deaths per 1,000 Live Births')
         plt.xlabel('Year')
         plt.title(f'{cohort} Mortality Rate: multiple settings of {interv} intervention')
@@ -193,5 +196,11 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, scenarios_dict: dic
 
         plt.legend()
         plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
-        plt.savefig(outputs_path / f'{cohort}_mort_rate_{interv}_multiple_settings.png', bbox_inches='tight')
+
+        # TODO: extract from iterv_folders_dict[interv] the suffix after the prefix (scenario_filename_prefix = 'wasting_analysis__minimal_model')
+        plt.savefig(
+            outputs_path / f"{cohort}_mort_rate_{interv}_multiple_settings__"
+                           f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png",
+            bbox_inches='tight'
+        )
         plt.show()
