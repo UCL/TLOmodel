@@ -16,7 +16,6 @@ from tlo.methods import (
     hiv,
     simplified_births,
     symptommanager,
-    tb,
 )
 
 # %% Setup:
@@ -167,7 +166,8 @@ def get_population_of_interest(sim):
 
 def get_population_of_interest_30_to_50(sim):
     # Function to make filtering the simulation population for the population of interest easier
-    # Population of interest for this function is 30 to 50 as it encompasses both HIV and non-HIV individuals eligible for screening
+    # Population of interest for this function is 30 to 50 as it encompasses both HIV and non-HIV individuals eligible
+    # for screening
     population_of_interest = \
         sim.population.props.is_alive & (
                 sim.population.props.age_years.between(30, 50, inclusive='left') & (sim.population.props.sex == 'F'))

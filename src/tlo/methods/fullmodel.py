@@ -7,6 +7,7 @@ from tlo.methods import (
     breast_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
+    cervical_cancer,
     contraception,
     copd,
     demography,
@@ -34,7 +35,7 @@ from tlo.methods import (
     stunting,
     symptommanager,
     tb,
-    wasting, cervical_cancer,
+    wasting,
 )
 
 

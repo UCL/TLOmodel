@@ -3609,7 +3609,8 @@ class DummyHivModule(Module):
         df.loc[(df.is_alive & df.hv_inf), "hv_art"] = pd.Series(
             self.rng.rand(sum(df.is_alive & df.hv_inf)) < self.art_cov).replace(
             {True: "on_VL_suppressed", False: "not"}).values
-        df.loc[(df.is_alive & df.hv_inf), "hv_diagnosed"] = self.rng.random_sample(len(df.loc[(df.is_alive & df.hv_inf)])) < 0.5
+        df.loc[(df.is_alive & df.hv_inf), "hv_diagnosed"] = (
+            self.rng.random_sample(len(df.loc[(df.is_alive & df.hv_inf)])) < 0.5)
 
     def initialise_simulation(self, sim):
         pass
