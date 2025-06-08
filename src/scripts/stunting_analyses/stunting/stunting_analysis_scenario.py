@@ -80,7 +80,7 @@ class Scenario(BaseScenario):
         # ]
         # return {
         #     'HealthSystem': {
-        #         'Service_Availability': service_availability[draw_number],
+        #         'service_availability': service_availability[draw_number],
         #     },
         # }
         # Awaiting fix to https://github.com/UCL/TLOmodel/issues/392

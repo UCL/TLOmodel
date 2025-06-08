@@ -72,7 +72,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         return {
             "No Healthcare System": {
                 'HealthSystem': {
-                    'Service_Availability': []
+                    'service_availability': []
                 },
             },
 
