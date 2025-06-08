@@ -26,7 +26,7 @@ total_time_start = time.time()
 # Create dicts for the intervention scenarios. 'Interv_abbrev': {'Intervention scenario title/abbreviation': draw_nmb}
 scenarios_dict = {'SQ': {'Status Quo': 0},
                   'GM': {'GM_all': 1, 'GM_1-2': 2, 'GM_FullAttend': 3},
-                  'GM2': {'GM_all': 1, 'GM_1-2': 2}}
+                  'GM2': {'GM_all': 1, 'GM_1-2': 2, 'GM_FullAttend': 3}}
 # Set the intervention to be analysed, and for which years they were simulated
 intervs_of_interest = ['GM', 'GM2']
 intervention_years = list(range(2026, 2031))
@@ -63,7 +63,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     iterv_folders_dict = {
         interv: get_scenario_outputs(
             scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
-        )[-1] for interv in intervs_of_interest
+        )[-1] for interv in intervs_ofinterest
     }
     # Define folders for each scenario
     scenario_folders = {
@@ -71,7 +71,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             scen_name: Path(iterv_folders_dict[interv] / str(scen_draw_nmb))
             for scen_name, scen_draw_nmb in scenarios_dict[interv].items()
         }
-        for interv in intervs_of_interest
+        for interv in intervs_ofinterest
     }
 
     pd.set_option('display.max_columns', None)  # Show all columns
@@ -90,25 +90,26 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #     print(f"### {interv=}")
     #     for outcome in birth_outcomes[interv]:
     #         print(f"{outcome}:\n{birth_outcomes[interv][outcome]}")
+    # print()
     #
+
     # Extract neonatal and under-5 death data for each intervention
-    print()
     death_outcomes = {
         interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
             iterv_folders_dict[interv], birth_outcomes[interv]['births_df'], plotyears, interventionyears
         ) for interv in scenario_folders
     }
     # TODO: rm
-    print("\nDEATH OUTCOMES")
-    for interv in death_outcomes.keys():
-        print(f"### {interv=}")
-        for outcome in death_outcomes[interv]:
-            print(f"{outcome}:\n{death_outcomes[interv][outcome]}")
-    #
+    # print("\nDEATH OUTCOMES")
+    # for interv in death_outcomes.keys():
+    #     print(f"### {interv=}")
+    #     for outcome in death_outcomes[interv]:
+    #         print(f"{outcome}:\n{death_outcomes[interv][outcome]}")
+    # #
 
     for cohort in ['Neonatal', 'Under-5']:
         analysis_utility_functions_wast.plot_mortality__by_interv_multiple_settings(
-            cohort, scenarios_dict, intervs_of_interest, plot_years, death_outcomes, outputs_path
+            cohort, scenarios_dict, intervs_ofinterest, plotyears, death_outcomes, outputspath
         )
 
 # ---------------- #
