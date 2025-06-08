@@ -69,8 +69,12 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
-            lambda df: df.loc[(df['age_days'] < 29)].assign(
-                year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            lambda df: (filtered_by_age := df.loc[df['age_days'] < 29])
+            .assign(year=filtered_by_age['date'].dt.year)
+            .groupby(['year'])['year']
+            .count()
+            .reindex(df['date'].dt.year.unique(), fill_value=0)
+        ),
         do_scaling=True).fillna(0)
     neonatal_deaths_df = neonatal_deaths_df.loc[years_of_interest]
 
@@ -97,9 +101,13 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
-            lambda df: df.loc[(df['age_exact_years'] < 5)].assign(
-                year=df['date'].dt.year).groupby(['year'])['year'].count()),
-        do_scaling=True).fillna(0)
+            lambda df: (filtered_by_age := df.loc[df['age_exact_years'] < 5])
+            .assign(year=filtered_by_age['date'].dt.year)
+            .groupby(['year'])['year']
+            .count()
+            .reindex(df['date'].dt.year.unique(), fill_value=0)
+        ),
+        do_scaling = True).fillna(0)
     under5_deaths_df = under5_deaths_df.loc[years_of_interest]
 
     under5_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_deaths_df)
