@@ -41,7 +41,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
 popsize = 100_000
 
-def run_sim(service_availability):
+def run_sim():
     # Establish the simulation object and set the seed
     sim = Simulation(start_date=start_date, log_config=log_config, resourcefilepath=resourcefilepath)
 
