@@ -986,32 +986,16 @@ class HealthSystem(Module):
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
         # If include_clinics is True, then redefine daily_capabilities
         if include_clinics:
-            facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-            officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
-            facs = list()
-            officers = list()
-            for f in facility_ids:
-                for o in officer_type_codes:
-                    facs.append(f)
-                    officers.append(o)
-
-            capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
-            ## Now we want to accomplish two goals: 1) if a facility_id is present in the ringfenced clinics, then
-            ## copy over its split to all the officer types, and 2) if a facility_id is not present in the
-            ## ringfenced clinics, then set the proportion of fungible  1 for all officer types.
-
-
-            # Merge in the ringfenced clinics
-            ringfenced_clinics = self.parameters['Ringfenced_Clinics'].set_index('Facility_ID')
-            updated_capabilities = self._daily_capabilities.merge(ringfenced_clinics, on='Facility_ID', how='left')
+            self.parameters['Ringfenced_Clinics'] = self.format_clinic_capabilities()
+            updated_capabilities = self.parameters['Ringfenced_Clinics'].join(self._daily_capabilities_per_staff)
             ## New capabilities are old_capabilities * fungible
-            updated_capabilities['Total_Mins_Per_Day'] = updated_capabilities['Total_Minutes_Per_Day'] * updated_capabilities['fungible']
+            updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Mins_Per_Day_Per_Staff'] * updated_capabilities['Fungible']
             ## Module specific capabilities are total time * non-fungible
-            module_cols = ringfenced_clinics.columns.difference(['Facility_ID', 'fungible'])
-            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis=0)
+            module_cols = self.parameters['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis=0)
             ## Store the non-fungible capabilities strucutred as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
             self._clinics_capabilities = updated_capabilities[module_cols].T.to_dict()
-            self._daily_capabilities = updated_capabilities.drop(columns=['fungible'])
+            self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
     """Set the clinic eligibility for this HSI event."""
     def set_clinic_eligibility(self, clinic_access: bool) -> None:
@@ -1122,7 +1106,7 @@ class HealthSystem(Module):
         return capabilities_ex['Total_Minutes_Per_Day'], capabilities_per_staff_ex['Mins_Per_Day_Per_Staff']
 
 
-    def format_clinic_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
+    def format_clinic_capabilities(self) -> pd.DataFrame:
         """
         The breakdown of capabilities between non-fungible and fungible clinics is done in the Ringfenced_Clinics
         read in from the ResourceFile_Clinics.csv file. This function will fill out the capabilities dataframe
@@ -1170,8 +1154,7 @@ class HealthSystem(Module):
         assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
-        ## Update the self.ringfenced_clinics_capabilities
-        self.parameters['Ringfenced_Clinics'] = capabilities_ex
+        return capabilities_ex
 
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
