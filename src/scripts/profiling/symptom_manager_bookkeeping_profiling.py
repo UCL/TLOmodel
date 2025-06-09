@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.methods import demography, symptommanager
 
 
