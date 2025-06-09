@@ -405,7 +405,8 @@ def test_check_progression_to_death_is_blocked_by_treatment(seed):
     yll = sim.modules['HealthBurden'].years_life_lost
     assert 'CervicalCancer' not in yll.columns
 
-    # todo - and everyone treated goes to none.
+    # Everyone that has been treated is now in 'none' category.
+    assert (df.loc[df.is_alive & df.ce_ever_treated, 'ce_hpv_cc_status'] == 'hpv').all()
 
 
 @pytest.mark.slow

@@ -519,6 +519,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "not")',
                 (p['rr_progress_cc_hiv'])),
+            # Assume no progression if ever has had treatment
+            Predictor('ce_ever_treated', conditions_are_exhaustive=True, conditions_are_mutually_exclusive=True).when(
+                True, 0.0).when(False, 1.0),
+
         )
 
         lm['cin2'] = LinearModel(
@@ -1279,6 +1283,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     This event is scheduled by HSI_CervicalCancer_Biopsy following a diagnosis of
     cervical Cancer. It initiates the treatment of cervical Cancer.
     It is only for persons with a cancer that is not in stage4 and who have been diagnosed.
+    Successful treatment, put people back in 'hpv' stage (from which a progression is not possible)
     """
 
     def __init__(self, module, person_id):
@@ -1369,7 +1374,8 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             if treatment_will_be_successful:
                 # Reset properties for this person at this episode is, in effect, over.
-                df.at[person_id, "ce_hpv_cc_status"] = 'none'  # <-- prevents the DeathInStage4 Event doing anything
+                df.at[person_id, "ce_hpv_cc_status"] = 'hpv'
+                                    # <-- resets to 'hpv' stage (and no re-progression possible; see linear_models)
                 df.at[person_id, 'ce_current_cc_diagnosed'] = False
                 df.at[person_id, 'ce_cured_date_cc'] = self.sim.date
 
