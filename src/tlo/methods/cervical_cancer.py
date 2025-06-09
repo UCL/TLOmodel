@@ -861,7 +861,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         screening_methods = {
             'VIA': {
                 'prob': 'prob_via_screen',
-                'event_class': HSI_CervicalCancer_AceticAcidScreening,
+                'event_class': HSI_CervicalCancer_VIAScreening,
             },
             'Xpert': {
                 'prob': 'prob_xpert_screen',
