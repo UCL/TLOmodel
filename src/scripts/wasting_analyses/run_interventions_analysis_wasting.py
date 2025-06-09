@@ -3,21 +3,13 @@ An analysis file for the wasting module to compare outcomes of one intervention 
 """
 
 # %% Import statements
-import analysis_utility_functions_wast
-import glob
-import gzip
-import os
-import shutil
 import time
 from pathlib import Path
 
-import numpy as np
+import analysis_utility_functions_wast
 import pandas as pd
-from matplotlib import pyplot as plt
-from PyPDF2 import PdfReader, PdfWriter
-from scipy import stats
 
-from tlo.analysis.utils import compare_number_of_deaths, get_scenario_outputs, parse_log_file
+from tlo.analysis.utils import get_scenario_outputs
 
 # start time of the whole analysis
 total_time_start = time.time()
