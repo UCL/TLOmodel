@@ -670,8 +670,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # Check multi-index is in check and that the addition of DALYS has worked
         assert self.module.years_lived_with_disability.index.equals(self.module.multi_index_for_age_and_wealth_and_time_and_region)
-        print(self.module.years_lived_with_disability.sum().sum())
-        print(dalys_to_add + dalys_current)
+
         assert abs(self.module.years_lived_with_disability.sum().sum() - (dalys_to_add + dalys_current)) < 1e-5
         self.module.check_multi_index()
 
