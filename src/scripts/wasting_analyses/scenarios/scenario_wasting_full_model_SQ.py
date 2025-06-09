@@ -35,7 +35,7 @@ class WastingAnalysis(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'wasting_analysis__minimal_model',
+            'filename': 'wasting_analysis__full_model_SQ',
             'directory': './outputs/wasting_analysis',
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
