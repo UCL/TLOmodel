@@ -1034,6 +1034,7 @@ def test_no_wasting_after_recent_recovery(tmpdir):
     used as an example within the assumed min_days_to_relapse-day relapse-free window.) """
     popsize = 1000
     sim = get_sim(tmpdir)
+    # get wasting module
     wmodule = sim.modules['Wasting']
     p = wmodule.parameters
 
@@ -1068,6 +1069,7 @@ def test_no_wasting_after_recent_recovery(tmpdir):
 def test_default_interv_pars(tmpdir):
     """ Test that default values of intervention parameters are the same as the parameters prior the intervention. """
     sim = get_sim(tmpdir)
+    # get wasting module
     wmodule = sim.modules['Wasting']
     p = wmodule.parameters
 
@@ -1075,9 +1077,13 @@ def test_default_interv_pars(tmpdir):
         ("The parameters 'growth_monitoring_attendance_prob_agecat' and "
          "'interv_growth_monitoring_attendance_prob_agecat' do not match.")
 
+    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
+        "The parameters 'seeking_care_MAM_prob' and 'interv_seeking_care_MAM_prob' do not match."
+
 def test_interventions_activation(tmpdir):
     """ Test that Wasting_ActivateInterventionsEvent correctly overwrites parameters. """
     sim = get_sim(tmpdir)
+    # get wasting module
     wmodule = sim.modules['Wasting']
     p = wmodule.parameters
 
@@ -1091,4 +1097,48 @@ def test_interventions_activation(tmpdir):
 
     # Verify that the parameters have been overwritten
     assert p['growth_monitoring_attendance_prob_agecat'] == p['interv_growth_monitoring_attendance_prob_agecat'], \
-        "The parameter was not correctly overwritten by the activation event."
+        ("The parameter 'growth_monitoring_attendance_prob_agecat' was not correctly overwritten by the activation "
+         "event.")
+
+def test_symptoms_with_MAM(tmpdir):
+    """ If 0% MAM cases are seeking care, after interventions activated, a person who becomes MAM will have no symptoms
+    assigned. """
+    dur = pd.DateOffset(days=1)
+    popsize = 1000
+    sim = get_sim(tmpdir)
+    # get wasting module
+    wmodule = sim.modules['Wasting']
+    p = wmodule.parameters
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+
+    # Get person to use and set their acute malnutrtion indicators to MAM:
+    df = sim.population.props
+    under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
+    person_id = under5s.index[0]
+    df.loc[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2' # moderately wasted
+    df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
+    df.loc[person_id, 'un_am_nutritional_oedema'] = False
+
+    # ### If no care-seeking MAM cases, the symptoms are never assigned to them
+    p['interv_seeking_care_MAM_prob'] = 0.0
+    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
+    activation_event.apply(sim.population)
+    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
+        "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+    # Verify no symptoms are assigned
+    assert not sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+    # ### If all MAM cases are seeking cares, the symptoms are always assigned to them
+    p['interv_seeking_care_MAM_prob'] = 1.0
+    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
+    activation_event.apply(sim.population)
+    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
+        "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+    # Verify symptoms are assigned
+    assert sim.modules['SymptomManager'].has_what(person_id=person_id)
