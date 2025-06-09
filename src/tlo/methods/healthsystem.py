@@ -1008,13 +1008,13 @@ class HealthSystem(Module):
         this implementation is likely to change in the future to break the one-to-one relationship between
         modules and clinics.
         """
-        df = self.parameters['Ringfenced_Clinics']
-        eligible = str in df
+        module_cols = self.parameters['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+        eligible = str in module_cols
 
         if eligible:
             return str
         else:
-            return 'fungible'
+            return 'Fungible'
 
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
