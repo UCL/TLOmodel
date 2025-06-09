@@ -296,12 +296,12 @@ def test_check_progression_through_stages_is_happening(seed):
     check_configuration_of_population(sim)
 
     # Look at distribution of status:
-    distr = sim.population.props.loc[population_of_interest, "ce_hpv_cc_status"].value_counts(normalize=True)
+    df = sim.population.props
+    distr = df.loc[population_of_interest, "ce_hpv_cc_status"].value_counts(normalize=True)
     assert (distr.loc[['stage2a', 'stage2b', 'stage3', 'stage4']] > 0.0).all()
 
     # check that some people have died of cervical cancer
-    yll = sim.modules['HealthBurden'].years_life_lost
-    assert yll['CervicalCancer'].sum() > 0
+    assert (df.cause_of_death == 'CervicalCancer').any()
 
     df = sim.population.props
     # check that people are being diagnosed, going onto treatment and palliative care:
@@ -342,8 +342,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     assert len(df.loc[df.is_alive & (df.ce_hpv_cc_status != 'none')]) > 0
 
     # check that some people have died of cervical cancer
-    yll = sim.modules['HealthBurden'].years_life_lost
-    assert yll['CervicalCancer'].sum() > 0
+    assert (df.cause_of_death == 'CervicalCancer').any()
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
     assert not (df.ce_date_diagnosis > start_date).any()
@@ -401,6 +400,8 @@ def test_check_progression_to_death_is_blocked_by_treatment(seed):
     check_dtypes(sim)
 
     # there should have been no year of live lost to cervical cancer
+    df = sim.population.props
+    assert not (df.cause_of_death == 'CervicalCancer').any()
     yll = sim.modules['HealthBurden'].years_life_lost
     assert 'CervicalCancer' not in yll.columns
 
