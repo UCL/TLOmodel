@@ -1,3 +1,2 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c8cb231e02adf0af7fff92e583032c4a7cadc2a2616898fe7c82104b801179eb
-size 208
+Facility_ID,Officer_Category,Hiv,Anc,Tb,Fungible
+0.0,Clinical,0.25,0.10,0.10,0.55

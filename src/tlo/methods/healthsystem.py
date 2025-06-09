@@ -556,8 +556,8 @@ class HealthSystem(Module):
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'ResourceFile_Clinics.csv'
             )
             ## Check that the fractions add to 1 for each row.
-            id_col = 'Facility_ID'
-            data = df.drop(columns=[id_col])
+            id_cols = ['Facility_ID', 'Officer_Category']
+            data = df.drop(columns=[id_cols])
             row_sums = data.sum(axis=1)
             mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
             if mask.any():
@@ -986,14 +986,29 @@ class HealthSystem(Module):
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
         # If include_clinics is True, then redefine daily_capabilities
         if include_clinics:
+            facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+            officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
+            facs = list()
+            officers = list()
+            for f in facility_ids:
+                for o in officer_type_codes:
+                    facs.append(f)
+                    officers.append(o)
+
+            capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
+            ## Now we want to accomplish two goals: 1) if a facility_id is present in the ringfenced clinics, then
+            ## copy over its split to all the officer types, and 2) if a facility_id is not present in the
+            ## ringfenced clinics, then set the proportion of fungible  1 for all officer types.
+
+
             # Merge in the ringfenced clinics
             ringfenced_clinics = self.parameters['Ringfenced_Clinics'].set_index('Facility_ID')
             updated_capabilities = self._daily_capabilities.merge(ringfenced_clinics, on='Facility_ID', how='left')
             ## New capabilities are old_capabilities * fungible
-            updated_capabilities['Total_Mins_Per_Day'] = updated_capabilities['Total_Mins_Per_Day'] * updated_capabilities['fungible']
+            updated_capabilities['Total_Mins_Per_Day'] = updated_capabilities['Total_Minutes_Per_Day'] * updated_capabilities['fungible']
             ## Module specific capabilities are total time * non-fungible
             module_cols = ringfenced_clinics.columns.difference(['Facility_ID', 'fungible'])
-            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Mins_Per_Day'], axis=0)
+            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis=0)
             ## Store the non-fungible capabilities strucutred as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
             self._clinics_capabilities = updated_capabilities[module_cols].T.to_dict()
             self._daily_capabilities = updated_capabilities.drop(columns=['fungible'])
@@ -1105,6 +1120,58 @@ class HealthSystem(Module):
 
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day'], capabilities_per_staff_ex['Mins_Per_Day_Per_Staff']
+
+
+    def format_clinic_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
+        """
+        The breakdown of capabilities between non-fungible and fungible clinics is done in the Ringfenced_Clinics
+        read in from the ResourceFile_Clinics.csv file. This function will fill out the capabilities dataframe
+        so that for facility, officer type combinations that are not present in the file, the proportion of fungible
+        is set to 1, and the non-fungible capabilities are set to 0.
+        """
+
+        capabilities_cl = self.parameters['Ringfenced_Clinics']
+        # Create dataframe containing background information about facility and officer types
+        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
+        facs = list()
+        officers = list()
+        for f in facility_ids:
+            for o in officer_type_codes:
+                facs.append(f)
+                officers.append(o)
+
+        capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
+
+        # Merge in information about facility from Master Facilities List
+        mfl = self.parameters['Master_Facilities_List']
+        capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
+
+        capabilities_ex = capabilities_ex.merge(
+            capabilities_cl,
+            on=['Facility_ID', 'Officer_Type_Code'],
+            how='left',
+        )
+        ## Fungible set to 1 for missing facility/office_code combinations
+        capabilities_ex = capabilities_ex['Fungible'].fillna(1)
+        ## All other columns are set to 0
+        other_cols = capabilities_ex.columns.difference[['Facility_ID', 'Officer_Type_Code', 'Fungible']]
+        capabilities_ex = capabilities_ex[other_cols].fillna(0)
+
+        # Give the standard index:
+        capabilities_ex = capabilities_ex.set_index(
+            'FacilityID_'
+            + capabilities_ex['Facility_ID'].astype(str)
+            + '_Officer_'
+            + capabilities_ex['Officer_Type_Code']
+        )
+
+        # Checks
+        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
+        assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
+
+        ## Update the self.ringfenced_clinics_capabilities
+        self.parameters['Ringfenced_Clinics'] = capabilities_ex
 
     def _rescale_capabilities_to_capture_effective_capability(self):
         # Notice that capabilities will only be expanded through this process
