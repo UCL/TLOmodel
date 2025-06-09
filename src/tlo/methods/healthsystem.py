@@ -2382,6 +2382,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
+        ## Counters for clinics
+        clinic_capabilities_monitor = Counter(self.module._clinics_capabilities.to_dict())
+        set_cl_capabilities_still_available = {k for k, v in clinic_capabilities_monitor.items() if v > 0.0}
+
+
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
         # due today all at once, run event immediately at time of querying. This ensures that no
         # artificial "midday effects" are introduced when evaluating priority policies.
@@ -2413,6 +2418,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
                 event = next_event_tuple.hsi_event
+                # Check the event's clinic eligibility; if not clinic for eligible,
+                # clinic name will be Fungible; otherwise it will be the clinic name
+                event_clinic = event.clinic_eligibility
+                counter_to_use = ## WIP
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -2446,6 +2455,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # In this version of mode_appt_constraints = 2, do not have access to squeeze
                     # based on queue information, and we assume no squeeze ever takes place.
                     squeeze_factor = 0.
+
 
                     # Check if any of the officers required have run out.
                     out_of_resources = False
