@@ -2312,10 +2312,24 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             prob_disruption = pd.DataFrame(prob_disruption)
                             prob_disruption = float(prob_disruption.iloc[0])/30 # to get average days
                             if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
-                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
-                                                                                    priority=item.priority)
                                 climate_disrupted = True
-                                print(climate_disrupted)
+                                response_to_disruption = 'delay'
+                                if prob_disruption > 0.05:
+                                    response_to_disruption == 'cancel'
+                                if response_to_disruption == 'delay':
+                                    if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
+                                        self._add_hsi_event_queue_item_to_hsi_event_queue(priority=item.priority,
+                                                                                          topen=self.sim.date + DateOffset(month=1),
+                                                                                          tclose=self.sim.date + DateOffset(month=1) +
+                                                                                                 DateOffset((item.topen - item.tclose).days()), hsi_event=item)
+                                    else:
+                                        self._add_hsi_event_queue_item_to_hsi_event_queue(priority=item.priority,
+                                                                                          topen=self.sim.date + DateOffset(month=1),
+                                                                                          tclose=self.sim.date + DateOffset(month=1) +
+                                                                                                 DateOffset((item.topen - item.tclose).days()), hsi_event=item)
+                                if response_to_disruption == 'cancel':
+                                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
+                                                                                    priority=item.priority)
 
 
                 if (climate_disrupted == False) and (equipment_available == True):
