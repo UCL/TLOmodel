@@ -1294,6 +1294,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules["HealthSystem"]
         p = self.module.parameters
         rng = self.module.rng
+        self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
         # If the status is already in `stage4`, start palliative care (instead of treatment)
         if df.at[person_id, "ce_hpv_cc_status"] == 'stage4':
@@ -1320,7 +1321,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - add the used equipment
-            self.add_equipment(self.healthcare_system.equipment.from_pkg_names('Major Surgery'))
 
             # Log the use of adjuvant chemotherapy: try cisplatin first, if not available try fluorouracil
             # Currently just documenting chemo consumbale, treatment not dependent on availability
