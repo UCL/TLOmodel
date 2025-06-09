@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, Literal, NamedTuple, Optional,
 
 import numpy as np
 
-from tlo import Date, logging
+from tlo import Date, logging, DateOffset
 from tlo.events import Event
 
 if TYPE_CHECKING:
@@ -117,6 +117,7 @@ class HSI_Event:
         #                                     run, and the `never_ran` method is called instead. This is a declaration
         #                                     of resource needs, but is private because users are expected to use
         #                                     `add_equipment` to declare equipment needs.
+        self.disrupted_by_climate = False
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -421,6 +422,21 @@ class HSI_Event:
             ),
             equipment=tuple(sorted(self._EQUIPMENT)),
         )
+
+    def reschedule_hsi(self):
+        """Schedule for this same HSI_Event to occur in a month."""
+        self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
+                                                                   topen=self.sim.date + DateOffset(month=1),
+                                                                   tclose=self.sim.date + DateOffset(month=1) + DateOffset(day = (self.topen - self.sim.date).days()),)
+    def climate_distrupted(self):
+        """Handle the impact of climate on healthcare seeking behaviours. If delated, the individual seeks care in
+        one months' time. If"""
+
+        if self.disrupted_by_climate == 'delayed':
+            self.reschedule_hsi()
+        if self.disrupted_by_climate == 'cancelled':
+            self.never_ran()
+
 
 
 class HSIEventWrapper(Event):
