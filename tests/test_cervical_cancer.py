@@ -95,13 +95,13 @@ def make_high_init_prev(sim):
     return sim
 
 
-def incr_rate_of_onset_lgd(sim):
+def incr_rate_of_onset_stage1(sim):
     # Rate of cancer onset per month:
     sim.modules['CervicalCancer'].parameters['r_stage1_cin3'] = 0.2
     return sim
 
 
-def zero_rate_of_onset_lgd(sim):
+def zero_rate_of_onset_stage1(sim):
     # Rate of cancer onset per month:
     sim.modules['CervicalCancer'].parameters['r_stage1_cin3'] = 0.00
     return sim
@@ -252,7 +252,7 @@ def test_run_sim_from_high_prevalence(seed):
     sim = make_simulation_healthsystemdisabled(seed=seed)
     sim = make_high_init_prev(sim)
     sim = incr_rates_of_progression(sim)
-    sim = incr_rate_of_onset_lgd(sim)
+    sim = incr_rate_of_onset_stage1(sim)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
@@ -274,7 +274,7 @@ def test_check_progression_through_stages_is_happening(seed):
     sim = zero_out_init_prev(sim)
 
     # no incidence of new cases
-    sim = zero_rate_of_onset_lgd(sim)
+    sim = zero_rate_of_onset_stage1(sim)
 
     # remove effect of treatment:
     sim = make_treatment_ineffective(sim)
@@ -322,7 +322,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     sim = zero_out_init_prev(sim)
 
     # no incidence of new cases
-    sim = zero_rate_of_onset_lgd(sim)
+    sim = zero_rate_of_onset_stage1(sim)
 
     # remove effect of treatment:
     sim = make_treatment_ineffective(sim)
@@ -361,7 +361,7 @@ def test_check_progression_to_death_is_blocked_by_treatment(seed):
     sim = zero_out_init_prev(sim)
 
     # no incidence of new cases
-    sim = zero_rate_of_onset_lgd(sim)
+    sim = zero_rate_of_onset_stage1(sim)
 
     # make everyone with a symptom seek care
     sim = make_perfect_healthcare_seeking(sim)
