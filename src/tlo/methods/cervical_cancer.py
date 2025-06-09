@@ -182,11 +182,11 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         "prob_cryotherapy_successful": Parameter(
             Types.REAL, "probability of cryotherapy treatment successful in removing CIN (ce_hpv_cc_status set to none)"
         ),
-        "transition_testing_year": Parameter(
-            Types.REAL, "year testing switches from VIA to Xpert"
+        "transition_screening_method_year": Parameter(
+            Types.REAL, "year screening method switches from VIA to Xpert"
         ),
-        "transition_screening_year": Parameter(
-            Types.REAL, "year screening switches from Cryo to Thermo"
+        "transition_to_thermo_year": Parameter(
+            Types.REAL, "year CIN removal method switches from Cryo to Thermo"
         ),
         "screening_min_age_hv_neg": Parameter(
             Types.REAL, "minimum age individual to be screened if HIV negative"
@@ -740,7 +740,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
 
     def choose_cin_procedure_and_schedule_it(self, person_id):
         """Function to decide treatment for individuals with CIN based on year and to schedule the relevant HSI.
-        If year is >= transition_testing_year then Thermoablation, else  Cryotherapy
+        If year is >= transition-year then Thermoablation, else  Cryotherapy
         :param hsi_event: HSI Event (required to pass in order to register equipment)
         :param person_id: person of interest
         """
@@ -752,7 +752,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             'Cryotherapy': HSI_CervicalCancer_Cryotherapy_CIN,
         }
 
-        selected_method = 'Thermoablation' if year >= p['transition_testing_year'] else 'Cryotherapy'
+        selected_method = 'Thermoablation' if year >= p['transition_to_thermo_year'] else 'Cryotherapy'
 
         # Schedule HSI event
         hs.schedule_hsi_event(
@@ -868,7 +868,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 'event_class': HSI_CervicalCancer_XpertHPVScreening,
             }
         }
-        selected_screening_method = 'VIA' if year < p['transition_screening_year'] else 'Xpert'
+        selected_screening_method = 'VIA' if year < p['transition_screening_method_year'] else 'Xpert'
         method_info = screening_methods[selected_screening_method]
 
         # Randomly select for screening

@@ -405,6 +405,9 @@ def test_check_progression_to_death_is_blocked_by_treatment(seed):
     yll = sim.modules['HealthBurden'].years_life_lost
     assert 'CervicalCancer' not in yll.columns
 
+    # todo - and everyone treated goes to none.
+
+
 @pytest.mark.slow
 def test_screening_age_conditions(seed):
     """Ensure individuals screened are of the corresponding eligible screening age"""
@@ -482,8 +485,7 @@ def test_transition_year_logic(seed):
 
     # Update transition_year so that simulation does not need to run through 2024
     transition_year = 2011
-    sim.modules['CervicalCancer'].parameters['transition_testing_year'] = transition_year
-    sim.modules['CervicalCancer'].parameters['transition_screening_year'] = transition_year
+    sim.modules['CervicalCancer'].parameters['transition_screening_method_year'] = transition_year
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=Date(transition_year+2, 1, 1))
