@@ -961,6 +961,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
         self.TREATMENT_ID = "CervicalCancer_AceticAcidScreening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -972,7 +973,6 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
               optional_item_codes=self.module.item_codes_cervical_can['cervical_cancer_screening_via_optional'])
 
         if cons_avail:
-            self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
 
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(
@@ -1022,6 +1022,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "CervicalCancer_XpertHPVScreening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)', 'Conventional PCR Equipment set'})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1033,7 +1034,6 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
             optional_item_codes = self.module.item_codes_cervical_can['cervical_cancer_screening_xpert_optional'])
 
         if cons_avail:
-            self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)', 'Conventional PCR Equipment set'})
 
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(
@@ -1455,7 +1455,6 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': int(p['palliative_care_bed_days'])})
-
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
