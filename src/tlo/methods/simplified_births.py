@@ -199,10 +199,8 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
                     (df.sex == 'F') & df.is_alive & ~df.is_pregnant & df.age_years.between(15, 35, inclusive='left')
                     ]
 
-                num_of_deaths_since_last_poll = len(df.loc[
-                    ~df.is_alive & df.date_of_birth.notnull() & df.date_of_death.between(
-                        self.date_of_last_poll, self.sim.date, inclusive='left')
-                ])
+                num_of_deaths_since_last_poll = len(
+                    df.loc[df.date_of_death.between(self.date_of_last_poll, self.sim.date, inclusive='left')])
 
                 return self.module.rng.choice(
                     eligible_for_pregnancy.index, size=num_of_deaths_since_last_poll, replace=False, p=None)
