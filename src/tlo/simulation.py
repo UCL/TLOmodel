@@ -6,7 +6,7 @@ import datetime
 import heapq
 import itertools
 import time
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -115,6 +115,7 @@ class Simulation:
             log_config = {}
         self._custom_log_levels = None
         self._log_filepath = self._configure_logging(**log_config)
+
 
         # random number generator
         seed_from = "auto" if seed is None else "user"
@@ -307,8 +308,15 @@ class Simulation:
         :param wall_clock_time: Optional argument specifying total time taken to
             simulate, to be written out to log before closing.
         """
-        for module in self.modules.values():
+        for module_name, module in self.modules.items():
             module.on_simulation_end()
+            if hasattr(module, "PARAMETERS"):
+                # collect the module's parameter labels
+                labels = [p.metadata.get("param_label", "not_init_via_load_param") for p in module.PARAMETERS.values()]
+                labels = Counter(labels)
+                for label, count in labels.items():
+                    logger.info(key="parameter_stats", data={"module": module_name, "label": label, "count": count})
+
         if wall_clock_time is not None:
             logger.info(key="info", data=f"simulate() {wall_clock_time} s")
         self.close_output_file()
