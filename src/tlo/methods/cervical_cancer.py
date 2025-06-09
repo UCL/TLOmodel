@@ -933,6 +933,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class CervicalCancer_DeathInStage4(Event, IndividualScopeEventMixin):
+    """Does a Cervical Cancer death for a person in Stage 4."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
