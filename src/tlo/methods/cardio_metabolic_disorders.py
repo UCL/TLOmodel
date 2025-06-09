@@ -400,17 +400,10 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             men_wo_cond = men & ~df[f'nc_{condition}']
             women_wo_cond = women & ~df[f'nc_{condition}']
 
-            if condition == 'chronic_kidney_disease':
-                for _age_range in self.age_cats:
-                    # p[f'm_{_age_range}'] = 0.5
-                    # p[f'f_{_age_range}'] = 0.5
-                    sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
-                    sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
-            else:
-                for _age_range in self.age_cats:
-                    # Select all eligible individuals (men & women w/o condition and in age range)
-                    sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
-                    sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
+            for _age_range in self.age_cats:
+                # Select all eligible individuals (men & women w/o condition and in age range)
+                sample_eligible(men_wo_cond & (df.age_range == _age_range), p[f'm_{_age_range}'], condition)
+                sample_eligible(women_wo_cond & (df.age_range == _age_range), p[f'f_{_age_range}'], condition)
 
             # ----- Set variables to false / NaT for everyone
             df.loc[df.is_alive, f'nc_{condition}_date_last_test'] = pd.NaT
@@ -1674,7 +1667,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         # Experiment with CKD consumable availability
         # if (self.condition != "chronic_kidney_disease" and self.get_consumables(item_codes=med_item_codes)) or \
-        #     (self.condition == "chronic_kidney_disease" and random.random() < 0.4 and self.get_consumables(item_codes=med_item_codes)):
+        #     (self.condition == "chronic_kidney_disease" and random.random() < 0.4 and
+        #     self.get_consumables(item_codes=med_item_codes)):
             self.add_equipment(eq_item_codes)
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
@@ -1686,7 +1680,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             """
             Currently logic is that if first line does not prevent death, then they will be put on second line,
             if second line does not prevent death, then they will move to third line.
-            Limitation is that all this is happening in the first appoinment. It must be moved to the refill section.
+            Limitation is that all this is happening in the first appointment. It must be moved to the refill section.
             How it will work is that in each refill appointment, the individual's blood will be tested.
             Based on the result, they will either stay on same med or they will change medication.
             """
@@ -1751,11 +1745,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        if condition == 'chronic_kidney_disease':
-            self.ACCEPTED_FACILITY_LEVEL = '3'
-        else:
-            self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.condition = condition
+        self.ACCEPTED_FACILITY_LEVEL = '3' if self.conditon == 'chronic_kidney_disease' else '1b'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1782,7 +1772,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 12,
+                'chronic_kidney_disease': 12, # 12 in a month: dialysis three times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
