@@ -945,7 +945,7 @@ class CervicalCancer_DeathInStage4(Event, IndividualScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_VIAScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual in eligible population is selected for screening based using this method.
 
@@ -958,7 +958,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_AceticAcidScreening"
+        self.TREATMENT_ID = "CervicalCancer_VIAScreening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
@@ -1052,7 +1052,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
                 if not df.loc[person_id, 'hv_diagnosed']:
                     if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] != 'none'):
                         hs.schedule_hsi_event(
-                            hsi_event=HSI_CervicalCancer_AceticAcidScreening(
+                            hsi_event=HSI_CervicalCancer_VIAScreening(
                                 module=self.module,
                                 person_id=person_id
                                    ),
