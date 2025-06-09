@@ -958,7 +958,7 @@ class HSI_CervicalCancer_VIAScreening(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_VIAScreening"
+        self.TREATMENT_ID = "CervicalCancer_Screening_VIA"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)'})
@@ -1019,7 +1019,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_XpertHPVScreening"
+        self.TREATMENT_ID = "CervicalCancer_Screening_Xpert"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.add_equipment({'Cusco’s/ bivalved Speculum (small, medium, large)', 'Conventional PCR Equipment set'})
@@ -1075,7 +1075,7 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_presentation_vaginal_bleeding"
+        self.TREATMENT_ID = "CervicalCancer_TestOnPresentation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
@@ -1107,7 +1107,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_Cryotherapy_CIN"
+        self.TREATMENT_ID = "CervicalCancer_CINRemoval_Cryotherapy"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.add_equipment('Cryotherapy unit')  # Essential Equipment
@@ -1157,7 +1157,7 @@ class HSI_CervicalCancer_Thermoablation_CIN(HSI_Event, IndividualScopeEventMixin
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        self.TREATMENT_ID = "CervicalCancer_Thermoablation_CIN"
+        self.TREATMENT_ID = "CervicalCancer_CINRemoval_Thermoablation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.add_equipment({'LLETZ Machines',
@@ -1284,7 +1284,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_StartTreatment"
+        self.TREATMENT_ID = "CervicalCancer_Treatment_Start"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
@@ -1395,7 +1395,7 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_PostTreatmentCheck"
+        self.TREATMENT_ID = "CervicalCancer_Treatment_PostTreatmentCheck"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
 
