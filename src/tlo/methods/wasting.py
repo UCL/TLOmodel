@@ -142,6 +142,8 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             Types.LIST, 'growth monitoring frequency (days) for age categories '),
         'growth_monitoring_attendance_prob_agecat': Parameter(
             Types.LIST, 'probability to attend the growth monitoring for age categories'),
+        'seeking_care_MAM_prob': Parameter(
+            Types.REAL, 'probability of recognising symptoms and seeking care in MAM cases'),
         # treatment
         'recovery_rate_with_soy_RUSF': Parameter(
             Types.REAL, 'probability of recovery from MAM following treatment with soy RUSF'),
@@ -168,10 +170,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # interventions
         'interv_start_year': Parameter(
             Types.INT, 'the year when the interventions are activated by overwriting the relevant '
-                       'parameters.'),
+                       'parameters'),
         'interv_growth_monitoring_attendance_prob_agecat': Parameter(
-            Types.LIST, 'probability to attend the growth monitoring for age categories  following the '
-                        'activation of the intervention(s).'),
+            Types.LIST, 'probability to attend the growth monitoring for age categories following the '
+                        'activation of the intervention'),
+        'interv_seeking_care_MAM_prob': Parameter(
+            Types.REAL, 'probability of recognising symptoms and seeking care in MAM cases following the '
+                        'activation of the intervention'),
     }
 
     PROPERTIES = {
@@ -609,6 +614,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         # if person well
         if (whz == 'WHZ>=-2') and (muac == '>=125mm') and (not oedema_presence):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
+            # clear all wasting symptoms
+            self.sim.modules["SymptomManager"].clear_symptoms(
+                person_id=person_id, disease_module=self
+            )
         # if person not well
         else:
             # start without treatment
@@ -625,6 +634,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             # otherwise moderate acute malnutrition (MAM)
             else:
                 df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
+                # apply symptoms to certain MAM cases
+                if self.rng.random_sample() < p['seeking_care_MAM_prob']:
+                    self.wasting_clinical_symptoms(person_id=person_id)
+                else:
+                    # clear all wasting symptoms
+                    self.sim.modules["SymptomManager"].clear_symptoms(
+                        person_id=person_id, disease_module=self
+                    )
 
         if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
             # Determine if SAM episode has complications
@@ -647,10 +664,6 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
         else:
             df.at[person_id, 'un_sam_with_complications'] = False
-            # clear all wasting symptoms
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=person_id, disease_module=self
-            )
 
         assert not ((df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM')
                     and (df.at[person_id, 'un_sam_with_complications'])), f'{person_id=} has MAM with complications.'
@@ -765,11 +778,10 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         :param person_id:
         """
         df = self.sim.population.props
-
-        if df.at[person_id, 'un_clinical_acute_malnutrition'] != 'SAM':
+        if df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well':
             return
 
-        # apply wasting symptoms to the new SAM case
+        # apply wasting symptoms to the new acute malnutrition case
         self.sim.modules["SymptomManager"].change_symptom(
             person_id=person_id,
             symptom_string=self.wasting_symptom,
