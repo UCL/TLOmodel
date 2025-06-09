@@ -3,11 +3,11 @@ This file defines a scenario for wasting analysis.
 
 It can be submitted on Azure Batch by running:
 
-    tlo batch-submit src/scripts/wasting_analyses/scenarios/scenario_wasting_full_model_GM.py
+    tlo batch-submit src/scripts/wasting_analyses/scenarios/scenario_wasting_full_model_CS.py
 
 or locally using:
 
-    tlo scenario-run src/scripts/wasting_analyses/scenarios/scenario_wasting_full_model_GM.py
+    tlo scenario-run src/scripts/wasting_analyses/scenarios/scenario_wasting_full_model_CS.py
 """
 # import itertools
 import warnings
@@ -35,7 +35,7 @@ class WastingAnalysis(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'wasting_analysis__full_model_GM',
+            'filename': 'wasting_analysis__full_model_CS',
             'directory': './outputs/wasting_analysis',
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
@@ -49,19 +49,18 @@ class WastingAnalysis(BaseScenario):
         return fullmodel(resourcefilepath=self.resources,
                          module_kwargs=get_parameters_for_status_quo())
 
-    # Scaling up growth monitoring (GM) attendance scenarios
+    # Scaling up care-seeking (CS) scenarios
     def draw_parameters(self, draw_number, rng):
-        ### growth_monitoring_attendance_probs by age categories
-        # < 1 year, 1-2 years, and > 2 years
-        attendance_probs_by_agecat = [
-            [0.76, 0.20, 0.55],
-            [0.76, 0.25, 0.50],
-            [0.76, 1.00, 1.00]
+        ### prob of care seeking for MAM cases
+        care_seek_prob = [
+            0.1,
+            0.3,
+            0.5
         ]
 
         return {
             'Wasting': {
-                'interv_growth_monitoring_attendance_prob_agecat': attendance_probs_by_agecat[draw_number]
+                'interv_seeking_care_MAM_prob': care_seek_prob[draw_number]
             }
         }
 
