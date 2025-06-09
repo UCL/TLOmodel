@@ -2,6 +2,8 @@
 * Check key outputs for reporting in the calibration table of the write-up
 * Produce representative plots for the default parameters
 
+NB. The assumption made is for perfect availability of consumables.
+
 NB. To see larger effects
 * Increase incidence of cancer (see tests)
 * Increase symptom onset
@@ -50,29 +52,25 @@ log_config = {
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-malawi_country_pop = 17000000
-popsize = 170000
+malawi_country_pop = 17_000_000
+popsize = 170_000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-#     sim = Simulation(start_date=start_date, log_config={"filename": "logfile"})
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
-#                cc_test.CervicalCancer(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
-                                           cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath, run_with_checks=False),
-                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
+    sim.register(demography.Demography(),
+                 cervical_cancer.CervicalCancer(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 epi.Epi(),
+                 tb.Tb(),
+                 hiv.Hiv(),
                  )
 
     sim.make_initial_population(n=popsize)
