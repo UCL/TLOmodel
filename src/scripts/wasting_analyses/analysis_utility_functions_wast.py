@@ -1,8 +1,9 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import scipy.stats as st
 from matplotlib import pyplot as plt
-from pathlib import Path
 
 from tlo.analysis.utils import extract_results
 
