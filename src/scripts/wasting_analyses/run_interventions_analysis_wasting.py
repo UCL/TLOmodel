@@ -17,10 +17,10 @@ total_time_start = time.time()
 # ####### TO SET #######################################################################################################
 # Create dicts for the intervention scenarios. 'Interv_abbrev': {'Intervention scenario title/abbreviation': draw_nmb}
 scenarios_dict = {'SQ': {'Status Quo': 0},
-                  'GM': {'GM_all': 1, 'GM_1-2': 2, 'GM_FullAttend': 3},
-                  'GM2': {'GM_all': 1, 'GM_1-2': 2, 'GM_FullAttend': 3}}
+                  'GM': {'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
+                  'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2}}
 # Set the intervention to be analysed, and for which years they were simulated
-intervs_of_interest = ['GM', 'GM2']
+intervs_of_interest = ['GM', 'CS']
 intervention_years = list(range(2026, 2031))
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2031))
