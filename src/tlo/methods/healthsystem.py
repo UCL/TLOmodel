@@ -993,8 +993,8 @@ class HealthSystem(Module):
             ## Module specific capabilities are total time * non-fungible
             module_cols = self.parameters['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
             updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis=0)
-            ## Store the non-fungible capabilities strucutred as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
-            self._clinics_capabilities = updated_capabilities[module_cols].T.to_dict()
+            ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
+            self._clinics_capabilities_per_staff = updated_capabilities[module_cols].T.to_dict()
             self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
     """Set the clinic eligibility for this HSI event."""
@@ -2382,9 +2382,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
-        ## Counters for clinics
-        clinic_capabilities_monitor = Counter(self.module._clinics_capabilities.to_dict())
-        set_cl_capabilities_still_available = {k for k, v in clinic_capabilities_monitor.items() if v > 0.0}
+        ## Counters for clinics; this will give a Counter for each column.
+        clinic_capabilities_monitor = self.module._clinics_capabilities_per_staff.apply(Counter, axis=0)
+        set_cl_capabilities_still_available = clinic_capabilities_monitor.apply(lambda x: {k for k, v in x.items() if v > 0.0})
 
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
@@ -2406,7 +2406,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Traverse the queue and run events due today until have capabilities still available
         while len(self.module.HSI_EVENT_QUEUE) > 0:
-
             # Check if any of the officers in the country are still available for today.
             # If not, no point in going through the queue any longer.
             # This will make things slower for tests/small simulations, but should be of significant help
@@ -2421,7 +2420,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Check the event's clinic eligibility; if not clinic for eligible,
                 # clinic name will be Fungible; otherwise it will be the clinic name
                 event_clinic = event.clinic_eligibility
-                counter_to_use = ## WIP
+                if event_clinic == "Fungible":
+                    counter_to_use = capabilities_monitor
+                    capabilities_still_available = set_capabilities_still_available
+                else:
+                    counter_to_use = clinic_capabilities_monitor[event_clinic]
+                    capabilities_still_available = set_cl_capabilities_still_available[event_clinic]
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -2461,7 +2465,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     out_of_resources = False
                     for officer, call in original_call.items():
                         # If any of the officers are not available, then out of resources
-                        if officer not in set_capabilities_still_available:
+                        if officer not in capabilities_still_available:
                             out_of_resources = True
                     # If officers still available, run event. Note: in current logic, a little
                     # overtime is allowed to run last event of the day. This seems more realistic
@@ -2544,14 +2548,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
 
                         # Subtract this from capabilities used so-far today
-                        capabilities_monitor.subtract(updated_call)
+                        counter_to_use.subtract(updated_call)
 
                         # If any of the officers have run out of time by performing this hsi,
                         # remove them from list of available officers.
                         for officer, call in updated_call.items():
-                            if capabilities_monitor[officer] <= 0:
-                                if officer in set_capabilities_still_available:
-                                    set_capabilities_still_available.remove(officer)
+                            if counter_to_use[officer] <= 0:
+                                if officer in capabilities_still_available:
+                                    capabilities_still_available.remove(officer)
                                 else:
                                     logger.warning(
                                         key="message",
