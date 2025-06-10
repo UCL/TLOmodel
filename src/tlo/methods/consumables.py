@@ -202,7 +202,8 @@ class Consumables:
                              essential_item_codes: dict,
                              optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
-                             treatment_id: Optional[str] = None
+                             treatment_id: Optional[str] = None,
+                             override_hsi: Optional[list] = None,
                              ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
@@ -212,6 +213,7 @@ class Consumables:
         :param optional_item_codes: dict of the form {<item_code>: <quantity>} for the optional items requested
         :param to_log: whether the request is logged.
         :param treatment_id: the TREATMENT_ID of the HSI (which is entered to the log, if provided).
+        :param override_hsi: list of treatment IDs for which consumable availability is set at 100%.
         :return: dict of the form {<item_code>: <bool>} indicating the availability of each item requested.
         """
         # If optional_item_codes is None, treat it as an empty dictionary
@@ -223,8 +225,12 @@ class Consumables:
         if len(not_recognised_item_codes) > 0:
             self._not_recognised_item_codes[treatment_id] |= not_recognised_item_codes
 
-        # Look-up whether each of these items is available in this facility currently:
-        available = self._lookup_availability_of_consumables(item_codes=_all_item_codes, facility_info=facility_info)
+        # Check if the availability of consumables for this treatment id has been overridden
+        avail_overridden = False if override_hsi is None else True if treatment_id in override_hsi else False
+
+        # Look-up whether each of these items is available in this facility currently.:
+        available = self._lookup_availability_of_consumables(item_codes=_all_item_codes, facility_info=facility_info,
+                                                             avail_overridden=avail_overridden)
 
         # Log the request and the outcome:
         if to_log:
@@ -255,7 +261,8 @@ class Consumables:
 
     def _lookup_availability_of_consumables(self,
                                             facility_info: 'FacilityInfo',  # noqa: F821
-                                            item_codes: dict
+                                            item_codes: dict,
+                                            avail_overridden: bool,
                                             ) -> dict:
         """Lookup whether a particular item_code is in the set of available items for that facility (in
         `self._is_available`). If any code is not recognised, use the `_is_unknown_item_available`."""
@@ -270,11 +277,18 @@ class Consumables:
             else:
                 return {_i: False for _i in item_codes}
 
-        for _i in item_codes.keys():
-            if _i in self.item_codes:
-                avail.update({_i: _i in self._is_available[facility_info.id]})
-            else:
-                avail.update({_i: self._is_unknown_item_available[facility_info.id]})
+        # If availability is overridden for this treatment id then all items will be set as available.
+        if avail_overridden:
+           for _i in item_codes.keys():
+               avail.update({_i: True})
+
+        else:
+            for _i in item_codes.keys():
+                if _i in self.item_codes:
+                    avail.update({_i: _i in self._is_available[facility_info.id]})
+                else:
+                    avail.update({_i: self._is_unknown_item_available[facility_info.id]})
+
         return avail
 
     def on_simulation_end(self):

@@ -229,6 +229,7 @@ class HSI_Event:
             to_log=_to_log,
             facility_info=self.facility_info,
             treatment_id=self.TREATMENT_ID,
+            override_hsi=self.healthcare_system.parameters['cons_override_treatment_ids'],
         )
 
         # Return result in expected format:

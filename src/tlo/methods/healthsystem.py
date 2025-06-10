@@ -191,6 +191,11 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
+        'cons_override_treatment_ids': Parameter(
+            Types.LIST,
+            "Consumable availability within any treatment ids listed in this parameter will be set at 100%. "
+            "By default this list is empty"),
+
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
