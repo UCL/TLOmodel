@@ -273,6 +273,7 @@ dalys = extract_results(
                 custom_generate_series=get_dalys_by_period_sex_agegrp_label,
                 do_scaling=False
             )
+dalys.index = dalys.index.set_names('age_group', level=1)
 
 def get_pop_by_agegrp_label(df):
     """Sum the dalys by period, sex, age-group and label"""
@@ -301,6 +302,22 @@ pop_m = extract_results(
             )
 
 pop = pop_f + pop_m
+
+
+
+
+
+
+pop_summ = compute_summary_statistics(pop)
+dalys_summ = compute_summary_statistics(dalys)
+
+
+# TODO OTHER OUTPUTS
+# CONSUMABLES
+# HCW TIME
+# NUMBER OF APPOINTMENTS
+
+
 
 # def get_mean_pop_by_age_for_sex_and_year(sex):
 #     years_needed = [i.year for i in TARGET_PERIOD]
