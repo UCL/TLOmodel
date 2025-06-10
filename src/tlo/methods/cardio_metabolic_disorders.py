@@ -1590,12 +1590,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        if condition == 'chronic_kidney_disease':
-            self.ACCEPTED_FACILITY_LEVEL = '3'
-            # self.ACCEPTED_FACILITY_LEVEL = '1b'
-        else:
-            self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.condition = condition
+        self.ACCEPTED_FACILITY_LEVEL = '3' if condition == 'chronic_kidney_disease' else '1b'
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1745,7 +1741,9 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3' if self.conditon == 'chronic_kidney_disease' else '1b'
+        self.condition = condition
+        self.ACCEPTED_FACILITY_LEVEL = '3' if condition == 'chronic_kidney_disease' else '1b'
+
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
