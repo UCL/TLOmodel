@@ -1121,18 +1121,15 @@ def test_symptoms_with_MAM(tmpdir):
     df.loc[person_id, 'un_am_MUAC_category'] = '>=125mm'
     df.loc[person_id, 'un_am_nutritional_oedema'] = False
 
-    # ### If no care-seeking MAM cases, the symptoms are never assigned to them
-    p['interv_seeking_care_MAM_prob'] = 0.0
-    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
-    activation_event.apply(sim.population)
-    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
-        "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
+    # ### Before the intervention is activated, symptoms are never assigned to MAM cases
+    # This part of the test only makes sense when seeking_care_MAM_prob is set to 0.0 by default.
+    assert p['seeking_care_MAM_prob'] == 0.0
     wmodule.clinical_acute_malnutrition_state(person_id, df)
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
     # Verify no symptoms are assigned
     assert not sim.modules['SymptomManager'].has_what(person_id=person_id)
 
-    # ### If all MAM cases are seeking cares, the symptoms are always assigned to them
+    # ### If all MAM cases are seeking care, the symptoms are always assigned to them
     p['interv_seeking_care_MAM_prob'] = 1.0
     activation_event = Wasting_ActivateInterventionsEvent(wmodule)
     activation_event.apply(sim.population)
@@ -1142,3 +1139,20 @@ def test_symptoms_with_MAM(tmpdir):
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
     # Verify symptoms are assigned
     assert sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+    # reset symptoms
+    sim.modules["SymptomManager"].clear_symptoms(
+        person_id=person_id, disease_module=wmodule
+    )
+    assert not sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+    # ### If no MAM cases are seeking care, the symptoms are never assigned to them
+    p['interv_seeking_care_MAM_prob'] = 0.0
+    activation_event = Wasting_ActivateInterventionsEvent(wmodule)
+    activation_event.apply(sim.population)
+    assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
+        "The parameter 'seeking_care_MAM_prob' was not correctly overwritten by the activation event."
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
+    assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+    # Verify no symptoms are assigned
+    assert not sim.modules['SymptomManager'].has_what(person_id=person_id)
