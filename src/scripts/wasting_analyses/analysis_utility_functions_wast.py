@@ -142,11 +142,13 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
 
 def get_scen_colour(scen_name: str) -> str:
     return {
-        'Status Quo': '#F7F77D',
+        'Status Quo': '#F12AE5',
         'GM_FullAttend': '#4575B4',
         'GM_all': '#BDEBF7',
         'GM_1-2': '#91BFDB',
         'CS_10': '#B5D784',
+        'CS_30': '#61B93C',
+        'CS_50': '#2D7918',
         'FS_full': '#A90251',
         'FS_plus10': '#D4898E'
     }.get(scen_name)
