@@ -8,7 +8,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import compare_number_of_deaths
+from tlo.analysis.utils import compare_number_of_deaths, get_root_path
 from tlo.methods import (
     cervical_cancer,
     demography,
@@ -24,11 +24,12 @@ from tlo.methods import (
 )
 
 # The resource files
-resourcefilepath = Path("./resources")
+root = get_root_path()
+resourcefilepath = root / "resources"
 
 log_config = {
     "filename": "cervical_cancer_analysis",
-    "directory": "./outputs",
+    "directory": root / "outputs",
     "custom_levels": {
         "*": logging.WARNING,
         "tlo.methods.demography": logging.INFO,
