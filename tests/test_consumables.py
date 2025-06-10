@@ -315,7 +315,6 @@ def test_items_used_includes_only_available_items(seed, p_known_items, expected_
     items_used = getattr(cons._summary_counter, '_items', {}).get('Used')
     assert items_used == expected_items_used, f"Expected items_used to be {expected_items_used}, but got {items_used}"
 
-
 def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
     """Return an initialised simulation object with a Dummy Module registered. If the `data` argument is provided,
     the parameter in HealthSystem that holds the data on consumables availability is over-written."""
@@ -342,11 +341,11 @@ def get_sim_with_dummy_module_registered(tmpdir=None, run=True, data=None):
         _log_config = None
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config=_log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=_log_config, resourcefilepath=resourcefilepath)
 
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
         DummyModule(),
         # Disable sorting + checks to avoid error due to missing dependencies
         sort_modules=False,
@@ -465,6 +464,15 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
         optional_item_codes=item_code_not_available[0],
         return_individual_results=True
     )
+
+    # Check that providing a treatment id within the following health system parameter sets treatment availability to
+    # 100%
+    sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] = [hsi_event.TREATMENT_ID]
+    assert True is hsi_event.get_consumables(item_codes=item_code_not_available[0])
+
+    # check that when the parameter is blank that availability is not overridden
+    sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] = []
+    assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0])
 
 
 def test_outputs_to_log(tmpdir):
@@ -605,12 +613,13 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
     sim = Simulation(
         start_date=Date(2010, 1, 1),
         seed=seed,
+        resourcefilepath=resourcefilepath
     )
 
     # Register the core modules
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        healthsystem.HealthSystem(),
     )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date)

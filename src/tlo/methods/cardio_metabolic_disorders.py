@@ -15,7 +15,7 @@ from __future__ import annotations
 import math
 from itertools import combinations
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -213,10 +213,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has')
                   }
 
-    def __init__(self, name=None, resourcefilepath=None, do_log_df: bool = False, do_condition_combos: bool = False):
+    def __init__(self, name=None, do_log_df: bool = False, do_condition_combos: bool = False):
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         self.conditions = CardioMetabolicDisorders.conditions
         self.events = CardioMetabolicDisorders.events
@@ -256,7 +255,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         self.lms_event_death = dict()
         self.lms_event_symptoms = dict()
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read parameter values from files for condition onset, removal, deaths, and initial prevalence.
 
         Folders
@@ -274,7 +273,8 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
             ResourceFile_cmd_events_hsi  = HSI parameters for events
 
         """
-        cmd_path = Path(self.resourcefilepath) / "cmd"
+
+        cmd_path = resourcefilepath / "cmd"
         cond_onset = read_csv_files(cmd_path / "ResourceFile_cmd_condition_onset", files=None)
         cond_removal = read_csv_files(cmd_path / "ResourceFile_cmd_condition_removal", files=None)
         cond_death = read_csv_files(cmd_path / "ResourceFile_cmd_condition_death", files=None)
