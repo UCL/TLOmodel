@@ -1316,20 +1316,15 @@ class StartInterventions(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        initiation = True
-        after_birth = True
+        # if ('fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening'] and 'fp'
+        #     not in self.sim.modules['ServiceIntegration'].parameters['serv_int_mch']):
+        #     after_birth = False
+        # if ('fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_mch'] and 'fp' not
+        #     in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening']):
+        #     initiation = False
 
-        # Update module parameters to enable interventions
-        if 'ServiceIntegration' in self.sim.modules:
-            if ('fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening'] and 'fp'
-                not in self.sim.modules['ServiceIntegration'].parameters['serv_int_mch']):
-                after_birth = False
-            if ('fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_mch'] and 'fp' not
-                in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening']):
-                initiation = False
-
-        self.module.processed_params = self.module.update_params_for_interventions(initiation=initiation,
-                                                                                   after_birth=after_birth)
+        self.module.processed_params = self.module.update_params_for_interventions(initiation=True,
+                                                                                   after_birth=True)
 
 
 # -----------------------------------------------------------------------------------------------------------
