@@ -1676,7 +1676,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             """
             Currently logic is that if first line does not prevent death, then they will be put on second line,
             if second line does not prevent death, then they will move to third line.
-            Limitation is that all this is happening in the first appointment. It must be moved to the refill section.
+            Limitation is that all this is happening in the first appointment.
+             It must be moved to the refill section.
             How it will work is that in each refill appointment, the individual's blood will be tested.
             Based on the result, they will either stay on same med or they will change medication.
             """
