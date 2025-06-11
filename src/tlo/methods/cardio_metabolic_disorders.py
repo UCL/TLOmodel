@@ -1683,7 +1683,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             """
             if self.condition == 'diabetes':
                 # Try second line if first fails
-                second_line_code = self.module.parameters[f'{self.condition}_hsi'].get('medication_item_code_second_line')
+                second_line_code = (self.module.parameters[f'{self.condition}_hsi'].
+                                    get('medication_item_code_second_line'))
                 if (not df.at[person_id, f'nc_{self.condition}_medication_prevents_death']) and second_line_code:
                     self.get_consumables(
                         item_codes={int(second_line_code): dose['diabetes_second_dose']}
