@@ -16,9 +16,11 @@ total_time_start = time.time()
 
 # ####### TO SET #######################################################################################################
 # Create dicts for the intervention scenarios. 'Interv_abbrev': {'Intervention scenario title/abbreviation': draw_nmb}
-scenarios_dict = {'SQ': {'Status Quo': 0},
-                  'GM': {'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
-                  'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2}}
+scenarios_dict = {
+    'SQ': {'Status Quo': 0},
+    'GM': {'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
+    'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2, 'CS_100': 3}
+}
 # Set the intervention to be analysed, and for which years they were simulated
 intervs_of_interest = ['GM', 'CS']
 intervention_years = list(range(2026, 2031))
