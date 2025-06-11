@@ -64,7 +64,7 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
         #                           'epi_max','chronic_care', 'chronic_care_max', 'all_screening', 'all_screening_max',
         #                           'all_mch', 'all_mch_max', 'all_int', 'all_int_max', 'no_integration']),
         'serv_integration':
-            Parameter(Types.LIST,
+            Parameter(Types.STRING,
                       '...'),
     }
 
@@ -148,9 +148,15 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         logger.info(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
 
-        if  not params['serv_integration']:
+        if params['serv_integration'] == 'no_integration':
             logger.info(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
             return
+        else:
+            assert params['serv_integration'] in ['htn', 'htn_max', 'dm','dm_max','hiv', 'hiv_max', 'tb', 'tb_max',
+                                                  'fp_scr', 'fp_scr_max', 'pnc', 'pnc_max', 'fp_pn', 'fp_pn_max',
+                                                  'chronic_care', 'chronic_care_max', 'all_screening',
+                                                  'all_screening_max', 'all_mch', 'all_mch_max', 'all_int',
+                                                  'all_int_max']
 
         def update_cons_override_treatment_ids(treatment_ids):
             for treatment_id in treatment_ids:

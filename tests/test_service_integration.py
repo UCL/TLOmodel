@@ -272,3 +272,20 @@ def test_long_run_chronic_integration(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
     assert 'event_runs' in output['tlo.methods.service_integration']
     assert 'event_cancelled' not in output['tlo.methods.service_integration']
+
+
+def test_long_run_no_integration(tmpdir, seed):
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
+        "*": logging.DEBUG}, "directory": tmpdir}, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=1000)
+
+    # Set parameter update event to run before end of sim
+
+    # sim.modules['ServiceIntegration'].parameters['serv_int_chronic'] = True
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
+    sim.simulate(end_date=Date(2015, 1, 1))
+
+    output = parse_log_file(sim.log_filepath)
+    assert 'event_runs' not in output['tlo.methods.service_integration']
+    assert 'event_cancelled' in output['tlo.methods.service_integration']
