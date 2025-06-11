@@ -670,9 +670,9 @@ for var in ['district', 'fac_name', 'month']:
 lmis_consumable_usage = stkout_df.copy()
 # TODO Generate a smaller version of this file
 # Collapse individual facilities
-def get_inflow_to_outflow_ratio_by_item_level_month(_df):
+def get_inflow_to_outflow_ratio_by_item_and_facilitylevel(_df):
     df_by_item_level_month = \
-    _df.groupby(['item_code', 'district', 'fac_type_tlo', 'month'])[
+    _df.groupby(['item_category', 'item_code', 'district', 'fac_type_tlo', 'month'])[
         ['closing_bal', 'dispensed', 'received']].sum()
     df_by_item_level_month = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') != "Aggregate"]
     # Opening balance in January is the closing balance for the month minus what was received during the month plus what was dispensed
@@ -681,17 +681,22 @@ def get_inflow_to_outflow_ratio_by_item_level_month(_df):
                           df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'January', 'received']
     closing_bal_december = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') == 'December', 'closing_bal']
     # the consumable inflow during the year is the opening balance in January + what was received throughout the year - what was transferred to the next year (i.e. closing bal of December)
-    total_consumables_inflow_during_the_year = df_by_item_level_month.loc[df_by_item_level_month.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
+    total_consumables_inflow_during_the_year = df_by_item_level_month['received'].groupby(level=['item_category', 'item_code', 'district', 'fac_type_tlo']).sum() +\
                                              opening_bal_january.reset_index(level='month', drop=True) -\
                                              closing_bal_december.reset_index(level='month', drop=True)
-    total_consumables_outflow_during_the_year  = df_by_item_level_month['dispensed'].groupby(level=[0,1,2,3]).sum()
+    total_consumables_outflow_during_the_year  = df_by_item_level_month['dispensed'].groupby(level=['item_category', 'item_code', 'district', 'fac_type_tlo']).sum()
     inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
     inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1  # Ratio can't be less than 1
 
     return inflow_to_outflow_ratio
 
-inflow_to_outflow_ratio = get_inflow_to_outflow_ratio_by_item_level_month(lmis_consumable_usage)
-inflow_to_outflow_ratio.reset_index().to_csv(resourcefilepath / 'costing/ResourceFile_Consumables_Inflow_Outflow_Ratio.csv', index = False)
+inflow_to_outflow_ratio = get_inflow_to_outflow_ratio_by_item_and_facilitylevel(lmis_consumable_usage)
+# Clean values for analysis
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
+inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
+
+inflow_to_outflow_ratio = inflow_to_outflow_ratio.reset_index().rename(columns={0:'inflow_to_outflow_ratio'})
+inflow_to_outflow_ratio.to_csv(resourcefilepath / 'costing/ResourceFile_Consumables_Inflow_Outflow_Ratio.csv', index = False)
 
 # Final checks
 stkout_df = stkout_df.drop(index=stkout_df.index[pd.isnull(stkout_df.available_prop)])
