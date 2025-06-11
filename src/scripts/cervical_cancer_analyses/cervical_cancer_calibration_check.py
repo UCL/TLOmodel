@@ -73,15 +73,15 @@ CAUSE_NAME = 'Cancer (Cervix)'
 comparison = compare_number_of_deaths(
     logfile=logfile, resourcefilepath=resourcefilepath).fillna(0.0)
 
-fig, axs = plt.subplots(nrows=2, ncols=2, sharey=True, sharex=True)
-for _col, sex in enumerate(('M', 'F')):
-    for _row, period in enumerate(('2010-2014', '2015-2019')):
-        ax = axs[_col][_row]
-        comparison.loc[(period, sex, slice(None), CAUSE_NAME)].plot(use_index=True, ax=ax)
-        ax.set_ylabel('Deaths per year')
-        ax.set_title(f"{period}: {sex}")
-        xticks = comparison.index.levels[2]
-        ax.set_xticks(range(len(xticks)))
-        ax.set_xticklabels(xticks, rotation=90)
+fig, axs = plt.subplots(nrows=2, ncols=1, sharey=True, sharex=True)
+sex = 'F'
+for _row, period in enumerate(('2010-2014', '2015-2019')):
+    ax = axs[_row]
+    comparison.loc[(period, sex, slice(None), CAUSE_NAME)].plot(use_index=True, ax=ax)
+    ax.set_ylabel('Deaths per year')
+    ax.set_title(f"{period}: {sex}")
+    xticks = comparison.index.levels[2]
+    ax.set_xticks(range(len(xticks)))
+    ax.set_xticklabels(xticks, rotation=90)
 fig.tight_layout()
 fig.show()
