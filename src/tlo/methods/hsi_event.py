@@ -423,21 +423,6 @@ class HSI_Event:
             equipment=tuple(sorted(self._EQUIPMENT)),
         )
 
-    def reschedule_hsi(self):
-        """Schedule for this same HSI_Event to occur in a month."""
-        self.module.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=self,
-                                                                   topen=self.sim.date + DateOffset(month=1),
-                                                                   tclose=self.sim.date + DateOffset(month=1) + DateOffset(day = (self.topen - self.sim.date).days()),)
-    def climate_distrupted(self):
-        """Handle the impact of climate on healthcare seeking behaviours. If delated, the individual seeks care in
-        one months' time. If"""
-
-        if self.disrupted_by_climate == 'delayed':
-            self.reschedule_hsi()
-        if self.disrupted_by_climate == 'cancelled':
-            self.never_ran()
-
-
 
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
