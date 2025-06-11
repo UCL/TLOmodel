@@ -146,9 +146,10 @@ def get_scen_colour(scen_name: str) -> str:
         'GM_FullAttend': '#4575B4',
         'GM_all': '#BDEBF7',
         'GM_1-2': '#91BFDB',
-        'CS_10': '#B5D784',
+        'CS_10': '#9FFD17',
         'CS_30': '#61B93C',
-        'CS_50': '#2D7918',
+        'CS_50': '#2D945F',
+        'CS_100': '#266714',
         'FS_full': '#A90251',
         'FS_plus10': '#D4898E'
     }.get(scen_name)
@@ -176,7 +177,7 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_d
     if cohort == 'Neonatal':
         outcome = 'neo_mort_rate_mean_ci_df'
         target = 12
-        ylim_top = 30 # 25
+        ylim_top = 40 #25
     else: #cohort == 'Under-5':
         outcome = 'under5_mort_rate_mean_ci_df'
         target = 25
