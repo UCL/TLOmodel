@@ -58,7 +58,7 @@ class WastingAnalysis(BaseScenario):
         #     0.5
         # ]
         care_seek_prob = [
-            1.0
+            1.0, 1.01
         ]
 
         return {
