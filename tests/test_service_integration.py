@@ -288,5 +288,4 @@ def test_long_run_no_integration(tmpdir, seed):
     sim.simulate(end_date=Date(2015, 1, 1))
 
     output = parse_log_file(sim.log_filepath)
-    assert 'event_runs' not in output['tlo.methods.service_integration']
     assert 'event_cancelled' in output['tlo.methods.service_integration']

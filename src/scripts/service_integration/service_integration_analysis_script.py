@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from collections import defaultdict
+
 import os
 import scipy.stats as st
 from scipy.stats import t, norm, shapiro
@@ -334,8 +336,106 @@ dalys_summ = compute_summary_statistics(dalys)
 
 # TODO OTHER OUTPUTS
 # =============================================== CONSUMABLES =========================================================
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
+
+def get_quantity_of_consumables_dispensed(results_folder):
+    def get_counts_of_items_requested(_df):
+        _df = drop_outside_period(_df)
+        counts_of_used = defaultdict(lambda: defaultdict(int))
+        counts_of_not_available = defaultdict(lambda: defaultdict(int))
+
+        for _, row in _df.iterrows():
+            date = row['date']
+            for item, num in row['Item_Used'].items():
+                counts_of_used[date][item] += num
+            for item, num in row['Item_NotAvailable'].items():
+                counts_of_not_available[date][item] += num
+        used_df = pd.DataFrame(counts_of_used).fillna(0).astype(int).stack().rename('Used')
+        not_available_df = pd.DataFrame(counts_of_not_available).fillna(0).astype(int).stack().rename('Not_Available')
+
+        # Combine the two dataframes into one series with MultiIndex (date, item, availability_status)
+        combined_df = pd.concat([used_df, not_available_df], axis=1).fillna(0).astype(int)
+
+        # Convert to a pd.Series, as expected by the custom_generate_series function
+        return combined_df.stack()
+
+    cons_req = extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=False)
+
+    cons_dispensed = cons_req.xs("Used", level=2)  # only keep actual dispensed amount, i.e. when available
+    return cons_dispensed
+
+consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
+collapsed = compute_summary_statistics(consumables_dispensed.groupby(level=0).sum())
 
 
+# consumables_dispensed = consumables_dispensed.reset_index().rename(columns = {'level_0': 'Item_Code', 'level_1': 'year'})
+# consumables_dispensed[idx['year']] = pd.to_datetime(consumables_dispensed[idx['year']]).dt.year # Extract only year from date
+# consumables_dispensed[idx['Item_Code']] = pd.to_numeric(consumables_dispensed[idx['Item_Code']])
+
+# Item codes
+# Htn screening:
+# Hydralazine 25mg_100_CMST - 223
+
+# dm screening:
+# Metformin hydrochloride 500mg_100_CMST - 233
+# Blood glucose level test - 216
+
+# fp screening:
+# Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle - 1
+# Condom, male - 2
+# IUD, Copper T-380A - 7
+# Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly - 3
+# Jadelle (implant), box of 2_CMST - 12
+# Pregnancy slide test kit_100_CMST - 2019
+
+# hiv screening:
+# Test, HIV EIA Elisa - 196
+# First-line ART regimen: adult - 2671
+# Cotrimoxizole, 960mg pppy - 204
+# First line ART regimen: older child -2672
+# Cotrimoxazole 120mg_1000_CMST -203
+# First line ART regimen: young child -2673
+
+# tb screening:
+# ZN Stain -186
+# Xpert - 187
+# X-ray - 175
+# MGIT960 Culture and DST - 188
+# Cat. I & III Patient Kit A - 176
+# Cat. I & III Patient Kit B -178
+# Cat. II Patient Kit A1 - 177
+# Cat. II Patient Kit A2 -179
+# Treatment: second-line drugs - 181
+# Isoniazid/Pyridoxine, tablet 300 mg -192
+# Isoniazid/Rifapentine - 2678
+
+# mal screening
+# Supplementary spread, sachet 92g/CAR-150 - 1221
+# Complementary feeding--education only drugs/supplies to service a client - 1171
+
+# chronic care (hiv, diabetes, htn, tb, plus...)
+# Phenobarbital, 100 mg - 278
+# Carbamazepine 200mg_1000_CMST -276
+# Phenytoin sodium 100mg_1000_CMST -279
+# Amitriptyline 25mg_100_CMST - 267
+
+# pnc:
+# Hydralazine, powder for injection, 20 mg ampoule - 60
+# Methyldopa 250mg_1000_CMST - 222
+# Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule - 61
+# Benzylpenicillin 3g (5MU), PFR_each_CMST - 99
+# Gentamycin, injection, 40 mg/ml in 2 ml vial - 28
+# Oxytocin, injection, 10 IU in 1 ml ampoule - 56
+# Blood, one unit - 141
+# Haemoglobin test (HB) - 50
+# Ferrous Salt + Folic Acid, tablet, 200 + 0.25 -140
 
 
 # ========================================= APPOINTMENTS/HCW TIME =====================================================
