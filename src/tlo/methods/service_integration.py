@@ -56,14 +56,16 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
                                               ' integration modelling'),
         'integration_year': Parameter(Types.INT, 'year on which parameters are overwritten for integration '
                                                   'modelling'),
+        # 'serv_integration':
+        #     Parameter(Types.CATEGORICAL,
+        #               '...',
+        #               categories=['hiv', 'hiv_max', 'tb', 'tb_max', 'htn', 'htn_max', 'dm', 'dm_max', 'fp_scr',
+        #                           'fp_scr_max', 'mal', 'mal_max', 'pnc', 'pnc_max', 'fp_pn', 'fp_pn_max', 'epi',
+        #                           'epi_max','chronic_care', 'chronic_care_max', 'all_screening', 'all_screening_max',
+        #                           'all_mch', 'all_mch_max', 'all_int', 'all_int_max', 'no_integration']),
         'serv_integration':
-            Parameter(Types.CATEGORICAL,
-                      '...',
-                      categories=['hiv', 'hiv_max', 'tb', 'tb_max', 'htn', 'htn_max', 'dm', 'dm_max', 'fp_scr',
-                                  'fp_scr_max', 'mal', 'mal_max', 'pnc', 'pnc_max', 'fp_pn', 'fp_pn_max', 'epi',
-                                  'epi_max','chronic_care', 'chronic_care_max', 'all_screening', 'all_screening_max',
-                                  'all_mch', 'all_mch_max', 'all_int', 'all_int_max', 'no_integration']),
-
+            Parameter(Types.LIST,
+                      '...'),
     }
 
     PROPERTIES = {
@@ -136,9 +138,6 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
 
 
 class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
-
-    # This event is occuring regularly at one monthly intervals
-
     def __init__(self, module):
         super().__init__(module)
         assert isinstance(module, ServiceIntegration)
@@ -149,7 +148,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         logger.info(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
 
-        if  params['serv_integration'] == 'no_integration':
+        if  not params['serv_integration']:
             logger.info(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
             return
 
