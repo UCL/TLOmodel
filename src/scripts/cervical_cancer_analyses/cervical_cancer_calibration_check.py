@@ -39,8 +39,8 @@ log_config = {
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 100_000
+end_date = Date(2011, 1, 1)
+popsize = 1_000
 
 def run_sim():
     # Establish the simulation object and set the seed
@@ -63,7 +63,7 @@ def run_sim():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    return sim
+    return sim.log_filepath
 
 # Create df from simulation
 logfile = run_sim()
@@ -77,7 +77,7 @@ fig, axs = plt.subplots(nrows=2, ncols=2, sharey=True, sharex=True)
 for _col, sex in enumerate(('M', 'F')):
     for _row, period in enumerate(('2010-2014', '2015-2019')):
         ax = axs[_col][_row]
-        comparison.loc[(period, sex, slice(None), CAUSE_NAME)].droplevel([0, 1, 3]).plot(use_index=True, ax=ax)
+        comparison.loc[(period, sex, slice(None), CAUSE_NAME)].plot(use_index=True, ax=ax)
         ax.set_ylabel('Deaths per year')
         ax.set_title(f"{period}: {sex}")
         xticks = comparison.index.levels[2]
