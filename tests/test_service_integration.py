@@ -139,6 +139,7 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'Epilepsy_Treatment_Followup']]):
 
         sim.modules['ServiceIntegration'].parameters['serv_integration'] = scenario
+        print(scenario)
         serv_int_event.apply(sim.population.props)
         assert sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] == treatment_ids
         sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] = []

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from tlo import Date
-from tlo.analysis.utils import (extract_results, get_scenario_outputs, compute_summary_statistics,
+from tlo.analysis.utils import (bin_hsi_event_details, extract_results, get_scenario_outputs, compute_summary_statistics,
 make_age_grp_types, get_scenario_info, make_calendar_period_lookup, make_calendar_period_type, parse_log_file)
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
@@ -48,47 +48,49 @@ def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
 
     return summary
 
-scenario = 'integration_scenario_max_test_2457909'
+scenario = 'service_integration_scenario-2025-05-21T150139Z'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 # create_pickles_locally(results_folder, compressed_file_name_prefix='service_integration_scenario')
 
 
-# int_names = ['status_quo',
-#              'chronic_care_clinic',
-#              'screening_htn',
-#              'screening_dm',
-#              'screening_hiv',
-#              'screening_tb',
-#              'screening_fp',
-#              'screening_mal',
-#              'screening_all',
-#              'mch_clinic_pnc',
-#              'mch_clinic_fp',
-#              'mch_clinic_all',
-#              'all_integration']
+int_names = ['status_quo',
+             'chronic_care_clinic',
+             'screening_htn',
+             'screening_dm',
+             'screening_hiv',
+             'screening_tb',
+             'screening_fp',
+             'screening_mal',
+             'screening_all',
+             'mch_clinic_pnc',
+             'mch_clinic_fp',
+             'mch_clinic_all',
+             'all_integration']
 
-int_names = ['htn',
-            'htn_max',
-            'dm',
-            'dm_max',
-            'hiv',
-            'hiv_max',
-            'tb',
-            'tb_max',
-            'fp_scr',
-            'fp_scr_max',
-            'pnc',
-            'pnc_max',
-            'fp_pn',
-            'fp_pn_max',
-            'chronic_care',
-            'chronic_care_max',
-            'all_screening',
-            'all_screening_max',
-             'all_mch',
-             'all_mch_max',
-            'all_int',
-            'all_int_max']
+# int_names = ['htn',
+#             'htn_max',
+#             'dm',
+#             'dm_max',
+#             'hiv',
+#             'hiv_max',
+#             'tb',
+#             'tb_max',
+#             'mal',
+#             'mal_max',
+#             'fp_scr',
+#             'fp_scr_max',
+#             'pnc',
+#             'pnc_max',
+#             'fp_pn',
+#             'fp_pn_max',
+#             'chronic_care',
+#             'chronic_care_max',
+#             'all_screening',
+#             'all_screening_max',
+#              'all_mch',
+#              'all_mch_max',
+#             'all_int',
+#             'all_int_max']
 
 # Create a folder to store graphs (if it hasn't already been created when ran previously)
 g_path = f'{outputspath}graphs_{scenario}'
@@ -100,7 +102,7 @@ if not os.path.isdir(g_path):
         os.makedirs(f'{outputspath}graphs_{scenario}')
 
 
-TARGET_PERIOD = (Date(2011, 1, 1), Date(2015, 12, 31))
+TARGET_PERIOD = (Date(2020, 1, 1), Date(2050, 12, 31))
 
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
@@ -147,7 +149,7 @@ all_dalys_dfs = extract_results(
                     columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=False)
 all_dalys_dfs.index.names = ['year', 'cause']
-years_to_sum = list(range(2011, 2016))
+years_to_sum = list(range(2020, 2051))
 
 # Filter the DataFrame to include only those years
 df_subset = all_dalys_dfs.loc[all_dalys_dfs.index.get_level_values('year').isin(years_to_sum)]
@@ -326,20 +328,25 @@ pop_m = extract_results(
 
 pop = pop_f + pop_m
 
-
-
-
-
-
 pop_summ = compute_summary_statistics(pop)
 dalys_summ = compute_summary_statistics(dalys)
 
 
 # TODO OTHER OUTPUTS
-# CONSUMABLES
-# HCW TIME
-# NUMBER OF APPOINTMENTS
+# =============================================== CONSUMABLES =========================================================
 
+
+
+
+# ========================================= APPOINTMENTS/HCW TIME =====================================================
+# # NUMBER OF APPOINTMENTS
+# hsi_details = bin_hsi_event_details(
+#     results_folder,
+#     get_counter_from_event_details: callable,
+#     Date(2020, 1, 1),
+#     Date(2051, 1, 1),
+#     False,
+# )
 
 
 # def get_mean_pop_by_age_for_sex_and_year(sex):

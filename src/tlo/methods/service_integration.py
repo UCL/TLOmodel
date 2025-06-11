@@ -153,10 +153,10 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             return
         else:
             assert params['serv_integration'] in ['htn', 'htn_max', 'dm','dm_max','hiv', 'hiv_max', 'tb', 'tb_max',
-                                                  'fp_scr', 'fp_scr_max', 'pnc', 'pnc_max', 'fp_pn', 'fp_pn_max',
-                                                  'chronic_care', 'chronic_care_max', 'all_screening',
-                                                  'all_screening_max', 'all_mch', 'all_mch_max', 'all_int',
-                                                  'all_int_max']
+                                                  'mal', 'mal_max', 'fp_scr', 'fp_scr_max', 'pnc', 'pnc_max',
+                                                  'fp_pn', 'fp_pn_max', 'chronic_care', 'chronic_care_max',
+                                                  'all_screening', 'all_screening_max', 'all_mch', 'all_mch_max',
+                                                  'all_int', 'all_int_max']
 
         def update_cons_override_treatment_ids(treatment_ids):
             for treatment_id in treatment_ids:
