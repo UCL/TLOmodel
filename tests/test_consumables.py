@@ -610,6 +610,7 @@ def test_consumables_availability_modes_that_depend_on_designations(seed):
                               'scenario1', 'scenario2', 'scenario3', 'scenario4',
                               'scenario5', 'scenario6', 'scenario7', 'scenario8',
                               'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                              'scenario13', 'scenario14', 'scenario15',
                             ):
             continue
         else:
