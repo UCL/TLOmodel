@@ -25,7 +25,8 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -53,9 +54,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     The HIV Disease Module
     """
 
-    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
+    def __init__(self, name=None, run_with_checks=False):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         assert isinstance(run_with_checks, bool)
         self.run_with_checks = run_with_checks
@@ -140,6 +140,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME, "prob of time since infection for baseline adult pop"
         ),
         "art_coverage": Parameter(Types.DATA_FRAME, "coverage of ART at baseline"),
+        "art_coverage_pregnant_women": Parameter(Types.REAL, "coverage of pregnant women on ART at baseline")
+
         "treatment_cascade": Parameter(Types.DATA_FRAME, "spectrum estimates of treatment cascade"),
         # Natural history - transmission - overall rates
         "beta": Parameter(Types.REAL, "Transmission rate"),
@@ -420,7 +422,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         * 1) Reads the ResourceFiles
         * 2) Declare the Symptoms
@@ -431,7 +433,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Shortcut to parameters dict
         p = self.parameters
 
-        workbook = read_csv_files(self.resourcefilepath/'ResourceFile_HIV', files=None)
+        workbook = read_csv_files(resourcefilepath/'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         # Load data on HIV prevalence
@@ -742,6 +744,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         art_data = worksheet.loc[
             worksheet.year == 2010, ["year", "single_age", "sex", "prop_coverage"]
         ]
+        hiv_positive_pregnant_women = df[(df.is_alive)&(df.sex =="F" &(df.hv_inf)&(df["is_pregnant"])&(df.hv_art=="not"))].index
+        # Randomly assign ART based on coverage parameter
+        n = len(hiv_positive_pregnant_women)
+        n_to_assign = int(n * self.parameters["art_coverage_pregnant_women"])
+        assigned_art_preg = self.rng.choice(hiv_positive_pregnant_women, size=n_to_assign, replace=False)
+
+        df.loc[assigned_art_preg, "hv_art"] = "on_viral_load"
 
         # merge all susceptible individuals with their coverage probability based on sex and age
         prob_art = df.loc[df.is_alive, ["age_years", "sex"]].merge(
@@ -1134,10 +1143,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # prep poll for AGYW - target to the highest risk
         # increase retention to 75% for FSW and AGYW
         p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params["probability_of_being_retained_on_prep_every_3_months"]
+        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_prep_every_3_months"
+        ]
 
         # perfect retention on ART
-        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params["probability_of_being_retained_on_art_every_3_months"]
+        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+            "probability_of_being_retained_on_art_every_3_months"
+        ]
 
         # increase probability of VMMC after hiv test
         p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
@@ -2901,7 +2914,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        if self.module.rng.random_sample(size=1) < p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']:
+        if (self.module.rng.random_sample(size=1) <
+            p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
             _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
@@ -2935,11 +2949,20 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required[
-                                'First line ART regimen: young child']: dispensation_days * 2},
-                optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: young child: cotrimoxazole']: dispensation_days * 240},
-                return_individual_results=True)
+                item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child"
+                    ]: dispensation_days
+                    * 2
+                },
+                optional_item_codes={
+                    self.module.item_codes_for_consumables_required[
+                        "First line ART regimen: young child: cotrimoxazole"
+                    ]: dispensation_days
+                    * 240
+                },
+                return_individual_results=True,
+            )
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
@@ -3584,7 +3607,7 @@ class DummyHivModule(Module):
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):
