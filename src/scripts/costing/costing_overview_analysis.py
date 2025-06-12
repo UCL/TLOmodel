@@ -28,11 +28,9 @@ from tlo.analysis.utils import (
 )
 
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             summarize_cost_data,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
-                                             create_summary_treemap_by_cost_subgroup,
-                                             estimate_projected_health_spending)
+                                             create_summary_treemap_by_cost_subgroup)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -305,28 +303,7 @@ generate_detail_cost_table(_groupby_var = 'cost_subgroup', _groupby_var_name = '
 
 # Figure E1: Consumable inflow to outflow ratio figure
 # -----------------------------------------------------------------------------------------------------------------------
-path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
-# Estimate the stock to dispensed ratio from OpenLMIS data
-lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
-# Collapse individual facilities
-lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
-df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
-df = df.loc[df.index.get_level_values('month') != "Aggregate"]
-opening_bal_january = df.loc[df.index.get_level_values('month') == 'January', 'closing_bal'] + \
-                      df.loc[df.index.get_level_values('month') == 'January', 'dispensed'] - \
-                      df.loc[df.index.get_level_values('month') == 'January', 'received']
-closing_bal_december = df.loc[df.index.get_level_values('month') == 'December', 'closing_bal']
-total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
-                                         opening_bal_january.reset_index(level='month', drop=True) -\
-                                         closing_bal_december.reset_index(level='month', drop=True)
-total_consumables_outflow_during_the_year  = df['dispensed'].groupby(level=[0,1,2,3]).sum()
-inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
-
-# Edit outlier ratios
-inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
-inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
-#average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean()
-inflow_to_outflow_ratio = inflow_to_outflow_ratio.reset_index().rename(columns = {0:'inflow_to_outflow_ratio'})
+inflow_to_outflow_ratio = pd.read_csv(resourcefilepath / "costing/ResourceFile_Consumables_Inflow_Outflow_Ratio.csv")
 
 # Clean category names for plot
 clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiometabolic Disorders',
@@ -335,7 +312,7 @@ clean_category_names = {'cancer': 'Cancer', 'cardiometabolicdisorders': 'Cardiom
                         'other_childhood_illnesses': 'Other Childhood Illnesses', 'reproductive_health': 'Reproductive Health',
                         'road_traffic_injuries': 'Road Traffic Injuries', 'tb': 'Tuberculosis',
                         'undernutrition': 'Undernutrition'}
-inflow_to_outflow_ratio['category'] = inflow_to_outflow_ratio['category'].map(clean_category_names)
+inflow_to_outflow_ratio['category'] = inflow_to_outflow_ratio['item_category'].map(clean_category_names)
 
 
 def plot_inflow_to_outflow_ratio(_df, groupby_var, _outputfilepath):

@@ -550,38 +550,19 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
         cost_of_consumables_dispensed[price_column], axis=0)
 
     # 2.2 Cost of consumables stocked (quantity needed for what is dispensed)
-    #---------------------------------------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------------------------------------
     # Stocked amount should be higher than dispensed because of i. excess capacity, ii. theft, iii. expiry
     # While there are estimates in the literature of what % these might be, we agreed that it is better to rely upon
     # an empirical estimate based on OpenLMIS data
-    # Estimate the stock to dispensed ratio from OpenLMIS data
-    lmis_consumable_usage = pd.read_csv(path_for_consumable_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
-    # TODO Generate a smaller version of this file
-    # Collapse individual facilities
-    lmis_consumable_usage_by_item_level_month = lmis_consumable_usage.groupby(['category', 'item_code', 'district', 'fac_type_tlo', 'month'])[['closing_bal', 'dispensed', 'received']].sum()
-    df = lmis_consumable_usage_by_item_level_month # Drop rows where monthly OpenLMIS data wasn't available
-    df = df.loc[df.index.get_level_values('month') != "Aggregate"]
-    # Opening balance in January is the closing balance for the month minus what was received during the month plus what was dispensed
-    opening_bal_january = df.loc[df.index.get_level_values('month') == 'January', 'closing_bal'] + \
-                          df.loc[df.index.get_level_values('month') == 'January', 'dispensed'] - \
-                          df.loc[df.index.get_level_values('month') == 'January', 'received']
-    closing_bal_december = df.loc[df.index.get_level_values('month') == 'December', 'closing_bal']
-    # the consumable inflow during the year is the opening balance in January + what was received throughout the year - what was transferred to the next year (i.e. closing bal of December)
-    total_consumables_inflow_during_the_year = df.loc[df.index.get_level_values('month') != 'January', 'received'].groupby(level=[0,1,2,3]).sum() +\
-                                             opening_bal_january.reset_index(level='month', drop=True) -\
-                                             closing_bal_december.reset_index(level='month', drop=True)
-    total_consumables_outflow_during_the_year  = df['dispensed'].groupby(level=[0,1,2,3]).sum()
-    inflow_to_outflow_ratio = total_consumables_inflow_during_the_year.div(total_consumables_outflow_during_the_year, fill_value=1)
-
-    # Edit outlier ratios
-    inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio < 1] = 1 # Ratio can't be less than 1
-    inflow_to_outflow_ratio.loc[inflow_to_outflow_ratio > inflow_to_outflow_ratio.quantile(0.95)] = inflow_to_outflow_ratio.quantile(0.95) # Trim values greater than the 95th percentile
-    average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio.mean() # Use average where item-specific ratio is not available
+    inflow_to_outflow_ratio = pd.read_csv(
+        resourcefilepath / "costing/ResourceFile_Consumables_Inflow_Outflow_Ratio.csv")
+    inflow_to_outflow_ratio = inflow_to_outflow_ratio.set_index(['item_category', 'item_code', 'district', 'fac_type_tlo'])
+    average_inflow_to_outflow_ratio_ratio = inflow_to_outflow_ratio['inflow_to_outflow_ratio'].mean()  # Use average where item-specific ratio is not available
 
     # Multiply number of items needed by cost of consumable
     inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='item_code').mean()
     excess_stock_ratio = inflow_to_outflow_ratio_by_consumable - 1
-    excess_stock_ratio = excess_stock_ratio.reset_index().rename(columns = {0: 'excess_stock_proportion_of_dispensed'})
+    excess_stock_ratio = excess_stock_ratio.reset_index().rename(columns = {'inflow_to_outflow_ratio': 'excess_stock_proportion_of_dispensed'})
     # TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
     cost_of_excess_consumables_stocked = consumables_dispensed.merge(unit_costs['consumables'], left_on = 'Item_Code', right_on = 'Item_Code', validate = 'm:1', how = 'left')
     excess_stock_ratio.columns = pd.MultiIndex.from_arrays([excess_stock_ratio.columns, [''] * len(excess_stock_ratio.columns)]) # TODO convert this into a funciton
