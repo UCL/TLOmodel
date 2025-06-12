@@ -388,6 +388,17 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
         'sens_analysis_max': Parameter(
             Types.BOOL, 'Signals within the analysis event and code that sensitivity analysis is being undertaken in '
                         'which the maximum coverage of ANC is enforced'),
+
+        'interventions_analysis': Parameter(
+            Types.BOOL, 'Signals within the analysis event and code that intervention-based analysis is being '
+                        'undertaken in which the maximum coverage of ANC is enforced'),
+        'interventions_under_analysis': Parameter(
+            Types.LIST, 'Intervention for which their availability is being changed during analysis'),
+        'all_interventions': Parameter(
+            Types.LIST, 'Names of all maternal and newborn health interventions'),
+        'intervention_analysis_availability': Parameter(
+            Types.REAL, 'Probability an intervention which is included in "interventions_under_analysis" will be'
+                        'available'),
     }
 
     PROPERTIES = {
@@ -526,13 +537,19 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
                            sim.date + DateOffset(years=1))
 
         # ...and register and schedule the parameter update event
-        sim.schedule_event(ParameterUpdateEvent(self),
-                           Date(2015, 1, 1))
+        if self.sim.date.year < 2015:
+            sim.schedule_event(ParameterUpdateEvent(self),
+                               Date(2015, 1, 1))
+        else:
+            sim.schedule_event(ParameterUpdateEvent(self),
+                               Date(self.sim.date.year, 1, 1))
 
         # ... and finally register and schedule the parameter override event. This is used in analysis scripts to change
         # key parameters after the simulation 'burn in' period. The event is schedule to run even when analysis is not
         # conducted but no changes to parameters can be made.
-        sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
+
+        if self.sim.date.year <= params['analysis_year']:
+            sim.schedule_event(PregnancyAnalysisEvent(self), Date(params['analysis_year'], 1, 1))
 
         # ==================================== LINEAR MODEL EQUATIONS =================================================
         # Next we scale linear models according to distribution of predictors in the dataframe at baseline
@@ -1667,7 +1684,7 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             "PregnancySupervisor"
         ].abortion_complications
         if abortion_complications.has_any(
-            [person_id], "sepsis", "injury", "haemorrhage", first=True
+            [person_id], "sepsis", "injury", "haemorrhage", "other", first=True
         ):
             event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                 module=self.sim.modules["CareOfWomenDuringPregnancy"],
@@ -2066,7 +2083,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'ps_ectopic_pregnancy'] = 'none'
 
             else:
-                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
+                self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury', 'other')
                 df.at[individual_id, 'ac_received_post_abortion_care'] = False
 
             if individual_id in mni:
