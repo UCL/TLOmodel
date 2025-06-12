@@ -505,8 +505,9 @@ class SymptomManager(Module):
             else True
         ), "Disease Module Name is not recognised"
 
+        # Faster to get current symptoms using tracker when no disease is specified
         if disease_module is None and person_id is not None:
-            return list(self.get_current_symptoms(person_id))
+            return list(self._get_current_symptoms_from_tracker(person_id))
 
         if individual_details is not None:
             # We are working in an IndividualDetails context, avoid lookups to the
@@ -605,6 +606,10 @@ class SymptomManager(Module):
                 if self.bsh.is_empty(pid, columns=symptom_col):
                     self.symptom_tracker[pid].discard(sym)
 
+            # Remove the person's entry from the tracker is the symptom set is empty
+            if pid in self.symptom_tracker and not self.symptom_tracker[pid]:
+                del self.symptom_tracker[pid]
+
     def caused_by(self, disease_module: Module):
         """Find the persons experiencing symptoms due to a particular module.
         Returns a dict of the form {<<person_id>>, <<list_of_symptoms>>}."""
@@ -623,30 +628,19 @@ class SymptomManager(Module):
     def reset_persons_with_newly_onset_symptoms(self):
         self._persons_with_newly_onset_symptoms.clear()
 
-    def get_current_symptoms(self, person_id: int) -> Set[str]:
+    def _get_current_symptoms_from_tracker(self, person_id: int) -> Set[str]:
         """Get the current symptoms for a person. Works with bookkeeping dictionary"""
         return self.symptom_tracker.get(person_id, set())
 
     def clear_symptoms_for_deceased_person(self, person_id: int):
         """
-        Clear all symptoms for a deceased person.
+        Clears symptoms by deleting the dead person's ID in the tracker
         """
-        df = self.sim.population.props
-        if not df.at[person_id, 'is_alive']:
-            # Get the person's current symptoms
-            current_symptoms = self.get_current_symptoms(person_id).copy()
 
-            # Clear symptoms individual had
-            for symptom in current_symptoms:  # Now safe to iterate
-                symptom_col = self.get_column_name_for_symptom(symptom)
-                # Reset bitset and discard from symptom tracker
-                df.at[person_id, symptom_col] = 0
-                if person_id in self.symptom_tracker:
-                    self.symptom_tracker[person_id].discard(symptom)
-
-            # Make sure deceased person has no symptoms left
-            assert not self.get_current_symptoms(person_id), \
-                f"Person {person_id} still has symptoms after clearing: {self.get_current_symptoms(person_id)}"
+        # Remove person from tracker entirely
+        self.symptom_tracker.pop(person_id, None)
+        # Verify cleanup
+        assert not self._get_current_symptoms_from_tracker(person_id)
 
 
 # ---------------------------------------------------------------------------------------------------------
