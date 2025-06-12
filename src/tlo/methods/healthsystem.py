@@ -2292,7 +2292,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 if not item.hsi_event.is_all_declared_equipment_available:
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                     equipment_available = False
-
                 # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
                 if self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] != None and year > 2025:
                         assert self.module.parameters['services_affected_precip'] == 'all'
@@ -2310,48 +2309,52 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 'disruption'
                             ]
                             prob_disruption = pd.DataFrame(prob_disruption)
-                            #prob_disruption = float(prob_disruption.iloc[0]) * 100
-                            prob_disruption = 1
+                            prob_disruption = float(prob_disruption.iloc[0]) # to get average days
                             if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
                                 climate_disrupted = True
                                 response_to_disruption = 'delay'
-                                if prob_disruption > 0.05:
-                                    response_to_disruption == 'cancel'
                                 if response_to_disruption == 'delay':
                                     if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                         self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(priority=item.priority,
                                                                                           topen=self.sim.date + DateOffset(month=1),
                                                                                           tclose=self.sim.date + DateOffset(month=1) +
-                                                                                                 DateOffset(days=(item.topen - item.tclose).days), hsi_event=item)
+                                                                                                 DateOffset((item.topen - item.tclose).days), hsi_event=item)
                                     else:
                                         subgroup = item.hsi_event.target  # the person ID, but the linear model is set up to expect “subgroup”
-                                        if self.sim.population.props.loc[subgroup, 'age'] > 15:
-                                            subgroup_name = 'children'
-                                            care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_children
-                                            hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models[
-                                                'children']
-                                        else:
-                                            subgroup_name = 'adults'
-                                            care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_adults
-                                            hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models[
-                                                'adults']
 
-                                        will_seek_care = hsb_model.predict(
-                                                subgroup,
-                                                self.sim.module.rng,
-                                                subgroup=subgroup_name,
-                                                care_seeking_odds_ratios=care_seeking_odds_ratios)
+                                        if self.sim.population.props.loc[subgroup, 'age'] > 15:
+
+                                            subgroup_name = 'children'
+
+                                            care_seeking_odds_ratios = self.sim.modules[
+                                                'HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_children
+
+                                            hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['children']
+
+                                        else:
+
+                                            subgroup_name = 'adults'
+
+                                            care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_adults
+
+                                            hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['adults']
+
+                                        will_seek_care = hsb_model.predict(subgroup, self.sim.module.rng, subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
 
                                         if will_seek_care:
+
                                             self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(priority=item.priority,
-                                                                                              topen=self.sim.date + DateOffset(month=1),
-                                                                                              tclose=self.sim.date + DateOffset(month=1) +
-                                                                                                     DateOffset((item.topen - item.tclose).days()), hsi_event=item)
+                                                topen=self.sim.date + DateOffset(month=1), tclose=self.sim.date + DateOffset(month=1) +
+                                                                                                  DateOffset((item.topen - item.tclose).days), hsi_event=item)
+
                                         else:
+
                                             response_to_disruption = 'cancel'
                                 if response_to_disruption == 'cancel':
                                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
                                                                                     priority=item.priority)
+
+
                 if (climate_disrupted == False) and (equipment_available == True):
                             list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
 
@@ -3087,4 +3090,3 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
             description="The number of hcw_staff this year",
             data=current_staff_count,
         )
-
