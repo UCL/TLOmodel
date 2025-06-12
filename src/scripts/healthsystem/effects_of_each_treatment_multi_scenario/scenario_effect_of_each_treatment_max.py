@@ -63,7 +63,7 @@ class EffectOfEachTreatmentMax(BaseScenario):
             get_parameters_for_status_quo(),
             {
                 'HealthSystem': {
-                    'Service_Availability': list(self._scenarios.values())[draw_number],
+                    'service_availability': list(self._scenarios.values())[draw_number],
                     'cons_availability': 'all',
                     "mode_appt_constraints": 0,
                     "use_funded_or_actual_staffing": "funded_plus",
@@ -75,14 +75,14 @@ class EffectOfEachTreatmentMax(BaseScenario):
         )
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
-        """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
+        """Return the Dict with values for the parameter `service_availability` keyed by a name for the scenario.
         The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model. The
         complete list of TREATMENT_ID's is found by running `tlo_hsi_events.py`."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=1)
 
-        # Return 'Service_Availability' values, with scenarios for everything, nothing, and ones for which each
+        # Return 'service_availability' values, with scenarios for everything, nothing, and ones for which each
         # treatment is omitted
         service_availability = dict({"Everything": ["*"], "Nothing": []})
         service_availability.update(
