@@ -60,6 +60,9 @@ class Consumables:
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
         self._not_recognised_item_codes = defaultdict(set)  # The item codes requested but which are not recognised.
 
+        # Save data
+        self._availability_data = availability_data
+
         # Save designations
         self._item_code_designations = item_code_designations
 
