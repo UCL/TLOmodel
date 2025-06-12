@@ -336,6 +336,15 @@ dalys_summ = compute_summary_statistics(dalys)
 
 
 # TODO OTHER OUTPUTS
+# Notes from epi meeting with Tim C/Andrew
+# - consider splitting appointments by those which could be done by staff member with sufficient training (e.g. refills) and
+# those that could only be done by a specialist (e.g. initial HIV care)
+# - start modelling at 2025
+# - present % of total DALYs attributable to each scenario
+# - can we look at TB dalys in people with HIV
+# - for contraception, present met need instead of DALYs? (although could present maternal dalys only)
+# they were unsure about age standardizaton
+
 # =============================================== CONSUMABLES =========================================================
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
