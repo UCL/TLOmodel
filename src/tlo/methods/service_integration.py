@@ -153,8 +153,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             return
         else:
             assert params['serv_integration'] in ['htn', 'htn_max', 'dm','dm_max','hiv', 'hiv_max', 'tb', 'tb_max',
-                                                  'mal', 'mal_max', 'fp_scr', 'fp_scr_max', 'pnc', 'pnc_max',
-                                                  'fp_pn', 'fp_pn_max', 'chronic_care', 'chronic_care_max',
+                                                  'mal', 'mal_max', 'fp_scr', 'fp_scr_max', 'anc', 'anc_max', 'pnc',
+                                                  'pnc_max',
+                                                  'fp_pn', 'fp_pn_max', 'epi', 'chronic_care', 'chronic_care_max',
                                                   'all_screening', 'all_screening_max', 'all_mch', 'all_mch_max',
                                                   'all_int', 'all_int_max']
 
@@ -234,11 +235,19 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                     'Tb_Treatment'])
 
         # ------------------------------------ MATERNAL AND CHILD HEALTH CLINIC ---------------------------------------
+        if params['serv_integration'].startswith(("anc", "all_mch", "all_int")):
+            self.sim.modules['PregnancySupervisor'].current_parameters['alternative_anc_coverage'] = True
+            self.sim.modules['PregnancySupervisor'].current_parameters['anc_availability_odds'] = 9.0
+            self.sim.modules['PregnancySupervisor'].update_antenatal_care_coverage_for_analysis()
+
+            if params['serv_integration'].endswith('_max'):
+                update_cons_override_treatment_ids(['AntenatalCare_Outpatient', 'AntenatalCare_FollowUp'])
+
+
         if params['serv_integration'].startswith(("pnc", "all_mch", "all_int")):
             self.sim.modules['Labour'].current_parameters['alternative_pnc_coverage'] = True
             self.sim.modules['Labour'].current_parameters['pnc_availability_odds'] = 15.0
-            self.sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self.sim.modules['Labour']),
-                                    Date(self.sim.date))
+            self.sim.modules['Labour'].update_labour_or_postnatal_coverage_for_analysis()
 
             if params['serv_integration'].endswith('_max'):
                 update_cons_override_treatment_ids(['PostnatalCare_Neonatal', 'PostnatalCare_Maternal'])
@@ -259,7 +268,15 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         # child's prob of vax entirely dependent on vaccine being available (cons required)
         # can manipulate this to induce 100% coverage rate - will need to look up the vaccines required for each
         if params['serv_integration'].startswith(("epi", "all_mch", "all_int")):
-            pass
+            update_cons_override_treatment_ids(['Epi_Childhood_Bcg',
+                                                'Epi_Childhood_Opv',
+                                                'Epi_Childhood_DtpHibHep',
+                                                'Epi_Childhood_Rota',
+                                                'Epi_Childhood_Pneumo',
+                                                'Epi_Childhood_MeaslesRubella',
+                                                'Epi_Adolescent_Hpv',
+                                                'Epi_Pregnancy_Td'
+                                                ])
 
         # ------------------------------------- CHRONIC CARE CLINIC ---------------------------------------------------
         # todo: currently only hiv and ncds are linked to other services (what about those presenting for depression etc)

@@ -1675,6 +1675,76 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             )
             schedule_hsi_event(event, **scheduling_options)
 
+    def update_antenatal_care_coverage_for_analysis(self):
+        params = self.current_parameters
+        df = self.sim.population.props
+
+        # Check if either of the analysis parameters are set to True
+        if params['alternative_anc_coverage'] or \
+            params['alternative_anc_quality'] or \
+            params['alternative_ip_anc_quality'] or \
+            params['sens_analysis_max'] or \
+            params['sens_analysis_min']:
+
+            # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
+            # alternative functionality for determining availability of interventions only occurs when analysis is
+            # occurring
+            params['ps_analysis_in_progress'] = True
+
+            # When this parameter is set as True, the following parameters are overridden when the event is called.
+            # Otherwise no parameters are updated.
+            if params['alternative_anc_coverage']:
+                # Reset the intercept parameter of the equation determining care seeking for ANC4+ and scale the model
+                target = params['anc_availability_odds']
+                params['odds_early_init_anc4'] = 1
+                mean = self.ps_linear_models['early_initiation_anc4'].predict(
+                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                    year=self.sim.date.year).mean()
+
+                mean = mean / (1.0 - mean)
+                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+
+                # Update parameters that also control when women will initiate visits
+                params['odds_early_init_anc4'] = scaled_intercept
+                params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
+                params['prob_late_initiation_anc4'] = 0
+
+                # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
+                # coverage can  be reached with current logic
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
+                    10_000
+
+            if params['alternative_anc_quality'] or params['sens_analysis_max']:
+
+                # Override the availability of IPTp consumables with the set level of coverage
+                if 'Malaria' in self.sim.modules:
+                    iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
+                    self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                        {iptp: params['anc_availability_probability']})
+
+                # And then override the quality parameters in the model
+                for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
+                                  'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
+                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
+                        params['anc_availability_probability']
+
+            if params['alternative_ip_anc_quality']:
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_an'] = \
+                    10_000
+
+            if params['sens_analysis_max']:
+                for parameter in ['prob_seek_anc5', 'prob_seek_anc6', 'prob_seek_anc7', 'prob_seek_anc8']:
+                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = 1.0
+
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
+                    10_000
+
+                params['prob_seek_care_pregnancy_complication'] = 1.0
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['prob_adherent_ifa'] = 1.0
+
+            if params['sens_analysis_min']:
+                params['prob_seek_care_pregnancy_complication'] = 0.0
+
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent, it is a weekly event which has four primary functions.
     1.) It updates the gestational age (in weeks) of all women who are pregnant
@@ -2112,75 +2182,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-        params = self.module.current_parameters
-        df = self.sim.population.props
 
-        # Check if either of the analysis parameters are set to True
-        if params['alternative_anc_coverage'] or \
-            params['alternative_anc_quality'] or \
-            params['alternative_ip_anc_quality'] or \
-            params['sens_analysis_max'] or \
-           params['sens_analysis_min']:
-
-            # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
-            # alternative functionality for determining availability of interventions only occurs when analysis is
-            # occurring
-            params['ps_analysis_in_progress'] = True
-
-            # When this parameter is set as True, the following parameters are overridden when the event is called.
-            # Otherwise no parameters are updated.
-            if params['alternative_anc_coverage']:
-
-                # Reset the intercept parameter of the equation determining care seeking for ANC4+ and scale the model
-                target = params['anc_availability_odds']
-                params['odds_early_init_anc4'] = 1
-                mean = self.module.ps_linear_models['early_initiation_anc4'].predict(
-                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
-                    year=self.sim.date.year).mean()
-
-                mean = mean / (1.0 - mean)
-                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
-
-                # Update parameters that also control when women will initiate visits
-                params['odds_early_init_anc4'] = scaled_intercept
-                params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
-                params['prob_late_initiation_anc4'] = 0
-
-                # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
-                # coverage can  be reached with current logic
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
-                    10_000
-
-            if params['alternative_anc_quality'] or params['sens_analysis_max']:
-
-                # Override the availability of IPTp consumables with the set level of coverage
-                if 'Malaria' in self.sim.modules:
-                    iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
-                    self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                        {iptp: params['anc_availability_probability']})
-
-                # And then override the quality parameters in the model
-                for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                                  'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
-                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
-                        params['anc_availability_probability']
-
-            if params['alternative_ip_anc_quality']:
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_an'] = \
-                    10_000
-
-            if params['sens_analysis_max']:
-                for parameter in ['prob_seek_anc5', 'prob_seek_anc6', 'prob_seek_anc7', 'prob_seek_anc8']:
-                    self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = 1.0
-
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
-                    10_000
-
-                params['prob_seek_care_pregnancy_complication'] = 1.0
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['prob_adherent_ifa'] = 1.0
-
-            if params['sens_analysis_min']:
-                params['prob_seek_care_pregnancy_complication'] = 0.0
+        self.module.update_antenatal_care_coverage_for_analysis()
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
