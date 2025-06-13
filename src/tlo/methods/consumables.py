@@ -282,13 +282,13 @@ class Consumables:
             #  is running with `disable=True`. Therefore, assume the consumable is available if the overall
             #  availability assumption is 'all' or 'default', and not otherwise.
             if self.availability in ('all', 'default'):
-                self._make_available(item_codes)
+                return self._make_available(item_codes)
             else:
                 return {_i: False for _i in item_codes}
 
         # If availability is overridden for this treatment id then all items will be set as available.
         if avail_overridden:
-            self._make_available(item_codes)
+            return self._make_available(item_codes)
         else:
             for _i in item_codes.keys():
                 if _i in self.item_codes:
