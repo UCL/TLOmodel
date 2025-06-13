@@ -77,124 +77,79 @@ def get_list_of_items(self, item_list):
 
     return codes
 
-
-def return_cons_avail(self, hsi_event, cons, opt_cons):
+def check_int_deliverable(self, int_name, hsi_event,
+                          q_param=None, cons=None, opt_cons=None, equipment=None, dx_test=None):
     """
-    This function is called by majority of interventions across maternal and neonatal modules to return whether a
-    consumable or package of consumables are available. If analysis is not being conducted (as indicated by a series of
-    analysis boolean parameters) then the availability is determined via the health system module. Otherwise a
-    fixed probability of availability is used to force a set level of intervention coverage
-    availability
-    :param self: module
-    :param hsi_event: hsi_event calling the intervention
-    :param cons_dict: dictionary containing the consumables for that module
-    :param info: information on core, optional and number of consumables requested
-    :return: BOOL
+    This function is called to determine if an intervention within the MNH modules can be delivered to an individual
+    during a given HSI. This applied to all MNH interventions. If analyses are being conducted in which the probability
+    of intervention delivery should be set explicitly, this is achieved during this function. Otherwise, probability of
+     intervention delivery is determined by any module-level quality parameters, consumable availability, and
+     (if applicable) the results of any dx_tests. Equipment is also declared.
+
+   :param self: module
+    param int_name: items for code look up
+    param hsi_event: module
+    param q_param: items for code look up
+    param cons: module
+    param opt_cons: items for code look up
+    param equipment: module
+    param dx_test: items for code look up
     """
-    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-    ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
-    la_params = self.sim.modules['Labour'].current_parameters
 
-    if opt_cons is None:
-        opt_cons = []
+    df = self.sim.population.props
+    individual_id = hsi_event.target
+    p_params = self.sim.modules['PregnancySupervisor'].current_parameters
+    l_params = self.sim.modules['Labour'].current_parameters
 
-    # Check if analysis is currently running, if not then availability is determined normally
-    if not ps_params['ps_analysis_in_progress'] and not la_params['la_analysis_in_progress']:
-        available = hsi_event.get_consumables(item_codes=cons,
-                                              optional_item_codes=opt_cons)
+    # assert int_name in p_params['all_interventions']
 
-        if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
-            mni[hsi_event.target]['cons_not_avail'] = True
+    # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
+    # delivery is being overridden
+    # To do: replace this parameter
+    if (p_params['interventions_analysis'] and p_params['ps_analysis_in_progress'] and
+        (int_name in p_params['interventions_under_analysis'])):
 
-        return available
+        # If so, we determine if this intervention will be delivered given the set probability of delivery.
+        can_int_run_analysis = self.rng.random_sample() < p_params['intervention_analysis_availability']
 
-    else:
-        available = hsi_event.get_consumables(item_codes=cons, optional_item_codes=opt_cons)
+        # The intervention has no effect
+        if not can_int_run_analysis:
+            return False
 
-        # Depending on HSI calling this function a different parameter set is used to determine if analysis is being
-        # conducted
-        if 'AntenatalCare' in hsi_event.TREATMENT_ID:
-            params = self.sim.modules['PregnancySupervisor'].current_parameters
         else:
-            params = self.sim.modules['Labour'].current_parameters
+            # The intervention will have an effect. If this is an intervention which leads to an outcome dependent on
+            # correct identification of a condition through a dx_test we account for that here.
+            if dx_test is not None:
+                test = self.sim.modules['HealthSystem'].dx_manager.dx_tests[dx_test]
 
-        # Store the names of the parameters which indicate that analysis is being conducted against specific HSIs
-        analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
-                         'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
-                         'AntenatalCare_FollowUp': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
-                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
-                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
-                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
-                         'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
-                         'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
-                         'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
+                if test[0].target_categories is None and (df.at[individual_id, test[0].property]):
+                    return True
 
-        # Cycle through each HSI of interest. If this HSI is requesting a consumable, analysis is being conducted and
-        # the simulation date is greater than the predetermined analysis date, then a random draw against a probability
-        # of consumable availability is used
-        for k in analysis_dict:
-            if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
-                if self.rng.random_sample() < params[analysis_dict[k][1]]:
-                    available = True
+                elif ((test[0].target_categories is not None) and
+                      (df.at[individual_id, test[0].property] in test[0].target_categories)):
+                    return True
+
                 else:
-                    available = False
+                    return False
 
-        # If the consumable is not available this is stored in the MNI dictionary
-        if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
-            mni[hsi_event.target]['cons_not_avail'] = True
+            else:
+                return True
 
-        return available
+    elif (l_params['la_analysis_in_progress'] or
+          (p_params['ps_analysis_in_progress'] and not p_params['interventions_under_analysis'])):
 
-
-def check_emonc_signal_function_will_run(self, sf, hsi_event):
-    """
-    Called during/after labour to determine if a B/CEmONC function will run depending on the availability of HCWs
-    trained in the intervention and their competence
-    :param self: module
-    :param sf: signal function of interest
-    :param hsi_event: hsi_event calling the intervention
-    :return: BOOL
-    """
-    la_params = self.sim.modules['Labour'].current_parameters
-    ps_params = self.sim.modules['PregnancySupervisor'].current_parameters
-    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-    def see_if_sf_will_run():
-        # Determine competence parameter to use (higher presumed competence in hospitals)
-        if hsi_event.ACCEPTED_FACILITY_LEVEL == '1a':
-            competence = la_params['mean_hcw_competence_hc'][0]
-        else:
-            competence = la_params['mean_hcw_competence_hp'][1]
-
-        comp_result = self.rng.random_sample() < competence
-        hcw_result = self.rng.random_sample() < la_params[f'prob_hcw_avail_{sf}']
-
-        # If HCW is available and staff are competent at delivering the intervention then it will be delivered
-        if comp_result and hcw_result:
-            return True
-
-        # Otherwise log within the mni
-        if not comp_result and (hsi_event.target in mni):
-            mni[hsi_event.target]['comp_not_avail'] = True
-        if not hcw_result and (hsi_event.target in mni):
-            mni[hsi_event.target]['hcw_not_avail'] = True
-
-        return False
-
-    if not la_params['la_analysis_in_progress'] and not ps_params['ps_analysis_in_progress']:
-        return see_if_sf_will_run()
-
-    else:
         if 'AntenatalCare' in hsi_event.TREATMENT_ID:
             params = self.sim.modules['PregnancySupervisor'].current_parameters
         else:
             params = self.sim.modules['Labour'].current_parameters
 
         # Define HSIs and analysis parameters of interest
-        analysis_dict = {'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
-                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_availability'],
-                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_availability'],
-                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_availability'],
+        analysis_dict = {'AntenatalCare_Outpatient': ['alternative_anc_quality', 'anc_availability_probability'],
+                         'AntenatalCare_Inpatient': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'AntenatalCare_FollowUp': ['alternative_ip_anc_quality', 'ip_anc_availability_probability'],
+                         'DeliveryCare_Basic': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
+                         'DeliveryCare_Neonatal': ['alternative_bemonc_availability', 'bemonc_cons_availability'],
+                         'DeliveryCare_Comprehensive': ['alternative_cemonc_availability', 'cemonc_cons_availability'],
                          'PostnatalCare_Maternal': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Comprehensive': ['alternative_pnc_quality', 'pnc_availability_probability'],
                          'PostnatalCare_Neonatal': ['alternative_pnc_quality', 'pnc_availability_probability']}
@@ -206,69 +161,42 @@ def check_emonc_signal_function_will_run(self, sf, hsi_event):
                 if self.rng.random_sample() < params[analysis_dict[k][1]]:
                     return True
 
-                # If the event wont run it is stored in the HSI for the relevant woman
-                elif hsi_event.target in mni:
-                    barrier = self.rng.choice(['comp_not_avail', 'hcw_not_avail'])
-                    mni[hsi_event.target][barrier] = True
+                else:
                     return False
 
-        return see_if_sf_will_run()
+    else:
 
+        # If analysis is not being conducted, intervention delivery is dependent on quality parameters, consumable
+        # availability and dx_test results
+        quality = False
+        consumables = False
+        test = False
 
-def log_met_need(self, intervention, hsi):
-    """
-    This function is called whenever a woman receives an intervention used as treatment for a potentially fatal
-    complication within the maternal or neonatal health modules. The intervention is logged within the labour.detail
-    logging and is used to calculate treatment coverage/met need
-    :param self: module
-    :param intervention: intervention to be logged
-    :param hsi: hsi_event calling the intervention
-    """
-    df = self.sim.population.props
-    logger = logging.getLogger("tlo.methods.labour.detail")
-    person = df.loc[hsi.target]
-    person_id = hsi.target
+        if ((q_param is None) or
+            all([self.rng.random_sample() < value for value in q_param])):
+            quality = True
 
-    # Interventions with single indications are simply logged
-    if intervention in ('ep_case_mang', 'pac', 'avd_other', 'avd_ol', 'avd_spe_ec', 'uterotonics', 'man_r_placenta',
-                        'pph_surg', 'ur_surg', 'neo_resus', 'neo_sep_supportive_care', 'neo_sep_abx'):
-        logger.info(key='intervention', data={'person_id': person_id, 'int': intervention})
+            # todo: should this only be if qual and cons are also true?
+            if equipment is not None:
+                hsi_event.add_equipment(equipment)
 
-    # For interventions with multiple indications the HSI and properties of the individual are used to determine the
-    # correct name for the logged intervention.
-    elif (intervention == 'mag_sulph') or (intervention == 'iv_htns'):
-        if hsi.TREATMENT_ID == 'AntenatalCare_Inpatient':
-            tp = ['an', 'ps']
-        elif hsi.TREATMENT_ID == 'DeliveryCare_Basic':
-            tp = ['la', 'ps']
+        if ((cons is None) or
+            (hsi_event.get_consumables(item_codes=cons if not None else [],
+                                       optional_item_codes=opt_cons if not None else []))):
+            consumables = True
+
+        if cons is None and opt_cons is not None:
+            hsi_event.get_consumables(item_codes=[], optional_item_codes=opt_cons)
+
+        if ((dx_test is None) or
+            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
+            test = True
+
+        if quality and consumables and test:
+            return True
+
         else:
-            tp = ['pn', 'pn']
-
-        logger.info(key='intervention',
-                    data={'person_id': person_id,
-                          'int': f'{intervention}_{tp[0]}_{df.at[person_id, f"{tp[1]}_htn_disorders"]}'})
-
-    elif intervention == 'sepsis_abx':
-        if (hsi.TREATMENT_ID == 'DeliveryCare_Basic') or (hsi.TREATMENT_ID == 'AntenatalCare_Inpatient'):
-            logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_an_sepsis'})
-
-        elif hsi.TREATMENT_ID == 'PostnatalCare_Maternal':
-            logger.info(key='intervention', data={'person_id': person_id, 'int': 'abx_pn_sepsis'})
-
-    elif intervention == 'blood_tran':
-        if hsi.TREATMENT_ID == 'AntenatalCare_Inpatient':
-            logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_anaemia'})
-
-        elif hsi.TREATMENT_ID == 'DeliveryCare_Comprehensive':
-            if ((person.la_antepartum_haem != 'none') or (person.ps_antepartum_haemorrhage != 'none')) and \
-              not person.la_is_postpartum:
-                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_aph'})
-
-            elif person.la_uterine_rupture and not person.la_is_postpartum:
-                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_ur'})
-
-            elif (person.la_postpartum_haem or person.pn_postpartum_haem_secondary) and person.la_is_postpartum:
-                logger.info(key='intervention', data={'person_id': person_id, 'int': 'blood_tran_pph'})
+            return False
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):
@@ -340,7 +268,10 @@ def update_current_parameter_dictionary(self, list_position):
 
     for key, value in self.parameters.items():
         if isinstance(value, list):
-            self.current_parameters[key] = self.parameters[key][list_position]
+            if not value or (len(value)) == 1 or key in ('interventions_under_analysis', 'all_interventions'):
+                self.current_parameters[key] = self.parameters[key]
+            else:
+                self.current_parameters[key] = self.parameters[key][list_position]
         else:
             if list_position == 0:
                 self.current_parameters[key] = self.parameters[key]

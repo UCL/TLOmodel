@@ -900,8 +900,11 @@ class NewbornOutcomes(Module):
         if (df.at[person_id, 'nb_low_birth_weight_status'] != 'normal_birth_weight') or \
            (df.at[person_id, 'nb_low_birth_weight_status'] != 'macrosomia'):
 
+            kmc_delivered = pregnancy_helper_functions.check_int_deliverable(
+            self, int_name='kmc', hsi_event=hsi_event, q_param=[params['prob_kmc_available']])
+
             # Check KMC can be delivered
-            if self.rng.random_sample() < params['prob_kmc_available']:
+            if kmc_delivered:
                 # Store treatment as a property of the newborn used to apply treatment effect
                 df.at[person_id, 'nb_kangaroo_mother_care'] = True
 
@@ -952,6 +955,8 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = int(hsi_event.target)
+        l_params = self.sim.modules['Labour'].current_parameters
+        pnc_location = 'hc' if facility_type == '1a' else 'hp'
 
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
@@ -959,35 +964,29 @@ class NewbornOutcomes(Module):
         if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
            df.at[person_id, 'pn_sepsis_early_neonatal']:
 
-            # Run HCW check
-            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
-                                                                                       sf='iv_abx',
-                                                                                       hsi_event=hsi_event)
             if facility_type != '1a':
 
-                # check consumables
-                avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event,
+                neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
+                    self, int_name='neo_sepsis_treatment_supp_care', hsi_event=hsi_event,
+                    q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_supportive_care_core'],
-                    opt_cons=self.item_codes_nb_consumables['sepsis_supportive_care_optional'])
+                    opt_cons=self.item_codes_nb_consumables['sepsis_supportive_care_optional'],
+                    equipment={'Drip stand', 'Infusion pump'})
 
-                # Then, if the consumables are available, treatment for sepsis is delivered
-                if avail and sf_check:
+                if neo_sepsis_treatment_delivered:
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
-                    pregnancy_helper_functions.log_met_need(self, 'neo_sep_supportive_care', hsi_event)
-                    hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
 
             # The same pattern is then followed for health centre care
             else:
-                avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event,
+                neo_sepsis_treatment_delivered = pregnancy_helper_functions.check_int_deliverable(
+                    self, int_name='neo_sepsis_treatment_abx', hsi_event=hsi_event,
+                    q_param=[l_params['prob_hcw_avail_iv_abx'], l_params[f'mean_hcw_competence_{pnc_location}']],
                     cons=self.item_codes_nb_consumables['sepsis_abx'],
-                    opt_cons=self.item_codes_nb_consumables['iv_drug_equipment'])
+                    opt_cons=self.item_codes_nb_consumables['iv_drug_equipment'],
+                    equipment={'Drip stand', 'Infusion pump'})
 
-                if avail and sf_check:
+                if neo_sepsis_treatment_delivered:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
-                    pregnancy_helper_functions.log_met_need(self, 'neo_sep_abx', hsi_event)
-                    hsi_event.add_equipment({'Drip stand', 'Infusion pump', 'Oxygen cylinder, with regulator'})
 
     def link_twins(self, child_one, child_two, mother_id):
         """
