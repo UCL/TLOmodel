@@ -185,11 +185,10 @@ def _simulation_factory(
         start_date=start_date,
         seed=seed,
         log_config=log_config,
+        resourcefilepath=resource_file_path
     )
     simulation.register(
-        *fullmodel(
-            resourcefilepath=resource_file_path,
-        )
+        *fullmodel()
     )
     return simulation
 
@@ -260,7 +259,7 @@ def _check_parsed_logs_are_equal(
             if key == "_metadata":
                 assert module_logs_1[key] == module_logs_2[key]
             elif (module_name, key) not in module_name_key_pairs_to_skip:
-                assert module_logs_1[key].equals(module_logs_2[key])
+                assert module_logs_1[key].equals(module_logs_2[key]), f"{module_name} log {key} not equal"
 
 
 @pytest.mark.slow
@@ -321,3 +320,6 @@ def test_initialise_simulation_twice_raises(
     simulation.initialise(end_date=end_date)
     with pytest.raises(SimulationPreviouslyInitialisedError):
         simulation.initialise(end_date=end_date)
+
+def test_resourcefilepath_is_set_correctly(simulation, resource_file_path):
+    assert simulation.resourcefilepath == resource_file_path
