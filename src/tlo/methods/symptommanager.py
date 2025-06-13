@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -26,6 +26,8 @@ from tlo.methods import Metadata
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
+    from typing import Union
+
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
