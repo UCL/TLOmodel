@@ -39,7 +39,8 @@ from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              estimate_projected_health_spending,
                                              apply_discounting_to_cost_data,
                                              tabulate_roi_estimates,
-                                             extract_roi_at_specific_implementation_costs)
+                                             extract_roi_at_specific_implementation_costs,
+                                             load_unit_cost_assumptions)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -256,15 +257,12 @@ for rates in alternative_discount_rates:
     # Add additional costs pertaining to simulation (Only for scenarios with Malaria scale-up)
     #-----------------------------------------------------------------------------------------------------------------------
     def estimate_malaria_scale_up_costs(_params, _relevant_period_for_costing):
-        # Load primary costing resourcefile
-        workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                      sheet_name=None)
+        # Load health spending projections
+        unit_costs = load_unit_cost_assumptions(resourcefilepath)
+        unit_price_consumable = unit_costs["consumables"]
+
         # Read parameters for consumables costs
         # Load consumables cost data
-        unit_price_consumable = workbook_cost["consumables"]
-        unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
-        unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
-            drop=True).iloc[1:]
         unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
 
         # In this case malaria intervention scale-up costs were not included in the standard estimate_input_cost_of_scenarios function
@@ -373,7 +371,7 @@ for rates in alternative_discount_rates:
                                                                                                          draws_included = list_of_draws_with_malaria_scaleup_implemented_in_costing_period)
 
         # Get annual cost of IRS under malaria scale-up assumptions
-        irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Final_price_per_chosen_unit (USD, 2023)']
+        irs_cost_per_person = unit_price_consumable[unit_price_consumable.Item_Code == 161]['Price_per_unit']
         # This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping, PPE. The cost is measured per person protected. Based on Stelmach et al (2018)
         irs_multiplication_factor = irs_cost_per_person * irs_coverage_rate
         total_irs_cost = irs_multiplication_factor.iloc[0] * district_population_covered_by_irs_scaleup_by_year # for districts and scenarios included
@@ -383,7 +381,7 @@ for rates in alternative_discount_rates:
         bednet_coverage_rate = 0.7
         # We can assume 3-year lifespan of a bednet, each bednet covering 1.8 people.
         inflation_2011_to_2023 = 1.35
-        unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Final_price_per_chosen_unit (USD, 2023)'] + (8.27 - 3.36) * inflation_2011_to_2023
+        unit_cost_of_bednet = unit_price_consumable[unit_price_consumable.Item_Code == 160]['Price_per_unit'] + (8.27 - 3.36) * inflation_2011_to_2023
         # Stelmach et al Tanzania https://pmc.ncbi.nlm.nih.gov/articles/PMC6169190/#_ad93_ (Price in 2011 USD) - This cost includes non-consumable costs - personnel, equipment, fuel, logistics and planning, shipping. The cost is measured per net distributed
         # Note that the cost per net of $3.36 has been replaced with a cost of Malawi Kwacha 667 (2023) as per the Central Medical Stores Trust sales catalogue
 
@@ -439,15 +437,12 @@ for rates in alternative_discount_rates:
                                                                      _relevant_period_for_costing = relevant_period_for_costing)
 
     def estimate_xpert_costs(_results_folder, _relevant_period_for_costing):
-        # Load primary costing resourcefile
-        workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                      sheet_name=None)
+        # Load health spending projections
+        unit_costs = load_unit_cost_assumptions(resourcefilepath)
+        unit_price_consumable = unit_costs["consumables"]
+
         # Read parameters for consumables costs
         # Load consumables cost data
-        unit_price_consumable = workbook_cost["consumables"]
-        unit_price_consumable = unit_price_consumable.rename(columns=unit_price_consumable.iloc[0])
-        unit_price_consumable = unit_price_consumable[['Item_Code', 'Final_price_per_chosen_unit (USD, 2023)']].reset_index(
-            drop=True).iloc[1:]
         unit_price_consumable = unit_price_consumable[unit_price_consumable['Item_Code'].notna()]
 
         # Add cost of Xpert consumables which was missed in the current analysis
@@ -505,7 +500,7 @@ for rates in alternative_discount_rates:
                 'year')
 
         xpert_cost_per_cartridge = unit_price_consumable[unit_price_consumable.Item_Code == 187][
-            'Final_price_per_chosen_unit (USD, 2023)']
+            'Price_per_unit']
         xpert_availability_adjustment = 0.77
         # note that as per 2018 Openlmis mean availability was 0.5, 0.77, 0.809, 0.861, 0.744 during Jul, Sep - Dec.
         # The median value is 0.77 - for the rest of the months availability was close to 0
@@ -905,14 +900,11 @@ for rates in alternative_discount_rates:
         total_population_summary = total_population_by_year[total_population_by_year.draw == 0].groupby("year")["population"].agg(
             population="median"
         ).reset_index()
-        workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                          sheet_name=None)
-        health_spending_per_capita = workbook_cost["health_spending_projections"]
-        # Assign the fourth row as column names
-        health_spending_per_capita.columns = health_spending_per_capita.iloc[1]
-        health_spending_per_capita = health_spending_per_capita.iloc[2:].reset_index(drop=True)
+        unit_costs = load_unit_cost_assumptions(resourcefilepath)
+        health_spending_per_capita = unit_costs["health_spending_projections"]
         health_spending_per_capita = health_spending_per_capita[health_spending_per_capita.year.isin(list(range(_relevant_period_for_costing[0], _relevant_period_for_costing[1] + 1)))]
-        health_spending_per_capita = health_spending_per_capita[['year', 'total_mean']]
+        health_spending_per_capita = health_spending_per_capita[['year', 'total_mean']].apply(
+            pd.to_numeric, errors='coerce')
         health_spending_per_capita_table = health_spending_per_capita.merge(total_population_summary, on = "year", how = "left", validate = "1:1")
         health_spending_per_capita_table["total_health_spending"] = health_spending_per_capita_table['total_mean'] * health_spending_per_capita_table['population']
         return health_spending_per_capita_table
