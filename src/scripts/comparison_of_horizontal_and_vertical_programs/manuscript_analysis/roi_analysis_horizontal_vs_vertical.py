@@ -1431,50 +1431,6 @@ print(f"The ICER of vertical strategy relative to the baseline scenario was "
       f"(${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}] versus "
       f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}]), meaning it was less cost-effective.")
 
-# ROI extracts
-# Find out at what implementation costs the ROI of TB and Malaria with HSS is the same as TB and Malaria without HSS
-breakeven_implementation_cost_tb = ((health_benefit_summarised[26][chosen_metric] * incremental_scenario_cost_summarised[18][chosen_metric]) - (health_benefit_summarised[18][chosen_metric] * incremental_scenario_cost_summarised[26][chosen_metric]))/(health_benefit_summarised[18][chosen_metric] - health_benefit_summarised[26][chosen_metric])
-breakeven_implementation_cost_malaria = ((health_benefit_summarised[35][chosen_metric] * incremental_scenario_cost_summarised[27][chosen_metric]) - (health_benefit_summarised[27][chosen_metric] * incremental_scenario_cost_summarised[35][chosen_metric]))/(health_benefit_summarised[27][chosen_metric] - health_benefit_summarised[35][chosen_metric])
-assert(round((health_benefit_summarised[26][chosen_metric] - incremental_scenario_cost_summarised[26][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[26][chosen_metric] + breakeven_implementation_cost_tb),6) ==
-       round((health_benefit_summarised[18][chosen_metric] - incremental_scenario_cost_summarised[18][chosen_metric] - breakeven_implementation_cost_tb)/(incremental_scenario_cost_summarised[18][chosen_metric] + breakeven_implementation_cost_tb),6))
-assert(round((health_benefit_summarised[35][chosen_metric] - incremental_scenario_cost_summarised[35][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[35][chosen_metric] + breakeven_implementation_cost_malaria),6) ==
-       round((health_benefit_summarised[27][chosen_metric] - incremental_scenario_cost_summarised[27][chosen_metric] - breakeven_implementation_cost_malaria)/(incremental_scenario_cost_summarised[27][chosen_metric] + breakeven_implementation_cost_malaria), 6))
-
-print(f"Notably, the ROI of the HIV program increased substantially to "
-      f"{roi_at_0_implementation_cost_dict[17][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[17]['lower']:.2f} - {roi_at_0_implementation_cost_dict[17]['upper']:.2f}) "
-      f"when integrated with HSS, compared to a negative ROI of "
-      f"{roi_at_0_implementation_cost_dict[9][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[9]['lower']:.2f} - {roi_at_0_implementation_cost_dict[9]['upper']:.2f}) "
-      f"without HSS. While malaria and TB initially demonstrated higher ROIs under the vertical strategy, "
-      f"this trend reversed when additional implementation costs were considered. Specifically, at an additional "
-      f"implementation cost threshold of "
-      f"${breakeven_implementation_cost_malaria/1e6: .2f} million "
-      f"({breakeven_implementation_cost_malaria/projected_health_spending_baseline * 100:.2f}% "
-      f"of the projected health spending) for malaria and "
-      f"${breakeven_implementation_cost_tb/1e6: .2f} million "
-      f"({breakeven_implementation_cost_tb/projected_health_spending_baseline * 100:.2f}%) for TB, "
-      f"the diagonal investment strategy overtook the vertical approach in terms of ROI")
-
-print(f"At a value of a statistical life year of $834 and assuming no incremental above service level costs, "
-      f"the return on investment (ROI) for the joint HTM diagonal approach was "
-      f"{(roi_at_0_implementation_cost_dict[44][chosen_metric] - roi_at_0_implementation_cost_dict[36][chosen_metric]) / roi_at_0_implementation_cost_dict[36][chosen_metric] * 100:.2f}% "
-      f"higher than that of the vertical approach, reaching "
-      f"{roi_at_0_implementation_cost_dict[44][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[44]['lower']:.2f} - {roi_at_0_implementation_cost_dict[44]['upper']:.2f}) compared to "
-      f"{roi_at_0_implementation_cost_dict[36][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[36]['lower']:.2f} - {roi_at_0_implementation_cost_dict[36]['upper']:.2f}) (Figure 3). "
-      f"Assuming zero incremental above service level costs for the vertical approach, "
-      f"the diagonal approach remained more favorable provided its own incremental above service level costs did not"
-      f" exceed "
-      f"${breakeven_implementation_cost_at_0_implementation_cost / 1e6: .2f} million—equivalent to "
-      f"{(breakeven_implementation_cost_at_0_implementation_cost) / (incremental_scenario_cost_summarised[44][chosen_metric]) * 100: .2f}%"
-      f" of the diagonal approach’s incremental service-level cost —over the  2025 and 2035 period. "
-      f"Under an alternative assumption that the vertical approach incurs incremental above service level costs equal to "
-      f"{above_service_level_cost_proportion * 100}% of its incremental service level cost (based on estimates from Opuni et al (2023)),"
-      f" the diagonal approach provided a higher ROI up to an even higher threshold of "
-      f"${(breakeven_implementation_cost_at_upper_limit_implementation_cost - implementation_cost_upper_limit_dict[36][chosen_metric]) / 1e6: .2f} million"
-      f"incremental above service level costs in comparison with the vertical apporach, "
-      f"or {breakeven_implementation_cost_at_upper_limit_implementation_cost / ((incremental_scenario_cost_summarised[44][chosen_metric]) / 100): .2f}%"
-      f" of its incremental service level cost. Furthermore, the ROI of the diagonal approach also surpassed that of the horizontal approach "
-      f"({roi_at_0_implementation_cost_dict[8][chosen_metric]:.2f} ({roi_at_0_implementation_cost_dict[8]['lower']:.2f} - {roi_at_0_implementation_cost_dict[8]['upper']:.2f}).")
-
 '''
 # Extract TB costs for inspection
 tb_consumables = ['Cat. I & III Patient Kit A', 'Cat. I & III Patient Kit B', 'Cat. II Patient Kit A1',
