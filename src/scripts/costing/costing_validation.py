@@ -15,7 +15,8 @@ from tlo.analysis.utils import (
 )
 from tlo.methods.healthsystem import get_item_code_from_item_name
 from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             do_stacked_bar_plot_of_cost_by_category)
+                                             do_stacked_bar_plot_of_cost_by_category,
+                                             load_unit_cost_assumptions)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -28,10 +29,9 @@ resourcefilepath = Path("./resources")
 
 # Steps: 1. Create a mapping of data labels in model_costing and relevant calibration data, 2. Create a dataframe with model_costs and calibration costs;
 # Load costing resourcefile
-workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                              sheet_name=None)
-# Prepare data for calibration
-calibration_data = workbook_cost["resource_mapping_r7_summary"]
+unit_costs = load_unit_cost_assumptions(resourcefilepath)
+calibration_data = unit_costs["actual_expenditure_data"]
+
 # Make sure values are numeric
 budget_columns = ['BUDGETS (USD) (Jul 2019 - Jun 2020)', 'BUDGETS (USD) (Jul 2020 - Jun 2021)',
        'BUDGETS (USD) (Jul 2021 - Jun 2022)']
@@ -65,7 +65,6 @@ results_folder = get_scenario_outputs('htm_and_hss_runs-2025-01-16T135243Z.py', 
 
 # Estimate costs for 2018
 input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath, _years = [2018], _draws = [0], summarize = True, cost_only_used_staff=False)
-#input_costs = input_costs[input_costs.year == 2018]
 
 # Manually create a dataframe of model costs and relevant calibration values
 def assign_item_codes_to_consumables(_df):
@@ -73,20 +72,10 @@ def assign_item_codes_to_consumables(_df):
     # Retain only consumable costs
     _df = _df[_df['cost_category'] == 'medical consumables']
 
-    '''
-    consumables_dict = pd.read_csv(path_for_consumable_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
-                                 encoding="ISO-8859-1")[['item_code', 'consumable_name_tlo']]
-    consumables_dict = consumables_dict.rename(columns = {'item_code': 'Item_Code'})
-    consumables_dict = dict(zip(consumables_dict['consumable_name_tlo'], consumables_dict['Item_Code']))
-    '''
-
     # Create dictionary mapping item_codes to consumables names
-    consumables_df = workbook_cost["consumables"]
-    consumables_df = consumables_df.rename(columns=consumables_df.iloc[0])
-    consumables_df = consumables_df[['Item_Code', 'Consumable_name_tlo']].reset_index(
-        drop=True).iloc[1:]
+    consumables_df = pd.read_csv(resourcefilepath / "costing" / "ResourceFile_Costing_Consumables.csv")[['Item_Code', 'Items']]
     consumables_df = consumables_df[consumables_df['Item_Code'].notna()]
-    consumables_dict = dict(zip(consumables_df['Consumable_name_tlo'], consumables_df['Item_Code']))
+    consumables_dict = dict(zip(consumables_df['Items'], consumables_df['Item_Code']))
 
     # Replace consumable_name_tlo with item_code
     _df = _df.copy()
