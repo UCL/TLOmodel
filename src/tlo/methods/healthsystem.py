@@ -2322,7 +2322,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     else:
                                         subgroup = item.hsi_event.target  # the person ID, but the linear model is set up to expect “subgroup”
 
-                                        if self.sim.population.props.loc[subgroup, 'age'] > 15:
+                                        if self.sim.population.props.loc[subgroup, 'age'] < 15:
 
                                             subgroup_name = 'children'
 
