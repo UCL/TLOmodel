@@ -12,9 +12,9 @@ class ClimateDisruptionScenario(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2040, 1, 12)
-        self.pop_size = 50000
-        self.runs_per_draw = 10
+        self.end_date = Date(2026, 1, 12)
+        self.pop_size = 500
+        self.runs_per_draw = 1
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -47,16 +47,16 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        return {'Baseline': self._baseline(),
+        return {#'Baseline': self._baseline(),
                 'SSP 1.26 High': self._ssp126_high(),
-                'SSP 1.26 Low': self._ssp126_low(),
-                'SSP 1.26 Mean': self._ssp126_mean(),
-                'SSP 2.45 High': self._ssp245_high(),
-                'SSP 2.45 Low': self._ssp245_low(),
-                'SSP 2.45 Mean': self._ssp245_mean(),
-                'SSP 5.85 High': self._ssp585_high(),
-                'SSP 5.85 Low': self._ssp585_low(),
-                'SSP 5.85 Mean': self._ssp585_mean()
+                #'SSP 1.26 Low': self._ssp126_low(),
+                #'SSP 1.26 Mean': self._ssp126_mean(),
+                #'SSP 2.45 High': self._ssp245_high(),
+                #'SSP 2.45 Low': self._ssp245_low(),
+                #'SSP 2.45 Mean': self._ssp245_mean(),
+                #'SSP 5.85 High': self._ssp585_high(),
+                #'SSP 5.85 Low': self._ssp585_low(),
+                #'SSP 5.85 Mean': self._ssp585_mean()
                 }
 
     def _baseline(self) -> Dict:
