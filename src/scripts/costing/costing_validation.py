@@ -83,7 +83,11 @@ def assign_item_codes_to_consumables(_df):
 
     return _df
 
-def get_calibration_relevant_subset_of_costs(_df, _col, _col_value, _calibration_category):
+def get_calibration_relevant_subset_of_costs(_df, # simulated consumable costs by item_code
+                                             _col, # column od _df on the basis of which relevant consumable
+                                             _col_value, # names of consumables in _df included in calibration category
+                                             _calibration_category, # Calibration category to match with
+                                             ):
     if (len(_col_value) == 1):
         _df = _df[_df[_col] == _col_value[0]]
     else:
@@ -166,49 +170,90 @@ other_drugs = set(consumables_costs_by_item_code['cost_subgroup'].unique()) - se
               - set(art) - set(tb_treatment) - set(antimalarials) - set(malaria_rdts) - set(hiv_screening)\
               - set(condoms) - set(tb_tests) # - set(cervical_cancer)
 
-# Note that the main ARV  regimen in 2018 was tenofovir/lamivudine/efavirenz as opposed to Tenofovir/Lamivudine/Dolutegravir as used in the RF_Costing. The price of this
+def fill_calibration_costs_from_cost_groups(calibration_df: pd.DataFrame,
+                                            mappings: list[tuple[pd.DataFrame, str, str, list[str], float]]) -> pd.DataFrame:
+    """
+    Fill missing model_costs in a calibration DataFrame based on cost group matches.
+
+    Parameters
+    ----------
+    calibration_df : pd.DataFrame
+        The main calibration DataFrame containing 'calibration_category', 'stat', and 'model_cost'.
+
+    cost_df : pd.DataFrame
+        The cost breakdown DataFrame, e.g. `consumables_costs_by_item_code`.
+
+    mappings : list of tuples
+        Each tuple defines one mapping:
+        (column name to match, calibration category, values to match in that column, optional multiplier)
+
+    Returns
+    -------
+    pd.DataFrame
+        Updated calibration_df with 'model_cost' filled where applicable.
+    """
+    calibration_df = calibration_df.copy()
+
+    for cost_df, col, category, values, multiplier in mappings:
+        print(category)
+        grouped = get_calibration_relevant_subset_of_costs(
+            _df=cost_df,
+            _col=col,
+            _col_value=values,
+            _calibration_category=category
+        )
+
+        if multiplier != 1:
+            grouped *= multiplier
+
+        grouped = grouped.reset_index().rename(columns={'cost': 'filled_cost'})
+
+        calibration_df = calibration_df.merge(grouped, on=['calibration_category', 'stat'], how='left')
+        calibration_df.loc[calibration_df['model_cost'].isna(), 'model_cost'] = calibration_df.loc[
+            calibration_df['model_cost'].isna(), 'filled_cost']
+        calibration_df.drop(columns='filled_cost', inplace=True)
+
+    return calibration_df.set_index(['calibration_category', 'stat'])
+
+mappings = [
+    # Consumables
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Antiretrovirals', art, 82 / (0.103 * 365)),  # Note that the main ARV  regimen in 2018 was tenofovir/lamivudine/efavirenz as opposed to Tenofovir/Lamivudine/Dolutegravir as used in the RF_Costing. The price of this
 # was $82 per year (80/(0.103*365)) times what's estimated by the model so let's update this
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = art, _calibration_category = 'Antiretrovirals')*  82/(0.103*365))
-# Other consumables costs do not need to be adjusted
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = irs, _calibration_category = 'Indoor Residual Spray'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = bednets, _calibration_category = 'Bednets'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = undernutrition, _calibration_category = 'Undernutrition commodities'))
-#calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = cervical_cancer, _calibration_category = 'Cervical Cancer'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = other_family_planning, _calibration_category = 'Other family planning commodities'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = vaccines, _calibration_category = 'Vaccines'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = tb_treatment, _calibration_category = 'TB Treatment'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = antimalarials, _calibration_category = 'Antimalarials'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = malaria_rdts, _calibration_category = 'Malaria RDTs'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = hiv_screening, _calibration_category = 'HIV Screening/Diagnostic Tests'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = condoms, _calibration_category = 'Condoms and Lubricants'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = tb_tests, _calibration_category = 'TB Tests (including RDTs)'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = other_drugs, _calibration_category = 'Other Drugs, medical supplies, and commodities'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = consumables_costs_by_item_code, _col = 'cost_subgroup', _col_value = circumcision, _calibration_category = 'Voluntary Male Medical Circumcision'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subcategory', _col_value = ['supply_chain'], _calibration_category = 'Supply Chain'))
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Indoor Residual Spray', irs, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Bednets', bednets, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Undernutrition commodities', undernutrition, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Other family planning commodities', other_family_planning, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Vaccines', vaccines, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'TB Treatment', tb_treatment, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Antimalarials', antimalarials, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Malaria RDTs', malaria_rdts, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'HIV Screening/Diagnostic Tests', hiv_screening, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Condoms and Lubricants', condoms, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'TB Tests (including RDTs)', tb_tests, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Other Drugs, medical supplies, and commodities', other_drugs, 1),
+    (consumables_costs_by_item_code, 'cost_subgroup', 'Voluntary Male Medical Circumcision', circumcision, 1),
+    (input_costs, 'cost_subcategory', 'Supply Chain', ['supply_chain'], 1),
 
-# HR
-#-----------------------------------------------------------------------------------------------------------------------
-hr_costs = input_costs[input_costs['cost_category'] == 'human resources for health']
-#ratio_of_all_to_used_staff = total_salary_for_all_staff[(0,2018)]/total_salary_for_staff_used_in_scenario[( 0, 'lower')][2018]
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = hr_costs, _col = 'cost_subcategory', _col_value = ['salary_for_all_staff'], _calibration_category = 'Health Worker Salaries'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = hr_costs, _col = 'cost_subcategory', _col_value = ['preservice_training_and_recruitment_cost_for_attrited_workers'], _calibration_category = 'Health Worker Training - Pre-Service')) # TODO remove recruitment costs?
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = hr_costs, _col = 'cost_subcategory', _col_value = ['inservice_training_cost_for_all_staff'], _calibration_category = 'Health Worker Training - In-Service'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = hr_costs, _col = 'cost_subcategory', _col_value = ['mentorship_and_supportive_cost_for_all_staff'], _calibration_category = 'Mentorships & Supportive Supervision'))
+    # HR
+    (input_costs[input_costs['cost_category'] == 'human resources for health'], 'cost_subcategory', 'Health Worker Salaries', ['salary_for_all_staff'], 1),
+    (input_costs[input_costs['cost_category'] == 'human resources for health'], 'cost_subcategory', 'Health Worker Training - Pre-Service', ['preservice_training_and_recruitment_cost_for_attrited_workers'], 1),
+    (input_costs[input_costs['cost_category'] == 'human resources for health'], 'cost_subcategory', 'Health Worker Training - In-Service', ['inservice_training_cost_for_all_staff'], 1),
+    (input_costs[input_costs['cost_category'] == 'human resources for health'], 'cost_subcategory', 'Mentorships & Supportive Supervision', ['mentorship_and_supportive_cost_for_all_staff'], 1),
 
-# Equipment
-equipment_costs = input_costs[input_costs['cost_category'] == 'medical equipment']
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = equipment_costs, _col = 'cost_subcategory', _col_value = ['replacement_cost_annual_total'], _calibration_category = 'Medical Equipment - Purchase'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = equipment_costs, _col = 'cost_subcategory',
-                                                                                                                _col_value = ['service_fee_annual_total', 'spare_parts_annual_total','major_corrective_maintenance_cost_annual_total'],
-                                                                                                                _calibration_category = 'Medical Equipment - Maintenance'))
-#calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
-#calibration_data[calibration_data['calibration_category'] == 'Vehicles - Purchase and Maintenance'] = get_calibration_relevant_subset()
+    # Equipment
+    (input_costs[input_costs['cost_category'] == 'medical equipment'], 'cost_subcategory', 'Medical Equipment - Purchase', ['replacement_cost_annual_total'], 1),
+    (input_costs[input_costs['cost_category'] == 'medical equipment'], 'cost_subcategory', 'Medical Equipment - Maintenance', ['service_fee_annual_total', 'spare_parts_annual_total', 'major_corrective_maintenance_cost_annual_total'], 1),
 
-# Facility operation costs
-#-----------------------------------------------------------------------------------------------------------------------
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Electricity', 'Water', 'Cleaning', 'Security', 'Food for inpatient cases', 'Facility management'], _calibration_category = 'Facility utility bills'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Building maintenance'], _calibration_category = 'Infrastructure - Rehabilitation'))
-calibration_data['model_cost'] = calibration_data['model_cost'].fillna(get_calibration_relevant_subset_of_costs(_df = input_costs, _col = 'cost_subgroup', _col_value = ['Vehicle maintenance', 'Ambulance fuel'], _calibration_category = 'Vehicles - Fuel and Maintenance'))
+    # Facility operation costs
+    (input_costs, 'cost_subgroup', 'Facility utility bills', ['Electricity', 'Water', 'Cleaning', 'Security', 'Food for inpatient cases', 'Facility management'], 1),
+    (input_costs, 'cost_subgroup', 'Infrastructure - Rehabilitation', ['Building maintenance'], 1),
+    (input_costs, 'cost_subgroup', 'Vehicles - Fuel and Maintenance', ['Vehicle maintenance', 'Ambulance fuel'], 1)]
+
+calibration_data = fill_calibration_costs_from_cost_groups(
+    calibration_df=calibration_data,
+    mappings=mappings
+)
+
 
 # %%
 # 3. Create calibration plot
