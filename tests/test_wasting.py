@@ -1067,7 +1067,14 @@ def test_no_wasting_after_recent_recovery(tmpdir):
     assert df.at[person_id, 'un_clinical_acute_malnutrition'] == 'well'
 
 def test_default_interv_pars(tmpdir):
-    """ Test that default values of intervention parameters are the same as the parameters prior the intervention. """
+    """
+    Test the default values of intervention parameters:
+    - The probabilities for growth monitoring attendance and MAM (Moderate Acute Malnutrition) cases seeking care should
+      remain unchanged from the values prior to the intervention.
+    - No food supplement intervention that assigns fixed availability probabilities should be applied.
+    - By default, when a food supplement intervention that assigns fixed availability probabilities is implemented, full
+      availability is assumed for all food supplements.
+    """
     sim = get_sim(tmpdir)
     # get wasting module
     wmodule = sim.modules['Wasting']
@@ -1079,6 +1086,13 @@ def test_default_interv_pars(tmpdir):
 
     assert p['seeking_care_MAM_prob'] == p['interv_seeking_care_MAM_prob'], \
         "The parameters 'seeking_care_MAM_prob' and 'interv_seeking_care_MAM_prob' do not match."
+
+    assert not p['interv_food_supplements_avail_bool'], \
+        "The parameters 'interv_food_supplements_avail_bool' should be False by default but it is not."
+
+    assert p['interv_avail_F75milk'] == p['interv_avail_RUTF'] == p['interv_avail_RUTF'] == 1.0, \
+        ("At least one of the food supplement availability probabilities 'interv_avail_' does not assume full "
+         "availability (1.0).")
 
 def test_interventions_activation(tmpdir):
     """ Test that Wasting_ActivateInterventionsEvent correctly overwrites parameters. """
