@@ -268,7 +268,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 handles, labels = ax.get_legend_handles_labels()
                 ax.legend(handles[::-1], labels[::-1], loc='upper right')
 
-                locs = np.array([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * 1e3
+                locs = np.array([-2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5]) * 1e3
                 ax.set_xticks(locs)
                 ax.set_xticklabels(np.round(np.sqrt(locs ** 2)).astype(int))
 
@@ -304,7 +304,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 )
                 return num_by_age[draw]
 
-            for year in range(int(min_year), int(max_year),1): #2049, 2059, 2069, 2079]:
+            for year in range(int(min_year), int(max_year),1):
                 if year in pop_model.index:
                     # Get WPP data:
                     wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
@@ -982,7 +982,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 zorder=5
             )
 
-        ax[0].set_title("Population Size 2010-2060")
         ax[0].set_xlabel("Year")
         ax[0].set_ylabel("Population Size (millions)")
         ax[0].set_xlim(2010, int(max_year))
@@ -1083,10 +1082,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 zorder=5
             )
 
-        ax[0].set_title("Population Size 2010-2060")
         ax[0].set_xlabel("Year")
         ax[0].set_ylabel("Population Size (millions)")
         ax[0].set_xlim(2010, int(max_year))
+        ax[0].axvline(x=2020, color='black', linestyle='--', linewidth=1)
         ax[0].xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
         ax[0].set_ylim(0, 60)
         ax[0].legend()
@@ -1109,7 +1108,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 # Concatenate all dataframes
                 le_all_years = pd.concat(dataframes, ignore_index=True)
                 le_all_years.set_index('Year', inplace=True)
-                ax[1].axvline(x=2020, color='black', linestyle='--', linewidth=1)
                 ax[1].plot(
                     le_all_years.index[1::2],
                     le_all_years.iloc[1::2]['mean'],
@@ -1129,6 +1127,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ax[1].plot(
                     le_all_years.index[0::2],
                     le_all_years.iloc[0::2]['mean'],
+                    marker='o',
                     alpha=0.6,
                     color=scenario_colours[draw],
                     label=f"{scenario_names[draw]} - M"
@@ -1142,12 +1141,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     alpha=0.1
                 )
         ax[1].plot(wpp_le['Time'], wpp_le['Value'], marker='o', color=colors['WPP'], label="WPP")
-
+        ax[1].axvline(x=2020, color='black', linestyle='--', linewidth=1)
         ax[1].legend(loc='lower right')
         ax[1].set_xlabel('Year')
         ax[1].set_ylim(50, 80)
         ax[1].set_ylabel('Life Expectancy (Years)')
-        ax[1].set_title('Panel B: Life Expectancy')
         fig.tight_layout()
         plt.savefig(make_graph_file_name("Pop_size_Life_expectancy_over_years_baseline"))
         plt.close(fig)
