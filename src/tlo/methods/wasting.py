@@ -170,6 +170,20 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'interv_seeking_care_MAM_prob': Parameter(
             Types.REAL, 'probability of recognising symptoms and seeking care in MAM cases following the '
                         'activation of the intervention'),
+        'interv_food_supplements_avail_bool': Parameter(
+            Types.BOOL, 'indicates whether the intervention that applies fixed availability probabilities'
+                        '(`interv_avail_xx`) for food supplements across all facilities and months from'
+                        '`interv_start_year` is implemented. If `True`, the default availability probabilities are'
+                        'overridden with the corresponding fixed values.'),
+        'interv_avail_F75milk': Parameter(
+            Types.REAL, 'probability of F-75 therapeutic milk availability across all facilities and '
+                        'months following the activation of the intervention'),
+        'interv_avail_RUTF': Parameter(
+            Types.REAL, 'probability of RUTF availability across all facilities and '
+                        'months following the activation of the intervention'),
+        'interv_avail_CSB++': Parameter(
+            Types.REAL, 'probability of CSB++ availability across all facilities and '
+                        'months following the activation of the intervention'),
     }
 
     PROPERTIES = {
@@ -2079,3 +2093,17 @@ class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
         # Overwrite seeking care prob for MAM cases
         self.module.parameters['seeking_care_MAM_prob'] = \
             p['interv_seeking_care_MAM_prob']
+
+        # If the intervention that applies fixed availability probabilities for food supplements
+        # across all facilities and months is implemented, override the probabilities
+        if p['interv_food_supplements_avail_bool']:
+            get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+            item_code_F75milk = get_item_code("F-75 therapeutic milk, 102.5 g")
+            item_code_RUTF = get_item_code("Therapeutic spread, sachet 92g/CAR-150")
+            item_code_CSB = get_item_code("Corn Soya Blend (or Supercereal - CSB++)")
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({
+                item_code_F75milk: p['interv_avail_F75milk'],
+                item_code_RUTF: p['interv_avail_RUTF'],
+                item_code_CSB: p['interv_avail_CSB++'],
+            })
