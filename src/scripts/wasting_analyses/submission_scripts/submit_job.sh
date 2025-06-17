@@ -19,4 +19,3 @@ qsub -t 1-${JOBS} -N wasting_analysis__full_model_${SCENARIO} \
  -wd /home/sejjej5/Scratch/thanzi/TLOmodel-outputs \
  -m beas -M sejjej5@ucl.ac.uk \
  job_script.sh $SCENARIO $TIME $MEMORY $DRAWS $RUNS
-
