@@ -8,6 +8,8 @@ from pathlib import Path
 
 import analysis_utility_functions_wast
 import pandas as pd
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 from tlo.analysis.utils import get_scenario_outputs
 
@@ -114,6 +116,27 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             cohort, interv_timestamps_dict, scenarios_dict, intervs_ofinterest, plotyears, death_outcomes_dict,
             outputspath
         )
+
+    # Create a PDF file to save all figures
+    # Create scenario prefix and all timestamps suffix
+    interv_all = "_".join(intervs_of_interest)
+    timestamps_all = "_".join(interv_timestamps_dict[interv] for interv in intervs_of_interest)
+
+    pdf_path = outputs_path / f"{interv_all}_scenarios_{timestamps_all}.pdf"
+    with PdfPages(pdf_path) as pdf:
+        for cohort in ['Neonatal', 'Under-5']:
+            for interv in intervs_of_interest:
+                fig_path = outputs_path / (
+                    f"{cohort}_mort_rate_{interv}_multiple_settings__"
+                    f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
+                )
+                if fig_path.exists():
+                    fig = plt.imread(fig_path)
+                    plt.figure(figsize=(8, 6))
+                    plt.imshow(fig)
+                    plt.axis('off')
+                    pdf.savefig()  # Save the figure to the PDF
+                    plt.close()
 
 # ---------------- #
 # RUN THE ANALYSIS #
