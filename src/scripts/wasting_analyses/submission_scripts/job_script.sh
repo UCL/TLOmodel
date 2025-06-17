@@ -25,7 +25,7 @@ cd ~/thanzi/TLOmodel
 
 # *** Run the specified scenario with resource usage measurement
 /usr/bin/time --verbose tlo scenario-run --draw $thisRun --output-dir "$outputDir" \
- src/scripts/wasting_analyses/scenarios/scenario_wasting_full_model_${SCENARIO}_totestsubmission.py
+ src/scripts/wasting_analyses/scenarios/scenario_wasting_full_model_${SCENARIO}.py
 
 # Parse and compress logs
 tlo parse-log "$outputDir"
