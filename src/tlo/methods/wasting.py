@@ -177,6 +177,20 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         'interv_seeking_care_MAM_prob': Parameter(
             Types.REAL, 'probability of recognising symptoms and seeking care in MAM cases following the '
                         'activation of the intervention'),
+        'interv_food_supplements_avail_bool': Parameter(
+            Types.BOOL, 'indicates whether the intervention that applies fixed availability probabilities'
+                        '(`interv_avail_xx`) for food supplements across all facilities and months from'
+                        '`interv_start_year` is implemented. If `True`, the default availability probabilities are'
+                        'overridden with the corresponding fixed values.'),
+        'interv_avail_F75milk': Parameter(
+            Types.REAL, 'probability of F-75 therapeutic milk availability across all facilities and '
+                        'months following the activation of the intervention'),
+        'interv_avail_RUTF': Parameter(
+            Types.REAL, 'probability of RUTF availability across all facilities and '
+                        'months following the activation of the intervention'),
+        'interv_avail_CSB++': Parameter(
+            Types.REAL, 'probability of CSB++ availability across all facilities and '
+                        'months following the activation of the intervention'),
     }
 
     PROPERTIES = {
