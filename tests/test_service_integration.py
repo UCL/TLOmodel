@@ -119,7 +119,7 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'PostnatalCare_Maternal',
                                         'Contraception_Routine'],
 
-                                       ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        'CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
                                         'CardioMetabolicDisorders_Investigation',
                                         'CardioMetabolicDisorders_Prevention_WeightLoss',
                                         'Contraception_Routine',
@@ -136,7 +136,7 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'Depression_TalkingTherapy',
                                         'Depression_Treatment',
                                         'Epilepsy_Treatment_Start',
-                                        'Epilepsy_Treatment_Followup']]):
+                                        'Epilepsy_Treatment_Followup']):
 
         sim.modules['ServiceIntegration'].parameters['serv_integration'] = scenario
         print(scenario)

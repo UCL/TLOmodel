@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import os
 import scipy.stats as st
@@ -13,42 +13,13 @@ from tableone import TableOne
 import matplotlib.pyplot as plt
 import numpy as np
 
+from typing import Callable, Dict, Iterable, List, Literal, Optional, TextIO, Tuple, Union
+
 from tlo import Date
 from tlo.analysis.utils import (bin_hsi_event_details, extract_results, get_scenario_outputs, compute_summary_statistics,
 make_age_grp_types, get_scenario_info, make_calendar_period_lookup, make_calendar_period_type, parse_log_file)
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
-
-def summarize_confidence_intervals(results: pd.DataFrame) -> pd.DataFrame:
-    """Utility function to compute summary statistics
-    Finds mean value and 95% interval across the runs for each draw.
-    """
-
-    # Calculate summary statistics
-    grouped = results.groupby(axis=1, by='draw', sort=False)
-    mean = grouped.mean()
-    sem = grouped.sem()  # Standard error of the mean
-
-    # Calculate the critical value for a 95% confidence level
-    n = grouped.size().max()  # Assuming the largest group size determines the degrees of freedom
-    critical_value = t.ppf(0.975, df=n - 1)  # Two-tailed critical value
-
-    # Compute the margin of error
-    margin_of_error = critical_value * sem
-
-    # Compute confidence intervals
-    lower = mean - margin_of_error
-    upper = mean + margin_of_error
-
-    # Combine into a single DataFrame
-    summary = pd.concat({'mean': mean, 'lower': lower, 'upper': upper}, axis=1)
-
-    # Format the DataFrame as in the original code
-    summary.columns = summary.columns.swaplevel(1, 0)
-    summary.columns.names = ['draw', 'stat']
-    summary = summary.sort_index(axis=1)
-
-    return summary
 
 scenario = 'integration_scenario_max_test_2462999'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
@@ -235,6 +206,7 @@ def barcharts(data, y_label, title):
 
 barcharts(total_dalys_diff_summ, 'Difference in DALYs', 'Total Difference in Total DALYs from Status Quo by '
                                                    'Scenario')
+
 barcharts(total_dalys_summ, 'DALYs', ' Total DALYs from Status Quo by Scenario')
 
 
@@ -382,92 +354,379 @@ def get_quantity_of_consumables_dispensed(results_folder):
     return cons_dispensed
 
 consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
-cons_sum = compute_summary_statistics(consumables_dispensed.groupby(level=0).sum())
+consumables_dispensed = consumables_dispensed.groupby(level=0).sum()
 
+base = consumables_dispensed.loc[:, 0]
 
-# consumables_dispensed = consumables_dispensed.reset_index().rename(columns = {'level_0': 'Item_Code', 'level_1': 'year'})
-# consumables_dispensed[idx['year']] = pd.to_datetime(consumables_dispensed[idx['year']]).dt.year # Extract only year from date
-# consumables_dispensed[idx['Item_Code']] = pd.to_numeric(consumables_dispensed[idx['Item_Code']])
+# Calculate percentage difference
+percent_diff = consumables_dispensed.copy()
+for col in consumables_dispensed.columns:
+    if col[0] != 0:
+        # Get corresponding (0, col[1]) for comparison
+        base_col = (0, col[1])
+        percent_diff[col] = (consumables_dispensed[col] - consumables_dispensed[base_col]) / consumables_dispensed[base_col] * 100
+    else:
+        percent_diff[col] = 0  # or np.nan if you prefer
+
+pdiff_sum = compute_summary_statistics(percent_diff)
+
 
 # todo: what about converting this back to a normal dose/size/measure?
-# item_codes = \
-#     {'Hydralazine (oral)': 223,
-#
-#     'Metformin (oral)': 233,
-#     'Blood glucose test': 216
-#
-#     '':
-#
-#      }
 
-# Item codes
-# Htn screening:
-# Hydralazine 25mg_100_CMST - 223
+ic = {'htn': {'Hydralazine (oral)': 221},
 
-# dm screening:
-# Metformin hydrochloride 500mg_100_CMST - 233
-# Blood glucose level test - 216
+      'dm': {'Metformin (oral)': 233,
+             'Blood glucose test': 216,},
 
-# fp screening:
-# Levonorgestrel 0.15 mg + Ethinyl estradiol 30 mcg (Microgynon), cycle - 1
-# Condom, male - 2
-# IUD, Copper T-380A - 7
-# Depot-Medroxyprogesterone Acetate 150 mg - 3 monthly - 3
-# Jadelle (implant), box of 2_CMST - 12
-# Pregnancy slide test kit_100_CMST - 2019
+      'hiv': {'HIV test': 196,
+              'First-line ART regimen (adult)': 2671,
+              'Cotrimoxizole, 960mg': 204,
+              'First line ART regimen (older child)': 2672,
+              'Cotrimoxazole 120mg' : 203,
+              'First line ART regimen (young child)': 2673},
 
-# hiv screening:
-# Test, HIV EIA Elisa - 196
-# First-line ART regimen: adult - 2671
-# Cotrimoxizole, 960mg pppy - 204
-# First line ART regimen: older child -2672
-# Cotrimoxazole 120mg_1000_CMST -203
-# First line ART regimen: young child -2673
 
-# tb screening:
-# ZN Stain -186
-# Xpert - 187
-# X-ray - 175
-# MGIT960 Culture and DST - 188
-# Cat. I & III Patient Kit A - 176
-# Cat. I & III Patient Kit B -178
-# Cat. II Patient Kit A1 - 177
-# Cat. II Patient Kit A2 -179
-# Treatment: second-line drugs - 181
-# Isoniazid/Pyridoxine, tablet 300 mg -192
-# Isoniazid/Rifapentine - 2678
+      'tb': {'ZN Stain': 186,
+             'Xpert': 187,
+             'X-ray': 175,
+             'MGIT960 Culture and DST': 188,
+             'Cat. I & III Patient Kit A': 176,
+             'Cat. I & III Patient Kit B': 178,
+             'Cat. II Patient Kit A1': 177,
+             'Cat. II Patient Kit A2': 179,
+             'Treatment (second-line drugs)': 181,
+             'Isoniazid/Pyridoxine, tablet 300 mg': 192,
+             'Isoniazid/Rifapentine': 2678},
 
-# mal screening
-# Supplementary spread, sachet 92g/CAR-150 - 1221
-# Complementary feeding--education only drugs/supplies to service a client - 1171
+      'mal': {'Supplementary spread, sachet': 1221,
+              'Complementary feeding': 1171},
 
-# chronic care (hiv, diabetes, htn, tb, plus...)
-# Phenobarbital, 100 mg - 278
-# Carbamazepine 200mg_1000_CMST -276
-# Phenytoin sodium 100mg_1000_CMST -279
-# Amitriptyline 25mg_100_CMST - 267
+      'fp': {'Levonorgestrel': 1,
+             'Condom, male': 2,
+             'IUD, Copper': 7,
+             'Depot': 3,
+             'Jadelle (implant)': 12,
+             'Pregnancy test kit': 2019},
 
-# pnc:
-# Hydralazine, powder for injection, 20 mg ampoule - 60
-# Methyldopa 250mg_1000_CMST - 222
-# Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule - 61
-# Benzylpenicillin 3g (5MU), PFR_each_CMST - 99
-# Gentamycin, injection, 40 mg/ml in 2 ml vial - 28
-# Oxytocin, injection, 10 IU in 1 ml ampoule - 56
-# Blood, one unit - 141
-# Haemoglobin test (HB) - 50
-# Ferrous Salt + Folic Acid, tablet, 200 + 0.25 -140
+      'pnc': {'Hydralazine' : 60,
+              'Methyldopa' : 222,
+              'Magnesium sulfate' : 61,
+              'Benzylpenicillin' : 99,
+              'Gentamycin' : 28,
+              'Oxytocin, injection' : 56,
+              'Blood, one unit' : 141,
+              'Haemoglobin test (HB)' : 50,
+              'Ferrous Salt + Folic Acid' : 140},
+
+      'chronic_care': {'Phenobarbital': 278,
+                        'Carbamazepine': 276,
+                        'Phenytoin sodium': 279,
+                        'Amitriptyline': 267}}
+
+draw_numbs = {'htn': [1, 2],
+              'dm': [3, 4],
+              }
+
+
+def get_data_as_list_for_bc(draw_numbs):
+    nc = draw_numbs[0]
+    mc = draw_numbs[1]
+
+    def get_med_and_error(draw):
+        med = [pdiff_sum.at[f'{ic}', (draw, 'central')] for ic in item_codes]
+        lq = [pdiff_sum.at[f'{ic}', (draw, 'lower')] for ic in item_codes]
+        uq = [pdiff_sum.at[f'{ic}', (draw, 'upper')] for ic in item_codes]
+        int_err_lower = [a - b for a, b in zip(med, lq)]
+        int_err_upper = [a - b for a, b in zip(uq, med)]
+
+        return [med, int_err_lower, int_err_upper]
+
+    return [get_med_and_error(nc), get_med_and_error(mc)]
+
+filtered_int_name = [s for s in int_names if not s.endswith('_max')]
+filtered_int_name.remove('status_quo')
+
+for scen in filtered_int_name:
+    if scen.startswith('htn'):
+        item_codes = list(ic['htn'].values())
+        labels = list(ic['htn'].keys())
+        data = get_data_as_list_for_bc(draw_numbs['htn'])
+        title = scen
+
+    elif scen.startswith('dm'):
+        item_codes = list(ic['dm'].values())
+        labels = list(ic['dm'].keys())
+        data = get_data_as_list_for_bc(draw_numbs['dm'])
+        title = scen
+
+    else:
+        pass
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    x = np.arange(len(labels))
+    width = 0.35
+    ax.bar(x - width / 2, data[0][0], width,
+           yerr=[data[0][1], data[0][2]],
+           capsize=5, label='Normal Cons.', alpha=0.8)
+
+    ax.bar(x + width / 2, data[1][0], width,
+           yerr=[data[1][1], data[1][2]],
+           capsize=5, label='Max Con.s', alpha=0.8)
+
+    ax.set_title(f"Percentage Difference in Consumable Use from SQ - {title}")
+    ax.set_ylabel("Percentage Difference")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(f'{g_path}/{scenario}_cons_pdiff.png', bbox_inches='tight')
+    plt.show()
+
 
 
 # ========================================= APPOINTMENTS/HCW TIME =====================================================
 # # NUMBER OF APPOINTMENTS
-# hsi_details = bin_hsi_event_details(
-#     results_folder,
-#     get_counter_from_event_details: callable,
-#     Date(2020, 1, 1),
-#     Date(2051, 1, 1),
-#     False,
-# )
+
+def compute_service_statistics(counters_by_draw_and_run):
+    grouped_data = defaultdict(lambda: defaultdict(list))
+
+    # Step 1: Group counts by first key and service name
+    for (group_idx, _), counter in counters_by_draw_and_run.items():
+        for service_name, count in counter.items():
+            grouped_data[group_idx][service_name].append(count)
+
+    # Step 2: Compute statistics
+    result = defaultdict(dict)
+    width_of_range = 0.95
+    lower_quantile = (1. - width_of_range) / 2.
+    for group_idx, service_dict in grouped_data.items():
+        for service_name, counts in service_dict.items():
+            arr = np.array(counts)
+            result[group_idx][service_name] = {
+                "median": float(np.median(arr)),
+                "lower_quartile": float(np.quantile(arr, lower_quantile)),
+                "upper_quartile": float(np.quantile(arr, 1 - lower_quantile))
+            }
+
+    return result
+
+counts_by_treatment_id = bin_hsi_event_details(
+            results_folder,
+            lambda event_details, count: sum(
+                [
+                    Counter({
+                        (
+                            event_details["treatment_id"]
+                        ):
+                        count * appt_number
+                    })
+                    for appt_type, appt_number in event_details["appt_footprint"]
+                ],
+                Counter()
+            ),
+            *TARGET_PERIOD,
+            True
+        )
+
+# TODO - what about other HSIs that might be impacted (anc, pnc etc), should we do this more generally
+
+hsi_results = compute_service_statistics(counts_by_treatment_id)
+hsi_results = {k:v for k, v in zip(int_names, hsi_results.values())}
+
+hsi_by_scen = {
+             'htn':['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        'CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss'],
+
+            'htn_max':['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        'CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss'],
+
+            'dm':[  'CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss'],
+
+            'dm_max':['CardioMetabolicDisorders_Investigation',
+                      'CardioMetabolicDisorders_Prevention_WeightLoss'],
+
+            'hiv': ['Hiv_Test', 'Hiv_Treatment'],
+
+            'hiv_max': ['Hiv_Test', 'Hiv_Treatment'],
+
+            'tb': ['Tb_Test_Screening',
+                    'Tb_Test_Clinical',
+                    'Tb_Test_Xray',
+                    'Tb_Treatment'],
+
+            'tb_max': ['Tb_Test_Screening',
+                       'Tb_Test_Clinical',
+                        'Tb_Test_Xray',
+                        'Tb_Treatment'],
+
+            'mal': ['Undernutrition_Feeding'],
+
+            'mal_max': ['Undernutrition_Feeding'],
+
+            'fp_scr': ['Contraception_Routine'],
+
+            'fp_scr_max': ['Contraception_Routine'],
+
+            'pnc': ['PostnatalCare_Neonatal',
+                      'PostnatalCare_Maternal'],
+
+            'pnc_max': ['PostnatalCare_Neonatal',
+                      'PostnatalCare_Maternal'],
+
+            'fp_pn': ['Contraception_Routine'],
+
+            'fp_pn_max': ['Contraception_Routine'],
+
+            'chronic_care': ['CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'Hiv_Test',
+                                        'Hiv_Treatment',
+                                        'Tb_Test_Screening',
+                                        'Tb_Test_Clinical',
+                                        'Tb_Test_Xray',
+                                        'Tb_Treatment',
+                                        'Depression_TalkingTherapy',
+                                        'Depression_Treatment',
+                                        'Epilepsy_Treatment_Start',
+                                        'Epilepsy_Treatment_Followup'],
+
+            'chronic_care_max': ['CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'Hiv_Test',
+                                        'Hiv_Treatment',
+                                        'Tb_Test_Screening',
+                                        'Tb_Test_Clinical',
+                                        'Tb_Test_Xray',
+                                        'Tb_Treatment',
+                                        'Depression_TalkingTherapy',
+                                        'Depression_Treatment',
+                                        'Epilepsy_Treatment_Start',
+                                        'Epilepsy_Treatment_Followup'],
+
+            'all_screening': ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        'CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'Contraception_Routine',
+                                        'Undernutrition_Feeding',
+                                        'Hiv_Test',
+                                        'Hiv_Treatment',
+                                        'Tb_Test_Screening',
+                                        'Tb_Test_Clinical',
+                                        'Tb_Test_Xray',
+                                        'Tb_Treatment'],
+
+            'all_screening_max': ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        'CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'Contraception_Routine',
+                                        'Undernutrition_Feeding',
+                                        'Hiv_Test',
+                                        'Hiv_Treatment',
+                                        'Tb_Test_Screening',
+                                        'Tb_Test_Clinical',
+                                        'Tb_Test_Xray',
+                                        'Tb_Treatment'],
+
+            'all_mch': ['Undernutrition_Feeding',
+                                        'PostnatalCare_Neonatal',
+                                        'PostnatalCare_Maternal',
+                                        'Contraception_Routine'],
+
+             'all_mch_max': ['Undernutrition_Feeding',
+                                        'PostnatalCare_Neonatal',
+                                        'PostnatalCare_Maternal',
+                                        'Contraception_Routine'],
+
+            'all_int': ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        'CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'Contraception_Routine',
+                                        'Undernutrition_Feeding',
+                                        'Hiv_Test',
+                                        'Hiv_Treatment',
+                                        'Tb_Test_Screening',
+                                        'Tb_Test_Clinical',
+                                        'Tb_Test_Xray',
+                                        'Tb_Treatment',
+                                        'PostnatalCare_Neonatal',
+                                        'PostnatalCare_Maternal',
+                                        'Depression_TalkingTherapy',
+                                        'Depression_Treatment',
+                                        'Epilepsy_Treatment_Start',
+                                        'Epilepsy_Treatment_Followup'],
+
+            'all_int_max': ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        'CardioMetabolicDisorders_Investigation',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'Contraception_Routine',
+                                        'Undernutrition_Feeding',
+                                        'Hiv_Test',
+                                        'Hiv_Treatment',
+                                        'Tb_Test_Screening',
+                                        'Tb_Test_Clinical',
+                                        'Tb_Test_Xray',
+                                        'Tb_Treatment',
+                                        'PostnatalCare_Neonatal',
+                                        'PostnatalCare_Maternal',
+                                        'Depression_TalkingTherapy',
+                                        'Depression_Treatment',
+                                        'Epilepsy_Treatment_Start',
+                                        'Epilepsy_Treatment_Followup']}
+
+
+def get_sq_hsi_data(data, labels):
+    med = [data[v]['median'] if v in data else 0 for v in labels]
+    lq = [data[v]['lower_quartile'] if v in data else 0 for v in labels]
+    uq = [data[v]['upper_quartile'] if v in data else 0 for v in labels]
+
+    sq_err_lower = [a - b for a, b in zip(med, lq)]
+    sq_err_upper = [a - b for a, b in zip(uq, med)]
+
+    return [med, sq_err_lower, sq_err_upper]
+
+for scenario in int_names:
+    if scenario == 'status_quo':
+        pass
+    else:
+        labels = hsi_by_scen[scenario]
+        int_data = hsi_results[scenario]
+        baseline_data = get_sq_hsi_data(hsi_results['status_quo'], labels)
+
+        median = [int_data[v]['median'] if v in int_data else 0 for v in labels]
+        lq = [int_data[v]['lower_quartile'] if v in int_data else 0 for v in labels]
+        uq = [int_data[v]['upper_quartile'] if v in int_data else 0 for v in labels]
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        int_err_lower = [a - b for a, b in zip(median, lq)]
+        int_err_upper = [a - b for a, b in zip(uq, median)]
+
+        x = np.arange(len(labels))
+        width = 0.35
+        ax.bar(x - width / 2, baseline_data[0], width,
+               yerr=[baseline_data[1], baseline_data[2]],
+               capsize=5, label='Status Quo', alpha=0.8)
+
+        ax.bar(x + width / 2, median, width,
+               yerr=[int_err_lower, int_err_upper],
+               capsize=5, label=scenario, alpha=0.8)
+
+        # ax.axhline(0, color='gray', linestyle='--', linewidth=1)
+
+        ax.set_title(f"Comparison: {scenario} vs Status Quo")
+        ax.set_ylabel("Number of HSIs")
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=45, ha='right')
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig(f'{g_path}/{scenario}_hsi_counts.png', bbox_inches='tight')
+        plt.show()
+
+
+
 
 
 # def get_mean_pop_by_age_for_sex_and_year(sex):
