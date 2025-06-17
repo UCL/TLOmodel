@@ -322,6 +322,16 @@ class DiabeticRetinopathy(Module):
             intercept=self.parameters['rate_onset_to_mild_dr']
         )
 
+        ##### Start from here #####
+        self.lm['onset_mild_dr'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            self.parameters['rate_onset_to_mild_dr'],
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_metastatic_prostate_ca_undergone_curative_treatment']),
+            Predictor('pc_status').when('local_ln', 1.0)
+            .otherwise(0.0)
+        )
+
         self.lm['mild_moderate_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             intercept=self.parameters['rate_mild_to_moderate']
