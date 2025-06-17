@@ -22,7 +22,7 @@ scenarios_dict = {
     'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2, 'CS_100': 3}
 }
 # Set the intervention to be analysed, and for which years they were simulated
-intervs_of_interest = ['GM', 'CS']
+intervs_of_interest = ['SQ', 'GM', 'CS']
 intervention_years = list(range(2026, 2031))
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2031))
