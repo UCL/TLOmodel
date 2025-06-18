@@ -101,6 +101,40 @@ def check_int_deliverable(self, int_name, hsi_event,
     p_params = self.sim.modules['PregnancySupervisor'].current_parameters
     l_params = self.sim.modules['Labour'].current_parameters
 
+    def check_int_can_run_no_analysis():
+        # If analysis is not being conducted, intervention delivery is dependent on quality parameters, consumable
+        # availability and dx_test results
+        quality = False
+        consumables = False
+        test = False
+
+        if ((q_param is None) or
+            all([self.rng.random_sample() < value for value in q_param])):
+            quality = True
+
+            # todo: should this only be if qual and cons are also true?
+            if equipment is not None:
+                hsi_event.add_equipment(equipment)
+
+        if ((cons is None) or
+            (hsi_event.get_consumables(item_codes=cons if not None else [],
+                                       optional_item_codes=opt_cons if not None else []))):
+            consumables = True
+
+        if cons is None and opt_cons is not None:
+            hsi_event.get_consumables(item_codes=[], optional_item_codes=opt_cons)
+
+        if ((dx_test is None) or
+            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
+            test = True
+
+        if quality and consumables and test:
+            return True
+
+        else:
+            return False
+
+
     # assert int_name in p_params['all_interventions']
 
     # Firstly, we determine if an analysis is currently being conducted during which the probability of intervention
@@ -160,43 +194,14 @@ def check_int_deliverable(self, int_name, hsi_event,
             if (hsi_event.TREATMENT_ID == k) and params[analysis_dict[k][0]]:
                 if self.rng.random_sample() < params[analysis_dict[k][1]]:
                     return True
-
                 else:
                     return False
 
+        check_int_can_run_no_analysis()
+
     else:
+        check_int_can_run_no_analysis()
 
-        # If analysis is not being conducted, intervention delivery is dependent on quality parameters, consumable
-        # availability and dx_test results
-        quality = False
-        consumables = False
-        test = False
-
-        if ((q_param is None) or
-            all([self.rng.random_sample() < value for value in q_param])):
-            quality = True
-
-            # todo: should this only be if qual and cons are also true?
-            if equipment is not None:
-                hsi_event.add_equipment(equipment)
-
-        if ((cons is None) or
-            (hsi_event.get_consumables(item_codes=cons if not None else [],
-                                       optional_item_codes=opt_cons if not None else []))):
-            consumables = True
-
-        if cons is None and opt_cons is not None:
-            hsi_event.get_consumables(item_codes=[], optional_item_codes=opt_cons)
-
-        if ((dx_test is None) or
-            (self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=dx_test, hsi_event=hsi_event))):
-            test = True
-
-        if quality and consumables and test:
-            return True
-
-        else:
-            return False
 
 
 def scale_linear_model_at_initialisation(self, model, parameter_key):

@@ -13,7 +13,7 @@ class ServiceIntegrationScenario(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2016, 1, 1)
         self.pop_size = 50_000
-        self.number_of_draws = 26
+        self.number_of_draws = 28
         self.runs_per_draw = 10
 
     def log_configuration(self):
@@ -59,19 +59,21 @@ class ServiceIntegrationScenario(BaseScenario):
                      10: {'serv_integration': 'mal_max'},
                      11: {'serv_integration': 'fp_scr'},
                      12: {'serv_integration': 'fp_scr_max'},
-                     13: {'serv_integration': 'pnc'},
-                     14: {'serv_integration': 'pnc_max'},
-                     15: {'serv_integration': 'fp_pn'},
-                     16: {'serv_integration': 'fp_pn_max'},
-                     17: {'serv_integration': 'epi'},
-                     18: {'serv_integration': 'chronic_care'},
-                     19: {'serv_integration': 'chronic_care_max'},
-                     20: {'serv_integration': 'all_screening'},
-                     21: {'serv_integration': 'all_screening_max'},
-                     22: {'serv_integration': 'all_mch'},
-                     23: {'serv_integration': 'all_mch_max'},
-                     24: {'serv_integration': 'all_int'},
-                     25: {'serv_integration': 'all_int_max'},
+                     13: {'serv_integration': 'anc'},
+                     14: {'serv_integration': 'anc_max'},
+                     15: {'serv_integration': 'pnc'},
+                     16: {'serv_integration': 'pnc_max'},
+                     17: {'serv_integration': 'fp_pn'},
+                     18: {'serv_integration': 'fp_pn_max'},
+                     19: {'serv_integration': 'epi'},
+                     20: {'serv_integration': 'chronic_care'},
+                     21: {'serv_integration': 'chronic_care_max'},
+                     22: {'serv_integration': 'all_screening'},
+                     23: {'serv_integration': 'all_screening_max'},
+                     24: {'serv_integration': 'all_mch'},
+                     25: {'serv_integration': 'all_mch_max'},
+                     26: {'serv_integration': 'all_int'},
+                     27: {'serv_integration': 'all_int_max'},
                      }
 
         if draw_number == 0:

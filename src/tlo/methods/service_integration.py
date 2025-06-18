@@ -48,24 +48,11 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
     }
 
     PARAMETERS = {
-        'serv_int_screening': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
-                                                    'which screening is increased as part of integration modelling'),
-        'serv_int_chronic': Parameter(Types.BOOL, 'specify whether chronic care pathway is implemented'),
-        'serv_int_mch': Parameter(Types.LIST, 'Blank by default. Listed conditions are those for '
-                                                    'which maternal and child health care is increased as part of'
-                                              ' integration modelling'),
         'integration_year': Parameter(Types.INT, 'year on which parameters are overwritten for integration '
                                                   'modelling'),
-        # 'serv_integration':
-        #     Parameter(Types.CATEGORICAL,
-        #               '...',
-        #               categories=['hiv', 'hiv_max', 'tb', 'tb_max', 'htn', 'htn_max', 'dm', 'dm_max', 'fp_scr',
-        #                           'fp_scr_max', 'mal', 'mal_max', 'pnc', 'pnc_max', 'fp_pn', 'fp_pn_max', 'epi',
-        #                           'epi_max','chronic_care', 'chronic_care_max', 'all_screening', 'all_screening_max',
-        #                           'all_mch', 'all_mch_max', 'all_int', 'all_int_max', 'no_integration']),
         'serv_integration':
             Parameter(Types.STRING,
-                      '...'),
+                      'name of the integration scenario to be enacted in a given run'),
     }
 
     PROPERTIES = {
@@ -76,8 +63,12 @@ class ServiceIntegration(Module, GenericFirstAppointmentsMixin):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        # self.accepted_conditions = ['hiv', 'tb', 'htn', 'dm', 'fp', 'cc', 'mal', 'ncds', 'depression', 'epilepsy',
-        #                             'pnc', 'epi']
+
+        self.accepted_scenarios = ['htn', 'htn_max', 'dm', 'dm_max', 'hiv', 'hiv_max', 'tb', 'tb_max',
+                                    'mal', 'mal_max', 'fp_scr', 'fp_scr_max', 'anc', 'anc_max', 'pnc',
+                                    'pnc_max', 'fp_pn', 'fp_pn_max', 'epi', 'chronic_care',
+                                     'chronic_care_max', 'all_screening', 'all_screening_max',
+                                     'all_mch', 'all_mch_max', 'all_int', 'all_int_max']
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
         parameter_dataframe = read_csv_files(resourcefilepath / 'service integration',
@@ -146,18 +137,15 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
         params = self.module.parameters
         hs_params = self.sim.modules['HealthSystem'].parameters
 
+        # TODO: make this a class of the health system module instead of its own module that needs to be registered?
+
         logger.info(key='event_runs', data='ServiceIntegrationParameterUpdateEvent is running')
 
         if params['serv_integration'] == 'no_integration':
             logger.info(key='event_cancelled', data='ServiceIntegrationParameterUpdateEvent did not run')
             return
         else:
-            assert params['serv_integration'] in ['htn', 'htn_max', 'dm','dm_max','hiv', 'hiv_max', 'tb', 'tb_max',
-                                                  'mal', 'mal_max', 'fp_scr', 'fp_scr_max', 'anc', 'anc_max', 'pnc',
-                                                  'pnc_max',
-                                                  'fp_pn', 'fp_pn_max', 'epi', 'chronic_care', 'chronic_care_max',
-                                                  'all_screening', 'all_screening_max', 'all_mch', 'all_mch_max',
-                                                  'all_int', 'all_int_max']
+            assert params['serv_integration'] in self.module.accepted_scenarios
 
         def update_cons_override_treatment_ids(treatment_ids):
             for treatment_id in treatment_ids:
@@ -263,7 +251,6 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                 # TODO: dont we only want those seeking postnatal contraception to have available consumables?
                 update_cons_override_treatment_ids(['Contraception_Routine'])
 
-        # Todo: EPI intervention
         # no parameter governing prob of receiving vaccine
         # child's prob of vax entirely dependent on vaccine being available (cons required)
         # can manipulate this to induce 100% coverage rate - will need to look up the vaccines required for each
@@ -309,84 +296,3 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                      'Depression_Treatment',
                      'Epilepsy_Treatment_Start',
                      'Epilepsy_Treatment_Followup'])
-
-        # # ---------------------------------------------- SCREENING ----------------------------------------------------
-        # if 'htn' in params['serv_int_screening']:
-        #     # Probability of screening when presenting to any generic first appointment set to 100%
-        #     self.sim.modules['CardioMetabolicDisorders'].parameters[
-        #         'hypertension_hsi']['pr_assessed_other_symptoms'] = 1.0
-        #
-        #     # Annual community screening in over 50s increased to 100%
-        #     self.sim.modules['CardioMetabolicDisorders'].lms_testing['hypertension'] =\
-        #         LinearModel(LinearModelType.MULTIPLICATIVE, 1.0)
-        #
-        #     # Now ensure consumables are always available for the relevant treatment ids
-        #     if '_max' in params['serv_int_screening']:
-        #         self.sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] = \
-        #             ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-        #              'CardioMetabolicDisorders_Investigation',
-        #              'CardioMetabolicDisorders_Prevention_WeightLoss']
-        #
-        # if 'dm' in params['serv_int_screening']:
-        #     # Probability of screening when presenting to any generic first appointment and not sympotmatic set to 100%
-        #     self.sim.modules['CardioMetabolicDisorders'].parameters['diabetes_hsi']['pr_assessed_other_symptoms'] = 1.0
-        #
-        # if 'fp' in params['serv_int_screening']:
-        #     # Here we use the in-built functionality of the contraception model to increase the coverage of modern
-        #     # methods of contraception. When 'fp' is listed in params['serv_int_screening'] the probability of
-        #     # initiation in the general female population is increased. See updates to contraception.py
-        #
-        #     # Todo: may need to increase coverage further! (use the function from the even and not the event itself!)
-        #     self.sim.schedule_event(StartInterventions(self.sim.modules['Contraception']), Date(self.sim.date))
-        #
-        # if 'mal' in params['serv_int_screening']:
-        #     self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
-        #
-        # # todo don't need to update exising linear models in case of hiv and tb
-        #
-        # if 'hiv' in params['serv_int_screening']:
-        #     # annual testing rate used in HIV scale-up scenarios, default average (2010-2020) is 0.25
-        #     self.sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = 0.4
-        #     # update exising linear models to use new scaled-up parameters
-        #
-        # if 'tb' in params['serv_int_screening']:
-        #     # increase treatment coverage rate used to infer rate testing for active tb, default is 0.75
-        #     self.sim.modules['Tb'].parameters["rate_testing_active_tb"]["treatment_coverage"] = 90
-        #
-        # # ------------------------------------ MATERNAL AND CHILD HEALTH CLINIC ---------------------------------------
-        # if 'pnc' in params['serv_int_mch']:
-        #     self.sim.modules['Labour'].current_parameters['alternative_pnc_coverage'] = True
-        #     self.sim.modules['Labour'].current_parameters['pnc_availability_odds'] = 15.0
-        #     self.sim.schedule_event(LabourAndPostnatalCareAnalysisEvent(self.sim.modules['Labour']), Date(self.sim.date))
-        #
-        # if 'fp' in params['serv_int_mch']:
-        #     # Here we use the in-built functionality of the contraception model to increase the coverage of modern
-        #     # methods of contraception. When 'fp' is listed in params['serv_int_mch'] the probability of
-        #     # initiation following birth is increased. See updates to contraception.py
-        #     self.sim.schedule_event(StartInterventions(self.sim.modules['Contraception']), Date(self.sim.date))
-        #
-        # if 'mal' in params['serv_int_mch']:
-        #     self.sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
-        #
-        # # Todo: EPI intervention
-        # # no parameter governing prob of receiving vaccine
-        # # child's prob of vax entirely dependent on vaccine being available (cons required)
-        # # can manipulate this to induce 100% coverage rate - will need to look up the vaccines required for each
-        # if 'epi' in params['serv_int_mch']:
-        #     pass
-        #
-        # # ------------------------------------- CHRONIC CARE CLINIC ---------------------------------------------------
-        # if params['serv_int_chronic']:
-        #     self.sim.modules['Hiv'].parameters['virally_suppressed_on_art'] = 1.0
-        #     self.sim.modules['Tb'].parameters['tb_prob_tx_success_ds'] = 0.9
-        #     self.sim.modules['Tb'].parameters['tb_prob_tx_success_mdr'] = 0.9
-        #     # commented out because tx_success higher than 0.9 already in these groups
-        #     # self.sim.modules['Tb'].parameters['tb_prob_tx_success_0_4'] = 0.9
-        #     # self.sim.modules['Tb'].parameters['tb_prob_tx_success_5_14'] = 0.9
-        #     self.sim.modules['Epilepsy'].parameters['prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt'] = 1.0
-        #     self.sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] = 1.0
-
-
-
-
-
