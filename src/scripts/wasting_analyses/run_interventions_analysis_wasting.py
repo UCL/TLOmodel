@@ -68,7 +68,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         )[-1].name.split(f"{scenario_filename_prefix}_{interv}-")[-1]
         for interv in interventions
     }
-    print(f"{interv_timestamps_dict=}")
+    print(f"\n{interv_timestamps_dict=}\n")
     # Define folders for each scenario
     scenario_folders = {
         interv: {
@@ -83,7 +83,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     pd.set_option('display.max_colwidth', None)  # Show full content of each row
     # ---------------------------------------- NEONATAL AND UNDER-5 MORTALITY ---------------------------------------- #
     # Extract birth outcomes for each intervention to calculate mortality as number of deaths per 1,000 live births
-    print("\nbirth outcomes calculation ...")
+    print("birth outcomes calculation ...")
     birth_outcomes_dict = {
         interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(iterv_folders_dict[interv],
                                                                                        plotyears, interventionyears)
@@ -97,21 +97,22 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #         print(f"{outcome}:\n{birth_outcomes_dict[interv][outcome]}")
     #
     # Extract neonatal and under-5 death data for each intervention
-    print("\ndeath outcomes calculation ...")
+    print("death outcomes calculation ...")
     death_outcomes_dict = {
         interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
             iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears
         ) for interv in scenario_folders
     }
-    # TODO: rm
-    print("\nDEATH OUTCOMES")
-    for interv in death_outcomes_dict.keys():
-        print(f"### {interv=}")
-        for outcome in death_outcomes_dict[interv]:
-            print(f"{outcome}:\n{death_outcomes_dict[interv][outcome]}")
-    #
+    # # TODO: rm
+    # print("\nDEATH OUTCOMES")
+    # for interv in death_outcomes_dict.keys():
+    #     print(f"### {interv=}")
+    #     for outcome in death_outcomes_dict[interv]:
+    #         print(f"{outcome}:\n{death_outcomes_dict[interv][outcome]}")
+    # #
 
     for cohort in ['Neonatal', 'Under-5']:
+        print(f"plotting {cohort} outcomes ...")
         analysis_utility_functions_wast.plot_mortality__by_interv_multiple_settings(
             cohort, interv_timestamps_dict, scenarios_dict, intervs_ofinterest, plotyears, death_outcomes_dict,
             outputspath
@@ -124,19 +125,21 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
 
     pdf_path = outputs_path / f"{interv_all}_scenarios_{timestamps_all}.pdf"
     with PdfPages(pdf_path) as pdf:
-        for cohort in ['Neonatal', 'Under-5']:
-            for interv in intervs_of_interest:
+        fig, axes = plt.subplots(len(intervs_of_interest), 2, figsize=(12, 6 * len(intervs_of_interest)))
+        for i, interv in enumerate(intervs_of_interest):
+            for j, cohort in enumerate(['Neonatal', 'Under-5']):
                 fig_path = outputs_path / (
                     f"{cohort}_mort_rate_{interv}_multiple_settings__"
                     f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
                 )
                 if fig_path.exists():
-                    fig = plt.imread(fig_path)
-                    plt.figure(figsize=(8, 6))
-                    plt.imshow(fig)
-                    plt.axis('off')
-                    pdf.savefig()  # Save the figure to the PDF
-                    plt.close()
+                    img = plt.imread(fig_path)
+                    axes[i, j].imshow(img)
+                    axes[i, j].axis('off')
+                    axes[i, j].set_title(f"{cohort} - {interv}", fontsize=10)
+        plt.tight_layout()
+        pdf.savefig(fig)  # Save the entire figure to the PDF
+        plt.close(fig)
 
 # ---------------- #
 # RUN THE ANALYSIS #
@@ -144,4 +147,4 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
 run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest)
 
 total_time_end = time.time()
-print(f"total running time (s): {(total_time_end - total_time_start)}")
+print(f"\ntotal running time (s): {(total_time_end - total_time_start)}")
