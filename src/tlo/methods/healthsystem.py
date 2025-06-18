@@ -2293,7 +2293,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                     equipment_available = False
                 # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-                if self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] != None and year > 2025:
+                if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] != None:
                         assert self.module.parameters['services_affected_precip'] == 'all'
                         fac_level = item.hsi_event.facility_info.level
                         facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
