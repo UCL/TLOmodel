@@ -197,10 +197,10 @@ def check_int_deliverable(self, int_name, hsi_event,
                 else:
                     return False
 
-        check_int_can_run_no_analysis()
+        return check_int_can_run_no_analysis()
 
     else:
-        check_int_can_run_no_analysis()
+        return check_int_can_run_no_analysis()
 
 
 
