@@ -104,6 +104,9 @@ To apply this module in a new country:
 |----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `roi_analysis_horizontal_vs_vertical.py` | Generates cost, ICERs and ROI estimates and plots for the manuscript [System-Wide Investments Enhance HIV, TB and Malaria Control in Malawi and Deliver Greater Health Impact](https://doi.org/10.1101/2025.04.29.25326667)    |
 
+## Potential Improvements
+See [GitHub Issue 1635](https://github.com/UCL/TLOmodel/issues/1635)
+
 ## Contact
 
 For questions, reach out to Sakshi Mohan
