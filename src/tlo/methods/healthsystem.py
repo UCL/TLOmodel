@@ -376,7 +376,9 @@ class HealthSystem(Module):
         projected_precip_disruptions: Optional[List[str]] = None,
         climate_ssp: Optional[str] = 'ssp245',
         climate_model_ensemble_model: Optional[str] = 'mean',
-        services_affected_precip: Optional[str] = 'none'
+        services_affected_precip: Optional[str] = 'none',
+        response_to_disruption: Optional[str] = 'delay', 
+        delay_in_seeking_care_weather: Optional[int] = 4
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -423,6 +425,8 @@ class HealthSystem(Module):
         :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
                 Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
         :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'
+        :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'
+        :param delay_in_seeking_care_weather: The number of weeks' delay in reseeking healthcare after an appointmnet has been delayed by weather. Unit is week. 
         """
 
         super().__init__(name)
@@ -2307,13 +2311,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         prob_disruption = float(prob_disruption.iloc[0])
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
-                            response_to_disruption = 'delay'
-                            if response_to_disruption == 'delay':
+                            if self.module.parameters['response_to_disruption'] == 'delay':
                                 if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                     self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                         priority=item.priority,
-                                        topen=self.sim.date + DateOffset(month=1),
-                                        tclose=self.sim.date + DateOffset(month=1) + DateOffset((item.topen - item.tclose).days),
+                                        topen=self.sim.date + DateOffset(week=self.module.parameters['delay_in_seeking_care_weather']),
+                                        tclose=self.sim.date + DateOffset(week=self.module.parameters['delay_in_seeking_care_weather']) + DateOffset((item.topen - item.tclose).days),
                                         hsi_event=item
                                     )
                                 else:
