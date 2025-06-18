@@ -1701,7 +1701,8 @@ class PregnancySupervisor(Module, GenericFirstAppointmentsMixin):
             params['alternative_anc_quality'] or \
             params['alternative_ip_anc_quality'] or \
             params['sens_analysis_max'] or \
-            params['sens_analysis_min']:
+            params['sens_analysis_min'] or \
+            params['interventions_analysis']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
             # alternative functionality for determining availability of interventions only occurs when analysis is
