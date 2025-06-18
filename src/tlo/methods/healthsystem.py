@@ -2310,7 +2310,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             ]
                             prob_disruption = pd.DataFrame(prob_disruption)
                             prob_disruption = float(prob_disruption.iloc[0]) # to get average days
-                            if np.random.binomial(1, prob_disruption) == 1:  # success is delayed appointment
+                            if np.random.binomial(1, prob_disruption) == 1:  # success is climate disruption
                                 climate_disrupted = True
                                 response_to_disruption = 'delay'
                                 if response_to_disruption == 'delay':
