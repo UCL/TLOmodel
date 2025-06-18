@@ -4,7 +4,6 @@ from tlo import Date
 from collections import defaultdict
 from typing import Optional, Union, Literal
 
-import datetime
 import textwrap
 
 import matplotlib.pyplot as plt
@@ -446,7 +445,6 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                                          varnames = ['annual_inservice_training_cost_usd'])
     inservice_training_cost['cost'] = inservice_training_cost['staff_count'] * inservice_training_cost['annual_inservice_training_cost_usd']
     inservice_training_cost = inservice_training_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'cost']]
-    # TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
 
     # 1.4 Regular mentorship and supportive supervision costs
     #---------------------------------------------------------------------------------------------------------------
@@ -454,7 +452,6 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
                                                          varnames = ['annual_mentorship_and_supervision_cost'])
     mentorship_and_supportive_cost['cost'] = mentorship_and_supportive_cost['staff_count'] * mentorship_and_supportive_cost['annual_mentorship_and_supervision_cost']
     mentorship_and_supportive_cost = mentorship_and_supportive_cost[['draw', 'run', 'year', 'OfficerType', 'Facility_Level', 'cost']]
-    # TODO Consider calculating economic cost of HR by multiplying salary times staff count with cadres_utilisation_rate
 
     # 1.5 Store all HR costs in one standard format dataframe
     #---------------------------------------------------------------------------------------------------------------
@@ -529,7 +526,6 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
         cons_dispensed = cons_req.xs("Used", level=2) # only keep actual dispensed amount, i.e. when available
         return cons_dispensed
-    # TODO Extract year of dispensing drugs
 
     consumables_dispensed = get_quantity_of_consumables_dispensed(results_folder)
     consumables_dispensed = consumables_dispensed.reset_index().rename(columns = {'level_0': 'Item_Code', 'level_1': 'year'})
@@ -563,9 +559,8 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
     inflow_to_outflow_ratio_by_consumable = inflow_to_outflow_ratio.groupby(level='item_code').mean()
     excess_stock_ratio = inflow_to_outflow_ratio_by_consumable - 1
     excess_stock_ratio = excess_stock_ratio.reset_index().rename(columns = {'inflow_to_outflow_ratio': 'excess_stock_proportion_of_dispensed'})
-    # TODO Consider whether a more disaggregated version of the ratio dictionary should be applied
     cost_of_excess_consumables_stocked = consumables_dispensed.merge(unit_costs['consumables'], left_on = 'Item_Code', right_on = 'Item_Code', validate = 'm:1', how = 'left')
-    excess_stock_ratio.columns = pd.MultiIndex.from_arrays([excess_stock_ratio.columns, [''] * len(excess_stock_ratio.columns)]) # TODO convert this into a funciton
+    excess_stock_ratio.columns = pd.MultiIndex.from_arrays([excess_stock_ratio.columns, [''] * len(excess_stock_ratio.columns)])
     cost_of_excess_consumables_stocked = cost_of_excess_consumables_stocked.merge(excess_stock_ratio, left_on = 'Item_Code', right_on = 'item_code', validate = 'm:1', how = 'left')
     cost_of_excess_consumables_stocked.loc[cost_of_excess_consumables_stocked.excess_stock_proportion_of_dispensed.isna(), 'excess_stock_proportion_of_dispensed'] = average_inflow_to_outflow_ratio_ratio - 1# TODO disaggregate the average by program
     cost_of_excess_consumables_stocked[quantity_columns] = cost_of_excess_consumables_stocked[quantity_columns].multiply(cost_of_excess_consumables_stocked[idx[price_column]], axis=0)
@@ -1271,7 +1266,6 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
 
 # 2. Line plots of total costs
 #----------------------------------------------------
-# TODO: Check why line plot get save without a file name
 def do_line_plot_of_cost(_df: pd.DataFrame,
                          _cost_category: Literal['all', 'human resources for health', 'medical consumables',
                                             'medical equipment', 'facility operating cost'] = 'all',

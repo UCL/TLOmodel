@@ -75,7 +75,11 @@ To apply this module in a new country:
 1. 🔁 Replace all cost files in `/costing/` with local unit costs and assumptions.
 2. 🏥 Update the Master Facilities List to reflect your country’s health facility types and levels.
 3. 🗺 Update population/district files to match local administrative units.
-4. 🛠 Modify `get_staff_count_by_facid_and_officer_type()` functions if model assumptions (e.g., facility level) differ.
+4. 🛠 Modify functions such as `get_staff_count_by_facid_and_officer_type()`, `update_itemuse_for_level1b_using_level2_data()` functions if model assumptions (e.g., facility level) differ.
+5. 🛠 Fix other hard coded assumptions -
+   1. The function `update_itemuse_for_level1b_using_level2_data()` is used to deal with the idiosyncrasy of the current model framework which treats levels 1b and 2 as identical.
+   2. The line `available_staff_count_by_level_and_officer_type = available_staff_count_by_level_and_officer_type.drop(available_staff_count_by_level_and_officer_type[available_staff_count_by_level_and_officer_type['Facility_Level'] == '5'].index)` drops headquarters from the calculation of HR costs
+   3. For equipment costing, the formulae for estimating `service_fee_annual`, `spare_parts_annual` and `major_corrective_maintenance_cost_annual` are based on Malawi HSSP-III assumptions
 
 ---
 
@@ -102,5 +106,4 @@ To apply this module in a new country:
 
 ## Contact
 
-For questions, reach out to -
-AUTHOR: Sakshi Mohan
+For questions, reach out to Sakshi Mohan
