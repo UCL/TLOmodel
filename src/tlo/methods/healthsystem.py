@@ -2285,83 +2285,80 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
 
-            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = list()
+            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = []
+            
             for item in list_of_individual_hsi_event_tuples_due_today:
-                equipment_available = True
                 climate_disrupted = False
-                if not item.hsi_event.is_all_declared_equipment_available:
-                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-                    equipment_available = False
-                # And for each indiviudal level event, check to see if there are projected disruptions due to precipitation.
-                if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] != None:
-                        assert self.module.parameters['services_affected_precip'] == 'all'
-                        fac_level = item.hsi_event.facility_info.level
-                        facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
-                        if facility_used in self.module.parameters['projected_precip_disruptions'][
-                            'RealFacility_ID'].values:
-                            prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
-                                (self.module.parameters['projected_precip_disruptions'][
-                                     'RealFacility_ID'] == facility_used) &
-                                (self.module.parameters['projected_precip_disruptions']['year'] == year) &
-                                (self.module.parameters['projected_precip_disruptions']['month'] == month) &
-                                (self.module.parameters['projected_precip_disruptions'][
-                                     'service'] == self.module.parameters['services_affected_precip']),
-                                'disruption'
-                            ]
-                            prob_disruption = pd.DataFrame(prob_disruption)
-                            prob_disruption = float(prob_disruption.iloc[0]) # to get average days
-                            if np.random.binomial(1, prob_disruption) == 1:  # success is climate disruption
-                                climate_disrupted = True
-                                response_to_disruption = 'delay'
-                                if response_to_disruption == 'delay':
-                                    if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
-                                        self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(priority=item.priority,
-                                                                                          topen=self.sim.date + DateOffset(month=1),
-                                                                                          tclose=self.sim.date + DateOffset(month=1) +
-                                                                                                 DateOffset((item.topen - item.tclose).days), hsi_event=item)
+            
+                # First, check for climate disruption
+                if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
+                    assert self.module.parameters['services_affected_precip'] == 'all'
+                    fac_level = item.hsi_event.facility_info.level
+                    facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
+                    if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
+                        prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
+                            (self.module.parameters['projected_precip_disruptions']['RealFacility_ID'] == facility_used) &
+                            (self.module.parameters['projected_precip_disruptions']['year'] == year) &
+                            (self.module.parameters['projected_precip_disruptions']['month'] == month) &
+                            (self.module.parameters['projected_precip_disruptions']['service'] == self.module.parameters['services_affected_precip']),
+                            'disruption'
+                        ]
+                        prob_disruption = pd.DataFrame(prob_disruption)
+                        prob_disruption = float(prob_disruption.iloc[0])
+                        if np.random.binomial(1, prob_disruption) == 1:
+                            climate_disrupted = True
+                            response_to_disruption = 'delay'
+                            if response_to_disruption == 'delay':
+                                if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
+                                    self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
+                                        priority=item.priority,
+                                        topen=self.sim.date + DateOffset(month=1),
+                                        tclose=self.sim.date + DateOffset(month=1) + DateOffset((item.topen - item.tclose).days),
+                                        hsi_event=item
+                                    )
+                                else:
+                                    subgroup = item.hsi_event.target
+                                    if self.sim.population.props.loc[subgroup, 'age'] < 15:
+                                        subgroup_name = 'children'
+                                        care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_children
+                                        hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['children']
                                     else:
-                                        subgroup = item.hsi_event.target  # the person ID, but the linear model is set up to expect “subgroup”
-
-                                        if self.sim.population.props.loc[subgroup, 'age'] < 15:
-
-                                            subgroup_name = 'children'
-
-                                            care_seeking_odds_ratios = self.sim.modules[
-                                                'HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_children
-
-                                            hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['children']
-
-                                        else:
-
-                                            subgroup_name = 'adults'
-
-                                            care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_adults
-
-                                            hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['adults']
-
-                                        will_seek_care = hsb_model.predict(subgroup, self.sim.module.rng, subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
-
-                                        if will_seek_care:
-
-                                            self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(priority=item.priority,
-                                                topen=self.sim.date + DateOffset(month=1), tclose=self.sim.date + DateOffset(month=1) +
-                                                                                                  DateOffset((item.topen - item.tclose).days), hsi_event=item)
-
-                                        else:
-
-                                            response_to_disruption = 'cancel'
-                                if response_to_disruption == 'cancel':
-                                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event,
-                                                                                    priority=item.priority)
-
-
-                if (climate_disrupted == False) and (equipment_available == True):
-                            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
-
-                # Try to run the list of individual-level events that have their essential equipment
+                                        subgroup_name = 'adults'
+                                        care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_adults
+                                        hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['adults']
+            
+                                    will_seek_care = hsb_model.predict(
+                                        subgroup, self.sim.module.rng,
+                                        subgroup=subgroup_name,
+                                        care_seeking_odds_ratios=care_seeking_odds_ratios
+                                    )
+            
+                                    if will_seek_care:
+                                        self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
+                                            priority=item.priority,
+                                            topen=self.sim.date + DateOffset(month=1),
+                                            tclose=self.sim.date + DateOffset(month=1) + DateOffset((item.topen - item.tclose).days),
+                                            hsi_event=item
+                                        )
+                                    else:
+                                        response_to_disruption = 'cancel'
+                            if response_to_disruption == 'cancel':
+                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+            
+                # If not climate disrupted, check equipment
+                if not climate_disrupted:
+                    equipment_available = True
+                    if not item.hsi_event.is_all_declared_equipment_available:
+                        self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                        equipment_available = False
+            
+                    if equipment_available:
+                        list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
+            
+            # Run events that meet all conditions
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
                 list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
-                )
+            )
             hold_over.extend(_to_be_held_over)
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
