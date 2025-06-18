@@ -207,4 +207,4 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_d
                            f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png",
             bbox_inches='tight'
         )
-        plt.show()
+        # plt.show()
