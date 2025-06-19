@@ -675,7 +675,8 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability()
+            availability=self.get_cons_availability(),
+            treatment_ids_overridden=self.parameters['cons_override_treatment_ids']
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']

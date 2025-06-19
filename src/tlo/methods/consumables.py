@@ -34,7 +34,8 @@ class Consumables:
                  availability_data: pd.DataFrame = None,
                  item_code_designations: pd.DataFrame = None,
                  rng: np.random = None,
-                 availability: str = 'default'
+                 availability: str = 'default',
+                 treatment_ids_overridden: list = []
                  ) -> None:
 
         self._options_for_availability = {
@@ -68,6 +69,9 @@ class Consumables:
 
         # Create (and save pointer to) the `ConsumablesSummaryCounter` helper class
         self._summary_counter = ConsumablesSummaryCounter()
+
+        # save treatment ids to override consumable availability
+        self._treatment_ids_overridden = treatment_ids_overridden
 
     @property
     def availability(self):
@@ -203,7 +207,6 @@ class Consumables:
                              optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
                              treatment_id: Optional[str] = None,
-                             override_hsi: Optional[list] = None,
                              ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
@@ -226,7 +229,9 @@ class Consumables:
             self._not_recognised_item_codes[treatment_id] |= not_recognised_item_codes
 
         # Check if the availability of consumables for this treatment id has been overridden
-        avail_overridden = False if override_hsi is None else True if treatment_id in override_hsi else False
+        avail_overridden = False
+        if treatment_id in self._treatment_ids_overridden:
+            avail_overridden = True
 
         # Look-up whether each of these items is available in this facility currently.:
         available = self._lookup_availability_of_consumables(item_codes=_all_item_codes, facility_info=facility_info,
@@ -259,6 +264,10 @@ class Consumables:
         # Return the result of the check on availability
         return available
 
+    def _make_available(self, item_codes: dict) -> dict:
+        """Returns a dictionary signifying all item codes are available"""
+        return {_i: True for _i in item_codes}
+
     def _lookup_availability_of_consumables(self,
                                             facility_info: 'FacilityInfo',  # noqa: F821
                                             item_codes: dict,
@@ -273,15 +282,13 @@ class Consumables:
             #  is running with `disable=True`. Therefore, assume the consumable is available if the overall
             #  availability assumption is 'all' or 'default', and not otherwise.
             if self.availability in ('all', 'default'):
-                return {_i: True for _i in item_codes}
+                return self._make_available(item_codes)
             else:
                 return {_i: False for _i in item_codes}
 
         # If availability is overridden for this treatment id then all items will be set as available.
         if avail_overridden:
-           for _i in item_codes.keys():
-               avail.update({_i: True})
-
+            return self._make_available(item_codes)
         else:
             for _i in item_codes.keys():
                 if _i in self.item_codes:
