@@ -986,7 +986,7 @@ class HealthSystem(Module):
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
         # If include_clinics is True, then redefine daily_capabilities
         if include_clinics:
-            self.parameters['Ringfenced_Clinics'] = self.format_clinic_capabilities()
+            self.PARAMETERSrameters['Ringfenced_Clinics'] = self.format_clinic_capabilities()
             updated_capabilities = self.parameters['Ringfenced_Clinics'].join(self._daily_capabilities_per_staff)
             ## New capabilities are old_capabilities * fungible
             updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Mins_Per_Day_Per_Staff'] * updated_capabilities['Fungible']
@@ -1001,18 +1001,18 @@ class HealthSystem(Module):
     def set_clinic_eligibility(self, clinic_access: bool) -> None:
         self.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
 
-    def get_clinic_eligibility(str):
+    def get_clinic_eligibility(self, name):
         """
         Returns the name of the module if the module is eligible for clinic access.
         If not, returns 'fungible'. Notes for future implementation:
         this implementation is likely to change in the future to break the one-to-one relationship between
         modules and clinics.
         """
-        module_cols = self.parameters['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
-        eligible = str in module_cols
+        module_cols = self.PARAMETERS['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+        eligible = name in module_cols
 
         if eligible:
-            return str
+            return name
         else:
             return 'Fungible'
 

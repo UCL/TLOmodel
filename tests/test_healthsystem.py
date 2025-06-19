@@ -2060,8 +2060,20 @@ def test_mode_2_clinics(seed, tmpdir):
     but fungible are
     """
 
-    # Create Dummy Module to host the HSI
-    class DummyModule(Module):
+    # Create Dummy Modules to host the HSI
+    class DummyModuleFungible(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    class DummyModuleNonFungible(Module):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
         def read_parameters(self, data_folder):
@@ -2102,7 +2114,8 @@ def test_mode_2_clinics(seed, tmpdir):
                                            randomise_queue=True,
                                            policy_name="",
                                            use_funded_or_actual_staffing='funded_plus'),
-                 DummyModule()
+                 DummyModuleFungible(),
+                 DummyModuleNonFungible()
                  )
 
     tot_population = 100
@@ -2141,9 +2154,7 @@ def test_mode_2_clinics(seed, tmpdir):
         )
 
     # Now adjust capabilities available.
-    # In first district, make capabilities half of what would be required to run all events
-    # without squeeze:
-    hsi1 = DummyHSIEvent(module=sim.modules['DummyModule'],
+    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='MinorSurg',
                          level='1a')
