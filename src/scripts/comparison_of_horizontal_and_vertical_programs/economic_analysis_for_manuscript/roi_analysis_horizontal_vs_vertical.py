@@ -1430,37 +1430,3 @@ print(f"The ICER of vertical strategy relative to the baseline scenario was "
       f"million more DALYs than HTM expansion, it did so at a higher cost per DALY averted "
       f"(${icer_result[8][chosen_metric]:.2f} [${icer_result[8]['lower']:.2f} - ${icer_result[8]['upper']:.2f}] versus "
       f"${icer_result[36][chosen_metric]:.2f} [${icer_result[36]['lower']:.2f} - ${icer_result[36]['upper']:.2f}]), meaning it was less cost-effective.")
-
-'''
-# Extract TB costs for inspection
-tb_consumables = ['Cat. I & III Patient Kit A', 'Cat. I & III Patient Kit B', 'Cat. II Patient Kit A1',
-'Cat. II Patient Kit A2', 'Isoniazid/Pyridoxine, tablet 300 mg', 'Isoniazid/Rifapentine', 'Xpert', 'ZN Stain']
-tb_consumables_costs = input_costs_for_plot_summarized[input_costs_for_plot_summarized.cost_subgroup.isin(tb_consumables)]
-tb_consumables_costs = tb_consumables_costs.groupby(['draw', 'stat', 'cost_subgroup'])['cost'].sum().reset_index()
-tb_consumables_costs.to_csv(figurespath / 'tb_consumables_costs_detailed.csv')
-
-input_costs_for_plot_summarized.to_csv(figurespath / 'cost_detailed_summarised.csv')
-
-
-input_costs_standard = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
-                                               _discount_rate = 0.03, _draws = [0], _runs = [0])
-
-input_costs_0 = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
-                                               _discount_rate = 0, _draws = [0], _runs = [0])
-
-variable_dr = {2025: 0.0039, 2026: 0.0042, 2027: 0.0042, 2028: 0.0041, 2029: 0.0041, 2030: 0.004, 2031: 0.004, 2032: 0.004, 2033: 0.0041, 2034: 0.0043, 2035: 0.0042}
-
-input_costs_variable = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
-                                               _years= list_of_relevant_years_for_costing, cost_only_used_staff= True,
-                                               _discount_rate = variable_dr, _draws = [0], _runs = [0])
-
-input_costs_standard.groupby(['cost_category','year'])['cost'].sum()
-input_costs_0.groupby(['cost_category','year'])['cost'].sum()
-input_costs_variable.groupby(['cost_category','year'])['cost'].sum()
-
-input_costs_v_test.groupby(['cost_category','year'])['cost'].sum()
-input_costs_v_test = apply_discounting_to_cost_data(input_costs_standard, _discount_rate=variable_dr, _initial_year=None, _column_for_discounting = 'cost')
-
-'''
