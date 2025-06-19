@@ -1468,7 +1468,7 @@ class HealthSystem(Module):
         else:
             rand_queue = self.hsi_event_queue_counter
 
-         clinic_eligibility = self.get_clinic_eligibility(hsi_event.module.name)
+        clinic_eligibility = self.get_clinic_eligibility(hsi_event.module.name)
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
             clinic_eligibility, priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 

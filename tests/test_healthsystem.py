@@ -2049,6 +2049,166 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     assert (Nran_w_priority2 == int(tot_population/4)) & (Nran_w_priority3 == 0)
 
 
+def test_mode_2_clinics(seed, tmpdir):
+    """Test that clinics work as expected in mode_appt_constraints=2. Specifically:
+    - If non-fuungible capabilities are available, an event needing those capabilities runs;
+    - If non-fungible capabilities are not available, the event does not run;
+    - If fungible capabilities are available, an event needing those capabilities runs;
+    - If fungible capabilities are not available, the event does not run;
+    - The fungible events in the following sequence run: fungible/non-fungible/fungible if non-fungible capabilities are not available but fungible are.
+    - Conversely, the non-fungible events in the following sequence run: fungible/non-fungible/fungible even if non-fungible capabilities are not available
+    but fungible are
+    """
+
+    # Create Dummy Module to host the HSI
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'DummyHSIEvent'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+            self.this_hsi_event_ran = False
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_hsi_event_ran = True
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    # Register the core modules and simulate for 0 days
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2,
+                                           ignore_priority=False,
+                                           randomise_queue=True,
+                                           policy_name="",
+                                           use_funded_or_actual_staffing='funded_plus'),
+                 DummyModule()
+                 )
+
+    tot_population = 100
+    sim.make_initial_population(n=tot_population)
+    sim.simulate(end_date=sim.start_date)
+
+    # Get pointer to the HealthSystemScheduler event
+    healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
+
+    # Schedule an identical appointment for all individuals, assigning clinc as follows:
+    # half individuals have clinic_eligibility=Fungible and half clinic_eligibility=Hiv
+    for i in range(0, tot_population // 2):
+        hsi = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+                            person_id=i,
+                            appt_type='MinorSurg',
+                            level='1a')
+
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=0
+        )
+
+    for i in range(tot_population // 2, tot_population):
+        hsi = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+                            person_id=i,
+                            appt_type='MinorSurg',
+                            level='1a')
+
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=0
+        )
+
+    # Now adjust capabilities available.
+    # In first district, make capabilities half of what would be required to run all events
+    # without squeeze:
+    hsi1 = DummyHSIEvent(module=sim.modules['DummyModule'],
+                         person_id=0,  # Ensures call is on officers in first district
+                         appt_type='MinorSurg',
+                         level='1a')
+    hsi1.initialise()
+    for k, v in hsi1.expected_time_requests.items():
+        print(k, sim.modules['HealthSystem']._daily_capabilities[k])
+        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/4)
+
+    # In second district, make capabilities tuned to be those required to run all priority=2 events under
+    # maximum squeezed allowed for this priority, which currently is zero.
+    max_squeeze = 0.
+    scale = (1.+max_squeeze)
+    print("Scale is ", scale)
+    hsi2 = DummyHSIEvent(module=sim.modules['DummyModule'],
+                         person_id=int(tot_population/2),  # Ensures call is on officers in second district
+                         appt_type='MinorSurg',
+                         level='1a')
+    hsi2.initialise()
+    for k, v in hsi2.expected_time_requests.items():
+        sim.modules['HealthSystem']._daily_capabilities[k] = (v/scale)*(tot_population/4)
+
+    # Run healthsystemscheduler
+    healthsystemscheduler.apply(sim.population)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    hs_output = output['tlo.methods.healthsystem']['HSI_Event']
+
+    # Check that some events could run, but not all
+    assert hs_output['did_run'].sum() < tot_population, "All events ran"
+    assert hs_output['did_run'].sum() != 0, "No events ran"
+
+    # Get the appointments that ran for each priority
+    Nran_w_priority0 = len(hs_output[(hs_output['priority'] == 0) & (hs_output['did_run'])])
+    Nran_w_priority1 = len(hs_output[(hs_output['priority'] == 1) & (hs_output['did_run'])])
+    Nran_w_priority2 = len(hs_output[(hs_output['priority'] == 2) & (hs_output['did_run'])])
+    Nran_w_priority3 = len(hs_output[(hs_output['priority'] == 3) & (hs_output['did_run'])])
+
+    # Within district, check that appointments with higher priority occurred more frequently
+    assert Nran_w_priority0 > Nran_w_priority1
+    assert Nran_w_priority2 > Nran_w_priority3
+
+    # Check that if capabilities ran out in one district, capabilities in different district
+    # cannot be accessed, even if priority should give precedence:
+    # Because competition for resources occurs by facility, priority=2 should occur more
+    # frequently than priority=1.
+    assert Nran_w_priority2 > Nran_w_priority1
+
+    # SQUEEZE CHECKS
+
+    # Check that some level of squeeze occurs:
+    # Although the capabilities in first district were set to half of those required,
+    # if some level of squeeze was allowed (i.e. if max squeeze allowed for priority=0 is >0)
+    # more than half of appointments should have taken place in total.
+    if max_squeeze > 0:
+        assert Nran_w_priority0 + Nran_w_priority1 > (tot_population/4)
+
+    # Check that the maximum squeeze allowed is set by priority:
+    # The capabilities in the second district were tuned to accomodate all priority=2
+    # appointments under the maximum squeeze allowed. Check that exactly all priority=2
+    # appointments were allowed and no priority=3, to verify that the maximum squeeze
+    # allowed in queue given priority is correct.
+    assert (Nran_w_priority2 == int(tot_population/4)) & (Nran_w_priority3 == 0)
+
+
 @pytest.mark.slow
 def test_which_hsi_can_run(seed):
     """This test confirms whether, and how, HSI with each Appointment Type can run at each facility, under the
