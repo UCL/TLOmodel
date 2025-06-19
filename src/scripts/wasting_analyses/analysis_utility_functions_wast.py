@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import scipy.stats as st
 from matplotlib import pyplot as plt
 
@@ -209,7 +210,7 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_d
         )
         # plt.show()
 
-def plot_availability_heatmap():
+def plot_availability_heatmap(outputs_path: Path) -> None:
     resourcefilepath = Path("./resources")
 
     tlo_availability_df = pd.read_csv(
@@ -225,75 +226,48 @@ def plot_availability_heatmap():
     tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                                                     on=['Facility_ID'], how='left')
     print(f"\ndebug - tlo_availability_df:\n{tlo_availability_df}")
-    # Attach programs
-    program_item_mapping = \
-    pd.read_csv(resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Item_Designations.csv')[
-        ['Item_Code', 'item_category']]
-    program_item_mapping = program_item_mapping.rename(columns={'Item_Code': 'item_code'})[
-        program_item_mapping.item_category.notna()]
-    tlo_availability_df = tlo_availability_df.merge(program_item_mapping, on=['item_code'], how='left')
-    print(f"\ndebug - tlo_availability_df w\ program mapping:\n{tlo_availability_df}")
 
-    # First a heatmap of current availability
-    fac_levels = {'0': 'Health Post', '1a': 'Health Centers', '1b': 'Rural/Community \n Hospitals',
-                  '2': 'District Hospitals', '3': 'Central Hospitals', '4': 'Mental Hospital'}
-    chosen_fac_levels_for_plot = ['0', '1a', '1b', '2', '3', '4']
-    correct_order_of_levels = ['Health Post', 'Health Centers', 'Rural/Community \n Hospitals', 'District Hospitals',
-                               'Central Hospitals', 'Mental Hospital']
-    df_for_plots = tlo_availability_df[tlo_availability_df.Facility_Level.isin(chosen_fac_levels_for_plot)]
-    df_for_plots['Facility_Level'] = df_for_plots['Facility_Level'].map(fac_levels)
+    # fac_levels = {'0': 'Health Post', '1a': 'Health Centers', '1b': 'Rural/Community \n Hospitals',
+    #               '2': 'District Hospitals', '3': 'Central Hospitals', '4': 'Mental Hospital'}
+    correct_order_of_levels = ['0', '1a', '1b', '2', '3', '4']
+    chosen_item_codes = [1220, 1227]#, 208]
+    item_names_to_map = {1220:'F-75\ntherapeutic\nmilk', 1227:'RUTF', 208:'CSB++'}
 
-    scenario_list = [1, 2, 3, 6, 7, 8, 10, 11]
-    chosen_availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                                        scenario_list]
-    scenario_names_dict = {'available_prop': 'Actual', 'available_prop_scenario1': 'General consumables',
-                           'available_prop_scenario2': 'Vital medicines',
-                           'available_prop_scenario3': 'Pharmacist- managed', 'available_prop_scenario4': 'Level 1b',
-                           'available_prop_scenario5': 'CHAM',
-                           'available_prop_scenario6': '75th percentile  facility',
-                           'available_prop_scenario7': '90th percentile  facility',
-                           'available_prop_scenario8': 'Best facility',
-                           'available_prop_scenario9': 'Best facility (including DHO)',
-                           'available_prop_scenario10': 'HIV supply  chain',
-                           'available_prop_scenario11': 'EPI supply chain',
-                           'available_prop_scenario12': 'HIV moved to Govt supply chain'}
-    # recreate the chosen columns list based on the mapping above
-    chosen_availability_columns = [scenario_names_dict[col] for col in chosen_availability_columns]
-    df_for_plots = df_for_plots.rename(columns=scenario_names_dict)
+    tlo_availability_df = tlo_availability_df[tlo_availability_df.Facility_Level.isin(correct_order_of_levels)]
+    print(f"\ndebug - df_for_plots:\n{tlo_availability_df}")
 
-    i = 0
-    for avail_scenario in chosen_availability_columns:
-        # Generate a heatmap
-        # Pivot the DataFrame
-        aggregated_df = df_for_plots.groupby(['item_category', 'Facility_Level'])[avail_scenario].mean().reset_index()
-        heatmap_data = aggregated_df.pivot("item_category", "Facility_Level", avail_scenario)
-        heatmap_data = heatmap_data[correct_order_of_levels]  # Maintain the order
+    # Pivot the DataFrame
+    aggregated_df = tlo_availability_df.groupby(['Facility_Level', 'item_code'])[['available_prop']].mean().reset_index()
+    print(f"debug - aggregated_df:\n{aggregated_df}")
+    heatmap_data = aggregated_df.pivot(columns='Facility_Level', index='item_code', values='available_prop')
+    print(f"debug - heatmap_data.index.unique:\n{list(heatmap_data.index.unique())}")
+    # Keep chosen items
+    heatmap_data = heatmap_data.loc[chosen_item_codes]
+    print(f"debug - heatmap_data:\n{heatmap_data}")
+    print(f"debug - heatmap_data.index:\n{heatmap_data.index}")
+    print(f"debug - heatmap_data.columns:\n{heatmap_data.columns}")
+    # Add average column (availability across all facility levels)
+    aggregate_col = aggregated_df.groupby('item_code')[['available_prop']].mean()
+    # Order the facility levels
+    heatmap_data = heatmap_data.reindex(columns=correct_order_of_levels)
+    print(f"debug - heatmap_data with correct Fac. Levels order:\n{heatmap_data}")
+    print(f"debug - aggregate_col:\n{aggregate_col}")
+    heatmap_data['Average'] = aggregate_col
+    # Map item codes to names
+    heatmap_data.index = heatmap_data.index.map(item_names_to_map)
 
-        # Calculate the aggregate row and column
-        aggregate_col = aggregated_df.groupby('Facility_Level')[avail_scenario].mean()
-        aggregate_col = aggregate_col[correct_order_of_levels]
-        aggregate_row = aggregated_df.groupby('item_category')[avail_scenario].mean()
-        overall_aggregate = df_for_plots[avail_scenario].mean()
+    # Generate the heatmap
+    sns.set(font_scale=1.5)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn',
+                cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
-        # Add aggregate row and column
-        heatmap_data['Average'] = aggregate_row
-        aggregate_col['Average'] = overall_aggregate
-        heatmap_data.loc['Average'] = aggregate_col
+    # Customize the plot
+    plt.title('Availability of essential consumables\n for acute malnutrition treatments', fontweight='bold')
+    plt.xlabel('Facility Level')
+    plt.ylabel(f'Consumable')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
 
-        # Generate the heatmap
-        sns.set(font_scale=1.5)
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn',
-                    cbar_kws={'label': 'Proportion of days on which consumable is available'})
-
-        # Customize the plot
-        plt.title(scenarios[i])
-        plt.xlabel('Facility Level')
-        plt.ylabel(f'Disease/Public health \n program')
-        plt.xticks(rotation=90)
-        plt.yticks(rotation=0)
-
-        plt.savefig(figurespath / f'consumable_availability_heatmap_{avail_scenario}.png', dpi=300, bbox_inches='tight')
-        # plt.show()
-        plt.close()
-        i = i + 1
+    plt.savefig(outputs_path / f'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
+    # plt.show()
