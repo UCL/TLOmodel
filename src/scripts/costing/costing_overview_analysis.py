@@ -15,10 +15,7 @@ import textwrap
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 import pandas as pd
-from itertools import cycle
-import jinja2 # This is for the latex table
 
 from tlo.analysis.utils import (
     extract_params,
