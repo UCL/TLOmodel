@@ -2052,12 +2052,14 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
 def test_mode_2_clinics(seed, tmpdir):
     """Test that clinics work as expected in mode_appt_constraints=2. Specifically:
     - If non-fuungible capabilities are available, an event needing those capabilities runs;
-    - If non-fungible capabilities are not available, the event does not run;
+    - If non-fungible capabilities run out, the event does not run; this test checks that that events query the
+    correct capabilities and that correct counters are run down;
     - If fungible capabilities are available, an event needing those capabilities runs;
     - If fungible capabilities are not available, the event does not run;
     - The fungible events in the following sequence run: fungible/non-fungible/fungible if non-fungible capabilities are not available but fungible are.
     - Conversely, the non-fungible events in the following sequence run: fungible/non-fungible/fungible even if non-fungible capabilities are not available
-    but fungible are
+    but fungible are;
+
     """
 
     # Create Dummy Modules to host the HSI
@@ -2073,6 +2075,7 @@ def test_mode_2_clinics(seed, tmpdir):
         def initialise_simulation(self, sim):
             pass
 
+
     class DummyModuleNonFungible(Module):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
 
@@ -2084,6 +2087,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
         def initialise_simulation(self, sim):
             pass
+
 
     # Create a dummy HSI event class
     class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
@@ -2097,6 +2101,8 @@ def test_mode_2_clinics(seed, tmpdir):
 
         def apply(self, person_id, squeeze_factor):
             self.this_hsi_event_ran = True
+
+
 
     log_config = {
         "filename": "log",
@@ -2113,7 +2119,8 @@ def test_mode_2_clinics(seed, tmpdir):
                                            ignore_priority=False,
                                            randomise_queue=True,
                                            policy_name="",
-                                           use_funded_or_actual_staffing='funded_plus'),
+                                           use_funded_or_actual_staffing='funded_plus',
+                                           include_ringfenced_clinics=True),
                  DummyModuleFungible(),
                  DummyModuleNonFungible()
                  )

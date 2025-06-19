@@ -553,11 +553,11 @@ class HealthSystem(Module):
         # If include_ringfenced_clinics is True, then read in the Resource file that contains the ringfenced clinics
         if self.include_ringfenced_clinics:
             df = pd.read_csv(
-                path_to_resourcefiles_for_healthsystem / 'human_resources' / 'ResourceFile_Clinics.csv'
+                path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
             )
             ## Check that the fractions add to 1 for each row.
             id_cols = ['Facility_ID', 'Officer_Category']
-            data = df.drop(columns=[id_cols])
+            data = df.drop(columns=id_cols)
             row_sums = data.sum(axis=1)
             mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
             if mask.any():
