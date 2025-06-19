@@ -56,8 +56,10 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'tb_max',
                                         'fp_scr_max',
                                         'mal_max',
+                                        'anc_max',
                                         'pnc_max',
                                         'fp_pn_max',
+                                        'epi',
                                         'chronic_care_max',
                                         'all_screening_max',
                                         'all_mch_max',
@@ -82,10 +84,23 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
 
                                         ['Undernutrition_Feeding'],
 
+                                        ['AntenatalCare_Outpatient',
+                                         'AntenatalCare_FollowUp'],
+
                                         ['PostnatalCare_Neonatal',
                                          'PostnatalCare_Maternal'],
 
                                        ['Contraception_Routine'],
+
+                                        ['Epi_Childhood_Bcg',
+                                         'Epi_Childhood_Opv',
+                                         'Epi_Childhood_DtpHibHep',
+                                         'Epi_Childhood_Rota',
+                                         'Epi_Childhood_Pneumo',
+                                         'Epi_Childhood_MeaslesRubella',
+                                         'Epi_Adolescent_Hpv',
+                                         'Epi_Pregnancy_Td'
+                                         ],
 
                                        ['CardioMetabolicDisorders_Investigation',
                                         'CardioMetabolicDisorders_Prevention_WeightLoss',
@@ -115,11 +130,22 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'Tb_Treatment'],
 
                                        ['Undernutrition_Feeding',
+                                        'AntenatalCare_Outpatient',
+                                        'AntenatalCare_FollowUp',
                                         'PostnatalCare_Neonatal',
                                         'PostnatalCare_Maternal',
-                                        'Contraception_Routine'],
+                                        'Contraception_Routine',
+                                        'Epi_Childhood_Bcg',
+                                        'Epi_Childhood_Opv',
+                                        'Epi_Childhood_DtpHibHep',
+                                        'Epi_Childhood_Rota',
+                                        'Epi_Childhood_Pneumo',
+                                        'Epi_Childhood_MeaslesRubella',
+                                        'Epi_Adolescent_Hpv',
+                                        'Epi_Pregnancy_Td'
+                                        ],
 
-                                        'CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
+                                        ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
                                         'CardioMetabolicDisorders_Investigation',
                                         'CardioMetabolicDisorders_Prevention_WeightLoss',
                                         'Contraception_Routine',
@@ -131,18 +157,28 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'Tb_Test_Culture',
                                         'Tb_Test_Xray',
                                         'Tb_Treatment',
+                                        'AntenatalCare_Outpatient',
+                                        'AntenatalCare_FollowUp',
                                         'PostnatalCare_Neonatal',
                                         'PostnatalCare_Maternal',
+                                        'Epi_Childhood_Bcg',
+                                        'Epi_Childhood_Opv',
+                                        'Epi_Childhood_DtpHibHep',
+                                        'Epi_Childhood_Rota',
+                                        'Epi_Childhood_Pneumo',
+                                        'Epi_Childhood_MeaslesRubella',
+                                        'Epi_Adolescent_Hpv',
+                                        'Epi_Pregnancy_Td',
                                         'Depression_TalkingTherapy',
                                         'Depression_Treatment',
                                         'Epilepsy_Treatment_Start',
-                                        'Epilepsy_Treatment_Followup']):
+                                        'Epilepsy_Treatment_Followup']]):
 
         sim.modules['ServiceIntegration'].parameters['serv_integration'] = scenario
         print(scenario)
         serv_int_event.apply(sim.population.props)
-        assert sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] == treatment_ids
-        sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] = []
+        assert sim.modules['HealthSystem'].consumables._treatment_ids_overridden == treatment_ids
+        sim.modules['HealthSystem'].consumables._treatment_ids_overridden = []
 
 
 def test_parameter_update_event_runs_as_expected_when_updates_required_screening_parameters(tmpdir, seed):

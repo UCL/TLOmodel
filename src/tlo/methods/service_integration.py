@@ -135,7 +135,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         params = self.module.parameters
-        hs_params = self.sim.modules['HealthSystem'].parameters
+        treat_ids_to_override = self.sim.modules['HealthSystem'].consumables._treatment_ids_overridden
 
         # TODO: make this a class of the health system module instead of its own module that needs to be registered?
 
@@ -149,8 +149,8 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
         def update_cons_override_treatment_ids(treatment_ids):
             for treatment_id in treatment_ids:
-                if treatment_id not in hs_params['cons_override_treatment_ids']:
-                    hs_params['cons_override_treatment_ids'].append(treatment_id)
+                if treatment_id not in treat_ids_to_override:
+                    treat_ids_to_override.append(treatment_id)
 
         # ---------------------------------------------- SCREENING ---------------------------------------------------
         if params['serv_integration'].startswith(("htn", "all_screening", "all_int")):
