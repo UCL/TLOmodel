@@ -28,7 +28,7 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=4_000,
+            initial_population_size=30_000,
             number_of_draws=2,
             runs_per_draw=10,
         )
@@ -53,7 +53,7 @@ class WastingAnalysis(BaseScenario):
     # Applying fixed availability probability across all facilities and months for all food supplements
     # with FS intervention
     def draw_parameters(self, draw_number, rng):
-        avail_prob = [0.5, 1.0]
+        avail_prob = [0.7, 1.0]
 
         return {
             'Wasting': {
