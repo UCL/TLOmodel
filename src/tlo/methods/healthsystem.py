@@ -377,7 +377,7 @@ class HealthSystem(Module):
         climate_ssp: Optional[str] = 'ssp245',
         climate_model_ensemble_model: Optional[str] = 'mean',
         services_affected_precip: Optional[str] = 'none',
-        response_to_disruption: Optional[str] = 'delay', 
+        response_to_disruption: Optional[str] = 'delay',
         delay_in_seeking_care_weather: Optional[int] = 4
     ):
         """
@@ -426,7 +426,7 @@ class HealthSystem(Module):
                 Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
         :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'
         :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'
-        :param delay_in_seeking_care_weather: The number of weeks' delay in reseeking healthcare after an appointmnet has been delayed by weather. Unit is week. 
+        :param delay_in_seeking_care_weather: The number of weeks' delay in reseeking healthcare after an appointmnet has been delayed by weather. Unit is week.
         """
 
         super().__init__(name)
@@ -2290,15 +2290,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # add it to the list of events to run.
 
             list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = []
-            
+
             for item in list_of_individual_hsi_event_tuples_due_today:
                 climate_disrupted = False
-            
+
                 # First, check for climate disruption
                 if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
                     assert self.module.parameters['services_affected_precip'] == 'all'
                     fac_level = item.hsi_event.facility_info.level
-                    facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_id}']
+                    facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_level}']
                     if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
                         prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
                             (self.module.parameters['projected_precip_disruptions']['RealFacility_ID'] == facility_used) &
@@ -2311,7 +2311,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         prob_disruption = float(prob_disruption.iloc[0])
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
-                            if self.module.parameters['response_to_disruption'] == 'delay':
+                            response_to_disruption = 'delay'
+                            #if self.module.parameters['response_to_disruption'] == 'delay':
+                            if response_to_disruption == 'delay':
                                 if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                     self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                         priority=item.priority,
@@ -2329,13 +2331,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         subgroup_name = 'adults'
                                         care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_adults
                                         hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['adults']
-            
+
                                     will_seek_care = hsb_model.predict(
                                         subgroup, self.sim.module.rng,
                                         subgroup=subgroup_name,
                                         care_seeking_odds_ratios=care_seeking_odds_ratios
                                     )
-            
+
                                     if will_seek_care:
                                         self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                             priority=item.priority,
@@ -2347,17 +2349,17 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         response_to_disruption = 'cancel'
                             if response_to_disruption == 'cancel':
                                 self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-            
+
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
                     equipment_available = True
                     if not item.hsi_event.is_all_declared_equipment_available:
                         self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
                         equipment_available = False
-            
+
                     if equipment_available:
                         list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
-            
+
             # Run events that meet all conditions
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
                 list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
