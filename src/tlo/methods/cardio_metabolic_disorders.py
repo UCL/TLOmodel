@@ -1475,14 +1475,14 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         # TODO: this is not the neatest, but as i need to know the full treatment id for the logic i've added to
         #  the consumables class this is the only way for now
 
-        if 'hypertension' in conditions_to_investigate and 'diabetes' not in conditions_to_investigate:
+        if conditions_to_investigate is None:
+            self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_other"
+        elif 'hypertension' in conditions_to_investigate and 'diabetes' not in conditions_to_investigate:
             self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_hypertension"
         elif'hypertension' not in conditions_to_investigate and 'diabetes' in conditions_to_investigate:
             self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_diabetes"
         elif  'hypertension' in conditions_to_investigate and 'diabetes' in conditions_to_investigate:
             self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_hypertension_and_diabetes"
-        else:
-            self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_other"
 
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
