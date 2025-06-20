@@ -66,11 +66,11 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'all_int_max'],
 
                                        [['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-                                         'CardioMetabolicDisorders_Investigation',
-                                         'CardioMetabolicDisorders_Prevention_WeightLoss'],
+                                         'CardioMetabolicDisorders_Investigation_hypertension',
+                                         'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension'],
 
-                                       ['CardioMetabolicDisorders_Investigation',
-                                         'CardioMetabolicDisorders_Prevention_WeightLoss'],
+                                       ['CardioMetabolicDisorders_Investigation_diabetes',
+                                         'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes'],
 
                                        ['Hiv_Test', 'Hiv_Treatment'],
 
@@ -90,7 +90,7 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         ['PostnatalCare_Neonatal',
                                          'PostnatalCare_Maternal'],
 
-                                       ['Contraception_Routine'],
+                                       ['Contraception_Routine_Postnatal'],
 
                                         ['Epi_Childhood_Bcg',
                                          'Epi_Childhood_Opv',
@@ -102,8 +102,10 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                          'Epi_Pregnancy_Td'
                                          ],
 
-                                       ['CardioMetabolicDisorders_Investigation',
-                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                       ['CardioMetabolicDisorders_Investigation_hypertension',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
+                                        'CardioMetabolicDisorders_Investigation_diabetes',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
                                         'Hiv_Test',
                                         'Hiv_Treatment',
                                         'Tb_Test_Screening',
@@ -117,8 +119,10 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'Epilepsy_Treatment_Followup'],
 
                                        ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-                                        'CardioMetabolicDisorders_Investigation',
-                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'CardioMetabolicDisorders_Investigation_hypertension',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
+                                        'CardioMetabolicDisorders_Investigation_diabetes',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
                                         'Contraception_Routine',
                                         'Undernutrition_Feeding',
                                         'Hiv_Test',
@@ -134,7 +138,7 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'AntenatalCare_FollowUp',
                                         'PostnatalCare_Neonatal',
                                         'PostnatalCare_Maternal',
-                                        'Contraception_Routine',
+                                        'Contraception_Routine_Postnatal',
                                         'Epi_Childhood_Bcg',
                                         'Epi_Childhood_Opv',
                                         'Epi_Childhood_DtpHibHep',
@@ -146,8 +150,10 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         ],
 
                                         ['CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-                                        'CardioMetabolicDisorders_Investigation',
-                                        'CardioMetabolicDisorders_Prevention_WeightLoss',
+                                        'CardioMetabolicDisorders_Investigation_hypertension',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
+                                        'CardioMetabolicDisorders_Investigation_diabetes',
+                                        'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
                                         'Contraception_Routine',
                                         'Undernutrition_Feeding',
                                         'Hiv_Test',
@@ -161,6 +167,7 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                         'AntenatalCare_FollowUp',
                                         'PostnatalCare_Neonatal',
                                         'PostnatalCare_Maternal',
+                                        'Contraception_Routine_Postnatal',
                                         'Epi_Childhood_Bcg',
                                         'Epi_Childhood_Opv',
                                         'Epi_Childhood_DtpHibHep',

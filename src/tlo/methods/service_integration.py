@@ -165,11 +165,10 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             # Now ensure consumables are always available for the relevant treatment ids
             if params['serv_integration'].endswith('_max'):
 
-                # TODO: this should only be those using treatment for hypertension...
                 update_cons_override_treatment_ids([
                     'CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
-                     'CardioMetabolicDisorders_Investigation',
-                     'CardioMetabolicDisorders_Prevention_WeightLoss'])
+                     'CardioMetabolicDisorders_Investigation_hypertension',
+                     'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension'])
 
         if params['serv_integration'].startswith(("dm", "all_screening", "all_int")):
             # Probability of screening when presenting to any generic first appointment and not sympotmatic set to 100%
@@ -177,10 +176,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                 'pr_assessed_other_symptoms'] = 1.0
 
             if params['serv_integration'].endswith('_max'):
-                # TODO: this should only be those using treatment for diabetes...
                 update_cons_override_treatment_ids([
-                    'CardioMetabolicDisorders_Investigation',
-                    'CardioMetabolicDisorders_Prevention_WeightLoss'])
+                    'CardioMetabolicDisorders_Investigation_diabetes',
+                    'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes'])
 
         if params['serv_integration'].startswith(("fp_scr", "all_screening", "all_int")):
             # Here we use the in-built functionality of the contraception model to increase the coverage of modern
@@ -248,8 +246,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             self.sim.modules['Contraception'].update_params_for_interventions(initiation=False,
                                                                               after_birth=True)
             if params['serv_integration'].endswith('_max'):
-                # TODO: dont we only want those seeking postnatal contraception to have available consumables?
-                update_cons_override_treatment_ids(['Contraception_Routine'])
+                update_cons_override_treatment_ids(['Contraception_Routine_Postnatal'])
 
         # no parameter governing prob of receiving vaccine
         # child's prob of vax entirely dependent on vaccine being available (cons required)

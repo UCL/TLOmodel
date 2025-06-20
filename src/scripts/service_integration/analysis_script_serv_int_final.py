@@ -30,7 +30,7 @@ plt.style.use('seaborn-darkgrid')
 resourcefilepath = Path("./resources")
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
-scenario = 'integration_scenario_max_test_2462999'
+scenario = 'integration_scenario_max_test_2524959'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a dict of {run: 'scenario'} from the updated parameters
@@ -87,7 +87,7 @@ def get_percentage_diff(df):
         else:
             percent_diff[col] = 0  # or np.nan if you prefer
 
-    pdiff_sum = compute_summary_statistics(percent_diff)
+    pdiff_sum = compute_summary_statistics(percent_diff, use_standard_error=True)
     return pdiff_sum
 
 def compute_service_statistics(counters_by_draw_and_run):
@@ -130,14 +130,20 @@ def compute_service_statistics(counters_by_draw_and_run):
     pdiff_appt_type = pct_diff_from_col0(appt_type)
 
     width_of_range = 0.95
-    lower_quantile = (1. - width_of_range) / 2.
 
     def summarize_list(cell):
         arr = np.array(cell)
+        n = arr.size
+        std_deviation = arr.std()
+        std_error = std_deviation / np.sqrt(n)
+        z_value = st.norm.ppf(1 - (1. - width_of_range) / 2.)
+
+        mean = float(np.mean(arr))
+
         return {
-            "median": float(np.median(arr)),
-            "lower": float(np.quantile(arr, lower_quantile)),
-            "upper": float(np.quantile(arr, 1 - lower_quantile))
+            "median": mean,
+            "lower": mean - z_value * std_error,
+            "upper": mean + z_value * std_error,
         }
     # Apply to every cell in the DataFrame
     appt_type_summ = appt_type.applymap(summarize_list)
@@ -252,14 +258,14 @@ dalys_by_age_date_and_cause.index = dalys_by_age_date_and_cause.index.set_names(
 dalys_by_year_cause = dalys_by_age_date_and_cause.groupby(by=["year", "label"]).sum()
 dalys_by_year_cause_int_period = dalys_by_year_cause.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year]
 total_dalys_by_year_cause =  dalys_by_year_cause_int_period.groupby('label').sum()
-total_dalys_by_year_summ = compute_summary_statistics(total_dalys_by_year_cause)
+total_dalys_by_year_summ = compute_summary_statistics(total_dalys_by_year_cause, use_standard_error=True)
 pdiff_dalys_by_cause = get_percentage_diff(total_dalys_by_year_cause)
 
 # Get total dalys per scenario (unweighted)
 dalys_by_age_date = dalys_by_age_date_and_cause.groupby(by=["year", "age_group"]).sum()
 dalys_unweighted_year = dalys_by_age_date.groupby(by='year').sum()
 total_dalys_unweighted = dalys_unweighted_year.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year].sum().to_frame().T
-total_dalys_unweighted_summ = compute_summary_statistics(total_dalys_unweighted)
+total_dalys_unweighted_summ = compute_summary_statistics(total_dalys_unweighted, use_standard_error=True)
 pdiff_total_dalys_unweighted = get_percentage_diff(total_dalys_unweighted)
 
 # Get total dalys per scenario (weighted by population size across age groups)
@@ -282,20 +288,46 @@ pop_m = extract_results(
 pop = pop_f + pop_m
 proportion_df = pop.div(pop.groupby(level='year').transform('sum'))
 
-# get weighted dalys by cause
-prop_df_aligned = proportion_df.reindex(dalys_by_age_date_and_cause.index.droplevel('label'))
-dalys_by_cause_age_weighted = dalys_by_age_date_and_cause * prop_df_aligned.values
-d_by_cause_int_period = dalys_by_cause_age_weighted.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year]
+# Get the column subset from b_aligned (e.g., top-level 0)
+def age_standardize_dalys(dalys_df):
+
+    if len(dalys_df.index.levels) == 3:
+        pop_df = proportion_df.reindex(dalys_df.index.droplevel('label'))
+    else:
+        pop_df = proportion_df.reindex(dalys_df.index)
+
+    base_level = 0
+    subset_cols = pop_df.columns.get_level_values(0) == base_level
+    base_columns = pop_df.columns[subset_cols]
+
+    # Create result DataFrame
+    dalys_weighted = dalys_df.copy()
+
+    # Loop over each top-level column index in `a`
+    for level in sorted(set(dalys_df.columns.get_level_values(0))):
+        # Shift base_columns to this new level
+        new_columns = [(level, col[1]) for col in base_columns]
+
+        # Ensure these columns exist in both a and result
+        if all(col in dalys_df.columns for col in new_columns):
+            # Multiply corresponding columns
+            dalys_weighted.loc[:, new_columns] = (dalys_df.loc[:, new_columns].values
+                                                                * pop_df.loc[:, base_columns].values)
+
+    return dalys_weighted
+
+total_dalys_weighted = age_standardize_dalys(dalys_by_age_date)
+total_dalys_weighted_yr = total_dalys_weighted.groupby(level='year').sum()
+total_dalys_weighted_yr_int = total_dalys_weighted_yr.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year].sum().to_frame().T
+total_weighted_dalys_summ = compute_summary_statistics(total_dalys_weighted_yr_int, use_standard_error=True)
+pdiff_weighted_dalys_sum = get_percentage_diff(total_dalys_weighted_yr_int)
+
+dalys_by_cause_weighted = age_standardize_dalys(dalys_by_age_date_and_cause)
+d_by_cause_int_period = dalys_by_cause_weighted.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year]
 dalys_by_cause_weighted = d_by_cause_int_period.groupby(level='label').sum()
 dalys_by_cause_weighted_summ = compute_summary_statistics(dalys_by_cause_weighted)
-pdiff_dalys_by_cause_weighted =get_percentage_diff(dalys_by_cause_weighted)
+pdiff_dalys_by_cause_weighted = get_percentage_diff(dalys_by_cause_weighted)
 
-# get weighted total dalys
-weighted_dalys = proportion_df * dalys_by_age_date
-total_weighted_dalys = weighted_dalys.groupby(level='year').sum()
-twd_int_period = total_weighted_dalys.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year].sum().to_frame().T
-total_weighted_dalys_summ = compute_summary_statistics(twd_int_period)
-pdiff_weighted_dalys_sum = get_percentage_diff(twd_int_period)
 
 # Output and save plots
 # Non-weighted DALYs
@@ -312,8 +344,6 @@ barcharts(pdiff_weighted_dalys_sum, 'Percentage Diff. Population Weighted DALYs'
 
 barcharts(total_weighted_dalys_summ, 'Total Population Weighted DALYs',
           'Total Population Weighted DALYs by Scenario', False, g_path)
-
-
 
 # Weighted and Non-weighted DALYs by cause
 for k in scen_draws:

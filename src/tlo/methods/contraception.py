@@ -650,7 +650,8 @@ class Contraception(Module):
             new_contraceptive = self.rng.choice(probs_30plus.index, p=probs_30plus.values)
 
         # Do the change in contraceptive
-        self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
+        self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive],
+                                                     on_birth=True)
 
     def get_item_code_for_each_contraceptive(self):
         """Get the item_code for each contraceptive and for contraceptive initiation."""
@@ -711,11 +712,12 @@ class Contraception(Module):
 
         return _cons_codes
 
-    def schedule_batch_of_contraceptive_changes(self, ids, old, new):
+    def schedule_batch_of_contraceptive_changes(self, ids, old, new, on_birth: bool = False):
         """Enact the change in contraception, either through editing properties instantaneously or by scheduling HSI.
         ids: pd.Index of the woman for whom the contraceptive state is changing
         old: iterable giving the corresponding contraceptive state being switched from
         new: iterable giving the corresponding contraceptive state being switched to
+        on_birth: bool. true if change sheduled postnatally
 
         It is assumed that even with the option `self.use_healthsystem=True` that switches to certain methods do not
         require the use of HSI (these are not in `states_that_may_require_HSI_to_switch_to`)."""
@@ -749,7 +751,8 @@ class Contraception(Module):
                     hsi_event=HSI_Contraception_FamilyPlanningAppt(
                         person_id=_woman_id,
                         module=self,
-                        new_contraceptive=_new
+                        new_contraceptive=_new,
+                        on_birth=on_birth
                     ),
                     # select start_date for 0 max day delay; start_date or later for >=1 max day delay:
                     topen=random_date(
@@ -923,7 +926,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=list(will_initiate),
                 old=['not_using'] * len(will_initiate),
-                new=list(will_initiate.values())
+                new=list(will_initiate.values()),
             )
 
     def discontinue_switch_or_continue(self, individuals_using: pd.Index):
@@ -952,7 +955,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=will_stop_idx,
                 old=df.loc[will_stop_idx, 'co_contraception'].values,
-                new=['not_using'] * len(will_stop_idx)
+                new=['not_using'] * len(will_stop_idx),
             )
 
         # 2) -- Switches and Continuations for those who do not Discontinue:
@@ -984,7 +987,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=new_co.index,
                 old=df.loc[new_co.index, 'co_contraception'].values,
-                new=new_co.values
+                new=new_co.values,
             )
 
         # Do the contraceptive "change" for those not switching (this is so that an HSI may be logged and if the HSI
@@ -994,7 +997,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=continue_idx,
                 old=current_contraception,
-                new=current_contraception
+                new=current_contraception,
             )
 
     def update_pregnancy(self):
@@ -1144,7 +1147,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
     """HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
      between contraceptives."""
 
-    def __init__(self, module, person_id, new_contraceptive):
+    def __init__(self, module, person_id, new_contraceptive, on_birth):
         super().__init__(module, person_id=person_id)
 
         _facility_level = '2' if new_contraceptive in ('implant', 'female_sterilization') else '1a'
@@ -1152,7 +1155,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.new_contraceptive = new_contraceptive
         self._number_of_times_run = 0
 
-        self.TREATMENT_ID = "Contraception_Routine"
+        if on_birth:
+            self.TREATMENT_ID = "Contraception_Routine_Postnatal"
+        else:
+            self.TREATMENT_ID = "Contraception_Routine"
+
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
         current_method = self.sim.population.props.loc[person_id].co_contraception
         self.EXPECTED_APPT_FOOTPRINT = self._get_appt_footprint(current_method)
