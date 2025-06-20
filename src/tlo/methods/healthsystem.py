@@ -999,18 +999,18 @@ class HealthSystem(Module):
             self._clinics_capabilities_per_staff = updated_capabilities[module_cols].T.to_dict()
             self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
-    """Set the clinic eligibility for this HSI event."""
-    def set_clinic_eligibility(self, clinic_access: str = None) -> None:
+    """Set the clinic eligibility for this HSI event Queue Item."""
+    def set_clinic_eligibility(self, hsi_q_item: HSIEventQueueItem, clinic_access: str = None) -> None:
         if clinic_access is not None:
-            self.clinic_eligibility = clinic_access
+            hsi_q_item.clinic_eligibility = clinic_access
         else:
-            self.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
+            hsi_q_item.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
 
 
     def get_clinic_eligibility(self, name):
         """
         Returns the name of the module if the module is eligible for clinic access.
-        If not, returns 'fungible'. Notes for future implementation:
+        If not, returns 'Fungible'. Notes for future implementation:
         this implementation is likely to change in the future to break the one-to-one relationship between
         modules and clinics.
         """
