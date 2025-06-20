@@ -329,19 +329,38 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
 
     # Define a function to merge unit cost data with model outputs
     def merge_cost_and_model_data(cost_df, model_df, varnames):
+        """
+        Merge model data with cost parameters based on specificity (overall, by cadre, by facility).
+
+        Parameters
+        ----------
+        cost_df : pd.DataFrame
+            DataFrame with columns ['Parameter_name', 'OfficerType', 'Facility_Level', 'Value'].
+        model_df : pd.DataFrame
+            Simulation output to merge cost data into.
+        varnames : list of str
+            List of parameter names to extract and merge.
+
+        Returns
+        -------
+        pd.DataFrame
+            The model_df with added columns for each cost parameter.
+        """
         merged_df = model_df.copy()
         for varname in varnames:
             new_cost_df = cost_df[cost_df['Parameter_name'] == varname][['OfficerType', 'Facility_Level', 'Value']]
             new_cost_df = new_cost_df.rename(columns={"Value": varname})
+
+            is_identical_for_all_cadres = (new_cost_df['OfficerType'] == 'All').all()
+            is_identical_for_all_levels = (new_cost_df['Facility_Level'] == 'All').all()
+
             # Some parameters are specific to the facility level/cadre, others are general
-            if ((new_cost_df['OfficerType'] == 'All').all()) and ((new_cost_df['Facility_Level'] == 'All').all()):
+            if (is_identical_for_all_cadres) and (is_identical_for_all_levels):
                 merged_df[varname] = new_cost_df[varname].mean()
-            elif ((new_cost_df['OfficerType'] == 'All').all()) and (
-                    (new_cost_df['Facility_Level'] == 'All').all() == False):
+            elif (is_identical_for_all_cadres) and not (is_identical_for_all_levels):
                 merged_df = pd.merge(merged_df, new_cost_df[['Facility_Level', varname]], on=['Facility_Level'],
                                      how="left")
-            elif ((new_cost_df['OfficerType'] == 'All').all() == False) and (
-            (new_cost_df['Facility_Level'] == 'All').all()):
+            elif (is_identical_for_all_levels) and not (is_identical_for_all_cadres):
                 merged_df = pd.merge(merged_df, new_cost_df[['OfficerType', varname]], on=['OfficerType'], how="left")
             else:
                 merged_df = pd.merge(merged_df, new_cost_df, on=['OfficerType', 'Facility_Level'], how="left")
@@ -2030,7 +2049,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
                     )
 
     # Set y-axis limit
-    if _y_axis_lim == None:
+    if _y_axis_lim is None:
         ax.set_ylim(0, max(max_roi) * 1.25)
     else:
         ax.set_ylim(0, _y_axis_lim)
@@ -2209,18 +2228,6 @@ def extract_roi_at_specific_implementation_costs(_monetary_value_of_incremental_
         _monetary_value_of_incremental_health.index.get_level_values('draw').isin(_draws)]
     _incremental_input_cost = _incremental_input_cost[
         _incremental_input_cost.index.get_level_values('draw').isin(_draws)]
-
-    def convert_results_to_dict(_df):
-        draws = _df.index.to_list()
-        values = {
-            draw: {
-                chosen_metric: _df.loc[_df.index.get_level_values('draw') == draw, chosen_metric].iloc[0],
-                "lower": _df.loc[_df.index.get_level_values('draw') == draw, 'lower'].iloc[0],
-                "upper": _df.loc[_df.index.get_level_values('draw') == draw, 'upper'].iloc[0]
-            }
-            for draw in draws
-        }
-        return values
 
     _monetary_value_of_incremental_health_summary = summarize_cost_data(_monetary_value_of_incremental_health,
                                                                         _metric=_metric)
