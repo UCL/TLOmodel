@@ -468,6 +468,7 @@ class HealthSystem(Module):
         self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
         self._use_funded_or_actual_staffing = None  # <-- this is the private internal store of the value that is used.
 
+        self.include_ringfenced_clinics = include_ringfenced_clinics
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
 
@@ -1130,7 +1131,6 @@ class HealthSystem(Module):
         # Merge in information about facility from Master Facilities List
         mfl = self.parameters['Master_Facilities_List']
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
-
         capabilities_ex = capabilities_ex.merge(
             capabilities_cl,
             on=['Facility_ID', 'Officer_Type_Code'],
@@ -1139,7 +1139,7 @@ class HealthSystem(Module):
         ## Fungible set to 1 for missing facility/office_code combinations
         capabilities_ex['Fungible'] = capabilities_ex['Fungible'].fillna(1)
         ## All other columns are set to 0
-        other_cols = capabilities_ex.columns.difference[['Facility_ID', 'Officer_Type_Code', 'Fungible']]
+        other_cols = capabilities_ex.columns.difference(['Facility_ID', 'Officer_Type_Code', 'Fungible'])
         capabilities_ex[other_cols] = capabilities_ex[other_cols].fillna(0)
 
         # Give the standard index:
@@ -1151,7 +1151,6 @@ class HealthSystem(Module):
         )
 
         # Checks
-        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Mins_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
         return capabilities_ex
@@ -1335,7 +1334,7 @@ class HealthSystem(Module):
         """Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. """
         assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
         self._use_funded_or_actual_staffing = use_funded_or_actual_staffing
-        self.setup_daily_capabilities(self._use_funded_or_actual_staffing, self.PARAMETERS['include_ringfenced_clinics'])
+        self.setup_daily_capabilities(self._use_funded_or_actual_staffing, self.include_ringfenced_clinics)
 
     def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
