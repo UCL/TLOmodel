@@ -345,7 +345,9 @@ class HealthSystem(Module):
                                                   'Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.'),
 
         'services_affected_precip': Parameter(Types.STRING,
-                                              'Which modelled services can be affected by weather. Options are all, none')
+                                              'Which modelled services can be affected by weather. Options are all, none'),
+
+        'delay_in_seeking_care_weather': Parameter(Types.INT, 'If faced with a climate disruption, and it is determined the individual will reseek healthcare, the number of weeks of delay in seeking healthcare again.')
 
     }
 
