@@ -13,8 +13,8 @@ class ClimateDisruptionScenario(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2030, 1, 12)
-        self.pop_size = 5000
-        self.runs_per_draw = 1
+        self.pop_size = 10,000
+        self.runs_per_draw = 10
         self.YEAR_OF_CHANGE = 2020
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -47,16 +47,16 @@ class ClimateDisruptionScenario(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
-        return {#'Baseline': self._baseline(),
+        return {'Baseline': self._baseline(),
                 'SSP 1.26 High': self._ssp126_high(),
-                # 'SSP 1.26 Low': self._ssp126_low(),
-                # 'SSP 1.26 Mean': self._ssp126_mean(),
-                # 'SSP 2.45 High': self._ssp245_high(),
-                # 'SSP 2.45 Low': self._ssp245_low(),
-                # 'SSP 2.45 Mean': self._ssp245_mean(),
-                # 'SSP 5.85 High': self._ssp585_high(),
-                # 'SSP 5.85 Low': self._ssp585_low(),
-                # 'SSP 5.85 Mean': self._ssp585_mean()
+                'SSP 1.26 Low': self._ssp126_low(),
+                'SSP 1.26 Mean': self._ssp126_mean(),
+                'SSP 2.45 High': self._ssp245_high(),
+                'SSP 2.45 Low': self._ssp245_low(),
+                'SSP 2.45 Mean': self._ssp245_mean(),
+                'SSP 5.85 High': self._ssp585_high(),
+                'SSP 5.85 Low': self._ssp585_low(),
+                'SSP 5.85 Mean': self._ssp585_mean()
                 }
 
     def _baseline(self) -> Dict:
@@ -159,8 +159,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp126',
                 "climate_model_ensemble_model":'lowest',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip":'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -198,8 +198,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp126',
                 "climate_model_ensemble_model":'mean',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip": 'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -237,8 +237,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp245',
                 "climate_model_ensemble_model":'highest',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip":'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -276,8 +276,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp245',
                 "climate_model_ensemble_model":'lowest',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip":'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -315,8 +315,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp245',
                 "climate_model_ensemble_model":'mean',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip":'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -354,8 +354,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp585',
                 "climate_model_ensemble_model":'highest',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip":'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -393,8 +393,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp585',
                 "climate_model_ensemble_model":'lowest',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip":'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
@@ -432,8 +432,8 @@ class ClimateDisruptionScenario(BaseScenario):
                 "use_funded_or_actual_staffing": "funded_plus",
                 "climate_ssp":'ssp126',
                 "climate_model_ensemble_model":'mean',
-                 "services_affected_precip":'all',
-                 "delay_in_seeking_care_weather": 4
+                "services_affected_precip":'all',
+                "delay_in_seeking_care_weather": 4
                 },
                 "Malaria": {
                     'type_of_scaleup': 'max',
