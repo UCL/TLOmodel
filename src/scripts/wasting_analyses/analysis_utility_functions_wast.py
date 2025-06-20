@@ -2,8 +2,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import scipy.stats as st
+import seaborn as sns
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results
@@ -219,21 +219,17 @@ def plot_availability_heatmap(outputs_path: Path) -> None:
     # Master Facilities List (district, facility level, region, facility id, and facility name)
     mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
     print(f"\ndebug - mfl:\n{mfl}")
-    districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
-    print(f"\ndebug - districts:\n{districts}")
-    fac_levels = {'0', '1a', '1b', '2', '3', '4'}
-    print(f"\ndebug - fac_levels:\n{fac_levels}")
     tlo_availability_df = tlo_availability_df.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
                                                     on=['Facility_ID'], how='left')
     print(f"\ndebug - tlo_availability_df:\n{tlo_availability_df}")
 
     # fac_levels = {'0': 'Health Post', '1a': 'Health Centers', '1b': 'Rural/Community \n Hospitals',
     #               '2': 'District Hospitals', '3': 'Central Hospitals', '4': 'Mental Hospital'}
-    correct_order_of_levels = ['0', '1a', '1b', '2', '3', '4']
+    correct_order_of_fac_levels = ['0', '1a', '1b', '2', '3', '4']
     chosen_item_codes = [1220, 1227]#, 208]
     item_names_to_map = {1220:'F-75\ntherapeutic\nmilk', 1227:'RUTF', 208:'CSB++'}
 
-    tlo_availability_df = tlo_availability_df[tlo_availability_df.Facility_Level.isin(correct_order_of_levels)]
+    tlo_availability_df = tlo_availability_df[tlo_availability_df.Facility_Level.isin(correct_order_of_fac_levels)]
     print(f"\ndebug - df_for_plots:\n{tlo_availability_df}")
 
     # Pivot the DataFrame
@@ -249,7 +245,7 @@ def plot_availability_heatmap(outputs_path: Path) -> None:
     # Add average column (availability across all facility levels)
     aggregate_col = aggregated_df.groupby('item_code')[['available_prop']].mean()
     # Order the facility levels
-    heatmap_data = heatmap_data.reindex(columns=correct_order_of_levels)
+    heatmap_data = heatmap_data.reindex(columns=correct_order_of_fac_levels)
     print(f"debug - heatmap_data with correct Fac. Levels order:\n{heatmap_data}")
     print(f"debug - aggregate_col:\n{aggregate_col}")
     heatmap_data['Average'] = aggregate_col
@@ -265,9 +261,9 @@ def plot_availability_heatmap(outputs_path: Path) -> None:
     # Customize the plot
     plt.title('Availability of essential consumables\n for acute malnutrition treatments', fontweight='bold')
     plt.xlabel('Facility Level')
-    plt.ylabel(f'Consumable')
+    plt.ylabel('Consumable')
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
 
-    plt.savefig(outputs_path / f'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.savefig(outputs_path / 'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
     # plt.show()
