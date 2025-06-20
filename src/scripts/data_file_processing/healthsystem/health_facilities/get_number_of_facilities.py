@@ -9,12 +9,12 @@ Outputs:
 1. updated master facilities list resource file - ResourceFile_Master_Facilities_List.csv
 """
 
+import copy
 import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import copy
 
 # Set local shared folder source
 path_to_share = Path(  # <-- point to the shared folder

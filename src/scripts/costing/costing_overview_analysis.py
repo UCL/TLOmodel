@@ -6,28 +6,27 @@ with reduced consumables logging
 /Users/tmangal/PycharmProjects/TLOmodel/outputs/t.mangal@imperial.ac.uk/hss_elements-2024-11-12T172311Z
 """
 
-from pathlib import Path
-from tlo import Date
-
 import datetime
 import os
 import textwrap
+from pathlib import Path
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
-
+import seaborn as sns
+from scripts.costing.cost_estimation import (
+    create_summary_treemap_by_cost_subgroup,
+    do_line_plot_of_cost,
+    do_stacked_bar_plot_of_cost_by_category,
+    estimate_input_cost_of_scenarios,
+)
+from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
 )
-
-from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             do_stacked_bar_plot_of_cost_by_category,
-                                             do_line_plot_of_cost,
-                                             create_summary_treemap_by_cost_subgroup)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")

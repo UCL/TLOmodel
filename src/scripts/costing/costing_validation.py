@@ -1,22 +1,19 @@
-from pathlib import Path
-from collections import defaultdict
-
 import datetime
 import os
 import textwrap
+from collections import defaultdict
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-from tlo.analysis.utils import (
-    extract_results,
-    get_scenario_outputs,
+from scripts.costing.cost_estimation import (
+    do_stacked_bar_plot_of_cost_by_category,
+    estimate_input_cost_of_scenarios,
+    load_unit_cost_assumptions,
 )
+from tlo.analysis.utils import extract_results, get_scenario_outputs
 from tlo.methods.healthsystem import get_item_code_from_item_name
-from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
-                                             do_stacked_bar_plot_of_cost_by_category,
-                                             load_unit_cost_assumptions)
 
 # Define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -68,7 +65,6 @@ input_costs = estimate_input_cost_of_scenarios(results_folder, resourcefilepath,
 
 # Manually create a dataframe of model costs and relevant calibration values
 def assign_item_codes_to_consumables(_df):
-    path_for_consumable_resourcefiles = resourcefilepath / "healthsystem/consumables"
     # Retain only consumable costs
     _df = _df[_df['cost_category'] == 'medical consumables']
 
@@ -464,8 +460,8 @@ def convert_df_to_latex(_df, _longtable = False, numeric_columns = []):
     latex_table = _df.to_latex(
         longtable=_longtable,  # Use the longtable environment for large tables
         column_format='|R{3.5cm}|R{3.5cm}|R{2.1cm}|R{2.1cm}|R{2.1cm}|R{2.1cm}|',
-        caption=f"Comparison of Model Estimates with Resource Mapping data",
-        label=f"tab:calibration_breakdown",
+        caption="Comparison of Model Estimates with Resource Mapping data",
+        label="tab:calibration_breakdown",
         position="h",
         index=False,
         escape=False,  # Prevent escaping special characters like \n
@@ -481,7 +477,7 @@ def convert_df_to_latex(_df, _longtable = False, numeric_columns = []):
     # latex_table = latex_table.replace("_", " ")  # Add \hline after each row
 
     # Specify the file path to save
-    latex_file_path = calibration_outputs_folder / f'calibration_breakdown.tex'
+    latex_file_path = calibration_outputs_folder / 'calibration_breakdown.tex'
 
     # Write to a file
     with open(latex_file_path, 'w') as latex_file:

@@ -1,26 +1,23 @@
-from pathlib import Path
-
-from tlo import Date
-from collections import defaultdict
-from typing import Optional, Union, Literal
-
+import ast
+import itertools
+import math
 import textwrap
+from collections import defaultdict
+from itertools import cycle
+from pathlib import Path
+from typing import Literal, Optional, Union
 
+import matplotlib.container as mpc
 import matplotlib.pyplot as plt
-import squarify
 import numpy as np
 import pandas as pd
-import ast
-import math
-import itertools
-from itertools import cycle
-import matplotlib.container as mpc
-
+import squarify
+from tlo import Date
 from tlo.analysis.utils import (
     extract_results,
     get_scenario_info,
     load_pickled_dataframes,
-    unflatten_flattened_multi_index_in_logging
+    unflatten_flattened_multi_index_in_logging,
 )
 
 
@@ -881,7 +878,7 @@ def estimate_input_cost_of_scenarios(results_folder: Path,
             def update_itemuse_for_level1b_using_level2_data(_df):
                 # Create a list of District and Item_code combinations for which use == True
                 list_of_equipment_used_at_level2 = \
-                _df[(_df.Facility_Level == '2') & (_df['whether_item_was_used'] == True)][['District', 'Item_code']]
+                _df[(_df.Facility_Level == '2') & (_df['whether_item_was_used'] is True)][['District', 'Item_code']]
                 # Now update the 'whether_item_was_used' for 'Facility_Level' == '1b' to match that of level '2'
                 _df.loc[
                     (_df['Facility_Level'] == '1b') &
@@ -1179,7 +1176,7 @@ def estimate_projected_health_spending(resourcefilepath: Path,
     projected_health_spending_discounted = projected_health_spending_discounted.groupby(['draw', 'run'])[
         'total_spending'].sum()
 
-    if _summarize == True:
+    if _summarize is True:
         if _metric == 'mean':
             # Calculate the mean and 95% confidence intervals for each group
             projected_health_spending_discounted = projected_health_spending_discounted.groupby(level="draw").agg(
@@ -1291,7 +1288,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
     _df_central, _df_lower, _df_upper = dfs["_df_central"], dfs["_df_lower"], dfs["_df_upper"]
 
     if _cost_category == 'all':
-        if (_disaggregate_by_subgroup == True):
+        if (_disaggregate_by_subgroup is True):
             raise ValueError(f"Invalid input for _disaggregate_by_subgroup: '{_disaggregate_by_subgroup}'. "
                              f"Value can be True only when plotting a specific _cost_category")
         else:
@@ -1299,7 +1296,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
             pivot_lower = _df_lower.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
             pivot_upper = _df_upper.pivot_table(index='draw', columns='cost_category', values='cost', aggfunc='sum')
     else:
-        if (_disaggregate_by_subgroup == True):
+        if (_disaggregate_by_subgroup is True):
             for name, df in dfs.items():
                 dfs[name] = df.copy()  # Choose the dataframe to modify
                 # If sub-groups are more than 10 in number, then disaggregate the top 10 and group the rest into an 'other' category
@@ -1442,7 +1439,7 @@ def do_stacked_bar_plot_of_cost_by_category(_df: pd.DataFrame,
     plt.rcParams['figure.edgecolor'] = 'gray'
     plt.rcParams['figure.frameon'] = True
 
-    if show_title != False:
+    if show_title is not False:
         plt.title(f'Costs by Scenario \n (Cost Category = {_cost_category} ; Period = {period})')
     plt.savefig(
         _outputfilepath / f'stacked_bar_chart_{_cost_category}_{period}{plt_name_suffix}{_add_figname_suffix}.png',
@@ -1512,7 +1509,7 @@ def do_line_plot_of_cost(_df: pd.DataFrame,
 
     #
     if ((_draws is None) or (len(_draws) > 1)) & (disaggregate_by is not None):
-        raise ValueError(f"The disaggregate_by option only works if only one draw is plotted, for exmaple _draws = [0]")
+        raise ValueError("The disaggregate_by option only works if only one draw is plotted, for exmaple _draws = [0]")
 
     # Filter the dataframe by draws, if specified
     subset_df = _df if _draws is None else _df[_df.draw.isin(_draws)]
@@ -1630,7 +1627,7 @@ def do_line_plot_of_cost(_df: pd.DataFrame,
     plt.xlabel('Year')
     plt.ylabel('Cost (2023 USD), millions')
     plt.legend(handles[::-1], sorted_labels[::-1], loc='upper right', bbox_to_anchor=(0.98, 0.98), framealpha=0.6)
-    if (show_title != False):
+    if (show_title is not False):
         plot_title = f'Total input cost \n (Category = {_cost_category}, Period = {period})'
         plt.title(plot_title)
 
@@ -1703,7 +1700,7 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
 
     valid_cost_categories = ['human resources for health', 'medical consumables',
                              'medical equipment', 'facility operating cost']
-    if _cost_category == None:
+    if _cost_category is None:
         raise ValueError(f"Specify one of the following as _cost_category - {valid_cost_categories})")
     elif _cost_category not in valid_cost_categories:
         raise ValueError(f"Invalid input for _cost_category: '{_cost_category}'. "
@@ -1711,7 +1708,7 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
     else:
         _df = _df[_df['cost_category'] == _cost_category]
 
-    if _draw != None:
+    if _draw is not None:
         _df = _df[_df.draw == _draw]
 
     # Remove non-specific subgroup for consumables
@@ -1765,7 +1762,7 @@ def create_summary_treemap_by_cost_subgroup(_df: pd.DataFrame,
     plt.figure(figsize=(12, 8))
     squarify.plot(sizes=sizes, label=labels, alpha=0.8, color=colors, text_kwargs={'fontsize': _label_fontsize})
     plt.axis("off")
-    if (show_title != False):
+    if (show_title is not False):
         plt.title(f'{_cost_category} ; Period = {period}')
 
     plt.savefig(_outputfilepath / f'treemap_{_cost_category}_[{_draw}]_{period}.png',
@@ -2059,7 +2056,7 @@ def generate_multiple_scenarios_roi_plot(_monetary_value_of_incremental_health: 
     plt.ylabel('Return on Investment')
 
     # Show legend and title
-    if (show_title_and_legend != False):
+    if (show_title_and_legend is not False):
         plt.title(f'Return on Investment at different levels of above service level cost {_year_suffix}')
         plt.legend()
 
