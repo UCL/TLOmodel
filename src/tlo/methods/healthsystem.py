@@ -1010,7 +1010,8 @@ class HealthSystem(Module):
         this implementation is likely to change in the future to break the one-to-one relationship between
         modules and clinics.
         """
-        module_cols = self.PARAMETERS['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+        ## This has the potential to go wrong because self.parameters['Ringfenced_Clinics'] has additional columns
+        module_cols = self.parameters['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
         eligible = name in module_cols
 
         if eligible:

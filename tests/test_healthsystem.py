@@ -2144,7 +2144,7 @@ def test_mode_2_clinics(seed, tmpdir):
             hsi,
             topen=sim.date,
             tclose=sim.date + pd.DateOffset(days=1),
-            priority=0
+            priority=1
         )
 
     for i in range(tot_population // 2, tot_population):
