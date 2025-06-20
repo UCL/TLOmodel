@@ -1000,8 +1000,12 @@ class HealthSystem(Module):
             self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
     """Set the clinic eligibility for this HSI event."""
-    def set_clinic_eligibility(self, clinic_access: bool) -> None:
-        self.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
+    def set_clinic_eligibility(self, clinic_access: str = None) -> None:
+        if clinic_access is not None:
+            self.clinic_eligibility = clinic_access
+        else:
+            self.clinic_eligibility = get_clinic_eligibility(self.hsi_event.module)
+
 
     def get_clinic_eligibility(self, name):
         """
