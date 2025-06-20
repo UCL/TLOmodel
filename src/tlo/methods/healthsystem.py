@@ -344,10 +344,11 @@ class HealthSystem(Module):
                                                   'Which model from the model ensemble for each climate ssp is under consideration.'
                                                   'Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.'),
 
+        'delay_in_seeking_care_weather': Parameter(Types.INT,
+                                                   'If faced with a climate disruption, and it is determined the individual will reseek healthcare, the number of weeks of delay in seeking healthcare again.'),
+
         'services_affected_precip': Parameter(Types.STRING,
                                               'Which modelled services can be affected by weather. Options are all, none'),
-
-        'delay_in_seeking_care_weather': Parameter(Types.INT, 'If faced with a climate disruption, and it is determined the individual will reseek healthcare, the number of weeks of delay in seeking healthcare again.')
 
     }
 
@@ -426,8 +427,8 @@ class HealthSystem(Module):
                 Options are ssp126, ssp245, and ssp585, in terms of increasing severity.
         :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
                 Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
-        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'
-        :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'
+        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'.
+        :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'.
         :param delay_in_seeking_care_weather: The number of weeks' delay in reseeking healthcare after an appointmnet has been delayed by weather. Unit is week.
         """
 

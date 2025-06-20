@@ -25,27 +25,27 @@ scenario_names = ["Baseline", "SSP 1.26 High", "SSP 1.26 Low", "SSP 1.26 Mean", 
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167']*4
 
 
-# Load map of Malawi for later
-file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
-dataset = Dataset(file_path_historical_data, mode='r')
-pr_data = dataset.variables['tp'][:]
-lat_data = dataset.variables['latitude'][:]
-long_data = dataset.variables['longitude'][:]
-meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
-
-malawi = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
-malawi_admin2 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
-water_bodies = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp")
+# # Load map of Malawi for later
+# file_path_historical_data = "/Users/rem76/Desktop/Climate_change_health/Data/Precipitation_data/Historical/daily_total/2011/60ab007aa16d679a32f9c3e186d2f744.nc"
+# dataset = Dataset(file_path_historical_data, mode='r')
+# pr_data = dataset.variables['tp'][:]
+# lat_data = dataset.variables['latitude'][:]
+# long_data = dataset.variables['longitude'][:]
+# meshgrid_from_netCDF = np.meshgrid(long_data, lat_data)
 #
-# change names of some districts for consistency
-malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Blantyre City', 'Blantyre')
-malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Mzuzu City', 'Mzuzu')
-malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Lilongwe City', 'Lilongwe')
-malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Zomba City', 'Zomba')
-
-difference_lat = lat_data[1] - lat_data[0]
-difference_long = long_data[1] - long_data[0]
-
+# malawi = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp")
+# malawi_admin2 = gpd.read_file("/Users/rem76/PycharmProjects/TLOmodel/resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp")
+# water_bodies = gpd.read_file("/Users/rem76/Desktop/Climate_change_health/Data/Water_Supply_Control-Rivers-shp/Water_Supply_Control-Rivers.shp")
+# #
+# # change names of some districts for consistency
+# malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Blantyre City', 'Blantyre')
+# malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Mzuzu City', 'Mzuzu')
+# malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Lilongwe City', 'Lilongwe')
+# malawi_admin2['ADM2_EN'] = malawi_admin2['ADM2_EN'].replace('Zomba City', 'Zomba')
+#
+# difference_lat = lat_data[1] - lat_data[0]
+# difference_long = long_data[1] - long_data[0]
+#
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
@@ -430,6 +430,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].grid(False)
 
     # Panel B: Total DALYs
+    print(dalys_totals_mean)
     axes[1].bar(dalys_totals_mean.index, dalys_totals_mean.values, color=scenario_colours, yerr = dalys_totals_err, capsize=20)
     axes[1].set_title(f'Total DALYs (2020-{max_year})')
     axes[1].set_xlabel('Scenario')
