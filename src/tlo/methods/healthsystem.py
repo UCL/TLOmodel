@@ -556,7 +556,7 @@ class HealthSystem(Module):
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
             )
             ## Check that the fractions add to 1 for each row.
-            id_cols = ['Facility_ID', 'Officer_Category']
+            id_cols = ['Facility_ID', 'Officer_Type_Code']
             data = df.drop(columns=id_cols)
             row_sums = data.sum(axis=1)
             mask = ~np.isclose(row_sums, 1.0, rtol=1e-5, atol=1e-8)
@@ -986,7 +986,7 @@ class HealthSystem(Module):
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
         # If include_clinics is True, then redefine daily_capabilities
         if include_clinics:
-            self.PARAMETERSrameters['Ringfenced_Clinics'] = self.format_clinic_capabilities()
+            self.parameters['Ringfenced_Clinics'] = self.format_clinic_capabilities()
             updated_capabilities = self.parameters['Ringfenced_Clinics'].join(self._daily_capabilities_per_staff)
             ## New capabilities are old_capabilities * fungible
             updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Mins_Per_Day_Per_Staff'] * updated_capabilities['Fungible']
@@ -1137,10 +1137,10 @@ class HealthSystem(Module):
             how='left',
         )
         ## Fungible set to 1 for missing facility/office_code combinations
-        capabilities_ex = capabilities_ex['Fungible'].fillna(1)
+        capabilities_ex['Fungible'] = capabilities_ex['Fungible'].fillna(1)
         ## All other columns are set to 0
         other_cols = capabilities_ex.columns.difference[['Facility_ID', 'Officer_Type_Code', 'Fungible']]
-        capabilities_ex = capabilities_ex[other_cols].fillna(0)
+        capabilities_ex[other_cols] = capabilities_ex[other_cols].fillna(0)
 
         # Give the standard index:
         capabilities_ex = capabilities_ex.set_index(
@@ -1335,7 +1335,7 @@ class HealthSystem(Module):
         """Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. """
         assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
         self._use_funded_or_actual_staffing = use_funded_or_actual_staffing
-        self.setup_daily_capabilities(self._use_funded_or_actual_staffing)
+        self.setup_daily_capabilities(self._use_funded_or_actual_staffing, self.PARAMETERS['include_ringfenced_clinics'])
 
     def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
