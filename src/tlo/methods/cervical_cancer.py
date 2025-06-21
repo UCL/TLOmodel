@@ -118,6 +118,12 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "risk ratio for hpv if age 50 plus"
         ),
+
+        "rr_cin_agelt40": Parameter(
+            Types.REAL,
+            "risk ratio for cin1 if age lt 40"
+        ),
+
         "prob_cure_stage1": Parameter(
             Types.REAL,
             "probability of cure if treated in stage 1 cervical cancer",
@@ -371,19 +377,36 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "ce_date_last_screened"] = pd.NaT
 
         # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------
-        women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
 
-        df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+        # low probability of higher stages age < 35 (based on calibration to gbd deaths by age)
+
+        # Set all women <35 to 'none'
+        women_under_35_idx = df.index[
+            (df["age_years"] < 35) & (df["age_years"] >= 15) & (df["sex"] == 'F')
+            ]
+        df.loc[women_under_35_idx, 'ce_hpv_cc_status'] = 'none'
+
+        # Women aged 35+ and HIV-negative
+        women_35plus_nhiv_idx = df.index[
+            (df["age_years"] >= 35) & (df["sex"] == 'F') & ~df["hv_inf"]
+            ]
+        df.loc[women_35plus_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
             ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
+            size=len(women_35plus_nhiv_idx),
+            p=p['init_prev_cin_hpv_cc_stage_nhiv']
         )
 
-        women_15plus_hiv_idx = df.index[(df["age_years"] >= 15) & (df["sex"] == 'F') & df["hv_inf"]]
-
-        df.loc[women_15plus_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+        # Women aged 35+ and HIV-positive
+        women_35plus_hiv_idx = df.index[
+            (df["age_years"] >= 35) & (df["sex"] == 'F') & df["hv_inf"]
+            ]
+        df.loc[women_35plus_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
             ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_15plus_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
+            size=len(women_35plus_hiv_idx),
+            p=p['init_prev_cin_hpv_cc_stage_hiv']
         )
+
+
 
         # -------------------- symptoms, diagnosis, treatment  -----------
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
@@ -515,6 +538,10 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
                 'hv_inf & '
                 '(hv_art == "on_not_vl_suppressed")',
                 (p['rr_progress_cc_hiv'])),
+
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(15,40)', p['rr_cin_agelt40']),
+
             Predictor().when(
                 'hv_inf & '
                 '(hv_art == "not")',
@@ -937,7 +964,7 @@ class CervicalCancer_DeathInStage4(Event, IndividualScopeEventMixin):
 
         person = self.sim.population.props.loc[person_id, ['is_alive', 'ce_hpv_cc_status']]
 
-        # Only kill the person is they are alive and still in stage4
+        # Person only dies if they are alive and still in stage4
         if not (person['is_alive'] and (person['ce_hpv_cc_status'] == 'stage4')):
             return
 
@@ -1543,6 +1570,11 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         rounded_decimal_year = round(decimal_year, 2)
         date_1_year_ago = self.sim.date - pd.DateOffset(years=1)
         n_deaths_past_year = (
+            df.date_of_death.between(date_1_year_ago, self.sim.date) &
+            (df.cause_of_death == "CervicalCancer")
+        ).sum()
+
+        n_deaths_age45pl_past_year = (
             df.date_of_death.between(date_1_year_ago, self.sim.date) &
             (df.cause_of_death == "CervicalCancer")
         ).sum()
