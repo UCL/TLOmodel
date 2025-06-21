@@ -439,6 +439,98 @@ def compute_summary_statistics(
         return summary
 
 
+def compute_summary_statistics_by_cause(
+    results: pd.DataFrame,
+    central_measure: Union[Literal["mean", "median"], None] = None,
+    width_of_range: float = 0.95,
+    use_standard_error: bool = True,
+    only_central: bool = False,
+    collapse_columns: bool = False,
+) -> pd.DataFrame:
+    """Utility function to compute summary statistics
+
+    Finds a central value and a specified interval across the runs for each draw. By default, this uses a central
+     measure of the median and a 95% interval range.
+
+    :param results: The dataframe of results to compute summary statistics of.
+    :param central_measure: The name of the central measure to use - either 'mean' or 'median' (defaults to 'median')
+    :param width_of_range: The width of the range to compute the statistics (e.g. 0.95 for the 95% interval).
+    :param use_standard_error: Whether the range should represent the standard error; otherwise it is just a
+     description of the variation of runs. If selected, then the central measure is always the mean.
+    :param collapse_columns: Whether to simplify the columnar index if there is only one run (cannot be done otherwise).
+    :param only_central: Whether to only report the central value (dropping the range).
+    :return: A dataframe with computed summary statistics.
+    """
+
+    if use_standard_error:
+        if not central_measure == 'mean':
+            warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
+            central_measure = 'mean'
+    elif central_measure is None:
+        # If no argument is provided for 'central_measure' (and not using standard-error), default to using 'median'
+        central_measure = 'median'
+
+    stats = dict()
+    grouped_results = results.groupby(axis=1, by='draw', sort=False)
+
+    if central_measure == 'mean':
+        stats['central'] = grouped_results.mean()
+    elif central_measure == 'median':
+        stats['central'] = grouped_results.median()
+    else:
+        raise ValueError(f"Unknown stat: {central_measure}")
+
+    if not use_standard_error:
+        lower_quantile = (1. - width_of_range) / 2.
+        stats["lower"] = grouped_results.quantile(lower_quantile)
+        stats["upper"] = grouped_results.quantile(1 - lower_quantile)
+    else:
+        #  Use standard error concept whereby we're using the intervals to express a 95% CI on the value of the mean.
+        #  This will make width of uncertainty become narrower with more runs.
+        std_deviation = grouped_results.std()
+        num_runs_per_draw = grouped_results.size().T
+        std_error = std_deviation.div(np.sqrt(num_runs_per_draw))
+        z_value = st.norm.ppf(1 - (1. - width_of_range) / 2.)
+        stats["lower"] = stats['central'] - z_value * std_error
+        stats["upper"] = stats['central'] + z_value * std_error
+
+    summary = pd.concat(stats, axis=1).stack(level=1).reset_index().rename(columns={'level_0': 'cause'})
+
+    return summary
+
+
+def summarize_by_cause(
+    results: pd.DataFrame,
+    only_mean: bool = False,
+    collapse_columns: bool = False
+):
+    """Utility function to compute summary statistics
+
+    Finds mean value and 95% interval across the runs for each draw.
+
+    NOTE: This provides the legacy functionality of `summarize` that is hard-wired to use `means` (the kwarg is
+     `only_mean` and the name of the column in the output is `mean`). Please move to using the new and more flexible
+     version of `summarize` that allows the use of medians and is flexible to allow other forms of summary measure in
+     the future.
+    """
+    warnings.warn(
+        "This function uses MEAN as the central measure. We now recommend using MEDIAN instead. "
+        "This can be done by using the function `compute_summary_statistics`."
+        ""
+    )
+    output = compute_summary_statistics_by_cause(
+        results=results,
+        central_measure='mean',
+        only_central=only_mean,
+        collapse_columns=collapse_columns,
+    )
+    # rename 'central' to 'mean' if needed
+    if isinstance(output, pd.DataFrame):
+        output = output.rename(columns={'central': 'mean'},
+                               level=0 if output.columns.nlevels == 1 else 1)
+    return output
+
+
 def summarize(
     results: pd.DataFrame,
     only_mean: bool = False,
