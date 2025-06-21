@@ -86,17 +86,19 @@ combination_list = ['s_0', 's_1', 's_2']  # the three special scenarios
 for n in range(1, len(cadre_group)+1):
     for subset in itertools.combinations(cadre_group, n):
         combination_list.append(str(subset))  # other equal-fraction scenarios
+# add in "s_*" in the end
+combination_list.append('s_*')
 
 # cadre groups to expand
 cadre_to_expand = pd.DataFrame(index=cadre_group, columns=combination_list).fillna(0.0)
 for c in cadre_group:
-    for i in cadre_to_expand.columns[3:]:  # for all equal-fraction scenarios
+    for i in cadre_to_expand.columns[3:len(combination_list) - 1]:  # for all equal-fraction scenarios
         if c in i:
             cadre_to_expand.loc[c, i] = 1  # value 1 indicate the cadre group will be expanded
 
 # prepare auxiliary dataframe for equal extra budget fractions scenarios
 auxiliary = cadre_to_expand.copy()
-for i in auxiliary.columns[3:]:  # for all equal-fraction scenarios
+for i in auxiliary.columns[3:len(combination_list) - 1]:  # for all equal-fraction scenarios
     auxiliary.loc[:, i] = auxiliary.loc[:, i] / auxiliary.loc[:, i].sum()
 # for "gap" allocation strategy
 # auxiliary.loc[:, 's_2'] = [0.4586, 0.0272, 0.3502, 0.1476, 0.0164]  # without historical scaling; "default" settings
@@ -105,6 +107,9 @@ auxiliary.loc[:, 's_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical
 # auxiliary.loc[:, 'more_budget s_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + more_budget
 # auxiliary.loc[:, 'less_budget s_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical scaling + less_budget
 # auxiliary.loc[:, 'max hs function s_2'] = [0.5133, 0.0085, 0.2501, 0.1551, 0.073]  # historical scaling + less_budget
+
+# for "optimal" allocation strategy
+auxiliary.loc[:, 's_*'] = [0.6037, 0.0, 0.0922, 0.2484, 0.0557]  # historical scaling + main settings
 
 # define extra budget fracs for each cadre
 extra_budget_fracs = pd.DataFrame(index=cadre_all, columns=combination_list)
@@ -128,14 +133,15 @@ for i in extra_budget_fracs.columns[2:]:
 assert (abs(extra_budget_fracs.iloc[:, 1:len(extra_budget_fracs.columns)].sum(axis=0) - 1.0) < 1/1e10).all()
 
 # rename scenarios
-# make the scenario of equal fracs for all five cadre groups (i.e., the last column) to be s_3
-simple_scenario_name = {extra_budget_fracs.columns[-1]: 's_3'}
-for i in range(3, len(extra_budget_fracs.columns)-1):
+# make the scenario of equal fracs for all five cadre groups (i.e., the second last column) to be s_3
+simple_scenario_name = {extra_budget_fracs.columns[-2]: 's_3'}
+for i in range(3, len(extra_budget_fracs.columns)-2):
     simple_scenario_name[extra_budget_fracs.columns[i]] = 's_' + str(i+1)  # name scenario from s_4
 extra_budget_fracs.rename(columns=simple_scenario_name, inplace=True)
 
 # reorder columns
-col_order = ['s_' + str(i) for i in range(0, len(extra_budget_fracs.columns))]
+col_order = ['s_' + str(i) for i in range(0, len(extra_budget_fracs.columns) - 1)]
+col_order += ['s_*']
 assert len(col_order) == len(extra_budget_fracs.columns)
 extra_budget_fracs = extra_budget_fracs.reindex(columns=col_order)
 
