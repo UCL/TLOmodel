@@ -111,7 +111,7 @@ auxiliary.loc[:, 's_2'] = [0.4314, 0.0214, 0.3701, 0.1406, 0.0365]  # historical
 # auxiliary.loc[:, 's_2'] = [0.4252, 0.0261, 0.3752, 0.1362, 0.0373]  # historical scaling + default_cons
 # auxiliary.loc[:, 's_2'] = [0.5133, 0.0085, 0.2501, 0.1551, 0.073]  # historical scaling + max_hs_function
 # for "optimal" allocation strategy
-auxiliary.loc[:, 's_*'] = [0.6068, 0.0, 0.0830, 0.2496, 0.0606]  # historical scaling + main settings
+auxiliary.loc[:, 's_*'] = [0.6037, 0.0, 0.0922, 0.2484, 0.0557]  # historical scaling + main settings
 # auxiliary.loc[:, 's_*'] = [0.5827, 0.0, 0.1083, 0.2409, 0.0681]  # historical scaling + more_budget; same as above
 # auxiliary.loc[:, 's_*'] = [0.5981, 0.0, 0.0902, 0.2649, 0.0468]  # historical scaling + less_budget; same as above
 # auxiliary.loc[:, 's_*'] = [0.6109, 0.0, 0.1494, 0.2033, 0.0364]  # historical scaling + default_cons
