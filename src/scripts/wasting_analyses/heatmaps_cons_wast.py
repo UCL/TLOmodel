@@ -1,6 +1,7 @@
 """
 An analysis file for the wasting module to visualise availability of:
-    * essential consumables
+    * essential consumables,
+    * treatments (i.e., probability of all consumables essential for the treatment being available)
 """
 
 from pathlib import Path

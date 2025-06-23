@@ -213,7 +213,8 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_d
 def plot_availability_heatmaps(outputs_path: Path) -> None:
     """
     Plots availability of
-        * essential consumables
+        * essential consumables,
+        * treatments (i.e., probability of all consumables essential for the treatment being available)
     :param outputs_path: path where to save the plots as PNG files
     :return:
     """
@@ -235,6 +236,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
 
     tlo_availability_df = tlo_availability_df[tlo_availability_df.Facility_Level.isin(correct_order_of_fac_levels)]
 
+    # HEATMAP OF CONSUMABLES AVAILABILITY
+    # ###
     # Pivot the DataFrame
     aggregated_df = tlo_availability_df.groupby(['Facility_Level', 'item_code'])[['available_prop']].mean().reset_index()
     heatmap_data = aggregated_df.pivot(columns='Facility_Level', index='item_code', values='available_prop')
@@ -254,12 +257,42 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn',
                 cbar_kws={'label': 'Proportion of days on which consumable is available'})
 
-    # Customize the plot
     plt.title('Availability of essential consumables\n for acute malnutrition treatments', fontweight='bold')
     plt.xlabel('Facility Level')
     plt.ylabel('Consumable')
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
-
     plt.savefig(outputs_path / 'consumable_availability_heatmap.png', dpi=300, bbox_inches='tight')
-    # plt.show()
+
+    # HEATMAP OF TREATMENTS AVAILABILITY
+    # ###
+    treatment_item_map = {
+        'ITC': ['F-75\ntherapeutic\nmilk', 'RUTF'],  # 1220, 1227
+        'OTP': ['RUTF'],        # 1227
+        'SFP': ['CSB++*']          # 208
+    }
+
+    # Calculate availability for treatments
+    treatment_availability = {}
+    for treatment, items in treatment_item_map.items():
+        treatment_availability[treatment] = {
+            level: np.prod([heatmap_data.loc[item_code, level] for item_code in items])
+            for level in correct_order_of_fac_levels
+        }
+
+    # Prepare the DataFrame
+    treatment_heatmap_data = pd.DataFrame.from_dict(treatment_availability, orient='index', columns=correct_order_of_fac_levels)
+    treatment_heatmap_data = treatment_heatmap_data.reindex(columns=correct_order_of_fac_levels)
+    treatment_heatmap_data['Average'] = treatment_heatmap_data.mean(axis=1)
+
+    # Generate the heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(treatment_heatmap_data, annot=True, cmap='RdYlGn',
+                cbar_kws={'label': 'Proportion of days on which treatment is available'})
+
+    plt.title('Availability of treatments\n for acute malnutrition', fontweight='bold')
+    plt.xlabel('Facility Level')
+    plt.ylabel('Treatment')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+    plt.savefig(outputs_path / 'treatment_availability_heatmap.png', dpi=300, bbox_inches='tight')
