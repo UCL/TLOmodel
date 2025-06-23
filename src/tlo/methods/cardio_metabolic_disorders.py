@@ -1812,6 +1812,44 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
 
+    class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEventMixin):
+        """This is a Health System Interaction Event in which a person receives a dialysis session 3 times a week
+        adding up to 12 times a month."""
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+            self.TREATMENT_ID = 'CardioMetabolicDisorders_Haemodialysis'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '3'
+            self.num_of_sessions_had = 0  # A counter for the number of sessions had
+
+        def apply(self, person_id, squeeze_factor):
+            """Set the property `cmd_ever_haemo` to be True and schedule the next session in the course if the person
+            has not yet had 12 sessions."""
+
+            self.num_of_sessions_had += 1
+
+            df = self.sim.population.props
+            if not df.at[person_id, 'cmd_ever_haemo']:
+                df.at[person_id, 'cmd_ever_haemo'] = True
+
+            # Do test and trigger treatment (if necessary) for chronic kidney disease:
+            if set(self.conditions_to_investigate).intersection(
+                ['chronic_kidney_disease']
+            ):
+                self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
+
+            hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
+
+            if self.num_of_sessions_had < 12:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=self,
+                    topen=self.sim.date + pd.DateOffset(months=1),
+                    tclose=None,
+                    priority=1
+                )
+
 
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
