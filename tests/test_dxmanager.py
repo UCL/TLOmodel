@@ -89,7 +89,9 @@ def bundle(seed):
             facility_ids=[0],
             months=[sim.date.month]),
         rng=sim.modules['HealthSystem'].rng,
-        availability='default'
+        availability='default',
+        treatment_ids_overridden = [],
+        treatment_ids_overridden_avail = 1.0
     )
     sim.modules['HealthSystem'].consumables.on_start_of_day(sim.date)
 
