@@ -1459,10 +1459,11 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             self.module.do_when_am_treatment(person_id, intervention='SFP')
         else:
             logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
+                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided to person "
+                              f"{person_id}.")
 
-    def did_not_run(self):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+    def did_not_run(self, person_id):
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
         pass
 
 
@@ -1510,10 +1511,11 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             self.module.do_when_am_treatment(person_id, intervention='OTP')
         else:
             logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
+                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided to person "
+                              f"{person_id}.")
 
-    def did_not_run(self):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+    def did_not_run(self, person_id):
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
         pass
 
 
@@ -1556,10 +1558,11 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
             self.module.do_when_am_treatment(person_id, intervention='ITC')
         else:
             logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided.")
+                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided to person "
+                              f"{person_id}.")
 
-    def did_not_run(self):
-        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run')
+    def did_not_run(self, person_id):
+        logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
         pass
 
 
