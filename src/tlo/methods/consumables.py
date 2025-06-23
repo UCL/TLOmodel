@@ -291,7 +291,8 @@ class Consumables:
                           item_codes: dict,
                           forced_avail: Optional[bool] = None) -> dict:
         """Returns a dictionary with availability of item codes when availability probability is being overridden. If
-        set_avail is not predetermined as True/False then availability is determined by _treatment_ids_overridden_avail"""
+        set_avail is not predetermined as True/False then availability is determined by
+         _treatment_ids_overridden_avail"""
 
         if forced_avail is not None:
             return {_i: forced_avail for _i in item_codes}
