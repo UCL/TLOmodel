@@ -583,7 +583,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 "pr_assessed_for_depression_for_perinatal_female"
             ]:  # module labour
                 return True
-        elif treatment_id in ("Hiv_Treatment", "CardioMetabolicDisorders_Treatment"):
+        elif treatment_id.startswith(("Hiv_Treatment", "CardioMetabolicDisorders_Treatment")):
             # this is only scheduled if integrated chronic care clinics are operationalised
             return True
         else:

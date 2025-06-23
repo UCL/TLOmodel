@@ -30,7 +30,7 @@ plt.style.use('seaborn-darkgrid')
 resourcefilepath = Path("./resources")
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
-scenario = 'integration_scenario_max_test_2524959'
+scenario = 'integration_scenario_max_test_2536972'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a dict of {run: 'scenario'} from the updated parameters

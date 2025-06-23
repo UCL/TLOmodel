@@ -280,8 +280,10 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
             if params['serv_integration'].endswith('_max'):
                 update_cons_override_treatment_ids(
-                    ['CardioMetabolicDisorders_Investigation',
-                     'CardioMetabolicDisorders_Prevention_WeightLoss',
+                    ['CardioMetabolicDisorders_Investigation_diabetes',
+                     'CardioMetabolicDisorders_Investigation_hypertension',
+                     'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
+                     'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
                      'Hiv_Test',
                      'Hiv_Treatment',
                      'Tb_Test_Screening',
