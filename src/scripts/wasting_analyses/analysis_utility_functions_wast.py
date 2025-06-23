@@ -249,7 +249,7 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     heatmap_data.index = heatmap_data.index.map(item_names_to_map)
 
     # Generate the heatmap
-    sns.set(font_scale=1.5)
+    sns.set_theme(font_scale=1.5)
     plt.figure(figsize=(10, 8))
     sns.heatmap(heatmap_data, annot=True, cmap='RdYlGn',
                 cbar_kws={'label': 'Proportion of days on which consumable is available'})

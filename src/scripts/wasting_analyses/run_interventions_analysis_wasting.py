@@ -141,14 +141,10 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         pdf.savefig(fig)  # Save the entire figure to the PDF
         plt.close(fig)
 
-def run_heatmap(outputspath:Path) -> None:
-    analysis_utility_functions_wast.plot_availability_heatmap(outputspath)
-
 # ---------------- #
 # RUN THE ANALYSIS #
 # ---------------- #
 run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest)
-run_heatmap(outputs_path)
 
 total_time_end = time.time()
 print(f"\ntotal running time (s): {(total_time_end - total_time_start)}")
