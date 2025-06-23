@@ -2247,11 +2247,11 @@ def extract_roi_at_specific_implementation_costs(_monetary_value_of_incremental_
 
     # Non zero implementation cost
     roi_df['Above Service-level costs ($, million)'] = (
-            "$" + (_incremental_input_cost_summary[_metric] * (1 + _non_zero_implementation_cost_proportion)).div(
+            "$" + (_incremental_input_cost_summary[_metric] * (_non_zero_implementation_cost_proportion)).div(
         1e6).apply("{:,.2f}".format) + " [" +
-            "$" + (_incremental_input_cost_summary['lower'] * (1 + _non_zero_implementation_cost_proportion)).div(
+            "$" + (_incremental_input_cost_summary['lower'] * (_non_zero_implementation_cost_proportion)).div(
         1e6).apply("{:,.2f}".format) + " - " +
-            "$" + (_incremental_input_cost_summary['upper'] * (1 + _non_zero_implementation_cost_proportion)).div(
+            "$" + (_incremental_input_cost_summary['upper'] * (_non_zero_implementation_cost_proportion)).div(
         1e6).apply("{:,.2f}".format) + "]"
     )
 
