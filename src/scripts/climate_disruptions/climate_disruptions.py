@@ -1,8 +1,7 @@
-import datetime
-import warnings
-from collections import defaultdict
-from itertools import repeat
-from typing import Dict, List, Optional, Tuple
+
+from pathlib import Path
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+
 
 import numpy as np
 import pandas as pd
@@ -29,7 +28,10 @@ class Climate_Disruptions:
 
     :param delay_in_seeking_care_weather: The number of weeks' delay in reseeking healthcare after an appointmnet has been delayed by weather. Unit is week.
     """
-
+    PARAMETERS = {
+        # Probability of climate disruption
+        'projected_precip_disruptions': Parameter(Types.REAL, 'Probabilities of precipitation-mediated '
+                                                              'disruptions to services by month, year, and clinic.'),    }
     def __init__(self,
                  climate_ssp: str = None,
                  climate_model_ensemble_model: pd.DataFrame = None,
@@ -39,32 +41,51 @@ class Climate_Disruptions:
 
         self._climate_ssp = {
             'none',
-            'default',
-            'all',
-            'all_diagnostics_available',
-            'all_medicines_available',
-            'all_medicines_and_other_available',
-            'all_vital_available',
-            'all_drug_or_vaccine_available',
+            'ssp126',
+            'ssp245',
+            'ssp585'
+        }
+        self._climate_model_ensemble_model = {
+            'low',
+            'medium',
+            'high'
+        }
+
+        self._services_affected_precip = {
+            'none',
+            'all'
         }
 
         # Create internal items:
-        self._rng = rng
-        self._availability = None  # Internal storage of availability assumption (only accessed through getter/setter)
-        self._prob_item_codes_available = None  # Data on the probability of each item_code being available
-        self._is_available = None  # Dict of sets giving the set of item_codes available, by facility_id
-        self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
-        self._not_recognised_item_codes = defaultdict(set)  # The item codes requested but which are not recognised.
+        self._climate_ssp = climate_ssp
+        self._climate_model_ensemble_model = climate_model_ensemble_model
+        self._services_affected_precip = services_affected_precip
+        self._delay_in_seeking_care_weather = delay_in_seeking_care_weather
 
-        # Save designations
-        self._item_code_designations = item_code_designations
+        path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'climate_change_impacts'
+        self.parameters['projected_precip_disruptions'] = pd.read_csv(
+            path_to_resourcefiles_for_climate / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv')
 
-        # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
-        self.item_codes, self._processed_consumables_data = \
-            self._process_consumables_data(availability_data=availability_data)
+    def check_if_hsi_experiences_climate_disruption(self, sim, hsi_item):
 
-        # Set the availability based on the argument provided (this can be updated later after the class is initialised)
-        self.availability = availability
-
-        # Create (and save pointer to) the `ConsumablesSummaryCounter` helper class
-        self._summary_counter = ConsumablesSummaryCounter()
+            year = sim.date.year
+            month = sim.date.month
+            if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters[
+                'services_affected_precip'] is not None:
+                assert self.module.parameters['services_affected_precip'] == 'all'
+                fac_level = hsi_item.hsi_event.facility_info.level
+                facility_used = sim.population.props.at[hsi_item.hsi_event.target, f'level_{fac_level}']
+                if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
+                    prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
+                        (self.module.parameters['projected_precip_disruptions']['RealFacility_ID'] == facility_used) &
+                        (self.module.parameters['projected_precip_disruptions']['year'] == year) &
+                        (self.module.parameters['projected_precip_disruptions']['month'] == month) &
+                        (self.module.parameters['projected_precip_disruptions']['service'] == self.module.parameters[
+                            'services_affected_precip']),
+                        'disruption'
+                    ]
+                    prob_disruption = pd.DataFrame(prob_disruption)
+                    prob_disruption = float(prob_disruption.iloc[0])
+                    if np.random.binomial(1, prob_disruption) == 1:
+                        climate_disrupted = True
+            return climate_disrupted
