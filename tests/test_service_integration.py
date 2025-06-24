@@ -26,30 +26,65 @@ def register_modules(sim):
     sim.register(*fullmodel(),
                   service_integration.ServiceIntegration())
 
-# def test_parameter_update_event_runs_and_cancels_as_expected(tmpdir, seed):
-#     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels":{
-#                 "*": logging.DEBUG},"directory": tmpdir}, resourcefilepath=resourcefilepath)
-#     register_modules(sim)
-#     sim.make_initial_population(n=50)
-#
-#     # Set parameter update event to run before end of sim
-#     sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
-#     sim.simulate(end_date=Date(2011, 1, 2))
-#
-#     # Because switches are unchanged check logging occurred as expected
-#     output= parse_log_file(sim.log_filepath)
-#     assert 'event_runs' in output['tlo.methods.service_integration']
-#     assert 'event_cancelled' in output['tlo.methods.service_integration']
+def check_cons_processed_params_have_been_overridden(initial_dict, updated_dict):
+    columns_to_differ = ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
+                         'other_modern']  # update with your actual column names
+
+    for key in initial_dict:
+        df1 = initial_dict[key]
+        df2 = updated_dict[key]
+        # Ensure required columns are present
+        for col in columns_to_differ:
+            assert col in df1.columns and col in df2.columns, f"Column '{col}' missing in DataFrame '{key}'"
+
+        # Extract relevant columns
+        df1_sub = df1[columns_to_differ]
+        df2_sub = df2[columns_to_differ]
+
+        # Create mask where df1 > 0
+        mask = df1_sub > 0
+
+        # Check df2 > df1 where mask is True
+        diff_check = df2_sub > df1_sub
+
+        # Assert condition holds for all cells where df1 > 0
+        condition_ok = diff_check[mask].all().all()
+        assert condition_ok, f"df2 is not greater than df1 in some cells of '{key}' where df1 > 0"
+        # Ensure shapes match
+        assert df1.shape == df2.shape, f"Shape mismatch in DataFrame '{key}'"
+
+
+def test_parameter_update_event_runs_and_cancels_as_expected(tmpdir, seed):
+    """Test that when no scenarios are stored as parameters of the service integration module the event runs and then is
+    cancelled"""
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels":{
+                "*": logging.DEBUG},"directory": tmpdir}, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=50)
+
+    # Set parameter update event to run before end of sim
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    # Because switches are unchanged check logging occurred as expected
+    output= parse_log_file(sim.log_filepath)
+    assert 'event_runs' in output['tlo.methods.service_integration']
+    assert 'event_cancelled' in output['tlo.methods.service_integration']
 
 def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir, seed):
+    """Test that TREATMENT_IDs are correctly passed to the health system AND consumables class meaning that
+    consumable availability for these HSIs is overridden"""
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels":{
                 "*": logging.DEBUG},"directory": tmpdir}, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=50)
     sim.simulate(end_date=Date(2010, 1, 2))
 
+    # Define the update event
     serv_int_event = service_integration.ServiceIntegrationParameterUpdateEvent(module=sim.modules['ServiceIntegration'])
 
+    # for each scenario in which cons availability will be overridden, check correct list of TREATMENT_IDs is passed
+    # to the health system
     for scenario, treatment_ids in zip(['htn_max',
                                         'dm_max',
                                         'hiv_max',
@@ -182,8 +217,8 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
                                          'Epilepsy_Treatment_Followup']]):
 
         sim.modules['ServiceIntegration'].parameters['serv_integration'] = scenario
-        print(scenario)
         serv_int_event.apply(sim.population.props)
+
         assert sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] == treatment_ids
         assert sim.modules['HealthSystem'].consumables._treatment_ids_overridden == treatment_ids
 
@@ -196,14 +231,16 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_screening
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
         "*": logging.DEBUG}, "directory": tmpdir}, resourcefilepath=resourcefilepath)
     register_modules(sim)
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=50)
 
     # Set parameter update event to run before end of sim
 
-    # sim.modules['ServiceIntegration'].parameters['serv_int_screening'] = ['htn', 'dm', 'hiv' ,'tb', 'fp', 'mal']
     sim.modules['ServiceIntegration'].parameters['serv_integration'] = 'all_screening'
-    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
-    sim.simulate(end_date=Date(2011, 1, 2))
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
+
+    cons_params_init = sim.modules['Contraception'].processed_params['p_start_per_month']
+
+    sim.simulate(end_date=Date(2010, 1, 2))
 
     output = parse_log_file(sim.log_filepath)
     assert 'event_runs' in output['tlo.methods.service_integration']
@@ -217,45 +254,69 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_screening
     assert htn_test_lm.intercept == 1.0
     assert not htn_test_lm.predictors
 
-    # TODO: add tests for HIV/Tb/Contraception screening interventions
+    cons_params_init_update = sim.modules['Contraception'].processed_params['p_start_per_month']
+    check_cons_processed_params_have_been_overridden(cons_params_init, cons_params_init_update)
+
+    assert (sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] == 0.4).all()
+    assert (sim.modules['Tb'].parameters["rate_testing_active_tb"]["treatment_coverage"] == 90).all()
 
 
 def test_parameter_update_event_runs_as_expected_when_updates_required_mch(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
         "*": logging.DEBUG}, "directory": tmpdir}, resourcefilepath=resourcefilepath)
     register_modules(sim)
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=50)
 
     # Set parameter update event to run before end of sim
-
-    # sim.modules['ServiceIntegration'].parameters['serv_int_mch'] = ['pnc', 'fp', 'mal', 'epi']
     sim.modules['ServiceIntegration'].parameters['serv_integration'] = 'all_mch'
-    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
-    sim.simulate(end_date=Date(2011, 1, 2))
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
+
+    cons_p_params_b1 = sim.modules['Contraception'].processed_params['p_start_after_birth_below30']
+    cons_p_params_b2 = sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']
+
+
+    sim.simulate(end_date=Date(2010, 1, 2))
 
     output = parse_log_file(sim.log_filepath)
     assert 'event_runs' in output['tlo.methods.service_integration']
     assert 'event_cancelled' not in output['tlo.methods.service_integration']
 
+    assert sim.modules['PregnancySupervisor'].current_parameters['alternative_anc_coverage']
+    assert sim.modules['PregnancySupervisor'].current_parameters['anc_availability_odds'] == 9.0
+    assert sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress']
+    assert (sim.modules['PregnancySupervisor'].current_parameters['prob_anc1_months_2_to_4'] ==
+            [1.0, 0, 0])
+    assert (sim.modules['PregnancySupervisor'].current_parameters['prob_late_initiation_anc4'] ==
+            0)
 
     assert sim.modules['Labour'].current_parameters['alternative_pnc_coverage']
     assert sim.modules['Labour'].current_parameters['pnc_availability_odds'] == 15.0
+    assert sim.modules['Labour'].current_parameters['la_analysis_in_progress']
+    cov_prob =  sim.modules['Labour'].current_parameters['pnc_availability_odds'] / (sim.modules['Labour'].current_parameters['pnc_availability_odds'] + 1)
+
+    assert sim.modules['Labour'].current_parameters['prob_timings_pnc'] == [1.0, 0]
+    assert sim.modules['NewbornOutcomes'].current_parameters['prob_pnc_check_newborn'] == cov_prob
+    assert sim.modules['NewbornOutcomes'].current_parameters['prob_timings_pnc_newborns'] == [1.0, 0]
+
     assert sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] == 1.0
 
-    # TODO: add tests for EPI/Contraception interventions
+    cons_params_b1_update = sim.modules['Contraception'].processed_params['p_start_after_birth_below30']
+    cons_p_params_b2_update = sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']
+    check_cons_processed_params_have_been_overridden(cons_p_params_b1, cons_params_b1_update)
+    check_cons_processed_params_have_been_overridden(cons_p_params_b2, cons_p_params_b2_update)
 
 def test_parameter_update_event_runs_as_expected_when_updates_required_chronic(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
         "*": logging.DEBUG}, "directory": tmpdir}, resourcefilepath=resourcefilepath)
     register_modules(sim)
-    sim.make_initial_population(n=500)
+    sim.make_initial_population(n=50)
 
     # Set parameter update event to run before end of sim
 
     # sim.modules['ServiceIntegration'].parameters['serv_int_chronic'] = True
     sim.modules['ServiceIntegration'].parameters['serv_integration'] = 'chronic_care'
-    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2011
-    sim.simulate(end_date=Date(2011, 1, 2))
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
+    sim.simulate(end_date=Date(2010, 1, 2))
 
     output = parse_log_file(sim.log_filepath)
     assert 'event_runs' in output['tlo.methods.service_integration']
@@ -267,6 +328,32 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_chronic(t
     assert sim.modules['Epilepsy'].parameters['prob_start_anti_epilep_when_seizures_detected_in_generic_first_appt'] == 1.0
     assert sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] == 1.0
 
+def test_cons_params_all_updated_with_all_integration_scenario(tmpdir, seed):
+    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
+        "*": logging.DEBUG}, "directory": tmpdir}, resourcefilepath=resourcefilepath)
+    register_modules(sim)
+    sim.make_initial_population(n=50)
+
+    cons_params_init = sim.modules['Contraception'].processed_params['p_start_per_month']
+    cons_p_params_b1 = sim.modules['Contraception'].processed_params['p_start_after_birth_below30']
+    cons_p_params_b2 = sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']
+
+    sim.modules['ServiceIntegration'].parameters['serv_integration'] = 'all_int'
+    sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
+    sim.simulate(end_date=Date(2010, 1, 2))
+
+    output = parse_log_file(sim.log_filepath)
+    assert 'event_runs' in output['tlo.methods.service_integration']
+    assert 'event_cancelled' not in output['tlo.methods.service_integration']
+
+    cons_params_init_update = sim.modules['Contraception'].processed_params['p_start_per_month']
+    cons_params_b1_update = sim.modules['Contraception'].processed_params['p_start_after_birth_below30']
+    cons_p_params_b2_update = sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']
+
+    check_cons_processed_params_have_been_overridden(cons_params_init, cons_params_init_update)
+    check_cons_processed_params_have_been_overridden(cons_p_params_b1, cons_params_b1_update)
+    check_cons_processed_params_have_been_overridden(cons_p_params_b2, cons_p_params_b2_update)
+
 
 def test_long_run_screening_integration(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
@@ -275,8 +362,6 @@ def test_long_run_screening_integration(tmpdir, seed):
     sim.make_initial_population(n=1000)
 
     # Set parameter update event to run before end of sim
-
-    # sim.modules['ServiceIntegration'].parameters['serv_int_screening'] = ['htn', 'dm', 'hiv' ,'tb', 'fp']
     sim.modules['ServiceIntegration'].parameters['serv_integration'] = 'all_screening'
     sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
     sim.simulate(end_date=Date(2015, 1, 1))
@@ -292,9 +377,6 @@ def test_long_run_mch_integration(tmpdir, seed):
     register_modules(sim)
     sim.make_initial_population(n=1000)
 
-    # Set parameter update event to run before end of sim
-
-    # sim.modules['ServiceIntegration'].parameters['serv_int_mch'] = ['pnc', 'fp', 'mal', 'epi']
     sim.modules['ServiceIntegration'].parameters['serv_integration'] = 'all_mch'
     sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
     sim.simulate(end_date=Date(2015, 1, 1))
@@ -310,9 +392,6 @@ def test_long_run_chronic_integration(tmpdir, seed):
     register_modules(sim)
     sim.make_initial_population(n=1000)
 
-    # Set parameter update event to run before end of sim
-
-    # sim.modules['ServiceIntegration'].parameters['serv_int_chronic'] = True
     sim.modules['ServiceIntegration'].parameters['serv_integration'] = 'chronic_care'
     sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
     sim.simulate(end_date=Date(2015, 1, 1))
@@ -328,9 +407,6 @@ def test_long_run_no_integration(tmpdir, seed):
     register_modules(sim)
     sim.make_initial_population(n=1000)
 
-    # Set parameter update event to run before end of sim
-
-    # sim.modules['ServiceIntegration'].parameters['serv_int_chronic'] = True
     sim.modules['ServiceIntegration'].parameters['integration_year'] = 2010
     sim.simulate(end_date=Date(2015, 1, 1))
 

@@ -164,7 +164,6 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
             # Now ensure consumables are always available for the relevant treatment ids
             if params['serv_integration'].endswith('_max'):
-
                 update_cons_override_treatment_ids([
                     'CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
                      'CardioMetabolicDisorders_Investigation_hypertension',
