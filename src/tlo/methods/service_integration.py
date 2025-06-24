@@ -135,7 +135,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         params = self.module.parameters
-        treat_ids_to_override = self.sim.modules['HealthSystem'].consumables._treatment_ids_overridden
+        treat_ids_to_override = []
 
         # TODO: make this a class of the health system module instead of its own module that needs to be registered?
 
@@ -295,3 +295,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                      'Depression_Treatment',
                      'Epilepsy_Treatment_Start',
                      'Epilepsy_Treatment_Followup'])
+
+        self.sim.modules['HealthSystem'].set_availability_for_treatment_ids(
+            treatment_ids=treat_ids_to_override,
+            availability=1.0)

@@ -184,8 +184,12 @@ def test_correct_treatment_ids_are_provided_to_hs_to_override_consumables(tmpdir
         sim.modules['ServiceIntegration'].parameters['serv_integration'] = scenario
         print(scenario)
         serv_int_event.apply(sim.population.props)
+        assert sim.modules['HealthSystem'].parameters['cons_override_treatment_ids'] == treatment_ids
         assert sim.modules['HealthSystem'].consumables._treatment_ids_overridden == treatment_ids
-        sim.modules['HealthSystem'].consumables._treatment_ids_overridden = []
+
+        sim.modules['HealthSystem'].set_availability_for_treatment_ids(
+            treatment_ids=[],
+            availability=1.0)
 
 
 def test_parameter_update_event_runs_as_expected_when_updates_required_screening_parameters(tmpdir, seed):
