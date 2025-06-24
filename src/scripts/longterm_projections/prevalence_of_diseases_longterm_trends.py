@@ -18,10 +18,12 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2069
+max_year = 2070
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
+
 age_standardisation = 50 #'non_age_standardization'
 
 CONDITION_TO_COLOR_MAP_PREVALENCE = MappingProxyType(
@@ -91,17 +93,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """Produce standard set of plots describing the prevalence of each disease
     """
     # Set period of interest needed for helper functions
-    all_draws_prevalence_normalized = pd.DataFrame(columns = range(4)) # to save 2069 results
-    all_draws_prevalence_normalized_lower = pd.DataFrame(columns = range(4)) # to save 2069 results
-    all_draws_prevalence_normalized_upper = pd.DataFrame(columns = range(4)) # to save 2069 results
+    all_draws_prevalence_normalized = pd.DataFrame(columns = range(len(scenario_names))) # to save 2069 results
+    all_draws_prevalence_normalized_lower = pd.DataFrame(columns = range(len(scenario_names))) # to save 2069 results
+    all_draws_prevalence_normalized_upper = pd.DataFrame(columns = range(len(scenario_names))) # to save 2069 results
 
-    all_draws_prevalence = pd.DataFrame(columns = range(4))
+    all_draws_prevalence = pd.DataFrame(columns = range(len(scenario_names)))
 
-    all_draws_prevalence_standard_years = pd.DataFrame(columns = range(4))
-    all_draws_prevalence_standard_years_lower = pd.DataFrame(columns = range(4))
-    all_draws_prevalence_standard_years_upper = pd.DataFrame(columns = range(4))
+    all_draws_prevalence_standard_years = pd.DataFrame(columns = range(len(scenario_names)))
+    all_draws_prevalence_standard_years_lower = pd.DataFrame(columns = range(len(scenario_names)))
+    all_draws_prevalence_standard_years_upper = pd.DataFrame(columns = range(len(scenario_names)))
 
-    for draw in range(4):
+    for draw in range(len(scenario_names)):
             # Definitions of general helper functions
 
         _, age_grp_lookup = make_age_grp_lookup()

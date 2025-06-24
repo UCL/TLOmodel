@@ -23,9 +23,10 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 min_year = "2020"
-max_year = "2069"
-scenario_colours = ['#0081a7', '#00afb9', '#fed9b7', '#f07167']
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
+max_year = "2070"
+
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     # Declare path for output graphs from this script
@@ -94,7 +95,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 label='WPP', color=colors['WPP'])
         ax.plot(2018.5, cens_2018.sum() / 1e6,
                 marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
-        for draw in range(4):
+        for draw in range(len(scenario_names)):
             ax.plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
                     label=scenario_names[draw], color=scenario_colours[draw])
             ax.fill_between((pop_model.index).to_numpy(),
@@ -119,7 +120,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
         # Make a gif
-        for draw in range(4):
+        for draw in range(len(scenario_names)):
             for year in range(int(min_year), int(max_year),1):
                 if year in pop_model.index:
                     fig, ax = plt.subplots()
@@ -345,7 +346,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         births_model_dict = {}
 
-        for draw in range(4):
+        for draw in range(len(scenario_names)):
             births_results = extract_results(
                 results_folder,
                 module="tlo.methods.demography",
@@ -411,7 +412,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
 
             # Plot all draws on the same graph
-            for draw in range(4):
+            for draw in range(len(scenario_names)):
                 ax.plot(
                     births_loc.index,
                     births_loc[f'Model_{draw}_mean'] / 1e6,
@@ -599,7 +600,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
         model_draws_list = []
-        for draw in range(4):
+        for draw in range(len(scenario_names)):
             deaths_model_by_period = summarize(results_deaths.groupby(level=0).sum(), collapse_columns=True)[draw]
             deaths_model_by_period = deaths_model_by_period.reset_index()
             deaths_model_by_period = deaths_model_by_period.melt(
@@ -650,7 +651,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         facecolor=colors['GBD'], alpha=0.2)
 
         # Plot each model draw
-        for draw in range(4):
+        for draw in range(len(scenario_names)):
             label_mean = f'Model_{draw}_mean'
             label_lower = f'Model_{draw}_lower'
             label_upper = f'Model_{draw}_upper'
@@ -970,7 +971,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax[0].plot(2018.5, cens_2018.sum() / 1e6, marker='o', markersize=10, linestyle='none',
                    label='Census', zorder=10, color=colors['Census'])
 
-        for draw in range(4):
+        for draw in range(len(scenario_names)):
             ax[0].plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
                        label=scenario_names[draw], color=scenario_colours[draw])
             ax[0].fill_between(
@@ -992,7 +993,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # --- Panel B: Final life expectancy grouped bars ---
         final_values = []
 
-        for draw in range(4):
+        for draw in range(len(scenario_names)):
             dataframes = []
             for year in range(2010, int(max_year) + 1):
                 df = get_life_expectancy_estimates(

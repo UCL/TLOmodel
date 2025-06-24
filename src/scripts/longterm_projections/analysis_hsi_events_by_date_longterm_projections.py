@@ -34,7 +34,9 @@ min_year = 2020
 max_year = 2069
 spacing_of_years = 1
 
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
+
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
 def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*target_period)])
@@ -49,7 +51,7 @@ def table1_description_of_hsi_events(
     """ `Table 1`: A summary table of all the HSI Events seen in the simulation.
     This is similar to that created by `hsi_events.py` but records all the different forms (levels/appt-type) that
     an HSI Event can take."""
-    for draw in range(4):
+    for draw in range(len(scenario_names)):
         log = load_pickled_dataframes(results_folder, draw, 0)
         h = pd.DataFrame(
             log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
@@ -95,7 +97,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
     """ 'Figure 9': The Trend of HSI_Events that occur by date."""
 
     target_year_sequence = range(min_year, max_year, spacing_of_years)
-    for draw in range(4):
+    for draw in range(len(scenario_names)):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig9_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data = {}
@@ -139,13 +141,14 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
         # Plotting
         causes = list(df_normalized.index)
-        group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
-        group_2 = [cause for cause in causes if "Cancer" in cause]
-        group_3 = ["Depression / Self-harm", "Diabetes", "Epilepsy", "Lower Back Pain", "Heart Disease", "Kidney Disease", "COPD"]
-        group_4 = ["Lower respiratory infections", "Measles", "Schistosomiasis"]
-        other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3]
-        new_order = group_1 + group_2 + group_3 + group_4 + other_causes
-        df_all_years_ordered = df_normalized.loc[new_order]
+        print(causes)
+        # group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
+        # group_2 = [cause for cause in causes if "Cancer" in cause]
+        # group_3 = ["Depression / Self-harm", "Diabetes", "Epilepsy", "Lower Back Pain", "Heart Disease", "Kidney Disease", "COPD"]
+        # group_4 = ["Lower respiratory infections", "Measles", "Schistosomiasis"]
+        # other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3]
+        # new_order = group_1 + group_2 + group_3 + group_4 + other_causes
+        df_all_years_ordered = df_normalized#.loc[new_order]
 
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -182,16 +185,16 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                                              resourcefilepath: Path, min_year, max_year):
     """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
     target_year_sequence = range(min_year, max_year, spacing_of_years)
-    all_draws_cadre = pd.DataFrame(columns=range(4))
-    all_draws_cadre_normalised = pd.DataFrame(columns=range(4))
-    all_draws_cadre_normalised_lower = pd.DataFrame(columns=range(4))
-    all_draws_cadre_normalised_upper = pd.DataFrame(columns=range(4))
+    all_draws_cadre = pd.DataFrame(columns=range(len(scenario_names)))
+    all_draws_cadre_normalised = pd.DataFrame(columns=range(len(scenario_names)))
+    all_draws_cadre_normalised_lower = pd.DataFrame(columns=range(len(scenario_names)))
+    all_draws_cadre_normalised_upper = pd.DataFrame(columns=range(len(scenario_names)))
 
-    all_draws_treatment = pd.DataFrame(columns=range(4))
-    all_draws_treatment_normalised = pd.DataFrame(columns=range(4))
-    all_draws_population = pd.DataFrame(columns=range(4))
-    all_draws_population_normalised = pd.DataFrame(columns=range(4))
-    for draw in range(4):
+    all_draws_treatment = pd.DataFrame(columns=range(len(scenario_names)))
+    all_draws_treatment_normalised = pd.DataFrame(columns=range(len(scenario_names)))
+    all_draws_population = pd.DataFrame(columns=range(len(scenario_names)))
+    all_draws_population_normalised = pd.DataFrame(columns=range(len(scenario_names)))
+    for draw in range(len(scenario_names)):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig10_{stub}_{draw}.png"  # noqa: E731
         appointment_time_table = pd.read_csv(
             resourcefilepath

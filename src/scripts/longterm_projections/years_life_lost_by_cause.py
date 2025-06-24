@@ -23,8 +23,9 @@ spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 age_standardisation = 50
 
-scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Lifestyle: CMD"]
-scenario_colours = ['#0081a7', '#00afb9',  '#fed9b7', '#f07167']
+scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
+scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
@@ -123,7 +124,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     all_draws_yld_lower_1000_2020 = []
     all_draws_yld_upper_1000_2020 = []
 
-    for draw in range(4):
+    for draw in range(len(scenario_names)):
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data_yll_mean = {}
