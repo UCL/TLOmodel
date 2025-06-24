@@ -35,7 +35,8 @@ class Consumables:
                  item_code_designations: pd.DataFrame = None,
                  rng: np.random = None,
                  availability: str = 'default',
-                 treatment_ids_overridden: list = []
+                 treatment_ids_overridden: list = None,
+                 treatment_ids_overridden_avail: float = None,
                  ) -> None:
 
         self._options_for_availability = {
@@ -72,6 +73,7 @@ class Consumables:
 
         # save treatment ids to override consumable availability
         self._treatment_ids_overridden = treatment_ids_overridden
+        self._treatment_ids_overridden_avail = treatment_ids_overridden_avail
 
     @property
     def availability(self):
@@ -201,6 +203,26 @@ class Consumables:
         else:
             return default_return_value
 
+    def _update_internal_cons_list_for_treat_id_avail(self,
+                                      treatment_ids: list,
+                                      avail: float):
+        """This is a private function called by _set_availability_for_treatment_ids in health system. It updates the
+        self._treatment_ids_overridden which is the list of treatment ids for which consumable availability is being
+         overridden. Also updates _override_avail_treatment_ids  which stores the probability of availability for
+         those treatment_ids
+
+        :param treatment_ids: The treatment ids which should have availability overridden (list)
+        :param avail: The probability of availability in those treatment_ids (float)
+        """
+        if not treatment_ids:
+            self._treatment_ids_overridden = []
+        else:
+            for treatment_id in treatment_ids:
+                if treatment_id not in self._treatment_ids_overridden:
+                    self._treatment_ids_overridden.append(treatment_id)
+
+        self._override_avail_treatment_ids = avail
+
     def _request_consumables(self,
                              facility_info: 'FacilityInfo',  # noqa: F821
                              essential_item_codes: dict,
@@ -230,8 +252,9 @@ class Consumables:
 
         # Check if the availability of consumables for this treatment id has been overridden
         avail_overridden = False
-        if treatment_id in self._treatment_ids_overridden:
-            avail_overridden = True
+        if treatment_id:
+            if treatment_id in self._treatment_ids_overridden:
+                avail_overridden = True
 
         # Look-up whether each of these items is available in this facility currently.:
         available = self._lookup_availability_of_consumables(item_codes=_all_item_codes, facility_info=facility_info,
@@ -264,9 +287,18 @@ class Consumables:
         # Return the result of the check on availability
         return available
 
-    def _make_available(self, item_codes: dict) -> dict:
-        """Returns a dictionary signifying all item codes are available"""
-        return {_i: True for _i in item_codes}
+    def _return_available(self,
+                          item_codes: dict,
+                          forced_avail: Optional[bool] = None) -> dict:
+        """Returns a dictionary with availability of item codes when availability probability is being overridden. If
+        set_avail is not predetermined as True/False then availability is determined by
+         _treatment_ids_overridden_avail"""
+
+        if forced_avail is not None:
+            return {_i: forced_avail for _i in item_codes}
+        else:
+            check_avail = self._rng.random_sample() < self._treatment_ids_overridden_avail
+            return {_i: check_avail for _i in item_codes}
 
     def _lookup_availability_of_consumables(self,
                                             facility_info: 'FacilityInfo',  # noqa: F821
@@ -282,13 +314,16 @@ class Consumables:
             #  is running with `disable=True`. Therefore, assume the consumable is available if the overall
             #  availability assumption is 'all' or 'default', and not otherwise.
             if self.availability in ('all', 'default'):
-                return self._make_available(item_codes)
+                # returns true for all item codes
+                return self._return_available(item_codes, forced_avail=True)
             else:
-                return {_i: False for _i in item_codes}
+                # returns false for all item codes
+                return self._return_available(item_codes, forced_avail=False)
 
         # If availability is overridden for this treatment id then all items will be set as available.
         if avail_overridden:
-            return self._make_available(item_codes)
+            # Checks if item codes will be available using random draw against set availability prob
+            return self._return_available(item_codes, forced_avail=None)
         else:
             for _i in item_codes.keys():
                 if _i in self.item_codes:
