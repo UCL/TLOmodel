@@ -1472,11 +1472,9 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
     def __init__(self, module, person_id, conditions_to_investigate: List, has_any_cmd_symptom: bool = False):
         super().__init__(module, person_id=person_id)
 
-        # TODO: this is not the neatest, but as i need to know the full treatment id for the logic i've added to
-        #  the consumables class this is the only way for now
-        self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_other"
+        self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation"
 
-        if conditions_to_investigate is not None:
+        if conditions_to_investigate:
             if 'hypertension' in conditions_to_investigate and 'diabetes' not in conditions_to_investigate:
                 self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_hypertension"
             elif'hypertension' not in conditions_to_investigate and 'diabetes' in conditions_to_investigate:
@@ -1597,7 +1595,11 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss' + f'_{condition}'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
+
+        if condition:
+            self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss' + f'_{condition}'
+
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
@@ -1680,7 +1682,11 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
     def __init__(self, module, person_id, condition):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment' + f'_{condition}'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
+
+        if condition:
+            self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment' + f'_{condition}'
+
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
