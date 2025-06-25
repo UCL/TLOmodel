@@ -658,8 +658,21 @@ class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
         if dx_result and is_cons_available:
-            # Will probably slow progression to proliferative if severe.
-            pass
+            if person.dr_status == "severe":
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_Dr_Dmo_AdvancedTreatment(module=self.module, person_id=person_id),
+                    topen=self.sim.date + DateOffset(months=3),
+                    tclose=None,
+                    priority=0
+                )
+
+            elif person.dr_status == 'proliferative':
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_Dr_Dmo_AdvancedTreatment(module=self.module, person_id=person_id),
+                    topen=self.sim.date + DateOffset(months=1),
+                    tclose=None,
+                    priority=0
+                )
 
 
 class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
