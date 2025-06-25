@@ -41,6 +41,29 @@ def drop_outside_period(_df, target_period):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*target_period)])
 
+rename_dict = {  # For legend labels
+    'ALRI': 'Lower respiratory infections',
+    'Bladder Cancer': 'Cancer (Bladder)',
+    'Breast Cancer': 'Cancer (Breast)',
+    'COPD': 'COPD',
+    'Depression': 'Depression / Self-harm',
+    'Diarrhoea': 'Diarrhoea',
+    'Epilepsy': 'Epilepsy',
+    'HIV': 'AIDS',
+    'Malaria': 'Malaria',
+    'Measles': 'Measles',
+    'Oesophageal Cancer': 'Cancer (Oesophagus)',
+    'Other Adult Cancers': 'Cancer (Other)',
+    'Prostate Cancer': 'Cancer (Prostate)',
+    'RTI': 'Transport Injuries',
+    'Schisto': 'Schistosomiasis',
+    'TB': 'TB',
+    'chronic_ischemic_hd': 'Heart Disease',
+    'chronic_kidney_disease': 'Kidney Disease',
+    'chronic_lower_back_pain': 'Lower Back Pain',
+    'diabetes': 'Diabetes',
+    'hypertension': 'Hypertension'
+}
 
 
 def table1_description_of_hsi_events(
@@ -141,7 +164,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
         # Plotting
         causes = list(df_normalized.index)
-        print(causes)
+        df_normalized = df_normalized.rename(index=rename_dict)
         # group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
         # group_2 = [cause for cause in causes if "Cancer" in cause]
         # group_3 = ["Depression / Self-harm", "Diabetes", "Epilepsy", "Lower Back Pain", "Heart Disease", "Kidney Disease", "COPD"]
