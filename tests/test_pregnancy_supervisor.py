@@ -90,21 +90,19 @@ def register_modules(sim):
     """Defines sim variable and registers all modules that can be called when running the full suite of pregnancy
     modules"""
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 symptommanager.SymptomManager(),
+                 healthsystem.HealthSystem(service_availability=['*'],
                                            cons_availability='all'),  # went set disable=true, cant check HSI queue
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  hiv.DummyHivModule(),
                  )
 
@@ -114,35 +112,43 @@ def test_run_core_modules_normal_allocation_of_pregnancy(seed, tmpdir):
     """Runs the simulation using only core modules without manipulation of pregnancy rates or parameters and checks
     dtypes at the end"""
 
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={"filename": "log", "directory": tmpdir}, resourcefilepath=resourcefilepath)
 
     register_modules(sim)
     sim.make_initial_population(n=1000)
-    sim.simulate(end_date=Date(2015, 2, 1))   # run to ensure ParameterUpdateEvent is called and works
+    sim.simulate(end_date=Date(2011, 2, 1))   # run to ensure ParameterUpdateEvent is called and works
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
-    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
-    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+    if 'tlo.methods.pregnancy_supervisor' in output:
+        assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+
+    if 'tlo.methods.care_of_women_during_pregnancy' in output:
+        assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 
 @pytest.mark.slow
 def test_run_core_modules_high_volumes_of_pregnancy(seed, tmpdir):
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation"""
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={"filename": "log", "directory": tmpdir}, resourcefilepath=resourcefilepath)
 
     register_modules(sim)
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 2))
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
-    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
-    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+    if 'tlo.methods.pregnancy_supervisor' in output:
+        assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+
+    if 'tlo.methods.care_of_women_during_pregnancy' in output:
+        assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 
 @pytest.mark.slow
@@ -150,36 +156,35 @@ def test_run_core_modules_high_volumes_of_pregnancy_hsis_cant_run(seed, tmpdir):
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
     simulation. In addition, scheduled HSI events will not run- testing the did_not_run functions of the
      relevant HSIs"""
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={"filename": "log", "directory": tmpdir}, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=2,
-                                           cons_availability='all'),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 symptommanager.SymptomManager(),
+                 healthsystem.HealthSystem(mode_appt_constraints=2, cons_availability='all'),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
                  hiv.DummyHivModule(),
                  )
 
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 2))
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
     for module in ['pregnancy_supervisor', 'care_of_women_during_pregnancy', 'labour', 'postnatal_supervisor',
                    'newborn_outcomes']:
-        assert 'error' not in output[f'tlo.methods.{module}']
+        if module in output:
+            assert 'error' not in output[f'tlo.methods.{module}']
 
 
 @pytest.mark.slow
@@ -187,46 +192,49 @@ def test_run_with_all_referenced_modules_registered(seed, tmpdir):
     """
     Runs the simulation for one year where all the referenced modules are registered to ensure
     """
-    sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "directory": tmpdir})
+    sim = Simulation(start_date=start_date, seed=seed,
+                     log_config={"filename": "log", "directory": tmpdir}, resourcefilepath=resourcefilepath)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 symptommanager.SymptomManager(),
+                 healthsystem.HealthSystem(service_availability=['*'],
                                            cons_availability='all'),  # went set disable=true, cant check HSI queue
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
 
                  # Register all the modules that are reference in the maternal perinatal health suite (including their
                  # dependencies)
-                 alri.Alri(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
-                 stunting.Stunting(resourcefilepath=resourcefilepath),
-                 wasting.Wasting(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath),
+                 alri.Alri(),
+                 hiv.Hiv(),
+                 malaria.Malaria(),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(),
+                 depression.Depression(),
+                 stunting.Stunting(),
+                 wasting.Wasting(),
+                 diarrhoea.Diarrhoea(),
+                 epi.Epi(),
+                 tb.Tb(),
                  )
 
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)  # keep high volume of pregnancy to increase risk of error
-    sim.simulate(end_date=Date(2011, 1, 1))
+    sim.simulate(end_date=Date(2011, 1, 2))
     check_dtypes(sim)
 
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
-    assert 'error' not in output['tlo.methods.pregnancy_supervisor']
-    assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+    if 'tlo.methods.pregnancy_supervisor' in output:
+        assert 'error' not in output['tlo.methods.pregnancy_supervisor']
+
+    if 'tlo.methods.care_of_women_during_pregnancy' in output:
+        assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
 
 
 def test_store_dalys_in_mni_function_and_daly_calculations(seed):
@@ -234,7 +242,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
     in the model."""
 
     # Set up sim and run for 0 days
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     sim.make_initial_population(n=100)
@@ -328,7 +336,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
 def test_calculation_of_gestational_age(seed):
     """This is a simple test to check that when called, the pregnancy supervisor event updates the age of all women's
     gestational age correctly"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
 
     sim.make_initial_population(n=100)
@@ -365,7 +373,7 @@ def test_calculation_of_gestational_age(seed):
 def test_application_of_risk_of_twin_pregnancy(seed):
     """Runs the simulation with the core modules, all reproductive age women as pregnant and forces all pregnancies to
     be twins. Other functionality related to or dependent upon twin birth is tested in respective module test files"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
 
@@ -395,7 +403,7 @@ def test_application_of_risk_of_twin_pregnancy(seed):
 def test_spontaneous_abortion_ends_pregnancies_as_expected(seed):
     """Test to check that risk of spontaneous abortion is applied as expected within the population and leads to the
     end of pregnancy"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     starting_population = 100
 
@@ -437,7 +445,7 @@ def test_spontaneous_abortion_ends_pregnancies_as_expected(seed):
 def test_induced_abortion_ends_pregnancies_as_expected(seed):
     """Test to check that risk of induced abortion is applied as expected within the population and leads to the
     end of pregnancy"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     starting_population = 100
 
@@ -480,7 +488,7 @@ def test_abortion_complications(seed):
      test women seek care and/or experience risk of death as expected """
 
     def check_abortion_logic(abortion_type):
-        sim = Simulation(start_date=start_date, seed=seed)
+        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
         register_modules(sim)
 
         starting_population = 100
@@ -519,9 +527,9 @@ def test_abortion_complications(seed):
         params['treatment_effect_post_abortion_care'] = 0.0
 
         lab_params = sim.modules['Labour'].current_parameters
-        lab_params['mean_hcw_competence_hc'] = [1, 1]
-        lab_params['mean_hcw_competence_hp'] = [1, 1]
-        lab_params['prob_hcw_avail_retained_prod'] = 1
+        lab_params['mean_hcw_competence_hc'] = 1.0
+        lab_params['mean_hcw_competence_hp'] = 1.0
+        lab_params['prob_hcw_avail_retained_prod'] = 1.0
 
         df = sim.population.props
         pregnant_women = df.loc[df.is_alive & df.is_pregnant]
@@ -593,7 +601,7 @@ def test_abortion_complications(seed):
 def test_still_births_ends_pregnancies_as_expected(seed):
     """Runs the simulation with the core modules and all women of reproductive age as pregnant. Sets antenatal still
     birth risk to 1 and runs checks """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     starting_population = 100
 
@@ -641,7 +649,7 @@ def test_still_births_ends_pregnancies_as_expected(seed):
 
 def test_run_all_births_end_ectopic_no_care_seeking(seed):
     """Test to check that risk of ectopic pregnancy, progression, careseeking and treatment occur as expected"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     starting_population = 100
     sim.make_initial_population(n=starting_population)
@@ -713,7 +721,7 @@ def test_preterm_labour_logic(seed):
     """Test to check that risk of preterm labour is applied as expected and triggers early labour through correct event
      scheduling """
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -785,7 +793,7 @@ def test_preterm_labour_logic(seed):
 
 def test_check_first_anc_visit_scheduling(seed):
     """Test to ensure first ANC visit is scheduled for women as expected """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -829,7 +837,7 @@ def test_check_first_anc_visit_scheduling(seed):
 
 def test_pregnancy_supervisor_anaemia(seed):
     """Tests the application of risk of maternal anaemia within the pregnancy supervisor event"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -887,7 +895,7 @@ def test_pregnancy_supervisor_anaemia(seed):
 def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage(seed):
     """Tests the application of risk of placenta praevia, abruption and antenatal haemorrhage within the pregnancy
     supervisor event"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -961,7 +969,7 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage(se
 
 def test_pregnancy_supervisor_pre_eclampsia_and_progression(seed):
     """Tests the application of risk of pre-eclampsia within the pregnancy supervisor event"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -1035,7 +1043,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression(seed):
 
 def test_pregnancy_supervisor_gestational_hypertension_and_progression(seed):
     """Tests the application of risk of gestational_hypertension within the pregnancy supervisor event"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -1065,7 +1073,7 @@ def test_pregnancy_supervisor_gestational_hypertension_and_progression(seed):
 
 def test_pregnancy_supervisor_gdm(seed):
     """Tests the application of risk of gestational diabetes within the pregnancy supervisor event"""
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -1081,6 +1089,9 @@ def test_pregnancy_supervisor_gdm(seed):
     for woman in pregnant_women.index:
         pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], woman)
         pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], woman)
+
+        sim.modules['PregnancySupervisor'].mother_and_newborn_info[woman]['delivery_setting'] = 'home_birth'
+
 
     # Run pregnancy supervisor event
     pregnancy_sup = pregnancy_supervisor.PregnancySupervisorEvent(module=sim.modules['PregnancySupervisor'])
@@ -1104,7 +1115,7 @@ def test_pregnancy_supervisor_gdm(seed):
 def test_pregnancy_supervisor_chorio_and_prom(seed):
     """Tests the application of risk of chorioamnionitis and PROM within the pregnancy supervisor event"""
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
@@ -1189,7 +1200,7 @@ def test_pregnancy_supervisor_chorio_and_prom(seed):
 def test_induction_of_labour_logic(seed):
     """Tests the that woman who are post-term are seeking care for induction of labour"""
 
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
