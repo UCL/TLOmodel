@@ -32,25 +32,23 @@ popsize = 1000
 def get_simulation(seed):
     """Return simulation objection with Diabetic Retinopathy and other necessary modules registered."""
     sim = Simulation(
-            start_date=start_date,
-            seed=seed,
-        )
+        start_date=start_date,
+        seed=seed,
+        resourcefilepath=resourcefilepath
+    )
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
-                                           cons_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                               # force symptoms to lead to health care seeking:
-                                                               force_any_symptom_to_lead_to_healthcareseeking=True
-                                                               ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(  # force symptoms to lead to health care seeking:
+                     force_any_symptom_to_lead_to_healthcareseeking=True
+                 ),
+                 healthburden.HealthBurden(),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(),
                  diabetic_retinopathy.DiabeticRetinopathy(),
-                 depression.Depression(resourcefilepath=resourcefilepath),
+                 depression.Depression(),
                  )
     return sim
 
@@ -61,43 +59,43 @@ def get_simulation_healthsystemdisabled(seed):
     sim = Simulation(
         start_date=start_date,
         seed=seed,
+        resourcefilepath=resourcefilepath
     )
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                               # force symptoms to lead to health care seeking:
-                                                               force_any_symptom_to_lead_to_healthcareseeking=False
-                                                               ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=True),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(  # force symptoms to lead to health care seeking:
+                     force_any_symptom_to_lead_to_healthcareseeking=False
+                 ),
+                 healthburden.HealthBurden(),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(),
                  diabetic_retinopathy.DiabeticRetinopathy(),
-                 depression.Depression(resourcefilepath=resourcefilepath),
+                 depression.Depression(),
                  )
     return sim
+
 
 def get_simulation_nohsi(seed):
     """Make the simulation with:
     * the healthsystem enabled but with no service availabilty (so no HSI run)
     """
-    sim = Simulation(start_date=start_date, seed=seed)
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    sim.register(demography.Demography(),
+                 simplified_births.SimplifiedBirths(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(service_availability=[]),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(),
                  diabetic_retinopathy.DiabeticRetinopathy(),
-                 depression.Depression(resourcefilepath=resourcefilepath)
+                 depression.Depression()
                  )
     return sim
 
@@ -114,21 +112,25 @@ def zero_out_init_prev(sim):
     # sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.0
     return sim
 
+
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
     sim.modules['DiabeticRetinopathy'].parameters['init_prob_any_dr'] = [0.1] * 4
     # sim.modules['DiabeticRetinopathy'].parameters['init_prob_late_dr'] = 0.1
     return sim
 
+
 def incr_rate_of_onset_mild(sim):
     # Rate of cancer onset per # months:
     sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_dr'] = 0.05
     return sim
 
+
 def zero_rate_of_onset_mild(sim):
     # Rate of cancer onset per # months:
     sim.modules['DiabeticRetinopathy'].parameters['rate_onset_to_mild_dr'] = 0.00
     return sim
+
 
 def incr_rates_of_progression(sim):
     # Rates of DR progression:
@@ -170,12 +172,14 @@ def test_basic_run(seed):
     sim.simulate(end_date=Date(2010, 5, 1))
     check_dtypes(sim)
 
+
 def test_initial_config_of_pop_usual_prevalence(seed):
     """Tests the way the population is configured: with usual initial prevalence values"""
     sim = get_simulation_healthsystemdisabled(seed=seed)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
+
 
 def test_initial_config_of_pop_zero_prevalence(seed):
     """Tests the way the population is configured: with zero initial prevalence values """
@@ -195,6 +199,7 @@ def test_initial_config_of_pop_high_prevalence(seed):
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
+
 
 @pytest.mark.slow
 def test_run_sim_from_high_prevalence(seed):

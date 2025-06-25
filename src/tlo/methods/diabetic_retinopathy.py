@@ -103,6 +103,11 @@ class DiabeticRetinopathy(Module):
             Types.DATE,
             "date of first receiving diabetic retinopathy treatment (pd.NaT if never started treatment)"
         ),
+        "dr_stage_at_which_treatment_given": Property(
+            Types.CATEGORICAL,
+            "The DR stage at which treatment was given (used to apply stage-specific treatment effect)",
+            categories=["none", "mild", "moderate", "severe", "proliferative"]
+        ),
         "dr_mild_diagnosed": Property(
             Types.BOOL, "Whether this person has been diagnosed with mild diabetic retinopathy"
         ),
@@ -201,6 +206,7 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_on_treatment"] = False
         df.loc[list(alive_diabetes_idx), "dr_diagnosed"] = False
         df.loc[list(alive_diabetes_idx), "dr_date_treatment"] = pd.NaT
+        df.loc[list(alive_diabetes_idx), "dr_stage_at_which_treatment_given"] = "none"
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_blindness_investigated"] = False
         df.loc[list(alive_diabetes_idx), "dr_ever_diet_mgmt"] = False
@@ -305,6 +311,7 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'dmo_status'] = 'none'
         self.sim.population.props.at[child_id, 'dr_on_treatment'] = False
         self.sim.population.props.at[child_id, 'dr_date_treatment'] = pd.NaT
+        self.sim.population.props.at[child_id, 'dr_stage_at_which_treatment_given'] = 'none'
         self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_blindness_investigated'] = False
@@ -322,29 +329,25 @@ class DiabeticRetinopathy(Module):
             intercept=self.parameters['rate_onset_to_mild_dr']
         )
 
-        ##### Start from here #####
-        self.lm['onset_mild_dr'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            self.parameters['rate_onset_to_mild_dr'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_metastatic_prostate_ca_undergone_curative_treatment']),
-            Predictor('pc_status').when('local_ln', 1.0)
-            .otherwise(0.0)
-        )
-
         self.lm['mild_moderate_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=self.parameters['rate_mild_to_moderate']
+            self.parameters['rate_mild_to_moderate'],
+            Predictor('had_treatment_during_this_stage', external=True)
+            .when(True, 0.0).otherwise(1.0)
         )
 
         self.lm['moderate_severe_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=self.parameters['rate_moderate_to_severe']
+            self.parameters['rate_moderate_to_severe'],
+            Predictor('had_treatment_during_this_stage', external=True)
+            .when(True, 0.0).otherwise(1.0)
         )
 
         self.lm['severe_proliferative_dr'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=self.parameters['rate_severe_to_proliferative']
+            self.parameters['rate_severe_to_proliferative'],
+            Predictor('had_treatment_during_this_stage', external=True)
+            .when(True, 0.0).otherwise(1.0)
         )
 
         self.lm['ever_diet_mgmt_initialisation'] = LinearModel(
@@ -434,6 +437,10 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population: Population) -> None:
         df = population.props
 
+        had_treatment_during_this_stage = \
+            df.is_alive & ~pd.isnull(df.dr_date_treatment) & \
+            (df.dr_status == df.dr_stage_at_which_treatment_given)
+
         diabetes_and_alive_nodr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'none')]
         diabetes_and_alive_milddr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'mild')]
         diabetes_and_alive_moderatedr = df.loc[df.is_alive & df.nc_diabetes & (df.dr_status == 'moderate')]
@@ -444,19 +451,26 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         will_progress_idx = df.index[np.where(will_progress)[0]]
         df.loc[will_progress_idx, 'dr_status'] = 'mild'
 
-        mild_to_moderate = self.module.lm['mild_moderate_dr'].predict(diabetes_and_alive_milddr, self.module.rng)
+        mild_to_moderate = self.module.lm['mild_moderate_dr'].predict(
+            diabetes_and_alive_milddr,
+            self.module.rng,
+            had_treatment_during_this_stage=had_treatment_during_this_stage)
         # mild_to_moderate_idx = mild_to_moderate[mild_to_moderate].index
         mild_to_moderate_idx = df.index[np.where(mild_to_moderate)[0]]
         df.loc[mild_to_moderate_idx, 'dr_status'] = 'moderate'
 
-        moderate_to_severe = self.module.lm['moderate_severe_dr'].predict(diabetes_and_alive_moderatedr,
-                                                                          self.module.rng)
+        moderate_to_severe = self.module.lm['moderate_severe_dr'].predict(
+            diabetes_and_alive_moderatedr,
+            self.module.rng,
+            had_treatment_during_this_stage=had_treatment_during_this_stage)
         # moderate_to_severe_idx = moderate_to_severe[moderate_to_severe].index
         moderate_to_severe_idx = df.index[np.where(moderate_to_severe)[0]]
         df.loc[moderate_to_severe_idx, 'dr_status'] = 'severe'
 
-        severe_to_proliferative = self.module.lm['severe_proliferative_dr'].predict(diabetes_and_alive_severedr,
-                                                                                    self.module.rng)
+        severe_to_proliferative = self.module.lm['severe_proliferative_dr'].predict(
+            diabetes_and_alive_severedr,
+            self.module.rng,
+            had_treatment_during_this_stage=had_treatment_during_this_stage)
         # severe_to_proliferative_idx = mild_to_moderate[severe_to_proliferative].index
         severe_to_proliferative_idx = df.index[np.where(severe_to_proliferative)[0]]
         df.loc[severe_to_proliferative_idx, 'dr_status'] = 'proliferative'
@@ -552,6 +566,8 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if person["dr_on_treatment"] or not person["dr_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        assert pd.isnull(df.at[person_id, 'dr_date_treatment'])
+
         # randomly_sampled = self.module.rng.rand()
         # treatment_slows_progression_to_proliferative = randomly_sampled < self.module.parameters['p_medication']
 
@@ -569,6 +585,8 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if dx_result and is_cons_available:
             # record date of diagnosis
             df.at[person_id, 'dr_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'dr_date_treatment'] = self.sim.date
+            df.at[person_id, 'dr_stage_at_which_treatment_given'] = df.at[person_id, 'dr_status']
             # If consumables are available, add equipment used and run dx_test
             self.add_equipment({'Ophthalmoscope'})
 
