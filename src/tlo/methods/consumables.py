@@ -56,6 +56,9 @@ class Consumables:
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
         self._not_recognised_item_codes = defaultdict(set)  # The item codes requested but which are not recognised.
 
+        # Save data
+        self._availability_data = availability_data
+
         # Save designations
         self._item_code_designations = item_code_designations
 
@@ -96,14 +99,21 @@ class Consumables:
         overriding the availability of specific consumables."""
 
         # Load the original read-in data (create copy so that edits do change the original)
-        self._prob_item_codes_available = self._processed_consumables_data.copy()
+        _, self._prob_item_codes_available = self._process_consumables_data(
+            availability_data=self._availability_data,
+            availability=availability
+        )
 
         # Load designations of the consumables
         item_code_designations = self._item_code_designations
 
         # Over-ride the data according to option for `availability`
-        if availability == 'default':
-            pass
+        if availability in ('default',
+                            'scenario1', 'scenario2', 'scenario3', 'scenario4',
+                            'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                            'scenario13', 'scenario14', 'scenario15'):
+            pass  # change already picked up in `self._process_consumables_data()`
         elif availability == 'all':
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
         elif availability == 'none':
@@ -134,16 +144,27 @@ class Consumables:
         else:
             raise ValueError
 
-    def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.Series]:
+    def _process_consumables_data(self, availability_data: pd.DataFrame, availability: str) -> Tuple[set, pd.Series]:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
         Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
         each consumable at each facility_id during each month.
         """
-        return (
-            set(availability_data.item_code),
-            availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
-        )
+        assert availability is not None, "This argument cannot be None."
+
+        if availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
+                              'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                            'scenario13', 'scenario14', 'scenario15',):
+            return (
+                set(availability_data.item_code),
+                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
+            )
+        else:
+            return (
+                set(availability_data['item_code']),
+                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+            )
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, given the current
