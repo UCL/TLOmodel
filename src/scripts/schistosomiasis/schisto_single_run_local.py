@@ -15,7 +15,6 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    really_simplified_births,
     schisto,
     simplified_births,
     symptommanager,
@@ -41,7 +40,6 @@ species = ('mansoni', 'haematobium')
 
 # %% Run the simulation
 def run_simulation(popsize,
-                   use_really_simplified_births,
                    equal_allocation_by_district,
                    hs_disable_and_reject_all,
                    mda_execute,
@@ -71,14 +69,7 @@ def run_simulation(popsize,
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable_and_reject_all=hs_disable_and_reject_all,
                                            cons_availability='all'),
-                 *(
-                     [really_simplified_births.ReallySimplifiedBirths(
-                         resourcefilepath=resourcefilepath)] if use_really_simplified_births else
-                     [
-                         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-                     ]
-                 ),
-
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  schisto.Schisto(resourcefilepath=resourcefilepath,
                                  mda_execute=mda_execute,
                                  single_district=single_district),
