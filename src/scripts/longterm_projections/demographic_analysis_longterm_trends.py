@@ -23,7 +23,7 @@ from tlo.analysis.utils import (
 
 PREFIX_ON_FILENAME = '1'
 min_year = "2020"
-max_year = "2070"
+max_year = "2071"
 
 scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
