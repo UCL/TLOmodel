@@ -416,7 +416,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_lookup = pd.MultiIndex.from_frame(df.loc[_where, ['district_num_of_residence', 'ma_age_edited']])
+            district_age_lookup = pd.MultiIndex.from_frame(
+                df.loc[_where, ['district_num_of_residence', 'ma_age_edited']])
 
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
@@ -625,7 +626,8 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         self.item_codes_for_consumables_required['paracetamol'] = get_item_code('Paracetamol 500mg_1000_CMST')
 
         # malaria treatment complicated - same consumables for adults and children
-        self.item_codes_for_consumables_required['malaria_complicated_artesunate'] = get_item_code('Injectable artesunate')
+        self.item_codes_for_consumables_required['malaria_complicated_artesunate'] = get_item_code(
+            'Injectable artesunate')
 
         self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = [
             get_item_code('Malaria test kit (RDT)'),
@@ -1242,7 +1244,9 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             # 35–44 kg: 4 tablets every 12 hours for 3 days
             # paracetamol syrup in 1ml doses, 15ml 4x per day, 3 days
             drugs_available = self.get_consumables(
-                item_codes={self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 24},
+                item_codes={
+                    self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children']: 24
+                },
                 optional_item_codes={self.module.item_codes_for_consumables_required['paracetamol_syrup']: 180,
                                      self.module.item_codes_for_consumables_required['malaria_rdt']: 1}
             )
