@@ -288,7 +288,7 @@ dataframes = {
 # Create a new Excel writer object
 with pd.ExcelWriter(results_folder / "summarised_deaths.xlsx") as writer:
     # Iterate over draws (0 to 7)
-    for draw in range(9):
+    for draw in range(2):
         # Prepare data for the current draw
         sheet_data = []
         for name, df in dataframes.items():
