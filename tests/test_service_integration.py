@@ -26,32 +26,45 @@ def register_modules(sim):
     sim.register(*fullmodel(),
                   service_integration.ServiceIntegration())
 
-def check_cons_processed_params_have_been_overridden(initial_dict, updated_dict):
-    columns_to_differ = ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
+def check_cons_processed_params_have_been_overridden(initial_p, updated_p, data):
+    mod_cons = ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
                          'other_modern']  # update with your actual column names
 
-    for key in initial_dict:
-        df1 = initial_dict[key]
-        df2 = updated_dict[key]
-        # Ensure required columns are present
-        for col in columns_to_differ:
-            assert col in df1.columns and col in df2.columns, f"Column '{col}' missing in DataFrame '{key}'"
+    if data == 'series':
+        # Restrict to the relevant subset
+        s1_sub = initial_p.loc[mod_cons]
+        s2_sub = updated_p.loc[mod_cons]
 
-        # Extract relevant columns
-        df1_sub = df1[columns_to_differ]
-        df2_sub = df2[columns_to_differ]
+        # Mask: where s1 > 0
+        mask = s1_sub > 0
 
-        # Create mask where df1 > 0
-        mask = df1_sub > 0
+        # Assert: in these positions, s2 > s1
+        condition_ok = (s2_sub[mask] > s1_sub[mask]).all()
+        assert condition_ok, "In some positions where series1 > 0, series2 is not greater"
 
-        # Check df2 > df1 where mask is True
-        diff_check = df2_sub > df1_sub
+    else:
+        for key in initial_p:
+            df1 = initial_p[key]
+            df2 = updated_p[key]
+            # Ensure required columns are present
+            for col in mod_cons:
+                assert col in df1.columns and col in df2.columns, f"Column '{col}' missing in DataFrame '{key}'"
 
-        # Assert condition holds for all cells where df1 > 0
-        condition_ok = diff_check[mask].all().all()
-        assert condition_ok, f"df2 is not greater than df1 in some cells of '{key}' where df1 > 0"
-        # Ensure shapes match
-        assert df1.shape == df2.shape, f"Shape mismatch in DataFrame '{key}'"
+            # Extract relevant columns
+            df1_sub = df1[mod_cons]
+            df2_sub = df2[mod_cons]
+
+            # Create mask where df1 > 0
+            mask = df1_sub > 0
+
+            # Check df2 > df1 where mask is True
+            diff_check = df2_sub > df1_sub
+
+            # Assert condition holds for all cells where df1 > 0
+            condition_ok = diff_check[mask].all().all()
+            assert condition_ok, f"df2 is not greater than df1 in some cells of '{key}' where df1 > 0"
+            # Ensure shapes match
+            assert df1.shape == df2.shape, f"Shape mismatch in DataFrame '{key}'"
 
 
 def test_parameter_update_event_runs_and_cancels_as_expected(tmpdir, seed):
@@ -255,7 +268,7 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_screening
     assert not htn_test_lm.predictors
 
     cons_params_init_update = sim.modules['Contraception'].processed_params['p_start_per_month']
-    check_cons_processed_params_have_been_overridden(cons_params_init, cons_params_init_update)
+    check_cons_processed_params_have_been_overridden(cons_params_init, cons_params_init_update, 'dict')
 
     assert (sim.modules['Hiv'].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] == 0.4).all()
     assert (sim.modules['Tb'].parameters["rate_testing_active_tb"]["treatment_coverage"] == 90).all()
@@ -302,8 +315,8 @@ def test_parameter_update_event_runs_as_expected_when_updates_required_mch(tmpdi
 
     cons_params_b1_update = sim.modules['Contraception'].processed_params['p_start_after_birth_below30']
     cons_p_params_b2_update = sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']
-    check_cons_processed_params_have_been_overridden(cons_p_params_b1, cons_params_b1_update)
-    check_cons_processed_params_have_been_overridden(cons_p_params_b2, cons_p_params_b2_update)
+    check_cons_processed_params_have_been_overridden(cons_p_params_b1, cons_params_b1_update, 'series')
+    check_cons_processed_params_have_been_overridden(cons_p_params_b2, cons_p_params_b2_update, 'series')
 
 def test_parameter_update_event_runs_as_expected_when_updates_required_chronic(tmpdir, seed):
     sim = Simulation(start_date=start_date, seed=seed, log_config={"filename": "log", "custom_levels": {
@@ -350,9 +363,9 @@ def test_cons_params_all_updated_with_all_integration_scenario(tmpdir, seed):
     cons_params_b1_update = sim.modules['Contraception'].processed_params['p_start_after_birth_below30']
     cons_p_params_b2_update = sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']
 
-    check_cons_processed_params_have_been_overridden(cons_params_init, cons_params_init_update)
-    check_cons_processed_params_have_been_overridden(cons_p_params_b1, cons_params_b1_update)
-    check_cons_processed_params_have_been_overridden(cons_p_params_b2, cons_p_params_b2_update)
+    check_cons_processed_params_have_been_overridden(cons_params_init, cons_params_init_update, 'dict')
+    check_cons_processed_params_have_been_overridden(cons_p_params_b1, cons_params_b1_update,'series')
+    check_cons_processed_params_have_been_overridden(cons_p_params_b2, cons_p_params_b2_update, 'series')
 
 
 def test_long_run_screening_integration(tmpdir, seed):

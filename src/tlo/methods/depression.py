@@ -583,7 +583,8 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 "pr_assessed_for_depression_for_perinatal_female"
             ]:  # module labour
                 return True
-        elif treatment_id.startswith(("Hiv_Treatment", "CardioMetabolicDisorders_Treatment")):
+        elif treatment_id.startswith(("Hiv_Treatment", "CardioMetabolicDisorders_Treatment",
+                                      "Epilepsy_Treatment_Followup")):
             # this is only scheduled if integrated chronic care clinics are operationalised
             return True
         else:
@@ -700,7 +701,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 schedule_hsi_event=schedule_hsi_event,
             )
 
-    def additional_screening(self, hsi_event, person_id):
+    def additional_screening(self, person_id):
         df = self.sim.population.props
 
         # link to HIV testing
@@ -722,7 +723,6 @@ class Depression(Module, GenericFirstAppointmentsMixin):
 
         # link to CMD screening
         if "CardioMetabolicDisorders" in self.sim.modules:
-            person_id = hsi_event.TARGET
             individual_properties = df.loc[person_id]
             symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
             schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
@@ -1060,7 +1060,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
                                       1)) and \
                 self.sim.modules['ServiceIntegration'].parameters['serv_integration'].startswith(
                     ("chronic_care", "all_int")):
-                self.module.additional_screening(person_id)
+                self.module.additional_screening(person_id=person_id)
 
 
 

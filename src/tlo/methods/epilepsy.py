@@ -424,7 +424,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
                 event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
                 schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
-    def additional_screening(self, hsi_event, person_id):
+    def additional_screening(self, person_id, hsi_event):
         df = self.sim.population.props
 
         # link to HIV testing
@@ -446,7 +446,6 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
 
         # link to CMD screening
         if "CardioMetabolicDisorders" in self.sim.modules:
-            person_id = hsi_event.TARGET
             individual_properties = df.loc[person_id]
             symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
             schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
@@ -461,7 +460,7 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
             # if not dx and currently on anti-depressants
             # call for depression check which
             if not df.at[person_id, 'de_on_antidepr']:
-                self.sim.modules['Depression'].do_on_presentation_to_care(person_id, hsi_event=self)
+                self.sim.modules['Depression'].do_on_presentation_to_care(person_id, hsi_event=hsi_event)
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' epilepsy status
@@ -797,4 +796,4 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
                                       1)) and \
                 self.sim.modules['ServiceIntegration'].parameters['serv_integration'].startswith(
                     ("chronic_care", "all_int")):
-                self.module.additional_screening(person_id)
+                self.module.additional_screening(person_id=person_id, hsi_event=self)
