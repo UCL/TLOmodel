@@ -142,6 +142,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
             def get_counts_of_hsi_by_short_treatment_id(_df):
                 """Get the counts of the short TREATMENT_IDs occurring (shortened, up to first underscore)"""
                 _counts_by_treatment_id = get_counts_of_hsi_by_treatment_id(_df)
+                print(_counts_by_treatment_id)
                 _short_treatment_id = _counts_by_treatment_id.index.map(lambda x: x.split('_')[0] + "*")
                 return _counts_by_treatment_id.groupby(by=_short_treatment_id).sum()
 
@@ -198,7 +199,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         axes[1].set_xlabel('Year')
         axes[1].set_ylabel('Normalized Counts (First Year = 2020)')
         axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
-        df_normalized.to_csv(output_folder/f"HSI_events_treatment_ID_normalized_2020_{draw}.csv")
+        df_normalized.to_csv(output_folder/f"HSI_events_treatment_ID_normalized_2020_2070_{draw}.csv")
         # Save the figure with both panels
         fig.savefig(make_graph_file_name('Trend_HSI_Events_by_TREATMENT_ID_All_Years_Panel_A_and_B'))
         plt.close(fig)
@@ -403,7 +404,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[1].legend(title='Cadre', ncol=1, bbox_to_anchor=(1.05, 1))
         axes[1].grid(False)
 
-        df_normalized_cadre.to_csv(output_folder / f"HSI_time_per_cadre_normalized_2020_{draw}.csv")
+        df_normalized_cadre.to_csv(output_folder / f"HSI_time_per_cadre_normalized_2020_2070_{draw}.csv")
         fig.tight_layout()
         fig.savefig(make_graph_file_name(f"Time_HSI_Events_by_Cadre_All_Years_Panel_A_and_B_{draw}"))
         plt.show()

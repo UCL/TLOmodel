@@ -277,7 +277,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         df_all_years_prevalence = pd.DataFrame(all_years_data_prevalence)
         df_prevalence_standard_years = pd.DataFrame(all_years_data_prevalence_standard_years)
-
+        df_prevalence_standard_years.to_csv(output_folder / f"Prevalence_diseases_2020_2070_{draw}.csv")
         # Drop rows only if they exist
         rows_to_drop = [
             'live_births', 'population',

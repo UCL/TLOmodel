@@ -312,6 +312,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         df_death_normalized_mean = df_all_years_deaths_mean.div(df_all_years_deaths_mean.iloc[:, 0], axis=0)
         df_DALY_normalized_mean = df_all_years_DALYS_mean.div(df_all_years_DALYS_mean.iloc[:, 0], axis=0)
+
+        df_all_years_deaths_mean.to_csv(output_folder / f"cause_of_death_2020_2070_{draw}.csv")
+        df_all_years_DALYS_mean.to_csv(output_folder / f"cause_of_dalys_2020_2070_{draw}.csv")
+
         df_death_normalized_mean.to_csv(output_folder / f"cause_of_death_normalized_2020_{draw}.csv")
         df_DALY_normalized_mean.to_csv(output_folder / f"cause_of_dalys_normalized_2020_{draw}.csv")
 

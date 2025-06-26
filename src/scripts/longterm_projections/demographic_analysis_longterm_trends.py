@@ -96,6 +96,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.plot(2018.5, cens_2018.sum() / 1e6,
                 marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
         for draw in range(len(scenario_names)):
+            pop_model[draw]['mean'].to_csv(output_folder / f"Population_2020_2070_{draw}.csv")
+
             ax.plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
                     label=scenario_names[draw], color=scenario_colours[draw])
             ax.fill_between((pop_model.index).to_numpy(),
@@ -329,6 +331,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ax = plot_population_pyramid(data=pops, fig=fig)
                     ax.set_title(f'Population Pyramid in {year}')
                     fig.savefig(make_graph_file_name(f"Pop_Size_{year}_{draw}"))
+
                     plt.close(fig)
 
             # Make a gif
@@ -356,7 +359,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ),
                 do_scaling=True
             )
-
+            for draw in range(len(scenario_names)):
+                birth_results_per_draw = summarize(births_results)[draw]
+                print(birth_results_per_draw)
             # Aggregate the model outputs into five-year periods:
             calperiods, calperiodlookup = make_calendar_period_lookup()
             births_results.index = births_results.index.map(calperiodlookup).astype(make_calendar_period_type())
@@ -370,6 +375,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             births_model.columns = [f'Model_{draw}_' + col for col in births_model.columns]
             # Store in dictionary
             births_model_dict[draw] = births_model
+
 
         # Merge all draws into a single DataFrame
         births_model = pd.concat(births_model_dict.values(), axis=1)
@@ -413,6 +419,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             # Plot all draws on the same graph
             for draw in range(len(scenario_names)):
+
                 ax.plot(
                     births_loc.index,
                     births_loc[f'Model_{draw}_mean'] / 1e6,
@@ -485,6 +492,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Compute age-specific fertility rates
         asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women)).sort_index()[draw]
+
         # Get the age-specific fertility rates of the WPP source
         wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
@@ -608,6 +616,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             deaths_model_by_period['Variant'] = f'Model_{draw}_' + deaths_model_by_period['Variant']
             model_draws_list.append(deaths_model_by_period)
 
+
         # Combine all model draws
         deaths_model_by_period = pd.concat(model_draws_list, ignore_index=True)
 
@@ -663,6 +672,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                 deaths_by_period[label_lower] / 1e6,
                                 deaths_by_period[label_upper] / 1e6,
                                 alpha=0.2)
+
 
         # Formatting
         ax.set_title('Number of Deaths')
@@ -776,7 +786,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 plt.close(fig)
 
 
-        # # 2b) All on one graph
+        # 2b) All on one graph
         # # Create a figure and axis for plotting
         #
         # fig, axs = plt.subplots(int(len(calperiods_selected) / 3), 3, figsize=(int(len(calperiods_selected) / 3) * 7.5,  3 * 3.5))
@@ -793,7 +803,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         #
         #     tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
         #     tot_deaths_byage = tot_deaths_byage.transpose()
-        #
+
+
         #     if 'WPP_Medium variant' in tot_deaths_byage.columns:
         #         ax.plot(
         #             tot_deaths_byage.index,
@@ -972,6 +983,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                    label='Census', zorder=10, color=colors['Census'])
 
         for draw in range(len(scenario_names)):
+
             ax[0].plot(pop_model.index, pop_model[draw]['mean'] / 1e6,
                        label=scenario_names[draw], color=scenario_colours[draw])
             ax[0].fill_between(
