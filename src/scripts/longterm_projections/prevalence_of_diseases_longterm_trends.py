@@ -365,6 +365,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                          marker='o',s = 10,
                          label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
                                                  all_draws_prevalence_normalized.index][i])
+            axes[1].plot(
+                jittered_all_draws_prevalence_normalized,
+                jittered_all_draws_prevalence_normalized.loc[condition],
+                color=[all_draws_prevalence_normalized(_label) for _label in jittered_all_draws_prevalence_normalized.index][i],
+                alpha=0.5
+            )
 
             axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
     axes[1].scatter(all_draws_population.columns,

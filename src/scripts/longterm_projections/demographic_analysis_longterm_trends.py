@@ -346,9 +346,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # %% Births: Number over time
         # Births over time (Model)
-
+        #
         births_model_dict = {}
-
+        #
         for draw in range(len(scenario_names)):
             births_results = extract_results(
                 results_folder,
@@ -359,9 +359,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ),
                 do_scaling=True
             )
-            for draw in range(len(scenario_names)):
-                birth_results_per_draw = summarize(births_results)[draw]
-                print(birth_results_per_draw)
+            # for draw in range(len(scenario_names)):
+            #     birth_results_per_draw = summarize(births_results)[draw]
+            #     birth_results_per_draw.to_csv(output_folder / f"Births_2020_2070_{draw}.csv")
             # Aggregate the model outputs into five-year periods:
             calperiods, calperiodlookup = make_calendar_period_lookup()
             births_results.index = births_results.index.map(calperiodlookup).astype(make_calendar_period_type())
@@ -457,7 +457,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             plt.tight_layout()
             plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
             plt.close(fig)
-        # %% Age-specific fertility
+        # # %% Age-specific fertility
 
         def get_births_by_year_and_age_range_of_mother_at_pregnancy(_df):
             _df = _df.drop(_df.index[_df.mother == -1])
@@ -472,6 +472,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             custom_generate_series=get_births_by_year_and_age_range_of_mother_at_pregnancy,
             do_scaling=False
         )
+
 
         def get_num_adult_women_by_age_range(_df):
             _df = _df.assign(year=_df['date'].dt.year)
@@ -492,7 +493,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # Compute age-specific fertility rates
         asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women)).sort_index()[draw]
+        for draw_number in range(len(scenario_names)):
+            asfr_by_draw = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women)).sort_index()[draw_number]
 
+            asfr_by_draw.to_csv(output_folder / f"ASFR_2020_2070_{draw_number}.csv")
         # Get the age-specific fertility rates of the WPP source
         wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
@@ -589,6 +593,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             custom_generate_series=get_counts_of_death_by_period_sex_agegrp,
             do_scaling=True
         )
+        for draw_number in range(len(scenario_names)):
+            death_age_group_draws = summarize(results_deaths)[draw_number]
+            death_age_group_draws.to_csv(output_folder/f"Deaths_by_age_2020_2070_{draw_number}.csv")
 
         # Load WPP data
         wpp_deaths = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")

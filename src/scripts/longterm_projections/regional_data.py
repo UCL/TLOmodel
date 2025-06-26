@@ -182,7 +182,7 @@ def table1_description_of_hsi_events(
 
         # Save table as csv for this draw (averaged over its runs)
         h_summary_avg.to_csv(
-            output_folder / f"{PREFIX_ON_FILENAME}_Table1_{year_range}_draw{draw}.csv",
+            output_folder / f"{PREFIX_ON_FILENAME}_Treatment_ID_{year_range}_draw{draw}.csv",
             index=False
         )
 
