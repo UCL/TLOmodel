@@ -1000,7 +1000,8 @@ class HealthSystem(Module):
             self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
     """Set the clinic eligibility for this HSI event Queue Item."""
-    def set_clinic_eligibility(self, hsi_q_item: HSIEventQueueItem, clinic_access: str = None) -> None:
+    def set_clinic_eligibility(self, hsi_q_item: HSIEventQueueI
+                               tem, clinic_access: str = None) -> None:
         if clinic_access is not None:
             hsi_q_item.clinic_eligibility = clinic_access
         else:
@@ -2387,9 +2388,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
-        ## Counters for clinics; this will give a Counter for each column.
-        clinic_capabilities_monitor = self.module._clinics_capabilities_per_staff.apply(Counter, axis=0)
-        set_cl_capabilities_still_available = clinic_capabilities_monitor.apply(lambda x: {k for k, v in x.items() if v > 0.0})
+        clinic_capabilities_monitor = {k: Counter(v) for k, v in self.module._clinics_capabilities_per_staff.items()}
+        set_cl_capabilities_still_available = defaultdict(set)
+        for outer_key, outer_val in clinic_capabilities_monitor.items():
+            for inner_key, inner_val in outer_val.items():
+                if inner_val > 0:
+                    set_cl_capabilities_still_available[inner_key].add(outer_key)
+
 
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
