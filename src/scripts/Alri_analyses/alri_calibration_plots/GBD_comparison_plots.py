@@ -22,6 +22,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.util import read_csv_files
 
 # %%
 outputpath = Path("./outputs")
@@ -55,19 +56,19 @@ if not os.path.exists(log_filename):
     seed = random.randint(0, 50000)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config,
+                     show_progress_bar=True, resourcefilepath=resourcefilepath)
 
     # run the simulation
     sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*']),
-        alri.Alri(resourcefilepath=resourcefilepath),
+        demography.Demography(),
+        enhanced_lifestyle.Lifestyle(),
+        symptommanager.SymptomManager(),
+        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthburden.HealthBurden(),
+        simplified_births.SimplifiedBirths(),
+        healthsystem.HealthSystem(service_availability=['*']),
+        alri.Alri(),
         alri.AlriPropertiesOfOtherModules()
     )
 
@@ -141,14 +142,14 @@ start_date = 2010
 end_date = 2026
 
 # import GBD data for Malawi's ALRI burden estimates
-GBD_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
-    sheet_name="GBD_Malawi_estimates",
+GBD_data = read_csv_files(
+    Path(resourcefilepath) / "ResourceFile_Alri",
+    files="GBD_Malawi_estimates",
     )
 # import McAllister estimates for Malawi's ALRI incidence
-McAllister_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
-    sheet_name="McAllister_2019",
+McAllister_data = read_csv_files(
+    Path(resourcefilepath) / "ResourceFile_Alri",
+    files="McAllister_2019",
     )
 
 plt.style.use("ggplot")

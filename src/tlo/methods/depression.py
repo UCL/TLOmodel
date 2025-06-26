@@ -18,6 +18,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
+from tlo.util import read_csv_files
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import DiagnosisFunction, HSIEventScheduler
@@ -32,9 +33,8 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------------------------------------
 
 class Depression(Module, GenericFirstAppointmentsMixin):
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
     INIT_DEPENDENCIES = {
         'Demography', 'Contraception', 'HealthSystem', 'Lifestyle', 'SymptomManager'
@@ -222,11 +222,11 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                                                      'or had a last pregnancy less than one year ago')
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path]=None):
         "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
-                          sheet_name='parameter_values')
+            read_csv_files(resourcefilepath / 'ResourceFile_Depression',
+                          files='parameter_values')
         )
         p = self.parameters
 

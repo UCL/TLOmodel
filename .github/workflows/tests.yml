@@ -46,9 +46,10 @@ jobs:
         name: Set matrix
         run: |
           set -e
+          shopt -s globstar
           # Find all test files and generate their list in JSON format
           VAR_FILES="{\"include\":["
-          for file in tests/test_*.py; do
+          for file in tests/**/test_*.py; do
               VAR_FILES="${VAR_FILES}{\"file\":\"${file}\"},"
           done
           VAR_FILES="${VAR_FILES}]}"

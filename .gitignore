@@ -124,6 +124,7 @@ src/**/_version.py
 
 # Generated TLO docs files
 docs/_*.rst
+docs/_*.html
 docs/hsi_events.csv
 docs/parameters.rst
 docs/reference/modules.rst
