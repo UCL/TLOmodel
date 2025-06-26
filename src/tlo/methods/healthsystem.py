@@ -1000,8 +1000,7 @@ class HealthSystem(Module):
             self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
     """Set the clinic eligibility for this HSI event Queue Item."""
-    def set_clinic_eligibility(self, hsi_q_item: HSIEventQueueI
-                               tem, clinic_access: str = None) -> None:
+    def set_clinic_eligibility(self, hsi_q_item: HSIEventQueueItem, clinic_access: str = None) -> None:
         if clinic_access is not None:
             hsi_q_item.clinic_eligibility = clinic_access
         else:
@@ -2429,7 +2428,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 event = next_event_tuple.hsi_event
                 # Check the event's clinic eligibility; if not clinic for eligible,
                 # clinic name will be Fungible; otherwise it will be the clinic name
-                event_clinic = event.clinic_eligibility
+                event_clinic = next_event_tuple.clinic_eligibility
                 if event_clinic == "Fungible":
                     counter_to_use = capabilities_monitor
                     capabilities_still_available = set_capabilities_still_available

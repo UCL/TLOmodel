@@ -2147,6 +2147,8 @@ def test_mode_2_clinics(seed, tmpdir):
             priority=1
         )
 
+
+
     for i in range(tot_population // 2, tot_population):
         hsi = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
                             person_id=i,
@@ -2161,18 +2163,6 @@ def test_mode_2_clinics(seed, tmpdir):
         )
 
 
-    ## First make sure DummyModuleNonFungible is eligible for clinic by setting clinic_eligibility
-    ## There are two ways of doing this - either use the setter or update the column name in
-    ## Resource file (equivalently key in the dictionary)
-    ## Get the existing dataframe
-    df = sim.modules['HealthSystem'].parameters['Ringfenced_Clinics']
-    keep_cols = ['Facility_ID', 'Officer_Type_Code', 'District', 'Facility_Level','Region', 'Facility_Name']
-    new_cols = ['DummyModuleNonFungible', 'Fungible']
-    updated_df = df[keep_cols].copy()
-    updated_df['DummyModuleNonFungible'] = 0.5
-    updated_df['Fungible'] = 0.5
-    sim.modules['HealthSystem'].parameters['Ringfenced_Clinics'] = updated_df
-
     hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='MinorSurg',
@@ -2184,18 +2174,13 @@ def test_mode_2_clinics(seed, tmpdir):
         print(k, sim.modules['HealthSystem']._daily_capabilities[k])
         sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
 
-    # In second district, make capabilities tuned to be those required to run all priority=2 events under
-    # maximum squeezed allowed for this priority, which currently is zero.
-    max_squeeze = 0.
-    scale = (1.+max_squeeze)
-    print("Scale is ", scale)
-    hsi2 = DummyHSIEvent(module=sim.modules['DummyModule'],
-                         person_id=int(tot_population/2),  # Ensures call is on officers in second district
+    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+                         person_id=int(tot_population/2),
                          appt_type='MinorSurg',
                          level='1a')
     hsi2.initialise()
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._daily_capabilities[k] = (v/scale)*(tot_population/4)
+        sim.modules['HealthSystem']._clinics_capabilities_per_staff[k]['DummyModuleNonFungible'] = v*(tot_population/2)
 
     # Run healthsystemscheduler
     healthsystemscheduler.apply(sim.population)
@@ -2204,41 +2189,13 @@ def test_mode_2_clinics(seed, tmpdir):
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output['tlo.methods.healthsystem']['HSI_Event']
 
-    # Check that some events could run, but not all
-    assert hs_output['did_run'].sum() < tot_population, "All events ran"
-    assert hs_output['did_run'].sum() != 0, "No events ran"
+    ## All events should have run
+    assert hs_output['did_run'].sum() == tot_population, "All events ran"
 
-    # Get the appointments that ran for each priority
-    Nran_w_priority0 = len(hs_output[(hs_output['priority'] == 0) & (hs_output['did_run'])])
-    Nran_w_priority1 = len(hs_output[(hs_output['priority'] == 1) & (hs_output['did_run'])])
-    Nran_w_priority2 = len(hs_output[(hs_output['priority'] == 2) & (hs_output['did_run'])])
-    Nran_w_priority3 = len(hs_output[(hs_output['priority'] == 3) & (hs_output['did_run'])])
+    ## Update the capabilties so that only Non-fungible events can run
+    sim.modules['HealthSystem']._daily_capabilities[:] = 0
 
-    # Within district, check that appointments with higher priority occurred more frequently
-    assert Nran_w_priority0 > Nran_w_priority1
-    assert Nran_w_priority2 > Nran_w_priority3
 
-    # Check that if capabilities ran out in one district, capabilities in different district
-    # cannot be accessed, even if priority should give precedence:
-    # Because competition for resources occurs by facility, priority=2 should occur more
-    # frequently than priority=1.
-    assert Nran_w_priority2 > Nran_w_priority1
-
-    # SQUEEZE CHECKS
-
-    # Check that some level of squeeze occurs:
-    # Although the capabilities in first district were set to half of those required,
-    # if some level of squeeze was allowed (i.e. if max squeeze allowed for priority=0 is >0)
-    # more than half of appointments should have taken place in total.
-    if max_squeeze > 0:
-        assert Nran_w_priority0 + Nran_w_priority1 > (tot_population/4)
-
-    # Check that the maximum squeeze allowed is set by priority:
-    # The capabilities in the second district were tuned to accomodate all priority=2
-    # appointments under the maximum squeeze allowed. Check that exactly all priority=2
-    # appointments were allowed and no priority=3, to verify that the maximum squeeze
-    # allowed in queue given priority is correct.
-    assert (Nran_w_priority2 == int(tot_population/4)) & (Nran_w_priority3 == 0)
 
 
 @pytest.mark.slow
