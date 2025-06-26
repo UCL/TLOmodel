@@ -2164,15 +2164,25 @@ def test_mode_2_clinics(seed, tmpdir):
     ## First make sure DummyModuleNonFungible is eligible for clinic by setting clinic_eligibility
     ## There are two ways of doing this - either use the setter or update the column name in
     ## Resource file (equivalently key in the dictionary)
+    ## Get the existing dataframe
+    df = sim.modules['HealthSystem'].parameters['Ringfenced_Clinics']
+    keep_cols = ['Facility_ID', 'Officer_Type_Code', 'District', 'Facility_Level','Region', 'Facility_Name']
+    new_cols = ['DummyModuleNonFungible', 'Fungible']
+    updated_df = df[keep_cols].copy()
+    updated_df['DummyModuleNonFungible'] = 0.5
+    updated_df['Fungible'] = 0.5
+    sim.modules['HealthSystem'].parameters['Ringfenced_Clinics'] = updated_df
+
     hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='MinorSurg',
                          level='1a')
     hsi1.initialise()
     # Now adjust capabilities available.
+    # We first want to make sure there is enough capabilities available to run all events
     for k, v in hsi1.expected_time_requests.items():
         print(k, sim.modules['HealthSystem']._daily_capabilities[k])
-        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/4)
+        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority, which currently is zero.
