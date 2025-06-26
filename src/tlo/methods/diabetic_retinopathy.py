@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 
 class DiabeticRetinopathy(Module):
-    """ This is Diabetic Retinopathy module. It seeks to model of blindness due to diabetes. """
+    """ This is Diabetic Retinopathy (DR) module. It seeks to model of DR effects. """
 
     INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders'}
     ADDITIONAL_DEPENDENCIES = set()
@@ -32,23 +32,24 @@ class DiabeticRetinopathy(Module):
 
     PARAMETERS = {
         "rate_onset_to_mild_dr": Parameter(Types.REAL,
-                                           "Probability of people who get diagnosed with mild diabetic retinopathy"),
+                                           "Probability of people who get diagnosed with mild "
+                                           "diabetic retinopathy"),
         "rate_mild_to_moderate": Parameter(Types.REAL,
-                                           "Probability of people who get diagnosed with moderate diabetic retinopathy"),
+                                           "Probability of people who get diagnosed with moderate "
+                                           "diabetic retinopathy"),
         "rate_moderate_to_severe": Parameter(Types.REAL,
-                                             "Probability of people who get diagnosed with severe diabetic retinopathy"),
+                                             "Probability of people who get diagnosed with severe "
+                                             "diabetic retinopathy"),
         "rate_severe_to_proliferative": Parameter(Types.REAL,
-                                                  "Probability of people who get diagnosed with proliferative "
-                                                  "diabetic retinopathy"),
+                                                  "Probability of people who get diagnosed with "
+                                                  "proliferative diabetic retinopathy"),
         'prob_fast_dr': Parameter(Types.REAL,
-                                  "Probability of people who get diagnosed from none phase to proliferative diabetic "
-                                  "retinopathy stage"),
+                                  "Probability of people who get diagnosed from none phase to "
+                                  "proliferative diabetic retinopathy stage"),
 
         "init_prob_any_dr": Parameter(Types.LIST, "Initial probability of anyone with diabetic retinopathy"),
-        "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having Diabetic "
-                                              "Macular Oedema (DMO)"),
-        # "init_prob_proliferative_dr": Parameter(Types.REAL, "Initial probability of people with diabetic
-        # retinopathy in the proliferative stage"),
+        "prob_any_dmo": Parameter(Types.LIST, "Probability of anyone with diabetic retinopathy having "
+                                              "Diabetic Macular Oedema (DMO)"),
         "p_medication": Parameter(Types.REAL, "Diabetic retinopathy treatment/medication effectiveness"),
         "init_prob_ever_diet_mgmt_if_diagnosed": Parameter(
             Types.REAL, "Initial probability of ever having had a diet management session if ever diagnosed "
@@ -82,7 +83,8 @@ class DiabeticRetinopathy(Module):
         "probs_for_dmo_when_dr_status_severe": Parameter(
             Types.LIST, "probability of having a DMO state when an individual has severe Diabetic Retinopathy "),
         "probs_for_dmo_when_dr_status_proliferative": Parameter(
-            Types.LIST, "probability of having a DMO state when an individual has proliferative Diabetic Retinopathy "),
+            Types.LIST, "probability of having a DMO state when an individual has "
+                        "proliferative Diabetic Retinopathy "),
     }
 
     PROPERTIES = {
@@ -125,10 +127,6 @@ class DiabeticRetinopathy(Module):
             Types.BOOL,
             "Whether blindness has been investigated, and diabetic retinopathy missed"
         ),
-        "dr_ever_diet_mgmt": Property(Types.BOOL,
-                                      "Whether this person has ever had a diabetic retinopathy diet management"
-                                      "session in the diabetic clinic"),
-
     }
 
     def __init__(self):
@@ -163,7 +161,6 @@ class DiabeticRetinopathy(Module):
         # self.parameters['init_prob_proliferative_dr'] = 0.09
         self.parameters['p_medication'] = 0.8
         self.parameters['effectiveness_of_laser_photocoagulation_in_severe_regression'] = 0.21
-        self.parameters['init_prob_ever_diet_mgmt_if_diagnosed'] = 0.1
         self.parameters['prob_reg_eye_exam'] = 0.05
 
         self.parameters['rp_dr_ex_alc'] = 1.1
@@ -209,7 +206,6 @@ class DiabeticRetinopathy(Module):
         df.loc[list(alive_diabetes_idx), "dr_stage_at_which_treatment_given"] = "none"
         df.loc[list(alive_diabetes_idx), "dr_date_diagnosis"] = pd.NaT
         df.loc[list(alive_diabetes_idx), "dr_blindness_investigated"] = False
-        df.loc[list(alive_diabetes_idx), "dr_ever_diet_mgmt"] = False
 
         # -------------------- dr_status -----------
         # Determine who has diabetic retinopathy at all stages:
@@ -315,7 +311,6 @@ class DiabeticRetinopathy(Module):
         self.sim.population.props.at[child_id, 'dr_diagnosed'] = False
         self.sim.population.props.at[child_id, 'dr_date_diagnosis'] = pd.NaT
         self.sim.population.props.at[child_id, 'dr_blindness_investigated'] = False
-        self.sim.population.props.at[child_id, 'dr_ever_diet_mgmt'] = False
 
     def on_simulation_end(self) -> None:
         pass
@@ -348,11 +343,6 @@ class DiabeticRetinopathy(Module):
             self.parameters['rate_severe_to_proliferative'],
             Predictor('had_treatment_during_this_stage', external=True)
             .when(True, 0.0).otherwise(1.0)
-        )
-
-        self.lm['ever_diet_mgmt_initialisation'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            intercept=self.parameters['init_prob_ever_diet_mgmt_if_diagnosed']
         )
 
     def look_up_consumable_item_codes(self):
@@ -529,9 +519,9 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         elif dr_stage == 'severe' or dr_stage == 'proliferative':
-            # Interventions for severe and proliferative
+            # Intervention for severe and proliferative
             schedule_hsi_event(
-                hsi_event=HSI_Dr_StartTreatment(module=self, person_id=person_id),
+                hsi_event=HSI_Dr_Dmo_AdvancedTreatment(module=self, person_id=person_id),
                 priority=0, topen=self.sim.date)
 
 
@@ -708,20 +698,9 @@ class DiabeticRetinopathyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_now = self.sim.date
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
-        n_any_dr = (df.is_alive & ((df.dr_status == "proliferative") | (df.dr_status == "mild"))).sum()
-        n_ever_diet_mgmt = (
-            df.dr_ever_diet_mgmt & df.is_alive & ((df.dr_status == "proliferative") | (df.dr_status == "mild"))).sum()
-
-        def zero_out_nan(x):
-            return x if not np.isnan(x) else 0.0
-
-        def safe_divide(x, y):
-            return float(x / y) if y > 0.0 else 0.0
-
         out.update({
             'diagnosed_since_last_log': df.dr_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.dr_date_treatment.between(date_lastlog, date_now).sum(),
-            'prop_ever_diet_mgmt_if_any_dr': zero_out_nan(safe_divide(n_ever_diet_mgmt, n_any_dr)),
         })
 
         logger.info(key='summary_stats', data=out)
