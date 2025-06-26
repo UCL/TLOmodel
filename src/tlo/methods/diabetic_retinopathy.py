@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 
 class DiabeticRetinopathy(Module):
-    """ This is Diabetic Retinopathy (DR) module. It seeks to model of DR effects. """
+    """ This is Diabetic Retinopathy (DR) module. It seeks to model DR effects. """
 
     INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle', 'HealthSystem', 'CardioMetabolicDisorders'}
     ADDITIONAL_DEPENDENCIES = set()
