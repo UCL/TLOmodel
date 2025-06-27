@@ -167,7 +167,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                 update_cons_override_treatment_ids([
                     'CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension',
                      'CardioMetabolicDisorders_Investigation_hypertension',
-                     'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension'])
+                     'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
+                     'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
+                    'CardioMetabolicDisorders_Treatment_hypertension'])
 
         if params['serv_integration'].startswith(("dm", "all_screening", "all_int")):
             # Probability of screening when presenting to any generic first appointment and not sympotmatic set to 100%
@@ -177,7 +179,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
             if params['serv_integration'].endswith('_max'):
                 update_cons_override_treatment_ids([
                     'CardioMetabolicDisorders_Investigation_diabetes',
-                    'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes'])
+                    'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
+                    'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
+                    'CardioMetabolicDisorders_Treatment_diabetes'])
 
         if params['serv_integration'].startswith(("fp_scr", "all_screening", "all_int")):
             # Here we use the in-built functionality of the contraception model to increase the coverage of modern
@@ -217,7 +221,9 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                     'Tb_Test_Clinical',
                     'Tb_Test_Culture',
                     'Tb_Test_Xray',
-                    'Tb_Treatment'])
+                    'Tb_Treatment',
+                     'Tb_Test_FollowUp'
+                     ])
 
         # ------------------------------------ MATERNAL AND CHILD HEALTH CLINIC ---------------------------------------
         if params['serv_integration'].startswith(("anc", "all_mch", "all_int")):
@@ -257,13 +263,10 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                                                 'Epi_Childhood_Rota',
                                                 'Epi_Childhood_Pneumo',
                                                 'Epi_Childhood_MeaslesRubella',
-                                                'Epi_Adolescent_Hpv',
                                                 'Epi_Pregnancy_Td'
                                                 ])
 
         # ------------------------------------- CHRONIC CARE CLINIC ---------------------------------------------------
-        # todo: currently only hiv and ncds are linked to other services (what about those presenting for depression etc)
-
         if params['serv_integration'].startswith(("chronic_care", "all_int")):
 
             self.sim.modules['Hiv'].parameters['virally_suppressed_on_art'] = 1.0
@@ -281,8 +284,11 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                 update_cons_override_treatment_ids(
                     ['CardioMetabolicDisorders_Investigation_diabetes',
                      'CardioMetabolicDisorders_Investigation_hypertension',
+                     'CardioMetabolicDisorders_Investigation_hypertension_and_diabetes',
                      'CardioMetabolicDisorders_Prevention_WeightLoss_diabetes',
                      'CardioMetabolicDisorders_Prevention_WeightLoss_hypertension',
+                     'CardioMetabolicDisorders_Treatment_hypertension',
+                     'CardioMetabolicDisorders_Treatment_diabetes',
                      'Hiv_Test',
                      'Hiv_Treatment',
                      'Tb_Test_Screening',
@@ -290,6 +296,7 @@ class ServiceIntegrationParameterUpdateEvent(Event, PopulationScopeEventMixin):
                      'Tb_Test_Culture',
                      'Tb_Test_Xray',
                      'Tb_Treatment',
+                     'Tb_Test_FollowUp',
                      'Depression_TalkingTherapy',
                      'Depression_Treatment',
                      'Epilepsy_Treatment_Start',

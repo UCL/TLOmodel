@@ -11,8 +11,8 @@ class ServiceIntegrationScenario(BaseScenario):
         super().__init__()
         self.seed = 537184
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2016, 1, 1)
-        self.pop_size = 50_000
+        self.end_date = Date(2050, 1, 1)
+        self.pop_size = 200_000
         self.number_of_draws = 28
         self.runs_per_draw = 10
 
@@ -46,7 +46,7 @@ class ServiceIntegrationScenario(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
 
-        params_all = {'ServiceIntegration':{'integration_year': 2011}}
+        params_all = {'ServiceIntegration':{'integration_year': 2025}}
         params_oth ={1: {'serv_integration': 'htn'},
                      2: {'serv_integration': 'htn_max'},
                      3: {'serv_integration': 'dm'},
