@@ -11,8 +11,8 @@ class ServiceIntegrationScenario(BaseScenario):
         super().__init__()
         self.seed = 537184
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2050, 1, 1)
-        self.pop_size = 200_000
+        self.end_date = Date(2055, 1, 1)
+        self.pop_size = 150_000
         self.number_of_draws = 28
         self.runs_per_draw = 10
 
