@@ -371,8 +371,8 @@ def check_format_of_consumables_file(df, fac_ids):
 
     availability_columns = list(filter(lambda x: x.startswith('available_prop'), df.columns))
 
-    assert set('Facility_ID', 'month', 'item_code').issubset(df.columns)
-    assert availability_columns
+    assert {'Facility_ID', 'month', 'item_code'}.issubset(df.columns)
+    assert len(availability_columns) > 0
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(
