@@ -719,9 +719,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             alpha=0.5
         )
 
-    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='grey', linestyle='--')
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+    axes[1].hlines(y=2, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
 
-    axes[1].set_ylabel('Fold Change in DALYs Compared to 2020')
+    axes[1].set_ylabel('Fold Change in DALYs per 1,000 Compared to 2020')
     axes[1].set_xlabel('Scenario')
     axes[1].set_xticks(range(len(scenario_names)))
     axes[1].set_xticklabels(scenario_names, rotation=45)

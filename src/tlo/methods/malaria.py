@@ -751,12 +751,13 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
             ((df['ma_inf_type'] == 'clinical') | (df['ma_inf_type'] == 'severe'))
             ]
         alive_df = df[df['is_alive']]
+        alive_df_by_age = alive_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
 
         prevalence_counts = (
             malaria_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
 
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df_by_age)).to_dict(orient='index')
 
         return {'Malaria': prevalence_by_age_group_sex}
 

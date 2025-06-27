@@ -1003,12 +1003,13 @@ class Alri(Module, GenericFirstAppointmentsMixin):
         # Select alive individuals with current ALRI infection
         alri_df = df[(df['is_alive']) & (df['ri_current_infection_status'])]
         alive_df = df[df['is_alive']]
+        alive_df_by_age = alive_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
 
         prevalence_counts = (
             alri_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
 
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df_by_age)).to_dict(orient='index')
 
         return {'ALRI': prevalence_by_age_group_sex}
 

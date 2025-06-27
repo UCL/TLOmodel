@@ -259,13 +259,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             result_data_prevalence_by_age.index.names = ['age_grp', 'cause']
 
-            crude_prevalence_by_agegroup = result_data_prevalence_by_age.unstack(level='age_grp')['mean'] / num_by_age[
-                'mean']
+            crude_prevalence_by_agegroup = result_data_prevalence_by_age.unstack(level='age_grp')['mean'] * num_by_age.sum()
 
-            standard_population = num_by_age['mean']
-            standard_population = standard_population / standard_population.sum()
+            standard_population = num_by_age['mean'].sum()
 
-            age_standardised_prevalence = (crude_prevalence_by_agegroup * standard_population).sum(axis=1)
+            age_standardised_prevalence = (crude_prevalence_by_agegroup).sum(axis=1) # need to multiply by standard population because I accidentally divided it
 
             # Store results
             all_years_data_prevalence[target_year] = result_data_prevalence['mean']
@@ -367,12 +365,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                  all_draws_prevalence_normalized.index][i])
             axes[1].plot(
                 jittered_all_draws_prevalence_normalized,
-                jittered_all_draws_prevalence_normalized.loc[condition],
-                color=[all_draws_prevalence_normalized(_label) for _label in jittered_all_draws_prevalence_normalized.index][i],
+                all_draws_prevalence_normalized.loc[condition],
+                color=[all_draws_prevalence_normalized(_label) for _label in all_draws_prevalence_normalized.index][i],
                 alpha=0.5
             )
 
-            axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
     axes[1].scatter(all_draws_population.columns,
                     all_draws_population.iloc[0, :],
                     color='black', marker='s', label='Population')

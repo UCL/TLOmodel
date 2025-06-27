@@ -196,12 +196,14 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         # This reports age- and sex-specific prevalence of measles for all individuals
         df = self.sim.population.props
         alive_df = df[df['is_alive']]
+        alive_df_by_age = alive_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
 
-        measles_df = alive_df[alive_df['me_has_measles']]
+        measles_df = alive_df_by_age[alive_df_by_age['me_has_measles']]
+
         prevalence_counts = (
             measles_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+        prevalence_by_age_group_sex = (prevalence_counts / len(measles_df)).to_dict(orient='index')
 
         return {'Measles': prevalence_by_age_group_sex}
 

@@ -194,8 +194,9 @@ class Copd(Module, GenericFirstAppointmentsMixin):
         prevalence_counts = (
             copd_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
         )
+        alive_df_by_age = alive_df.groupby(['age_range', 'sex']).size().unstack(fill_value=0)
 
-        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df)).to_dict(orient='index')
+        prevalence_by_age_group_sex = (prevalence_counts / len(alive_df_by_age)).to_dict(orient='index')
 
         return {'COPD': prevalence_by_age_group_sex}
 
