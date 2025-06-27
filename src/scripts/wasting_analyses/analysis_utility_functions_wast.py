@@ -72,21 +72,38 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     print(f"\n{interv=}")
     # ### NEONATAL MORTALITY
     # Extract all deaths occurring during the first 28 days of life
-    neonatal_deaths_df = extract_results(
+    # differentiated by cause of death
+    neonatal_deaths_by_cause_df = extract_results(
         folder,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: (filtered_by_age := df.loc[df['age_days'] < 29])
             .assign(year=filtered_by_age['date'].dt.year)
-            .groupby(['year'])['year']
+            .groupby(['year', 'cause_of_death'])['year']
             .count()
-            .reindex(df['date'].dt.year.unique(), fill_value=0)
+            .reindex(pd.MultiIndex.from_product([df['date'].dt.year.unique(), df['cause_of_death'].unique()],
+                                                names=['year', 'cause_of_death']), fill_value=0)
         ),
         do_scaling=True).fillna(0)
-    neonatal_deaths_df = neonatal_deaths_df.loc[years_of_interest]
+    neonatal_deaths_by_cause_df = neonatal_deaths_by_cause_df.loc[years_of_interest]
+    # number of deaths by any cause
+    neonatal_deaths_df = neonatal_deaths_by_cause_df.groupby(['year']).sum()
+    # number of deaths by specific causes
+    neonatal_SAM_deaths_df = neonatal_deaths_by_cause_df.loc[
+        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'Severe Acute Malnutrition'
+        ].groupby(['year']).sum()
+    neonatal_ALRI_deaths_df = neonatal_deaths_by_cause_df.loc[
+        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
+    ].groupby(['year']).sum()
+    neonatal_Diarrhoea_deaths_df = neonatal_deaths_by_cause_df.loc[
+        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_')
+    ].groupby(['year']).sum()
 
     neo_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_deaths_df)
+    neo_SAM_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_SAM_deaths_df)
+    neo_ALRI_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_ALRI_deaths_df)
+    neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_Diarrhoea_deaths_df)
 
     interv_neo_deaths_df = neonatal_deaths_df.loc[intervention_years]
     interv_neo_deaths_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_neo_deaths_df)
@@ -95,30 +112,40 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     nmr_df = (neonatal_deaths_df / births_df) * 1000
     nmr_per_year_per_draw_df = return_mean_95_CI_across_runs(nmr_df)
 
-    # # TODO: rm prints when no longer needed
-    # print("\nYears, and (Draws, Runs) with no neonatal death:")
-    # no_neo_deaths = [(neonatal_deaths.index[row], neonatal_deaths.columns[col]) for row, col in
-    #                  zip(*np.where(neonatal_deaths == 0.0))]
-    # print(f"{no_neo_deaths}")
-    # #
-
     # ### UNDER-5 MORTALITY
     # Extract all deaths occurring during the first 5 years of life
-    under5_deaths_df = extract_results(
+    # differentiated by cause of death
+    under5_deaths_by_cause_df = extract_results(
         folder,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: (filtered_by_age := df.loc[df['age_exact_years'] < 5])
             .assign(year=filtered_by_age['date'].dt.year)
-            .groupby(['year'])['year']
+            .groupby(['year', 'cause_of_death'])['year']
             .count()
-            .reindex(df['date'].dt.year.unique(), fill_value=0)
+            .reindex(pd.MultiIndex.from_product([df['date'].dt.year.unique(), df['cause_of_death'].unique()],
+                                                names=['year', 'cause_of_death']), fill_value=0)
         ),
-        do_scaling = True).fillna(0)
-    under5_deaths_df = under5_deaths_df.loc[years_of_interest]
+        do_scaling=True).fillna(0)
+    under5_deaths_by_cause_df = under5_deaths_by_cause_df.loc[years_of_interest]
+    # number of deaths by any cause
+    under5_deaths_df = under5_deaths_by_cause_df.groupby(['year']).sum()
+    # number of deaths by specific causes
+    under5_SAM_deaths_df = under5_deaths_by_cause_df.loc[
+        under5_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'Severe Acute Malnutrition'
+        ].groupby(['year']).sum()
+    under5_ALRI_deaths_df = under5_deaths_by_cause_df.loc[
+        under5_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
+    ].groupby(['year']).sum()
+    under5_Diarrhoea_deaths_df = under5_deaths_by_cause_df.loc[
+        under5_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_')
+    ].groupby(['year']).sum()
 
     under5_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_deaths_df)
+    under5_SAM_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_SAM_deaths_df)
+    under5_ALRI_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_ALRI_deaths_df)
+    under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_Diarrhoea_deaths_df)
 
     interv_under5_deaths_df = under5_deaths_df.loc[intervention_years]
     interv_under5_deaths_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_deaths_df)
@@ -128,13 +155,25 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     under5mr_per_year_per_draw_df = return_mean_95_CI_across_runs(under5mr_df)
 
     return {'neo_deaths_df': neonatal_deaths_df,
+            'neo_SAM_deaths_df': neonatal_SAM_deaths_df,
+            'neo_ALRI_deaths_df': neonatal_ALRI_deaths_df,
+            'neo_Diarrhoea_deaths_df': neonatal_Diarrhoea_deaths_df,
             'neo_deaths_mean_ci_df': neo_deaths_mean_ci_per_year_per_draw_df,
+            'neo_SAM_deaths_mean_ci_df': neo_SAM_deaths_mean_ci_per_year_per_draw_df,
+            'neo_ALRI_deaths_mean_ci_df': neo_ALRI_deaths_mean_ci_per_year_per_draw_df,
+            'neo_Diarrhoea_deaths_mean_ci_df': neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
             'interv_neo_deaths_df': interv_neo_deaths_df, # TODO: check when and how is this used, is it really worth to return this?
             'interv_neo_deaths_mean_ci_df': interv_neo_deaths_per_year_per_draw_df,
             'neonatal_mort_rate_df': nmr_df,
             'neo_mort_rate_mean_ci_df': nmr_per_year_per_draw_df,
             'under5_deaths_df': under5_deaths_df,
+            'under5_SAM_deaths_df': under5_SAM_deaths_df,
+            'under5_ALRI_deaths_df': under5_ALRI_deaths_df,
+            'under5_Diarrhoea_deaths_df': under5_Diarrhoea_deaths_df,
             'under5_deaths_mean_ci_df': under5_deaths_mean_ci_per_year_per_draw_df,
+            'under5_SAM_deaths_mean_ci_df': under5_SAM_deaths_mean_ci_per_year_per_draw_df,
+            'under5_ALRI_deaths_mean_ci_df': under5_ALRI_deaths_mean_ci_per_year_per_draw_df,
+            'under5_Diarrhoea_deaths_mean_ci_df': under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
             'interv_under5_deaths_df': interv_under5_deaths_df,
             'interv_under5_deaths_mean_ci_df': interv_under5_deaths_per_year_per_draw_df,
             'under5_mort_rate_df': under5mr_df,
@@ -233,47 +272,54 @@ def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: 
     # Outcome to plot
     assert cohort in ['Neonatal', 'Under-5'], \
         f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
-    outcome = 'neo_deaths_mean_ci_df' if cohort == 'Neonatal' else 'under5_deaths_mean_ci_df'
 
-    # Initialize the plot
-    fig, ax = plt.subplots()
+    for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
 
-    # Iterate over scenarios to compare
-    for scenario in scenarios_to_compare:
-        # Find the corresponding intervention and draw number
-        interv, draw = next(
-            (interv, draw)
-            for interv, scenarios_for_interv_dict in scenarios_dict.items()
-            if scenario in scenarios_for_interv_dict
-            for scen_name, draw in scenarios_for_interv_dict.items()
-            if scen_name == scenario
+        neonatal_outcomes = ['neo_deaths_mean_ci_df', 'neo_SAM_deaths_mean_ci_df',
+                             'neo_ALRI_deaths_mean_ci_df', 'neo_Diarrhoea_deaths_mean_ci_df']
+        under5_outcomes = ['under5_deaths_mean_ci_df', 'under5_SAM_deaths_mean_ci_df',
+                           'under5_ALRI_deaths_mean_ci_df', 'under5_Diarrhoea_deaths_mean_ci_df']
+        outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
+
+        # Initialize the plot
+        fig, ax = plt.subplots()
+
+        # Iterate over scenarios to compare
+        for scenario in scenarios_to_compare:
+            # Find the corresponding intervention and draw number
+            interv, draw = next(
+                (interv, draw)
+                for interv, scenarios_for_interv_dict in scenarios_dict.items()
+                if scenario in scenarios_for_interv_dict
+                for scen_name, draw in scenarios_for_interv_dict.items()
+                if scen_name == scenario
+            )
+
+            # Extract data for the scenario
+            scen_data = data_dict[interv][outcome][draw]
+
+            # Calculate means and confidence intervals
+            means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+
+            # Plot the data
+            ax.plot(plot_years, means, label=scenario, color=get_scen_colour(scenario))
+            ax.fill_between(plot_years, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
+
+        # Add labels, title, and legend
+        plt.ylabel(f'{cohort} Deaths')
+        plt.xlabel('Year')
+        plt.title(f'{cohort} Mean deaths due to {cause_of_death} and 95% CI over time')
+        plt.legend()
+        plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
+
+        # Save the plot
+        plt.savefig(
+            outputs_path / (
+                f"{cohort}_mean_{cause_of_death}_deaths_CI_scenarios_comparison__"
+                f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+            ),
+            bbox_inches='tight'
         )
-
-        # Extract data for the scenario
-        scen_data = data_dict[interv][outcome][draw]
-
-        # Calculate means and confidence intervals
-        means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
-
-        # Plot the data
-        ax.plot(plot_years, means, label=scenario, color=get_scen_colour(scenario))
-        ax.fill_between(plot_years, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
-
-    # Add labels, title, and legend
-    plt.ylabel(f'{cohort} Deaths')
-    plt.xlabel('Year')
-    plt.title(f'{cohort} Mean deaths and 95% CI over time')
-    plt.legend()
-    plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
-
-    # Save the plot
-    plt.savefig(
-        outputs_path / (
-            f"{cohort}_mean_deaths_CI_scenarios_comparison__"
-            f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
-        ),
-        bbox_inches='tight'
-    )
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
     """
