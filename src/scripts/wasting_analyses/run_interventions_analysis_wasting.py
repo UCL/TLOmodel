@@ -21,11 +21,14 @@ total_time_start = time.time()
 scenarios_dict = {
     'SQ': {'Status Quo': 0},
     'GM': {'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
-    'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2, 'CS_100': 3}
+    'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2, 'CS_100': 3},
+    'FS': {'FS_70':0, 'FS_Full': 1}
 }
 # Set the intervention to be analysed, and for which years they were simulated
-intervs_of_interest = ['SQ', 'GM', 'CS']
+intervs_all = ['SQ', 'GM', 'CS', 'FS']
+intervs_of_interest = ['SQ', 'GM', 'CS', 'FS']
 intervention_years = list(range(2026, 2031))
+scenarios_to_compare = ['Status Quo', 'GM_all', 'CS_100', 'FS_Full']
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2031))
 # Plot settings
@@ -39,24 +42,34 @@ scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 ########################################################################################################################
+assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
+                                                                      "in intervs_all")
 
 def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interventionyears:list,
-                                       intervs_ofinterest:list) -> None:
+                                       intervs_ofinterest:list, scenarios_tocompare, intervsall) -> None:
     """
     This function saves outcomes from analyses conducted for the Janoušková et al. (2025) paper on acute malnutrition.
 
-    The analyses examine the impact of improved screening or treatment coverage. Outcomes from a single intervention,
-    evaluated under multiple assumptions, are compared with each other and with outcomes from a status quo scenario.
+    The analyses examine the impact of improved screening or treatment coverage.
+    * Outcome 1:
+        for each intervs_ofinterest, compare multiple settings of the intervention and status quo scenarios.
+    * Outcome 2:
+        compare scenarios_tocompare to each other
 
-    :param outputspath: path to the directory to save output plots/tables
-    :param plotyears: the years to be included in the plots/tables
-    :param interventionyears: the years during which an intervention is implemented (if any)
-    :param intervs_ofinterest: list of interventions being analysed;
-            (GM = growth monitoring, CS = care-seeking, FS = food supplements)
+    :param outputspath: Path to the directory to save output plots/tables
+    :param plotyears: The years to be included in the plots/tables
+    :param interventionyears: The years during which an intervention is implemented (if any)
+    :param intervs_ofinterest: List of interventions to plot scenarios with multiple settings of those interventions;
+            (SQ = status quo, GM = growth monitoring, CS = care-seeking, FS = food supplements)
+    :param scenarios_tocompare: List of scenarios to be plotted together for comparison
+    :param intervsall: List of all interventions
     """
 
     # Find the most recent folders containing results for each intervention
-    interventions = intervs_ofinterest + ['SQ']
+    if 'SQ' not in intervs_ofinterest:
+        interventions = intervs_ofinterest + ['SQ']
+    else:
+        interventions = intervs_ofinterest
     iterv_folders_dict = {
         interv: get_scenario_outputs(
             scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
@@ -85,8 +98,9 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     # Extract birth outcomes for each intervention to calculate mortality as number of deaths per 1,000 live births
     print("birth outcomes calculation ...")
     birth_outcomes_dict = {
-        interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(iterv_folders_dict[interv],
-                                                                                       plotyears, interventionyears)
+        interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(
+            iterv_folders_dict[interv], plotyears, interventionyears, interv
+        )
         for interv in scenario_folders
     }
     # TODO: rm
@@ -97,10 +111,11 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #         print(f"{outcome}:\n{birth_outcomes_dict[interv][outcome]}")
     #
     # Extract neonatal and under-5 death data for each intervention
+    print("\n--------------")
     print("death outcomes calculation ...")
     death_outcomes_dict = {
         interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
-            iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears
+            iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears, interv
         ) for interv in scenario_folders
     }
     # # TODO: rm
@@ -111,40 +126,104 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #         print(f"{outcome}:\n{death_outcomes_dict[interv][outcome]}")
     # #
 
+    # ---------------------------------------------------- Plots  ---------------------------------------------------- #
+    print("\n--------------")
     for cohort in ['Neonatal', 'Under-5']:
         print(f"plotting {cohort} outcomes ...")
-        analysis_utility_functions_wast.plot_mortality__by_interv_multiple_settings(
+        print("    plotting mortality rates ...")
+        analysis_utility_functions_wast.plot_mortality_rate__by_interv_multiple_settings(
             cohort, interv_timestamps_dict, scenarios_dict, intervs_ofinterest, plotyears, death_outcomes_dict,
             outputspath
         )
+        print("    plotting mean deaths ...")
+        # Prepare scenarios_tocompare_prefix
+        if 'Status Quo' in scenarios_tocompare:
+            scenarios_tocompare_sq_shorten = [
+                'SQ' if scenario == 'Status Quo' else scenario for scenario in scenarios_tocompare
+            ]
+        else:
+            scenarios_tocompare_sq_shorten = scenarios_tocompare
+        scenarios_tocompare_prefix = "_".join(scenarios_tocompare_sq_shorten)
+        # Prepare timestamps_mean_deaths_suffix suffix
+        timestamps_mean_deaths_suffix = ''
+        for interv in intervsall:
+            if any(scenario.startswith(interv) for scenario in scenarios_tocompare):
+                if timestamps_mean_deaths_suffix == '':
+                    timestamps_mean_deaths_suffix = f"{interv_timestamps_dict[interv]}"
+                else:
+                    timestamps_mean_deaths_suffix = timestamps_mean_deaths_suffix + f"_{interv_timestamps_dict[interv]}"
+        if 'Status Quo' in scenarios_tocompare:
+            if timestamps_mean_deaths_suffix == '':
+                timestamps_mean_deaths_suffix = f"{interv_timestamps_dict['SQ']}"
+            else:
+                timestamps_mean_deaths_suffix = timestamps_mean_deaths_suffix + f"_{interv_timestamps_dict['SQ']}"
+        analysis_utility_functions_wast.plot_mean_deaths_and_CIs__scenarios_comparison(
+            cohort, scenarios_dict, scenarios_tocompare, plotyears, death_outcomes_dict, outputspath,
+            scenarios_tocompare_prefix, timestamps_mean_deaths_suffix
+        )
 
-    # Create a PDF file to save all figures
-    # Create scenario prefix and all timestamps suffix
-    interv_all = "_".join(intervs_of_interest)
-    timestamps_all = "_".join(interv_timestamps_dict[interv] for interv in intervs_of_interest)
+    # ------------------------------------ Create a PDF file to save all figures ------------------------------------- #
+    # Create interventions prefix and timestamps_intervs_plotted suffix
+    intervs_ofinterest_prefix = "_".join(intervs_ofinterest) # mortality rates - multiple settings of Interventions
+    intervs_plotted = [
+        interv for interv in intervsall
+        if interv in intervs_of_interest or \
+           any(scenario.startswith(interv) for scenario in scenarios_tocompare_sq_shorten)
+    ]
+    timestamps_intervs_plotted = "_".join(interv_timestamps_dict[interv] for interv in intervs_plotted)
 
-    pdf_path = outputs_path / f"{interv_all}_scenarios_{timestamps_all}.pdf"
+    pdf_path = outputs_path / (
+        f"{intervs_ofinterest_prefix}_interventions__{scenarios_tocompare_prefix}_scenarios_"
+        f"{timestamps_intervs_plotted}.pdf"
+    )
     with PdfPages(pdf_path) as pdf:
-        fig, axes = plt.subplots(len(intervs_of_interest), 2, figsize=(12, 6 * len(intervs_of_interest)))
-        for i, interv in enumerate(intervs_of_interest):
-            for j, cohort in enumerate(['Neonatal', 'Under-5']):
-                fig_path = outputs_path / (
-                    f"{cohort}_mort_rate_{interv}_multiple_settings__"
-                    f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
-                )
-                if fig_path.exists():
-                    img = plt.imread(fig_path)
-                    axes[i, j].imshow(img)
-                    axes[i, j].axis('off')
-                    axes[i, j].set_title(f"{cohort} - {interv}", fontsize=10)
+        # Outcome 1: figures with mortality rates for each interv of interest, comparing different settings
+        for page_start in range(0, len(intervs_of_interest), 2):
+            fig1, axes1 = plt.subplots(min(2, len(intervs_of_interest) - page_start), 2, figsize=(12, 12))
+            for i, interv in enumerate(intervs_of_interest[page_start:page_start + 2]):
+                for j, cohort in enumerate(['Neonatal', 'Under-5']):
+                    mort_rate_png_file_path = outputs_path / (
+                        f"{cohort}_mort_rate_{interv}_multiple_settings__"
+                        f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
+                    )
+                    if mort_rate_png_file_path.exists():
+                        img = plt.imread(mort_rate_png_file_path)
+                        axes1[i, j].imshow(img)
+                        axes1[i, j].axis('off')
+                        axes1[i, j].set_title(f"{cohort} - {interv}", fontsize=10)
+            plt.tight_layout()
+            pdf.savefig(fig1)  # Save the current page to the PDF
+            fig1_png_file_path = outputs_path / (
+                f"mortality_rates_{'_'.join(intervs_of_interest[page_start:page_start + 2])}__"
+                f"{'_'.join(interv_timestamps_dict[interv] for interv in intervs_of_interest[page_start:page_start + 2])}.png"
+            )
+            fig1.savefig(fig1_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+
+        # Outcome 2: figures with mean deaths and CI, scenarios comparison
+        fig2, axes2 = plt.subplots(1, 2, figsize=(12, 6))
+        for j, cohort in enumerate(['Neonatal', 'Under-5']):
+            mean_deaths_png_file_path = outputs_path / (
+                f"{cohort}_mean_deaths_CI_scenarios_comparison__"
+                f"{scenarios_tocompare_prefix}__{timestamps_mean_deaths_suffix}.png"
+            )
+            if mean_deaths_png_file_path.exists():
+                img = plt.imread(mean_deaths_png_file_path)
+                axes2[j].imshow(img)
+                axes2[j].axis('off')
+                axes2[j].set_title(f"{cohort} - Mean deaths, Scenarios comparison", fontsize=10)
         plt.tight_layout()
-        pdf.savefig(fig)  # Save the entire figure to the PDF
-        plt.close(fig)
+        pdf.savefig(fig2)  # Save the second outcome to the PDF
+        fig2.savefig(
+            outputs_path / f"mean_deaths_comparison_{scenarios_tocompare_prefix}__{timestamps_mean_deaths_suffix}.png",
+            dpi=300, bbox_inches='tight'
+        )  # Save as PNG
+        plt.close(fig2)
 
 # ---------------- #
 # RUN THE ANALYSIS #
 # ---------------- #
-run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest)
+run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
+                                   scenarios_to_compare, intervs_all)
 
 total_time_end = time.time()
 print(f"\ntotal running time (s): {(total_time_end - total_time_start)}")

@@ -1,3 +1,9 @@
+"""
+A helping file that contains functions used for wasting analyses to extract data, derive outcomes and generate plots.
+It is not to be run by itself. Functions are called from run_interventions_analysis_wasting.py, and
+heatmaps_cons_wast.py.
+"""
+
 from pathlib import Path
 
 import numpy as np
@@ -9,9 +15,6 @@ from matplotlib import pyplot as plt
 from tlo.analysis.utils import extract_results
 
 plt.style.use('seaborn-darkgrid')
-
-"""This file contains functions used for wasting analyses to extract data, derive outcomes and generate plots.
-(It is based on analysis_utility_function prepared by Joe for maternal_perinatal_analyses.)"""
 
 def return_mean_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -32,7 +35,7 @@ def return_mean_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
-def extract_birth_data_frames_and_outcomes(folder, years_of_interest, intervention_years) -> dict:
+def extract_birth_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) -> dict:
     """
     :param folder: the folder from which the outcome data will be extracted
     :param years_of_interest: years for which we want to extract the data
@@ -41,6 +44,8 @@ def extract_birth_data_frames_and_outcomes(folder, years_of_interest, interventi
         (1) total_births, (2) interv_births; and a dataframe (3) with births counts for years of interests as simulated
         for draws and runs.
     """
+
+    print(f"\n{interv=}")
 
     births_df = extract_results(
         folder,
@@ -63,7 +68,8 @@ def extract_birth_data_frames_and_outcomes(folder, years_of_interest, interventi
             'interv_births_df': interv_births_df, # TODO: check when and how is this used, is it really worth to return this?
             'interv_births_mean_ci_df': interv_births_per_year_per_draw_df}
 
-def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest, intervention_years):
+def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest, intervention_years, interv):
+    print(f"\n{interv=}")
     # ### NEONATAL MORTALITY
     # Extract all deaths occurring during the first 28 days of life
     neonatal_deaths_df = extract_results(
@@ -151,13 +157,14 @@ def get_scen_colour(scen_name: str) -> str:
         'CS_30': '#61B93C',
         'CS_50': '#2D945F',
         'CS_100': '#266714',
-        'FS_full': '#A90251',
-        'FS_plus10': '#D4898E'
+        'FS_50': '#D4898E',
+        'FS_70': '#D4898E',
+        'FS_Full': '#A90251'
     }.get(scen_name)
 
-def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_dict: dict, scenarios_dict: dict,
-                                                intervs_of_interest: list, plot_years: list, data_dict: dict,
-                                                outputs_path: Path) -> None:
+def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timestamps_dict: dict, scenarios_dict: dict,
+                                                     intervs_of_interest: list, plot_years: list, data_dict: dict,
+                                                     outputs_path: Path) -> None:
 
     def plot_scenarios(plot_interv, plot_outcome):
         scenarios_to_plot = scenarios_dict[plot_interv]
@@ -171,10 +178,9 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_d
             ax.fill_between(plot_years, ci_lower, ci_upper,
                             color=scen_colour, alpha=.1)
 
-    # outcome to plot
+    # Outcome to plot, corresponding target, and y-axis limit
     assert cohort in ['Neonatal', 'Under-5'],\
         f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
-
     if cohort == 'Neonatal':
         outcome = 'neo_mort_rate_mean_ci_df'
         target = 12
@@ -184,6 +190,7 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_d
         target = 25
         ylim_top = 100 #60
 
+    # Plots by intervention (multiple settings within each plot)
     for interv in intervs_of_interest:
 
         fig, ax = plt.subplots()
@@ -210,6 +217,64 @@ def plot_mortality__by_interv_multiple_settings(cohort: str, interv_timestamps_d
         )
         # plt.show()
 
+def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: dict, scenarios_to_compare: list,
+                                                   plot_years: list, data_dict: dict, outputs_path: Path,
+                                                   scenarios_tocompare_prefix, timestamps_suffix: str) -> None:
+    """
+    Plots mean deaths and confidence intervals over time for the specified cohort for multiple scenarios.
+    :param cohort: 'Neonatal' or 'Under-5'
+    :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
+    :param scenarios_to_compare: List of scenarios to plot
+    :param plot_years: List of years to plot
+    :param data_dict: Dictionary containing data for plotting nested as data_dict[interv][outcome][draw][run]
+    :param outputs_path: Path to save the plot
+    :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
+    """
+    # Outcome to plot
+    assert cohort in ['Neonatal', 'Under-5'], \
+        f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
+    outcome = 'neo_deaths_mean_ci_df' if cohort == 'Neonatal' else 'under5_deaths_mean_ci_df'
+
+    # Initialize the plot
+    fig, ax = plt.subplots()
+
+    # Iterate over scenarios to compare
+    for scenario in scenarios_to_compare:
+        # Find the corresponding intervention and draw number
+        interv, draw = next(
+            (interv, draw)
+            for interv, scenarios_for_interv_dict in scenarios_dict.items()
+            if scenario in scenarios_for_interv_dict
+            for scen_name, draw in scenarios_for_interv_dict.items()
+            if scen_name == scenario
+        )
+
+        # Extract data for the scenario
+        scen_data = data_dict[interv][outcome][draw]
+
+        # Calculate means and confidence intervals
+        means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+
+        # Plot the data
+        ax.plot(plot_years, means, label=scenario, color=get_scen_colour(scenario))
+        ax.fill_between(plot_years, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
+
+    # Add labels, title, and legend
+    plt.ylabel(f'{cohort} Deaths')
+    plt.xlabel('Year')
+    plt.title(f'{cohort} Mean deaths and 95% CI over time')
+    plt.legend()
+    plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
+
+    # Save the plot
+    plt.savefig(
+        outputs_path / (
+            f"{cohort}_mean_deaths_CI_scenarios_comparison__"
+            f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+        ),
+        bbox_inches='tight'
+    )
+# ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
     """
     Plots availability of
