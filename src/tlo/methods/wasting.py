@@ -251,9 +251,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                  'sev_not_yet_recovered']
         blank_length_counter = dict(
             zip(self.recovery_options, [list() for _ in self.recovery_options]))
-        self.wasting_length_tracker_blank = {
+        self.wasting_recovery_tracker_blank = {
             _agrp: copy.deepcopy(blank_length_counter) for _agrp in ['0y', '1y', '2y', '3y', '4y', '5+y']}
-        self.wasting_length_tracker = copy.deepcopy(self.wasting_length_tracker_blank)
+        self.wasting_recovery_tracker = copy.deepcopy(self.wasting_recovery_tracker_blank)
 
         # define age groups
         self.age_grps = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
@@ -294,9 +294,12 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         p['progression_severe_wasting_by_agegp'] = \
             [s/30.4375*p['duration_of_untreated_mod_wasting'] for s in p['progression_severe_wasting_monthly_by_agegp']]
         logger.debug(
-            key="progression_severe_wasting_by_agegp",
-            data="A progression_severe_wasting_monthly_by_agegp adjusted to the duration of untreated moderate wasting:"
-                 f" {p['progression_severe_wasting_by_agegp']}"
+            key="progression_severe_wasting",
+            data={
+                'progression_severe_wasting_monthly_by_agegp': p['progression_severe_wasting_monthly_by_agegp'],
+                 'progression_severe_wasting_by_agegp': p['progression_severe_wasting_by_agegp'],
+            },
+            description="monthly progression to severe wasting adjusted to the duration of untreated moderate wasting"
         )
 
         # Set initial properties
@@ -704,8 +707,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             if self.sim.date == individual_properties['un_last_nonemergency_appt_date']:
                 logger.debug(
                     key="multiple non-emergency appts on same day",
-                    data=f"A non-emerg. appt runs again on the same date {self.sim.date=} for the {person_id=}. "
-                         "All DOs related to wasting are cancelled."
+                    data={
+                        'date': self.sim.date,
+                        'person_id': person_id,
+                    },
+                    description="A non-emerg. appt runs again on the same date for the same person "
+                                "(due to other symptom), hence screening for acute malnutrition cancelled, to be "
+                                "performed just once."
                 )
             return
 
@@ -763,6 +771,15 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
         df = self.sim.population.props
         p = self.parameters
 
+        logger.debug(key='get-tx',
+                     data={
+                         'treatment': intervention,
+                         'person_id': person_id,
+                         'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                         'date': self.sim.date
+                     },
+                     description='Treatment for acute malnutrition provided.')
+
         # natural progression or recovery is cancelled with the tx and the outcome is fully driven by tx
         self.cancel_future_event(person_id, event_type=Wasting_ProgressionToSevere_Event)
         self.cancel_future_event(person_id, event_type=Wasting_FullRecovery_Event)
@@ -787,6 +804,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
 
             if mam_full_recovery:
+                outcome = 'full_recovery'
                 # set discharge date and schedule recovery for that day
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 self.sim.schedule_event(
@@ -795,10 +813,24 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 )
             else:
                 # remained MAM, send for another SFP
+                outcome = 'remained_MAM'
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                     priority=0, topen=outcome_date)
-                return
+
+            logger.debug(
+                key="tx-outcome",
+                data={
+                    'treatment': intervention,
+                    'person_id': person_id,
+                    'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                    'date': self.sim.date,
+                    'tx_outcome': outcome,
+                    'outcome_date': outcome_date,
+                },
+                description="record treatment (tx) outcome"
+            )
+            return
 
         elif intervention in ['OTP', 'ITC']:
             if intervention == 'OTP':
@@ -810,6 +842,7 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                 df.loc[[person_id]], self.rng
             )
             if sam_full_recovery:
+                outcome = 'full_recovery'
                 df.at[person_id, 'un_am_discharge_date'] = outcome_date
                 # schedule full recovery
                 self.sim.schedule_event(
@@ -841,6 +874,19 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
                         priority=0, topen=outcome_date)
+
+            logger.debug(
+                key="tx-outcome",
+                data={
+                    'treatment': intervention,
+                    'person_id': person_id,
+                    'age_group': self.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                    'date': self.sim.date,
+                    'tx_outcome': outcome,
+                    'outcome_date': outcome_date,
+                },
+                description="record treatment (tx) outcome"
+            )
 
     def cancel_future_event(self, person_id, event_type) -> None:
         """
@@ -1096,7 +1142,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
                 (f" The {person_id=} is {wasted_days=} < minimal expected length= "
                  f"{get_min_length(recov_how, person_id, whz)} days "
                  f"when {recov_opt=}.")
-            self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
+            self.module.wasting_recovery_tracker[age_group][recov_opt].append(wasted_days)
 
         df.at[person_id, 'un_am_recovery_date'] = self.sim.date
         df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'  # normal WHZ
@@ -1180,7 +1226,7 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
                 assert wasted_days >= get_min_length(recov_how, person_id, whz), \
                     (f" The {person_id=} is wasted {wasted_days=} < minimal expected length= "
                      f"{get_min_length(recov_how, person_id, whz)} days when {recov_opt=}.")
-                self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
+                self.module.wasting_recovery_tracker[age_group][recov_opt].append(wasted_days)
 
                 df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
                 df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
@@ -1413,8 +1459,7 @@ class HSI_Wasting_GrowthMonitoring(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         logger.debug(key="HSI_Wasting_GrowthMonitoring",
-                     data="HSI_Wasting_GrowthMonitoring: did not run"
-                     )
+                     data="HSI_Wasting_GrowthMonitoring: did not run")
         pass
 
 
@@ -1439,8 +1484,18 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
+        treatment = 'SFP'
 
         df = self.sim.population.props
+
+        logger.debug(key='seek-tx',
+                     data={
+                         'HSI': 'HSI_Wasting_SupplementaryFeedingProgramme_MAM',
+                         'person_id': person_id,
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                         'date': self.sim.date
+                     },
+                     description='This is start of HSI_Wasting_SupplementaryFeedingProgramme_MAM.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1452,15 +1507,25 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         self.add_equipment({'Height Pole (Stadiometer)', 'Weighing scale', 'MUAC tape'})
 
         # Check and log availability of consumables
-        if self.get_consumables(item_codes=self.module.cons_codes['SFP']):
-            logger.debug(key='debug', data='consumables are available')
+        if self.get_consumables(item_codes=self.module.cons_codes[treatment]):
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 1,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                               'date': self.sim.date},
+                         description='consumables are available')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
-            self.module.do_when_am_treatment(person_id, intervention='SFP')
+            self.module.do_when_am_treatment(person_id, intervention=treatment)
         else:
-            logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided to person "
-                              f"{person_id}.")
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 0,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                               'date': self.sim.date},
+                         description='consumables are NOT available')
 
     def did_not_run(self, person_id):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
@@ -1488,9 +1553,19 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
+        treatment = 'OTP'
 
         df = self.sim.population.props
         # p = self.module.parameters
+
+        logger.debug(key='seek-tx',
+                     data={
+                         'HSI': 'HSI_Wasting_OutpatientTherapeuticProgramme_SAM',
+                         'person_id': person_id,
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                         'date': self.sim.date
+                     },
+                     description='This is start of HSI_Wasting_OutpatientTherapeuticProgramme_SAM.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1503,16 +1578,26 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
 
         # Check and log availability of consumables
         if self.get_consumables(
-            item_codes=self.module.cons_codes['OTP'], optional_item_codes=self.module.cons_codes['OTP_opt']
+            item_codes=self.module.cons_codes[treatment], optional_item_codes=self.module.cons_codes['OTP_opt']
         ):
-            logger.debug(key='debug', data='consumables are available.')
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 1,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                               'date': self.sim.date},
+                         description='consumables are available')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
-            self.module.do_when_am_treatment(person_id, intervention='OTP')
+            self.module.do_when_am_treatment(person_id, intervention=treatment)
         else:
-            logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided to person "
-                              f"{person_id}.")
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 0,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                               'date': self.sim.date},
+                         description='consumables are NOT available')
 
     def did_not_run(self, person_id):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
@@ -1536,8 +1621,18 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
 
     def apply(self, person_id, squeeze_factor):
         assert isinstance(self.module, Wasting)
+        treatment = 'ITC'
 
         df = self.sim.population.props
+
+        logger.debug(key='seek-tx',
+                     data={
+                         'HSI': 'HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM',
+                         'person_id': person_id,
+                         'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                         'date': self.sim.date
+                     },
+                     description='This is start of HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1550,16 +1645,26 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
 
         # Check and log availability of consumables
         if self.get_consumables(
-            item_codes=self.module.cons_codes['ITC'], optional_item_codes=self.module.cons_codes['ITC_opt']
+            item_codes=self.module.cons_codes[treatment], optional_item_codes=self.module.cons_codes['ITC_opt']
         ):
-            logger.debug(key='debug', data='consumables available, so use it.')
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 1,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                               'date': self.sim.date},
+                         description='consumables are available')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
-            self.module.do_when_am_treatment(person_id, intervention='ITC')
+            self.module.do_when_am_treatment(person_id, intervention=treatment)
         else:
-            logger.debug(key='debug',
-                         data=f"Consumable(s) not available, hence {self.TREATMENT_ID} cannot be provided to person "
-                              f"{person_id}.")
+            logger.debug(key='wast-cons-avail',
+                         data={'treatment': treatment,
+                               'available': 0,
+                               'person_id': person_id,
+                               'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                               'date': self.sim.date},
+                         description='consumables are NOT available')
 
     def did_not_run(self, person_id):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
@@ -1737,16 +1842,29 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.wasting_incident_case_tracker = copy.deepcopy(self.module.wasting_incident_case_tracker_blank)
         self.date_last_run = self.sim.date
 
+        # ----- RECOVERY LOG ----------------
+        # Convert the list of lengths to number of recovery events
+        recovery_df = pd.DataFrame(index=self.module.wasting_recovery_tracker.keys(),
+                                 columns=self.module.recovery_options)
+        for age_grp in self.module.wasting_recovery_tracker.keys():
+            for recov_opt in self.module.recovery_options:
+                if self.module.wasting_recovery_tracker[age_grp][recov_opt]:
+                    recovery_df.loc[age_grp, recov_opt] = len(self.module.wasting_recovery_tracker[age_grp][recov_opt])
+                else:
+                    recovery_df.loc[age_grp, recov_opt] = 0
+
+        logger.debug(key='wasting_recovery', data=recovery_df.to_dict())
+
         # ----- LENGTH LOG ----------------
         # Convert the list of lengths to an avg length
         # and check that all the lengths are positive
-        length_df = pd.DataFrame(index=self.module.wasting_length_tracker.keys(),
+        length_df = pd.DataFrame(index=self.module.wasting_recovery_tracker.keys(),
                                  columns=self.module.recovery_options)
-        for age_grp in self.module.wasting_length_tracker.keys():
+        for age_grp in self.module.wasting_recovery_tracker.keys():
             for recov_opt in self.module.recovery_options:
-                if self.module.wasting_length_tracker[age_grp][recov_opt]:
-                    length_df.loc[age_grp, recov_opt] = (sum(self.module.wasting_length_tracker[age_grp][recov_opt]) /
-                                                         len(self.module.wasting_length_tracker[age_grp][recov_opt]))
+                if self.module.wasting_recovery_tracker[age_grp][recov_opt]:
+                    length_df.loc[age_grp, recov_opt] = (sum(self.module.wasting_recovery_tracker[age_grp][recov_opt]) /
+                                                         len(self.module.wasting_recovery_tracker[age_grp][recov_opt]))
                 else:
                     length_df.loc[age_grp, recov_opt] = 0
                 assert not np.isnan(length_df.loc[age_grp, recov_opt]),\
@@ -1754,14 +1872,14 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
                 if recov_opt in ['mod_MAM_nat_full_recov', 'mod_SAM_nat_recov_to_MAM']:
                     assert all(length >= (p['duration_of_untreated_mod_wasting'] - 1) for length in
-                           self.module.wasting_length_tracker[age_grp][recov_opt]),\
-                        f"{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < "\
+                           self.module.wasting_recovery_tracker[age_grp][recov_opt]),\
+                        f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < "\
                         f"{(p['duration_of_untreated_mod_wasting'] - 1)=}; {age_grp=}, {recov_opt=}"
                 elif recov_opt in ['sev_SAM_nat_recov_to_MAM']:
                     assert all(length >=
                                (p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2) for
-                               length in self.module.wasting_length_tracker[age_grp][recov_opt]),\
-                        (f"{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < duration of "
+                               length in self.module.wasting_recovery_tracker[age_grp][recov_opt]),\
+                        (f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < duration of "
                          "(mod + sev wast - 2): "
                          f"{(p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2)=} "
                          f"days; {age_grp=}, {recov_opt=}")
@@ -1774,14 +1892,11 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             (min(p['tx_length_weeks_OutpatientSAM'], p['tx_length_weeks_InpatientSAM']) * 7) - 1
 
                     assert all(length >= min_length for length in
-                               self.module.wasting_length_tracker[age_grp][recov_opt]), \
-                        f'{self.module.wasting_length_tracker[age_grp][recov_opt]=} contains length(s) < ' \
+                               self.module.wasting_recovery_tracker[age_grp][recov_opt]), \
+                        f'{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < ' \
                         f'{min_length=} days; {age_grp=}, {recov_opt=}'
 
                 assert recov_opt in self.module.recovery_options, f'\nInvalid {recov_opt=}.'
-
-        # Reset the length tracker
-        self.module.wasting_length_tracker = copy.deepcopy(self.module.wasting_length_tracker_blank)
 
         under5s = df.loc[df.is_alive & (df.age_exact_years < 5)]
         above5s = df.loc[df.is_alive & (df.age_exact_years >= 5)]
@@ -1846,6 +1961,9 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 f"The avg {length_df.loc[age_grp, 'sev_not_yet_recovered']=} for {age_grp=} is empty."
 
         logger.debug(key='wasting_length_avg', data=length_df.to_dict())
+
+        # Reset the recovery tracker
+        self.module.wasting_recovery_tracker = copy.deepcopy(self.module.wasting_recovery_tracker_blank)
 
         # ----- PREVALENCE LOG ----------------
         # Wasting totals (prevalence & pop size at logging time)
