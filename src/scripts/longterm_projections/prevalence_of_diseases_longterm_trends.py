@@ -86,6 +86,8 @@ rename_dict = {  # For legend labels
     'hypertension': 'Hypertension'
 }
 
+standard_population = None
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the prevalence of each disease
@@ -254,16 +256,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True
             )[draw]
 
+
             num_by_age = num_by_age_F + num_by_age_M
             num_by_age[num_by_age == 0] = np.nan
+            if target_year == 2020:
+                standard_population_structure = num_by_age['mean']
 
             result_data_prevalence_by_age.index.names = ['age_grp', 'cause']
+            result_data_prevalence_by_age['mean'] = result_data_prevalence_by_age['mean'] * num_by_age['mean'].sum() # from the mistake I made in the original coding
+            crude_prevalence_by_agegroup = result_data_prevalence_by_age.unstack(level='age_grp')['mean']/num_by_age['mean']
 
-            crude_prevalence_by_agegroup = result_data_prevalence_by_age.unstack(level='age_grp')['mean'] * num_by_age.sum()
-
-            standard_population = num_by_age['mean'].sum()
-
-            age_standardised_prevalence = (crude_prevalence_by_agegroup).sum(axis=1) # need to multiply by standard population because I accidentally divided it
+            age_standardised_prevalence = (crude_prevalence_by_agegroup * standard_population_structure).sum(axis=1)
 
             # Store results
             all_years_data_prevalence[target_year] = result_data_prevalence['mean']
