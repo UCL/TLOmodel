@@ -382,8 +382,8 @@ def check_format_of_consumables_file(df, fac_ids):
     )
 
     # Check that every entry for a probability is a float on [0,1]
-    assert (df[availability_columns] <= 1.0).all() and (df[availability_columns] >= 0.0).all()
-    assert df[availability_columns].notnull().all()
+    assert (df[availability_columns] <= 1.0).all().all() and (df[availability_columns] >= 0.0).all().all()
+    assert df[availability_columns].notnull().all().all()
 
 
 class ConsumablesSummaryCounter:
