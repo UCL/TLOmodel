@@ -1087,7 +1087,7 @@ class HealthSystem(Module):
             how='left'
         )
 
-        availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in range(1, 16)]
+        availability_columns = list(filter(lambda x: x.startswith('available_prop'), dfx.columns))
 
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
