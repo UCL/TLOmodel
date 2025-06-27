@@ -996,7 +996,7 @@ class HealthSystem(Module):
             ## Module specific capabilities are total time * non-fungible
             updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
             ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
-            self._clinics_capabilities_per_staff = updated_capabilities[module_cols].T.to_dict()
+            self._clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
             self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
 
     """Set the clinic eligibility for this HSI event Queue Item."""
@@ -2426,15 +2426,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
                 event = next_event_tuple.hsi_event
-                # Check the event's clinic eligibility; if not clinic for eligible,
-                # clinic name will be Fungible; otherwise it will be the clinic name
-                event_clinic = next_event_tuple.clinic_eligibility
-                if event_clinic == "Fungible":
-                    counter_to_use = capabilities_monitor
-                    capabilities_still_available = set_capabilities_still_available
-                else:
-                    counter_to_use = clinic_capabilities_monitor[event_clinic]
-                    capabilities_still_available = set_cl_capabilities_still_available[event_clinic]
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -2465,6 +2456,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Retrieve officers&facility required for HSI
                     original_call = next_event_tuple.hsi_event.expected_time_requests
                     _priority = next_event_tuple.priority
+
+                    # Check the event's clinic eligibility; if not clinic for eligible,
+                    # clinic name will be Fungible; otherwise it will be the clinic name
+                    event_clinic = next_event_tuple.clinic_eligibility
+                    print("EVENT CLINIC")
+                    print(event_clinic)
+                    if event_clinic == "Fungible":
+                        counter_to_use = capabilities_monitor
+                        capabilities_still_available = set_capabilities_still_available
+                    else:
+                        counter_to_use = clinic_capabilities_monitor[event_clinic]
+                        capabilities_still_available = set_cl_capabilities_still_available[event_clinic]
+
                     # In this version of mode_appt_constraints = 2, do not have access to squeeze
                     # based on queue information, and we assume no squeeze ever takes place.
                     squeeze_factor = 0.
@@ -2557,6 +2561,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
 
                         # Subtract this from capabilities used so-far today
+                        print("########## Subtracting ###########")
+                        print(next(iter(counter_to_use.keys())))
+                        print(next(iter(updated_call.keys())))
                         counter_to_use.subtract(updated_call)
 
                         # If any of the officers have run out of time by performing this hsi,
