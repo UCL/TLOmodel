@@ -2242,6 +2242,76 @@ class Labour(Module, GenericFirstAppointmentsMixin):
                     tclose=self.sim.date + pd.DateOffset(days=1),
                 )
 
+    def update_labour_or_postnatal_coverage_for_analysis(self):
+        params = self.current_parameters
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mni_df = pd.DataFrame.from_dict(mni, orient='index')
+        pn_params = self.sim.modules['PostnatalSupervisor'].current_parameters
+        nb_params = self.sim.modules['NewbornOutcomes'].current_parameters
+
+        # Check to see if analysis is being conducted when this event runs
+        if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
+            params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or params['sba_sens_analysis_max'] \
+            or params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
+
+            params['la_analysis_in_progress'] = True
+
+            # If PNC analysis is being conducted we reset the intercept parameter of the equation determining care
+            # seeking for PNC and scale the model
+            if params['alternative_pnc_coverage']:
+                target = params['pnc_availability_odds']
+                params['odds_will_attend_pnc'] = 1
+
+                women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
+                mode_of_delivery = pd.Series(False, index=women.index)
+                delivery_setting = pd.Series(False, index=women.index)
+
+                if 'mode_of_delivery' in mni_df.columns:
+                    mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=women.index)
+                if 'delivery_setting' in mni_df.columns:
+                    delivery_setting = pd.Series(mni_df['delivery_setting'], index=women.index)
+
+                mean = self.la_linear_models['postnatal_check'].predict(
+                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
+                    year=self.sim.date.year,
+                    mode_of_delivery=mode_of_delivery,
+                    delivery_setting=delivery_setting).mean()
+
+                mean = mean / (1.0 - mean)
+                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
+
+                params['odds_will_attend_pnc'] = scaled_intercept
+
+                # Then override the parameters which control neonatal care seeking
+                cov_prob = params['pnc_availability_odds'] / (params['pnc_availability_odds'] + 1)
+                params['prob_timings_pnc'] = [1.0, 0]
+
+                nb_params['prob_pnc_check_newborn'] = cov_prob
+                nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
+
+            if params['alternative_pnc_quality']:
+                nb_params['prob_kmc_available'] = params['pnc_availability_probability']
+                params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
+
+            if params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
+                self.la_linear_models['postnatal_check'] = LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['pnc_availability_probability'])
+                params['prob_timings_pnc'] = [params['pnc_availability_probability'],
+                                              1 - params['pnc_availability_probability']]
+                params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
+
+                nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
+                nb_params['prob_timings_pnc_newborns'] = [params['pnc_availability_probability'],
+                                                          1 - params['pnc_availability_probability']]
+                nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
+                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
+
+            if params['sba_sens_analysis_max']:
+                params['odds_deliver_at_home'] = 0.0
+
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """
     This is the LabourOnsetEvent. It is scheduled by the set_date_of_labour function for all women who are newly
@@ -3236,74 +3306,8 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-        params = self.module.current_parameters
-        df = self.sim.population.props
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        mni_df = pd.DataFrame.from_dict(mni, orient='index')
-        pn_params = self.sim.modules['PostnatalSupervisor'].current_parameters
-        nb_params = self.sim.modules['NewbornOutcomes'].current_parameters
 
-        # Check to see if analysis is being conducted when this event runs
-        if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
-            params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or params['sba_sens_analysis_max'] \
-           or params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
-
-            params['la_analysis_in_progress'] = True
-
-            # If PNC analysis is being conducted we reset the intercept parameter of the equation determining care
-            # seeking for PNC and scale the model
-            if params['alternative_pnc_coverage']:
-                target = params['pnc_availability_odds']
-                params['odds_will_attend_pnc'] = 1
-
-                women = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
-                mode_of_delivery = pd.Series(False, index=women.index)
-                delivery_setting = pd.Series(False, index=women.index)
-
-                if 'mode_of_delivery' in mni_df.columns:
-                    mode_of_delivery = pd.Series(mni_df['mode_of_delivery'], index=women.index)
-                if 'delivery_setting' in mni_df.columns:
-                    delivery_setting = pd.Series(mni_df['delivery_setting'], index=women.index)
-
-                mean = self.module.la_linear_models['postnatal_check'].predict(
-                    df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)],
-                    year=self.sim.date.year,
-                    mode_of_delivery=mode_of_delivery,
-                    delivery_setting=delivery_setting).mean()
-
-                mean = mean / (1.0 - mean)
-                scaled_intercept = 1.0 * (target / mean) if (target != 0 and mean != 0 and not np.isnan(mean)) else 1.0
-
-                params['odds_will_attend_pnc'] = scaled_intercept
-
-                # Then override the parameters which control neonatal care seeking
-                cov_prob = params['pnc_availability_odds'] / (params['pnc_availability_odds'] + 1)
-                params['prob_timings_pnc'] = [1.0, 0]
-
-                nb_params['prob_pnc_check_newborn'] = cov_prob
-                nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
-
-            if params['alternative_pnc_quality']:
-                params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
-
-            if params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
-
-                self.module.la_linear_models['postnatal_check'] = LinearModel(
-                         LinearModelType.MULTIPLICATIVE,
-                         params['pnc_availability_probability'])
-                params['prob_timings_pnc'] = [params['pnc_availability_probability'],
-                                              1 - params['pnc_availability_probability']]
-                params['prob_careseeking_for_complication_pn'] = params['pnc_availability_probability']
-                pn_params['prob_care_seeking_postnatal_emergency'] = params['pnc_availability_probability']
-
-                nb_params['prob_pnc_check_newborn'] = params['pnc_availability_probability']
-                nb_params['prob_timings_pnc_newborns'] = [params['pnc_availability_probability'],
-                                                          1 - params['pnc_availability_probability']]
-                nb_params['prob_care_seeking_for_complication'] = params['pnc_availability_probability']
-                pn_params['prob_care_seeking_postnatal_emergency_neonate'] = params['pnc_availability_probability']
-
-            if params['sba_sens_analysis_max']:
-                params['odds_deliver_at_home'] = 0.0
+        self.module.update_labour_or_postnatal_coverage_for_analysis()
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

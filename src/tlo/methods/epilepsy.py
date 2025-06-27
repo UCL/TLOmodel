@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import Metadata
+from tlo.methods import Metadata, hiv
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.hsi_event import HSI_Event
@@ -424,6 +424,43 @@ class Epilepsy(Module, GenericFirstAppointmentsMixin):
                 event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id, module=self)
                 schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
+    def additional_screening(self, person_id, hsi_event):
+        df = self.sim.population.props
+
+        # link to HIV testing
+        # do not run if already HIV diagnosed or had test in last week
+        if 'Hiv' in self.sim.modules:
+
+            if not df.at[person_id, "hv_diagnosed"] or (
+                df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=7))):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                        person_id=person_id,
+                        module=self.sim.modules["Hiv"],
+                        referred_from="Integrated_Depression",
+                    ),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
+                )
+
+        # link to CMD screening
+        if "CardioMetabolicDisorders" in self.sim.modules:
+            individual_properties = df.loc[person_id]
+            symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+            schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
+
+            self.sim.modules['CardioMetabolicDisorders'].do_at_generic_first_appt(person_id=person_id,
+                                                                                  individual_properties=individual_properties,
+                                                                                  symptoms=symptoms,
+                                                                                  schedule_hsi_event=schedule_hsi_event)
+
+        # link to depression screening
+        if 'Depression' in self.sim.modules:
+            # if not dx and currently on anti-depressants
+            # call for depression check which
+            if not df.at[person_id, 'de_on_antidepr']:
+                self.sim.modules['Depression'].do_on_presentation_to_care(person_id, hsi_event=hsi_event)
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' epilepsy status
@@ -753,3 +790,10 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
             # No medicine is available and the maximum number of repeats has been reached: The person will default
             # to being off the anti-epileptics and no further follow-ups are scheduled.
             df.at[person_id, 'ep_antiep'] = False
+
+        if 'ServiceIntegration' in self.sim.modules:
+            if (self.sim.date >= Date(self.sim.modules['ServiceIntegration'].parameters['integration_year'], 1,
+                                      1)) and \
+                self.sim.modules['ServiceIntegration'].parameters['serv_integration'].startswith(
+                    ("chronic_care", "all_int")):
+                self.module.additional_screening(person_id=person_id, hsi_event=self)

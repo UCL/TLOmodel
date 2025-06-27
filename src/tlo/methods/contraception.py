@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from numpy.core.numeric import True_
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
@@ -592,7 +593,7 @@ class Contraception(Module):
 
         return processed_params
 
-    def update_params_for_interventions(self):
+    def update_params_for_interventions(self, initiation, after_birth):
         """Updates process parameters to enable FP interventions."""
 
         processed_params = self.processed_params
@@ -617,17 +618,23 @@ class Contraception(Module):
                 p_start_after_birth_with_interv.mul(self.parameters['Interventions_PPFP'].loc[0])
 
             # Return reduced prob of 'not_using'
-            p_start_after_birth_with_interv = pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
-                                                        index=['not_using']).append(p_start_after_birth_with_interv)
+            # p_start_after_birth_with_interv = pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
+            #                                             index=['not_using']).append(p_start_after_birth_with_interv)
+
+            p_start_after_birth_with_interv = pd.concat([pd.Series((1.0 - p_start_after_birth_with_interv.sum()),
+                                                        index=['not_using']), p_start_after_birth_with_interv])
 
             return p_start_after_birth_with_interv
 
-        processed_params['p_start_per_month'] = \
-            contraception_initiation_with_interv(processed_params['p_start_per_month'])
-        processed_params['p_start_after_birth_below30'] = \
-            contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_below30'])
-        processed_params['p_start_after_birth_30plus'] = \
-            contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_30plus'])
+        if initiation:
+            processed_params['p_start_per_month'] = \
+                contraception_initiation_with_interv(processed_params['p_start_per_month'])
+
+        if after_birth:
+            processed_params['p_start_after_birth_below30'] = \
+                contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_below30'])
+            processed_params['p_start_after_birth_30plus'] = \
+                contraception_initiation_after_birth_with_interv(processed_params['p_start_after_birth_30plus'])
 
         return processed_params
 
@@ -643,7 +650,8 @@ class Contraception(Module):
             new_contraceptive = self.rng.choice(probs_30plus.index, p=probs_30plus.values)
 
         # Do the change in contraceptive
-        self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
+        self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive],
+                                                     on_birth=True)
 
     def get_item_code_for_each_contraceptive(self):
         """Get the item_code for each contraceptive and for contraceptive initiation."""
@@ -704,11 +712,12 @@ class Contraception(Module):
 
         return _cons_codes
 
-    def schedule_batch_of_contraceptive_changes(self, ids, old, new):
+    def schedule_batch_of_contraceptive_changes(self, ids, old, new, on_birth: bool = False):
         """Enact the change in contraception, either through editing properties instantaneously or by scheduling HSI.
         ids: pd.Index of the woman for whom the contraceptive state is changing
         old: iterable giving the corresponding contraceptive state being switched from
         new: iterable giving the corresponding contraceptive state being switched to
+        on_birth: bool. true if change sheduled postnatally
 
         It is assumed that even with the option `self.use_healthsystem=True` that switches to certain methods do not
         require the use of HSI (these are not in `states_that_may_require_HSI_to_switch_to`)."""
@@ -742,7 +751,8 @@ class Contraception(Module):
                     hsi_event=HSI_Contraception_FamilyPlanningAppt(
                         person_id=_woman_id,
                         module=self,
-                        new_contraceptive=_new
+                        new_contraceptive=_new,
+                        on_birth=on_birth
                     ),
                     # select start_date for 0 max day delay; start_date or later for >=1 max day delay:
                     topen=random_date(
@@ -916,7 +926,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=list(will_initiate),
                 old=['not_using'] * len(will_initiate),
-                new=list(will_initiate.values())
+                new=list(will_initiate.values()),
             )
 
     def discontinue_switch_or_continue(self, individuals_using: pd.Index):
@@ -945,7 +955,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=will_stop_idx,
                 old=df.loc[will_stop_idx, 'co_contraception'].values,
-                new=['not_using'] * len(will_stop_idx)
+                new=['not_using'] * len(will_stop_idx),
             )
 
         # 2) -- Switches and Continuations for those who do not Discontinue:
@@ -977,7 +987,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=new_co.index,
                 old=df.loc[new_co.index, 'co_contraception'].values,
-                new=new_co.values
+                new=new_co.values,
             )
 
         # Do the contraceptive "change" for those not switching (this is so that an HSI may be logged and if the HSI
@@ -987,7 +997,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
             self.module.schedule_batch_of_contraceptive_changes(
                 ids=continue_idx,
                 old=current_contraception,
-                new=current_contraception
+                new=current_contraception,
             )
 
     def update_pregnancy(self):
@@ -1137,7 +1147,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
     """HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching
      between contraceptives."""
 
-    def __init__(self, module, person_id, new_contraceptive):
+    def __init__(self, module, person_id, new_contraceptive, on_birth):
         super().__init__(module, person_id=person_id)
 
         _facility_level = '2' if new_contraceptive in ('implant', 'female_sterilization') else '1a'
@@ -1145,7 +1155,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.new_contraceptive = new_contraceptive
         self._number_of_times_run = 0
 
-        self.TREATMENT_ID = "Contraception_Routine"
+        if on_birth:
+            self.TREATMENT_ID = "Contraception_Routine_Postnatal"
+        else:
+            self.TREATMENT_ID = "Contraception_Routine"
+
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
         current_method = self.sim.population.props.loc[person_id].co_contraception
         self.EXPECTED_APPT_FOOTPRINT = self._get_appt_footprint(current_method)
@@ -1309,8 +1323,15 @@ class StartInterventions(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # Update module parameters to enable interventions
-        self.module.processed_params = self.module.update_params_for_interventions()
+        # if ('fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening'] and 'fp'
+        #     not in self.sim.modules['ServiceIntegration'].parameters['serv_int_mch']):
+        #     after_birth = False
+        # if ('fp' in self.sim.modules['ServiceIntegration'].parameters['serv_int_mch'] and 'fp' not
+        #     in self.sim.modules['ServiceIntegration'].parameters['serv_int_screening']):
+        #     initiation = False
+
+        self.module.processed_params = self.module.update_params_for_interventions(initiation=True,
+                                                                                   after_birth=True)
 
 
 # -----------------------------------------------------------------------------------------------------------

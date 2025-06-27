@@ -191,6 +191,14 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
+        'cons_override_treatment_ids': Parameter(
+            Types.LIST,
+            "Consumable availability within any treatment ids listed in this parameter will be set at to a "
+            "given probabilty stored in override_treatment_ids_avail. By default this list is empty"),
+        'override_treatment_ids_avail': Parameter(
+            Types.REAL,
+            "Probability that consumables for treatment ids listed in cons_override_treatment_ids will be "
+            "available"),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -670,7 +678,10 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability()
+            availability=self.get_cons_availability(),
+            treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
+            treatment_ids_overridden_avail=self.parameters['override_treatment_ids_avail'],
+
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']
@@ -1930,6 +1941,36 @@ class HealthSystem(Module):
         :return: None
         """
         self.consumables.override_availability(item_codes)
+
+    def set_availability_for_treatment_ids(self, treatment_ids: list,
+                                           availability: float = None) -> None:
+        """
+        This function can be called by any module to update the treatment ids for which consumable availability should
+        be overridden and to provide a probability of availability (set at 1.0 if unchanged)
+
+        :param treatment_ids: The treatment ids which should have availability overridden (list)
+        :param avail: The probability of availability in those treatment_ids (float)
+        :return: None
+        """
+
+        # If an empty list is passed to this function then treatment ids for which cons availability was previously
+        # being overriden are removed
+        if not treatment_ids:
+            self.parameters['cons_override_treatment_ids'] = []
+        else:
+            # Otherwise the parameter is updated
+            for treatment_id in treatment_ids:
+                if treatment_id not in self.parameters['cons_override_treatment_ids']:
+                    self.parameters['cons_override_treatment_ids'].append(treatment_id)
+
+        # If an availability probability is provided that parameter is updated
+        if availability:
+            self.parameters['override_treatment_ids_avail'] = availability
+
+        # Call internal cons function to update the cons 'owned' lists in which this information is stored
+        self.consumables._update_internal_cons_list_for_treat_id_avail(treatment_ids=self.parameters['cons_override_treatment_ids'],
+                                                                       avail=self.parameters['override_treatment_ids_avail'])
+
 
     def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(

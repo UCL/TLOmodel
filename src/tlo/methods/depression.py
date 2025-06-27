@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, hiv
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
@@ -583,6 +583,10 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 "pr_assessed_for_depression_for_perinatal_female"
             ]:  # module labour
                 return True
+        elif treatment_id.startswith(("Hiv_Treatment", "CardioMetabolicDisorders_Treatment",
+                                      "Epilepsy_Treatment_Followup")):
+            # this is only scheduled if integrated chronic care clinics are operationalised
+            return True
         else:
             raise NotImplementedError
         return False
@@ -633,6 +637,7 @@ class Depression(Module, GenericFirstAppointmentsMixin):
         :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
         """
+
         if diagnosis_function is None:
             assert isinstance(
                 hsi_event, HSI_Event
@@ -696,6 +701,36 @@ class Depression(Module, GenericFirstAppointmentsMixin):
                 schedule_hsi_event=schedule_hsi_event,
             )
 
+    def additional_screening(self, person_id):
+        df = self.sim.population.props
+
+        # link to HIV testing
+        # do not run if already HIV diagnosed or had test in last week
+        if 'Hiv' in self.sim.modules:
+
+            if not df.at[person_id, "hv_diagnosed"] or (
+                df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=7))):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                        person_id=person_id,
+                        module=self.sim.modules["Hiv"],
+                        referred_from="Integrated_Depression",
+                    ),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
+                )
+
+        # link to CMD screening
+        if "CardioMetabolicDisorders" in self.sim.modules:
+            individual_properties = df.loc[person_id]
+            symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+            schedule_hsi_event = self.sim.modules["HealthSystem"].schedule_hsi_event
+
+            self.sim.modules['CardioMetabolicDisorders'].do_at_generic_first_appt(person_id=person_id,
+                                                                                  individual_properties=individual_properties,
+                                                                                  symptoms=symptoms,
+                                                                                  schedule_hsi_event=schedule_hsi_event)
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -1019,6 +1054,15 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         else:
             # If medication was not available, the persons ceases to be taking antidepressants
             df.at[person_id, 'de_on_antidepr'] = False
+
+        if 'ServiceIntegration' in self.sim.modules:
+            if (self.sim.date >= Date(self.sim.modules['ServiceIntegration'].parameters['integration_year'], 1,
+                                      1)) and \
+                self.sim.modules['ServiceIntegration'].parameters['serv_integration'].startswith(
+                    ("chronic_care", "all_int")):
+                self.module.additional_screening(person_id=person_id)
+
+
 
     def did_not_run(self):
         # If this HSI event did not run, then the persons ceases to be taking antidepressants

@@ -438,7 +438,8 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
         hsi_event = HSI_Contraception_FamilyPlanningAppt(
             module=sim.modules['Contraception'],
             person_id=person_id,
-            new_contraceptive=switch_to
+            new_contraceptive=switch_to,
+            on_birth=False,
         )
         sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=hsi_event, topen=sim.start_date, priority=0)
 

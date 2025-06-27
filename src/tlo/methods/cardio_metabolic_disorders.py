@@ -20,10 +20,10 @@ from typing import TYPE_CHECKING, List, Optional
 import numpy as np
 import pandas as pd
 
-from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, hiv
 from tlo.methods import demography as de
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
@@ -1473,6 +1473,15 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation"
+
+        if conditions_to_investigate:
+            if 'hypertension' in conditions_to_investigate and 'diabetes' not in conditions_to_investigate:
+                self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_hypertension"
+            elif'hypertension' not in conditions_to_investigate and 'diabetes' in conditions_to_investigate:
+                self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_diabetes"
+            elif  'hypertension' in conditions_to_investigate and 'diabetes' in conditions_to_investigate:
+                self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation_hypertension_and_diabetes"
+
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.conditions_to_investigate = conditions_to_investigate
@@ -1587,6 +1596,10 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
+
+        if condition:
+            self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss' + f'_{condition}'
+
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
@@ -1670,6 +1683,10 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
+
+        if condition:
+            self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment' + f'_{condition}'
+
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
@@ -1732,6 +1749,39 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
                     priority=1
                 )
 
+        # todo additional screening if chronic care implemented
+        if 'ServiceIntegration' in self.sim.modules:
+            if (self.sim.date >= Date(self.sim.modules['ServiceIntegration'].parameters['integration_year'], 1, 1)) and \
+                    self.sim.modules['ServiceIntegration'].parameters['serv_integration'].startswith(("chronic_care", "all_int")):
+                self.additional_screening(person_id)
+
+    # todo - linkage to HIV testing, depression
+    def additional_screening(self, person_id):
+        df = self.sim.population.props
+
+        # link to HIV testing
+        # do not run if already HIV diagnosed or had test in last week
+        if 'Hiv' in self.sim.modules:
+
+            if not df.at[person_id, "hv_diagnosed"] or (df.at[person_id, "hv_last_test_date"] >= (self.sim.date - DateOffset(days=7))):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                        person_id=person_id,
+                        module=self.sim.modules["Hiv"],
+                        referred_from="Integrated_CMD",
+                    ),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
+                )
+
+        # link to depression screening
+        if 'Depression' in self.sim.modules:
+            # if not dx and currently on anti-depressants
+            # call for depression check which
+            if not df.at[person_id, 'de_on_antidepr']:
+                self.sim.modules['Depression'].do_on_presentation_to_care(person_id, hsi_event=self)
+
     def did_not_run(self):
         # If this HSI event did not run, then the persons ceases to be taking medication
         person_id = self.target
@@ -1751,7 +1801,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CardioMetabolicDisorders)
 
-        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
+        self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment_Emergency'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.events_to_investigate = events_to_investigate
