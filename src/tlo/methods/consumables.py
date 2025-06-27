@@ -366,12 +366,11 @@ def check_format_of_consumables_file(df, fac_ids):
     """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
-    number_of_scenarios = 15
 
-    availability_columns = ['available_prop'] + [f'available_prop_scenario{i}' for i in
-                                                 range(1, number_of_scenarios + 1)]
+    availability_columns = list(filter(lambda x: x.startswith('available_prop'), df.columns))
 
-    assert set(df.columns).issubset({'Facility_ID', 'month', 'item_code'} | set(availability_columns))
+    assert set('Facility_ID', 'month', 'item_code').issubset(df.columns)
+    assert availability_columns
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(
@@ -381,11 +380,8 @@ def check_format_of_consumables_file(df, fac_ids):
     )
 
     # Check that every entry for a probability is a float on [0,1]
-    for col in availability_columns:
-        if col in df.columns: # This makes sure that even when all scenarios have not been created, the ones that are
-            # have appropriate values
-            assert (df[col] <= 1.0).all() and (df[col] >= 0.0).all()
-            assert not pd.isnull(df[col]).any()
+    assert (df[availability_columns] <= 1.0).all() and (df[availability_columns] >= 0.0).all()
+    assert df[availability_columns].notnull().all()
 
 
 class ConsumablesSummaryCounter:
