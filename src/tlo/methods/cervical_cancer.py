@@ -1762,3 +1762,5 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key="all",
                     data=out,
                     description="all_data")
+
+

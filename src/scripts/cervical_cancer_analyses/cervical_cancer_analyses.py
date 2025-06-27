@@ -31,7 +31,7 @@ from tlo.methods import (
     tb,
 )
 
-seed = 15
+seed = 23
 
 # Date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -53,7 +53,7 @@ log_config = {
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
 malawi_country_pop = 17_000_000
-popsize = 17_000
+popsize = 340_000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
@@ -109,7 +109,7 @@ plt.title('Total deaths by Year')
 plt.xlabel('Year')
 plt.ylabel('Total deaths past year')
 plt.grid(True)
-# plt.ylim(0, 10000)
+plt.ylim(0, 10000)
 plt.show()
 
 
