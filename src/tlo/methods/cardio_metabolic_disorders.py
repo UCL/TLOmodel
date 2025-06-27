@@ -1822,7 +1822,7 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Haemodialysis'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.num_of_sessions_had = 0  # A counter for the number of sessions had
 
