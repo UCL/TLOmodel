@@ -46,14 +46,14 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                                           label='Childhood Undernutrition')
+        'SevereAcuteMalnutrition': Cause(gbd_causes='Protein-energy malnutrition',
+                                         label='Childhood Undernutrition')
     }
 
     # Declare Causes of Death and Disability
     CAUSES_OF_DISABILITY = {
-        'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                                           label='Childhood Undernutrition')
+        'SevereAcuteMalnutrition': Cause(gbd_causes='Protein-energy malnutrition',
+                                         label='Childhood Undernutrition')
     }
 
     PARAMETERS = {
@@ -1025,7 +1025,7 @@ class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixi
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='Severe Acute Malnutrition',
+                cause='SevereAcuteMalnutrition',
                 originating_module=self.module)
         # else:
             # death is not happening as the person already recovered and didn't get wasted again since,
