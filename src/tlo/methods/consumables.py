@@ -66,9 +66,8 @@ class Consumables:
         # Save designations
         self._item_code_designations = item_code_designations
 
-        # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
-        self.item_codes,  self._processed_consumables_data = \
-            self._process_consumables_data(availability_data=availability_data, availability=availability)
+        # Save all item_codes
+        self.item_codes = set(self._availability_data.item_code)
 
         # Set the availability based on the argument provided (this can be updated later after the class is initialised)
         self.availability = availability
@@ -103,7 +102,7 @@ class Consumables:
         overriding the availability of specific consumables."""
 
         # Load the original read-in data (create copy so that edits do change the original)
-        _, self._prob_item_codes_available = self._process_consumables_data(
+        self._prob_item_codes_available = self._process_consumables_data(
             availability_data=self._availability_data,
             availability=availability
         )
@@ -148,11 +147,10 @@ class Consumables:
         else:
             raise ValueError
 
-    def _process_consumables_data(self, availability_data: pd.DataFrame, availability: str) -> Tuple[set, pd.Series]:
+    def _process_consumables_data(self, availability_data: pd.DataFrame, availability: str) -> pd.Series:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
-        Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
-        each consumable at each facility_id during each month.
+        Returns pd.Series of the availability of each consumable at each facility_id during each month.
         """
         assert availability is not None, "This argument cannot be None."
 
@@ -160,15 +158,11 @@ class Consumables:
                               'scenario5', 'scenario6', 'scenario7', 'scenario8',
                             'scenario9', 'scenario10', 'scenario11', 'scenario12',
                             'scenario13', 'scenario14', 'scenario15',):
-            return (
-                set(availability_data.item_code),
-                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + availability]
-            )
+            return availability_data.set_index(['month', 'Facility_ID', 'item_code'])[f'available_prop_{availability}']
+
         else:
-            return (
-                set(availability_data['item_code']),
-                availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
-            )
+            return availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, given the current
