@@ -26,9 +26,9 @@ scenarios_dict = {
 }
 # Set the intervention to be analysed, and for which years they were simulated
 intervs_all = ['SQ', 'GM', 'CS', 'FS']
-intervs_of_interest = ['SQ', 'GM', 'CS', 'FS']
+intervs_of_interest = ['GM', 'CS', 'FS']
 intervention_years = list(range(2026, 2031))
-scenarios_to_compare = ['Status Quo', 'GM_all', 'CS_100', 'FS_Full']
+scenarios_to_compare = ['GM_all', 'CS_100', 'FS_Full']
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2031))
 # Plot settings
@@ -44,7 +44,11 @@ outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
-
+# Ensure Status Quo is always included within the both intervs_of_interest and scenarios_to_compare
+if 'SQ' not in intervs_of_interest:
+    intervs_of_interest = intervs_of_interest + ['SQ']
+if 'Status Quo' not in scenarios_to_compare:
+    scenarios_to_compare = scenarios_to_compare + ['Status Quo']
 def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interventionyears:list,
                                        intervs_ofinterest:list, scenarios_tocompare, intervsall) -> None:
     """
@@ -66,20 +70,16 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     """
 
     # Find the most recent folders containing results for each intervention
-    if 'SQ' not in intervs_ofinterest:
-        interventions = intervs_ofinterest + ['SQ']
-    else:
-        interventions = intervs_ofinterest
     iterv_folders_dict = {
         interv: get_scenario_outputs(
             scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
-        )[-1] for interv in interventions
+        )[-1] for interv in intervs_ofinterest
     }
     interv_timestamps_dict = {
         interv: get_scenario_outputs(
             scenario_filename_prefix, Path(interv_scenarios_folder_path / interv)
         )[-1].name.split(f"{scenario_filename_prefix}_{interv}-")[-1]
-        for interv in interventions
+        for interv in intervs_ofinterest
     }
     print(f"\n{interv_timestamps_dict=}\n")
     # Define folders for each scenario
@@ -88,7 +88,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             scen_name: Path(iterv_folders_dict[interv] / str(scen_draw_nmb))
             for scen_name, scen_draw_nmb in scenarios_dict[interv].items()
         }
-        for interv in interventions
+        for interv in intervs_ofinterest
     }
 
     pd.set_option('display.max_columns', None)  # Show all columns
@@ -186,11 +186,18 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         f"{cohort}_mort_rate_{interv}_multiple_settings__"
                         f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
                     )
+                    interv_title = (
+                        'Growth Monitoring attendance (GM)' if interv == 'GM'
+                        else 'Food Supplements availability (FS)' if interv == 'FS'
+                        else 'Care-Seeking in MAM cases (CS)' if interv == 'CS'
+                        else 'SQ' if interv == 'SQ'
+                        else 'n/a'
+                    )
                     if mort_rate_png_file_path.exists():
                         img = plt.imread(mort_rate_png_file_path)
                         axes1[i, j].imshow(img)
                         axes1[i, j].axis('off')
-                        axes1[i, j].set_title(f"{cohort} - {interv}", fontsize=10)
+                        axes1[i, j].set_title(f"{cohort} - {interv_title}", fontsize=10)
             plt.tight_layout()
             pdf.savefig(fig1)  # Save the current page to the PDF
             fig1_png_file_path = outputs_path / (
@@ -200,24 +207,27 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             fig1.savefig(fig1_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
 
         # Outcome 2: figures with mean deaths and CI, scenarios comparison
-        fig2, axes2 = plt.subplots(1, 2, figsize=(12, 6))
-        for j, cohort in enumerate(['Neonatal', 'Under-5']):
-            mean_deaths_png_file_path = outputs_path / (
-                f"{cohort}_mean_deaths_CI_scenarios_comparison__"
+        for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
+            fig2, axes2 = plt.subplots(2, 2, figsize=(12, 12))
+            for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
+                for j, cohort in enumerate(['Neonatal', 'Under-5']):
+                    mean_deaths_png_file_path = outputs_path / (
+                        f"{cohort}_mean_{cause_of_death}_deaths_CI_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_mean_deaths_suffix}.png"
+                    )
+                    if mean_deaths_png_file_path.exists():
+                        img = plt.imread(mean_deaths_png_file_path)
+                        axes2[i, j].imshow(img)
+                        axes2[i, j].axis('off')
+                        axes2[i, j].set_title(f"{cohort} - {cause_of_death}", fontsize=10)
+            plt.tight_layout()
+            pdf.savefig(fig2)  # Save the current page to the PDF
+            fig2_png_file_path = outputs_path / (
+                f"mean_deaths_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
                 f"{scenarios_tocompare_prefix}__{timestamps_mean_deaths_suffix}.png"
             )
-            if mean_deaths_png_file_path.exists():
-                img = plt.imread(mean_deaths_png_file_path)
-                axes2[j].imshow(img)
-                axes2[j].axis('off')
-                axes2[j].set_title(f"{cohort} - Mean deaths, Scenarios comparison", fontsize=10)
-        plt.tight_layout()
-        pdf.savefig(fig2)  # Save the second outcome to the PDF
-        fig2.savefig(
-            outputs_path / f"mean_deaths_comparison_{scenarios_tocompare_prefix}__{timestamps_mean_deaths_suffix}.png",
-            dpi=300, bbox_inches='tight'
-        )  # Save as PNG
-        plt.close(fig2)
+            fig2.savefig(fig2_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+            plt.close(fig2)
 
 # ---------------- #
 # RUN THE ANALYSIS #
