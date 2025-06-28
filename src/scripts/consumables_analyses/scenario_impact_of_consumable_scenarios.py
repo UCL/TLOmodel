@@ -20,13 +20,11 @@ or locally using:
     ```tlo scenario-run src/scripts/consumables_analyses/scenario_impact_of_consumable_scenarios.py```
 """
 
-from pathlib import Path
-from typing import Dict
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
+
 
 class ImpactOfConsumablesScenarios(BaseScenario):
     def __init__(self):

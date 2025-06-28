@@ -6,55 +6,23 @@ holding the consumable availability constant in the short run would be more just
 than holding it constant for a long period.
 """
 
-import argparse
-from pathlib import Path
 import textwrap
-from typing import Tuple
+from collections import defaultdict
+from pathlib import Path
 
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib.ticker import FuncFormatter
-from collections import Counter, defaultdict
 import seaborn as sns
-import squarify
-
-from tlo.analysis.utils import (
-    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
-    extract_results,
-    get_color_cause_of_death_or_daly_label,
-    make_age_grp_lookup,
-    order_of_cause_of_death_or_daly_label,
-    summarize,
-)
-import pickle
-
+from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
     get_scenario_info,
-    get_scenario_outputs,
     load_pickled_dataframes,
     make_age_grp_lookup,
-    make_age_grp_types,
-    make_calendar_period_lookup,
-    make_calendar_period_type,
     summarize,
-    write_log_to_excel,
-    parse_log_file,
-    COARSE_APPT_TYPE_TO_COLOR_MAP,
-    SHORT_TREATMENT_ID_TO_COLOR_MAP,
-    _standardize_short_treatment_id,
-    bin_hsi_event_details,
-    compute_mean_across_runs,
-    get_coarse_appt_type,
-    get_color_short_treatment_id,
-    order_of_short_treatment_ids,
-    plot_stacked_bar_chart,
-    squarify_neat,
-    unflatten_flattened_multi_index_in_logging,
 )
 
 outputspath = Path('./outputs')
@@ -104,7 +72,7 @@ def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrappe
           'Perfect':'#31a354'
     }
 
-    colors = [_df.index[i] in color_mapping for i in range(len(_df.index))]
+    [_df.index[i] in color_mapping for i in range(len(_df.index))]
     color_values = [color_mapping.get(idx, '#cccccc') for idx in _df.index]
 
     fig, ax = plt.subplots()
@@ -637,7 +605,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_title(name_of_plot)
     ax.set_ylim(0, y_limit)
     ax.set_yticks(np.arange(0, y_limit, y_tick_gaps))
-    ax.set_ylabel(f'Additional DALYs averted \n(Millions)')
+    ax.set_ylabel('Additional DALYs averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', ''))
     #fig.show()
@@ -792,7 +760,7 @@ for cause in top_10_causes_of_dalys:
     ax.set_title(name_of_plot)
     ax.set_ylim(0, y_limit)
     ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
-    ax.set_ylabel(f'Additional DALYs averted per person')
+    ax.set_ylabel('Additional DALYs averted per person')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', ''))
     #fig.show()
@@ -858,7 +826,7 @@ for cadre_level in capacity_used.index:
         y_tick_gap = 0.25
     ax.set_ylim(0, y_limit)
     ax.set_yticks(np.arange(0, y_limit, y_tick_gap))
-    ax.set_ylabel(f'Capacity used \n (Proportion of capacity available)')
+    ax.set_ylabel('Capacity used \n (Proportion of capacity available)')
     fig.tight_layout()
     fig.savefig(figurespath / name_of_plot.replace(' ', '_').replace(',', '').replace('/', '_').replace('\n', '_'))
     fig.show()
@@ -928,7 +896,7 @@ for avail_scenario in chosen_availability_columns:
     # Customize the plot
     plt.title(scenarios[i])
     plt.xlabel('Facility Level')
-    plt.ylabel(f'Disease/Public health \n program')
+    plt.ylabel('Disease/Public health \n program')
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
 
@@ -948,7 +916,7 @@ for avail_scenario in chosen_availability_columns:
 # TODO ideally this should count the number of treatment IDs but this needs the detailed health system logger
 def consumables_availability_figure(results_folder: Path, output_folder: Path, resourcefilepath: Path):
     """ 'Figure 3': Usage of consumables in the HealthSystem"""
-    make_graph_file_name = lambda stub: output_folder / f"Fig3_consumables_availability_figure.png"  # noqa: E731
+    lambda stub: output_folder / "Fig3_consumables_availability_figure.png"  # noqa: E731
 
     def get_counts_of_items_requested(_df):
         _df = drop_outside_period(_df)
@@ -990,7 +958,7 @@ def consumables_availability_figure(results_folder: Path, output_folder: Path, r
     cons.columns = pd.MultiIndex.from_tuples(cons.columns, names=['draw', 'stat', 'var'])
     cons_not_available = cons.loc[:, cons.columns.get_level_values(2) == 'Not_Available']
     cons_not_available.mean = cons_not_available.loc[:, cons_not_available.columns.get_level_values(1) == 'mean']
-    cons_available = cons.loc[:, cons.columns.get_level_values(2) == 'Available']
+    cons.loc[:, cons.columns.get_level_values(2) == 'Available']
 
     cons_not_available = cons_not_available.unstack().reset_index()
     cons_not_available = cons_not_available.rename(columns={0: 'qty_not_available'})
