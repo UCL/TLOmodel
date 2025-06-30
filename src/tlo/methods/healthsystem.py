@@ -681,7 +681,6 @@ class HealthSystem(Module):
             availability=self.get_cons_availability(),
             treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
             treatment_ids_overridden_avail=self.parameters['override_treatment_ids_avail'],
-
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']
@@ -1942,35 +1941,25 @@ class HealthSystem(Module):
         """
         self.consumables.override_availability(item_codes)
 
-    def set_availability_for_treatment_ids(self, treatment_ids: list,
-                                           availability: float = None) -> None:
+    def override_cons_availability_for_treatment_ids(self,
+                                                     treatment_ids: list = None,
+                                                     prob_available: float = None) -> None:
         """
         This function can be called by any module to update the treatment ids for which consumable availability should
-        be overridden and to provide a probability of availability (set at 1.0 if unchanged)
+        be overridden and to provide a probability of availability.
 
         :param treatment_ids: The treatment ids which should have availability overridden (list)
-        :param avail: The probability of availability in those treatment_ids (float)
+        :param prob_available: The probability of availability in those treatment_ids (float)
         :return: None
         """
 
-        # If an empty list is passed to this function then treatment ids for which cons availability was previously
-        # being overriden are removed
-        if not treatment_ids:
-            self.parameters['cons_override_treatment_ids'] = []
-        else:
-            # Otherwise the parameter is updated
-            for treatment_id in treatment_ids:
-                if treatment_id not in self.parameters['cons_override_treatment_ids']:
-                    self.parameters['cons_override_treatment_ids'].append(treatment_id)
+        # Update internal cons function to update the cons 'owned' lists in which this information is stored
+        self.consumables.treatment_ids_overridden = treatment_ids if treatment_ids is not None else []
 
-        # If an availability probability is provided that parameter is updated
-        if availability:
-            self.parameters['override_treatment_ids_avail'] = availability
+        if (treatment_ids is not None) and (len(treatment_ids) > 0):
+            assert prob_available is not None, "If treatment_ids is provided, prob_available must be provided"
 
-        # Call internal cons function to update the cons 'owned' lists in which this information is stored
-        self.consumables._update_internal_cons_list_for_treat_id_avail(treatment_ids=self.parameters['cons_override_treatment_ids'],
-                                                                       avail=self.parameters['override_treatment_ids_avail'])
-
+        self.consumables.treatment_ids_overridden_avail = prob_available if prob_available is not None else 0.0
 
     def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(

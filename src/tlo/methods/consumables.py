@@ -72,8 +72,8 @@ class Consumables:
         self._summary_counter = ConsumablesSummaryCounter()
 
         # save treatment ids to override consumable availability
-        self._treatment_ids_overridden = treatment_ids_overridden if treatment_ids_overridden else []
-        self._treatment_ids_overridden_avail = treatment_ids_overridden_avail if treatment_ids_overridden_avail else 0.0
+        self.treatment_ids_overridden = treatment_ids_overridden if treatment_ids_overridden else []
+        self.treatment_ids_overridden_avail = treatment_ids_overridden_avail if treatment_ids_overridden_avail else 0.0
 
     @property
     def availability(self):
@@ -89,6 +89,28 @@ class Consumables:
         assert value in self._options_for_availability, f"Argument `cons_availability` is not recognised: {value}."
         self._availability = value
         self._update_prob_item_codes_available(self._availability)
+
+    @property
+    def treatment_ids_overridden(self):
+        """Returns the property self._treatment_ids_overridden"""
+        return self._treatment_ids_overridden
+
+    @treatment_ids_overridden.setter
+    def treatment_ids_overridden(self, value: List[str]):
+        """Sets treatmets_id_overriden"""
+        assert isinstance(value, list), "Value for `treatment_ids_overridden` must be a list."
+        self._treatment_ids_overridden = value
+
+    @property
+    def treatment_ids_overridden_avail(self):
+        return self._treatment_ids_overridden_avail
+
+    @treatment_ids_overridden_avail.setter
+    def treatment_ids_overridden_avail(self, value: float):
+        assert isinstance(value, float), "Value for `treatment_ids_overridden_avail` must be a float."
+        assert 0.0 <= value <= 1.0, "Value for `treatment_ids_overridden_avail` must be between 0.0 and 1.0"
+        self._treatment_ids_overridden_avail = value
+
 
     def on_start_of_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
