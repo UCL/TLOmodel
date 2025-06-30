@@ -914,9 +914,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
             months=list(range(1, 13)),
             facility_ids=list(all_fac_ids)),
         rng=sim.modules['HealthSystem'].rng,
-        availability='default',
-        treatment_ids_overridden=[],
-        treatment_ids_overridden_avail=1.0
+        availability='default'
     )
 
     sim.simulate(end_date=start_date + pd.DateOffset(years=2))
