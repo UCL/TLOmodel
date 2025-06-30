@@ -195,7 +195,7 @@ class HealthSystem(Module):
             Types.LIST,
             "Consumable availability within any treatment ids listed in this parameter will be set at to a "
             "given probabilty stored in override_treatment_ids_avail. By default this list is empty"),
-        'override_treatment_ids_avail': Parameter(
+        'cons_override_treatment_ids_prob_avail': Parameter(
             Types.REAL,
             "Probability that consumables for treatment ids listed in cons_override_treatment_ids will be "
             "available"),
@@ -680,7 +680,7 @@ class HealthSystem(Module):
             rng=rng_for_consumables,
             availability=self.get_cons_availability(),
             treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
-            treatment_ids_overridden_avail=self.parameters['override_treatment_ids_avail'],
+            treatment_ids_overridden_avail=self.parameters['cons_override_treatment_ids_prob_avail'],
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']
