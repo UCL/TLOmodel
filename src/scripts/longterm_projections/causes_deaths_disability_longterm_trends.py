@@ -432,10 +432,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         label_to_handle = dict(zip(labels, handles))
         ordered_handles = [label_to_handle[label] for label in new_order]
         ordered_handles = reversed(ordered_handles)
-        axes[0].set_xlabel('Year')
+        axes[0].set_xlabel('Year', fontsize=12)
         axes[0].set_xticks(axes[0].get_xticks()[::10])
         axes[0].tick_params(axis='x', rotation=0)
-        axes[0].set_ylabel('Number of deaths per 1000 people')
+        axes[0].set_ylabel('Number of deaths per 1000 people', fontsize=12)
         axes[0].legend().set_visible(False)
         axes[0].tick_params(axis='both', which='major', labelsize=12)
 
@@ -451,10 +451,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                          df_normalized_population.iloc[0],
                          color='black', linestyle='--', marker='s', linewidth=2, label='Population')
 
-        axes[1].axhline(0.0, color='black')
-        axes[1].tick_params(axis='both', which='major', labelsize=12)
-        axes[1].set_ylabel('Fold change in DALYs')
-        axes[1].set_xlabel('Year')
+        axes[1].axhline(1, color='black')
+        axes[1].tick_params(axis='both', which='major', fontsize=12)
+        axes[1].set_ylabel('Fold change in DALYs', fontsize=12)
+        axes[1].set_xlabel('Year', fontsize=12)
         axes[1].legend(ordered_handles, reversed(new_order), title="Cause",  bbox_to_anchor=(1.05, 1), loc='upper left')
 
         fig.tight_layout()
@@ -719,8 +719,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             alpha=0.5
         )
 
-    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
-    axes[1].hlines(y=2, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+    axes[1].hlines(y=normalized_DALYs.loc['TB'][0], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black') # just want it to be at 1
 
     axes[1].set_ylabel('Fold Change in DALYs per 1,000 Compared to 2020')
     axes[1].set_xlabel('Scenario')
