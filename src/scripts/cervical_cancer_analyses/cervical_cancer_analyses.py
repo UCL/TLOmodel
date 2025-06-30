@@ -31,7 +31,7 @@ from tlo.methods import (
     tb,
 )
 
-seed = 12
+seed = 30
 
 # Date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -51,9 +51,9 @@ log_config = {
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
+end_date = Date(2025, 1, 1)
 malawi_country_pop = 17_000_000
-popsize = 170_000
+popsize = 340_000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed

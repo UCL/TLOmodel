@@ -39,8 +39,8 @@ log_config = {
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
-popsize = 1_000
+end_date = Date(2020, 1, 1)
+popsize = 340_000
 
 def run_sim():
     # Establish the simulation object and set the seed
