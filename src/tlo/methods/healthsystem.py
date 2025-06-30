@@ -2471,7 +2471,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # based on queue information, and we assume no squeeze ever takes place.
                     squeeze_factor = 0.
 
-                    breakpoint()
                     # Check if any of the officers required have run out.
                     out_of_resources = False
                     for officer, call in original_call.items():
