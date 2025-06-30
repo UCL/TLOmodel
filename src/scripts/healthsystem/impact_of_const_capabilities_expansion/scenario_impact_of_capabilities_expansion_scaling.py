@@ -76,7 +76,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
 
         return {
-            """
+            
             # =========== STATUS QUO ============
             "No growth status quo":
                 mix_scenarios(
@@ -255,7 +255,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                       },
                     }
                 ),
-            """
+            
             # =========== SCENARIO 13 AVAILABILITY ============
             "No growth cons scenario 13":
                 mix_scenarios(
