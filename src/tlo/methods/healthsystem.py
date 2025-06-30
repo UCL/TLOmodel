@@ -2392,7 +2392,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         for outer_key, outer_val in clinic_capabilities_monitor.items():
             for inner_key, inner_val in outer_val.items():
                 if inner_val > 0:
-                    set_cl_capabilities_still_available[inner_key].add(outer_key)
+                    set_cl_capabilities_still_available[outer_key].add(inner_key)
 
 
 
@@ -2420,12 +2420,21 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # This will make things slower for tests/small simulations, but should be of significant help
             # in the case of large simulations in mode_appt_constraints = 2 where number of people in the
             # queue for today >> resources available for that day. This would be faster done by facility.
-            if len(set_capabilities_still_available) > 0:
+            if len(set_capabilities_still_available) > 0 or len(set_cl_capabilities_still_available) > 0:
 
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
                 event = next_event_tuple.hsi_event
+                # Check the event's clinic eligibility; if not clinic for eligible,
+                # clinic name will be Fungible; otherwise it will be the clinic name
+                event_clinic = next_event_tuple.clinic_eligibility
+                if event_clinic == "Fungible":
+                    counter_to_use = capabilities_monitor
+                    capabilities_still_available = set_capabilities_still_available
+                else:
+                    counter_to_use = clinic_capabilities_monitor[event_clinic]
+                    capabilities_still_available = set_cl_capabilities_still_available[event_clinic]
 
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
@@ -2457,23 +2466,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     original_call = next_event_tuple.hsi_event.expected_time_requests
                     _priority = next_event_tuple.priority
 
-                    # Check the event's clinic eligibility; if not clinic for eligible,
-                    # clinic name will be Fungible; otherwise it will be the clinic name
-                    event_clinic = next_event_tuple.clinic_eligibility
-                    print("EVENT CLINIC")
-                    print(event_clinic)
-                    if event_clinic == "Fungible":
-                        counter_to_use = capabilities_monitor
-                        capabilities_still_available = set_capabilities_still_available
-                    else:
-                        counter_to_use = clinic_capabilities_monitor[event_clinic]
-                        capabilities_still_available = set_cl_capabilities_still_available[event_clinic]
 
                     # In this version of mode_appt_constraints = 2, do not have access to squeeze
                     # based on queue information, and we assume no squeeze ever takes place.
                     squeeze_factor = 0.
 
-
+                    breakpoint()
                     # Check if any of the officers required have run out.
                     out_of_resources = False
                     for officer, call in original_call.items():
@@ -2561,9 +2559,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
 
                         # Subtract this from capabilities used so-far today
-                        print("########## Subtracting ###########")
-                        print(next(iter(counter_to_use.keys())))
-                        print(next(iter(updated_call.keys())))
                         counter_to_use.subtract(updated_call)
 
                         # If any of the officers have run out of time by performing this hsi,

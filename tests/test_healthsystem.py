@@ -2109,6 +2109,7 @@ def test_mode_2_clinics(seed, tmpdir):
         "directory": tmpdir,
         "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
     }
+
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the core modules and simulate for 0 days
@@ -2129,6 +2130,10 @@ def test_mode_2_clinics(seed, tmpdir):
     sim.make_initial_population(n=tot_population)
     sim.simulate(end_date=sim.start_date)
 
+    # healthsystem will query self.parameters['Ringfenced_Clinics'] to determine clinic eligibility
+    # So we will add a colummn with the dummy module name so that it becomes eligible
+    # The precise values are not important, because we will adjust capabilities later.
+    sim.modules['HealthSystem'].parameters['Ringfenced_Clinics']['DummyModuleNonFungible'] = 0
     # Get pointer to the HealthSystemScheduler event
     healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
 
@@ -2162,7 +2167,6 @@ def test_mode_2_clinics(seed, tmpdir):
             priority=1
         )
 
-
     hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
                          person_id=0,  # Ensures call is on officers in first district
                          appt_type='MinorSurg',
@@ -2179,12 +2183,13 @@ def test_mode_2_clinics(seed, tmpdir):
                          appt_type='MinorSurg',
                          level='1a')
     hsi2.initialise()
+    sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._clinics_capabilities_per_staff[k]['DummyModuleNonFungible'] = v*(tot_population/2)
+        sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
 
     # Run healthsystemscheduler
     healthsystemscheduler.apply(sim.population)
-
+    breakpoint()
     # read the results
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output['tlo.methods.healthsystem']['HSI_Event']
@@ -2192,6 +2197,7 @@ def test_mode_2_clinics(seed, tmpdir):
     ## All events should have run
     assert hs_output['did_run'].sum() == tot_population, "All events ran"
 
+    ## Test 2: Events requiring fungible capabilities do not run if those capabilities are available
     ## Update the capabilties so that only Non-fungible events can run
     sim.modules['HealthSystem']._daily_capabilities[:] = 0
 
