@@ -3,7 +3,6 @@ Runs the cervical cancer module and produces the standard `compare_deaths` analy
 modelled against the GBD data.
 
 """
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 
