@@ -2129,6 +2129,11 @@ def test_mode_2_clinics(seed, tmpdir):
     tot_population = 100
     sim.make_initial_population(n=tot_population)
     sim.simulate(end_date=sim.start_date)
+    # Assign the entire population to the first district, so that all events are run in the same district
+    person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
+    keys_district = list(person_for_district.keys())
+    for i in range(0, tot_population):
+        sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
 
     # healthsystem will query self.parameters['Ringfenced_Clinics'] to determine clinic eligibility
     # So we will add a colummn with the dummy module name so that it becomes eligible
@@ -2172,6 +2177,7 @@ def test_mode_2_clinics(seed, tmpdir):
                          appt_type='MinorSurg',
                          level='1a')
     hsi1.initialise()
+
     # Now adjust capabilities available.
     # We first want to make sure there is enough capabilities available to run all events
     for k, v in hsi1.expected_time_requests.items():
@@ -2179,21 +2185,22 @@ def test_mode_2_clinics(seed, tmpdir):
         sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
-                         person_id=int(tot_population/2),
+                         person_id=0,
                          appt_type='MinorSurg',
                          level='1a')
     hsi2.initialise()
+
     sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
     for k, v in hsi2.expected_time_requests.items():
         sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
 
     # Run healthsystemscheduler
     healthsystemscheduler.apply(sim.population)
-    breakpoint()
+
     # read the results
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output['tlo.methods.healthsystem']['HSI_Event']
-
+    breakpoint()
     ## All events should have run
     assert hs_output['did_run'].sum() == tot_population, "All events ran"
 
