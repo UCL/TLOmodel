@@ -35,8 +35,8 @@ class Consumables:
                  item_code_designations: pd.DataFrame = None,
                  rng: np.random = None,
                  availability: str = 'default',
-                 treatment_ids_overridden: list = None,
-                 treatment_ids_overridden_avail: float = None,
+                 treatment_ids_overridden: Optional[list] = None,
+                 treatment_ids_overridden_avail: Optional[float] = None,
                  ) -> None:
 
         self._options_for_availability = {
@@ -72,8 +72,8 @@ class Consumables:
         self._summary_counter = ConsumablesSummaryCounter()
 
         # save treatment ids to override consumable availability
-        self._treatment_ids_overridden = treatment_ids_overridden
-        self._treatment_ids_overridden_avail = treatment_ids_overridden_avail
+        self._treatment_ids_overridden = treatment_ids_overridden if treatment_ids_overridden else []
+        self._treatment_ids_overridden_avail = treatment_ids_overridden_avail if treatment_ids_overridden_avail else 0.0
 
     @property
     def availability(self):
