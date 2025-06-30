@@ -468,20 +468,20 @@ def test_use_get_consumables_by_hsi_method_get_consumables():
 
     # Check that providing a treatment id within the following health system parameter sets treatment availability to
     # 100%
-    sim.modules['HealthSystem'].set_availability_for_treatment_ids(
+    sim.modules['HealthSystem'].override_cons_availability_for_treatment_ids(
         treatment_ids=[hsi_event.TREATMENT_ID],
-        availability=1.0)
+        prob_available=1.0)
 
     assert True is hsi_event.get_consumables(item_codes=item_code_not_available[0])
-    assert hsi_event.TREATMENT_ID in sim.modules['HealthSystem'].parameters['cons_override_treatment_ids']
-    assert sim.modules['HealthSystem'].parameters['override_treatment_ids_avail'] == 1.0
+    assert hsi_event.TREATMENT_ID in sim.modules['HealthSystem'].consumables.treatment_ids_overridden
+    assert 1.0 == sim.modules['HealthSystem'].consumables.treatment_ids_overridden_avail
 
-    # check that when the parameter is blank that availability is not overridden
-    sim.modules['HealthSystem'].set_availability_for_treatment_ids(
+    # check that when the parameter is reset to an empty list that there is no overriding
+    sim.modules['HealthSystem'].override_cons_availability_for_treatment_ids(
         treatment_ids=[])
 
     assert False is hsi_event.get_consumables(item_codes=item_code_not_available[0])
-    assert not sim.modules['HealthSystem'].parameters['cons_override_treatment_ids']
+    assert 0 == len(sim.modules['HealthSystem'].consumables.treatment_ids_overridden)
 
 
 def test_outputs_to_log(tmpdir):
