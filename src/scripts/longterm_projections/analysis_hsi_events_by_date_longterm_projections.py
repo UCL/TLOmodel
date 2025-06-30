@@ -124,16 +124,17 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig9_{stub}_{draw}.png"  # noqa: E731
 
         all_years_data = {}
+        all_years_data_population_mean = {}
 
         for target_year in target_year_sequence:
-            TARGET_PERIOD = (
+            target_period = (
                 Date(target_year, 1, 1),
                 Date(target_year + spacing_of_years, 12, 31))  # Corrected the year range to cover 5 years.
 
             def get_counts_of_hsi_by_treatment_id(_df):
                 """Get the counts of the short TREATMENT_IDs occurring"""
                 _counts_by_treatment_id = _df \
-                    .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+                    .loc[pd.to_datetime(_df['date']).between(*target_period), 'TREATMENT_ID'] \
                     .apply(pd.Series) \
                     .sum() \
                     .astype(int)
@@ -157,21 +158,47 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                 collapse_columns=True,
             )[draw]
             all_years_data[target_year] = result_data['mean']
+            def get_population_for_year(_df):
+                """Returns the population in the year of interest"""
+                _df['date'] = pd.to_datetime(_df['date'])
+
+                # Filter the DataFrame based on the target period
+                filtered_df = _df.loc[_df['date'].between(*target_period)]
+                numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
+                population_sum = numeric_df.sum(numeric_only=True)
+
+                return population_sum
+            result_data_population = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='population',
+                custom_generate_series=get_population_for_year,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+            all_years_data_population_mean[target_year] = result_data_population['mean']
+            all_years_data_population_mean[target_year] = result_data_population['mean']
 
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years = pd.DataFrame(all_years_data)
-        # Normalizing by the first column (first year in the sequence)
+        df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
+        print(df_all_years_data_population_mean)
         df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
+        df_normalized_population = df_all_years_data_population_mean / df_all_years_data_population_mean.iloc[0]
+
         # Plotting
         causes = list(df_normalized.index)
-        df_normalized = df_normalized.rename(index=rename_dict)
-        # group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
-        # group_2 = [cause for cause in causes if "Cancer" in cause]
-        # group_3 = ["Depression / Self-harm", "Diabetes", "Epilepsy", "Lower Back Pain", "Heart Disease", "Kidney Disease", "COPD"]
-        # group_4 = ["Lower respiratory infections", "Measles", "Schistosomiasis"]
-        # other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3]
-        # new_order = group_1 + group_2 + group_3 + group_4 + other_causes
-        df_all_years_ordered = df_normalized#.loc[new_order]
+        print(df_normalized)
+        group_1 = ["Hiv*", "Tb*", "Malaria*"]
+        group_2 = [cause for cause in causes if "Cancer" in cause]
+        group_3 = ["CardioMetabolicDisorders*", "Copd*", "Depression*", "Epilepsy*", "Epi*", "FirstAttendance*"]
+        group_4 = ["Alri*", "Measles*", "Schisto*"]
+        group_5 = ["AntenatalCare*", "Contraception*", "DeliveryCare*", "PostnatalCare*"]
+        other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3 + group_4 + group_5]
+        new_order = group_1 + group_2 + group_3 + group_4 + group_5 + other_causes
+        df_all_years_ordered = df_normalized.loc[new_order]
 
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -179,29 +206,39 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         df_all_years_ordered.T.plot.bar(stacked=True, ax=axes[0],
                                 color=[get_color_short_treatment_id(_label) for _label in
                                        df_all_years_ordered.index])
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Counts of HSI Events')
+        axes[0].set_xlabel('Year', fontsize=12)
+        axes[0].set_ylabel('Counts of HSI Events', fontsize=12)
         axes[0].legend().set_visible(False)
         labels = [label.get_text() for label in axes[0].get_xticklabels()]
         new_labels = [label if i % 10 == 0 else '' for i, label in enumerate(labels)]
         new_labels.append('2070')
         tick_positions = list(range(len(new_labels)))
-
+        axes[0].tick_params(axis='both', which='major', labelsize=12)
         axes[0].set_xticks(tick_positions)
         axes[0].set_xticklabels(new_labels, rotation=0)
 
         # Panel B: Normalized counts
-        for i, treatment_id in enumerate(df_normalized.index):
-            axes[1].plot(df_normalized.columns, df_normalized.loc[treatment_id], marker='o', label=treatment_id,
+        for i, treatment_id in enumerate(df_all_years_ordered.index):
+            axes[1].plot(df_all_years_ordered.columns, df_all_years_ordered.loc[treatment_id], marker='o', label=treatment_id,
                          color=[get_color_short_treatment_id(_label) for _label in
                                 df_all_years.index][i])
-        axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Normalized Counts (First Year = 2020)')
-        axes[1].legend(title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
+        axes[1].plot(df_normalized_population.columns,
+                     df_normalized_population.iloc[0],
+                     color='black', linestyle='--', marker='s', linewidth=2, label='Population')
+
+        axes[1].set_xlabel('Year', fontsize=12)
+        axes[1].set_ylabel('Fold change in counts of HSI Events', fontsize=12)
+        handles, labels = axes[0].get_legend_handles_labels()
+        label_to_handle = dict(zip(labels, handles))
+        ordered_handles = [label_to_handle[label] for label in new_order]
+        ordered_handles = reversed(ordered_handles)
+        axes[1].legend(ordered_handles, reversed(new_order),title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
+        axes[1].tick_params(axis='both', which='major', labelsize=12)
+
         df_all_years.to_csv(output_folder/f"HSI_events_treatment_ID_2020_2070_{draw}.csv")
 
         df_normalized.to_csv(output_folder/f"HSI_events_treatment_ID_normalized_2020_2070_{draw}.csv")
-        # Save the figure with both panels
+        fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_HSI_Events_by_TREATMENT_ID_All_Years_Panel_A_and_B'))
         plt.close(fig)
 
@@ -259,6 +296,18 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                 population_sum = numeric_df.sum(numeric_only=True)
 
                 return population_sum
+            result_data_population = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='population',
+                custom_generate_series=get_population_for_year,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+            all_years_data_population_mean[target_year] = result_data_population['mean']
+
             # Initialize aggregation variables
             cadre_to_total_time = {}
             cadre_to_total_time_lower = {}
@@ -378,8 +427,8 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
         df_all_years_cadre.T.plot.bar(stacked=True, ax=axes[0])
 
-        axes[0].set_xlabel('Year')
-        axes[0].set_ylabel('Time Spent (Minutes)')
+        axes[0].set_xlabel('Year', fontsize=12)
+        axes[0].set_ylabel('Time Spent (Minutes)', fontsize=12)
         axes[0].legend().set_visible(False)
         axes[0].grid(False)
 
@@ -390,6 +439,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
         axes[0].set_xticks(tick_positions)
         axes[0].set_xticklabels(new_labels, rotation=0)
+        axes[0].tick_params(axis='both', which='major', labelsize=12)
 
         for i, treatment_id in enumerate(df_normalized_cadre.index):
             axes[1].plot(df_normalized_cadre.columns, df_normalized_cadre.loc[treatment_id],
@@ -398,9 +448,9 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[1].plot(df_normalized_population.columns,
                      df_normalized_population.iloc[0],
                      color='black', linestyle='--', marker='s', linewidth=2, label='Population')
-
-        axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Fold Increase in Demand from 2020')
+        axes[1].tick_params(axis='both', which='major', labelsize=12)
+        axes[1].set_xlabel('Year', fontsize=12)
+        axes[1].set_ylabel('Fold change in demand', fontsize=12)
         axes[1].legend(title='Cadre', ncol=1, bbox_to_anchor=(1.05, 1))
         axes[1].grid(False)
 
@@ -418,9 +468,10 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         stacked=True, ax=axes[0], legend=False,  color=[get_color_short_treatment_id(_label) for _label in
                                        all_draws_treatment_per_1000.index]
     )
-    axes[0].set_ylabel('Time spent (Minutes) per 1,000 population')
-    axes[0].set_xlabel('Scenario')
+    axes[0].set_ylabel('Time spent (Minutes) per 1,000 population', fontsize=12)
+    axes[0].set_xlabel('Scenario', fontsize=12)
     axes[0].set_xticklabels(scenario_names, rotation=45)
+    axes[0].tick_params(axis='both', which='major', labelsize=12)
 
     for i, treatment_id in enumerate(all_draws_treatment_normalised.index):
         axes[1].scatter(all_draws_treatment_normalised.columns, all_draws_treatment_normalised.loc[treatment_id],
@@ -443,11 +494,12 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     )
 
     axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
-    axes[1].set_ylabel('Fold change in time spent compared to 2020')
-    axes[1].set_xlabel('Scenario')
+    axes[1].set_ylabel('Fold change in time spent', fontsize=12)
+    axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(all_draws_treatment_normalised.columns)
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='black')
+    axes[1].tick_params(axis='both', which='major', labelsize=12)
 
     fig.tight_layout()
     fig.savefig(output_folder / "Time_HSI_Events_by_Treatment_combined.png")
@@ -461,8 +513,8 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     all_draws_cadre_per_1000.T.plot.bar(
             stacked=True, ax=axes[0], legend=False
         )
-    axes[0].set_ylabel('Time Spent (Minutes) per 1,000 population')
-    axes[0].set_xlabel('Scenario')
+    axes[0].set_ylabel('Time Spent (Minutes) per 1,000 population', fontsize=12)
+    axes[0].set_xlabel('Scenario', fontsize=12)
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
     y_err = [
@@ -489,8 +541,8 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     )
 
     axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
-    axes[1].set_ylabel('Fold change in time spent compared to 2020')
-    axes[1].set_xlabel('Scenario')
+    axes[1].set_ylabel('Fold change in time spent', fontsize=12)
+    axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(all_draws_cadre_normalised.columns)
     axes[1].set_xticklabels(scenario_names, rotation=45)
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
@@ -551,7 +603,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # Lower right diagonal
 
     ax2.set_xlabel("Scenario")
-    ax2.set_ylabel("Fold change in time spent vs. 2020")
+    ax2.set_ylabel("Fold change in time spent")
     ax2.set_ylabel("")
 
     ax2.axhline(y=1, color='black', linestyle='--')
