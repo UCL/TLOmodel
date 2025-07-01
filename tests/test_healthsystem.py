@@ -2252,7 +2252,68 @@ def test_mode_2_clinics(seed, tmpdir):
 
 
     ## Test 3: Events requiring non-fungible capabilities do not run if those capabilities are available
+    ## Mirror of test 2 above
+    for i in range(0, tot_population // 2):
+        hsi = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+                            person_id=i,
+                            appt_type='MinorSurg',
+                            level='1a')
 
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=1
+        )
+
+    for i in range(tot_population // 2, tot_population):
+        hsi = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+                            person_id=i,
+                            appt_type='MinorSurg',
+                            level='1a')
+
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=1
+        )
+
+    hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+                         person_id=0,  # Ensures call is on officers in first district
+                         appt_type='MinorSurg',
+                         level='1a')
+    hsi1.initialise()
+
+    # Now adjust capabilities available.
+    # We first want to make sure there is enough capabilities available to run all events
+    for k, v in hsi1.expected_time_requests.items():
+        print(k, sim.modules['HealthSystem']._daily_capabilities[k])
+        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
+
+    hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+                         person_id=0,
+                         appt_type='MinorSurg',
+                         level='1a')
+    hsi2.initialise()
+
+    sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    for k, v in hsi2.expected_time_requests.items():
+        sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
+
+    healthsystemscheduler.apply(sim.population)
+
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    hs_output = output['tlo.methods.healthsystem']['HSI_Event']
+
+    ## Additional pop/2 events should have run; but log file already has pop_size events, so we check that
+    ## pop_size + <additional expected events>
+    ## Writing it out to be explcit about what is being counted.
+    assert hs_output['did_run'].sum() == tot_population + tot_population // 2 + tot_population // 2, "Half of the events ran"
+    Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
+    ## No more non-fungible events should have run, but all fungible ones should have
+    assert Nevents.loc[('DummyModuleNonFungible', True)] == tot_population // 2 + tot_population // 2, "No additional NonFungible events ran"
+    assert Nevents.loc[('Fungible', True)] == tot_population // 2 + tot_population // 2, "Scheduled fungible events ran"
 
 
 @pytest.mark.slow
