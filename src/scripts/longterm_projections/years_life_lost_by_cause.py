@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 )
 
 min_year = 2020
-max_year = 2025
+max_year = 2070
 spacing_of_years = 1
 PREFIX_ON_FILENAME = '1'
 scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
@@ -181,18 +181,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             # Store results
             all_years_data_population[target_year] = num_by_age['mean'].sum(axis=0)
-            print(result_data_yld)
-            all_years_data_yll_standard_years[target_year] = (result_data_yld['mean'])
-            # all_keys = set(k for d in all_years_data_yll_standard_years for k in d)
-            # for d in all_years_data_yll_standard_years:
-            #     for k in all_keys:
-            #         d.setdefault(k, None)
+            all_years_data_yll_standard_years[target_year] = (result_data_yld['mean'])/num_by_age['mean'].sum(axis=0) * 1000
+
         df_yll_standard_years = pd.DataFrame(all_years_data_yll_standard_years)
         df_yll_standard_years.to_csv(output_folder / f"YLL_diseases_2020_2070_{draw}.csv")
-        df_all_years_data_population = all_years_data_population_df = pd.DataFrame(
-    list(all_years_data_population.items()),
-    columns=['Year', 'Population']
-)
 
     # Drop rows only if they exist
         rows_to_drop = [
@@ -211,7 +203,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_yll_standard_years = pd.DataFrame(df_yll_standard_years)
         df_all_years_yll_normalized = df_yll_standard_years.div(
                 df_yll_standard_years.iloc[:, 0], axis=0)
-        print(all_years_data_population)
         df_normalized_population = {year: value / all_years_data_population[2020]
                                         for year, value in all_years_data_population.items()}
         df_normalized_population = pd.Series(df_normalized_population)
@@ -229,7 +220,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                            df_yll_standard_years.index])
 
         axes[0].set_xlabel('Year', fontsize=12)
-        axes[0].set_ylabel('Age-standardised yll in population (per 1,000)', fontsize=12)
+        axes[0].set_ylabel('Age-standardised YLL in population (per 1,000)', fontsize=12)
         axes[0].legend().set_visible(False)
 
         labels = [label.get_text() for label in axes[0].get_xticklabels()]
@@ -247,10 +238,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[1].scatter(df_normalized_population.index,
                             df_normalized_population,
                             color='black', marker='s', label='Population')
+        axes[1].plot(
+                df_normalized_population.index,
+                df_normalized_population,
+                alpha=0.5
+            )
         axes[1].hlines(y=df_normalized_population.loc[2020], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()),
                            color='black')  # just want it to be at 1
-        axes[1].set_xlabel('Year')
-        axes[1].set_ylabel('Fold Change in yll compared to 2020')
+        axes[1].set_xlabel('Year',  fontsize=12)
+        axes[1].set_ylabel('Fold Change in YLL',  fontsize=12)
         axes[1].legend(title='Condition', bbox_to_anchor=(1, 1), loc='upper left')
         axes[1].tick_params(axis='both', which='major', labelsize=12)
 
@@ -292,7 +288,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     all_draws_population,
                     color='black', marker='s', label='Population')
     axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
-    axes[1].set_ylabel('Fold change in yll', fontsize=12)
+    axes[1].set_ylabel('Fold change in YLL', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(range(len(scenario_names)))
     axes[1].set_xticklabels(scenario_names, rotation=45)
