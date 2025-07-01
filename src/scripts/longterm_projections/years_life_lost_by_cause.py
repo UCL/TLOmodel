@@ -283,7 +283,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
 
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
-    print(all_draws_population)
     axes[1].scatter(all_draws_population.columns,
                     all_draws_population,
                     color='black', marker='s', label='Population')
