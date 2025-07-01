@@ -5,7 +5,7 @@ Road traffic injury module.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -37,10 +37,9 @@ class RTI(Module, GenericFirstAppointmentsMixin):
     The road traffic injuries module for the TLO model, handling all injuries related to road traffic accidents.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
         self.ASSIGN_INJURIES_AND_DALY_CHANGES = None
         self.cons_item_codes = None  # (Will store consumable item codes)
 
@@ -1108,11 +1107,11 @@ class RTI(Module, GenericFirstAppointmentsMixin):
         'RTI': Cause(gbd_causes='Road injuries', label='Transport Injuries')
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """ Reads the parameters used in the RTI module"""
         p = self.parameters
 
-        dfd = read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_RTI', files='parameter_values')
+        dfd = read_csv_files(resourcefilepath / 'ResourceFile_RTI', files='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         if "HealthBurden" in self.sim.modules:
             # get the DALY weights of the seq associated with road traffic injuries
@@ -3955,7 +3954,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self._number_of_times_this_event_has_run = 0
-        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            "maximum_number_of_times_HSI_events_should_run"
+        ]
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4840,7 +4841,9 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
         self._number_of_times_this_event_has_run = 0
-        self._maximum_number_times_event_should_run = self.module.parameters['maximum_number_of_times_HSI_events_should_run']
+        self._maximum_number_times_event_should_run = self.module.parameters[
+            "maximum_number_of_times_HSI_events_should_run"
+        ]
 
         p = self.module.parameters
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
