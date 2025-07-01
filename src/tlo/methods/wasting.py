@@ -1166,6 +1166,21 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
             df.at[person_id, "un_recov_to_mam_date"] = outcome_date
         # else: death due to SAM scheduled earlier, i.e. natural progression
 
+        logger.debug(
+            key="progression to severe wasting",
+            data={
+                'person_id': person_id,
+                'age_group': self.sim.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                'date': self.sim.date,
+                'natural history scheduled':
+                    "recovery to moderate wasting" if pd.isnull(df.at[person_id, 'un_sam_death_date']) else "death",
+                'outcome_date':
+                    outcome_date if pd.isnull(df.at[person_id, 'un_sam_death_date']) else \
+                        df.at[person_id, 'un_sam_death_date']
+            },
+            description="progression from moderate to severe wasting"
+        )
+
 class Wasting_SevereAcuteMalnutritionDeath_Event(Event, IndividualScopeEventMixin):
     """
     This event applies the death function
@@ -1230,11 +1245,24 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         ):
             return
 
-        # if not well (i.e. occurs as result of OTP/ITC, not a follow-up SFP)
-        if df.at[person_id, 'un_WHZ_category'] != 'WHZ>=-2':
-            if df.at[person_id, 'un_WHZ_category'] == '-3<=WHZ<-2':
+        whz = df.at[person_id, 'un_WHZ_category']
+        severity = 'sev' if whz == 'WHZ<-3' else 'mod'
+
+        # Record recovery
+        logger.debug(
+            key="recovery",
+            data={
+                'person_id': person_id,
+                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                'recov_opt': f"{severity}_{df.at[person_id, 'un_clinical_acute_malnutrition']}_{recov_how}_full_recov"
+            },
+        )
+
+        # Record wasting length if wasted
+        if whz != 'WHZ>=-2':
+            if whz == '-3<=WHZ<-2':
                 recov_opt = f"mod_{df.at[person_id, 'un_clinical_acute_malnutrition']}_{recov_how}_full_recov"
-            else: # df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3':
+            else: # whz == 'WHZ<-3':
                 recov_opt = f"sev_{df.at[person_id, 'un_clinical_acute_malnutrition']}_{recov_how}_full_recov"
             age_group = self.module.age_grps.get(df.loc[person_id].age_years, '5+y')
             wasted_days = (self.sim.date - df.at[person_id, 'un_last_wasting_date_of_onset']).days
@@ -1261,7 +1289,6 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
                     min_length = min_length_nat
                 return min_length - 1
 
-            whz = df.at[person_id, 'un_WHZ_category']
             assert wasted_days >= get_min_length(recov_how, person_id, whz),\
                 (f" The {person_id=} is {wasted_days=} < minimal expected length= "
                  f"{get_min_length(recov_how, person_id, whz)} days "
@@ -1279,7 +1306,7 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'not_applicable'
 
-        # this will clear all wasting symptoms
+        # Clear all wasting symptoms
         self.sim.modules["SymptomManager"].clear_symptoms(
             person_id=person_id, disease_module=self.module
         )
@@ -1320,6 +1347,16 @@ class Wasting_RecoveryToMAM_Event(Event, IndividualScopeEventMixin):
         # For cases with normal WHZ and other acute malnutrition signs:
         # oedema, or low MUAC - do not change the WHZ
         whz = df.at[person_id, 'un_WHZ_category']
+        severity = 'sev' if whz == 'WHZ<-3' else 'mod' if whz == '-3<=WHZ<-2' else 'norm'
+        logger.debug(
+            key="recovery",
+            data={
+                'person_id': person_id,
+                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                'date': self.sim.date,
+                'recov_opt': f"{severity}_SAM_{recov_how}_recov_to_MAM"
+            },
+        )
         if whz == 'WHZ>=-2':
             # MAM by MUAC only
             df.at[person_id, 'un_am_MUAC_category'] = '[115-125)mm'
