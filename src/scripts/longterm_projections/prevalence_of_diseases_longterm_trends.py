@@ -270,10 +270,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         df_prevalence_standard_years = pd.DataFrame(all_years_data_prevalence_standard_years)
         df_prevalence_standard_years.to_csv(output_folder / f"Prevalence_diseases_2020_2070_{draw}.csv")
-        df_all_years_data_population = all_years_data_population_df = pd.DataFrame(
-    list(all_years_data_population.items()),
-    columns=['Year', 'Population']
-)
 
     # Drop rows only if they exist
         rows_to_drop = [
@@ -295,9 +291,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_normalized_population = {year: value / all_years_data_population[2020]
                                         for year, value in all_years_data_population.items()}
         df_normalized_population = pd.Series(df_normalized_population)
-
-        all_draws_population[draw] = df_normalized_population.iloc[ -1]
-
+        all_draws_population.loc[0,draw] = df_normalized_population.iloc[-1]
 
 
     # Plotting
@@ -359,7 +353,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                          label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
                                                  all_draws_prevalence_normalized.index][i])
             axes[1].plot(
-                all_draws_prevalence_normalized,
+                all_draws_prevalence_normalized.columns,
                 all_draws_prevalence_normalized.loc[condition],
                 color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_normalized.index][i],
                 alpha=0.5
@@ -367,7 +361,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
     axes[1].scatter(all_draws_population.columns,
-                    all_draws_population.iloc[0, :],
+                    all_draws_population,
                     color='black', marker='s', label='Population')
     axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
     axes[1].set_ylabel('Fold change in prevalence', fontsize=12)
