@@ -149,7 +149,9 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict,
         'prob_care_provided_given_seek_emergency_care': Parameter(
             Types.REAL, "The probability that correct care is fully provided to persons that have sought emergency care"
-                        " for a Cardio-metabolic disorder.")
+                        " for a Cardio-metabolic disorder."),
+        'prob_ckd_patient_needs_dialysis': Parameter(
+            Types.REAL, "The probability that patient with ckd has disease progression ultimately needing dialysis")
     }
 
     # Convert conditions and events to dicts and merge together into PROPERTIES
@@ -1077,6 +1079,34 @@ class CardioMetabolicDisorders_MainPollingEvent(RegularEvent, PopulationScopeEve
                     else:
                         self.module.trackers['incident_event'].add(event, {df.at[person_id, 'age_range']: 1})
 
+        ckd_patients = (
+            df.is_alive
+            & df["nc_chronic_kidney_disease"]
+            & (
+                df["nc_hypertension"]
+                | df["nc_diabetes"]
+                | df["nc_chronic_ischemic_hd"]
+                | df["li_tob"]
+            )
+        )
+
+        will_receive_dialysis = ckd_patients & (
+            rng.random_sample(size=len(df)) < self.module.parameters['prob_ckd_patient_needs_dialysis']
+
+        )
+
+        for person_id in df.index[will_receive_dialysis]:
+            # Schedule dialysis session
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_CardioMetabolicDisorders_Dialysis_Refill(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=1,
+                topen=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=1), m.rng),
+                tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)
+            )
+
 
 class CardioMetabolicDisordersEvent(Event, IndividualScopeEventMixin):
     """
@@ -1822,7 +1852,7 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Haemodialysis'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.num_of_sessions_had = 0  # A counter for the number of sessions had
 
@@ -1830,11 +1860,16 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         """Set the property `ckd_ever_haemo` to be True and schedule the next session in the course if the person
         has not yet had 12 sessions."""
 
-        self.num_of_sessions_had += 1
 
         df = self.sim.population.props
+
+        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
         if not df.at[person_id, 'ckd_ever_haemo']:
             df.at[person_id, 'ckd_ever_haemo'] = True
+
+        self.num_of_sessions_had += 1
 
         # Do test and trigger treatment (if necessary) for chronic kidney disease:
         if set(self.conditions_to_investigate).intersection(
