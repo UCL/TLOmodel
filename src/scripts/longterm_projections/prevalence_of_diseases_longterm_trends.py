@@ -318,9 +318,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                              marker='o',
                              label=condition,
                              color=get_color_cause_of_prevalence_label(condition))
-        axes[1].scatter(df_normalized_population.index,
-                            df_normalized_population,
-                            color='black', marker='s', label='Population')
+        # axes[1].scatter(df_normalized_population.index,
+        #                     df_normalized_population,
+        #                     color='black', marker='s', label='Population')
         axes[1].hlines(y=df_normalized_population.loc[2020], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()),
                            color='black')  # just want it to be at 1
         axes[1].set_xlabel('Year',  fontsize=12)
@@ -360,9 +360,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
 
     axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
-    axes[1].scatter(all_draws_population.columns,
-                    all_draws_population,
-                    color='black', marker='s', label='Population')
+    # axes[1].scatter(all_draws_population.columns,
+    #                 all_draws_population,
+    #                 color='black', marker='s', label='Population')
     axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
     axes[1].set_ylabel('Fold change in prevalence', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
