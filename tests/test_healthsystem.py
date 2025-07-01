@@ -2202,6 +2202,10 @@ def test_mode_2_clinics(seed, tmpdir):
     hs_output = output['tlo.methods.healthsystem']['HSI_Event']
     ## All events should have run
     assert hs_output['did_run'].sum() == tot_population, "All events ran"
+    Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
+    assert Nevents.loc[('DummyModuleNonFungible', True)] == tot_population // 2, "Half were NonFungible"
+    assert Nevents.loc[('Fungible', True)] == tot_population // 2, "Half were Fungible"
+
 
     ## Test 2: Events requiring fungible capabilities do not run if those capabilities are available
     ## Update the capabilties so that only Non-fungible events can run
@@ -2235,15 +2239,20 @@ def test_mode_2_clinics(seed, tmpdir):
             priority=1
         )
 
-
     healthsystemscheduler.apply(sim.population)
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output['tlo.methods.healthsystem']['HSI_Event']
-    breakpoint()
     ## Additional pop/2 events should have run; but log file already has pop_size events, so we check that
     ## pop_size + <additional expected events>
-    assert hs_output['did_run'].sum() == tot_population + tot_population//2, "Half of the events ran"
-    ## Need to check that the events that ran were the non-fungible ones; not quite sure how to do this
+    assert hs_output['did_run'].sum() == tot_population + tot_population // 2, "Half of the events ran"
+    Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
+    ## No more fungible events should have run, but all non-fungible ones should have
+    assert Nevents.loc[('DummyModuleNonFungible', True)] == tot_population // 2 + tot_population // 2, "Another half were NonFungible"
+    assert Nevents.loc[('Fungible', True)] == tot_population // 2, "No additional Fungible events ran"
+
+
+    ## Test 3: Events requiring non-fungible capabilities do not run if those capabilities are available
+
 
 
 @pytest.mark.slow
