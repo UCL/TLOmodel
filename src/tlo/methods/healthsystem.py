@@ -1825,7 +1825,7 @@ class HealthSystem(Module):
 
         return self._get_squeeze_factors_store
 
-    def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None):
+    def record_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True, priority=None, clinic=None):
         """
         Record the processing of an HSI event.
         It will also record the actual appointment footprint.
@@ -1843,6 +1843,7 @@ class HealthSystem(Module):
             squeeze_factor=_squeeze_factor,
             did_run=did_run,
             priority=priority,
+            clinic=clinic
         )
 
     def write_to_hsi_log(
@@ -1853,6 +1854,7 @@ class HealthSystem(Module):
         squeeze_factor: float,
         did_run: bool,
         priority: int,
+        clinic: str
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
@@ -1869,6 +1871,7 @@ class HealthSystem(Module):
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
                 'Equipment': sorted(event_details.equipment),
+                'Clinic': clinic
             },
             description="record of each HSI event"
         )
@@ -2426,7 +2429,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
                 event = next_event_tuple.hsi_event
-                # Check the event's clinic eligibility; if not clinic for eligible,
+                # Check the event's clinic eligibility; if not eligible for clinic,
                 # clinic name will be Fungible; otherwise it will be the clinic name
                 event_clinic = next_event_tuple.clinic_eligibility
                 if event_clinic == "Fungible":
@@ -2504,7 +2507,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                             squeeze_factor=squeeze_factor,
                             did_run=False,
-                            priority=_priority
+                            priority=_priority,
+                            clinic=event_clinic
                         )
 
                     # Have enough capabilities left to run event
@@ -2582,7 +2586,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             actual_appt_footprint=actual_appt_footprint,
                             squeeze_factor=squeeze_factor,
                             did_run=True,
-                            priority=_priority
+                            priority=_priority,
+                            clinic=event_clinic
                         )
 
             # Don't have any capabilities at all left for today, no
@@ -2655,7 +2660,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                    squeeze_factor=0,
                    did_run=False,
-                   priority=next_event_tuple.priority
+                   priority=next_event_tuple.priority,
+                   clinc=next_event.clinic_eligibility
                    )
 
         # add events from the list_of_events_not_due_today back into the queue

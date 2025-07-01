@@ -2200,15 +2200,50 @@ def test_mode_2_clinics(seed, tmpdir):
     # read the results
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output['tlo.methods.healthsystem']['HSI_Event']
-    breakpoint()
     ## All events should have run
     assert hs_output['did_run'].sum() == tot_population, "All events ran"
 
     ## Test 2: Events requiring fungible capabilities do not run if those capabilities are available
     ## Update the capabilties so that only Non-fungible events can run
     sim.modules['HealthSystem']._daily_capabilities[:] = 0
+    ## Repopulate the event queue and run
+    for i in range(0, tot_population // 2):
+        hsi = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
+                            person_id=i,
+                            appt_type='MinorSurg',
+                            level='1a')
+
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=1
+        )
 
 
+
+    for i in range(tot_population // 2, tot_population):
+        hsi = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
+                            person_id=i,
+                            appt_type='MinorSurg',
+                            level='1a')
+
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            priority=1
+        )
+
+
+    healthsystemscheduler.apply(sim.population)
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    hs_output = output['tlo.methods.healthsystem']['HSI_Event']
+    breakpoint()
+    ## Additional pop/2 events should have run; but log file already has pop_size events, so we check that
+    ## pop_size + <additional expected events>
+    assert hs_output['did_run'].sum() == tot_population + tot_population//2, "Half of the events ran"
+    ## Need to check that the events that ran were the non-fungible ones; not quite sure how to do this
 
 
 @pytest.mark.slow
