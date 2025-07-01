@@ -1552,7 +1552,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                          'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                          'date': self.sim.date
                      },
-                     description='This is start of HSI_Wasting_SupplementaryFeedingProgramme_MAM.')
+                     description='Care is sought.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1571,7 +1571,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                                'date': self.sim.date},
-                         description='consumables are available')
+                         description='essential consumables availability recorded')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             self.module.do_when_am_treatment(person_id, treatment=treatment)
@@ -1582,7 +1582,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                                'date': self.sim.date},
-                         description='consumables are NOT available')
+                         description='essential consumables availability recorded')
 
     def did_not_run(self, person_id):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
@@ -1615,7 +1615,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                          'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                          'date': self.sim.date
                      },
-                     description='This is start of HSI_Wasting_OutpatientTherapeuticProgramme_SAM.')
+                     description='Care is sought.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1636,7 +1636,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                                'date': self.sim.date},
-                         description='consumables are available')
+                         description='essential consumables availability recorded')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             self.module.do_when_am_treatment(person_id, treatment=treatment)
@@ -1647,7 +1647,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                                'date': self.sim.date},
-                         description='consumables are NOT available')
+                         description='essential consumables availability recorded')
 
     def did_not_run(self, person_id):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
@@ -1680,7 +1680,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                          'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                          'date': self.sim.date
                      },
-                     description='This is start of HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM.')
+                     description='Care is sought.')
 
         # no treatment if already dead
         if not df.at[person_id, 'is_alive']:
@@ -1701,7 +1701,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                                'date': self.sim.date},
-                         description='consumables are available')
+                         description='essential consumables availability recorded')
             # Record that the treatment is provided:
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             self.module.do_when_am_treatment(person_id, treatment=treatment)
@@ -1712,7 +1712,7 @@ class HSI_Wasting_InpatientTherapeuticCare_ComplicatedSAM(HSI_Event, IndividualS
                                'person_id': person_id,
                                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                                'date': self.sim.date},
-                         description='consumables are NOT available')
+                         description='essential consumables availability recorded')
 
     def did_not_run(self, person_id):
         logger.debug(key='debug', data=f'{self.TREATMENT_ID}: did not run for person {person_id}')
