@@ -2206,16 +2206,52 @@ class Wasting_ActivateInterventionsEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         p = self.module.parameters
 
+        # ###
+        # Log whether GM intervention is ON
+        logger.debug(
+            key="GM-interv",
+            data={'GM interv ON':
+                      p['growth_monitoring_attendance_prob_agecat'] != \
+                      p['interv_growth_monitoring_attendance_prob_agecat'],
+                  'growth_monitoring_attendance_prob_agecat': p['growth_monitoring_attendance_prob_agecat'],
+                  'interv_growth_monitoring_attendance_prob_agecat':
+                      p['interv_growth_monitoring_attendance_prob_agecat'],
+                  'date': self.sim.date
+                  },
+            description="record info about growth monitoring (GM) intervention"
+        )
         # Overwrite growth monitoring attendance probs
-        self.module.parameters['growth_monitoring_attendance_prob_agecat'] = \
-            p['interv_growth_monitoring_attendance_prob_agecat']
+        p['growth_monitoring_attendance_prob_agecat'] = p['interv_growth_monitoring_attendance_prob_agecat']
 
+        # ###
+        # Log whether CS intervention is ON
+        logger.debug(
+            key="CS-interv",
+            data={'CS interv ON':
+                      p['seeking_care_MAM_prob'] != p['interv_seeking_care_MAM_prob'],
+                  'seeking_care_MAM_prob': p['seeking_care_MAM_prob'],
+                  'interv_seeking_care_MAM_prob':
+                      p['interv_seeking_care_MAM_prob'],
+                  'date': self.sim.date
+                  },
+            description="record info abo care-seeking (CS) intervention"
+        )
         # Overwrite seeking care prob for MAM cases
-        self.module.parameters['seeking_care_MAM_prob'] = \
-            p['interv_seeking_care_MAM_prob']
+        p['seeking_care_MAM_prob'] = p['interv_seeking_care_MAM_prob']
 
-        # If the intervention that applies fixed availability probabilities for food supplements
-        # across all facilities and months is implemented, override the probabilities
+        # ###
+        # Log whether FS intervention is ON
+        logger.debug(
+            key="FS-interv",
+            data={'FS interv ON': p['interv_food_supplements_avail_bool'],
+                  'F-75 milk availability': p['interv_avail_F75milk'],
+                  'RUTF availability': p['interv_avail_RUTF'],
+                  'CSB availability': p['interv_avail_CSB++'],
+                  'date': self.sim.date
+                  },
+            description="record info about food supplements (FS) intervention"
+        )
+        # If FS intervention is ON, override the probabilities
         if p['interv_food_supplements_avail_bool']:
             get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
             item_code_F75milk = get_item_code("F-75 therapeutic milk, 102.5 g")
