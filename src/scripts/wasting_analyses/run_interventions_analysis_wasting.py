@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 import analysis_utility_functions_wast
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -41,6 +42,7 @@ interv_scenarios_folder_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenari
 scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
+cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
@@ -128,7 +130,29 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
 
     # ---------------------------------------------------- Plots  ---------------------------------------------------- #
     print("\n--------------")
-    for cohort in ['Neonatal', 'Under-5']:
+    # Prepare scenarios_tocompare_prefix
+    if 'Status Quo' in scenarios_tocompare:
+        scenarios_tocompare_sq_shorten = [
+            'SQ' if scenario == 'Status Quo' else scenario for scenario in scenarios_tocompare
+        ]
+    else:
+        scenarios_tocompare_sq_shorten = scenarios_tocompare
+    scenarios_tocompare_prefix = "_".join(scenarios_tocompare_sq_shorten)
+    # Prepare timestamps_scenarios_comparison_suffix
+    timestamps_scenarios_comparison_suffix = ''
+    for interv in intervsall:
+        if any(scenario.startswith(interv) for scenario in scenarios_tocompare):
+            if timestamps_scenarios_comparison_suffix == '':
+                timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict[interv]}"
+            else:
+                timestamps_scenarios_comparison_suffix = timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict[interv]}"
+    if 'Status Quo' in scenarios_tocompare:
+        if timestamps_scenarios_comparison_suffix == '':
+            timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict['SQ']}"
+        else:
+            timestamps_scenarios_comparison_suffix = timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict['SQ']}"
+
+    for cohort in cohorts_to_plot:
         print(f"plotting {cohort} outcomes ...")
         print("    plotting mortality rates ...")
         analysis_utility_functions_wast.plot_mortality_rate__by_interv_multiple_settings(
@@ -136,33 +160,16 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             outputspath
         )
         print("    plotting mean deaths ...")
-        # Prepare scenarios_tocompare_prefix
-        if 'Status Quo' in scenarios_tocompare:
-            scenarios_tocompare_sq_shorten = [
-                'SQ' if scenario == 'Status Quo' else scenario for scenario in scenarios_tocompare
-            ]
-        else:
-            scenarios_tocompare_sq_shorten = scenarios_tocompare
-        scenarios_tocompare_prefix = "_".join(scenarios_tocompare_sq_shorten)
-        # Prepare timestamps_mean_deaths_suffix suffix
-        timestamps_mean_deaths_suffix = ''
-        for interv in intervsall:
-            if any(scenario.startswith(interv) for scenario in scenarios_tocompare):
-                if timestamps_mean_deaths_suffix == '':
-                    timestamps_mean_deaths_suffix = f"{interv_timestamps_dict[interv]}"
-                else:
-                    timestamps_mean_deaths_suffix = timestamps_mean_deaths_suffix + f"_{interv_timestamps_dict[interv]}"
-        if 'Status Quo' in scenarios_tocompare:
-            if timestamps_mean_deaths_suffix == '':
-                timestamps_mean_deaths_suffix = f"{interv_timestamps_dict['SQ']}"
-            else:
-                timestamps_mean_deaths_suffix = timestamps_mean_deaths_suffix + f"_{interv_timestamps_dict['SQ']}"
         analysis_utility_functions_wast.plot_mean_deaths_and_CIs__scenarios_comparison(
             cohort, scenarios_dict, scenarios_tocompare, plotyears, death_outcomes_dict, outputspath,
-            scenarios_tocompare_prefix, timestamps_mean_deaths_suffix
+            scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
 
-    # ------------------------------------ Create a PDF file to save all figures ------------------------------------- #
+    # --------------------- Create a PDF to save all figures and save each page also as PNG file --------------------- #
+    # Create cohort prefix
+    cohort_prefix = "_".join(
+        ["Neo" if cohort == "Neonatal" else "Under5" if cohort == "Under-5" else cohort for cohort in cohorts_to_plot]
+    )
     # Create interventions prefix and timestamps_intervs_plotted suffix
     intervs_ofinterest_prefix = "_".join(intervs_ofinterest) # mortality rates - multiple settings of Interventions
     intervs_plotted = [
@@ -173,15 +180,24 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     timestamps_intervs_plotted = "_".join(interv_timestamps_dict[interv] for interv in intervs_plotted)
 
     pdf_path = outputs_path / (
-        f"{intervs_ofinterest_prefix}_interventions__{scenarios_tocompare_prefix}_scenarios_"
+        f"{cohort_prefix}_{intervs_ofinterest_prefix}_interventions__{scenarios_tocompare_prefix}_scenarios_"
         f"{timestamps_intervs_plotted}.pdf"
     )
     with PdfPages(pdf_path) as pdf:
         # Outcome 1: figures with mortality rates for each interv of interest, comparing different settings
         for page_start in range(0, len(intervs_of_interest), 2):
-            fig1, axes1 = plt.subplots(min(2, len(intervs_of_interest) - page_start), 2, figsize=(12, 12))
+            fig1, axes1 = plt.subplots(
+                min(2, len(intervs_of_interest) - page_start),
+                len(cohorts_to_plot),
+                figsize=(12, 12)
+            )
+
+            # Ensure `axes1` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes1 = np.expand_dims(axes1, axis=-1)
+
             for i, interv in enumerate(intervs_of_interest[page_start:page_start + 2]):
-                for j, cohort in enumerate(['Neonatal', 'Under-5']):
+                for j, cohort in enumerate(cohorts_to_plot):
                     mort_rate_png_file_path = outputs_path / (
                         f"{cohort}_mort_rate_{interv}_multiple_settings__"
                         f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
@@ -198,22 +214,26 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         axes1[i, j].imshow(img)
                         axes1[i, j].axis('off')
                         axes1[i, j].set_title(f"{cohort} - {interv_title}", fontsize=10)
-            plt.tight_layout()
             pdf.savefig(fig1)  # Save the current page to the PDF
             fig1_png_file_path = outputs_path / (
-                f"mortality_rates_{'_'.join(intervs_of_interest[page_start:page_start + 2])}__"
+                f"{cohort_prefix}_mortality_rates_{'_'.join(intervs_of_interest[page_start:page_start + 2])}__"
                 f"{'_'.join(interv_timestamps_dict[interv] for interv in intervs_of_interest[page_start:page_start + 2])}.png"
             )
             fig1.savefig(fig1_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
 
         # Outcome 2: figures with mean deaths and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
-            fig2, axes2 = plt.subplots(2, 2, figsize=(12, 12))
+            fig2, axes2 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+
+            # Ensure `axes1` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes2 = np.expand_dims(axes2, axis=-1)
+
             for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
-                for j, cohort in enumerate(['Neonatal', 'Under-5']):
+                for j, cohort in enumerate(cohorts_to_plot):
                     mean_deaths_png_file_path = outputs_path / (
                         f"{cohort}_mean_{cause_of_death}_deaths_CI_scenarios_comparison__"
-                        f"{scenarios_tocompare_prefix}__{timestamps_mean_deaths_suffix}.png"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
                     )
                     if mean_deaths_png_file_path.exists():
                         img = plt.imread(mean_deaths_png_file_path)
@@ -223,8 +243,8 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             plt.tight_layout()
             pdf.savefig(fig2)  # Save the current page to the PDF
             fig2_png_file_path = outputs_path / (
-                f"mean_deaths_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
-                f"{scenarios_tocompare_prefix}__{timestamps_mean_deaths_suffix}.png"
+                f"{cohort_prefix}_mean_deaths_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig2.savefig(fig2_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
             plt.close(fig2)
