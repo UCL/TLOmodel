@@ -2,10 +2,16 @@
 This script generates estimates of availability of consumables used by disease modules:
 
 * ResourceFile_Consumables_availability_and_usage.csv (a large file that gives consumable availability and usage).
-* ResourceFile_Consumables_availability_small.csv (estimate of consumable available - smaller file for use in the
- simulation).
+* ResourceFile_Consumables_availability_small.csv (estimate of consumable availability for items with availability data
+   - smaller file).
+ * ResourceFile_Consumables_availability_all.csv (use estimates of consumable availability for items with availability
+     data from the RF..._small, and approximate availability for items without availability data, approximation by
+     average availability at the Facility_ID and month - smaller file).
 
-N.B. The file uses `ResourceFile_Consumables_matched.csv` as an input.
+N.B.
+The script uses `ResourceFile_LMIS_2018.csv`, `ResourceFile_Consumables_matched.csv`,
+`ResourceFile_hhfa_consumables.xlsx`, `ResourceFile_Master_Facilities_List.csv`,
+`ResourceFile_Population_2010.csv`, and 'ResourceFile_Consumables_Items_and_Packages.csv' as inputs.
 
 It creates one row for each consumable for availability at a specific facility and month when the data is extracted from
 the OpenLMIS dataset and one row for each consumable for availability aggregated across all facilities when the data is
@@ -31,13 +37,14 @@ import pandas as pd
 from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local Dropbox source
-path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    '/Users/sm2511/Dropbox/Thanzi la Onse'
-    # '/Users/sejjj49/Dropbox/Thanzi la Onse'
-    # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
-)
+path_to_dropbox = Path.home() / 'Dropbox (TLO_HMC)/TLOModel_WP_2025_07_01__FromOneDrive'
+#     Path(  # <-- point to the TLO dropbox locally
+#     '/Users/sm2511/Dropbox/Thanzi la Onse'
+#     # '/Users/sejjj49/Dropbox/Thanzi la Onse'
+#     # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
+# )
 
-path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
+path_to_files_in_the_tlo_dropbox = path_to_dropbox / "07 - Data/Consumables data"
 
 # define a timestamp for script outputs
 timestamp = datetime.datetime.now().strftime("_%Y_%m_%d_%H_%M")
@@ -68,7 +75,8 @@ def change_colnames(df, NameChangeList):  # Change column names
 #########################################################################################
 
 # Import 2018 data
-lmis_df = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'ResourceFile_LMIS_2018.csv', low_memory=False)
+lmis_df = pd.read_csv(path_to_files_in_the_tlo_dropbox / 'OpenLMIS/2018' / 'ResourceFile_LMIS_2018.csv',
+                      low_memory=False)
 
 # 1. BASIC CLEANING ##
 # Rename columns
@@ -652,7 +660,7 @@ assert (stkout_df.available_prop <= 1.0).all(), "No Values greater than 1.0 "
 print(stkout_df.loc[(~(stkout_df.available_prop >= 0.0)) | (~(stkout_df.available_prop <= 1.0))].available_prop)
 assert not stkout_df.duplicated(['fac_type_tlo', 'fac_name', 'district', 'month', 'item_code']).any(), "No duplicates"
 
-# --- 6.7 Generate file for use in model run --- #
+# --- 6.7 Generate file including only item_codes with availability data --- #
 # 1) Smaller file size
 # 2) Indexed by the 'Facility_ID' used in the model (which is an amalgmation of district and facility_level, defined in
 #  the Master Facilities List.
@@ -831,6 +839,61 @@ full_set_interpolated.reset_index().to_csv(
     path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",
     index=False
 )
+
+# --- 6.8 Generate file including both item_codes with and without availability data --- #
+# - for use in model run
+# 1) Smaller file size
+# 2) Indexed by the 'Facility_ID' used in the model (which is an amalgmation of district and facility_level, defined in
+#  the Master Facilities List.
+# 3) if item_code in ResourceFile_Consumables_availability_small.csv, use those availability estimates,
+#  if item_code in ResourceFile_Consumables_Items_and_Packages.csv, but not in
+#  ResourceFile_Consumables_availability_small.csv, approximate the availability by average availability at the
+#  'Facility_ID' and 'month'
+
+# Load the CSV files
+items_and_packages = pd.read_csv(path_for_new_resourcefiles /'ResourceFile_Consumables_Items_and_Packages.csv')
+availability_small = pd.read_csv(path_for_new_resourcefiles /'ResourceFile_Consumables_availability_small.csv')
+
+# Extract all item codes from the RF Items_and_Packages
+all_item_codes = set(items_and_packages['Item_Code'])
+
+# Extract item codes with availability data from RF availability_small
+available_item_codes = set(availability_small['item_code'])
+
+# Find missing item codes
+missing_item_codes = all_item_codes - available_item_codes
+
+# Calculate average availability for each combination of 'Facility_ID' and 'month'
+avg_availability = (
+    availability_small.groupby(['Facility_ID', 'month'])['available_prop']
+    .mean()
+    .reset_index()
+    .rename(columns={'available_prop': 'avg_available_prop'})
+)
+
+# Create rows for missing item codes
+missing_rows = []
+for item_code in missing_item_codes:
+    for _, row in avg_availability.iterrows():
+        missing_rows.append({
+            'Facility_ID': row['Facility_ID'],
+            'month': row['month'],
+            'item_code': item_code,
+            'available_prop': row['avg_available_prop']
+        })
+
+# Convert missing rows to a DataFrame
+missing_df = pd.DataFrame(missing_rows)
+
+# Combine the original availability data with the missing rows
+availability_all = pd.concat([availability_small, missing_df], ignore_index=True)
+
+# Ensure Facility_ID and month columns are integers before saving
+availability_all['Facility_ID'] = availability_all['Facility_ID'].astype(int)
+availability_all['month'] = availability_all['month'].astype(int)
+
+# Save the new file
+availability_all.to_csv(path_for_new_resourcefiles / 'ResourceFile_Consumables_availability_all.csv', index=False)
 
 # %%
 # 7. COMPARISON WITH HHFA DATA, 2018/19 ##
