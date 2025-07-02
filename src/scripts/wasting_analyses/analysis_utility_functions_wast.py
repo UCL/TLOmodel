@@ -35,6 +35,21 @@ def return_mean_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
+def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Returns a DataFrame with sum, lower CI, and upper CI for each draw across runs.
+    The output DataFrame is structured with column index ['draw'], where each cell contains
+    a list of [sum, lower_ci, upper_ci].
+    """
+    result = pd.DataFrame(index=['sum'], columns=df.columns.get_level_values('draw').unique())
+
+    for draw in df.columns.get_level_values('draw').unique():
+        draw_data = df.xs(draw, level='draw', axis=1).sum(axis=0)
+        ci = st.t.interval(0.95, len(draw_data) - 1, loc=np.sum(draw_data), scale=st.sem(draw_data))
+        result.at['sum', draw] = [np.sum(draw_data), ci[0], ci[1]]
+
+    return result
+
 def extract_birth_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) -> dict:
     """
     :param folder: the folder from which the outcome data will be extracted
@@ -65,7 +80,7 @@ def extract_birth_data_frames_and_outcomes(folder, years_of_interest, interventi
 
     return {'births_df': births_df,
             'births_mean_ci_df': births_mean_ci_per_year_per_draw_df,
-            'interv_births_df': interv_births_df, # TODO: check when and how is this used, is it really worth to return this?
+            'interv_births_df': interv_births_df,
             'interv_births_mean_ci_df': interv_births_per_year_per_draw_df}
 
 def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest, intervention_years, interv):
@@ -106,7 +121,14 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_Diarrhoea_deaths_df)
 
     interv_neo_deaths_df = neonatal_deaths_df.loc[intervention_years]
-    interv_neo_deaths_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_neo_deaths_df)
+    interv_neo_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_deaths_df)
+    interv_neo_SAM_deaths_df = neonatal_SAM_deaths_df.loc[intervention_years]
+    interv_neo_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_SAM_deaths_df)
+    interv_neo_ALRI_deaths_df = neonatal_ALRI_deaths_df.loc[intervention_years]
+    interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_ALRI_deaths_df)
+    interv_neo_Diarrhoea_deaths_df = neonatal_Diarrhoea_deaths_df.loc[intervention_years]
+    interv_neo_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_neo_Diarrhoea_deaths_df)
 
     # NEONATAL MORTALITY RATE (NMR), i.e. the number of deaths of infants up to 28 days old per 1,000 live births
     nmr_df = (neonatal_deaths_df / births_df) * 1000
@@ -148,7 +170,15 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_Diarrhoea_deaths_df)
 
     interv_under5_deaths_df = under5_deaths_df.loc[intervention_years]
-    interv_under5_deaths_per_year_per_draw_df = return_mean_95_CI_across_runs(interv_under5_deaths_df)
+    interv_under5_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_deaths_df)
+    interv_under5_SAM_deaths_df = under5_SAM_deaths_df.loc[intervention_years]
+    interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_deaths_df)
+    interv_under5_ALRI_deaths_df = under5_ALRI_deaths_df.loc[intervention_years]
+    interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(
+        interv_under5_ALRI_deaths_df)
+    interv_under5_Diarrhoea_deaths_df = under5_Diarrhoea_deaths_df.loc[intervention_years]
+    interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(
+        interv_under5_Diarrhoea_deaths_df)
 
     # UNDER-5 MORTALITY RATE, i.e. the number of deaths of children under 5 years old per 1,000 live births
     under5mr_df = (under5_deaths_df / births_df) * 1000
@@ -162,8 +192,14 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
             'neo_SAM_deaths_mean_ci_df': neo_SAM_deaths_mean_ci_per_year_per_draw_df,
             'neo_ALRI_deaths_mean_ci_df': neo_ALRI_deaths_mean_ci_per_year_per_draw_df,
             'neo_Diarrhoea_deaths_mean_ci_df': neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
-            'interv_neo_deaths_df': interv_neo_deaths_df, # TODO: check when and how is this used, is it really worth to return this?
-            'interv_neo_deaths_mean_ci_df': interv_neo_deaths_per_year_per_draw_df,
+            'interv_neo_deaths_df': interv_neo_deaths_df,
+            'interv_neo_deaths_sum_ci_df': interv_neo_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_neo_SAM_deaths_df': interv_neo_SAM_deaths_df,
+            'interv_neo_SAM_deaths_sum_ci_df': interv_neo_SAM_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_neo_ALRI_deaths_df': interv_neo_ALRI_deaths_df,
+            'interv_neo_ALRI_deaths_sum_ci_df': interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_neo_Diarrhoea_deaths_df': interv_neo_Diarrhoea_deaths_df,
+            'interv_neo_Diarrhoea_deaths_sum_ci_df': interv_neo_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
             'neonatal_mort_rate_df': nmr_df,
             'neo_mort_rate_mean_ci_df': nmr_per_year_per_draw_df,
             'under5_deaths_df': under5_deaths_df,
@@ -175,7 +211,13 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
             'under5_ALRI_deaths_mean_ci_df': under5_ALRI_deaths_mean_ci_per_year_per_draw_df,
             'under5_Diarrhoea_deaths_mean_ci_df': under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
             'interv_under5_deaths_df': interv_under5_deaths_df,
-            'interv_under5_deaths_mean_ci_df': interv_under5_deaths_per_year_per_draw_df,
+            'interv_under5_deaths_sum_ci_df': interv_under5_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_under5_SAM_deaths_df': interv_under5_SAM_deaths_df,
+            'interv_under5_SAM_deaths_sum_ci_df': interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_under5_ALRI_deaths_df': interv_under5_ALRI_deaths_df,
+            'interv_under5_ALRI_deaths_sum_ci_df': interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_under5_Diarrhoea_deaths_df': interv_under5_Diarrhoea_deaths_df,
+            'interv_under5_Diarrhoea_deaths_sum_ci_df': interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
             'under5_mort_rate_df': under5mr_df,
             'under5_mort_rate_mean_ci_df': under5mr_per_year_per_draw_df}
 
@@ -316,6 +358,76 @@ def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: 
         plt.savefig(
             outputs_path / (
                 f"{cohort}_mean_{cause_of_death}_deaths_CI_scenarios_comparison__"
+                f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+            ),
+            bbox_inches='tight'
+        )
+
+def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: dict, scenarios_to_compare: list,
+                                                 data_dict: dict, outputs_path: Path, scenarios_tocompare_prefix,
+                                                 timestamps_suffix: str) -> None:
+    """
+    Plots sum of deaths and confidence intervals over the intervention period for the specified cohort for multiple
+    scenarios.
+    :param cohort: 'Neonatal' or 'Under-5'
+    :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
+    :param scenarios_to_compare: List of scenarios to plot
+    :param data_dict: Dictionary containing data for plotting nested as data_dict[interv][outcome][draw][run]
+    :param outputs_path: Path to save the plot
+    :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
+    """
+    # Outcome to plot
+    assert cohort in ['Neonatal', 'Under-5'], \
+        f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
+
+    for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
+
+        neonatal_outcomes = ['interv_neo_deaths_sum_ci_df', 'interv_neo_SAM_deaths_sum_ci_df',
+                             'interv_neo_ALRI_deaths_sum_ci_df', 'interv_neo_Diarrhoea_deaths_sum_ci_df']
+        under5_outcomes = ['interv_under5_deaths_sum_ci_df', 'interv_under5_SAM_deaths_sum_ci_df',
+                           'interv_under5_ALRI_deaths_sum_ci_df', 'interv_under5_Diarrhoea_deaths_sum_ci_df']
+        outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
+
+        # Initialize the plot
+        fig, ax = plt.subplots()
+
+        # Iterate over scenarios to compare
+        for scenario in scenarios_to_compare:
+            # Find the corresponding intervention and draw number
+            interv, draw = next(
+                (interv, draw)
+                for interv, scenarios_for_interv_dict in scenarios_dict.items()
+                if scenario in scenarios_for_interv_dict
+                for scen_name, draw in scenarios_for_interv_dict.items()
+                if scen_name == scenario
+            )
+
+            # Extract data for the scenario
+            scen_data = data_dict[interv][outcome][draw]
+
+            # Calculate sum and confidence intervals
+            sums, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+
+            # Plot the data
+            ax.bar(scenario, sums[0], yerr=[[sums[0] - ci_lower[0]], [ci_upper[0] - sums[0]]],
+                   label=scenario, color=get_scen_colour(scenario), capsize=5)
+
+            # Add horizontal lines for Status Quo scenario
+            if scenario == 'Status Quo':
+                ax.axhline(y=ci_lower[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+                ax.axhline(y=ci_upper[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+
+        # Add labels, title, and legend
+        plt.ylabel(f'{cohort} Deaths (Sum over intervention period)')
+        plt.xlabel('Scenario')
+        plt.title(f'{cohort} Sum of deaths due to {cause_of_death} and 95% CI over intervention period')
+        plt.legend()
+        plt.xticks(rotation=45, fontsize=8)
+
+        # Save the plot
+        plt.savefig(
+            outputs_path / (
+                f"{cohort}_sum_{cause_of_death}_deaths_CI_intervention_period_scenarios_comparison__"
                 f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
             ),
             bbox_inches='tight'
