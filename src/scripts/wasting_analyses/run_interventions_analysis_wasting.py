@@ -3,6 +3,7 @@ An analysis file for the wasting module to compare outcomes of one intervention 
 """
 
 # %% Import statements
+import pickle
 import time
 from pathlib import Path
 
@@ -99,15 +100,28 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     pd.set_option('display.max_columns', None)  # Show all columns
     pd.set_option('display.max_rows', None)  # Show all rows
     pd.set_option('display.max_colwidth', None)  # Show full content of each row
-    # ---------------------------------------- NEONATAL AND UNDER-5 MORTALITY ---------------------------------------- #
-    # Extract birth outcomes for each intervention to calculate mortality as number of deaths per 1,000 live births
-    print("birth outcomes calculation ...")
-    birth_outcomes_dict = {
-        interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(
-            iterv_folders_dict[interv], plotyears, interventionyears, interv
-        )
-        for interv in scenario_folders
-    }
+
+    # --------------------------------- NEONATAL AND UNDER-5 BIRTH AND DEATH OUTCOMES -------------------------------- #
+    # Define paths for saving/loading outcomes
+    birth_outcomes_path = outputspath / f"outcomes_data/birth_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
+    death_outcomes_path = outputspath / f"outcomes_data/death_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
+
+    # Extract or load birth outcomes
+    if birth_outcomes_path.exists():
+        print("loading birth outcomes from file ...")
+        with birth_outcomes_path.open("rb") as f:
+            birth_outcomes_dict = pickle.load(f)
+    else:
+        print("birth outcomes calculation ...")
+        birth_outcomes_dict = {
+            interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(
+                iterv_folders_dict[interv], plotyears, interventionyears, interv
+            )
+            for interv in scenario_folders
+        }
+        print("saving birth outcomes to file ...")
+        with birth_outcomes_path.open("wb") as f:
+            pickle.dump(birth_outcomes_dict, f)
     # TODO: rm
     # print("\nBIRTH OUTCOMES")
     # for interv in birth_outcomes_dict.keys():
@@ -115,14 +129,23 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #     for outcome in birth_outcomes_dict[interv]:
     #         print(f"{outcome}:\n{birth_outcomes_dict[interv][outcome]}")
     #
-    # Extract neonatal and under-5 death data for each intervention
-    print("\n--------------")
-    print("death outcomes calculation ...")
-    death_outcomes_dict = {
-        interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
-            iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears, interv
-        ) for interv in scenario_folders
-    }
+
+    # Extract or load death outcomes
+    if death_outcomes_path.exists():
+        print("loading death outcomes from file ...")
+        with death_outcomes_path.open("rb") as f:
+            death_outcomes_dict = pickle.load(f)
+    else:
+        print("death outcomes calculation ...")
+        death_outcomes_dict = {
+            interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
+                iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears,
+                interv
+            ) for interv in scenario_folders
+        }
+        print("saving death outcomes to file ...")
+        with death_outcomes_path.open("wb") as f:
+            pickle.dump(death_outcomes_dict, f)
     # # TODO: rm
     # print("\nDEATH OUTCOMES")
     # for interv in death_outcomes_dict.keys():
