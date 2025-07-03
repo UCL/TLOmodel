@@ -276,7 +276,27 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
 
         fig, ax = plt.subplots()
         plot_scenarios(interv, outcome)
-        plot_scenarios('SQ', outcome)
+
+        if interv == 'SQ':
+            # Add UNICEF data for under-5 mortality rate
+            unicef_neonatal_mort_rates = [27.207, 26.392, 25.463, 24.55, 23.749, 23.039, 22.392, 21.786, 21.253, 20.769,
+                                          20.261, 19.778, 19.326, 18.825]
+            unicef_under5_mort_rates = [83.027, 76.687, 69.793, 63.998, 60.224, 56.708, 53.503, 50.647, 47.524, 45.456,
+                                        43.086, 41.527, 39.94, 38.34]
+            unicef_years = list(range(2010, 2024))
+            unicef_colour = (28/255, 171/255, 226/255)
+
+            # Filter data to include only years present in both plot_years and unicef_years
+            filtered_years = [year for year in plot_years if year in unicef_years]
+            filtered_neonatal_rates = [rate for year, rate in zip(unicef_years, unicef_neonatal_mort_rates) if year in plot_years]
+            filtered_under5_rates = [rate for year, rate in zip(unicef_years, unicef_under5_mort_rates) if year in plot_years]
+
+            if cohort == 'Neonatal':
+                    ax.plot(filtered_years, filtered_neonatal_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+            elif cohort == 'Under-5':
+                ax.plot(filtered_years, filtered_under5_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+        else:
+            plot_scenarios('SQ', outcome)
 
         plt.axhline(y=target, color='black', linestyle='--', linewidth=1)
         plt.text(x=plot_years[-1] + 1, y=target, s='SDG\n3.2 target', color='black', va='center', ha='left', fontsize=8)
@@ -290,13 +310,20 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
         plt.legend()
         plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
 
-        # TODO: extract from iterv_folders_dict[interv] the suffix after the prefix (scenario_filename_prefix = 'wasting_analysis__minimal_model')
-        plt.savefig(
-            outputs_path / f"{cohort}_mort_rate_{interv}_multiple_settings__"
-                           f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png",
-            bbox_inches='tight'
-        )
-        # plt.show()
+        # Save plot as PNG
+        if interv == 'SQ':
+            plt.savefig(
+                outputs_path / f"{cohort}_mort_rate_{interv}_UNICEF__"
+                               f"{interv_timestamps_dict[interv]}.png",
+                bbox_inches='tight'
+            )
+
+        else:
+            plt.savefig(
+                outputs_path / f"{cohort}_mort_rate_{interv}_multiple_settings__"
+                               f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png",
+                bbox_inches='tight'
+            )
 
 def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: dict, scenarios_to_compare: list,
                                                    plot_years: list, data_dict: dict, outputs_path: Path,
@@ -309,6 +336,7 @@ def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: 
     :param plot_years: List of years to plot
     :param data_dict: Dictionary containing data for plotting nested as data_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plot
+    :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
     :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
     """
     # Outcome to plot
@@ -374,6 +402,7 @@ def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: di
     :param scenarios_to_compare: List of scenarios to plot
     :param data_dict: Dictionary containing data for plotting nested as data_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plot
+    :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
     :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
     """
     # Outcome to plot
