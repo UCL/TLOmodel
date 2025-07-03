@@ -229,10 +229,16 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
 
             for i, interv in enumerate(intervs_of_interest[page_start:page_start + 2]):
                 for j, cohort in enumerate(cohorts_to_plot):
-                    mort_rate_png_file_path = outputs_path / (
-                        f"{cohort}_mort_rate_{interv}_multiple_settings__"
-                        f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
-                    )
+                    if interv == 'SQ':
+                        mort_rate_png_file_path = outputs_path / (
+                            f"{cohort}_mort_rate_{interv}_UNICEF__"
+                            f"{interv_timestamps_dict[interv]}.png"
+                        )
+                    else:
+                        mort_rate_png_file_path = outputs_path / (
+                            f"{cohort}_mort_rate_{interv}_multiple_settings__"
+                            f"{interv_timestamps_dict[interv]}__{interv_timestamps_dict['SQ']}.png"
+                        )
                     interv_title = (
                         'Growth Monitoring attendance (GM)' if interv == 'GM'
                         else 'Food Supplements availability (FS)' if interv == 'FS'
