@@ -412,16 +412,32 @@ def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: di
             ax.bar(scenario, sums[0], yerr=[[sums[0] - ci_lower[0]], [ci_upper[0] - sums[0]]],
                    label=scenario, color=get_scen_colour(scenario), capsize=5)
 
+            y_top = ax.get_ylim()[1]
+
+            # Add text labels for ci_low and ci_upper
+            text_color = 'white' if scenario in ['CS_100', 'FS_Full'] else 'black'
+            ax.text(scenario,
+                    ci_upper[0] / 2 + ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
+                    f"{ci_upper[0]:,.2f}", color=text_color, ha='center', va='top', fontsize=12)
+            ax.text(scenario,
+                    ci_upper[0] / 2 - ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 - y_top / 15,
+                    f"{ci_lower[0]:,.2f}", color=text_color, ha='center', va='bottom', fontsize=12)
+
             # Add horizontal lines for Status Quo scenario
             if scenario == 'Status Quo':
                 ax.axhline(y=ci_lower[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
                 ax.axhline(y=ci_upper[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
 
+
         # Add labels, title, and legend
+        min_interv_year = data_dict["SQ"]["interv_under5_deaths_df"].index.min()
+        max_interv_year = data_dict["SQ"]["interv_under5_deaths_df"].index.max()
         plt.ylabel(f'{cohort} Deaths (Sum over intervention period)')
         plt.xlabel('Scenario')
-        plt.title(f'{cohort} Sum of deaths due to {cause_of_death} and 95% CI over intervention period')
-        plt.legend()
+        plt.title(
+            f'{cohort} Sum of deaths due to {cause_of_death} and 95% CI over intervention period '
+            f'({min_interv_year}--{max_interv_year})')
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         plt.xticks(rotation=45, fontsize=8)
 
         # Save the plot
