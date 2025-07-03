@@ -30,7 +30,7 @@ class WastingAnalysis(BaseScenario):
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
             number_of_draws=1,
-            runs_per_draw=5,
+            runs_per_draw=10,
         )
 
     def log_configuration(self):
@@ -40,6 +40,7 @@ class WastingAnalysis(BaseScenario):
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.population": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.wasting": logging.DEBUG,
                 '*': logging.WARNING
             }
@@ -54,8 +55,9 @@ class WastingAnalysis(BaseScenario):
         ### growth_monitoring_attendance_probs by age categories
         # < 1 year, 1-2 years, and > 2 years
         attendance_probs_by_agecat = [
-            [0.76, 0.20, 0.55],
-            [0.76, 0.25, 0.50],
+            # [0.76, 0.20, 0.55],
+            # [0.76, 0.25, 0.50],
+            [0.76, 1.00, 1.00],
             [0.76, 1.00, 1.00]
         ]
 
