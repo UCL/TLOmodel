@@ -64,7 +64,7 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                     get_parameters_for_status_quo(),
                     {
                         'HealthSystem': {
-                            'service_availability': []
+                            'Service_Availability': []
                         }
                     },
                 ),
