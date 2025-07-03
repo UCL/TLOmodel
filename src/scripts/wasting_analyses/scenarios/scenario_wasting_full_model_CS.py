@@ -28,8 +28,8 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=4_000,
-            number_of_draws=2,
+            initial_population_size=30_000,
+            number_of_draws=1,
             runs_per_draw=10,
         )
 
@@ -40,6 +40,7 @@ class WastingAnalysis(BaseScenario):
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.population": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
                 "tlo.methods.wasting": logging.DEBUG,
                 '*': logging.WARNING
             }
@@ -52,10 +53,8 @@ class WastingAnalysis(BaseScenario):
     # Scaling up care-seeking (CS) scenarios
     def draw_parameters(self, draw_number, rng):
         ### prob of care seeking for MAM cases
-        care_seek_prob = [0.1, 0.3, 0.5, 1.0]
-        # care_seek_prob = [
-        #     1.0, 1.01
-        # ]
+        # care_seek_prob = [0.1, 0.3, 0.5, 1.0]
+        care_seek_prob = [1.0, 1.01]
 
         return {
             'Wasting': {

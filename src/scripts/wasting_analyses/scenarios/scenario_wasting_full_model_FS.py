@@ -29,7 +29,7 @@ class WastingAnalysis(BaseScenario):
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
             initial_population_size=30_000,
-            number_of_draws=2,
+            number_of_draws=1,
             runs_per_draw=10,
         )
 
@@ -40,6 +40,7 @@ class WastingAnalysis(BaseScenario):
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.population": logging.INFO,
+                "tlo.methods.healthburden" :logging.INFO,
                 "tlo.methods.wasting": logging.DEBUG,
                 '*': logging.WARNING
             }
@@ -53,7 +54,7 @@ class WastingAnalysis(BaseScenario):
     # Applying fixed availability probability across all facilities and months for all food supplements
     # with FS intervention
     def draw_parameters(self, draw_number, rng):
-        avail_prob = [0.7, 1.0]
+        avail_prob = [1.0, 1.01]
 
         return {
             'Wasting': {
