@@ -452,7 +452,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                          color='black', linestyle='--', marker='s', linewidth=2, label='Population')
 
         axes[1].axhline(1, color='black')
-        axes[1].tick_params(axis='both', which='major', fontsize=12)
+        axes[1].tick_params(axis='both', which='major')
         axes[1].set_ylabel('Fold change in DALYs', fontsize=12)
         axes[1].set_xlabel('Year', fontsize=12)
         axes[1].legend(ordered_handles, reversed(new_order), title="Cause",  bbox_to_anchor=(1.05, 1), loc='upper left')
