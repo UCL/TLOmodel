@@ -718,8 +718,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             normalized_DALYs.loc[cause],
             alpha=0.5
         )
-
-    axes[1].hlines(y=normalized_DALYs.loc['TB'][0], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black') # just want it to be at 1
+    axes[1].hlines(y=normalized_DALYs.loc['TB (non-AIDS)'][0], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black') # just want it to be at 1
 
     axes[1].set_ylabel('Fold Change in DALYs per 1,000 Compared to 2020')
     axes[1].set_xlabel('Scenario')
