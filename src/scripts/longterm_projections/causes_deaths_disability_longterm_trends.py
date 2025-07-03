@@ -422,7 +422,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3]
         new_order = group_1 + group_2 + group_3 + group_4 + other_causes
         df_daly_per_1000_mean_ordered = df_daly_per_1000_mean.loc[new_order]
-        bars = df_daly_per_1000_mean_ordered.T.plot.bar(
+        df_daly_per_1000_mean_ordered.T.plot.bar(
             stacked=True,
             ax=axes[0],
             color=[get_color_cause_of_death_or_daly_label(_label) for _label in new_order]
@@ -435,17 +435,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].set_xlabel('Year', fontsize=12)
         axes[0].set_xticks(axes[0].get_xticks()[::10])
         axes[0].tick_params(axis='x', rotation=0)
-        axes[0].set_ylabel('Number of deaths per 1000 people', fontsize=12)
+        axes[0].set_ylabel('Number of DALYs per 1000 people', fontsize=12)
         axes[0].legend().set_visible(False)
         axes[0].tick_params(axis='both', which='major', labelsize=12)
 
         # Panel B: Normalized counts
         df_normalized_population = df_all_years_data_population_mean.div(df_all_years_data_population_mean.iloc[:, 0],
                                                                          axis=0)
-        for i, condition in enumerate(df_death_normalized_mean.index):
-            axes[1].plot(df_death_normalized_mean.columns, df_death_normalized_mean.loc[condition], marker='o',
+        for i, condition in enumerate(df_DALY_normalized_mean.index):
+            axes[1].plot(df_DALY_normalized_mean.columns, df_DALY_normalized_mean.loc[condition], marker='o',
                          label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                                 df_all_years_deaths_mean.index][i])
+                                                 df_DALY_normalized_mean.index][i])
 
         axes[1].plot(df_normalized_population.columns,
                          df_normalized_population.iloc[0],
