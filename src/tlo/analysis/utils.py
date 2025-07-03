@@ -1256,7 +1256,7 @@ def get_parameters_for_status_quo() -> Dict:
             "spurious_symptoms": True,
         },
         "HealthSystem": {
-            'service_availability': ['*'],
+            'Service_Availability': ['*'],
             "use_funded_or_actual_staffing": "actual",
             "mode_appt_constraints": 1,
             "cons_availability": "default",
