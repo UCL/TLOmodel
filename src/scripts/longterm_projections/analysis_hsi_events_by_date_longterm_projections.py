@@ -179,18 +179,14 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                 collapse_columns=True,
             )[draw]
             all_years_data_population_mean[target_year] = result_data_population['mean']
-            all_years_data_population_mean[target_year] = result_data_population['mean']
 
         # Convert the accumulated data into a DataFrame for plotting
         df_all_years = pd.DataFrame(all_years_data)
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
-        print(df_all_years_data_population_mean)
         df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
         df_normalized_population = df_all_years_data_population_mean / df_all_years_data_population_mean.iloc[0]
-
         # Plotting
         causes = list(df_normalized.index)
-        print(df_normalized)
         group_1 = ["Hiv*", "Tb*", "Malaria*"]
         group_2 = [cause for cause in causes if "Cancer" in cause]
         group_3 = ["CardioMetabolicDisorders*", "Copd*", "Depression*", "Epilepsy*", "Epi*", "FirstAttendance*"]
@@ -223,7 +219,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                          color=[get_color_short_treatment_id(_label) for _label in
                                 df_all_years.index][i])
         axes[1].plot(df_normalized_population.columns,
-                     df_normalized_population.iloc[0],
+                     df_normalized_population.loc['total'],
                      color='black', linestyle='--', marker='s', linewidth=2, label='Population')
 
         axes[1].set_xlabel('Year', fontsize=12)
@@ -492,7 +488,8 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         all_draws_population_normalised.iloc[0,:],
         alpha=0.5
     )
-
+    axes[1].hlines(y=df_normalized_population.iloc[0,0], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()),
+                        color='black')  # just want it to be at 1
     axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
     axes[1].set_ylabel('Fold change in time spent', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
@@ -531,15 +528,15 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
                 alpha=0.5
             )
 
-    axes[1].scatter(all_draws_population_normalised.columns,
-                 all_draws_population_normalised.iloc[0,:],
-                 color='black', marker='s', label='Population')
     axes[1].plot(
         all_draws_cadre_normalised.columns,
-        all_draws_population_normalised.iloc[0,:],
-        alpha=0.5
+        all_draws_population_normalised.iloc[0, :],
+        color='black',
+        linewidth=3,
+        linestyle='-',
+        label='Population',
+        zorder=3
     )
-
     axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
     axes[1].set_ylabel('Fold change in time spent', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)

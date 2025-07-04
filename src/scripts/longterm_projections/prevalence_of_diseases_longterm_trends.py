@@ -118,33 +118,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     _standardize_short_treatment_id(prevalence_condition_label),
                     np.nan)
 
-        def get_prevalence_by_cause_label(_df):
-                """Return total prevalence by cause label (total across age-groups and sexes within the TARGET_PERIOD)."""
-                _df['date'] = pd.to_datetime(_df['date'])
-
-                # Filter the DataFrame based on the target period
-                filtered_df = _df.loc[_df['date'].between(*TARGET_PERIOD)]
-
-                prevalence_sums = {}
-
-                for col in filtered_df.columns:
-                    if col == 'date':
-                        continue
-                    if pd.api.types.is_numeric_dtype(filtered_df[col]):
-                        prevalence_sums[col] = filtered_df[col].sum()
-
-                    elif isinstance(filtered_df[col].iloc[0], list):
-                        prevalence_sums[col] = filtered_df[col].apply(lambda x: x[0]).sum()
-
-                    elif isinstance(filtered_df[col].iloc[0], dict):
-                        prevalence_sums[col] = filtered_df[col].apply(
-                            lambda d: sum(
-                                v for age_group in d.values() for v in age_group.values()
-                            )
-                        ).sum()
-
-                return pd.Series(prevalence_sums)
-
         def get_prevalence_by_cause_by_age(_df):
                 """Return total prevalence by cause label (total across age-groups and sexes within the TARGET_PERIOD)."""
                 _df['date'] = pd.to_datetime(_df['date'])
@@ -244,26 +217,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 'chronic_kidney_disease',
                 'chronic_lower_back_pain',
                 'diabetes',
-                'hypertension'
+                'hypertension',
+                'live_births',
+                'population'
             ]
 
             # Mask for rows where cause is NOT in the excluded list
+            age_grps = result_data_prevalence_by_age.index.get_level_values('age_grp')
             mask = ~result_data_prevalence_by_age.index.get_level_values('cause').isin(excluded_causes)
+            crude_prevalence_by_agegroup = result_data_prevalence_by_age['mean'].copy()
+
             # Correct the prevalence values by multiplying by total alive / alive in age group
             total_alive = num_by_age['mean'].sum()
 
-            # Make sure num_by_age has matching index to prevalence data
-            correction_factor = total_alive / num_by_age['mean']
-
+            correction_factor = total_alive/ num_by_age['mean'] # want to multiply by the total population to correct for mistake, but also divide by the number in each age group to get per age group cases
             # Apply correction factor to your prevalence values
-            result_data_prevalence_by_age['mean'] *= correction_factor
-            # Apply the multiplication only to rows not in excluded causes
-            result_data_prevalence_by_age.loc[mask, 'mean'] *= num_by_age['mean'].sum()
-            #result_data_prevalence_by_age['mean'] = result_data_prevalence_by_age['mean'] * num_by_age['mean'].sum() # from the mistake I made in the original coding
-            crude_prevalence_by_agegroup = result_data_prevalence_by_age.unstack(level='age_grp')['mean']/num_by_age['mean']
+            crude_prevalence_by_agegroup.loc[mask] = (
+                result_data_prevalence_by_age.loc[mask, 'mean'].values *
+                correction_factor.loc[age_grps[mask]].values
+            )
 
-            age_standardised_prevalence = ((((crude_prevalence_by_agegroup * standard_population_structure_weights))/num_by_age['mean'].sum()) * 1000).sum(axis=1)
-
+            result_data_prevalence_by_age['crude_prevalence'] = crude_prevalence_by_agegroup
+            age_standardised_prevalence = ((crude_prevalence_by_agegroup.unstack(level='age_grp') * standard_population_structure_weights)).sum(axis=1)
+            age_standardised_prevalence = age_standardised_prevalence.drop(index = 'Schisto')
             # Store results
             all_years_data_population[target_year] = num_by_age['mean'].sum(axis=0)
             all_years_data_prevalence_standard_years[target_year] = (age_standardised_prevalence)
@@ -276,7 +252,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             'live_births', 'population',
             'PostnatalSupervisor', 'PregnancySupervisor', 'CardioMetabolicDisorders',
             'NewbornOutcomes', 'Labour',
-            'Intrapartum stillbirth', 'Antenatal stillbirth', 'NMR', 'MMR'
+            'Intrapartum stillbirth', 'Antenatal stillbirth', 'NMR', 'MMR',
+            'Schistosomiasis' # because it is out of date
         ]
 
         df_prevalence_standard_years = df_prevalence_standard_years.drop(index=rows_to_drop, errors='ignore')
@@ -334,46 +311,92 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         df_all_years_prevalence_normalized.to_csv(output_folder/f"Prevalence_by_condition_normalized_2020_{draw}_age_standardisation.csv")
         all_draws_prevalence_normalized[draw] = df_all_years_prevalence_normalized.iloc[:,-1]
 
-    # Plot across scenarios
+        fig, axes = plt.subplots(1, 1, figsize=(10, 10))
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+        label_positions = []
+        y_offset = 0.02
 
-    all_draws_prevalence_standard_years.T.plot.bar(
-            stacked=True, ax=axes[0],
-            color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_standard_years.index], legend=False
-        )
-    axes[0].set_ylabel('Age-standardised prevalence per 1,000',  fontsize=12)
-    axes[0].set_xlabel('Scenario', fontsize=12)
-    axes[0].set_xticklabels(scenario_names, rotation=45)
-    axes[0].tick_params(axis='both', which='major', labelsize=12)
+        for condition in df_all_years_prevalence_normalized.index:
+                color = get_color_cause_of_prevalence_label(condition)
 
-    for i, condition in enumerate(all_draws_prevalence_normalized.index):
-            axes[1].scatter(all_draws_prevalence_normalized.columns, all_draws_prevalence_normalized.loc[condition],
-                         marker='o',s = 10,
-                         label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
-                                                 all_draws_prevalence_normalized.index][i])
-            axes[1].plot(
-                all_draws_prevalence_normalized.columns,
-                all_draws_prevalence_normalized.loc[condition],
-                color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_normalized.index][i],
-                alpha=0.5
+                axes.plot(
+                    df_all_years_prevalence_normalized.columns,
+                    df_all_years_prevalence_normalized.loc[condition],
+                    marker='o',
+                    color=color
+                )
+
+                final_x = df_all_years_prevalence_normalized.columns[-1] + 0.5
+                final_y = df_all_years_prevalence_normalized.loc[condition].iloc[-1]
+
+                # Check for nearby labels and offset if necessary
+                while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+                    final_y += y_offset
+
+                label_positions.append(final_y)
+
+                axes.text(
+                    x=final_x,
+                    y=final_y,
+                    s=condition,
+                    color=color,
+                    fontsize=8,
+                    va='center')
+
+        axes.hlines(
+                y=df_normalized_population.loc[2020],
+                xmin=min(axes.get_xlim()),
+                xmax=max(axes.get_xlim()),
+                color='black'
             )
 
-    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+        axes.set_xlabel('Year', fontsize=12)
+        axes.set_ylabel('Fold change in age-standardised prevalence', fontsize=12)
+        axes.tick_params(axis='both', which='major', labelsize=12)
+
+        plt.tight_layout()
+        fig.savefig(make_graph_file_name(
+                f'Trend_Prevalence_by_Condition_All_Years_Normalized_{draw}_age_standardisation'))
+        plt.show()
+    # Plot across scenarios
+
+    fig, axes = plt.subplots(1, 1, figsize=(10, 10))
+    #
+    # all_draws_prevalence_standard_years.T.plot.bar(
+    #         stacked=True, ax=axes[0],
+    #         color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_standard_years.index], legend=False
+    #     )
+    # axes[0].set_ylabel('Age-standardised prevalence',  fontsize=12)
+    # axes[0].set_xlabel('Scenario', fontsize=12)
+    # axes[0].set_xticklabels(scenario_names, rotation=45)
+    # axes[0].tick_params(axis='both', which='major', labelsize=12)
+
+    for i, condition in enumerate(all_draws_prevalence_normalized.index):
+        axes.scatter(all_draws_prevalence_normalized.columns, all_draws_prevalence_normalized.loc[condition],
+                     marker='o', s=10,
+                     label=condition, color=[get_color_cause_of_prevalence_label(_label) for _label in
+                                             all_draws_prevalence_normalized.index][i])
+        axes.plot(
+            all_draws_prevalence_normalized.columns,
+            all_draws_prevalence_normalized.loc[condition],
+            color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_normalized.index][i],
+            alpha=0.5
+        )
+
+    axes.hlines(y=1, xmin=min(axes.get_xlim()), xmax=max(axes.get_xlim()), color='black')
     # axes[1].scatter(all_draws_population.columns,
     #                 all_draws_population,
     #                 color='black', marker='s', label='Population')
-    axes[1].legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
-    axes[1].set_ylabel('Fold change in prevalence', fontsize=12)
-    axes[1].set_xlabel('Scenario', fontsize=12)
-    axes[1].set_xticks(range(len(scenario_names)))
-    axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].set_xlim(-0.5, len(scenario_names) - 0.5)
-    axes[1].tick_params(axis='both', which='major', labelsize=12)
+    axes.legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
+    axes.set_ylabel('Fold change in prevalence', fontsize=12)
+    axes.set_xlabel('Scenario', fontsize=12)
+    axes.set_xticks(range(len(scenario_names)))
+    axes.set_xticklabels(scenario_names, rotation=45)
+    axes.set_xlim(-0.5, len(scenario_names) - 0.5)
+    axes.tick_params(axis='both', which='major', labelsize=12)
 
-    fig.tight_layout()
+    plt.tight_layout()
     fig.savefig(output_folder / f"Prevalence_by_condition_combined_years.png")
-    plt.show()
 
 
 if __name__ == "__main__":
