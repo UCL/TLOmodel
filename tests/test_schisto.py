@@ -76,10 +76,6 @@ def test_diagnosis_and_treatment(seed):
     worm burden in individual """
 
     sim = get_simulation(seed=seed, start_date=start_date, mda_execute=True)
-    # set symptoms to high probability
-    sim.modules['Schisto'].parameters["sm_symptoms"] = {key: 1 for key in
-                                                        sim.modules['Schisto'].parameters["sm_symptoms"]}
-
     sim.make_initial_population(n=1)
 
     df = sim.population.props
@@ -104,8 +100,7 @@ def test_diagnosis_and_treatment(seed):
     assert df.at[person_id, "ss_sm_aggregate_worm_burden"] == infecting_worms
 
     # check symptoms assigned
-    symptom_list = {'anemia', 'fever', 'ascites', 'diarrhoea', 'vomiting', 'hepatomegaly'}
-    assert symptom_list.issubset(sim.modules['SymptomManager'].has_what(person_id))
+    assert 'ss_sm_heavy' in sim.modules['SymptomManager'].has_what(person_id)
 
     # refer for test
     test_appt = schisto.HSI_Schisto_TestingFollowingSymptoms(person_id=person_id,

@@ -13,6 +13,7 @@ from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_i
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
     schisto,
@@ -45,13 +46,13 @@ def run_simulation(popsize,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2016, 12, 31)
+    end_date = Date(2014, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
         "tlo.methods.schisto": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
-        # "tlo.methods.healthburden": logging.INFO,
+        "tlo.methods.healthburden": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.alri": logging.INFO,
         "tlo.methods.diarrhoea": logging.INFO,
@@ -59,19 +60,18 @@ def run_simulation(popsize,
     }
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "schisto_test_runs",
-                                                                "custom_levels": custom_levels, })
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath,
-                                       equal_allocation_by_district=equal_allocation_by_district),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=hs_disable_and_reject_all,
+    sim = Simulation(start_date=start_date, seed=0,
+                     log_config={"filename": "schisto_test_runs", "custom_levels": custom_levels, },
+                     resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(equal_allocation_by_district=equal_allocation_by_district),
+                 enhanced_lifestyle.Lifestyle(),
+                 symptommanager.SymptomManager(),
+                 healthburden.HealthBurden(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthsystem.HealthSystem(disable_and_reject_all=hs_disable_and_reject_all,
                                            cons_availability='all'),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 schisto.Schisto(resourcefilepath=resourcefilepath,
-                                 mda_execute=mda_execute,
+                 simplified_births.SimplifiedBirths(),
+                 schisto.Schisto(mda_execute=mda_execute,
                                  single_district=single_district),
                  )
 
@@ -128,7 +128,7 @@ def get_model_prevalence_by_district(spec: str, year: int):
     _df = dfs[f'infection_status_{spec}']
     t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
     counts = t.unstack(level=1).groupby(level=0).sum().T
-    return ((counts['High-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(
+    return ((counts['Heavy-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(
         axis=1)).to_dict()
 
 
@@ -153,7 +153,7 @@ def get_model_prevalence_by_district_over_time(spec: str):
     district_sums = df.groupby(level='district_of_residence', axis=1).sum()
 
     filtered_columns = df.columns.get_level_values('infection_status').isin(
-        ['High-infection', 'Moderate-infection', 'Low-infection'])
+        ['Heavy-infection', 'Moderate-infection', 'Low-infection'])
     infected = df.loc[:, filtered_columns].groupby(level='district_of_residence', axis=1).sum()
 
     prop_infected = infected.div(district_sums)
@@ -188,7 +188,7 @@ for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
         'Data': get_expected_prevalence_by_district(_spec),
-        'Model': get_model_prevalence_by_district(_spec, year=2010)}
+        'Model': get_model_prevalence_by_district(_spec, year=2011)}
     ).loc[fitted_districts].plot.bar(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (Fitted)')
@@ -205,7 +205,7 @@ for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
         'Data': get_expected_prevalence_by_district(_spec),
-        'Model': get_model_prevalence_by_district(_spec, year=2010)}
+        'Model': get_model_prevalence_by_district(_spec, year=2011)}
     ).plot(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (All)')
