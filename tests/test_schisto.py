@@ -96,7 +96,7 @@ def test_diagnosis_and_treatment(seed):
     mature_worms = schisto.SchistoMatureJuvenileWormsEvent(module=sim.modules['Schisto'])
     mature_worms.apply(sim.population)
 
-    assert df.at[person_id, "ss_sm_infection_status"] == 'High-infection'
+    assert df.at[person_id, "ss_sm_infection_status"] == 'Heavy-infection'
     assert df.at[person_id, "ss_sm_aggregate_worm_burden"] == infecting_worms
 
     # check symptoms assigned
