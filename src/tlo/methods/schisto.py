@@ -240,8 +240,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         for _spec in self.species.values():
             _spec.initialise_simulation(sim)
 
-        # Schedule the logging event
-        sim.schedule_event(SchistoLoggingEvent(self), sim.date + pd.DateOffset(years=1))  # annual, by district, age-group
+        # Schedule the logging event, annual, by district, age-group
+        sim.schedule_event(SchistoLoggingEvent(self), sim.date + pd.DateOffset(years=1))
         sim.schedule_event(SchistoPersonDaysLoggingEvent(self), sim.date)
 
         # over-ride availability of PZQ for MDA, MDA cons is optional in HSI so will always run
@@ -1278,7 +1278,8 @@ class SchistoMatureJuvenileWormsEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-        def juvenile_worms_to_adults(df, species_column_juvenile, species_column_aggregate, juvenile_infection_date, species_prefix):
+        def juvenile_worms_to_adults(df, species_column_juvenile, species_column_aggregate,
+                                     juvenile_infection_date, species_prefix):
             """
             moves the juveniles worms into the aggregate_worm_burden property
             indicating that they are now mature and will contribute to the disability threshold

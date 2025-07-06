@@ -340,7 +340,8 @@ class Demography(Module):
             if self.equal_allocation_by_district:
                 _logger.warning(
                     key='scaling_factor_district',
-                    data={'scaling_factor_district': (1.0 / self.initial_model_to_data_popsize_ratio_district).to_dict()},
+                    data={
+                        'scaling_factor_district': (1.0 / self.initial_model_to_data_popsize_ratio_district).to_dict()},
                     description='The data-to-model district_level scaling factor (based on the initial population size,'
                                 'used to multiply-up results so that they correspond to the real population size.'
                 )
@@ -648,7 +649,8 @@ class Demography(Module):
         return initial_population_size / self.parameters['pop_2010']['Count'].sum()
 
 
-    def compute_initial_model_to_data_popsize_ratio_by_district(self, district_pop: pd.Series, model_pop: pd.Series) -> pd.Series:
+    def compute_initial_model_to_data_popsize_ratio_by_district(self, district_pop: pd.Series,
+                                                                model_pop: pd.Series) -> pd.Series:
         """Compute ratio of initial model population size to estimated population size in 2010 district-wise.
         :returns: Ratio of ``initial_population`` to 2010 baseline population district-by-district in
         pd.Series indexed by district name.
