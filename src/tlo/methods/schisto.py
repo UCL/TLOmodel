@@ -206,7 +206,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, f'{self.module_prefix}_MDA_treatment_counter'] = 0
 
         # reset all to one district if doing calibration or test runs
-        # choose Zomba as it has ~10% prev of both species
+        # choose Zomba (district 19) as it has ~10% prev of both species
         if self.single_district:
             df['district_num_of_residence'] = pd.Categorical([19] * len(df),
                                                              categories=df['district_num_of_residence'].cat.categories)
@@ -226,9 +226,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             self.disability_weights = self._get_disability_weight()
 
         # Look-up item codes for Praziquantel
-        if 'HealthSystem' in self.sim.modules:
-            self.item_code_for_praziquantel = self._get_item_code_for_praziquantel(MDA=False)
-            self.item_code_for_praziquantel_MDA = self._get_item_code_for_praziquantel(MDA=True)
+        self.item_code_for_praziquantel = self._get_item_code_for_praziquantel(MDA=False)
+        self.item_code_for_praziquantel_MDA = self._get_item_code_for_praziquantel(MDA=True)
 
         # define the Dx tests and consumables required
         self._get_consumables_for_dx()
@@ -402,6 +401,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         return parameters
 
     def _create_mda_strategy(self) -> pd.DataFrame:
+        """ this uses the parameters set in the module to create a pd.DataFrame that contains the MDA strategy for
+        future MDA activities. This will take effect the year after the last entry in
+        parameters['MDA_coverage_historical']"""
 
         params = self.parameters
         coverage = params['mda_coverage']
@@ -767,6 +769,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             schedule_hsi_event(event, priority=0, topen=self.sim.date)
 
     def select_test(self, person_id):
+        """ choose the most likely test administered given the prevalent symptoms
+        of this person"""
 
         # choose test
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
@@ -779,8 +783,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
     def reduce_susceptibility(self, df, species_column):
         """
-        Reduce the proportion of individuals susceptible to each species by a specified percentage
-        applied
+        Updates individual susceptibility to Schistosoma species following changes in WASH-related attributes,
+        either through enhanced lifestyle interventions or WASH scale-up in the schisto module.
+
+        Individuals newly gaining access to WASH experience a 40% reduction in susceptibility,
+        such that 40% of them are no longer considered susceptible to schistosomiasis.
         """
         p = self.parameters
 

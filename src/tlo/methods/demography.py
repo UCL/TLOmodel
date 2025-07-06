@@ -650,7 +650,8 @@ class Demography(Module):
 
     def compute_initial_model_to_data_popsize_ratio_by_district(self, district_pop: pd.Series, model_pop: pd.Series) -> pd.Series:
         """Compute ratio of initial model population size to estimated population size in 2010 district-wise.
-        :returns: Ratio of ``initial_population`` to 2010 baseline population district-by-district in pd.Series indexed by distrct name.
+        :returns: Ratio of ``initial_population`` to 2010 baseline population district-by-district in
+        pd.Series indexed by district name.
         """
         return model_pop / district_pop
 
