@@ -178,7 +178,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
             self.parameters.update(_spec.load_parameters_from_workbook(workbook))
 
         # Register symptoms
-        # symptoms_df = workbook['Symptoms']
         self._register_symptoms()
 
         # create container for logging person-days infected
@@ -743,8 +742,6 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Update infection status column
         # this can sometimes return an object due to mixed types, eg string and None
-        # df[f"{species_prefix}_infection_status"] = correct_status.astype(str)
-
         df[f"{species_prefix}_infection_status"] = pd.Categorical(correct_status,
                                                               dtype=df[f"{species_prefix}_infection_status"].dtype)
 
