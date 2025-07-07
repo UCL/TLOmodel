@@ -272,8 +272,8 @@ class Lifestyle(Module):
                         'The men are assumed to be circumcised at birth.'
         ),
         'proportion_of_men_circumcised_at_initiation': Parameter(
-            Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the '
-                        'initiation of the simulation.'
+            Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
+                        'simulation.'
         ),
         "proportion_female_sex_workers": Parameter(
             Types.REAL, "proportion of women aged 15-49 years who are sex workers"
@@ -288,8 +288,7 @@ class Lifestyle(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
-        'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)',
-                              categories=[1, 2, 3, 4, 5]),
+        'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
         'li_bmi': Property(
             Types.CATEGORICAL, 'bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)'
                                'bmi is np.nan until age 15', categories=[1, 2, 3, 4, 5], ordered=True
