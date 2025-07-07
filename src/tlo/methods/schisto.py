@@ -774,7 +774,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # choose test
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        if any(symptom in ['ss_sh_moderate', 'ss_sh_heavy',] for symptom in persons_symptoms):
+        if {'ss_sh_moderate', 'ss_sh_heavy'} & set(persons_symptoms):
             test = 'urine_filtration_test'
         else:
             test = 'kato-katz'
