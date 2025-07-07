@@ -44,7 +44,7 @@ def make_plot(model=None, data_mid=None, data_low=None, data_high=None, title_st
 # %%: DATA
 # ---------------------------------------------------------------------- #
 start_date = 2010
-end_date = 2020
+end_date = 2024
 
 # load all the data for calibration
 
@@ -94,7 +94,7 @@ data_tb_ntp = data_tb_ntp.drop(columns=["year"])
 xls = read_csv_files(resourcefilepath / "ResourceFile_HIV", files=None)
 
 # HIV UNAIDS data
-data_hiv_unaids = xls["unaids_infections_art2021"]
+data_hiv_unaids = xls["unaids_infections_art2023"]
 data_hiv_unaids.index = pd.to_datetime(data_hiv_unaids["year"], format="%Y")
 data_hiv_unaids = data_hiv_unaids.drop(columns=["year"])
 
@@ -116,22 +116,36 @@ data_hiv_program.index = pd.to_datetime(data_hiv_program["year"], format="%Y")
 data_hiv_program = data_hiv_program.drop(columns=["year"])
 
 # MPHIA HIV data - age-structured
-data_hiv_mphia_inc = xls["MPHIA_incidence2015"]
-data_hiv_mphia_inc_estimate = data_hiv_mphia_inc.loc[
-    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence"
+data_hiv_mphia_inc = xls["MPHIA_incidence2020"]
+data_hiv_mphia_inc_2015 = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2015), "total_percent_annual_incidence"
 ].values[0]
 data_hiv_mphia_inc_lower = data_hiv_mphia_inc.loc[
-    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence_lower"
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2015), "total_percent_annual_incidence_lower"
 ].values[0]
 data_hiv_mphia_inc_upper = data_hiv_mphia_inc.loc[
-    (data_hiv_mphia_inc.age == "15-49"), "total_percent_annual_incidence_upper"
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2015), "total_percent_annual_incidence_upper"
 ].values[0]
-data_hiv_mphia_inc_yerr = [
-    abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_estimate),
-    abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_estimate),
+data_hiv_mphia_inc_yerr2015 = [
+    abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_2015),
+    abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_2015),
 ]
 
-data_hiv_mphia_prev = xls["MPHIA_prevalence_art2015"]
+data_hiv_mphia_inc_2020 = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2020), "total_percent_annual_incidence"
+].values[0]
+data_hiv_mphia_inc_lower = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2020), "total_percent_annual_incidence_lower"
+].values[0]
+data_hiv_mphia_inc_upper = data_hiv_mphia_inc.loc[
+    (data_hiv_mphia_inc.age == "15-49") & (data_hiv_mphia_inc.year == 2020), "total_percent_annual_incidence_upper"
+].values[0]
+data_hiv_mphia_inc_yerr2020 = [
+    abs(data_hiv_mphia_inc_lower - data_hiv_mphia_inc_2020),
+    abs(data_hiv_mphia_inc_upper - data_hiv_mphia_inc_2020),
+]
+
+data_hiv_mphia_prev = xls["MPHIA_prevalence_art2020"]
 
 # DHS HIV data
 data_hiv_dhs_prev = xls["DHS_prevalence"]
@@ -273,14 +287,22 @@ title_str = "HIV Prevalence in Adults Aged 15-49 (%)"
 make_plot(
     title_str=title_str,
     model=prev_and_inc_over_time["hiv_prev_adult_1549"] * 100,
-    data_mid=data_hiv_unaids["prevalence_age15_49"] * 100,
-    data_low=data_hiv_unaids["prevalence_age15_49_lower"] * 100,
-    data_high=data_hiv_unaids["prevalence_age15_49_upper"] * 100,
+    data_mid=data_hiv_unaids["prevalence_age15_49"],
+    data_low=data_hiv_unaids["prevalence_age15_49_lower"],
+    data_high=data_hiv_unaids["prevalence_age15_49_upper"],
 )
 
 # MPHIA
 plt.plot(
-    prev_and_inc_over_time.index[6],
+    prev_and_inc_over_time.index[4],
+    data_hiv_mphia_prev.loc[
+        data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
+    ].values[0],
+    "gx",
+)
+
+plt.plot(
+    prev_and_inc_over_time.index[9],
     data_hiv_mphia_prev.loc[
         data_hiv_mphia_prev.age == "Total 15-49", "total percent hiv positive"
     ].values[0],
@@ -332,22 +354,32 @@ plt.show()
 # ---------------------------------------------------------------------- #
 
 # HIV Incidence 15-49
-title_str = "HIV Incidence in Adults (15-49) (per 100 pyar)"
+title_str = "HIV Incidence in Adults (15-49) (per 1000 py)"
 make_plot(
     title_str=title_str,
-    model=prev_and_inc_over_time["hiv_adult_inc_1549"] * 100,
-    data_mid=data_hiv_unaids["incidence_per1000_age15_49"] / 10,
-    data_low=data_hiv_unaids["incidence_per1000_age15_49_lower"] / 10,
-    data_high=data_hiv_unaids["incidence_per1000_age15_49_upper"] / 10,
+    model=prev_and_inc_over_time["hiv_adult_inc_1549"] * 1000,
+    data_mid=data_hiv_unaids["incidence_per1000_age15_49"],
+    data_low=data_hiv_unaids["incidence_per1000_age15_49_lower"],
+    data_high=data_hiv_unaids["incidence_per1000_age15_49_upper"],
 )
 
 # MPHIA
 plt.errorbar(
     prev_and_inc_over_time.index[6],
-    data_hiv_mphia_inc_estimate,
-    yerr=[[data_hiv_mphia_inc_yerr[0]], [data_hiv_mphia_inc_yerr[1]]],
+    data_hiv_mphia_inc_2015*10,
+    yerr=[[data_hiv_mphia_inc_yerr2015[0]*10], [data_hiv_mphia_inc_yerr2015[1]*10]],
     fmt="o",
+    color="C1",
 )
+
+plt.errorbar(
+    prev_and_inc_over_time.index[9],
+    data_hiv_mphia_inc_2020*10,
+    yerr=[[data_hiv_mphia_inc_yerr2020[0]*10], [data_hiv_mphia_inc_yerr2020[1]*10]],
+    fmt="o",
+    color="C1",
+)
+
 
 # handles for legend
 red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
