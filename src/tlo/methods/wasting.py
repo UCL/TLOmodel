@@ -1,10 +1,11 @@
 """Placeholder for childhood wasting module."""
+from pathlib import Path
+from typing import Optional
 
 from tlo import Module, Property, Types, logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
 
 class Wasting(Module):
     """Placeholder for childhood wasting module.
@@ -20,11 +21,10 @@ class Wasting(Module):
         'un_ever_wasted': Property(Types.BOOL, 'temporary property')
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name=name)
-        self.resourcefilepath = resourcefilepath
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         pass
 
     def initialise_population(self, population):

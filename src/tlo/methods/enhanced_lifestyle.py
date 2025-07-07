@@ -3,7 +3,7 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -25,9 +25,8 @@ class Lifestyle(Module):
     by urban/rural, wealth, tobacco usage etc.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath: Path = resourcefilepath
 
         # a pointer to the linear models class
         self.models = None
@@ -342,10 +341,9 @@ class Lifestyle(Module):
         "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
-        dataframes = read_csv_files(
-            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced',
+        dataframes = read_csv_files(resourcefilepath / 'ResourceFile_Lifestyle_Enhanced',
             files=["parameter_values", "urban_rural_by_district"],
         )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
