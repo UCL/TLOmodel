@@ -1757,20 +1757,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         test_result = None
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
-        # refer for HIV testing: all ages
-        # do not run if already HIV diagnosed or had test in last week
-        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=hiv.HSI_Hiv_TestAndRefer(
-                    person_id=person_id,
-                    module=self.sim.modules["Hiv"],
-                    referred_from="Tb",
-                ),
-                priority=1,
-                topen=now,
-                tclose=None,
-            )
-
         # ------------------------- x-ray for children ------------------------- #
 
         # child under 5 -> chest x-ray, but access is limited
@@ -2332,6 +2318,21 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # if person already on treatment or not yet diagnosed, do nothing
         if person["tb_on_treatment"] or not person["tb_diagnosed"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
+        # ------------------------- HIV test referral ------------------------- #
+        # refer for HIV testing: all ages
+        # do not run if already HIV diagnosed or had test in last week
+        if not person["hv_diagnosed"] or (person["hv_last_test_date"] >= (now - DateOffset(days=7))):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=hiv.HSI_Hiv_TestAndRefer(
+                    person_id=person_id,
+                    module=self.sim.modules["Hiv"],
+                    referred_from="Tb",
+                ),
+                priority=1,
+                topen=now,
+                tclose=None,
+            )
 
         treatment_regimen = self.select_treatment(person_id)
         # treatment supplied in kits, one kit per treatment course
