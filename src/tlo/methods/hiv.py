@@ -2467,7 +2467,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         if person["hv_last_test_date"] >= (self.sim.date - DateOffset(days=7)):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        # Run test
+        # ------------------------- run test ------------------------- #
+
         if person["age_years"] < 1.0:
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="hiv_early_infant_test", hsi_event=self
@@ -2838,6 +2839,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
+        # ------------------------- give ART ------------------------- #
+
         if art_status_at_beginning_of_hsi == "not":
 
             assert person[
@@ -2929,7 +2932,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     )
 
         # also screen for tb
-        if "Tb" in self.sim.modules:
+        if "Tb" in self.sim.modules and not person["tb_diagnosed"]:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 tb.HSI_Tb_ScreeningAndRefer(
                     person_id=person_id, module=self.sim.modules["Tb"]
