@@ -762,7 +762,7 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
                                                  'ss_sh_moderate',
                                                  'ss_sm_heavy'}
 
-        if any(symptom in set_of_symptoms_indicative_of_schisto for symptom in symptoms):
+        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
             event = HSI_Schisto_TestingFollowingSymptoms(
                 module=self, person_id=person_id
             )
