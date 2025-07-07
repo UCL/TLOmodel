@@ -253,7 +253,9 @@ class Consumables:
 
         # Check if the availability of consumables for this treatment id has been overridden
         # avail_overidden is None if there is no overriding, and the value to be taken if there is.
-        override_probability = self.treatment_ids_overridden_avail if treatment_id in self.treatment_ids_overridden else None
+        override_probability = self.treatment_ids_overridden_avail if (
+            treatment_id in self.treatment_ids_overridden
+        ) else None
 
         # Look-up whether each of these items is available in this facility currently.:
         available = self._lookup_availability_of_consumables(item_codes=_all_item_codes,
