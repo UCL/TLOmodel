@@ -280,37 +280,74 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
         if interv == 'SQ':
 
             # Add UNICEF mortality rates data
-            unicef_neo_mort_rates = [27.207, 26.392, 25.463, 24.55, 23.749, 23.039, 22.392, 21.786, 21.253, 20.769,
-                                     20.261, 19.778, 19.326, 18.825]
-            unicef_under5_mort_rates = [83.027, 76.687, 69.793, 63.998, 60.224, 56.708, 53.503, 50.647, 47.524, 45.456,
-                                        43.086, 41.527, 39.94, 38.34]
-            unicef_years = list(range(2010, 2024))
+            # ####
+            # Load UNICEF mortality rates data from CSV
+            unicef_csv_path = Path(__file__).parent / "fusion_GLOBAL_DATAFLOW_UNICEF_1.0_MWI.CME_MRY0T4+CME_MRM0...csv"
+            unicef_df = pd.read_csv(unicef_csv_path)
+
+            # Filter for neonatal and under-5 rates, total sex
+            neo_mask = (
+                (unicef_df['INDICATOR:Indicator'] == 'CME_MRM0: Neonatal mortality rate') &
+                (unicef_df['SEX:Sex'] == '_T: Total')
+            )
+            under5_mask = (
+                (unicef_df['INDICATOR:Indicator'] == 'CME_MRY0T4: Under-five mortality rate') &
+                (unicef_df['SEX:Sex'] == '_T: Total')
+            )
+
+            unicef_neo = unicef_df.loc[neo_mask]
+            unicef_under5 = unicef_df.loc[under5_mask]
+
+            # Extract years and rates (convert to int/float)
+            unicef_neo_years = unicef_neo['TIME_PERIOD:Time period'].astype(int).tolist()
+            unicef_neo_rates = unicef_neo['OBS_VALUE:Observation Value'].astype(float).tolist()
+            unicef_neo_lower = unicef_neo['LOWER_BOUND:Lower Bound'].astype(float).tolist()
+            unicef_neo_upper = unicef_neo['UPPER_BOUND:Upper Bound'].astype(float).tolist()
+
+            unicef_under5_years = unicef_under5['TIME_PERIOD:Time period'].astype(int).tolist()
+            unicef_under5_rates = unicef_under5['OBS_VALUE:Observation Value'].astype(float).tolist()
+            unicef_under5_lower = unicef_under5['LOWER_BOUND:Lower Bound'].astype(float).tolist()
+            unicef_under5_upper = unicef_under5['UPPER_BOUND:Upper Bound'].astype(float).tolist()
+
             unicef_colour = '#1CABE2'
 
+            # Filter data to include only years present in both plot_years and source years
+            unicef_filtered_neo = [(y, r, l, u) for y, r, l, u in \
+                                   zip(unicef_neo_years, unicef_neo_rates, unicef_neo_lower, unicef_neo_upper) if \
+                                   y in plot_years]
+            unicef_filtered_under5 = [(y, r, l, u) for y, r, l, u in \
+                                      zip(unicef_under5_years, unicef_under5_rates,
+                                          unicef_under5_lower, unicef_under5_upper) if \
+                                      y in plot_years]
+
+            (unicef_filtered_neo_years, unicef_filtered_neo_rates,
+             unicef_filtered_neo_lower, unicef_filtered_neo_upper) = \
+                zip(*unicef_filtered_neo) if unicef_filtered_neo else ([], [], [], [])
+            (unicef_filtered_under5_years, unicef_filtered_under5_rates,
+             unicef_filtered_under5_lower, unicef_filtered_under5_upper) = \
+                zip(*unicef_filtered_under5) if unicef_filtered_under5 else ([], [], [], [])
+
             # Add WPP 2024 mortality rates estimates (past data) and medium projection variant (future predictions)
-            # only for under-5
+            # ####
             wpp_medium_under5_mort_rates = [
                 81, 76, 70, 65, 61, 57, 53, 51, 48, 46, 44, 42, 41, 39, 38, 37, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30,
                 29, 28, 27, 27, 26, 26, 25, 24, 24, 23, 23, 22, 22, 21, 21, 21, 20, 20, 19, 19, 19, 18, 18, 17, 17, 17,
                 16, 16, 16, 16, 16, 15, 15, 15, 15, 15, 14, 14, 14, 14, 14, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12,
                 12, 12, 12, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11
             ]
-
             wpp_years = list(range(2010, 2101))
             wpp_colour = '#1D73F5'
-
-            # Filter data to include only years present in both plot_years and source years
-            unicef_filtered_years = [year for year in plot_years if year in unicef_years]
-            unicef_filtered_neo_rates = [rate for year, rate in zip(unicef_years, unicef_neo_mort_rates) if year in unicef_filtered_years]
-            unicef_filtered_under5_rates = [rate for year, rate in zip(unicef_years, unicef_under5_mort_rates) if year in unicef_filtered_years]
-
             wpp_filtered_years = [year for year in plot_years if year in wpp_years]
             wpp_filtered_under5_rates = [rate for year, rate in zip(wpp_years, wpp_medium_under5_mort_rates) if year in wpp_filtered_years]
 
+            # Plot both data
+            # ####
             if cohort == 'Neonatal':
-                    ax.plot(unicef_filtered_years, unicef_filtered_neo_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.plot(unicef_filtered_neo_years, unicef_filtered_neo_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.fill_between(unicef_filtered_neo_years, unicef_filtered_neo_lower, unicef_filtered_neo_upper, color=unicef_colour, alpha=0.2)
             elif cohort == 'Under-5':
-                ax.plot(unicef_filtered_years, unicef_filtered_under5_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.plot(unicef_filtered_under5_years, unicef_filtered_under5_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.fill_between(unicef_filtered_under5_years, unicef_filtered_under5_lower, unicef_filtered_under5_upper, color=unicef_colour, alpha=0.2)
                 ax.plot(wpp_filtered_years, wpp_filtered_under5_rates, label='WPP 2024', color=wpp_colour, linestyle='-.')
         else:
             plot_scenarios('SQ', outcome)
