@@ -75,6 +75,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.daly_wts = dict()
         self.lm = dict()
         self.item_codes_for_consumables_required = dict()
+        self.vl_testing_available_by_year: int|None = None
 
     INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
@@ -310,10 +311,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "adjustment to current ART coverage levels to account for defaulters",
         ),
-        "vs_adjustment": Parameter(
-            Types.REAL,
-            "adjustment to current viral suppression levels to account for defaulters",
-        ),
         "prob_hiv_test_at_anc_or_delivery": Parameter(
             Types.REAL,
             "probability of a women having hiv test at anc or following delivery",
@@ -324,7 +321,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
         "prob_start_art_or_vs": Parameter(
             Types.REAL,
-            "Probability that a person will start treatment and be virally suppressed following testing",
+            "Probability that a person will start treatment and be virally suppressed following testing, "
+            "from 2016 inputs reduced viral suppression rates to account for viral load testing effect",
         ),
         "prob_behav_chg_after_hiv_test": Parameter(
             Types.REAL,
@@ -433,6 +431,14 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "selftest_available": Parameter(
             Types.BOOL,
             "whether self-tests for HIV are available from the scale-up start date"
+        ),
+        "prob_of_viral_suppression_following_VL_test": Parameter(
+            Types.REAL,
+            "the probability of viral suppression following a viral load test"
+        ),
+        "viral_load_testing_start_year": Parameter(
+            Types.INT,
+            "the year when the viral load testing starts (it will occur on 1st January of that year)"
         ),
     }
 
@@ -1135,6 +1141,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             )
         )
 
+        # 8) define the start date for viral load testing
+        self.vl_testing_available_by_year = {
+            year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year)
+        }
+
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
@@ -1505,9 +1516,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             (prob_vs.year == current_year) &
             (prob_vs.age == age_group),
             "overall_adjusted_viral_suppression_on_art"].values[0]
-
-        # adjust for defaulters
-        return_prob = return_prob * self.parameters["vs_adjustment"]
 
         assert return_prob is not None
 
@@ -3012,18 +3020,20 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # Viral Load Monitoring
         # Attempt viral load test only at appropriate interval
         VL_test_done = False
-        if self.module.rng.random_sample() < (
-            p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
-            if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
-                # VL test performed
-                VL_test_done = True
-                logger.info(
-                    key='hiv_VLtest',
-                    data={
-                        'adult': person['age_years'] >= 15,
-                        'person_id': person_id
-                    }
-                )
+
+        if self.module.vl_testing_available_by_year[self.sim.date.year]:
+            if self.module.rng.random_sample() < (
+                p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
+                if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
+                    # VL test performed
+                    VL_test_done = True
+                    logger.info(
+                        key='hiv_VLtest',
+                        data={
+                            'adult': person['age_years'] >= 15,
+                            'person_id': person_id
+                        }
+                    )
 
         # If VL test was done and drugs are available, update suppression status
         if VL_test_done and drugs_available:
