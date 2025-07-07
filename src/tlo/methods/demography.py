@@ -304,15 +304,14 @@ class Demography(Module):
             self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
 
         # Compute the initial population scaling factor by district
-        if self.equal_allocation_by_district:
-            # compute the scaling factors by district
-            # get the actual numbers in each district in 2010
-            district_pop = init_pop.groupby('District')['Count'].sum()
-            # get the numbers in new population dataframe by district
-            model_pop = df.loc[df.is_alive].groupby('district_of_residence').size()
+        # compute the scaling factors by district
+        # get the actual numbers in each district in 2010
+        district_pop = init_pop.groupby('District')['Count'].sum()
+        # get the numbers in new population dataframe by district
+        model_pop = df.loc[df.is_alive].groupby('district_of_residence').size()
 
-            self.initial_model_to_data_popsize_ratio_district = \
-                self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
+        self.initial_model_to_data_popsize_ratio_district = \
+            self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
 
     def initialise_simulation(self, sim):
         """
@@ -337,14 +336,13 @@ class Demography(Module):
                 description='The data-to-model scaling factor (based on the initial population size, used to '
                             'multiply-up results so that they correspond to the real population size.'
             )
-            if self.equal_allocation_by_district:
-                _logger.warning(
-                    key='scaling_factor_district',
-                    data={
-                        'scaling_factor_district': (1.0 / self.initial_model_to_data_popsize_ratio_district).to_dict()},
-                    description='The data-to-model district_level scaling factor (based on the initial population size,'
-                                'used to multiply-up results so that they correspond to the real population size.'
-                )
+            _logger.warning(
+                key='scaling_factor_district',
+                data={
+                    'scaling_factor_district': (1.0 / self.initial_model_to_data_popsize_ratio_district).to_dict()},
+                description='The data-to-model district_level scaling factor (based on the initial population size,'
+                            'used to multiply-up results so that they correspond to the real population size.'
+            )
 
         # Check that the simulation does not run too long
         if self.sim.end_date.year >= 2100:
