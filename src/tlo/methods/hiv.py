@@ -1504,10 +1504,10 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         return_prob = prob_vs.loc[
             (prob_vs.year == current_year) &
             (prob_vs.age == age_group),
-            "virally_suppressed_on_art"].values[0]
+            "overall_adjusted_viral_suppression_on_art"].values[0]
 
-        # convert to probability and adjust for defaulters
-        return_prob = (return_prob / 100) * self.parameters["vs_adjustment"]
+        # adjust for defaulters
+        return_prob = return_prob * self.parameters["vs_adjustment"]
 
         assert return_prob is not None
 
@@ -3002,26 +3002,33 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
-        # Viral Load Monitoring
-        # NB. This does not have a direct effect on outcomes for the person.
-        if (self.module.rng.random_sample(size=1) <
-            p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
-            _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
-
-            # Log the VL test: line-list of summary information about each test
-            adult = True if person['age_years'] >= 15 else False
-            person_details_for_test = {
-                'adult': adult,
-                'person_id': person_id
-            }
-            logger.info(key='hiv_VLtest', data=person_details_for_test)
-
-        # Check if drugs are available, and provide drugs:
+        # Check if drugs are available and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
         # if cotrimoxazole is available, update person's property
         if drugs_available.get('cotrim', False):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
+
+        # Viral Load Monitoring
+        # Attempt viral load test only at appropriate interval
+        VL_test_done = False
+        if self.module.rng.random_sample() < (
+            p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
+            if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
+                # VL test performed
+                VL_test_done = True
+                logger.info(
+                    key='hiv_VLtest',
+                    data={
+                        'adult': person['age_years'] >= 15,
+                        'person_id': person_id
+                    }
+                )
+
+        # If VL test was done and drugs are available, update suppression status
+        if VL_test_done and drugs_available:
+            if person["hv_art"] == "on_not_VL_suppressed":
+                person["hv_art"] = self.update_viral_suppression_status()
 
         return drugs_available
 
@@ -3034,6 +3041,18 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         return (
             "on_VL_suppressed"
             if (self.module.rng.random_sample() < prob_vs)
+            else "on_not_VL_suppressed"
+        )
+
+    def update_viral_suppression_status(self):
+        """Helper function to determine whether person who is currently not virally suppressed
+        will become virally suppressed following viral load test."
+        """
+        p = self.module.parameters
+
+        return (
+            "on_VL_suppressed"
+            if self.module.rng.random_sample() < p["prob_of_viral_suppression_following_VL_test"]
             else "on_not_VL_suppressed"
         )
 
