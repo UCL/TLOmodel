@@ -244,14 +244,14 @@ def get_scen_colour(scen_name: str) -> str:
     }.get(scen_name)
 
 def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timestamps_dict: dict, scenarios_dict: dict,
-                                                     intervs_of_interest: list, plot_years: list, data_dict: dict,
+                                                     intervs_of_interest: list, plot_years: list, outcomes_dict: dict,
                                                      outputs_path: Path) -> None:
 
     def plot_scenarios(plot_interv, plot_outcome):
         scenarios_to_plot = scenarios_dict[plot_interv]
         for scen_name, draw in scenarios_to_plot.items():
             scen_colour = get_scen_colour(scen_name)
-            scen_data = data_dict[plot_interv][plot_outcome][draw]
+            scen_data = outcomes_dict[plot_interv][plot_outcome][draw]
 
             means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
 
@@ -278,23 +278,40 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
         plot_scenarios(interv, outcome)
 
         if interv == 'SQ':
-            # Add UNICEF data for under-5 mortality rate
-            unicef_neonatal_mort_rates = [27.207, 26.392, 25.463, 24.55, 23.749, 23.039, 22.392, 21.786, 21.253, 20.769,
-                                          20.261, 19.778, 19.326, 18.825]
+
+            # Add UNICEF mortality rates data
+            unicef_neo_mort_rates = [27.207, 26.392, 25.463, 24.55, 23.749, 23.039, 22.392, 21.786, 21.253, 20.769,
+                                     20.261, 19.778, 19.326, 18.825]
             unicef_under5_mort_rates = [83.027, 76.687, 69.793, 63.998, 60.224, 56.708, 53.503, 50.647, 47.524, 45.456,
                                         43.086, 41.527, 39.94, 38.34]
             unicef_years = list(range(2010, 2024))
-            unicef_colour = (28/255, 171/255, 226/255)
+            unicef_colour = '#1CABE2'
 
-            # Filter data to include only years present in both plot_years and unicef_years
-            filtered_years = [year for year in plot_years if year in unicef_years]
-            filtered_neonatal_rates = [rate for year, rate in zip(unicef_years, unicef_neonatal_mort_rates) if year in plot_years]
-            filtered_under5_rates = [rate for year, rate in zip(unicef_years, unicef_under5_mort_rates) if year in plot_years]
+            # Add WPP 2024 mortality rates estimates (past data) and medium projection variant (future predictions)
+            # only for under-5
+            wpp_medium_under5_mort_rates = [
+                81, 76, 70, 65, 61, 57, 53, 51, 48, 46, 44, 42, 41, 39, 38, 37, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30,
+                29, 28, 27, 27, 26, 26, 25, 24, 24, 23, 23, 22, 22, 21, 21, 21, 20, 20, 19, 19, 19, 18, 18, 17, 17, 17,
+                16, 16, 16, 16, 16, 15, 15, 15, 15, 15, 14, 14, 14, 14, 14, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12,
+                12, 12, 12, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11
+            ]
+
+            wpp_years = list(range(2010, 2101))
+            wpp_colour = '#1D73F5'
+
+            # Filter data to include only years present in both plot_years and source years
+            unicef_filtered_years = [year for year in plot_years if year in unicef_years]
+            unicef_filtered_neo_rates = [rate for year, rate in zip(unicef_years, unicef_neo_mort_rates) if year in unicef_filtered_years]
+            unicef_filtered_under5_rates = [rate for year, rate in zip(unicef_years, unicef_under5_mort_rates) if year in unicef_filtered_years]
+
+            wpp_filtered_years = [year for year in plot_years if year in wpp_years]
+            wpp_filtered_under5_rates = [rate for year, rate in zip(wpp_years, wpp_medium_under5_mort_rates) if year in wpp_filtered_years]
 
             if cohort == 'Neonatal':
-                    ax.plot(filtered_years, filtered_neonatal_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+                    ax.plot(unicef_filtered_years, unicef_filtered_neo_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
             elif cohort == 'Under-5':
-                ax.plot(filtered_years, filtered_under5_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.plot(unicef_filtered_years, unicef_filtered_under5_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.plot(wpp_filtered_years, wpp_filtered_under5_rates, label='WPP 2024', color=wpp_colour, linestyle='-.')
         else:
             plot_scenarios('SQ', outcome)
 
@@ -313,7 +330,7 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
         # Save plot as PNG
         if interv == 'SQ':
             plt.savefig(
-                outputs_path / f"{cohort}_mort_rate_{interv}_UNICEF__"
+                outputs_path / f"{cohort}_mort_rate_{interv}_UNICEF_WPP__"
                                f"{interv_timestamps_dict[interv]}.png",
                 bbox_inches='tight'
             )
@@ -326,7 +343,7 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
             )
 
 def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: dict, scenarios_to_compare: list,
-                                                   plot_years: list, data_dict: dict, outputs_path: Path,
+                                                   plot_years: list, outcomes_dict: dict, outputs_path: Path,
                                                    scenarios_tocompare_prefix, timestamps_suffix: str) -> None:
     """
     Plots mean deaths and confidence intervals over time for the specified cohort for multiple scenarios.
@@ -334,7 +351,7 @@ def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: 
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
     :param plot_years: List of years to plot
-    :param data_dict: Dictionary containing data for plotting nested as data_dict[interv][outcome][draw][run]
+    :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plot
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
     :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
@@ -366,7 +383,7 @@ def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: 
             )
 
             # Extract data for the scenario
-            scen_data = data_dict[interv][outcome][draw]
+            scen_data = outcomes_dict[interv][outcome][draw]
 
             # Calculate means and confidence intervals
             means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
@@ -392,7 +409,7 @@ def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: 
         )
 
 def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: dict, scenarios_to_compare: list,
-                                                 data_dict: dict, outputs_path: Path, scenarios_tocompare_prefix,
+                                                 outcomes_dict: dict, outputs_path: Path, scenarios_tocompare_prefix,
                                                  timestamps_suffix: str) -> None:
     """
     Plots sum of deaths and confidence intervals over the intervention period for the specified cohort for multiple
@@ -400,7 +417,7 @@ def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: di
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
-    :param data_dict: Dictionary containing data for plotting nested as data_dict[interv][outcome][draw][run]
+    :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plot
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
     :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
@@ -432,7 +449,7 @@ def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: di
             )
 
             # Extract data for the scenario
-            scen_data = data_dict[interv][outcome][draw]
+            scen_data = outcomes_dict[interv][outcome][draw]
 
             # Calculate sum and confidence intervals
             sums, ci_lower, ci_upper = zip(*scen_data.values.flatten())
@@ -459,8 +476,8 @@ def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: di
 
 
         # Add labels, title, and legend
-        min_interv_year = data_dict["SQ"]["interv_under5_deaths_df"].index.min()
-        max_interv_year = data_dict["SQ"]["interv_under5_deaths_df"].index.max()
+        min_interv_year = outcomes_dict["SQ"]["interv_under5_deaths_df"].index.min()
+        max_interv_year = outcomes_dict["SQ"]["interv_under5_deaths_df"].index.max()
         plt.ylabel(f'{cohort} Deaths (Sum over intervention period)')
         plt.xlabel('Scenario')
         plt.title(
