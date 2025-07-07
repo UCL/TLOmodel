@@ -45,7 +45,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from plotnine import *  # ggplot, aes, geom_point for ggplots from R
+from plotnine import aes, element_text, geom_bar, ggplot, labs, theme, ylim  # for ggplots from R
+
 from tlo.methods.consumables import check_format_of_consumables_file
 
 # define a timestamp for script outputs

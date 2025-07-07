@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
+
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
@@ -34,7 +35,7 @@ resourcefilepath = Path("./resources")
 
 TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
-make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
+make_graph_file_name = lambda stub: outputspath / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
 _, age_grp_lookup = make_age_grp_lookup()
 
@@ -320,7 +321,7 @@ def extract_results_by_person_year(results_folder: Path,
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
-                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                assert isinstance(output_from_eval, pd.Series), 'Custom command does not generate a pd.Series'
                 res[draw_run] = output_from_eval.reset_index().drop(columns = ['year']).T  / get_population_size(draw, run)
                 res[draw_run] = res[draw_run].sum(axis =1)
             except KeyError:
@@ -392,7 +393,7 @@ def extract_results_by_person_year_by_cause(results_folder: Path,
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
-                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                assert isinstance(output_from_eval, pd.Series), 'Custom command does not generate a pd.Series'
                 output_from_eval = output_from_eval[output_from_eval.index.get_level_values(0) == cause].droplevel(0)
                 res[draw_run] = output_from_eval.reset_index().drop(columns = ['year']).T / get_population_size(draw, run)
                 res[draw_run] = res[draw_run].sum(axis =1)

@@ -13,17 +13,12 @@ Outputs:
 Consumable availability is measured as probability of stockout at any point in time.
 """
 
-import calendar
+import copy
 import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from tabulate import tabulate
-import copy
-
-from collections import defaultdict
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
@@ -307,7 +302,7 @@ for col in today_cols:
     i = 1
 
 today_categories = list(dict.fromkeys(today_categories))
-today_categories = [x for x in today_categories if pd.isnull(x) == False]  # drop nan from list
+today_categories = [x for x in today_categories if not pd.isnull(x)]  # drop nan from list
 
 # Create dictionary to map availability options to a number
 today_categories_dict = {'NEVERAVAILABLE': -1}
@@ -336,7 +331,7 @@ for col in last_mth_or_3mts_cols:
 
 last_mth_or_3mts_cols_categories = list(dict.fromkeys(last_mth_or_3mts_cols_categories))
 last_mth_or_3mts_cols_categories = [x for x in last_mth_or_3mts_cols_categories if
-                                    pd.isnull(x) == False]  # drop nan from list
+                                    not pd.isnull(x)]  # drop nan from list
 
 # Create dictionary to map availability options to a number
 last_mth_or_3mts_cols_categories_dict = {'PRODUCTNOTOFFERED': -1}
@@ -803,7 +798,7 @@ for col in fac_vars_binary:
     df_for_regression_binvars_cleaned.loc[cond, col] = np.nan
 
     assert len([x for x in df_for_regression_binvars_cleaned[col].unique() if
-                pd.isnull(x) == False]) == 2  # verify that the variable is binary
+                not pd.isnull(x)]) == 2  # verify that the variable is binary
 
     df_for_regression_binvars_cleaned[col] = df_for_regression_binvars_cleaned[col].map(binary_dict).fillna(df_for_regression_binvars_cleaned[col])
 

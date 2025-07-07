@@ -12,8 +12,9 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import tlo
 from pandas.testing import assert_series_equal
+
+import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
@@ -1120,7 +1121,9 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated).all(axis=1),
+                ~(
+                    df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated
+                ).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
