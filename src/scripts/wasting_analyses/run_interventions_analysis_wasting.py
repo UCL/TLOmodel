@@ -231,7 +231,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                 for j, cohort in enumerate(cohorts_to_plot):
                     if interv == 'SQ':
                         mort_rate_png_file_path = outputs_path / (
-                            f"{cohort}_mort_rate_{interv}_UNICEF__"
+                            f"{cohort}_mort_rate_{interv}_UNICEF_WPP__"
                             f"{interv_timestamps_dict[interv]}.png"
                         )
                     else:
