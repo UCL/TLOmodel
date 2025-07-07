@@ -793,10 +793,12 @@ def test_hsi_testandrefer_and_prep(seed):
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 1.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_is_on_prep"]
-    assert 0 == len([
-        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
-    ])
+    events = [
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
+        if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) and (ev[0] >= date_decision_event)
+    ]
+
+    assert len(events) > 0, "No HSI_Hiv_StartOrContinueOnPrep events found on or after the decision date"
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI or
     # "decision" events
@@ -804,6 +806,7 @@ def test_hsi_testandrefer_and_prep(seed):
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.0
     decision_event.apply(person_id)
+
     assert not df.at[person_id, "hv_is_on_prep"]
     assert 0 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if

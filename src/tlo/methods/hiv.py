@@ -2323,26 +2323,25 @@ class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
                 key="message",
                 data="This event should not be running: Hiv_DecisionToContinueOnPrEP is for those currently on prep")
 
-        # check still eligible, person must be <30 years old or a fsw
-        if (person["age_years"] >= 25) or not person["li_is_sexworker"]:
-            return
+        # check still eligible, person must be <25 years old or a fsw
+        if (person["age_years"] < 25) or person["li_is_sexworker"]:
 
-        # Determine if this appointment is actually attended by the person who has already started on PrEP
-        if (
-            m.rng.random_sample()
-            < m.parameters["probability_of_being_retained_on_prep_every_3_months"]
-        ):
-            # Continue on PrEP - and schedule an HSI for a refill appointment today
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
-                topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=7),
-                priority=0,
-            )
+            # Determine if this appointment is actually attended by the person who has already started on PrEP
+            if (
+                m.rng.random_sample()
+                < m.parameters["probability_of_being_retained_on_prep_every_3_months"]
+            ):
+                # Continue on PrEP - and schedule an HSI for a refill appointment today
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=m),
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=7),
+                    priority=0,
+                )
 
-        else:
-            # Defaults to being off PrEP - reset flag and take no further action
-            df.at[person_id, "hv_is_on_prep"] = False
+            else:
+                # Defaults to being off PrEP - reset flag and take no further action
+                df.at[person_id, "hv_is_on_prep"] = False
 
 
 class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
