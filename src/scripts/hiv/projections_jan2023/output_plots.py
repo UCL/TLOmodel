@@ -666,6 +666,7 @@ Tb_tx_coverage = output["tlo.methods.tb"]["tb_treatment"]
 Tb_tx_coverage = Tb_tx_coverage.set_index("date")
 Tb_tx_coverage.index = pd.to_datetime(Tb_tx_coverage.index)
 
+# HIV
 cov_over_time = output["tlo.methods.hiv"]["hiv_program_coverage"]
 cov_over_time = cov_over_time.set_index("date")
 
