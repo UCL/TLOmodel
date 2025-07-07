@@ -2503,18 +2503,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     df.at[person_id, "hv_diagnosed"] = True
                     self.module.do_when_hiv_diagnosed(person_id=person_id)
 
-                    # Screen for tb if they have not been referred from a Tb HSI
-                    # and do not currently have TB diagnosis
-                    if "Tb" in self.sim.modules and (self.referred_from != 'Tb') and not person["tb_diagnosed"]:
-                        self.sim.modules["HealthSystem"].schedule_hsi_event(
-                            tb.HSI_Tb_ScreeningAndRefer(
-                                person_id=person_id, module=self.sim.modules["Tb"]
-                            ),
-                            topen=self.sim.date,
-                            tclose=None,
-                            priority=0,
-                        )
-
             else:
                 # The test_result is HIV negative
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
