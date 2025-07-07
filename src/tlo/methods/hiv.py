@@ -307,10 +307,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.REAL,
             "adjustment to current testing rates to account for multiple routes into HIV testing",
         ),
-        "treatment_initiation_adjustment": Parameter(
-            Types.REAL,
-            "adjustment to current ART coverage levels to account for defaulters",
-        ),
         "prob_hiv_test_at_anc_or_delivery": Parameter(
             Types.REAL,
             "probability of a women having hiv test at anc or following delivery",
@@ -1497,7 +1493,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         return_prob = prob_art.loc[
                           (prob_art.year == current_year) &
                           (prob_art.age == "adults"),
-                          "prob_art_if_dx"].values[0] * self.parameters["treatment_initiation_adjustment"]
+                          "prob_art_if_dx"].values[0]
 
         return return_prob
 
