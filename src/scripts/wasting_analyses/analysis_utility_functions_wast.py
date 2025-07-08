@@ -312,13 +312,13 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
             unicef_colour = '#1CABE2'
 
             # Filter data to include only years present in both plot_years and source years
-            unicef_filtered_neo = [(y, r, l, u) for y, r, l, u in \
+            unicef_filtered_neo = [(year, mort_rate, low, upper) for year, mort_rate, low, upper in \
                                    zip(unicef_neo_years, unicef_neo_rates, unicef_neo_lower, unicef_neo_upper) if \
-                                   y in plot_years]
-            unicef_filtered_under5 = [(y, r, l, u) for y, r, l, u in \
+                                   year in plot_years]
+            unicef_filtered_under5 = [(year, mort_rate, low, upper) for year, mort_rate, low, upper in
                                       zip(unicef_under5_years, unicef_under5_rates,
-                                          unicef_under5_lower, unicef_under5_upper) if \
-                                      y in plot_years]
+                    unicef_under5_lower, unicef_under5_upper) if
+                year in plot_years]
 
             (unicef_filtered_neo_years, unicef_filtered_neo_rates,
              unicef_filtered_neo_lower, unicef_filtered_neo_upper) = \

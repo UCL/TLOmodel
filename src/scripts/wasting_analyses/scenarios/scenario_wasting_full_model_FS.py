@@ -13,10 +13,7 @@ or locally using:
 import warnings
 
 from tlo import Date, logging
-from tlo.analysis.utils import (
-    get_parameters_for_status_quo,
-    mix_scenarios,
-)
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
