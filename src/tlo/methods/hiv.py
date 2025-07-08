@@ -76,11 +76,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.lm = dict()
         self.item_codes_for_consumables_required = dict()
 
-    INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager", "Contraception"}
+    INIT_DEPENDENCIES = {"Demography", "HealthSystem", "Lifestyle", "SymptomManager"}
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
 
-    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes'}
+    ADDITIONAL_DEPENDENCIES = {'Tb', 'NewbornOutcomes', "Contraception", "Labour"}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -436,6 +436,17 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         workbook = read_csv_files(resourcefilepath / 'ResourceFile_HIV', files=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
+        preg_art_path = resourcefilepath / 'ResourceFile_HIV' / 'art_coverage_pregnant_women.csv'
+        preg_art_df = pd.read_csv(preg_art_path)
+
+        # Extract the value for 'art_coverage_pregnant_women'
+        art_cov_value = preg_art_df.loc[
+            preg_art_df['parameter_name'] == 'art_coverage_pregnant_women', 'value'
+        ].values[0]
+
+        # Assign it to the parameters dictionary
+        p['art_coverage_pregnant_women'] = float(art_cov_value)
+
         # Load data on HIV prevalence
         p["hiv_prev"] = workbook["hiv_prevalence"]
 
@@ -752,7 +763,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             (df.hv_art == "not")].index
         # Randomly assign ART based on coverage parameter
         n = len(hiv_positive_pregnant_women)
-        n_to_assign = int(n * self.parameters["art_coverage_pregnant_women"])
+        n_to_assign = int(n * params["art_coverage_pregnant_women"])
         assigned_art_preg = self.rng.choice(hiv_positive_pregnant_women, size=n_to_assign, replace=False)
 
         df.loc[assigned_art_preg, "hv_art"] = "on_VL_suppressed"
