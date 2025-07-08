@@ -1984,10 +1984,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # unimproved sanitation
         # NOTE: True = no sanitation
-        li_no_clean_drinking_water = len(
-            df[df.li_unimproved_sanitation & df.is_alive & (df.age_years < 5)]
-        ) / len(df[df.is_alive & (df.age_years < 5)]
-                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
+        under_5 = df.is_alive & (df.age_years < 5)
+        between_5_and_15 = df.is_alive & (df.age_years.between(5, 15)
+        
+        li_no_clean_drinking_water = sum(df.li_unimproved_sanitation & under_5) / sum(under_5) if sum(under_5) else 0
 
         no_sanitation_SAC = len(
             df[df.li_unimproved_sanitation & df.is_alive & df.age_years.between(5, 15)]
