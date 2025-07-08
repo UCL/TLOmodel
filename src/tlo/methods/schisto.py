@@ -937,6 +937,10 @@ class SchistoSpecies:
         # assign initial worm burden
         self._assign_initial_worm_burden(population)
 
+        # update infection status and symptoms
+        # todo check this works - infection status should be updated
+        self.schisto_module.update_infection_symptoms(df, prop('aggregate_worm_burden'), f'ss_{self.prefix}')
+
     def initialise_simulation(self, sim):
         """
         * Schedule natural history events for those with worm burden initially.
@@ -1060,10 +1064,11 @@ class SchistoSpecies:
             reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
 
             # Determine a 'contact rate' for each person
-            contact_rates = pd.Series(1, index=in_the_district, dtype=float)
+            # contact_rates = pd.Series(1, index=in_the_district, dtype=float)
 
             # multiply by susceptibility (0 or 1)
-            contact_and_susceptibility = contact_rates * df.loc[in_the_district, prop('susceptibility')]
+            # contact_and_susceptibility = contact_rates * df.loc[in_the_district, prop('susceptibility')]
+            contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
 
             for age_group in ['PSAC', 'SAC', 'Adults']:
                 age_range = _AGE_GROUPS[age_group]
