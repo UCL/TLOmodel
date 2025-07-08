@@ -2,7 +2,7 @@ import datetime
 import warnings
 from collections import defaultdict
 from itertools import repeat
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -48,6 +48,10 @@ class Consumables:
             'all_medicines_and_other_available',
             'all_vital_available',
             'all_drug_or_vaccine_available',
+            'scenario1', 'scenario2', 'scenario3', 'scenario4',
+            'scenario5', 'scenario6', 'scenario7', 'scenario8',
+            'scenario9', 'scenario10', 'scenario11', 'scenario12',
+            'scenario13', 'scenario14', 'scenario15',
         }
 
         # Create internal items:
@@ -58,12 +62,14 @@ class Consumables:
         self._is_unknown_item_available = None  # Whether an unknown item is available, by facility_id
         self._not_recognised_item_codes = defaultdict(set)  # The item codes requested but which are not recognised.
 
+        # Save data
+        self._availability_data = availability_data
+
         # Save designations
         self._item_code_designations = item_code_designations
 
-        # Save all item_codes that are defined and pd.Series with probs of availability from ResourceFile
-        self.item_codes, self._processed_consumables_data = \
-            self._process_consumables_data(availability_data=availability_data)
+        # Save all item_codes
+        self.item_codes = set(self._availability_data.item_code)
 
         # Set the availability based on the argument provided (this can be updated later after the class is initialised)
         self.availability = availability
@@ -124,14 +130,21 @@ class Consumables:
         overriding the availability of specific consumables."""
 
         # Load the original read-in data (create copy so that edits do change the original)
-        self._prob_item_codes_available = self._processed_consumables_data.copy()
+        self._prob_item_codes_available = self._process_consumables_data(
+            availability_data=self._availability_data,
+            availability=availability
+        )
 
         # Load designations of the consumables
         item_code_designations = self._item_code_designations
 
         # Over-ride the data according to option for `availability`
-        if availability == 'default':
-            pass
+        if availability in ('default',
+                            'scenario1', 'scenario2', 'scenario3', 'scenario4',
+                            'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                            'scenario13', 'scenario14', 'scenario15'):
+            pass  # change already picked up in `self._process_consumables_data()`
         elif availability == 'all':
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
         elif availability == 'none':
@@ -162,16 +175,22 @@ class Consumables:
         else:
             raise ValueError
 
-    def _process_consumables_data(self, availability_data: pd.DataFrame) -> Tuple[set, pd.Series]:
+    def _process_consumables_data(self, availability_data: pd.DataFrame, availability: str) -> pd.Series:
         """Helper function for processing the consumables data, passed in here as pd.DataFrame that has been read-in by
         the HealthSystem.
-        Returns: (i) the set of all recognised item_codes; (ii) pd.Series of the availability of
-        each consumable at each facility_id during each month.
+        Returns pd.Series of the availability of each consumable at each facility_id during each month.
         """
-        return (
-            set(availability_data.item_code),
-            availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
-        )
+        assert availability is not None, "This argument cannot be None."
+
+        if availability in ('scenario1', 'scenario2', 'scenario3', 'scenario4',
+                              'scenario5', 'scenario6', 'scenario7', 'scenario8',
+                            'scenario9', 'scenario10', 'scenario11', 'scenario12',
+                            'scenario13', 'scenario14', 'scenario15',):
+            return availability_data.set_index(['month', 'Facility_ID', 'item_code'])[f'available_prop_{availability}']
+
+        else:
+            return availability_data.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
+
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, given the current
@@ -394,7 +413,10 @@ def check_format_of_consumables_file(df, fac_ids):
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
 
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'available_prop'}
+    availability_columns = list(filter(lambda x: x.startswith('available_prop'), df.columns))
+
+    assert {'Facility_ID', 'month', 'item_code'}.issubset(df.columns)
+    assert len(availability_columns) > 0
 
     # Check that all permutations of Facility_ID, month and item_code are present
     pd.testing.assert_index_equal(
@@ -404,8 +426,8 @@ def check_format_of_consumables_file(df, fac_ids):
     )
 
     # Check that every entry for a probability is a float on [0,1]
-    assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
-    assert not pd.isnull(df.available_prop).any()
+    assert (df[availability_columns] <= 1.0).all().all() and (df[availability_columns] >= 0.0).all().all()
+    assert df[availability_columns].notnull().all().all()
 
 
 class ConsumablesSummaryCounter:

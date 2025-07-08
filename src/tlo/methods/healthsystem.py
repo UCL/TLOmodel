@@ -14,8 +14,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 
-import tlo
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
 )
@@ -1097,10 +1096,12 @@ class HealthSystem(Module):
             how='left'
         )
 
+        availability_columns = list(filter(lambda x: x.startswith('available_prop'), dfx.columns))
+
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1129,7 +1130,9 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(
+                    df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated
+                ).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
@@ -1411,7 +1414,7 @@ class HealthSystem(Module):
         assert hsi_event.TREATMENT_ID != ''
 
         # Check that the target of the HSI is not the entire population
-        assert not isinstance(hsi_event.target, tlo.population.Population)
+        assert not isinstance(hsi_event.target, Population)
 
         # This is an individual-scoped HSI event.
         # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
