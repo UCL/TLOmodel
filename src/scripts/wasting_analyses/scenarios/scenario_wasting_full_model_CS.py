@@ -13,7 +13,10 @@ or locally using:
 import warnings
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo
+from tlo.analysis.utils import (
+    get_parameters_for_status_quo,
+    mix_scenarios,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -28,7 +31,7 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=30_000,
+            initial_population_size=4_000,
             number_of_draws=1,
             runs_per_draw=10,
         )
@@ -47,20 +50,22 @@ class WastingAnalysis(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources,
-                         module_kwargs=get_parameters_for_status_quo())
+        return fullmodel(resourcefilepath=self.resources)
 
     # Scaling up care-seeking (CS) scenarios
     def draw_parameters(self, draw_number, rng):
         ### prob of care seeking for MAM cases
         # care_seek_prob = [0.1, 0.3, 0.5, 1.0]
-        care_seek_prob = [1.0, 1.01]
+        care_seek_prob = [1.0, 1.0]
 
-        return {
-            'Wasting': {
-                'interv_seeking_care_MAM_prob': care_seek_prob[draw_number]
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {
+                'Wasting': {
+                    'interv_seeking_care_MAM_prob': care_seek_prob[draw_number]
+                }
             }
-        }
+        )
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run

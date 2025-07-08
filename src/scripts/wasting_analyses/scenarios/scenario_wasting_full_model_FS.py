@@ -13,7 +13,10 @@ or locally using:
 import warnings
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo
+from tlo.analysis.utils import (
+    get_parameters_for_status_quo,
+    mix_scenarios,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -28,7 +31,7 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=30_000,
+            initial_population_size=4_000,
             number_of_draws=1,
             runs_per_draw=10,
         )
@@ -47,23 +50,23 @@ class WastingAnalysis(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources,
-                         module_kwargs=get_parameters_for_status_quo())
+        return fullmodel(resourcefilepath=self.resources)
 
-    # Food supplement (FS) scenarios:
-    # Applying fixed availability probability across all facilities and months for all food supplements
-    # with FS intervention
+    # Scaling up growth monitoring (GM) attendance scenarios
     def draw_parameters(self, draw_number, rng):
-        avail_prob = [1.0, 1.01]
+        avail_prob = [1.0, 1.0]
 
-        return {
-            'Wasting': {
-                'interv_food_supplements_avail_bool': True,
-                'interv_avail_F75milk': avail_prob[draw_number],
-                'interv_avail_RUTF': avail_prob[draw_number],
-                'interv_avail_CSB++': avail_prob[draw_number],
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {
+                'Wasting': {
+                    'interv_food_supplements_avail_bool': True,
+                    'interv_avail_F75milk': avail_prob[draw_number],
+                    'interv_avail_RUTF': avail_prob[draw_number],
+                    'interv_avail_CSB++': avail_prob[draw_number],
+                }
             }
-        }
+        )
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
