@@ -552,6 +552,7 @@ class HealthSystem(Module):
         self.parameters['Master_Facilities_List'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
         # If include_ringfenced_clinics is True, then read in the Resource file that contains the ringfenced clinics
+        self.parameters['Ringfenced_Clinics'] = pd.DataFrame()  # Initialise as empty DataFrame
         if self.include_ringfenced_clinics:
             df = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
@@ -567,6 +568,7 @@ class HealthSystem(Module):
                     "Please ensure that the fractions for each appointment type sum to 1.0."
                 )
             self.parameters['Ringfenced_Clinics'] = df
+
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -998,6 +1000,11 @@ class HealthSystem(Module):
             ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
             self._clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
             self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
+        else:
+            self._clinics_capabilities_per_staff = {}
+
+
+
 
     """Set the clinic eligibility for this HSI event Queue Item."""
     def set_clinic_eligibility(self, hsi_q_item: HSIEventQueueItem, clinic_access: str = None) -> None:
@@ -1854,13 +1861,12 @@ class HealthSystem(Module):
         squeeze_factor: float,
         did_run: bool,
         priority: int,
-        clinic: str
+        clinic: Optional[str] = None
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         # Debug logger gives simple line-list for every HSI event
-        logger.debug(
-            key="HSI_Event",
-            data={
+
+        hsi_record = {
                 'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
@@ -1870,9 +1876,14 @@ class HealthSystem(Module):
                 'did_run': did_run,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
-                'Equipment': sorted(event_details.equipment),
-                'Clinic': clinic
-            },
+                'Equipment': sorted(event_details.equipment)
+        }
+        if clinic is not None:
+            hsi_record['Clinic'] = clinic
+
+        logger.debug(
+            key="HSI_Event",
+            data=hsi_record,
             description="record of each HSI event"
         )
         if did_run:
@@ -2661,7 +2672,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                    squeeze_factor=0,
                    did_run=False,
                    priority=next_event_tuple.priority,
-                   clinc=next_event.clinic_eligibility
+                   clinic=next_event_tuple.clinic_eligibility
                    )
 
         # add events from the list_of_events_not_due_today back into the queue
