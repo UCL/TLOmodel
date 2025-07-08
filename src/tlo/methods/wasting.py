@@ -1170,7 +1170,7 @@ class Wasting_ProgressionToSevere_Event(Event, IndividualScopeEventMixin):
             key="progression to severe wasting",
             data={
                 'person_id': person_id,
-                'age_group': self.sim.age_grps.get(df.loc[person_id].age_years, '5+y'),
+                'age_group': self.module.age_grps.get(df.loc[person_id].age_years, '5+y'),
                 'date': self.sim.date,
                 'natural history scheduled':
                     "recovery to moderate wasting" if pd.isnull(df.at[person_id, 'un_sam_death_date']) else "death",
