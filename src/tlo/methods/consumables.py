@@ -34,7 +34,9 @@ class Consumables:
                  availability_data: pd.DataFrame = None,
                  item_code_designations: pd.DataFrame = None,
                  rng: np.random = None,
-                 availability: str = 'default'
+                 availability: str = 'default',
+                 treatment_ids_overridden: Optional[list] = None,
+                 treatment_ids_overridden_avail: Optional[float] = None,
                  ) -> None:
 
         self._options_for_availability = {
@@ -75,6 +77,10 @@ class Consumables:
         # Create (and save pointer to) the `ConsumablesSummaryCounter` helper class
         self._summary_counter = ConsumablesSummaryCounter()
 
+        # save treatment ids to override consumable availability
+        self.treatment_ids_overridden = treatment_ids_overridden if treatment_ids_overridden else []
+        self.treatment_ids_overridden_avail = treatment_ids_overridden_avail if treatment_ids_overridden_avail else 0.0
+
     @property
     def availability(self):
         """Returns the internally stored value for the assumption of availability of consumables."""
@@ -89,6 +95,28 @@ class Consumables:
         assert value in self._options_for_availability, f"Argument `cons_availability` is not recognised: {value}."
         self._availability = value
         self._update_prob_item_codes_available(self._availability)
+
+    @property
+    def treatment_ids_overridden(self):
+        """Returns the property self._treatment_ids_overridden"""
+        return self._treatment_ids_overridden
+
+    @treatment_ids_overridden.setter
+    def treatment_ids_overridden(self, value: List[str]):
+        """Sets treatmets_id_overriden"""
+        assert isinstance(value, list), "Value for `treatment_ids_overridden` must be a list."
+        self._treatment_ids_overridden = value
+
+    @property
+    def treatment_ids_overridden_avail(self):
+        return self._treatment_ids_overridden_avail
+
+    @treatment_ids_overridden_avail.setter
+    def treatment_ids_overridden_avail(self, value: float):
+        assert isinstance(value, float), "Value for `treatment_ids_overridden_avail` must be a float."
+        assert 0.0 <= value <= 1.0, "Value for `treatment_ids_overridden_avail` must be between 0.0 and 1.0"
+        self._treatment_ids_overridden_avail = value
+
 
     def on_start_of_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
@@ -221,7 +249,7 @@ class Consumables:
                              essential_item_codes: dict,
                              optional_item_codes: Optional[dict] = None,
                              to_log: bool = True,
-                             treatment_id: Optional[str] = None
+                             treatment_id: Optional[str] = None,
                              ) -> dict:
         """This is a private function called by 'get_consumables` in the `HSI_Event` base class. It queries whether
         item_codes are currently available at a particular Facility_ID and logs the request.
@@ -242,8 +270,16 @@ class Consumables:
         if len(not_recognised_item_codes) > 0:
             self._not_recognised_item_codes[treatment_id] |= not_recognised_item_codes
 
-        # Look-up whether each of these items is available in this facility currently:
-        available = self._lookup_availability_of_consumables(item_codes=_all_item_codes, facility_info=facility_info)
+        # Check if the availability of consumables for this treatment id has been overridden
+        # avail_overidden is None if there is no overriding, and the value to be taken if there is.
+        override_probability = self.treatment_ids_overridden_avail if (
+            treatment_id in self.treatment_ids_overridden
+        ) else None
+
+        # Look-up whether each of these items is available in this facility currently.:
+        available = self._lookup_availability_of_consumables(item_codes=_all_item_codes,
+                                                             facility_info=facility_info,
+                                                             override_probability=override_probability)
 
         # Log the request and the outcome:
         if to_log:
@@ -274,11 +310,13 @@ class Consumables:
 
     def _lookup_availability_of_consumables(self,
                                             facility_info: 'FacilityInfo',  # noqa: F821
-                                            item_codes: dict
+                                            item_codes: dict,
+                                            override_probability: None|float,
                                             ) -> dict:
         """Lookup whether a particular item_code is in the set of available items for that facility (in
-        `self._is_available`). If any code is not recognised, use the `_is_unknown_item_available`."""
-        avail = dict()
+        `self._is_available`). If any code is not recognised, use the `_is_unknown_item_available`. If an
+        `override_probability` is not None, then use that as the probability of items being available. """
+
 
         if facility_info is None:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
@@ -289,12 +327,18 @@ class Consumables:
             else:
                 return {_i: False for _i in item_codes}
 
-        for _i in item_codes.keys():
-            if _i in self.item_codes:
-                avail.update({_i: _i in self._is_available[facility_info.id]})
-            else:
-                avail.update({_i: self._is_unknown_item_available[facility_info.id]})
-        return avail
+        if override_probability is not None:
+            # The probability of these items being available is being overriden
+            return dict(zip(item_codes, self._rng.random_sample(len(item_codes)) < override_probability))
+
+        else:
+            avail = dict()
+            for _i in item_codes.keys():
+                if _i in self.item_codes:
+                    avail.update({_i: _i in self._is_available[facility_info.id]})
+                else:
+                    avail.update({_i: self._is_unknown_item_available[facility_info.id]})
+            return avail
 
     def on_simulation_end(self):
         """Do tasks at the end of the simulation.
