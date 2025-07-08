@@ -938,7 +938,6 @@ class SchistoSpecies:
         self._assign_initial_worm_burden(population)
 
         # update infection status and symptoms
-        # todo check this works - infection status should be updated
         self.schisto_module.update_infection_symptoms(df, prop('aggregate_worm_burden'), f'ss_{self.prefix}')
 
     def initialise_simulation(self, sim):

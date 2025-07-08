@@ -57,6 +57,7 @@ def run_simulation(popsize,
         "tlo.methods.alri": logging.INFO,
         "tlo.methods.diarrhoea": logging.INFO,
         "tlo.methods.bladder_cancer": logging.INFO,
+        "tlo.methods.enhanced_lifestyle": logging.INFO,
     }
 
     # Establish the simulation object
@@ -93,7 +94,7 @@ def run_simulation(popsize,
     return sim, output
 
 # update these parameters
-sim, output = run_simulation(popsize=5000,
+sim, output = run_simulation(popsize=2000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
