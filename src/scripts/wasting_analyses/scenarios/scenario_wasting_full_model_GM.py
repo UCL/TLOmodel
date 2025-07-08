@@ -13,7 +13,10 @@ or locally using:
 import warnings
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo
+from tlo.analysis.utils import (
+    get_parameters_for_status_quo,
+    mix_scenarios,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -28,7 +31,7 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=30_000,
+            initial_population_size=4_000,
             number_of_draws=1,
             runs_per_draw=10,
         )
@@ -47,8 +50,7 @@ class WastingAnalysis(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources,
-                         module_kwargs=get_parameters_for_status_quo())
+        return fullmodel(resourcefilepath=self.resources)
 
     # Scaling up growth monitoring (GM) attendance scenarios
     def draw_parameters(self, draw_number, rng):
@@ -61,11 +63,14 @@ class WastingAnalysis(BaseScenario):
             [0.76, 1.00, 1.00]
         ]
 
-        return {
-            'Wasting': {
-                'interv_growth_monitoring_attendance_prob_agecat': attendance_probs_by_agecat[draw_number]
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {
+                'Wasting': {
+                    'interv_growth_monitoring_attendance_prob_agecat': attendance_probs_by_agecat[draw_number]
+                }
             }
-        }
+        )
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
