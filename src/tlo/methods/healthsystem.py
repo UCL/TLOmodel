@@ -541,7 +541,7 @@ class HealthSystem(Module):
 
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv') #####
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -552,16 +552,16 @@ class HealthSystem(Module):
             'ResourceFile_Appt_Types_Table.csv')
         self.parameters['Appt_Offered_By_Facility_Level'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
-            'ResourceFile_ApptType_By_FacLevel.csv')
+            'ResourceFile_ApptType_By_FacLevel.csv') #####
         self.parameters['Appt_Time_Table'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
-            'ResourceFile_Appt_Time_Table.csv')
+            'ResourceFile_Appt_Time_Table.csv') ######
 
         # Load 'Daily_Capabilities' (for both actual and funded)
         for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' /
-                'ResourceFile_Daily_Capabilities.csv')
+                'ResourceFile_Daily_Capabilities.csv') #####
 
         # Read in ResourceFile_Consumables
         self.parameters['item_and_package_code_lookups'] = pd.read_csv(
@@ -923,7 +923,7 @@ class HealthSystem(Module):
 
         facilities_per_level_and_district = {_facility_level: {} for _facility_level in self._facility_levels}
         facilities_by_facility_id = dict()
-        for facility_tuple in self.parameters['Master_Facilities_List'].itertuples():
+        for facility_tuple in mfl.itertuples():
             _facility_info = FacilityInfo(id=facility_tuple.Facility_ID,
                                           name=facility_tuple.Facility_Name,
                                           level=facility_tuple.Facility_Level,
@@ -994,8 +994,10 @@ class HealthSystem(Module):
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
 
+
+        mfl = self._get_filtered_mfl()
         # Create dataframe containing background information about facility and officer types
-        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        facility_ids = mfl['Facility_ID'].values
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
         # todo - <-- avoid use of the file or define differently?
 
@@ -1010,7 +1012,7 @@ class HealthSystem(Module):
         capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
 
         # Merge in information about facility from Master Facilities List
-        mfl = self.parameters['Master_Facilities_List']
+        # mfl = self.parameters['Master_Facilities_List']
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
 
         # Create a copy of this to store staff counts
@@ -1094,7 +1096,7 @@ class HealthSystem(Module):
         availability of consumables at level 2 with new values."""
 
         # get master facilities list
-        mfl = self.parameters['Master_Facilities_List']
+        mfl = self._get_filtered_mfl()
 
         # merge in facility level
         dfx = df_original.merge(
@@ -1228,13 +1230,12 @@ class HealthSystem(Module):
         - Level '5' facilities (headquarters), which are always excluded
         """
         mfl = self.parameters['Master_Facilities_List']
-        cham_levels = {'1a_cham', '1b_cham', '2_cham'}
 
         # Always exclude level '5'
         mfl = mfl[mfl['Facility_Level'] != '5']
 
         if not self.include_non_gov_facilities:
-            mfl = mfl[~mfl['Facility_Level'].isin(cham_levels)]
+            mfl = mfl[~mfl['Facility_Level'].str.contains('_cham', na=False)]
 
         return mfl
 
