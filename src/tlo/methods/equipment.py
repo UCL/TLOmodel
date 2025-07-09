@@ -12,43 +12,44 @@ logger_summary = logging.getLogger("tlo.methods.healthsystem.summary")
 
 
 class Equipment:
-    """This is the equipment class. It maintains a current record of the availability of equipment in the
-     health system. It is expected that this is instantiated by the :py:class:`~.HealthSystem` module.
+    """
+    This is the equipment class. It maintains a current record of the availability of equipment in the health system. It
+    is expected that this is instantiated by the :py:class:`~.HealthSystem` module.
 
-     The basic paradigm is that an :py:class:`~.HSI_Event` can declare equipment that is required for delivering the healthcare
-     service that the ``HSI_Event`` represents. The ``HSI_Event`` uses :py:meth:`HSI_event.add_equipment` to make these declarations,
-     with reference to the items of equipment that are defined in ``ResourceFile_EquipmentCatalogue.csv``. (These
-     declaration can be in the form of the descriptor or the equipment item code). These declarations can be used when
-     the ``HSI_Event`` is created but before it is run (in ``__init__``), or during execution of the ``HSI_Event`` (in :py:meth:`.HSI_Event.apply`).
+    The basic paradigm is that an :py:class:`~.HSI_Event` can declare equipment that is required for delivering the
+    healthcare service that the ``HSI_Event`` represents. The ``HSI_Event`` uses :py:meth:`HSI_event.add_equipment` to
+    make these declarations, with reference to the items of equipment that are defined in
+    ``ResourceFile_EquipmentCatalogue.csv``. (These declaration can be in the form of the descriptor or the equipment
+    item code). These declarations can be used when the ``HSI_Event`` is created but before it is run (in ``__init__``),
+    or during execution of the ``HSI_Event`` (in :py:meth:`.HSI_Event.apply`).
 
-     As the ``HSI_Event`` can declare equipment that is required before it is run, the HealthSystem *can* use this to
-     prevent an ``HSI_Event`` running if the equipment declared is not available. Note that for equipment that is declared
-     whilst the ``HSI_Event`` is running, there are no checks on availability, and the ``HSI_Event`` is allowed to continue
-     running even if equipment is declared is not available. For this reason, the ``HSI_Event`` should declare equipment
-     that is *essential* for the healthcare service in its ``__init__`` method. If the logic inside the ``apply`` method
-     of the ``HSI_Event`` depends on the availability of equipment, then it can find the probability with which
-     item(s) will be available using :py:meth:`.HSI_Event.probability_equipment_available`.
+    As the ``HSI_Event`` can declare equipment that is required before it is run, the HealthSystem *can* use this to
+    prevent an ``HSI_Event`` running if the equipment declared is not available. Note that for equipment that is
+    declared whilst the ``HSI_Event`` is running, there are no checks on availability, and the ``HSI_Event`` is allowed
+    to continue running even if equipment is declared is not available. For this reason, the ``HSI_Event`` should
+    declare equipment that is *essential* for the healthcare service in its ``__init__`` method. If the logic inside the
+    ``apply`` method of the ``HSI_Event`` depends on the availability of equipment, then it can find the probability
+    with which item(s) will be available using :py:meth:`.HSI_Event.probability_equipment_available`.
 
-     The data on the availability of equipment data refers to the proportion of facilities in a district of a
-     particular level (i.e., the ``Facility_ID``) that do have that piece of equipment. In the model, we do not know
-     which actual facility the person is attending (there are many actual facilities grouped together into one
-     ``Facility_ID`` in the model). Therefore, the determination of whether equipment is available is made
-     probabilistically for the ``HSI_Event`` (i.e., the probability that the actual facility being attended by the
-     person has the equipment is represented by the proportion of such facilities that do have that equipment). It is
-     assumed that the probabilities of each item being available are independent of one other (so that the
-     probability of all items being available is the product of the probabilities for each item). This probabilistic
-     determination of availability is only done _once_ for the ``HSI_Event``: i.e., if the equipment is determined to
-     not be available for the instance of the ``HSI_Event``, then it will remain not available if the same event is
-     re-scheduled / re-entered into the ``HealthSystem`` queue. This represents that if the facility that a particular
-     person attends for the ``HSI_Event`` does not have the equipment available, then it will still not be available on
-     another day.
+    The data on the availability of equipment data refers to the proportion of facilities in a district of a particular
+    level (i.e., the ``Facility_ID``) that do have that piece of equipment. In the model, we do not know which actual
+    facility the person is attending (there are many actual facilities grouped together into one ``Facility_ID`` in the
+    model). Therefore, the determination of whether equipment is available is made probabilistically for the
+    ``HSI_Event`` (i.e., the probability that the actual facility being attended by the person has the equipment is
+    represented by the proportion of such facilities that do have that equipment). It is assumed that the probabilities
+    of each item being available are independent of one other (so that the probability of all items being available is
+    the product of the probabilities for each item). This probabilistic determination of availability is only done
+    _once_ for the ``HSI_Event``: i.e., if the equipment is determined to not be available for the instance of the
+    ``HSI_Event``, then it will remain not available if the same event is re-scheduled / re-entered into the
+    ``HealthSystem`` queue. This represents that if the facility that a particular person attends for the ``HSI_Event``
+    does not have the equipment available, then it will still not be available on another day.
 
-     Where data on availability is not provided for an item, the probability of availability is inferred from the
-     average availability of other items in that facility ID. Likewise, the probability of an item being available
-     at a facility ID is inferred from the average availability of that item at other facilities. If an item code is
-     referred in ``add_equipment`` that is not recognised (not included in :py:attr:`catalogue`), a :py:exc:`UserWarning` is issued, but
-     that item is then silently ignored. If a facility ID is ever referred that is not recognised (not included in
-     :py:attr:`master_facilities_list`), an :py:exc:`AssertionError` is raised.
+    Where data on availability is not provided for an item, the probability of availability is inferred from the average
+    availability of other items in that facility ID. Likewise, the probability of an item being available at a facility
+    ID is inferred from the average availability of that item at other facilities. If an item code is referred in
+    ``add_equipment`` that is not recognised (not included in :py:attr:`catalogue`), a :py:exc:`UserWarning` is issued,
+    but that item is then silently ignored. If a facility ID is ever referred that is not recognised (not included in
+    :py:attr:`master_facilities_list`), an :py:exc:`AssertionError` is raised.
 
     :param catalogue: The database of all recognised item_codes.
     :param data_availability: Specifies the probability with which each equipment (identified by an ``item_code``) is
@@ -56,9 +57,10 @@ class Equipment:
         and every facility ID in the :py:attr`master_facilities_list`.
     :param: rng: The random number generator object to use for random numbers.
     :param availability: Determines the mode availability of the equipment. If 'default' then use the availability
-        specified in :py:attr:`data_availability`; if 'none', then let no equipment be ever be available; if 'all', then all
-        equipment is always available.
-    :param master_facilities_list: The :py:class:`~pandas.DataFrame` with the line-list of all the facilities in the health system.
+        specified in :py:attr:`data_availability`; if 'none', then let no equipment be ever be available; if 'all', then
+        all equipment is always available.
+    :param master_facilities_list: The :py:class:`~pandas.DataFrame` with the line-list of all the facilities in the
+        health system.
     """
 
     def __init__(
@@ -90,7 +92,6 @@ class Equipment:
         # {facility_id: {item_code: count}}.
         self._record_of_equipment_used_by_facility_id = defaultdict(Counter)
 
-
     def on_simulation_end(self):
         """Things to do when the simulation ends:
          * Log (to the summary logger) the equipment that has been used.
@@ -117,7 +118,10 @@ class Equipment:
         calculation if the equipment availability change event occurs during the simulation.
         """
         dat = self.data_availability.set_index(
-            [self.data_availability["Facility_ID"].astype(np.int64), self.data_availability["Item_Code"].astype(np.int64)]
+            [
+                self.data_availability["Facility_ID"].astype(np.int64),
+                self.data_availability["Item_Code"].astype(np.int64),
+            ]
         )["Pr_Available"]
 
         # Confirm that there is an estimate for every item_code at every facility_id

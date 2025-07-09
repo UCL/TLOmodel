@@ -13,13 +13,12 @@ from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_i
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    healthburden,
-    really_simplified_births,
     schisto,
     simplified_births,
-    symptommanager, healthburden,
+    symptommanager,
 )
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -42,13 +41,12 @@ species = ('mansoni', 'haematobium')
 
 # %% Run the simulation
 def run_simulation(popsize,
-                   use_really_simplified_births,
                    equal_allocation_by_district,
                    hs_disable_and_reject_all,
                    mda_execute,
                    single_district):
     start_date = Date(2010, 1, 1)
-    end_date = Date(2019, 12, 31)
+    end_date = Date(2014, 12, 31)
     # For logging
     custom_levels = {
         "*": logging.WARNING,
@@ -59,39 +57,31 @@ def run_simulation(popsize,
         "tlo.methods.alri": logging.INFO,
         "tlo.methods.diarrhoea": logging.INFO,
         "tlo.methods.bladder_cancer": logging.INFO,
+        "tlo.methods.enhanced_lifestyle": logging.INFO,
     }
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "schisto_test_runs",
-                                                                "custom_levels": custom_levels, })
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath,
-                                       equal_allocation_by_district=equal_allocation_by_district),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable_and_reject_all=hs_disable_and_reject_all,
+    sim = Simulation(start_date=start_date, seed=0,
+                     log_config={"filename": "schisto_test_runs", "custom_levels": custom_levels, },
+                     resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(equal_allocation_by_district=equal_allocation_by_district),
+                 enhanced_lifestyle.Lifestyle(),
+                 symptommanager.SymptomManager(),
+                 healthburden.HealthBurden(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthsystem.HealthSystem(disable_and_reject_all=hs_disable_and_reject_all,
                                            cons_availability='all'),
-                 *(
-                     [really_simplified_births.ReallySimplifiedBirths(
-                         resourcefilepath=resourcefilepath)] if use_really_simplified_births else
-                     [
-                         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-                     ]
-                 ),
-
-                 schisto.Schisto(resourcefilepath=resourcefilepath,
-                                 mda_execute=mda_execute,
+                 simplified_births.SimplifiedBirths(),
+                 schisto.Schisto(mda_execute=mda_execute,
                                  single_district=single_district),
                  )
 
     # sim.modules["Schisto"].parameters["calibration_scenario"] = 0
-    sim.modules["Schisto"].parameters["scaleup_WASH"] = 'pause'  # 1.0=True
-    sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
-    sim.modules["Schisto"].parameters['mda_coverage'] = 0.8
-    sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
-    sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
+    # sim.modules["Schisto"].parameters["scaleup_WASH"] = 0.0  # 1.0=True
+    # sim.modules["Schisto"].parameters["scaleup_WASH_start_year"] = 2011
+    # sim.modules["Schisto"].parameters['mda_coverage'] = 0
+    # sim.modules["Schisto"].parameters['mda_target_group'] = 'SAC'
+    # sim.modules["Schisto"].parameters['mda_frequency_months'] = 12
 
     # initialise the population
     sim.make_initial_population(n=popsize)
@@ -103,9 +93,8 @@ def run_simulation(popsize,
 
     return sim, output
 
-# todo update these parameters
-sim, output = run_simulation(popsize=1_000,
-                             use_really_simplified_births=False,
+# update these parameters
+sim, output = run_simulation(popsize=2000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
@@ -140,20 +129,18 @@ def get_model_prevalence_by_district(spec: str, year: int):
     _df = dfs[f'infection_status_{spec}']
     t = _df.loc[_df.index.year == year].iloc[-1]  # gets the last entry for 2010 (Dec)
     counts = t.unstack(level=1).groupby(level=0).sum().T
-    return ((counts['High-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(
+    return ((counts['Heavy-infection'] + counts['Moderate-infection'] + counts['Low-infection']) / counts.sum(
         axis=1)).to_dict()
 
 
 def get_expected_prevalence_by_district(species: str):
     """Get the prevalence of a particular species from the data (which is for year 2010/2011)."""
-    expected_district_prevalence = pd.read_csv(
-        resourcefilepath / f"ResourceFile_Schisto/InitialData_{species.lower()}.csv"
-    )
 
+    file_path = Path(resourcefilepath).joinpath('ResourceFile_Schisto', 'District_Params_' + species.lower() + '.csv')
+    expected_district_prevalence = pd.read_csv(file_path)
     expected_district_prevalence.set_index("District", inplace=True)
-    expected_district_prevalence["mean_prevalence"] /= 100
+    expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
 
-    expected_district_prevalence = expected_district_prevalence.loc[:, 'mean_prevalence'].to_dict()
     return expected_district_prevalence
 
 
@@ -167,7 +154,7 @@ def get_model_prevalence_by_district_over_time(spec: str):
     district_sums = df.groupby(level='district_of_residence', axis=1).sum()
 
     filtered_columns = df.columns.get_level_values('infection_status').isin(
-        ['High-infection', 'Moderate-infection', 'Low-infection'])
+        ['Heavy-infection', 'Moderate-infection', 'Low-infection'])
     infected = df.loc[:, filtered_columns].groupby(level='district_of_residence', axis=1).sum()
 
     prop_infected = infected.div(district_sums)
@@ -202,7 +189,7 @@ for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
         'Data': get_expected_prevalence_by_district(_spec),
-        'Model': get_model_prevalence_by_district(_spec, year=2010)}
+        'Model': get_model_prevalence_by_district(_spec, year=2011)}
     ).loc[fitted_districts].plot.bar(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (Fitted)')
@@ -219,7 +206,7 @@ for i, _spec in enumerate(species):
     ax = axes[i]
     pd.DataFrame(data={
         'Data': get_expected_prevalence_by_district(_spec),
-        'Model': get_model_prevalence_by_district(_spec, year=2010)}
+        'Model': get_model_prevalence_by_district(_spec, year=2011)}
     ).plot(ax=ax)
     ax.set_title(f"{_spec}")
     ax.set_xlabel('District (All)')
@@ -252,32 +239,3 @@ fig.tight_layout()
 # fig.savefig(make_graph_file_name('annual_prev_in_districts'))
 fig.show()
 
-
-# PROPORTION SUSCEPTIBLE
-
-def plot_susceptibility(dfs_susc: dict):
-    """
-    Plot susceptibility over time for each species.
-
-    Args:
-    dfs_susc (dict): A dictionary where each key is a species name and the value is a DataFrame
-                     containing susceptibility data with 'date' as the index.
-    """
-    for species, df in dfs_susc.items():
-        plt.figure(figsize=(10, 6))
-        for column in df.columns:
-            plt.plot(df.index, df[column], label=column)
-
-        plt.title(f'Proportion susceptible {species.capitalize()}')
-        plt.xlabel('Date')
-        plt.ylabel('Proportion susceptible')
-        plt.legend(title="Districts", bbox_to_anchor=(0.5, -0.2), loc="upper center", ncol=4)
-        plt.grid(True)
-        plt.ylim(0, 1.0)
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.show()
-
-
-# Example usage
-plot_susceptibility(dfs_susc)

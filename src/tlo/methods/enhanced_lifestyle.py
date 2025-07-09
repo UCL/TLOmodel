@@ -3,7 +3,7 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -25,9 +25,8 @@ class Lifestyle(Module):
     by urban/rural, wealth, tobacco usage etc.
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.resourcefilepath: Path = resourcefilepath
 
         # a pointer to the linear models class
         self.models = None
@@ -341,10 +340,9 @@ class Lifestyle(Module):
         "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
     }
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         p = self.parameters
-        dataframes = read_csv_files(
-            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced',
+        dataframes = read_csv_files(resourcefilepath / 'ResourceFile_Lifestyle_Enhanced',
             files=["parameter_values", "urban_rural_by_district"],
         )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
@@ -1985,63 +1983,37 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # ---------------------- log properties associated with WASH
+        under_5 = df.is_alive & (df.age_years < 5)
+        between_5_and_15 = df.is_alive & (df.age_years.between(5, 15))
 
         # unimproved sanitation
         # NOTE: True = no sanitation
-        li_no_clean_drinking_water = len(
-            df[df.li_unimproved_sanitation & df.is_alive & (df.age_years < 5)]
-        ) / len(df[df.is_alive & (df.age_years < 5)]
-                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
-
-        no_sanitation_SAC = len(
-            df[df.li_unimproved_sanitation & df.is_alive & df.age_years.between(5, 15)]
-        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
-            df[df.is_alive & df.age_years.between(5, 15)]) else 0
-
-        no_sanitation_ALL = len(
-            df[df.li_unimproved_sanitation & df.is_alive]
-        ) / len(df[df.is_alive]
-                ) if len(df[df.is_alive]) else 0
+        no_sanitation_PSAC = sum(df.li_unimproved_sanitation & under_5) / sum(under_5) if sum(under_5) else 0
+        no_sanitation_SAC = sum(df.li_unimproved_sanitation & between_5_and_15) / sum(between_5_and_15) if sum(
+            between_5_and_15) else 0
+        no_sanitation_ALL = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive) if sum(df.is_alive) else 0
 
         # no access hand-washing
         # NOTE: True = no access hand-washing
-        no_handwashing_PSAC = len(
-            df[df.li_no_access_handwashing & df.is_alive & (df.age_years < 5)]
-        ) / len(df[df.is_alive & (df.age_years < 5)]
-                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
-
-        no_handwashing_SAC = len(
-            df[df.li_no_access_handwashing & df.is_alive & df.age_years.between(5, 15)]
-        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
-            df[df.is_alive & df.age_years.between(5, 15)]) else 0
-
-        no_handwashing_ALL = len(
-            df[df.li_no_access_handwashing & df.is_alive]
-        ) / len(df[df.is_alive]
-                ) if len(df[df.is_alive]) else 0
+        no_handwashing_PSAC = sum(df.li_no_access_handwashing & under_5) / sum(under_5) if sum(under_5) else 0
+        no_handwashing_SAC = sum(df.li_no_access_handwashing & between_5_and_15) / sum(between_5_and_15) if sum(
+            between_5_and_15) else 0
+        no_handwashing_ALL = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
 
         # no clean drinking water
         # NOTE: True = no clean drinking water
-        no_drinkingwater_PSAC = len(
-            df[df.li_no_clean_drinking_water & df.is_alive & (df.age_years < 5)]
-        ) / len(df[df.is_alive & (df.age_years < 5)]
-                ) if len(df[df.is_alive & (df.age_years < 5)]) else 0
-
-        no_drinkingwater_SAC = len(
-            df[df.li_no_clean_drinking_water & df.is_alive & df.age_years.between(5, 15)]
-        ) / len(df[df.is_alive & df.age_years.between(5, 15)]) if len(
-            df[df.is_alive & df.age_years.between(5, 15)]) else 0
-
-        no_drinkingwater_ALL = len(
-            df[df.li_no_clean_drinking_water & df.is_alive]
-        ) / len(df[df.is_alive]
-                ) if len(df[df.is_alive]) else 0
+        no_drinkingwater_PSAC = sum(df.li_no_clean_drinking_water & under_5) / sum(under_5) if sum(under_5) else 0
+        no_drinkingwater_SAC = sum(df.li_no_clean_drinking_water & between_5_and_15) / sum(between_5_and_15) if sum(
+            between_5_and_15) else 0
+        no_drinkingwater_ALL = sum(df.li_no_clean_drinking_water & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
 
         logger.info(
             key="summary_WASH_properties",
             description="Summary of current status of WASH properties",
             data={
-                "no_sanitation_PSAC": li_no_clean_drinking_water,
+                "no_sanitation_PSAC": no_sanitation_PSAC,
                 "no_sanitation_SAC": no_sanitation_SAC,
                 "no_sanitation_ALL": no_sanitation_ALL,
                 "no_handwashing_PSAC": no_handwashing_PSAC,

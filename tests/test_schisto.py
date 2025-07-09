@@ -25,16 +25,15 @@ start_date = Date(2010, 1, 1)
 
 
 def get_simulation(seed, start_date, mda_execute=True):
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           cons_availability='all'),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute, single_district=True),
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 healthsystem.HealthSystem(cons_availability='all'),
+                 simplified_births.SimplifiedBirths(),
+                 schisto.Schisto(mda_execute=mda_execute),
                  )
     return sim
 
@@ -77,10 +76,6 @@ def test_diagnosis_and_treatment(seed):
     worm burden in individual """
 
     sim = get_simulation(seed=seed, start_date=start_date, mda_execute=True)
-    # set symptoms to high probability
-    sim.modules['Schisto'].parameters["sm_symptoms"] = {key: 1 for key in
-                                                        sim.modules['Schisto'].parameters["sm_symptoms"]}
-
     sim.make_initial_population(n=1)
 
     df = sim.population.props
@@ -101,12 +96,11 @@ def test_diagnosis_and_treatment(seed):
     mature_worms = schisto.SchistoMatureJuvenileWormsEvent(module=sim.modules['Schisto'])
     mature_worms.apply(sim.population)
 
-    assert df.at[person_id, "ss_sm_infection_status"] == 'High-infection'
+    assert df.at[person_id, "ss_sm_infection_status"] == 'Heavy-infection'
     assert df.at[person_id, "ss_sm_aggregate_worm_burden"] == infecting_worms
 
     # check symptoms assigned
-    symptom_list = {'anemia', 'fever', 'ascites', 'diarrhoea', 'vomiting', 'hepatomegaly'}
-    assert symptom_list.issubset(sim.modules['SymptomManager'].has_what(person_id))
+    assert 'ss_sm_heavy' in sim.modules['SymptomManager'].has_what(person_id)
 
     # refer for test
     test_appt = schisto.HSI_Schisto_TestingFollowingSymptoms(person_id=person_id,
@@ -124,8 +118,6 @@ def test_diagnosis_and_treatment(seed):
     tx_appt = schisto.HSI_Schisto_TreatmentFollowingDiagnosis(person_id=person_id,
                                                  module=sim.modules['Schisto'])
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
-
-    assert df.at[person_id, 'ss_last_PZQ_date'] != pd.NaT
 
     # check worm burden now reduced
     assert df.at[person_id, 'ss_sm_aggregate_worm_burden'] < infecting_worms
