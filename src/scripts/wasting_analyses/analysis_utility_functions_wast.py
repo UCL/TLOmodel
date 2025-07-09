@@ -497,8 +497,19 @@ def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: di
 
             y_top = ax.get_ylim()[1]
 
+            # Add text label for the bar height (sum), above the bar
+            ax.text(
+                scenario,
+                sums[0] + (y_top * 0.02),  # small offset above the bar
+                f"{sums[0]:,.2f}",
+                color='black',
+                ha='center',
+                va='bottom',
+                fontsize=12
+            )
+
             # Add text labels for ci_low and ci_upper
-            text_color = 'white' if scenario in ['CS_100', 'FS_Full'] else 'black'
+            text_color = 'black' if scenario in ['Status Quo'] else 'white'
             ax.text(scenario,
                     ci_upper[0] / 2 + ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
                     f"{ci_upper[0]:,.2f}", color=text_color, ha='center', va='top', fontsize=12)
