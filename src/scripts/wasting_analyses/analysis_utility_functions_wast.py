@@ -5,6 +5,7 @@ heatmaps_cons_wast.py.
 """
 
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -50,7 +51,8 @@ def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
-def extract_birth_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) -> dict:
+def extract_birth_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) \
+    -> Dict[str, pd.DataFrame]:
     """
     :param folder: the folder from which the outcome data will be extracted
     :param years_of_interest: years for which we want to extract the data
@@ -83,7 +85,8 @@ def extract_birth_data_frames_and_outcomes(folder, years_of_interest, interventi
             'interv_births_df': interv_births_df,
             'interv_births_mean_ci_df': interv_births_per_year_per_draw_df}
 
-def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest, intervention_years, interv):
+def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest, intervention_years, interv) \
+    -> Dict[str, pd.DataFrame]:
     print(f"\n{interv=}")
     # ### NEONATAL MORTALITY
     # Extract all deaths occurring during the first 28 days of life
