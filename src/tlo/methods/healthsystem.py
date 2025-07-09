@@ -14,8 +14,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 
-import tlo
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
 )
@@ -191,6 +190,14 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
+        'cons_override_treatment_ids': Parameter(
+            Types.LIST,
+            "Consumable availability within any treatment ids listed in this parameter will be set at to a "
+            "given probabilty stored in override_treatment_ids_avail. By default this list is empty"),
+        'cons_override_treatment_ids_prob_avail': Parameter(
+            Types.REAL,
+            "Probability that consumables for treatment ids listed in cons_override_treatment_ids will be "
+            "available"),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -670,7 +677,9 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability()
+            availability=self.get_cons_availability(),
+            treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
+            treatment_ids_overridden_avail=self.parameters['cons_override_treatment_ids_prob_avail'],
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']
@@ -1087,10 +1096,12 @@ class HealthSystem(Module):
             how='left'
         )
 
+        availability_columns = list(filter(lambda x: x.startswith('available_prop'), dfx.columns))
+
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1119,7 +1130,9 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(
+                    df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated
+                ).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
@@ -1401,7 +1414,7 @@ class HealthSystem(Module):
         assert hsi_event.TREATMENT_ID != ''
 
         # Check that the target of the HSI is not the entire population
-        assert not isinstance(hsi_event.target, tlo.population.Population)
+        assert not isinstance(hsi_event.target, Population)
 
         # This is an individual-scoped HSI event.
         # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
@@ -1930,6 +1943,26 @@ class HealthSystem(Module):
         :return: None
         """
         self.consumables.override_availability(item_codes)
+
+    def override_cons_availability_for_treatment_ids(self,
+                                                     treatment_ids: list = None,
+                                                     prob_available: float = None) -> None:
+        """
+        This function can be called by any module to update the treatment ids for which consumable availability should
+        be overridden and to provide a probability of availability.
+
+        :param treatment_ids: The treatment ids which should have availability overridden (list)
+        :param prob_available: The probability of availability in those treatment_ids (float)
+        :return: None
+        """
+
+        # Update internal cons function to update the cons 'owned' lists in which this information is stored
+        self.consumables.treatment_ids_overridden = treatment_ids if treatment_ids is not None else []
+
+        if (treatment_ids is not None) and (len(treatment_ids) > 0):
+            assert prob_available is not None, "If treatment_ids is provided, prob_available must be provided"
+
+        self.consumables.treatment_ids_overridden_avail = prob_available if prob_available is not None else 0.0
 
     def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(
