@@ -106,7 +106,7 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     neonatal_deaths_df = neonatal_deaths_by_cause_df.groupby(['year']).sum()
     # number of deaths by specific causes
     neonatal_SAM_deaths_df = neonatal_deaths_by_cause_df.loc[
-        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'Severe Acute Malnutrition'
+        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'SevereAcuteMalnutrition'
         ].groupby(['year']).sum()
     neonatal_ALRI_deaths_df = neonatal_deaths_by_cause_df.loc[
         neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
@@ -155,7 +155,7 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     under5_deaths_df = under5_deaths_by_cause_df.groupby(['year']).sum()
     # number of deaths by specific causes
     under5_SAM_deaths_df = under5_deaths_by_cause_df.loc[
-        under5_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'Severe Acute Malnutrition'
+        under5_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'SevereAcuteMalnutrition'
         ].groupby(['year']).sum()
     under5_ALRI_deaths_df = under5_deaths_by_cause_df.loc[
         under5_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
