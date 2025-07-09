@@ -692,13 +692,9 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         if len(idx_clear) > 0:
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=idx_clear,
-                symptom=symptom_list,
+                symptom_string=symptom_list,
                 add_or_remove='-',
                 disease_module=self.sim.modules['Schisto'])
-            # self.sim.modules['SymptomManager'].clear_symptoms(
-            #     person_id=idx_clear,
-            #     disease_module=self.sim.modules['Schisto']
-            # )
 
         # Filter those with changed infection status and alive, excluding non-infected
         changed_mask = (correct_status != original_status) & (correct_status != 'Non-infected') & is_alive
