@@ -1989,21 +1989,23 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         no_sanitation_PSAC = sum(df.li_unimproved_sanitation & under_5) / sum(under_5) if sum(under_5) else 0
         no_sanitation_SAC = sum(df.li_unimproved_sanitation & between_5_and_15) / sum(between_5_and_15) if sum(
             between_5_and_15) else 0
-        no_sanitation_ALL = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive)
+        no_sanitation_ALL = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive) if sum(df.is_alive) else 0
 
-         # no access hand-washing
+        # no access hand-washing
         # NOTE: True = no access hand-washing
         no_handwashing_PSAC = sum(df.li_no_access_handwashing & under_5) / sum(under_5) if sum(under_5) else 0
         no_handwashing_SAC = sum(df.li_no_access_handwashing & between_5_and_15) / sum(between_5_and_15) if sum(
             between_5_and_15) else 0
-        no_handwashing_ALL = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive)
+        no_handwashing_ALL = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
 
         # no clean drinking water
         # NOTE: True = no clean drinking water
         no_drinkingwater_PSAC = sum(df.li_no_clean_drinking_water & under_5) / sum(under_5) if sum(under_5) else 0
         no_drinkingwater_SAC = sum(df.li_no_clean_drinking_water & between_5_and_15) / sum(between_5_and_15) if sum(
             between_5_and_15) else 0
-        no_drinkingwater_ALL = sum(df.li_no_clean_drinking_water & df.is_alive) / sum(df.is_alive)
+        no_drinkingwater_ALL = sum(df.li_no_clean_drinking_water & df.is_alive) / sum(df.is_alive) if sum(
+            df.is_alive) else 0
 
         logger.info(
             key="summary_WASH_properties",
