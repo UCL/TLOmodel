@@ -684,15 +684,21 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
         correct_status = self.get_infection_status(df['age_years'], df[species_column_aggregate], species_prefix)
         original_status = df[f"{species_prefix}_infection_status"]
         is_alive = df['is_alive']
+        symptom_list = ['schisto_low', 'ss_sm_moderate', 'ss_sm_heavy', 'ss_sh_moderate', 'ss_sh_heavy']
 
         # Clear symptoms for newly non-infected
         newly_non_infected = (correct_status == 'Non-infected') & (original_status != 'Non-infected') & is_alive
         idx_clear = df.loc[newly_non_infected].index
         if len(idx_clear) > 0:
-            self.sim.modules['SymptomManager'].clear_symptoms(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=idx_clear,
-                disease_module=self.sim.modules['Schisto']
-            )
+                symptom=symptom_list,
+                add_or_remove='-',
+                disease_module=self.sim.modules['Schisto'])
+            # self.sim.modules['SymptomManager'].clear_symptoms(
+            #     person_id=idx_clear,
+            #     disease_module=self.sim.modules['Schisto']
+            # )
 
         # Filter those with changed infection status and alive, excluding non-infected
         changed_mask = (correct_status != original_status) & (correct_status != 'Non-infected') & is_alive
