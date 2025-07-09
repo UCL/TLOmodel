@@ -1168,12 +1168,11 @@ icer_district_cons_only.to_excel(results_folder / f'icer_district_cons_only_{tar
 
 
 
+#################################################################################
+# %% NHB
+#################################################################################
 
-
-########################
-# NHB
-
-
+# todo the dalys averted and costs need to be compared to no MDA
 def compute_nhb(
     dalys_averted: pd.DataFrame,
     comparison_costs: pd.DataFrame,
@@ -1240,10 +1239,10 @@ def compute_nhb(
 
 
 nhb_district = compute_nhb(
-    dalys_averted=schisto_dalys_averted_by_year_run_district_combined,
-    comparison_costs=costs_incurred_by_district_year_run_combined,
+    dalys_averted=dalys_averted_district_compared_noMDA,
+    comparison_costs=cons_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
-    threshold=150,
+    threshold=120,
     discount_rate_costs=0.0,
     return_summary=True
 )

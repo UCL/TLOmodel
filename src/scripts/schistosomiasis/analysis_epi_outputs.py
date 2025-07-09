@@ -879,6 +879,7 @@ def get_person_years_infected(_df):
     return pd.Series(person_years)
 
 
+# todo this needs to be person-YEARS not days -> divide outputs by 365.25
 def generate_py_averted_by_age(results_folder, comparator_scenario):
 
     def wrap_get_person_years_infected(age_group, inf_level):
