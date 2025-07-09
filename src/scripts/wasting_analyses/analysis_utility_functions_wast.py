@@ -54,12 +54,17 @@ def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 def extract_birth_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) \
     -> Dict[str, pd.DataFrame]:
     """
-    :param folder: the folder from which the outcome data will be extracted
-    :param years_of_interest: years for which we want to extract the data
-    :param intervention_years: out of the years of interest, during which years was intervention implemented (if any)
-    :return: dictionary with list of lists with means, lower_CI, and upper_CI for all years of interest of
-        (1) total_births, (2) interv_births; and a dataframe (3) with births counts for years of interests as simulated
-        for draws and runs.
+    Extracts and summarizes birth data.
+
+    :param folder: Path to the folder containing outcome data.
+    :param years_of_interest: List of years to extract data for.
+    :param intervention_years: List of years during which the intervention was implemented (if any).
+    :param interv: Name or identifier of the intervention.
+    :return: Dictionary with DataFrames:
+            (1) 'births_df': Birth counts for years of interest (by draw and run),
+            (2) 'births_mean_ci_df': Mean and 95% CI for total births per year and draw,
+            (3) 'interv_births_df': Birth counts for intervention years,
+            (4) 'interv_births_mean_ci_df': Mean and 95% CI for births per year and draw for intervention years.
     """
 
     print(f"\n{interv=}")
@@ -87,6 +92,17 @@ def extract_birth_data_frames_and_outcomes(folder, years_of_interest, interventi
 
 def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest, intervention_years, interv) \
     -> Dict[str, pd.DataFrame]:
+    """
+    Extracts and summarizes death data (neonatal and under-5) by cause, year, and intervention period.
+
+    :param folder: Path to the folder containing outcome data.
+    :param births_df: DataFrame of births for the years of interest.
+    :param years_of_interest: List of years to extract data for.
+    :param intervention_years: List of years during which the intervention was implemented (if any).
+    :param interv: Name or identifier of the intervention.
+    :return: Dictionary with DataFrames for deaths by cause, mean and CI, and mortality rates for neonatal and under-5 cohorts.
+    """
+
     print(f"\n{interv=}")
     # ### NEONATAL MORTALITY
     # Extract all deaths occurring during the first 28 days of life
