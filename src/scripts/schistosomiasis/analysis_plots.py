@@ -416,7 +416,6 @@ plot_dalys_vs_costs_by_district(
     threshold=120
 )
 
-
 # cons only
 plot_dalys_vs_costs_by_district(
     dalys_district_df=dalys_district_df,
