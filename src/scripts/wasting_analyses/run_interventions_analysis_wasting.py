@@ -44,6 +44,7 @@ scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
+force_calculations = False  # set True if you need the births and death outcomes to be recalculated from the source
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
@@ -107,7 +108,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     death_outcomes_path = outputspath / f"outcomes_data/death_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
 
     # Extract or load birth outcomes
-    if birth_outcomes_path.exists():
+    if birth_outcomes_path.exists() and not force_calculations:
         print("loading birth outcomes from file ...")
         with birth_outcomes_path.open("rb") as f:
             birth_outcomes_dict = pickle.load(f)
