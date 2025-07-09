@@ -1250,3 +1250,5 @@ nhb_district = compute_nhb(
 nhb_district.to_csv(results_folder / f'nhb_district{target_period()}.csv')
 
 
+# for each district under each WASH assumption, get the preferred strategy
+# preferred strategy chosen by
