@@ -333,10 +333,10 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
-        'include_ringfenced_clinics': Parameter(
+        'include_clinics': Parameter(
             Types.BOOL, 'Implement ring-fencing of a portion of facility time for specific appointment types. This parameter is'
             'only applicable if mode_appt_constraints is set to 2.'),
-        'Ringfenced_Clinics': Parameter(Types.DATA_FRAME, 'Proportion facility time ringfenced for specific appointment types.'),
+        'Clinics_Capabilities': Parameter(Types.DATA_FRAME, 'Proportion facility time ringfenced for specific appointment types.'),
     }
 
     PROPERTIES = {
@@ -363,7 +363,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        include_ringfenced_clinics: bool = False,
+        include_clinics: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -405,7 +405,7 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
-        :param include_ringfenced_clinics: Whether to implement ring-fencing of a portion of facility time for specific
+        :param include_clinics: Whether to implement ring-fencing of a portion of facility time for specific
             appointment types. This parameter is only applicable if mode_appt_constraints is set to 2. Defaults to False.
         """
 
@@ -420,7 +420,7 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
-        assert isinstance(include_ringfenced_clinics, bool)
+        assert isinstance(include_clinics, bool)
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -468,7 +468,7 @@ class HealthSystem(Module):
         self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
         self._use_funded_or_actual_staffing = None  # <-- this is the private internal store of the value that is used.
 
-        self.include_ringfenced_clinics = include_ringfenced_clinics
+        self.include_clinics = include_clinics
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
 
@@ -537,7 +537,7 @@ class HealthSystem(Module):
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
                 "'year', 'simulation' or None."
             )
-        self.include_ringfenced_clinics = include_ringfenced_clinics
+        self.include_clinics = include_clinics
 
     def read_parameters(self, data_folder):
 
@@ -551,9 +551,9 @@ class HealthSystem(Module):
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
-        # If include_ringfenced_clinics is True, then read in the Resource file that contains the ringfenced clinics
-        self.parameters['Ringfenced_Clinics'] = pd.DataFrame()  # Initialise as empty DataFrame
-        if self.include_ringfenced_clinics:
+        # If include_clinics is True, then read in the Resource file that contains the ringfenced clinics
+        self.parameters['Clinics_Capabilities'] = pd.DataFrame()  # Initialise as empty DataFrame
+        if self.include_clinics:
             df = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
             )
@@ -567,7 +567,7 @@ class HealthSystem(Module):
                     f"Row(s) {df[mask][id_col].values} in the ringfenced clinics file do not sum to 1.0. "
                     "Please ensure that the fractions for each appointment type sum to 1.0."
                 )
-            self.parameters['Ringfenced_Clinics'] = df
+            self.parameters['Clinics_Capabilities'] = df
 
 
         # Load ResourceFiles that define appointment and officer types
@@ -976,7 +976,7 @@ class HealthSystem(Module):
         self._facilities_for_each_district = facilities_per_level_and_district
 
 
-    def setup_daily_capabilities(self, use_funded_or_actual_staffing, include_clinics=False):
+    def setup_daily_capabilities(self, use_funded_or_actual_staffing, include_clinics):
         """Set up `self._daily_capabilities` and `self._officers_with_availability`.
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
@@ -990,9 +990,9 @@ class HealthSystem(Module):
         # If include_clinics is True, then redefine daily_capabilities
         if include_clinics:
             ## Get the module column names before formatting as the dataframe will gain additional non-module columns
-            module_cols = self.parameters['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
-            self.parameters['Ringfenced_Clinics'] = self.format_clinic_capabilities()
-            updated_capabilities = self.parameters['Ringfenced_Clinics'].join(self._daily_capabilities_per_staff)
+            module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+            self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
+            updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_capabilities_per_staff)
             ## New capabilities are old_capabilities * fungible
             updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Fungible'] * updated_capabilities['Mins_Per_Day_Per_Staff']
             ## Module specific capabilities are total time * non-fungible
@@ -1021,8 +1021,8 @@ class HealthSystem(Module):
         this implementation is likely to change in the future to break the one-to-one relationship between
         modules and clinics.
         """
-        ## This has the potential to go wrong because self.parameters['Ringfenced_Clinics'] has additional columns
-        module_cols = self.parameters['Ringfenced_Clinics'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+        ## This has the potential to go wrong because self.parameters['Clinics_Capabilities'] has additional columns
+        module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
         eligible = name in module_cols
 
         if eligible:
@@ -1122,13 +1122,13 @@ class HealthSystem(Module):
 
     def format_clinic_capabilities(self) -> pd.DataFrame:
         """
-        The breakdown of capabilities between non-fungible and fungible clinics is done in the Ringfenced_Clinics
+        The breakdown of capabilities between non-fungible and fungible clinics is done in the Clinics_Capabilities
         read in from the ResourceFile_Clinics.csv file. This function will fill out the capabilities dataframe
         so that for facility, officer type combinations that are not present in the file, the proportion of fungible
         is set to 1, and the non-fungible capabilities are set to 0.
         """
 
-        capabilities_cl = self.parameters['Ringfenced_Clinics']
+        capabilities_cl = self.parameters['Clinics_Capabilities']
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
@@ -1347,7 +1347,7 @@ class HealthSystem(Module):
         """Set value for `use_funded_or_actual_staffing` and update the daily_capabilities accordingly. """
         assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
         self._use_funded_or_actual_staffing = use_funded_or_actual_staffing
-        self.setup_daily_capabilities(self._use_funded_or_actual_staffing, self.include_ringfenced_clinics)
+        self.setup_daily_capabilities(self._use_funded_or_actual_staffing, self.include_clinics)
 
     def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but

@@ -2121,7 +2121,7 @@ def test_mode_2_clinics(seed, tmpdir):
                                            randomise_queue=True,
                                            policy_name="",
                                            use_funded_or_actual_staffing='funded_plus',
-                                           include_ringfenced_clinics=True),
+                                           include_clinics=True),
                  DummyModuleFungible(),
                  DummyModuleNonFungible()
                  )
@@ -2129,16 +2129,17 @@ def test_mode_2_clinics(seed, tmpdir):
     tot_population = 100
     sim.make_initial_population(n=tot_population)
     sim.simulate(end_date=sim.start_date)
+
     # Assign the entire population to the first district, so that all events are run in the same district
     person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
     keys_district = list(person_for_district.keys())
     for i in range(0, tot_population):
         sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
 
-    # healthsystem will query self.parameters['Ringfenced_Clinics'] to determine clinic eligibility
+    # healthsystem will query self.parameters['Clinics_Capabilities'] to determine clinic eligibility
     # So we will add a colummn with the dummy module name so that it becomes eligible
     # The precise values are not important, because we will adjust capabilities later.
-    sim.modules['HealthSystem'].parameters['Ringfenced_Clinics']['DummyModuleNonFungible'] = 0
+    sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0
     # Get pointer to the HealthSystemScheduler event
     healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
 
