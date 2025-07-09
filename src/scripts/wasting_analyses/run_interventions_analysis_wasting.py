@@ -205,7 +205,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     intervs_ofinterest_prefix = "_".join(intervs_ofinterest) # mortality rates - multiple settings of Interventions
     intervs_plotted = [
         interv for interv in intervsall
-        if interv in intervs_of_interest or \
+        if interv in intervs_ofinterest or \
            any(scenario.startswith(interv) for scenario in scenarios_tocompare_sq_shorten)
     ]
     timestamps_intervs_plotted = "_".join(interv_timestamps_dict[interv] for interv in intervs_plotted)
@@ -216,9 +216,9 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     )
     with PdfPages(pdf_path) as pdf:
         # Outcome 1: figures with mortality rates for each interv of interest, comparing different settings
-        for page_start in range(0, len(intervs_of_interest), 2):
+        for page_start in range(0, len(intervs_ofinterest), 2):
             fig1, axes1 = plt.subplots(
-                min(2, len(intervs_of_interest) - page_start),
+                min(2, len(intervs_ofinterest) - page_start),
                 len(cohorts_to_plot),
                 figsize=(12, 12)
             )
@@ -227,7 +227,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             if len(cohorts_to_plot) == 1:
                 axes1 = np.expand_dims(axes1, axis=-1)
 
-            for i, interv in enumerate(intervs_of_interest[page_start:page_start + 2]):
+            for i, interv in enumerate(intervs_ofinterest[page_start:page_start + 2]):
                 for j, cohort in enumerate(cohorts_to_plot):
                     if interv == 'SQ':
                         mort_rate_png_file_path = outputs_path / (
@@ -253,8 +253,8 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         axes1[i, j].set_title(f"{cohort} - {interv_title}", fontsize=10)
             pdf.savefig(fig1)  # Save the current page to the PDF
             fig1_png_file_path = outputs_path / (
-                f"{cohort_prefix}_mortality_rates_{'_'.join(intervs_of_interest[page_start:page_start + 2])}__"
-                f"{'_'.join(interv_timestamps_dict[interv] for interv in intervs_of_interest[page_start:page_start + 2])}.png"
+                f"{cohort_prefix}_mortality_rates_{'_'.join(intervs_ofinterest[page_start:page_start + 2])}__"
+                f"{'_'.join(interv_timestamps_dict[interv] for interv in intervs_ofinterest[page_start:page_start + 2])}.png"
             )
             fig1.savefig(fig1_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
 
