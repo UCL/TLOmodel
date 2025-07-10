@@ -2138,6 +2138,21 @@ def test_mode_2_clinics(seed, tmpdir):
 
     # healthsystem will query self.parameters['Clinics_Capabilities'] to determine clinic eligibility
     # So we will add a colummn with the dummy module name so that it becomes eligible
+    # Test that capabilities are split according the proportion.
+    module_cols = sim.modules['HealthSystem'].parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
+    ## Remove extra columns that are not needed for this test
+    sim.modules['HealthSystem'].parameters['Clinics_Capabilities'] = sim.modules['HealthSystem'].parameters['Clinics_Capabilities'].drop(columns=module_cols)
+    ## Say 50% of capabilities are fungible and 50% non-fungible.
+    sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0.5
+    sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['Fungible'] = 0.5
+    sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus', True)
+    fungible = sim.modules['HealthSystem']._daily_capabilities_per_staff.to_dict()
+    nonfungible = sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible']
+    nonzero = {k: v for k, v in fungible.items() if v > 0.0}
+    ratio = np.array([nonfungible[k] / v for k,v in nonzero.items()])
+    assert all(abs(ratio - [0.5] < 1e-7)), "Fungible capabilities are not split correctly"
+
+
     # The precise values are not important, because we will adjust capabilities later.
     sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0
     # Get pointer to the HealthSystemScheduler event
