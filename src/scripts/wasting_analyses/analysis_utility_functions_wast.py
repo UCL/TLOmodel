@@ -100,7 +100,8 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     :param years_of_interest: List of years to extract data for.
     :param intervention_years: List of years during which the intervention was implemented (if any).
     :param interv: Name or identifier of the intervention.
-    :return: Dictionary with DataFrames for deaths by cause, mean and CI, and mortality rates for neonatal and under-5 cohorts.
+    :return: Dictionary with DataFrames for deaths by cause, mean and CI, and mortality rates
+        for both neonatal and under-5 cohorts.
     """
 
     print(f"\n{interv=}")
@@ -121,6 +122,7 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
         ),
         do_scaling=True).fillna(0)
     neonatal_deaths_by_cause_df = neonatal_deaths_by_cause_df.loc[years_of_interest]
+
     # number of deaths by any cause
     neonatal_deaths_df = neonatal_deaths_by_cause_df.groupby(['year']).sum()
     # number of deaths by specific causes
@@ -170,6 +172,7 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
         ),
         do_scaling=True).fillna(0)
     under5_deaths_by_cause_df = under5_deaths_by_cause_df.loc[years_of_interest]
+
     # number of deaths by any cause
     under5_deaths_df = under5_deaths_by_cause_df.groupby(['year']).sum()
     # number of deaths by specific causes
@@ -357,17 +360,27 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
             wpp_years = list(range(2010, 2101))
             wpp_colour = '#1D73F5'
             wpp_filtered_years = [year for year in plot_years if year in wpp_years]
-            wpp_filtered_under5_rates = [rate for year, rate in zip(wpp_years, wpp_medium_under5_mort_rates) if year in wpp_filtered_years]
+            wpp_filtered_under5_rates = \
+                [rate for year, rate in zip(wpp_years, wpp_medium_under5_mort_rates) if year in wpp_filtered_years]
 
             # Plot both data
             # ####
             if cohort == 'Neonatal':
-                ax.plot(unicef_filtered_neo_years, unicef_filtered_neo_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
-                ax.fill_between(unicef_filtered_neo_years, unicef_filtered_neo_lower, unicef_filtered_neo_upper, color=unicef_colour, alpha=0.2)
+                ax.plot(unicef_filtered_neo_years, unicef_filtered_neo_rates,
+                        label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.fill_between(
+                    unicef_filtered_neo_years, unicef_filtered_neo_lower, unicef_filtered_neo_upper,
+                    color=unicef_colour, alpha=0.2
+                )
             elif cohort == 'Under-5':
-                ax.plot(unicef_filtered_under5_years, unicef_filtered_under5_rates, label='UNICEF Data', color=unicef_colour, linestyle='--')
-                ax.fill_between(unicef_filtered_under5_years, unicef_filtered_under5_lower, unicef_filtered_under5_upper, color=unicef_colour, alpha=0.2)
-                ax.plot(wpp_filtered_years, wpp_filtered_under5_rates, label='WPP 2024', color=wpp_colour, linestyle='-.')
+                ax.plot(unicef_filtered_under5_years, unicef_filtered_under5_rates,
+                        label='UNICEF Data', color=unicef_colour, linestyle='--')
+                ax.fill_between(
+                    unicef_filtered_under5_years, unicef_filtered_under5_lower, unicef_filtered_under5_upper,
+                    color=unicef_colour, alpha=0.2
+                )
+                ax.plot(wpp_filtered_years, wpp_filtered_under5_rates,
+                        label='WPP 2024', color=wpp_colour, linestyle='-.')
         else:
             plot_scenarios('SQ', outcome)
 
@@ -591,7 +604,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
     # HEATMAP OF CONSUMABLES AVAILABILITY
     # ###
     # Pivot the DataFrame
-    aggregated_df = tlo_availability_df.groupby(['Facility_Level', 'item_code'])[['available_prop']].mean().reset_index()
+    aggregated_df = \
+        tlo_availability_df.groupby(['Facility_Level', 'item_code'])[['available_prop']].mean().reset_index()
     heatmap_data = aggregated_df.pivot(columns='Facility_Level', index='item_code', values='available_prop')
     # Keep chosen items
     heatmap_data = heatmap_data.loc[chosen_item_codes]
@@ -633,7 +647,8 @@ def plot_availability_heatmaps(outputs_path: Path) -> None:
         }
 
     # Prepare the DataFrame
-    treatment_heatmap_data = pd.DataFrame.from_dict(treatment_availability, orient='index', columns=correct_order_of_fac_levels)
+    treatment_heatmap_data = \
+        pd.DataFrame.from_dict(treatment_availability, orient='index',columns=correct_order_of_fac_levels)
     treatment_heatmap_data = treatment_heatmap_data.reindex(columns=correct_order_of_fac_levels)
     treatment_heatmap_data['Average'] = treatment_heatmap_data.mean(axis=1)
 
