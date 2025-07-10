@@ -20,17 +20,23 @@ total_time_start = time.time()
 
 # ####### TO SET #######################################################################################################
 # Create dicts for the intervention scenarios. 'Interv_abbrev': {'Intervention scenario title/abbreviation': draw_nmb}
+# scenarios_dict = {
+#     'SQ': {'Status Quo': 0},
+#     'GM': {'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
+#     'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2, 'CS_100': 3},
+#     'FS': {'FS_70':0, 'FS_Full': 1}
+# }
 scenarios_dict = {
     'SQ': {'Status Quo': 0},
-    'GM': {'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
-    'CS': {'CS_10': 0, 'CS_30': 1, 'CS_50': 2, 'CS_100': 3},
-    'FS': {'FS_70':0, 'FS_Full': 1}
+    'GM': {'GM_FullAttend': 0},  # 'GM_all': 0, 'GM_1-2': 1, 'GM_FullAttend': 2},
+    'CS': {'CS_100': 0},  # 'CS_10': 0 ,'CS_30': 1, 'CS_50': 2, 'CS_100': 3},
+    'FS': {'FS_Full': 0}  # 'FS_70':0, 'FS_Full': 1}
 }
 # Set the intervention to be analysed, and for which years they were simulated
 intervs_all = ['SQ', 'GM', 'CS', 'FS']
 intervs_of_interest = ['GM', 'CS', 'FS']
 intervention_years = list(range(2026, 2031))
-scenarios_to_compare = ['GM_all', 'CS_100', 'FS_Full']
+scenarios_to_compare = ['GM_FullAttend', 'CS_100', 'FS_Full']
 # Which years to plot (from post burn-in period)
 plot_years = list(range(2015, 2031))
 # Plot settings
@@ -105,6 +111,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     # Define paths for saving/loading outcomes
     birth_outcomes_path = outputspath / f"outcomes_data/birth_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
     death_outcomes_path = outputspath / f"outcomes_data/death_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
+    dalys_outcomes_path = outputspath / f"outcomes_data/dalys_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
 
     # Extract or load birth outcomes
     if birth_outcomes_path.exists():
@@ -153,6 +160,23 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #     for outcome in death_outcomes_dict[interv]:
     #         print(f"{outcome}:\n{death_outcomes_dict[interv][outcome]}")
     # #
+
+    # Extract or load dalys outcomes
+    dalys_outcomes_path = outputspath / f"outcomes_data/dalys_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
+    if dalys_outcomes_path.exists():
+        print("loading dalys outcomes from file ...")
+        with dalys_outcomes_path.open("rb") as f:
+            dalys_outcomes_dict = pickle.load(f)
+    else:
+        print("dalys outcomes calculation ...")
+        dalys_outcomes_dict = {
+            interv: analysis_utility_functions_wast.extract_daly_data_frames_and_outcomes(
+                iterv_folders_dict[interv], plotyears, interventionyears, interv
+            ) for interv in scenario_folders
+        }
+        print("saving dalys outcomes to file ...")
+        with dalys_outcomes_path.open("wb") as f:
+            pickle.dump(dalys_outcomes_dict, f)
 
     # ---------------------------------------------------- Plots  ---------------------------------------------------- #
     print("\n--------------")

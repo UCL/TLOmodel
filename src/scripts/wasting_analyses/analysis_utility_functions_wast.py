@@ -250,6 +250,91 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     # print(f"{no_under5_deaths}")
     # #
 
+def extract_daly_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) \
+    -> Dict[str, pd.DataFrame]:
+    """
+    Extracts DALYs by cause for under-5s (age_range '0-4'), summed over both sexes, for the specified years.
+    :param folder: the folder from which the DALY data will be extracted
+    :param years_of_interest: years for which to extract the data
+    :return: DataFrame with index ['year'] and columns for each cause, values are summed DALYs for both sexes
+    """
+
+    print(f"\n{interv=}")
+    # ### UNDER-5 DALYs
+    # Extract all DALYs assigned to children under 5 --- dalys_stacked_by_age_and_time, i.e. all the year of life lost
+    # are ascribed to the age of the death and the year of the death differentiated by cause of death / disability
+
+    def extrapolate_dalys_data_from_logs(df: pd.DataFrame) -> pd.Series:
+        # Melt the DataFrame to have 'cause_of_dalys' as a variable
+        df_with_cause_of_dalys = df.melt(
+            id_vars=['age_range', 'sex', 'year'],
+            value_vars=[
+                "AIDS", "COPD", "Cancer (Bladder)", "Cancer (Breast)", "Cancer (Oesophagus)", "Cancer (Other)",
+                "Cancer (Prostate)", "Childhood Diarrhoea", "Childhood Undernutrition", "Congenital birth defects",
+                "Depression / Self-harm", "Diabetes", "Epilepsy", "Heart Disease", "Kidney Disease", "Lower Back Pain",
+                "Lower respiratory infections", "Malaria", "Maternal Disorders", "Measles", "Neonatal Disorders",
+                "Other", "Schistosomiasis", "Stroke", "TB (non-AIDS)", "Transport Injuries"
+            ],
+            var_name='cause_of_dalys',
+            value_name='dalys'
+        )
+
+        # Keep only dalys for children under-5 by year and cause_of_dalys
+        under5_dalys_by_year_cause = \
+            df_with_cause_of_dalys[df_with_cause_of_dalys['age_range'] == '0-4']\
+                .groupby(['year', 'cause_of_dalys'],as_index=True)['dalys'].sum()
+
+        return under5_dalys_by_year_cause
+
+    under5_dalys_by_cause_df = extract_results(
+        folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked_by_age_and_time",
+        custom_generate_series=lambda df: extrapolate_dalys_data_from_logs(df),
+        do_scaling=True
+    ).fillna(0)
+    under5_dalys_by_cause_df = under5_dalys_by_cause_df.loc[years_of_interest]
+
+    # number of dalys by any cause
+    under5_dalys_df = under5_dalys_by_cause_df.groupby(['year']).sum()
+    # number of dalys by specific causes
+    under5_SAM_dalys_df = under5_dalys_by_cause_df.xs("Childhood Undernutrition", level=1)
+    under5_ALRI_dalys_df = under5_dalys_by_cause_df.xs("Lower respiratory infections", level=1)
+    under5_Diarrhoea_dalys_df = under5_dalys_by_cause_df.xs("Childhood Diarrhoea", level=1)
+
+    under5_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_dalys_df)
+    under5_SAM_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_SAM_dalys_df)
+    under5_ALRI_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_ALRI_dalys_df)
+    under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_Diarrhoea_dalys_df)
+
+    interv_under5_dalys_df = under5_dalys_df.loc[intervention_years]
+    interv_under5_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_dalys_df)
+    interv_under5_SAM_dalys_df = under5_SAM_dalys_df.loc[intervention_years]
+    interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_dalys_df)
+    interv_under5_ALRI_dalys_df = under5_ALRI_dalys_df.loc[intervention_years]
+    interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_under5_ALRI_dalys_df)
+    interv_under5_Diarrhoea_dalys_df = under5_Diarrhoea_dalys_df.loc[intervention_years]
+    interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_under5_Diarrhoea_dalys_df)
+
+    return {'under5_dalys_df': under5_dalys_df,
+            'under5_SAM_dalys_df': under5_SAM_dalys_df,
+            'under5_ALRI_dalys_df': under5_ALRI_dalys_df,
+            'under5_Diarrhoea_dalys_df': under5_Diarrhoea_dalys_df,
+            'under5_dalys_mean_ci_df': under5_dalys_mean_ci_per_year_per_draw_df,
+            'under5_SAM_dalys_mean_ci_df': under5_SAM_dalys_mean_ci_per_year_per_draw_df,
+            'under5_ALRI_dalys_mean_ci_df': under5_ALRI_dalys_mean_ci_per_year_per_draw_df,
+            'under5_Diarrhoea_dalys_mean_ci_df': under5_Diarrhoea_dalys_mean_ci_per_year_per_draw_df,
+            'interv_under5_dalys_df': interv_under5_dalys_df,
+            'interv_under5_dalys_sum_ci_df': interv_under5_dalys_sum_per_draw_CI_across_runs_df,
+            'interv_under5_SAM_dalys_df': interv_under5_SAM_dalys_df,
+            'interv_under5_SAM_dalys_sum_ci_df': interv_under5_SAM_dalys_sum_per_draw_CI_across_runs_df,
+            'interv_under5_ALRI_dalys_df': interv_under5_ALRI_dalys_df,
+            'interv_under5_ALRI_dalys_sum_ci_df': interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
+            'interv_under5_Diarrhoea_dalys_df': interv_under5_Diarrhoea_dalys_df,
+            'interv_under5_Diarrhoea_dalys_sum_ci_df': interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df}
+
 def get_scen_colour(scen_name: str) -> str:
     return {
         'Status Quo': '#F12AE5',
