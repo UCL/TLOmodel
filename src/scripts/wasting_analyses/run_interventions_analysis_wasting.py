@@ -50,6 +50,9 @@ scenario_filename_prefix = 'wasting_analysis__full_model'
 # Where to save the outcomes
 outputs_path = Path("./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes")
 cohorts_to_plot = ['Under-5'] # ['Neonatal', 'Under-5'] #
+# force_calculation of [births_data, deaths_data, dalys_data],
+#   if True, enables to force recalculation of the corresponding data
+force_calculation = [False, False, False]
 ########################################################################################################################
 assert all(interv in intervs_all for interv in intervs_of_interest), ("Some interventions in intervs_of_interest are not"
                                                                       "in intervs_all")
@@ -93,7 +96,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         )[-1].name.split(f"{scenario_filename_prefix}_{interv}-")[-1]
         for interv in intervs_ofinterest
     }
-    print(f"\n{interv_timestamps_dict=}\n")
+    print(f"\n{interv_timestamps_dict=}")
     # Define folders for each scenario
     scenario_folders = {
         interv: {
@@ -114,12 +117,12 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     dalys_outcomes_path = outputspath / f"outcomes_data/dalys_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
 
     # Extract or load birth outcomes
-    if birth_outcomes_path.exists():
-        print("loading birth outcomes from file ...")
+    if birth_outcomes_path.exists() and not force_calculation[0]:
+        print("\nloading birth outcomes from file ...")
         with birth_outcomes_path.open("rb") as f:
             birth_outcomes_dict = pickle.load(f)
     else:
-        print("birth outcomes calculation ...")
+        print("\nbirth outcomes calculation ...")
         birth_outcomes_dict = {
             interv: analysis_utility_functions_wast.extract_birth_data_frames_and_outcomes(
                 iterv_folders_dict[interv], plotyears, interventionyears, interv
@@ -138,12 +141,12 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     #
 
     # Extract or load death outcomes
-    if death_outcomes_path.exists():
-        print("loading death outcomes from file ...")
+    if death_outcomes_path.exists() and not force_calculation[1]:
+        print("\nloading death outcomes from file ...")
         with death_outcomes_path.open("rb") as f:
             death_outcomes_dict = pickle.load(f)
     else:
-        print("death outcomes calculation ...")
+        print("\ndeath outcomes calculation ...")
         death_outcomes_dict = {
             interv: analysis_utility_functions_wast.extract_death_data_frames_and_outcomes(
                 iterv_folders_dict[interv], birth_outcomes_dict[interv]['births_df'], plotyears, interventionyears,
@@ -162,13 +165,12 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
     # #
 
     # Extract or load dalys outcomes
-    dalys_outcomes_path = outputspath / f"outcomes_data/dalys_outcomes_{'_'.join(interv_timestamps_dict.values())}.pkl"
-    if dalys_outcomes_path.exists():
-        print("loading dalys outcomes from file ...")
+    if dalys_outcomes_path.exists() and not force_calculation[2]:
+        print("\nloading dalys outcomes from file ...")
         with dalys_outcomes_path.open("rb") as f:
             dalys_outcomes_dict = pickle.load(f)
     else:
-        print("dalys outcomes calculation ...")
+        print("\ndalys outcomes calculation ...")
         dalys_outcomes_dict = {
             interv: analysis_utility_functions_wast.extract_daly_data_frames_and_outcomes(
                 iterv_folders_dict[interv], plotyears, interventionyears, interv
@@ -215,13 +217,18 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting sum of deaths ...")
-        analysis_utility_functions_wast.plot_sum_deaths_and_CIs__intervention_period(
-            cohort, scenarios_dict, scenarios_tocompare, death_outcomes_dict, outputspath,
-            scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+        analysis_utility_functions_wast.plot_sum_outcome_and_CIs__intervention_period(
+            cohort, scenarios_dict, scenarios_tocompare, "deaths", death_outcomes_dict,
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting mean DALYs ...")
         analysis_utility_functions_wast.plot_mean_outcome_and_CIs__scenarios_comparison(
             cohort, scenarios_dict, scenarios_tocompare, plotyears, "DALYs", dalys_outcomes_dict,
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+        )
+        print("    plotting sum of DALYs ...")
+        analysis_utility_functions_wast.plot_sum_outcome_and_CIs__intervention_period(
+            cohort, scenarios_dict, scenarios_tocompare, "DALYs", dalys_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
 
@@ -286,6 +293,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                 f"{'_'.join(interv_timestamps_dict[interv] for interv in intervs_ofinterest[page_start:page_start + 2])}.png"
             )
             fig1.savefig(fig1_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+        plt.close('all')
 
         # Outcome 2: figures with mean deaths and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
@@ -313,7 +321,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig2.savefig(fig2_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
-            plt.close(fig2)
+        plt.close('all')
 
         # Outcome 3: figures with sum of deaths and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
@@ -341,7 +349,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig3.savefig(fig3_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
-            plt.close(fig3)
+        plt.close('all')
 
         # Outcome 4: figures with mean DALYs and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
@@ -369,7 +377,35 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig4.savefig(fig4_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
-            plt.close(fig4)
+        plt.close('all')
+
+        # Outcome 5: figures with sum of DALYs and CI, scenarios comparison
+        for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
+            fig5, axes5 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+
+            # Ensure `axes5` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes5 = np.expand_dims(axes5, axis=-1)
+
+            for i, cause_of_daly in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
+                for j, cohort in enumerate(cohorts_to_plot):
+                    sum_dalys_png_file_path = outputs_path / (
+                        f"{cohort}_sum_{cause_of_daly}_DALYs_CI_intervention_period_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                    )
+                    if sum_dalys_png_file_path.exists():
+                        img = plt.imread(sum_dalys_png_file_path)
+                        axes5[i, j].imshow(img)
+                        axes5[i, j].axis('off')
+                        axes5[i, j].set_title(f"{cohort} - {cause_of_daly}", fontsize=10)
+            plt.tight_layout()
+            pdf.savefig(fig5)  # Save the current page to the PDF
+            fig5_png_file_path = outputs_path / (
+                f"{cohort_prefix}_sum_DALYs_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+            )
+            fig5.savefig(fig5_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+        plt.close('all')
 
 # ---------------- #
 # RUN THE ANALYSIS #
