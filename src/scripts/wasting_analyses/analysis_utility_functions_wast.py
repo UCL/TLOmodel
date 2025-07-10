@@ -51,8 +51,12 @@ def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
-def extract_birth_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) \
-    -> Dict[str, pd.DataFrame]:
+def extract_birth_data_frames_and_outcomes(
+    folder,
+    years_of_interest,
+    intervention_years,
+    interv
+) -> Dict[str, pd.DataFrame]:
     """
     Extracts and summarizes birth data.
 
@@ -90,8 +94,13 @@ def extract_birth_data_frames_and_outcomes(folder, years_of_interest, interventi
             'interv_births_df': interv_births_df,
             'interv_births_mean_ci_df': interv_births_per_year_per_draw_df}
 
-def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest, intervention_years, interv) \
-    -> Dict[str, pd.DataFrame]:
+def extract_death_data_frames_and_outcomes(
+    folder,
+    births_df,
+    years_of_interest,
+    intervention_years,
+    interv
+) -> Dict[str, pd.DataFrame]:
     """
     Extracts and summarizes death data (neonatal and under-5) by cause, year, and intervention period.
 
@@ -250,8 +259,12 @@ def extract_death_data_frames_and_outcomes(folder, births_df, years_of_interest,
     # print(f"{no_under5_deaths}")
     # #
 
-def extract_daly_data_frames_and_outcomes(folder, years_of_interest, intervention_years, interv) \
-    -> Dict[str, pd.DataFrame]:
+def extract_daly_data_frames_and_outcomes(
+    folder,
+    years_of_interest,
+    intervention_years,
+    interv
+) -> Dict[str, pd.DataFrame]:
     """
     Extracts DALYs by cause for under-5s (age_range '0-4'), summed over both sexes, for the specified years.
     :param folder: the folder from which the DALY data will be extracted
@@ -350,9 +363,28 @@ def get_scen_colour(scen_name: str) -> str:
         'FS_Full': '#A90251'
     }.get(scen_name)
 
-def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timestamps_dict: dict, scenarios_dict: dict,
-                                                     intervs_of_interest: list, plot_years: list, outcomes_dict: dict,
-                                                     outputs_path: Path) -> None:
+def plot_mortality_rate__by_interv_multiple_settings(
+    cohort: str,
+    interv_timestamps_dict: dict,
+    scenarios_dict: dict,
+    intervs_of_interest: list,
+    plot_years: list,
+    outcomes_dict: dict,
+    outputs_path: Path
+) -> None:
+    """
+    Plots mortality rates (neonatal or under-5) and their confidence intervals over time for multiple intervention settings.
+    For the 'SQ' (Status Quo) intervention, also overlays UNICEF and WPP reference data.
+
+    :param cohort: 'Neonatal' or 'Under-5'
+    :param interv_timestamps_dict: Dictionary mapping intervention names to their timestamp identifiers
+    :param scenarios_dict: Dictionary mapping interventions to scenario names and draw numbers
+    :param intervs_of_interest: List of interventions to plot
+    :param plot_years: List of years to plot on the x-axis
+    :param outcomes_dict: Nested dictionary with outcome data for each intervention and scenario
+    :param outputs_path: Path to save the generated plots
+    :return: None
+    """
 
     def plot_scenarios(plot_interv, plot_outcome):
         scenarios_to_plot = scenarios_dict[plot_interv]
@@ -496,9 +528,16 @@ def plot_mortality_rate__by_interv_multiple_settings(cohort: str, interv_timesta
                 bbox_inches='tight'
             )
 
-def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: dict, scenarios_to_compare: list,
-                                                   plot_years: list, outcomes_dict: dict, outputs_path: Path,
-                                                   scenarios_tocompare_prefix, timestamps_suffix: str) -> None:
+def plot_mean_outcome_and_CIs__scenarios_comparison(
+    cohort: str,
+    scenarios_dict: dict,
+    scenarios_to_compare: list,
+    plot_years: list,
+    outcomes_dict: dict,
+    outputs_path: Path,
+    scenarios_tocompare_prefix: str,
+    timestamps_suffix: str
+) -> None:
     """
     Plots mean deaths and confidence intervals over time for the specified cohort for multiple scenarios.
     :param cohort: 'Neonatal' or 'Under-5'
@@ -562,9 +601,15 @@ def plot_mean_deaths_and_CIs__scenarios_comparison(cohort: str, scenarios_dict: 
             bbox_inches='tight'
         )
 
-def plot_sum_deaths_and_CIs__intervention_period(cohort: str, scenarios_dict: dict, scenarios_to_compare: list,
-                                                 outcomes_dict: dict, outputs_path: Path, scenarios_tocompare_prefix,
-                                                 timestamps_suffix: str) -> None:
+def plot_sum_deaths_and_CIs__intervention_period(
+    cohort: str,
+    scenarios_dict: dict,
+    scenarios_to_compare: list,
+    outcomes_dict: dict,
+    outputs_path: Path,
+    scenarios_tocompare_prefix: str,
+    timestamps_suffix: str
+) -> None:
     """
     Plots sum of deaths and confidence intervals over the intervention period for the specified cohort for multiple
     scenarios.
