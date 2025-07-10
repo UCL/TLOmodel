@@ -310,7 +310,7 @@ class DiabeticRetinopathy(Module):
         return pd.Series(index=self.sim.population.props.index, data=0.0)
 
     def on_birth(self, mother_id: int, child_id: int) -> None:
-        """ set properties of a child when they are born.
+        """ Set properties of a child when they are born.
         :param child_id: the new child
         """
         self.sim.population.props.at[child_id, 'dr_status'] = 'none'
@@ -510,7 +510,6 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         if dr_stage == 'none':
             return
 
-        # Interventions for MAM
         elif dr_stage == 'mild' or dr_stage == 'moderate':
             # schedule HSI for mild and moderate
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -530,10 +529,10 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
                 priority=0, topen=self.sim.date)
 
 
-class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_Dr_LaserTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event initiates the treatment of DR for severe and proliferative stages.
-    This event is scheduled by HSI_GenericFirstAppt.
+    This is the Laser treatment of DR for dr_status mild and moderate stages. Given to individuals
+    who have gone through HSI_CardioMetabolicDisorders_StartWeightLossAndMedication but condition did not person.
     """
 
     def __init__(self, module, person_id):
@@ -587,8 +586,9 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             if person.dr_status == 'severe':
                 #determine_effectiveness
-                self.module.do_treatment(person_id, prob_success=self.module.parameters[
-                    'effectiveness_of_laser_photocoagulation_in_severe_regression'])
+                pass
+                # self.module.do_treatment(person_id, prob_success=self.module.parameters[
+                #     'effectiveness_of_laser_photocoagulation_in_severe_regression'])
 
             # if treatment_slows_progression_to_proliferative:
             #     df.at[person_id, 'dr_on_treatment'] = True
@@ -613,7 +613,7 @@ class HSI_Dr_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 class HSI_Dr_Dmo_AdvancedTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event when a person undergoes the optical coherence topography before being given the anti-vegf
-    injection
+    injection. Given to individuals with dr_status of severe and proliferative
     """
 
     def __init__(self, module, person_id):
