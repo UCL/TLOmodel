@@ -533,73 +533,82 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
     scenarios_dict: dict,
     scenarios_to_compare: list,
     plot_years: list,
+    outcome_type: str,
     outcomes_dict: dict,
     outputs_path: Path,
     scenarios_tocompare_prefix: str,
     timestamps_suffix: str
 ) -> None:
     """
-    Plots mean deaths and confidence intervals over time for the specified cohort for multiple scenarios.
+    Plots mean deaths or DALYs and confidence intervals over time for the specified cohort for multiple scenarios.
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
     :param plot_years: List of years to plot
+    :param outcome_type: 'deaths' or 'DALYs'
     :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
-    :param outputs_path: Path to save the plot
+    :param outputs_path: Path to save the plots
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
     :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
     """
-    # Outcome to plot
     assert cohort in ['Neonatal', 'Under-5'], \
         f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
+    assert outcome_type in ['deaths', 'DALYs'], \
+        f"Invalid value for 'outcome_type': expected 'deaths' or 'DALYs'. Received {outcome_type} instead."
 
-    for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
-
-        neonatal_outcomes = ['neo_deaths_mean_ci_df', 'neo_SAM_deaths_mean_ci_df',
-                             'neo_ALRI_deaths_mean_ci_df', 'neo_Diarrhoea_deaths_mean_ci_df']
-        under5_outcomes = ['under5_deaths_mean_ci_df', 'under5_SAM_deaths_mean_ci_df',
-                           'under5_ALRI_deaths_mean_ci_df', 'under5_Diarrhoea_deaths_mean_ci_df']
+    for i, cause in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
+        if outcome_type == "deaths":
+            neonatal_outcomes = ['neo_deaths_mean_ci_df', 'neo_SAM_deaths_mean_ci_df',
+                                 'neo_ALRI_deaths_mean_ci_df', 'neo_Diarrhoea_deaths_mean_ci_df']
+            under5_outcomes = ['under5_deaths_mean_ci_df', 'under5_SAM_deaths_mean_ci_df',
+                               'under5_ALRI_deaths_mean_ci_df', 'under5_Diarrhoea_deaths_mean_ci_df']
+        else:  # outcome_type == "DALYs":
+            neonatal_outcomes = [None, None, None, None]  # No data on DALYs for neonatal
+            under5_outcomes = ['under5_dalys_mean_ci_df', 'under5_SAM_dalys_mean_ci_df',
+                               'under5_ALRI_dalys_mean_ci_df', 'under5_Diarrhoea_dalys_mean_ci_df']
         outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
 
-        # Initialize the plot
-        fig, ax = plt.subplots()
+        if outcome:
+            # Initialize the plot
+            fig, ax = plt.subplots()
 
-        # Iterate over scenarios to compare
-        for scenario in scenarios_to_compare:
-            # Find the corresponding intervention and draw number
-            interv, draw = next(
-                (interv, draw)
-                for interv, scenarios_for_interv_dict in scenarios_dict.items()
-                if scenario in scenarios_for_interv_dict
-                for scen_name, draw in scenarios_for_interv_dict.items()
-                if scen_name == scenario
+            # Iterate over scenarios to compare
+            for scenario in scenarios_to_compare:
+                # Find the corresponding intervention and draw number
+                interv, draw = next(
+                    (interv, draw)
+                    for interv, scenarios_for_interv_dict in scenarios_dict.items()
+                    if scenario in scenarios_for_interv_dict
+                    for scen_name, draw in scenarios_for_interv_dict.items()
+                    if scen_name == scenario
+                )
+
+                # Extract data for the scenario
+                scen_data = outcomes_dict[interv][outcome][draw]
+
+                # Calculate means and confidence intervals
+                means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+
+                # Plot the data
+                ax.plot(plot_years, means, label=scenario, color=get_scen_colour(scenario))
+                ax.fill_between(plot_years, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
+
+            # Add labels, title, and legend
+            plt.ylabel(f'{cohort} {outcome_type}')
+            plt.xlabel('Year')
+            plt.title(f'{cohort} Mean {outcome_type} due to {cause} and 95% CI over time')
+            plt.legend()
+            plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
+
+            plt.savefig(
+                outputs_path / (
+                    f"{cohort}_mean_{cause}_{outcome_type}_CI_scenarios_comparison__"
+                    f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                ),
+                bbox_inches='tight'
             )
-
-            # Extract data for the scenario
-            scen_data = outcomes_dict[interv][outcome][draw]
-
-            # Calculate means and confidence intervals
-            means, ci_lower, ci_upper = zip(*scen_data.values.flatten())
-
-            # Plot the data
-            ax.plot(plot_years, means, label=scenario, color=get_scen_colour(scenario))
-            ax.fill_between(plot_years, ci_lower, ci_upper, color=get_scen_colour(scenario), alpha=0.2)
-
-        # Add labels, title, and legend
-        plt.ylabel(f'{cohort} Deaths')
-        plt.xlabel('Year')
-        plt.title(f'{cohort} Mean deaths due to {cause_of_death} and 95% CI over time')
-        plt.legend()
-        plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
-
-        # Save the plot
-        plt.savefig(
-            outputs_path / (
-                f"{cohort}_mean_{cause_of_death}_deaths_CI_scenarios_comparison__"
-                f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
-            ),
-            bbox_inches='tight'
-        )
+        else:
+            print(f'We DONT have outcomes for {cohort} {outcome_type}.')
 
 def plot_sum_deaths_and_CIs__intervention_period(
     cohort: str,
