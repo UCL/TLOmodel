@@ -478,27 +478,22 @@ class DrPollEvent(RegularEvent, PopulationScopeEventMixin):
         # Update DMO status
         self.module.update_dmo_status()
 
-        # fast_dr = self.module.lm['onset_fast_dr'].predict(diabetes_and_alive_nodr, self.module.rng)
-        # # fast_dr_idx = fast_dr[fast_dr].index
-        # fast_dr_idx = df.index[np.where(fast_dr)[0]]
-        # df.loc[fast_dr_idx, 'dr_status'] = 'late'
+        mild_dr_individuals = diabetes_and_alive_milddr
+        # Get those who are currently on diabetes weight loss medication from cardiometabolicdisorders
+        mild_dr_individuals_eligible = mild_dr_individuals[mild_dr_individuals.nc_diabetes_on_medication]
+        # Get those with controlled diabetes among those with mild dr_status
+        selected_individuals_with_controlled_and_mild = (
+                self.module.rng.random_sample(len(mild_dr_individuals_eligible))
+                < self.module.parameters['prob_diabetes_controlled'])
+        controlled_and_mild_idx = mild_dr_individuals_eligible.index[selected_individuals_with_controlled_and_mild]
 
-        # eligible_for_ns_threatening = df.loc[df.is_alive & df.nc_diabetes & (df.age_years >= 40)
-        #                                      & (df.dr_status == 'none')]
-        #
-        # df.loc[eligible_for_ns_threatening, 'selected_for_regular_eye_exam'] = (
-        #     np.random.random_sample(size=len(df[eligible_for_ns_threatening]))
-        #     < self.module.parameters['prob_reg_eye_exam'])
-        #
-        # # Schedule HSI event for selected individuals
-        # selected_for_exam = df.index[df['selected_for_regular_eye_exam']]
-        # for person_id in selected_for_exam:
-        #     self.sim.modules['HealthSystem'].schedule_hsi_event(
-        #         hsi_event=HSI_Regular_Eye_Exam(module=self.module, person_id=person_id),
-        #         priority=0,
-        #         topen=self.sim.date,
-        #         tclose=None
-        #     )
+        # Get those who will regress to none dr_status among those with mild dr_status and controlled diabetes
+        selected_to_regress_to_none = (self.module.rng.random_sample(len(controlled_and_mild_idx))
+                                       < self.module.parameters['prob_mild_to_none_if_controlled_diabetes'])
+        regress_to_none_idx = controlled_and_mild_idx[selected_to_regress_to_none]
+
+        df.loc[regress_to_none_idx, "dr_status"] = "none"
+        # df.loc[regress_to_none_idx, "dmo_status"] = "none"
 
     def do_at_generic_first_appt(
         self,
