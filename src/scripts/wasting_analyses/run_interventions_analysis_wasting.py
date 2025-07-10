@@ -210,14 +210,19 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             outputspath
         )
         print("    plotting mean deaths ...")
-        analysis_utility_functions_wast.plot_mean_deaths_and_CIs__scenarios_comparison(
-            cohort, scenarios_dict, scenarios_tocompare, plotyears, death_outcomes_dict, outputspath,
-            scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+        analysis_utility_functions_wast.plot_mean_outcome_and_CIs__scenarios_comparison(
+            cohort, scenarios_dict, scenarios_tocompare, plotyears, "deaths", death_outcomes_dict,
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting sum of deaths ...")
         analysis_utility_functions_wast.plot_sum_deaths_and_CIs__intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, death_outcomes_dict, outputspath,
             scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+        )
+        print("    plotting mean DALYs ...")
+        analysis_utility_functions_wast.plot_mean_outcome_and_CIs__scenarios_comparison(
+            cohort, scenarios_dict, scenarios_tocompare, plotyears, "DALYs", dalys_outcomes_dict,
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
 
     # --------------------- Create a PDF to save all figures and save each page also as PNG file --------------------- #
@@ -337,6 +342,34 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             )
             fig3.savefig(fig3_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
             plt.close(fig3)
+
+        # Outcome 4: figures with mean DALYs and CI, scenarios comparison
+        for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
+            fig4, axes4 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+
+            # Ensure `axes4` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes4 = np.expand_dims(axes4, axis=-1)
+
+            for i, cause_of_daly in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
+                for j, cohort in enumerate(cohorts_to_plot):
+                    mean_dalys_png_file_path = outputs_path / (
+                        f"{cohort}_mean_{cause_of_daly}_DALYs_CI_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                    )
+                    if mean_dalys_png_file_path.exists():
+                        img = plt.imread(mean_dalys_png_file_path)
+                        axes4[i, j].imshow(img)
+                        axes4[i, j].axis('off')
+                        axes4[i, j].set_title(f"{cohort} - {cause_of_daly}", fontsize=10)
+            plt.tight_layout()
+            pdf.savefig(fig4)  # Save the current page to the PDF
+            fig4_png_file_path = outputs_path / (
+                f"{cohort_prefix}_mean_DALYs_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+            )
+            fig4.savefig(fig4_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+            plt.close(fig4)
 
 # ---------------- #
 # RUN THE ANALYSIS #
