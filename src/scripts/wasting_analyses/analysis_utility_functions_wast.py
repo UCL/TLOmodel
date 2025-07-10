@@ -92,7 +92,8 @@ def extract_birth_data_frames_and_outcomes(
     return {'births_df': births_df,
             'births_mean_ci_df': births_mean_ci_per_year_per_draw_df,
             'interv_births_df': interv_births_df,
-            'interv_births_mean_ci_df': interv_births_per_year_per_draw_df}
+            'interv_births_mean_ci_df': interv_births_per_year_per_draw_df,
+            'interv_years': intervention_years}
 
 def extract_death_data_frames_and_outcomes(
     folder,
@@ -250,7 +251,8 @@ def extract_death_data_frames_and_outcomes(
             'interv_under5_Diarrhoea_deaths_df': interv_under5_Diarrhoea_deaths_df,
             'interv_under5_Diarrhoea_deaths_sum_ci_df': interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
             'under5_mort_rate_df': under5mr_df,
-            'under5_mort_rate_mean_ci_df': under5mr_per_year_per_draw_df}
+            'under5_mort_rate_mean_ci_df': under5mr_per_year_per_draw_df,
+            'interv_years': intervention_years}
 
     # # TODO: rm prints when no longer needed
     # print("\nYears, and (Draws, Runs) with no under 5 death:")
@@ -346,7 +348,8 @@ def extract_daly_data_frames_and_outcomes(
             'interv_under5_ALRI_dalys_df': interv_under5_ALRI_dalys_df,
             'interv_under5_ALRI_dalys_sum_ci_df': interv_under5_ALRI_dalys_sum_per_draw_CI_across_runs_df,
             'interv_under5_Diarrhoea_dalys_df': interv_under5_Diarrhoea_dalys_df,
-            'interv_under5_Diarrhoea_dalys_sum_ci_df': interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df}
+            'interv_under5_Diarrhoea_dalys_sum_ci_df': interv_under5_Diarrhoea_dalys_sum_per_draw_CI_across_runs_df,
+            'interv_years': intervention_years}
 
 def get_scen_colour(scen_name: str) -> str:
     return {
@@ -607,112 +610,118 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                 ),
                 bbox_inches='tight'
             )
-        else:
-            print(f'We DONT have outcomes for {cohort} {outcome_type}.')
 
-def plot_sum_deaths_and_CIs__intervention_period(
+def plot_sum_outcome_and_CIs__intervention_period(
     cohort: str,
     scenarios_dict: dict,
     scenarios_to_compare: list,
+    outcome_type: str,
     outcomes_dict: dict,
     outputs_path: Path,
     scenarios_tocompare_prefix: str,
     timestamps_suffix: str
 ) -> None:
     """
-    Plots sum of deaths and confidence intervals over the intervention period for the specified cohort for multiple
+    Plots sum of deaths or DALYs and confidence intervals over the intervention period for the specified cohort for multiple
     scenarios.
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
+    :param outcome_type: 'deaths' or 'DALYs'
     :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plot
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
     :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
     """
-    # Outcome to plot
     assert cohort in ['Neonatal', 'Under-5'], \
         f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
+    assert outcome_type in ['deaths', 'DALYs'], \
+        f"Invalid value for 'outcome_type': expected 'deaths' or 'DALYs'. Received {outcome_type} instead."
 
-    for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
-
-        neonatal_outcomes = ['interv_neo_deaths_sum_ci_df', 'interv_neo_SAM_deaths_sum_ci_df',
-                             'interv_neo_ALRI_deaths_sum_ci_df', 'interv_neo_Diarrhoea_deaths_sum_ci_df']
-        under5_outcomes = ['interv_under5_deaths_sum_ci_df', 'interv_under5_SAM_deaths_sum_ci_df',
-                           'interv_under5_ALRI_deaths_sum_ci_df', 'interv_under5_Diarrhoea_deaths_sum_ci_df']
+    # Outcome to plot
+    for i, cause in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
+        if outcome_type == "deaths":
+            neonatal_outcomes = ['interv_neo_deaths_sum_ci_df', 'interv_neo_SAM_deaths_sum_ci_df',
+                                 'interv_neo_ALRI_deaths_sum_ci_df', 'interv_neo_Diarrhoea_deaths_sum_ci_df']
+            under5_outcomes = ['interv_under5_deaths_sum_ci_df', 'interv_under5_SAM_deaths_sum_ci_df',
+                               'interv_under5_ALRI_deaths_sum_ci_df', 'interv_under5_Diarrhoea_deaths_sum_ci_df']
+        else:  # outcome_type == "DALYs"
+            neonatal_outcomes = [None, None, None, None]  # No DALYs for neonatal
+            under5_outcomes = ['interv_under5_dalys_sum_ci_df', 'interv_under5_SAM_dalys_sum_ci_df',
+                               'interv_under5_ALRI_dalys_sum_ci_df', 'interv_under5_Diarrhoea_dalys_sum_ci_df']
         outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
 
-        # Initialize the plot
-        fig, ax = plt.subplots()
+        if outcome:
+            # Initialize the plot
+            fig, ax = plt.subplots()
 
-        # Iterate over scenarios to compare
-        for scenario in scenarios_to_compare:
-            # Find the corresponding intervention and draw number
-            interv, draw = next(
-                (interv, draw)
-                for interv, scenarios_for_interv_dict in scenarios_dict.items()
-                if scenario in scenarios_for_interv_dict
-                for scen_name, draw in scenarios_for_interv_dict.items()
-                if scen_name == scenario
+            # Iterate over scenarios to compare
+            for scenario in scenarios_to_compare:
+                # Find the corresponding intervention and draw number
+                interv, draw = next(
+                    (interv, draw)
+                    for interv, scenarios_for_interv_dict in scenarios_dict.items()
+                    if scenario in scenarios_for_interv_dict
+                    for scen_name, draw in scenarios_for_interv_dict.items()
+                    if scen_name == scenario
+                )
+
+                # Extract data for the scenario
+                scen_data = outcomes_dict[interv][outcome][draw]
+
+                # Calculate sum and confidence intervals
+                sums, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+
+                # Plot the data
+                ax.bar(scenario, sums[0], yerr=[[sums[0] - ci_lower[0]], [ci_upper[0] - sums[0]]],
+                       label=scenario, color=get_scen_colour(scenario), capsize=5)
+
+                y_top = ax.get_ylim()[1]
+
+                # Add text label for the bar height (sum), above the bar
+                ax.text(
+                    scenario,
+                    sums[0] + (y_top * 0.02),  # small offset above the bar
+                    f"{sums[0]:,.0f}",
+                    color='black',
+                    ha='center',
+                    va='bottom',
+                    fontsize=12.5
+                )
+
+                # Add text labels for ci_low and ci_upper
+                text_color = 'black' if scenario in ['Status Quo'] else 'white'
+                ax.text(scenario,
+                        ci_upper[0] / 2 + ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
+                        f"{ci_upper[0]:,.0f}", color=text_color, ha='center', va='top', fontsize=12.5)
+                ax.text(scenario,
+                        ci_upper[0] / 2 - ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 - y_top / 15,
+                        f"{ci_lower[0]:,.0f}", color=text_color, ha='center', va='bottom', fontsize=12.5)
+
+                # Add horizontal lines for Status Quo scenario
+                if scenario == 'Status Quo':
+                    ax.axhline(y=ci_lower[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+                    ax.axhline(y=ci_upper[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+
+            # Add labels, title, and legend
+            min_interv_year = min(outcomes_dict["SQ"]['interv_years'])
+            max_interv_year = max(outcomes_dict["SQ"]['interv_years'])
+            plt.ylabel(f'{cohort} {outcome_type} (Sum over intervention period)')
+            plt.xlabel('Scenario')
+            plt.title(
+                f'{cohort} Sum of {outcome_type} due to {cause} and 95% CI over intervention period '
+                f'({min_interv_year}--{max_interv_year})')
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.xticks(rotation=45, fontsize=8)
+
+            plt.savefig(
+                outputs_path / (
+                    f"{cohort}_sum_{cause}_{outcome_type}_CI_intervention_period_scenarios_comparison__"
+                    f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                ),
+                bbox_inches='tight'
             )
 
-            # Extract data for the scenario
-            scen_data = outcomes_dict[interv][outcome][draw]
-
-            # Calculate sum and confidence intervals
-            sums, ci_lower, ci_upper = zip(*scen_data.values.flatten())
-
-            # Plot the data
-            ax.bar(scenario, sums[0], yerr=[[sums[0] - ci_lower[0]], [ci_upper[0] - sums[0]]],
-                   label=scenario, color=get_scen_colour(scenario), capsize=5)
-
-            y_top = ax.get_ylim()[1]
-
-            # Add text label for the bar height (sum), above the bar
-            ax.text(
-                scenario,
-                sums[0] + (y_top * 0.02),  # small offset above the bar
-                f"{sums[0]:,.2f}",
-                color='black',
-                ha='center',
-                va='bottom',
-                fontsize=12
-            )
-
-            # Add text labels for ci_low and ci_upper
-            text_color = 'black' if scenario in ['Status Quo'] else 'white'
-            ax.text(scenario,
-                    ci_upper[0] / 2 + ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
-                    f"{ci_upper[0]:,.2f}", color=text_color, ha='center', va='top', fontsize=12)
-            ax.text(scenario,
-                    ci_upper[0] / 2 - ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 - y_top / 15,
-                    f"{ci_lower[0]:,.2f}", color=text_color, ha='center', va='bottom', fontsize=12)
-
-            # Add horizontal lines for Status Quo scenario
-            if scenario == 'Status Quo':
-                ax.axhline(y=ci_lower[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
-                ax.axhline(y=ci_upper[0], color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
-
-
-        # Add labels, title, and legend
-        min_interv_year = outcomes_dict["SQ"]["interv_under5_deaths_df"].index.min()
-        max_interv_year = outcomes_dict["SQ"]["interv_under5_deaths_df"].index.max()
-        plt.ylabel(f'{cohort} Deaths (Sum over intervention period)')
-        plt.xlabel('Scenario')
-        plt.title(
-            f'{cohort} Sum of deaths due to {cause_of_death} and 95% CI over intervention period '
-            f'({min_interv_year}--{max_interv_year})')
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.xticks(rotation=45, fontsize=8)
-
-        # Save the plot
-        plt.savefig(
-            outputs_path / (
-                f"{cohort}_sum_{cause_of_death}_deaths_CI_intervention_period_scenarios_comparison__"
-                f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
-            ),
-            bbox_inches='tight'
-        )
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
     """
