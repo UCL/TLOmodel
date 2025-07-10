@@ -73,6 +73,14 @@ class DiabeticRetinopathy(Module):
         "rp_dr_urban": Parameter(
             Types.REAL, "relative prevalence at baseline of diabetic retinopathy if urban"
         ),
+        "prob_diabetes_controlled": Parameter(
+            Types.REAL,
+            "Probability that a person with mild DR has controlled diabetes"
+        ),
+        "prob_mild_to_none_if_controlled_diabetes": Parameter(
+            Types.REAL,
+            "Probability that people with mild DR and controlled diabetes regress to 'none'"
+        ),
         'effectiveness_of_laser_photocoagulation_in_severe_regression': Parameter(
             Types.REAL,
             'Probability of severe diabetic retinopathy regressing to moderate.'),
@@ -161,6 +169,8 @@ class DiabeticRetinopathy(Module):
         # self.parameters['init_prob_proliferative_dr'] = 0.09
         self.parameters['p_medication'] = 0.8
         self.parameters['effectiveness_of_laser_photocoagulation_in_severe_regression'] = 0.21
+        self.parameters["prob_diabetes_controlled"] = 0.5
+        self.parameters["prob_mild_to_none_if_controlled_diabetes"] = 0.21
         self.parameters['prob_reg_eye_exam'] = 0.05
 
         self.parameters['rp_dr_ex_alc'] = 1.1
