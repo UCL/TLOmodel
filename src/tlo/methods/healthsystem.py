@@ -685,7 +685,7 @@ class HealthSystem(Module):
             catalogue=self.parameters['EquipmentCatalogue'],
             data_availability=self.parameters['equipment_availability_estimates'],
             rng=rng_for_equipment,
-            master_facilities_list=self.parameters['Master_Facilities_List'],
+            master_facilities_list=self._get_filtered_mfl(),
             availability=self.get_equip_availability(),
         )
 
@@ -1235,7 +1235,7 @@ class HealthSystem(Module):
         mfl = mfl[mfl['Facility_Level'] != '5']
 
         if not self.include_non_gov_facilities:
-            mfl = mfl[~mfl['Facility_Level'].str.contains('_cham', na=False)]
+            mfl = mfl[~mfl['Facility_Level'].str.contains('_0cham', na=False)]
 
         return mfl
 
