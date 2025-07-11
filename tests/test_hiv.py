@@ -11,6 +11,7 @@ from tlo import Date, Simulation
 from tlo.lm import LinearModel
 from tlo.methods import (
     care_of_women_during_pregnancy,
+    contraception,
     demography,
     enhanced_lifestyle,
     epi,
@@ -73,6 +74,7 @@ def get_sim(seed, use_simplified_birth=True, cons_availability='all'):
         sim.register(demography.Demography(),
                      pregnancy_supervisor.PregnancySupervisor(),
                      care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                     contraception.Contraception(),
                      labour.Labour(),
                      newborn_outcomes.NewbornOutcomes(),
                      postnatal_supervisor.PostnatalSupervisor(),
