@@ -47,6 +47,8 @@ logger_summary.setLevel(logging.INFO)
 # Declare the assumption for the availability of consumables at the merged levels '1b' and '2'. This can be a
 #  list of facility_levels over which an average is taken (within a district): e.g. ['1b', '2'].
 AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2 = ['1b']  # <-- Implies that availability at merged level '1b & 2'
+
+
 #                                                                     is equal to availability at level '1b'. This is
 #                                                                     reasonable because the '1b' are more numerous than
 #                                                                     those of '2' and have more overall capacity, so
@@ -364,6 +366,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        include_non_gov_facilities: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -507,6 +510,8 @@ class HealthSystem(Module):
         # A reusable store for holding squeeze factors in get_squeeze_factors()
         self._get_squeeze_factors_store_grow = 500
         self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
+
+        self.include_non_gov_facilities = include_non_gov_facilities
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -861,9 +866,21 @@ class HealthSystem(Module):
          * self._facilities_for_each_district
         """
 
+        # mfl = self.parameters['Master_Facilities_List']
+        # cham_levels = {'1a_cham', '1b_cham', '2_cham'}
+        # if not self.include_non_gov_facilities:
+        #     mfl = mfl[~mfl['Facility_Level'].isin(cham_levels)]
+        # mfl = mfl[mfl['Facility_Level'] != '5']
+        mfl = self._get_filtered_mfl()
+        self._facility_levels = set(mfl['Facility_Level'])
+
         # * Define Facility Levels
-        self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
-        assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this?
+        # self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
+        # assert self._facility_levels == {'0', '1a', '1b', '2', '3', '4'}  # todo soft code this?
+
+        fac_lev = self._facility_levels
+
+        print(f'fac levels: {fac_lev}')
 
         # * Define Appointment Types
         self._appointment_types = set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
@@ -1217,6 +1234,23 @@ class HealthSystem(Module):
 
         return _equip_availability
 
+    def _get_filtered_mfl(self):
+        """
+        Returns the Master Facilities List excluding:
+        - CHAM facility levels (1a_cham, 1b_cham, 2_cham) if include_non_gov_facilities is False
+        - Level '5' facilities (headquarters), which are always excluded
+        """
+        mfl = self.parameters['Master_Facilities_List']
+        cham_levels = {'1a_cham', '1b_cham', '2_cham'}
+
+        # Always exclude level '5'
+        mfl = mfl[mfl['Facility_Level'] != '5']
+
+        if not self.include_non_gov_facilities:
+            mfl = mfl[~mfl['Facility_Level'].isin(cham_levels)]
+
+        return mfl
+
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
         self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tdate)
@@ -1454,6 +1488,7 @@ class HealthSystem(Module):
           * An entry in the list of the form "A_B_C" means a treatment_id that matches exactly is allowed
           * An entry in the list of the form "A_B_*" means that a treatment_id that begins "A_B_" or "A_B" is allowed
         """
+
         def _treatment_matches_pattern(_treatment_id, _service_availability):
             """Check if treatment_id matches any services specified with wildcard * patterns"""
 
@@ -1888,7 +1923,7 @@ class HealthSystem(Module):
                     data={
                         'Frac_Time_Used_Overall': fraction_time_used_overall,
                         'Frac_Time_Used_By_Facility_ID': summary_by_fac_id['Fraction_Time_Used'].to_dict(),
-                        'Frac_Time_Used_By_OfficerType':  flatten_multi_index_series_into_dict_for_logging(
+                        'Frac_Time_Used_By_OfficerType': flatten_multi_index_series_into_dict_for_logging(
                             summary_by_officer['Fraction_Time_Used']
                         ),
                     },
@@ -2060,7 +2095,7 @@ class HealthSystem(Module):
             for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
                 event = event.hsi_event
-                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
+                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]  # todo use zip here!
 
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
@@ -2254,9 +2289,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             if self.sim.date > event.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
-                      hsi_event=event.hsi_event,
-                      priority=event.priority
-                     )
+                    hsi_event=event.hsi_event,
+                    priority=event.priority
+                )
 
             elif not is_alive[event.hsi_event.target]:
                 # if the person who is the target is no longer alive, do nothing more,
@@ -2341,9 +2376,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 if self.sim.date > next_event_tuple.tclose:
                     # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                     self.module.call_and_record_never_ran_hsi_event(
-                          hsi_event=event,
-                          priority=next_event_tuple.priority
-                         )
+                        hsi_event=event,
+                        priority=next_event_tuple.priority
+                    )
 
                 elif event.target not in alive_persons:
                     # if the person who is the target is no longer alive,
@@ -2416,7 +2451,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             event._received_info_about_bed_days = \
                                 self.module.bed_days.issue_bed_days_according_to_availability(
                                     facility_id=self.module.bed_days.get_facility_id_for_beds(
-                                                                       persons_id=event.target),
+                                        persons_id=event.target),
                                     footprint=event.BEDDAYS_FOOTPRINT
                                 )
 
@@ -2455,7 +2490,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                         # Recalculate call on officers based on squeeze factor.
                         for k in updated_call.keys():
-                            updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
+                            updated_call[k] = updated_call[k] / (squeeze_factor + 1.)
 
                         # Subtract this from capabilities used so-far today
                         capabilities_monitor.subtract(updated_call)
@@ -2515,9 +2550,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             elif self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
-                      hsi_event=event,
-                      priority=next_event_tuple.priority
-                     )
+                    hsi_event=event,
+                    priority=next_event_tuple.priority
+                )
 
             elif event.target not in alive_persons:
                 # if the person who is the target is no longer alive,
@@ -2551,17 +2586,16 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 # Log that the event did not run
                 self.module.record_hsi_event(
-                   hsi_event=event,
-                   actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                   squeeze_factor=0,
-                   did_run=False,
-                   priority=next_event_tuple.priority
-                   )
+                    hsi_event=event,
+                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                    squeeze_factor=0,
+                    did_run=False,
+                    priority=next_event_tuple.priority
+                )
 
         # add events from the list_of_events_not_due_today back into the queue
         while len(list_of_events_not_due_today) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(list_of_events_not_due_today))
-
 
     def apply(self, population):
 
@@ -2630,6 +2664,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Do activities that are required at end of year (if last day of the year)
         if self._is_last_day_of_the_year(self.sim.date):
             self.module.on_end_of_year()
+
 
 # ---------------------------------------------------------------------------
 #   Logging
@@ -2743,9 +2778,9 @@ class HealthSystemSummaryCounter:
             key="HSI_Event_non_blank_appt_footprint",
             description="Same as for key 'HSI_Event' but limited to HSI_Event that have non-blank footprints",
             data={
-            "TREATMENT_ID": self._no_blank_appt_treatment_ids,
-            "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
-            "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
+                "TREATMENT_ID": self._no_blank_appt_treatment_ids,
+                "Number_By_Appt_Type_Code": self._no_blank_appt_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._no_blank_appt_by_level,
             },
         )
 
@@ -2785,8 +2820,8 @@ class HealthSystemSummaryCounter:
 
     def frac_time_used_by_officer_type_and_level(
         self,
-        officer_type: Optional[str]=None,
-        level: Optional[str]=None,
+        officer_type: Optional[str] = None,
+        level: Optional[str] = None,
     ) -> Union[float, pd.Series]:
         """Average fraction of time used by officer type and level since last reset.
         If `officer_type` and/or `level` is not provided (left to default to `None`) then a pd.Series with a multi-index
@@ -2812,6 +2847,7 @@ class HealthSystemSummaryCounter:
                 ),
                 data=mean_frac_time_used.values()
             ).sort_index()
+
 
 class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
@@ -2855,8 +2891,10 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         if 'use_funded_or_actual_staffing' in self._parameters:
             self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing']
 
+
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1))
         self.last_year_pop_size = self.current_pop_size  # will store population size at initiation (when this class is
@@ -2900,11 +2938,11 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
 class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities, with a factor for each Officer Type at each Facility_Level.
     """
+
     def __init__(self, module):
         super().__init__(module)
 
     def apply(self, population):
-
         # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode'
         # assumption
         HR_scaling_by_level_and_officer_type_factor = (
@@ -2927,6 +2965,7 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities, with a factor for each district."""
+
     def __init__(self, module):
         super().__init__(module)
 
@@ -2965,7 +3004,7 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
         # If we've changed from mode 1 to mode 2, update the priority for every HSI event in the queue
         if preswitch_mode == 1 and health_system.mode_appt_constraints == 2:
             # A place to store events with updated priority
-            updated_events: List[HSIEventQueueItem|None] = [None] * len(health_system.HSI_EVENT_QUEUE)
+            updated_events: List[HSIEventQueueItem | None] = [None] * len(health_system.HSI_EVENT_QUEUE)
             offset = 0
 
             # For each HSI event in the queue
@@ -3026,7 +3065,7 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
         # Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,
         # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
         # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
-        current_staff_count = dict((hs.capabilities_today/hs._daily_capabilities_per_staff).sort_index())
+        current_staff_count = dict((hs.capabilities_today / hs._daily_capabilities_per_staff).sort_index())
 
         logger_summary.info(
             key="number_of_hcw_staff",
