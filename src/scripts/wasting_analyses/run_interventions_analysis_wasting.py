@@ -197,12 +197,14 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             if timestamps_scenarios_comparison_suffix == '':
                 timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict[interv]}"
             else:
-                timestamps_scenarios_comparison_suffix = timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict[interv]}"
+                timestamps_scenarios_comparison_suffix = \
+                    timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict[interv]}"
     if 'Status Quo' in scenarios_tocompare:
         if timestamps_scenarios_comparison_suffix == '':
             timestamps_scenarios_comparison_suffix = f"{interv_timestamps_dict['SQ']}"
         else:
-            timestamps_scenarios_comparison_suffix = timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict['SQ']}"
+            timestamps_scenarios_comparison_suffix = \
+                timestamps_scenarios_comparison_suffix + f"_{interv_timestamps_dict['SQ']}"
 
     for cohort in cohorts_to_plot:
         print(f"plotting {cohort} outcomes ...")
@@ -216,9 +218,17 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             cohort, scenarios_dict, scenarios_tocompare, plotyears, "deaths", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
+        analysis_utility_functions_wast.plot_mean_outcome_and_CIs__scenarios_comparison(
+            cohort, scenarios_dict, scenarios_tocompare, plotyears, "deaths_with_SAM", death_outcomes_dict,
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+        )
         print("    plotting sum of deaths ...")
         analysis_utility_functions_wast.plot_sum_outcome_and_CIs__intervention_period(
             cohort, scenarios_dict, scenarios_tocompare, "deaths", death_outcomes_dict,
+            outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
+        )
+        analysis_utility_functions_wast.plot_sum_outcome_and_CIs__intervention_period(
+            cohort, scenarios_dict, scenarios_tocompare, "deaths_with_SAM", death_outcomes_dict,
             outputspath, scenarios_tocompare_prefix, timestamps_scenarios_comparison_suffix
         )
         print("    plotting mean DALYs ...")
@@ -259,7 +269,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                 figsize=(12, 12)
             )
 
-            # Ensure `axes1` is always a 2D array for consistent indexing
+            # Ensure `axes` is always a 2D array for consistent indexing
             if len(cohorts_to_plot) == 1:
                 axes1 = np.expand_dims(axes1, axis=-1)
 
@@ -286,11 +296,12 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         img = plt.imread(mort_rate_png_file_path)
                         axes1[i, j].imshow(img)
                         axes1[i, j].axis('off')
-                        axes1[i, j].set_title(f"{cohort} - {interv_title}", fontsize=10)
+                        axes1[i, j].set_title(f"{interv_title}", fontsize=10)
             pdf.savefig(fig1)  # Save the current page to the PDF
             fig1_png_file_path = outputs_path / (
                 f"{cohort_prefix}_mortality_rates_{'_'.join(intervs_ofinterest[page_start:page_start + 2])}__"
-                f"{'_'.join(interv_timestamps_dict[interv] for interv in intervs_ofinterest[page_start:page_start + 2])}.png"
+                f"{'_'.join(interv_timestamps_dict[interv] for interv in intervs_ofinterest[page_start:page_start + 2])}"
+                ".png"
             )
             fig1.savefig(fig1_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
         plt.close('all')
@@ -299,10 +310,11 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
             fig2, axes2 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
 
-            # Ensure `axes1` is always a 2D array for consistent indexing
+            # Ensure `axes` is always a 2D array for consistent indexing
             if len(cohorts_to_plot) == 1:
                 axes2 = np.expand_dims(axes2, axis=-1)
 
+            # ### Mean deaths by cause
             for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
                 for j, cohort in enumerate(cohorts_to_plot):
                     mean_deaths_png_file_path = outputs_path / (
@@ -313,14 +325,44 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         img = plt.imread(mean_deaths_png_file_path)
                         axes2[i, j].imshow(img)
                         axes2[i, j].axis('off')
-                        axes2[i, j].set_title(f"{cohort} - {cause_of_death}", fontsize=10)
             plt.tight_layout()
             pdf.savefig(fig2)  # Save the current page to the PDF
             fig2_png_file_path = outputs_path / (
-                f"{cohort_prefix}_mean_deaths_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{cohort_prefix}_mean_deaths_comparison_"
+                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig2.savefig(fig2_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+        plt.close('all')
+
+        for page_start in range(0, len(['ALRI', 'Diarrhoea']), 2):
+            fig2_sam, axes2_sam = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+
+            # Ensure `axes` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes2_sam = np.expand_dims(axes2_sam, axis=-1)
+
+            # ### Mean deaths with SAM by cause
+            for i, cause_of_death in enumerate(['ALRI', 'Diarrhoea']):
+                fig2_sam, axes2_sam = plt.subplots(1, len(cohorts_to_plot), figsize=(12, 6))
+                if len(cohorts_to_plot) == 1:
+                    axes2_sam = np.expand_dims(axes2_sam, axis=-1)
+                for j, cohort in enumerate(cohorts_to_plot):
+                    mean_deaths_with_SAM_png_file_path = outputs_path / (
+                        f"{cohort}_mean_{cause_of_death}_deaths_with_SAM_CI_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                    )
+                    if mean_deaths_with_SAM_png_file_path.exists():
+                        img = plt.imread(mean_deaths_with_SAM_png_file_path)
+                        axes2_sam[j].imshow(img)
+                        axes2_sam[j].axis('off')
+                plt.tight_layout()
+                pdf.savefig(fig2_sam)
+                fig2_sam_png_file_path = outputs_path / (
+                    f"{cohort_prefix}_mean_deaths_with_SAM_comparison_{cause_of_death}__"
+                    f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                )
+                fig2_sam.savefig(fig2_sam_png_file_path, dpi=300, bbox_inches='tight')
         plt.close('all')
 
         # Outcome 3: figures with sum of deaths and CI, scenarios comparison
@@ -331,6 +373,7 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             if len(cohorts_to_plot) == 1:
                 axes3 = np.expand_dims(axes3, axis=-1)
 
+            # ### Sum of deaths over intervention period by cause
             for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
                 for j, cohort in enumerate(cohorts_to_plot):
                     sum_deaths_png_file_path = outputs_path / (
@@ -341,26 +384,57 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         img = plt.imread(sum_deaths_png_file_path)
                         axes3[i, j].imshow(img)
                         axes3[i, j].axis('off')
-                        axes3[i, j].set_title(f"{cohort} - {cause_of_death}", fontsize=10)
             plt.tight_layout()
             pdf.savefig(fig3)  # Save the current page to the PDF
             fig3_png_file_path = outputs_path / (
-                f"{cohort_prefix}_sum_deaths_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{cohort_prefix}_sum_deaths_comparison_"
+                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig3.savefig(fig3_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
         plt.close('all')
 
+        for page_start in range(0, len(['ALRI', 'Diarrhoea']), 2):
+            fig3_sam, axes3_sam = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+
+            # Ensure `axes3_sam` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes3_sam = np.expand_dims(axes3_sam, axis=-1)
+
+            # ### Sum of deaths with SAM over intervention period by cause
+            for i, cause_of_death in enumerate(['ALRI', 'Diarrhoea']):
+                fig3_sam, axes3_sam = plt.subplots(1, len(cohorts_to_plot), figsize=(12, 6))
+                if len(cohorts_to_plot) == 1:
+                    axes3_sam = np.expand_dims(axes3_sam, axis=-1)
+                for j, cohort in enumerate(cohorts_to_plot):
+                    sum_deaths_with_SAM_png_file_path = outputs_path / (
+                        f"{cohort}_sum_{cause_of_death}_deaths_with_SAM_CI_intervention_period_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                    )
+                    if sum_deaths_with_SAM_png_file_path.exists():
+                        img = plt.imread(sum_deaths_with_SAM_png_file_path)
+                        axes3_sam[j].imshow(img)
+                        axes3_sam[j].axis('off')
+                plt.tight_layout()
+                pdf.savefig(fig3_sam)
+                fig3_sam_png_file_path = outputs_path / (
+                    f"{cohort_prefix}_sum_deaths_with_SAM_comparison_{cause_of_death}__"
+                    f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                )
+                fig3_sam.savefig(fig3_sam_png_file_path, dpi=300, bbox_inches='tight')
+        plt.close('all')
+
         # Outcome 4: figures with mean DALYs and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
-            fig4, axes4 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+            cohorts_to_plot_fig4 = [c for c in cohorts_to_plot if c != "Neonatal"]
+            fig4, axes4 = plt.subplots(2, len(cohorts_to_plot_fig4), figsize=(12, 12))
 
             # Ensure `axes4` is always a 2D array for consistent indexing
-            if len(cohorts_to_plot) == 1:
+            if len(cohorts_to_plot_fig4) == 1:
                 axes4 = np.expand_dims(axes4, axis=-1)
 
             for i, cause_of_daly in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
-                for j, cohort in enumerate(cohorts_to_plot):
+                for j, cohort in enumerate(cohorts_to_plot_fig4):
                     mean_dalys_png_file_path = outputs_path / (
                         f"{cohort}_mean_{cause_of_daly}_DALYs_CI_scenarios_comparison__"
                         f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
@@ -369,11 +443,11 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         img = plt.imread(mean_dalys_png_file_path)
                         axes4[i, j].imshow(img)
                         axes4[i, j].axis('off')
-                        axes4[i, j].set_title(f"{cohort} - {cause_of_daly}", fontsize=10)
             plt.tight_layout()
             pdf.savefig(fig4)  # Save the current page to the PDF
             fig4_png_file_path = outputs_path / (
-                f"{cohort_prefix}_mean_DALYs_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{cohort_prefix}_mean_DALYs_comparison_"
+                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig4.savefig(fig4_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
@@ -381,14 +455,15 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
 
         # Outcome 5: figures with sum of DALYs and CI, scenarios comparison
         for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
-            fig5, axes5 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+            cohorts_to_plot_fig5 = [c for c in cohorts_to_plot if c != "Neonatal"]
+            fig5, axes5 = plt.subplots(2, len(cohorts_to_plot_fig5), figsize=(12, 12))
 
             # Ensure `axes5` is always a 2D array for consistent indexing
-            if len(cohorts_to_plot) == 1:
+            if len(cohorts_to_plot_fig5) == 1:
                 axes5 = np.expand_dims(axes5, axis=-1)
 
             for i, cause_of_daly in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
-                for j, cohort in enumerate(cohorts_to_plot):
+                for j, cohort in enumerate(cohorts_to_plot_fig5):
                     sum_dalys_png_file_path = outputs_path / (
                         f"{cohort}_sum_{cause_of_daly}_DALYs_CI_intervention_period_scenarios_comparison__"
                         f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
@@ -397,11 +472,11 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
                         img = plt.imread(sum_dalys_png_file_path)
                         axes5[i, j].imshow(img)
                         axes5[i, j].axis('off')
-                        axes5[i, j].set_title(f"{cohort} - {cause_of_daly}", fontsize=10)
             plt.tight_layout()
             pdf.savefig(fig5)  # Save the current page to the PDF
             fig5_png_file_path = outputs_path / (
-                f"{cohort_prefix}_sum_DALYs_comparison_{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{cohort_prefix}_sum_DALYs_comparison_"
+                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
                 f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
             )
             fig5.savefig(fig5_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG

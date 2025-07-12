@@ -117,39 +117,54 @@ def extract_death_data_frames_and_outcomes(
     print(f"\n{interv=}")
     # ### NEONATAL MORTALITY
     # Extract all deaths occurring during the first 28 days of life
-    # differentiated by cause of death
-    neonatal_deaths_by_cause_df = extract_results(
+    # differentiated by cause of death and acute malnutrition state
+    neonatal_deaths_by_cause_am_df = extract_results(
         folder,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: (filtered_by_age := df.loc[df['age_days'] < 29])
             .assign(year=filtered_by_age['date'].dt.year)
-            .groupby(['year', 'cause_of_death'])['year']
+            .groupby(['year', 'cause_of_death', 'un_clinical_acute_malnutrition'])['year']
             .count()
-            .reindex(pd.MultiIndex.from_product([df['date'].dt.year.unique(), df['cause_of_death'].unique()],
-                                                names=['year', 'cause_of_death']), fill_value=0)
+            .reindex(pd.MultiIndex.from_product([
+                df['date'].dt.year.unique(), df['cause_of_death'].unique(),
+                df['un_clinical_acute_malnutrition'].unique()
+            ], names=['year', 'cause_of_death', 'un_clinical_acute_malnutrition']), fill_value=0)
         ),
         do_scaling=True).fillna(0)
-    neonatal_deaths_by_cause_df = neonatal_deaths_by_cause_df.loc[years_of_interest]
+    neonatal_deaths_by_cause_am_df = neonatal_deaths_by_cause_am_df.loc[years_of_interest]
 
     # number of deaths by any cause
-    neonatal_deaths_df = neonatal_deaths_by_cause_df.groupby(['year']).sum()
-    # number of deaths by specific causes
-    neonatal_SAM_deaths_df = neonatal_deaths_by_cause_df.loc[
-        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'SevereAcuteMalnutrition'
+    neonatal_deaths_df = neonatal_deaths_by_cause_am_df.groupby(['year']).sum()
+    # number of deaths due to specific cause
+    neonatal_SAM_deaths_df = neonatal_deaths_by_cause_am_df.loc[
+        neonatal_deaths_by_cause_am_df.index.get_level_values('cause_of_death') == 'SevereAcuteMalnutrition'
         ].groupby(['year']).sum()
-    neonatal_ALRI_deaths_df = neonatal_deaths_by_cause_df.loc[
-        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
+    neonatal_ALRI_deaths_df = neonatal_deaths_by_cause_am_df.loc[
+        neonatal_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
     ].groupby(['year']).sum()
-    neonatal_Diarrhoea_deaths_df = neonatal_deaths_by_cause_df.loc[
-        neonatal_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_')
+    neonatal_Diarrhoea_deaths_df = neonatal_deaths_by_cause_am_df.loc[
+        neonatal_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_')
     ].groupby(['year']).sum()
+    # number of deaths due to specific cause with SAM
+    neonatal_ALRI_deaths_with_SAM_df = neonatal_deaths_by_cause_am_df.loc[
+        (neonatal_deaths_by_cause_am_df.index.get_level_values('un_clinical_acute_malnutrition') == 'SAM') &
+        (neonatal_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('ALRI_'))
+        ].groupby(['year']).sum()
+    neonatal_Diarrhoea_deaths_with_SAM_df = neonatal_deaths_by_cause_am_df.loc[
+        (neonatal_deaths_by_cause_am_df.index.get_level_values('un_clinical_acute_malnutrition') == 'SAM') &
+        (neonatal_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_'))
+        ].groupby(['year']).sum()
 
     neo_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_deaths_df)
     neo_SAM_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_SAM_deaths_df)
     neo_ALRI_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_ALRI_deaths_df)
     neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(neonatal_Diarrhoea_deaths_df)
+    neo_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df = \
+        return_mean_95_CI_across_runs(neonatal_ALRI_deaths_with_SAM_df)
+    neo_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df = \
+        return_mean_95_CI_across_runs(neonatal_Diarrhoea_deaths_with_SAM_df)
 
     interv_neo_deaths_df = neonatal_deaths_df.loc[intervention_years]
     interv_neo_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_neo_deaths_df)
@@ -160,6 +175,12 @@ def extract_death_data_frames_and_outcomes(
     interv_neo_Diarrhoea_deaths_df = neonatal_Diarrhoea_deaths_df.loc[intervention_years]
     interv_neo_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df = \
         return_sum_95_CI_across_runs(interv_neo_Diarrhoea_deaths_df)
+    interv_neo_ALRI_deaths_with_SAM_df = neonatal_ALRI_deaths_with_SAM_df.loc[intervention_years]
+    interv_neo_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_neo_ALRI_deaths_with_SAM_df)
+    interv_neo_Diarrhoea_deaths_with_SAM_df = neonatal_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
+    interv_neo_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_neo_Diarrhoea_deaths_with_SAM_df)
 
     # NEONATAL MORTALITY RATE (NMR), i.e. the number of deaths of infants up to 28 days old per 1,000 live births
     nmr_df = (neonatal_deaths_df / births_df) * 1000
@@ -167,50 +188,71 @@ def extract_death_data_frames_and_outcomes(
 
     # ### UNDER-5 MORTALITY
     # Extract all deaths occurring during the first 5 years of life
-    # differentiated by cause of death
-    under5_deaths_by_cause_df = extract_results(
+    # differentiated by cause of death and acute malnutrition state
+    under5_deaths_by_cause_am_df = extract_results(
         folder,
         module="tlo.methods.demography.detail",
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: (filtered_by_age := df.loc[df['age_exact_years'] < 5])
             .assign(year=filtered_by_age['date'].dt.year)
-            .groupby(['year', 'cause_of_death'])['year']
+            .groupby(['year', 'cause_of_death', 'un_clinical_acute_malnutrition'])['year']
             .count()
-            .reindex(pd.MultiIndex.from_product([df['date'].dt.year.unique(), df['cause_of_death'].unique()],
-                                                names=['year', 'cause_of_death']), fill_value=0)
+            .reindex(pd.MultiIndex.from_product([
+                df['date'].dt.year.unique(), df['cause_of_death'].unique(),
+                df['un_clinical_acute_malnutrition'].unique()
+            ], names=['year', 'cause_of_death', 'un_clinical_acute_malnutrition']), fill_value=0)
         ),
         do_scaling=True).fillna(0)
-    under5_deaths_by_cause_df = under5_deaths_by_cause_df.loc[years_of_interest]
+    under5_deaths_by_cause_am_df = under5_deaths_by_cause_am_df.loc[years_of_interest]
 
     # number of deaths by any cause
-    under5_deaths_df = under5_deaths_by_cause_df.groupby(['year']).sum()
-    # number of deaths by specific causes
-    under5_SAM_deaths_df = under5_deaths_by_cause_df.loc[
-        under5_deaths_by_cause_df.index.get_level_values('cause_of_death') == 'SevereAcuteMalnutrition'
+    under5_deaths_df = under5_deaths_by_cause_am_df.groupby(['year']).sum()
+    # number of deaths due to specific cause
+    under5_SAM_deaths_df = under5_deaths_by_cause_am_df.loc[
+        under5_deaths_by_cause_am_df.index.get_level_values('cause_of_death') == 'SevereAcuteMalnutrition'
         ].groupby(['year']).sum()
-    under5_ALRI_deaths_df = under5_deaths_by_cause_df.loc[
-        under5_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
+    under5_ALRI_deaths_df = under5_deaths_by_cause_am_df.loc[
+        under5_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('ALRI_')
     ].groupby(['year']).sum()
-    under5_Diarrhoea_deaths_df = under5_deaths_by_cause_df.loc[
-        under5_deaths_by_cause_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_')
+    under5_Diarrhoea_deaths_df = under5_deaths_by_cause_am_df.loc[
+        under5_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_')
+    ].groupby(['year']).sum()
+    # number of deaths due to specific cause with SAM
+    under5_ALRI_deaths_with_SAM_df = under5_deaths_by_cause_am_df.loc[
+        (under5_deaths_by_cause_am_df.index.get_level_values('un_clinical_acute_malnutrition') == 'SAM') &
+        (under5_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('ALRI_'))
+    ].groupby(['year']).sum()
+    under5_Diarrhoea_deaths_with_SAM_df = under5_deaths_by_cause_am_df.loc[
+        (under5_deaths_by_cause_am_df.index.get_level_values('un_clinical_acute_malnutrition') == 'SAM') &
+        (under5_deaths_by_cause_am_df.index.get_level_values('cause_of_death').str.startswith('Diarrhoea_'))
     ].groupby(['year']).sum()
 
     under5_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_deaths_df)
     under5_SAM_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_SAM_deaths_df)
     under5_ALRI_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_ALRI_deaths_df)
     under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df = return_mean_95_CI_across_runs(under5_Diarrhoea_deaths_df)
+    under5_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df = \
+        return_mean_95_CI_across_runs(under5_ALRI_deaths_with_SAM_df)
+    under5_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df = \
+        return_mean_95_CI_across_runs(under5_Diarrhoea_deaths_with_SAM_df)
 
     interv_under5_deaths_df = under5_deaths_df.loc[intervention_years]
     interv_under5_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_deaths_df)
     interv_under5_SAM_deaths_df = under5_SAM_deaths_df.loc[intervention_years]
     interv_under5_SAM_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(interv_under5_SAM_deaths_df)
     interv_under5_ALRI_deaths_df = under5_ALRI_deaths_df.loc[intervention_years]
-    interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(
-        interv_under5_ALRI_deaths_df)
+    interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_under5_ALRI_deaths_df)
     interv_under5_Diarrhoea_deaths_df = under5_Diarrhoea_deaths_df.loc[intervention_years]
-    interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df = return_sum_95_CI_across_runs(
-        interv_under5_Diarrhoea_deaths_df)
+    interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_under5_Diarrhoea_deaths_df)
+    interv_under5_ALRI_deaths_with_SAM_df = under5_ALRI_deaths_with_SAM_df.loc[intervention_years]
+    interv_under5_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_under5_ALRI_deaths_with_SAM_df)
+    interv_under5_Diarrhoea_deaths_with_SAM_df = under5_Diarrhoea_deaths_with_SAM_df.loc[intervention_years]
+    interv_under5_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df = \
+        return_sum_95_CI_across_runs(interv_under5_Diarrhoea_deaths_with_SAM_df)
 
     # UNDER-5 MORTALITY RATE, i.e. the number of deaths of children under 5 years old per 1,000 live births
     under5mr_df = (under5_deaths_df / births_df) * 1000
@@ -220,10 +262,14 @@ def extract_death_data_frames_and_outcomes(
             'neo_SAM_deaths_df': neonatal_SAM_deaths_df,
             'neo_ALRI_deaths_df': neonatal_ALRI_deaths_df,
             'neo_Diarrhoea_deaths_df': neonatal_Diarrhoea_deaths_df,
+            'neo_ALRI_deaths_with_SAM_df': neonatal_ALRI_deaths_with_SAM_df,
+            'neo_Diarrhoea_deaths_with_SAM_df': neonatal_Diarrhoea_deaths_with_SAM_df,
             'neo_deaths_mean_ci_df': neo_deaths_mean_ci_per_year_per_draw_df,
             'neo_SAM_deaths_mean_ci_df': neo_SAM_deaths_mean_ci_per_year_per_draw_df,
             'neo_ALRI_deaths_mean_ci_df': neo_ALRI_deaths_mean_ci_per_year_per_draw_df,
             'neo_Diarrhoea_deaths_mean_ci_df': neo_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
+            'neo_ALRI_deaths_with_SAM_mean_ci_df': neo_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df,
+            'neo_Diarrhoea_deaths_with_SAM_mean_ci_df': neo_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df,
             'interv_neo_deaths_df': interv_neo_deaths_df,
             'interv_neo_deaths_sum_ci_df': interv_neo_deaths_sum_per_draw_CI_across_runs_df,
             'interv_neo_SAM_deaths_df': interv_neo_SAM_deaths_df,
@@ -232,16 +278,26 @@ def extract_death_data_frames_and_outcomes(
             'interv_neo_ALRI_deaths_sum_ci_df': interv_neo_ALRI_deaths_sum_per_draw_CI_across_runs_df,
             'interv_neo_Diarrhoea_deaths_df': interv_neo_Diarrhoea_deaths_df,
             'interv_neo_Diarrhoea_deaths_sum_ci_df': interv_neo_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_neo_ALRI_deaths_with_SAM_df': interv_neo_ALRI_deaths_with_SAM_df,
+            'interv_neo_ALRI_deaths_with_SAM_sum_ci_df': interv_neo_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
+            'interv_neo_Diarrhoea_deaths_with_SAM_df': interv_neo_Diarrhoea_deaths_with_SAM_df,
+            'interv_neo_Diarrhoea_deaths_with_SAM_sum_ci_df':
+                interv_neo_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
             'neonatal_mort_rate_df': nmr_df,
             'neo_mort_rate_mean_ci_df': nmr_per_year_per_draw_df,
             'under5_deaths_df': under5_deaths_df,
             'under5_SAM_deaths_df': under5_SAM_deaths_df,
             'under5_ALRI_deaths_df': under5_ALRI_deaths_df,
             'under5_Diarrhoea_deaths_df': under5_Diarrhoea_deaths_df,
+            'under5_ALRI_deaths_with_SAM_df': under5_ALRI_deaths_with_SAM_df,
+            'under5_Diarrhoea_deaths_with_SAM_df': under5_Diarrhoea_deaths_with_SAM_df,
             'under5_deaths_mean_ci_df': under5_deaths_mean_ci_per_year_per_draw_df,
             'under5_SAM_deaths_mean_ci_df': under5_SAM_deaths_mean_ci_per_year_per_draw_df,
             'under5_ALRI_deaths_mean_ci_df': under5_ALRI_deaths_mean_ci_per_year_per_draw_df,
             'under5_Diarrhoea_deaths_mean_ci_df': under5_Diarrhoea_deaths_mean_ci_per_year_per_draw_df,
+            'under5_ALRI_deaths_with_SAM_mean_ci_df': under5_ALRI_deaths_with_SAM_mean_ci_per_year_per_draw_df,
+            'under5_Diarrhoea_deaths_with_SAM_mean_ci_df':
+                under5_Diarrhoea_deaths_with_SAM_mean_ci_per_year_per_draw_df,
             'interv_under5_deaths_df': interv_under5_deaths_df,
             'interv_under5_deaths_sum_ci_df': interv_under5_deaths_sum_per_draw_CI_across_runs_df,
             'interv_under5_SAM_deaths_df': interv_under5_SAM_deaths_df,
@@ -250,6 +306,13 @@ def extract_death_data_frames_and_outcomes(
             'interv_under5_ALRI_deaths_sum_ci_df': interv_under5_ALRI_deaths_sum_per_draw_CI_across_runs_df,
             'interv_under5_Diarrhoea_deaths_df': interv_under5_Diarrhoea_deaths_df,
             'interv_under5_Diarrhoea_deaths_sum_ci_df': interv_under5_Diarrhoea_deaths_sum_per_draw_CI_across_runs_df,
+            'interv_under5_ALRI_deaths_with_SAM_df': interv_under5_ALRI_deaths_with_SAM_df,
+            'interv_under5_ALRI_deaths_with_SAM_sum_ci_df':
+                interv_under5_ALRI_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
+            'interv_under5_Diarrhoea_deaths_with_SAM_df':
+                interv_under5_Diarrhoea_deaths_with_SAM_df,
+            'interv_under5_Diarrhoea_deaths_with_SAM_sum_ci_df':
+                interv_under5_Diarrhoea_deaths_with_SAM_sum_per_draw_CI_across_runs_df,
             'under5_mort_rate_df': under5mr_df,
             'under5_mort_rate_mean_ci_df': under5mr_per_year_per_draw_df,
             'interv_years': intervention_years}
@@ -548,7 +611,7 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
     :param plot_years: List of years to plot
-    :param outcome_type: 'deaths' or 'DALYs'
+    :param outcome_type: 'deaths', 'deaths_with_SAM', or 'DALYs'
     :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plots
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
@@ -556,7 +619,7 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
     """
     assert cohort in ['Neonatal', 'Under-5'], \
         f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
-    assert outcome_type in ['deaths', 'DALYs'], \
+    assert outcome_type in ['deaths', 'deaths_with_SAM', 'DALYs'], \
         f"Invalid value for 'outcome_type': expected 'deaths' or 'DALYs'. Received {outcome_type} instead."
 
     for i, cause in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
@@ -565,6 +628,11 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                                  'neo_ALRI_deaths_mean_ci_df', 'neo_Diarrhoea_deaths_mean_ci_df']
             under5_outcomes = ['under5_deaths_mean_ci_df', 'under5_SAM_deaths_mean_ci_df',
                                'under5_ALRI_deaths_mean_ci_df', 'under5_Diarrhoea_deaths_mean_ci_df']
+        elif outcome_type == "deaths_with_SAM":
+            neonatal_outcomes = [None, None,
+                                 'neo_ALRI_deaths_with_SAM_mean_ci_df', 'neo_Diarrhoea_deaths_with_SAM_mean_ci_df']
+            under5_outcomes = [None, None,
+                               'under5_ALRI_deaths_with_SAM_mean_ci_df', 'under5_Diarrhoea_deaths_with_SAM_mean_ci_df']
         else:  # outcome_type == "DALYs":
             neonatal_outcomes = [None, None, None, None]  # No data on DALYs for neonatal
             under5_outcomes = ['under5_dalys_mean_ci_df', 'under5_SAM_dalys_mean_ci_df',
@@ -599,7 +667,7 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
             # Add labels, title, and legend
             plt.ylabel(f'{cohort} {outcome_type}')
             plt.xlabel('Year')
-            plt.title(f'{cohort} Mean {outcome_type} due to {cause} and 95% CI over time')
+            plt.title(f'{cohort} Mean {outcome_type.replace("_", " ")} due to {cause} and 95% CI over time')
             plt.legend()
             plt.xticks(plot_years, labels=plot_years, rotation=45, fontsize=8)
 
@@ -610,6 +678,30 @@ def plot_mean_outcome_and_CIs__scenarios_comparison(
                 ),
                 bbox_inches='tight'
             )
+
+def plot_percentage_deaths_with_SAM(
+    cohort: str,
+    scenarios_dict: dict,
+    scenarios_to_compare: list,
+    plot_years: list,
+    outcome_type: str,
+    outcomes_dict: dict,
+    outputs_path: Path,
+    scenarios_tocompare_prefix: str,
+    timestamps_suffix: str
+) -> None:
+    """
+    Plots mean deaths or DALYs and confidence intervals over time for the specified cohort for multiple scenarios.
+    :param cohort: 'Neonatal' or 'Under-5'
+    :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
+    :param scenarios_to_compare: List of scenarios to plot
+    :param plot_years: List of years to plot
+    :param outcome_type: 'deaths', 'deaths_with_SAM', or 'DALYs'
+    :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
+    :param outputs_path: Path to save the plots
+    :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
+    :param timestamps_suffix: Timestamps to identify the log data from which the outcomes originated.
+    """
 
 def plot_sum_outcome_and_CIs__intervention_period(
     cohort: str,
@@ -627,7 +719,7 @@ def plot_sum_outcome_and_CIs__intervention_period(
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
-    :param outcome_type: 'deaths' or 'DALYs'
+    :param outcome_type: 'deaths', 'deaths_with_SAM' or 'DALYs'
     :param outcomes_dict: Dictionary containing data for plotting nested as outcomes_dict[interv][outcome][draw][run]
     :param outputs_path: Path to save the plot
     :param scenarios_tocompare_prefix: Prefix for output files with names of scenarios that are compared in the plots
@@ -635,7 +727,7 @@ def plot_sum_outcome_and_CIs__intervention_period(
     """
     assert cohort in ['Neonatal', 'Under-5'], \
         f"Invalid value for 'cohort': expected 'Neonatal' or 'Under-5'. Received {cohort} instead."
-    assert outcome_type in ['deaths', 'DALYs'], \
+    assert outcome_type in ['deaths', 'deaths_with_SAM', 'DALYs'], \
         f"Invalid value for 'outcome_type': expected 'deaths' or 'DALYs'. Received {outcome_type} instead."
 
     # Outcome to plot
@@ -645,6 +737,13 @@ def plot_sum_outcome_and_CIs__intervention_period(
                                  'interv_neo_ALRI_deaths_sum_ci_df', 'interv_neo_Diarrhoea_deaths_sum_ci_df']
             under5_outcomes = ['interv_under5_deaths_sum_ci_df', 'interv_under5_SAM_deaths_sum_ci_df',
                                'interv_under5_ALRI_deaths_sum_ci_df', 'interv_under5_Diarrhoea_deaths_sum_ci_df']
+        elif outcome_type == "deaths_with_SAM":
+            neonatal_outcomes = [None, None,
+                                 'interv_neo_ALRI_deaths_with_SAM_sum_ci_df',
+                                 'interv_neo_Diarrhoea_deaths_with_SAM_sum_ci_df']
+            under5_outcomes = [None, None,
+                               'interv_under5_ALRI_deaths_with_SAM_sum_ci_df',
+                               'interv_under5_Diarrhoea_deaths_with_SAM_sum_ci_df']
         else:  # outcome_type == "DALYs"
             neonatal_outcomes = [None, None, None, None]  # No DALYs for neonatal
             under5_outcomes = ['interv_under5_dalys_sum_ci_df', 'interv_under5_SAM_dalys_sum_ci_df',
@@ -709,8 +808,8 @@ def plot_sum_outcome_and_CIs__intervention_period(
             plt.ylabel(f'{cohort} {outcome_type} (Sum over intervention period)')
             plt.xlabel('Scenario')
             plt.title(
-                f'{cohort} Sum of {outcome_type} due to {cause} and 95% CI over intervention period '
-                f'({min_interv_year}--{max_interv_year})')
+                f'{cohort} Sum of {outcome_type.replace("_", " ")} due to {cause} and 95% CI over '
+                f'intervention period ({min_interv_year}--{max_interv_year})')
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             plt.xticks(rotation=45, fontsize=8)
 
