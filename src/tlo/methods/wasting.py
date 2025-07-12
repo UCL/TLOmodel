@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -201,10 +201,9 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
                                                                'appointment'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
-        super().__init__(name)
+    def __init__(self, name=None):
+        super().__init__(name=name)
         self.wasting_models = None
-        self.resourcefilepath = resourcefilepath
         # wasting states
         self.wasting_states = self.PROPERTIES["un_WHZ_category"].categories
         # wasting symptom
@@ -238,13 +237,13 @@ class Wasting(Module, GenericFirstAppointmentsMixin):
             agegp_i = f'{low_bound_mos}_{high_bound_mos}mo'
             self.age_gps_range_mo.append(agegp_i)
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """
         :param data_folder: path to a folder supplied to the simulation containing data csv files
         """
         # Read parameters from the resource file
         self.load_parameters_from_dataframe(
-            read_csv_files(Path(self.resourcefilepath) / 'ResourceFile_Wasting', files='parameters')
+            read_csv_files(resourcefilepath / 'ResourceFile_Wasting', files='parameters')
         )
 
         # Register wasting symptom (weight loss) in Symptoms Manager with high odds of seeking care
