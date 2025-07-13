@@ -1056,7 +1056,8 @@ class Wasting_FullRecovery_Event(Event, IndividualScopeEventMixin):
 
             whz = df.at[person_id, 'un_WHZ_category']
             assert wasted_days >= get_min_length(recov_how, person_id, whz),\
-                (f" The {person_id=} is {wasted_days=} < minimal expected length= {get_min_length(recov_how, person_id, whz)} days "
+                (f" The {person_id=} is {wasted_days=} < minimal expected length= "
+                 f"{get_min_length(recov_how, person_id, whz)} days "
                  f"when {recov_opt=}.")
             self.module.wasting_length_tracker[age_group][recov_opt].append(wasted_days)
 
@@ -1824,12 +1825,12 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
             if total_per_agegrp_nmb > 0:
                 # get those children who are wasted
-                mod_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
-                                                                         inclusive='left') & (under5s.un_WHZ_category
-                                                                                              == '-3<=WHZ<-2')).sum()
-                sev_wasted_agegrp_nmb = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
-                                                                         inclusive='left') & (under5s.un_WHZ_category
-                                                                                           == 'WHZ<-3')).sum()
+                mod_wasted_agegrp_nmb = \
+                    (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years, inclusive='left')
+                     & (under5s.un_WHZ_category == '-3<=WHZ<-2')).sum()
+                sev_wasted_agegrp_nmb = \
+                    (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years, inclusive='left')
+                     & (under5s.un_WHZ_category == 'WHZ<-3')).sum()
                 # add moderate and severe wasting prevalence to the dictionary
                 wasting_prev_dict[f'mod__{low_bound_mos}_{high_bound_mos}mo'] = \
                     mod_wasted_agegrp_nmb / total_per_agegrp_nmb
