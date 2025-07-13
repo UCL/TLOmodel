@@ -20,13 +20,14 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def get_sim(seed, popsize=1000):
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+def get_sim(seed, popsize=1000, **kwargs):
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-                 )
+    sim.register(
+        demography.Demography(),
+        simplified_births.SimplifiedBirths(**kwargs)
+    )
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -235,20 +236,19 @@ def test_standard_run_using_simplified_birth_module(seed):
 
 
 @pytest.mark.slow
-def test_other_modules_running_with_simplified_births_module():
+def test_other_modules_running_with_simplified_births_module(seed):
     """Run a "full simulation" using the simplified_births module and other disease modules"""
     sim = Simulation(
         start_date=Date(2010, 1, 1),
+        seed=seed,
         log_config={
             'custom_levels': {
                 '*': logging.WARNING,
             }
-        }
+        }, resourcefilepath=resourcefilepath
     )
     sim.register(
-        *fullmodel(
-            resourcefilepath=resourcefilepath,
-            use_simplified_births=True,
+        *fullmodel(use_simplified_births=True,
             module_kwargs={"HealthSystem": {"disable": True}},
         )
     )
@@ -256,3 +256,19 @@ def test_other_modules_running_with_simplified_births_module():
     sim.simulate(end_date=Date(2011, 12, 31))
     check_property_integrity(sim)
     check_dtypes(sim)
+
+def test_using_option_force_one_birth_for_one_death(seed):
+    """Test that when we have the option `force_one_birth_for_one_death` we see the behaviour expected."""
+
+    sim = get_sim(seed=seed, popsize=1000, force_one_birth_for_one_death=True)
+
+    # Make births happen same month as pregnancy, so that at the end of each month, pregnancies == births
+    sim.modules['SimplifiedBirths'].parameters['months_between_pregnancy_and_delivery'] = 0
+
+    # Check that in a simulation, the number of births that occurs does match the number of deaths
+    sim.simulate(end_date=Date(2015, 1, 1))
+    df = sim.population.props
+    num_births = len(df.loc[df.date_of_birth.notnull() & (df.mother_id >= 0)])
+    num_deaths = len(df.loc[df.date_of_death.notnull()])
+
+    assert num_births == num_deaths
