@@ -48,6 +48,7 @@ def get_sim(tmpdir):
     modules registered.
     """
     sim = Simulation(start_date=start_date, seed=0,
+                     resourcefilepath=resourcefilepath,
                      show_progress_bar=False,
                      log_config={
                          'filename': 'tmp',
@@ -57,17 +58,16 @@ def get_sim(tmpdir):
                              "tlo.methods.wasting": logging.INFO}
                      })
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=False,
+    sim.register(demography.Demography(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthsystem.HealthSystem(disable=False,
                                            cons_availability='all',
                                            equip_availability='all'),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 wasting.Wasting(resourcefilepath=resourcefilepath)
+                 symptommanager.SymptomManager(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthburden.HealthBurden(),
+                 simplified_births.SimplifiedBirths(),
+                 wasting.Wasting()
                  )
     return sim
 
@@ -405,10 +405,10 @@ def test_nat_recovery_moderate_wasting(tmpdir):
 
 
 def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpdir):
-    """ Check the onset of symptoms with uncomplicated SAM, check recovery to MAM with tx when
+    """ Check the onset of symptoms with uncomplicated SAM, check recovery to MAM with treatment (tx) when
     the progression to severe wasting is certain, hence no natural recovery from moderate wasting,
     the natural death due to SAM is certain, hence no natural recovery from severe wasting,
-    and check natural death canceled w\ tx and symptoms resolved when recovered to MAM with tx. """
+    and check natural death canceled with tx and symptoms resolved when recovered to MAM with tx. """
     dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
@@ -542,8 +542,8 @@ def test_tx_recovery_to_MAM_severe_acute_malnutrition_without_complications(tmpd
 
 
 def test_tx_full_recovery_severe_acute_malnutrition_with_complications(tmpdir):
-    """ Check the onset of symptoms with complicated SAM, check full recovery with tx when
-    the natural death due to SAM is certain but canceled w\ tx, and symptoms resolved when fully recovered with tx. """
+    """ Check the onset of symptoms with complicated SAM, check full recovery with treatment (tx) when the natural
+    death due to SAM is certain but canceled with tx, and symptoms resolved when fully recovered with tx. """
     dur = pd.DateOffset(days=0)
     popsize = 1000
     sim = get_sim(tmpdir)
