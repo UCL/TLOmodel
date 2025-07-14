@@ -31,13 +31,13 @@ sim.register(demography.Demography(),
 sim.make_initial_population(n=5000)
 sim.simulate(end_date=end_date)
 
-# run simulation and store logfile path
-path_to_logfile = sim.log_filepath
-# create copd logs dictionary
-logs_dict = parse_log_file(path_to_logfile)['tlo.methods.demography']
-
-# create a DataFrame that contains copd prevalence data
-pop_df = logs_dict['population']
-pop_df.to_excel(outputpath / 'demography_analysis.xlsx')
-print(pop_df)
+# # run simulation and store logfile path
+# path_to_logfile = sim.log_filepath
+# # create copd logs dictionary
+# logs_dict = parse_log_file(path_to_logfile)['tlo.methods.demography']
+#
+# # create a DataFrame that contains copd prevalence data
+# pop_df = logs_dict['population']
+# pop_df.to_excel(outputpath / 'demography_analysis.xlsx')
+# print(pop_df)
 
