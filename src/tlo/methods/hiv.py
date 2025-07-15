@@ -128,6 +128,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.BOOL, "Knows that they are HIV+: i.e. is HIV+ and tested as HIV+"
         ),
         "hv_number_tests": Property(Types.INT, "Number of HIV tests ever taken"),
+        "hv_arv_dispensing_interval": Property(Types.REAL,
+                                              "Number of months of ARVs dispensed in current prescription"),
         # --- Dates on which things have happened:
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
@@ -394,9 +396,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.INT,
             "number of repeat visits assumed for healthcare services",
         ),
+        "initial_dispensation_period_months": Parameter(
+            Types.INT,
+            "length of prescription for ARVs in months for prescriptions pre-2021",
+        ),
         "dispensation_period_months": Parameter(
-            Types.REAL,
-            "length of prescription for ARVs in months, same for all PLHIV",
+            Types.DATA_FRAME,
+            "prescription length probabilities for ARVs in months, varies by age/sex/year",
         ),
         "length_of_inpatient_stay_if_terminal": Parameter(
             Types.LIST,
@@ -467,11 +473,17 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # Load probability of art / viral suppression start after positive HIV test
         p["prob_start_art_or_vs"] = workbook["spectrum_treatment_cascade"]
 
+        # Load ARV dispensation schedule
+        p["dispensation_period_months"] = workbook["arv_dispensation_schedule"]
+
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
 
         # load parameters for scale-up projections
         p['scaleup_parameters'] = workbook["scaleup_parameters"]
+
+        # create nested dict for ARV dispensation schedule
+        self.setup_art_dispensation_lookup()
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -489,7 +501,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             #  AIDS without anti-retroviral treatment without anemia
             self.daly_wts["aids"] = self.sim.modules["HealthBurden"].get_daly_weight(19)
 
-        # 2)  Declare the Symptoms.
+        # 2) Declare the Symptoms.
         self.sim.modules["SymptomManager"].register_symptom(
             Symptom(
                 name="aids_symptoms",
@@ -655,6 +667,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, "hv_behaviour_change"] = False
         df.loc[df.is_alive, "hv_diagnosed"] = False
         df.loc[df.is_alive, "hv_number_tests"] = 0
+        df.loc[df.is_alive, "hv_arv_dispensing_interval"] = np.nan
 
         # --- Dates on which things have happened
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
@@ -845,11 +858,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # all those on ART need to have event scheduled for continuation/cessation of treatment
         # this window is 1-90 days (3-monthly prescribing)
         for person in art_idx:
-            days = self.rng.randint(low=1, high=self.parameters['dispensation_period_months'] * 30.5, dtype=np.int64)
+            days = self.rng.randint(low=1, high=self.parameters['initial_dispensation_period_months'] * 30.5, dtype=np.int64)
 
-            date_treated = (params['dispensation_period_months'] * 30.5) - days
+            date_treated = (params['initial_dispensation_period_months'] * 30.5) - days
             df.at[person, "hv_date_treated"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
             df.at[person, "hv_date_last_ART"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
+            df.at[person, "hv_arv_dispensing_interval"] = self.parameters['initial_dispensation_period_months']
 
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(person_id=person, module=self),
@@ -1186,7 +1200,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # change all column values
         p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
 
-        # update exising linear models to use new scaled-up paramters
+        # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
 
     def on_birth(self, mother_id, child_id):
@@ -1207,6 +1221,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_diagnosed"] = False
         df.at[child_id, "hv_number_tests"] = 0
+        df.at[child_id, "hv_arv_dispensing_interval"] = np.nan
 
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
@@ -1516,6 +1531,47 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         assert return_prob is not None
 
         return return_prob
+
+    def setup_art_dispensation_lookup(self):
+        """Preprocess the dispensation probability table into a nested dict for fast lookup."""
+        df = self.parameters["dispensation_period_months"]
+        lookup = {}
+
+        for (sub_group, year), group_df in df.groupby(["sub_group", "year"]):
+            lengths = group_df["length_of_dispensation_months"].values
+            probs = group_df["probability"].values
+            lookup[(sub_group, year)] = (lengths, probs)
+
+        self._art_dispensation_lookup = lookup
+
+    def get_art_dispensation_length(self, year, person):
+        """
+        Return ART dispensation duration (in months) based on year and person attributes
+        """
+        # subgroup assignment
+        if person["age_years"] < 15:
+            sub_group = "child"
+        elif person["sex"] == "F":
+            if person["is_pregnant"]:
+                sub_group = "pregnant"
+            elif person["nb_breastfeeding_status"] != 'none':
+                sub_group = "breastfeeding"
+            else:
+                sub_group = "adult_female"
+        else:
+            sub_group = "adult_male"
+
+        # Fast year clamp
+        if year < 2021:
+            return self.parameters["initial_dispensation_period_months"]
+        year = min(year, 2025)
+
+        key = (sub_group, year)
+        try:
+            lengths, probs = self._art_dispensation_lookup[key]
+            return np.random.choice(lengths, p=probs)
+        except KeyError:
+            raise ValueError(f"No ART dispensation data for sub_group={sub_group} and year={year}")
 
     def stops_treatment(self, person_id):
         """Helper function that is called when someone stops being on ART.
@@ -2763,7 +2819,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
         # HIV test is negative - check that PrEP is available and if it is, initiate or continue  PrEP:
         else:
-            quantity_required = self.module.parameters['dispensation_period_months'] * 30
+            quantity_required = self.module.parameters['initial_dispensation_period_months'] * 30
             if self.get_consumables(
                 item_codes={self.module.item_codes_for_consumables_required['prep']: quantity_required}
             ):
@@ -2778,7 +2834,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
                 # Schedule 'decision about whether to continue on PrEP' for 3 months time
                 self.sim.schedule_event(
                     Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
-                    self.sim.date + pd.DateOffset(months=3),
+                    self.sim.date + pd.DateOffset(months=self.module.parameters['initial_dispensation_period_months']),
                 )
 
             else:
@@ -2825,6 +2881,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
         art_status_at_beginning_of_hsi = person["hv_art"]
+        self.dispensation_interval = self.module.parameters['initial_dispensation_period_months']  # default
 
         if not person["is_alive"]:
             return
@@ -2834,9 +2891,10 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # check whether person had Rx at least 3 months ago and is now due repeat prescription
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
-        if person['hv_date_last_ART'] > (
-                self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        if pd.notna(person["hv_arv_dispensing_interval"]):
+            if person["hv_date_last_ART"] > (
+                self.sim.date - pd.DateOffset(months=person["hv_arv_dispensing_interval"])):
+                return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # ------------------------- give ART ------------------------- #
 
@@ -2856,15 +2914,16 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if drugs_were_available.get('art', False):
             df.at[person_id, 'hv_date_last_ART'] = self.sim.date
 
-            # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
+            # If person has been placed/continued on ART, schedule decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
                     person_id=person_id, module=self.module
                 ),
-                self.sim.date + pd.DateOffset(months=self.module.parameters['dispensation_period_months']),
+                self.sim.date + pd.DateOffset(months=self.dispensation_interval),
             )
 
         else:
+            # ------------------------- if ART not available ------------------------- #
 
             # logger for drugs not available
             person_details_for_tx = {
@@ -2946,9 +3005,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
+        # assign dispensation period of 1 month for first prescription
+        self.dispensation_interval = 1
+
         # Check if drugs are available, and provide drugs
         # this will return a dict where the first item is ART and the second is cotrimoxazole
-        drugs_available = self.get_drugs(age_of_person=person["age_years"])
+        drugs_available = self.get_drugs(age_of_person=person["age_years"], dispensation_interval=self.dispensation_interval)
 
         # ART is first item in drugs_available dict
         if drugs_available.get('art', False):
@@ -2970,6 +3032,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
             df.at[person_id, "hv_art"] = vl_status
             df.at[person_id, "hv_date_treated"] = self.sim.date
+            df.at[person_id, "hv_arv_dispensing_interval"] = self.dispensation_interval
 
             # If VL suppressed, remove any symptoms caused by this module
             if vl_status == "on_VL_suppressed":
@@ -2981,7 +3044,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if drugs_available.get('cotrim', False):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
-        # Consider if TB treatment should start
+        # Consider if TB preventive therapy should start
         self.consider_tb(person_id)
 
         return drugs_available
@@ -2996,8 +3059,20 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
+        # look up dispensation length, DSD from 2021 onwards, else stick with default
+        if self.sim.date.year > 2021:
+            self.dispensation_interval = self.module.get_art_dispensation_length(
+                year=self.sim.date.year,
+                person=person)
+
         # Check if drugs are available and provide drugs:
-        drugs_available = self.get_drugs(age_of_person=person["age_years"])
+        drugs_available = self.get_drugs(age_of_person=person["age_years"], dispensation_interval=self.dispensation_interval)
+
+        if not drugs_available.get('art', False):
+            # if ART not available for full dispensation length, check if one month available
+            self.dispensation_interval = 1
+            drugs_available = self.get_drugs(age_of_person=person["age_years"],
+                                             dispensation_interval=self.dispensation_interval)
 
         # if cotrimoxazole is available, update person's property
         if drugs_available.get('cotrim', False):
@@ -3009,7 +3084,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if self.module.vl_testing_available_by_year[self.sim.date.year]:
             if self.module.rng.random_sample() < (
-                p['dispensation_period_months'] / p['interval_for_viral_load_measurement_months']):
+                df.at[person_id, 'hv_arv_dispensing_interval'] / p['interval_for_viral_load_measurement_months']):
                 if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
                     # VL test performed
                     VL_test_done = True
@@ -3025,6 +3100,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if VL_test_done and drugs_available:
             if person["hv_art"] == "on_not_VL_suppressed":
                 person["hv_art"] = self.update_viral_suppression_status()
+
+        # store new dispensation length for person
+        df.at[person_id, 'hv_arv_dispensing_interval'] = self.dispensation_interval
 
         return drugs_available
 
@@ -3052,12 +3130,13 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             else "on_not_VL_suppressed"
         )
 
-    def get_drugs(self, age_of_person):
+    def get_drugs(self, age_of_person, dispensation_interval):
         """Helper function to get the ART according to the age of the person being treated. Returns dict to indicate
         whether individual drugs were available"""
 
         p = self.module.parameters
-        dispensation_days = 30 * self.module.parameters['dispensation_period_months']
+        dispensation_days = 30 * dispensation_interval
+        # todo if don't have dispensation interval amount, could give fewer months
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
