@@ -199,7 +199,7 @@ def compute_stepwise_effects_by_wash_strategy(df: pd.DataFrame) -> pd.DataFrame:
 
 
 
-def compute_number_averted_within_wash_strategies(
+def compute_number_averted_vs_noMDA_within_wash_strategies(
     df: pd.DataFrame,
     wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
     results_path: Path = None,
@@ -220,6 +220,53 @@ def compute_number_averted_within_wash_strategies(
 
     for strategy in wash_strategies:
         comparator_draw = f"{strategy}, no MDA"
+        # Skip the comparator in selection
+        relevant_draws = [col for col in df.columns.get_level_values(0).unique()
+                          if strategy in col and col != comparator_draw]
+        if not relevant_draws:
+            continue
+
+        # Filter to relevant columns for this strategy
+        df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+
+        # Compute difference relative to the strategy's 'no MDA' comparator
+        diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+
+        # Select only the relevant MDA draws
+        comparator_results.append(diff_df)
+
+    # Concatenate results across all strategies
+    combined_df = pd.concat(comparator_results, axis=1)
+
+    if results_path:
+        period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
+        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+        combined_df.to_excel(output_file)
+
+    return combined_df
+
+
+def compute_number_averted_vs_SAC_within_wash_strategies(
+    df: pd.DataFrame,
+    wash_strategies: tuple = ("Pause WASH", "Continue WASH", "Scale-up WASH"),
+    results_path: Path = None,
+    filename_prefix: str = 'dalys_averted_by_year_run_district',
+    target_period: tuple = None,
+    averted_or_incurred: str = 'averted',
+) -> pd.DataFrame:
+    """
+    Computes value (dalys or number py) averted by comparing each WASH strategy's MDA scenarios
+    to the corresponding 'no MDA' baseline within the same strategy group.
+    """
+    if averted_or_incurred == 'averted':
+        scale = -1.0
+    else:
+        scale = 1.0
+
+    comparator_results = []
+
+    for strategy in wash_strategies:
+        comparator_draw = f"{strategy}, MDA SAC"
         # Skip the comparator in selection
         relevant_draws = [col for col in df.columns.get_level_values(0).unique()
                           if strategy in col and col != comparator_draw]
@@ -868,13 +915,24 @@ formatted_table = format_summary_for_output(dalys_national_summary, filename='su
 
 # === DALYs averted by district =========================================================
 
-dalys_averted_district_compared_noMDA = compute_number_averted_within_wash_strategies(
+dalys_averted_district_compared_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
     dalys_schisto_district_scaled,
     results_path=results_folder,
     filename_prefix='schisto_dalys_averted_by_year_run_district',
     target_period=TARGET_PERIOD,
     averted_or_incurred='averted'
 )
+dalys_averted_district_compared_noMDA.to_excel(results_folder / f'dalys_averted_district_compared_noMDA{target_period()}.xlsx')
+
+
+dalys_averted_district_compared_SAC = compute_number_averted_vs_SAC_within_wash_strategies(
+    dalys_schisto_district_scaled,
+    results_path=results_folder,
+    filename_prefix='schisto_dalys_averted_by_year_run_district',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='averted'
+)
+dalys_averted_district_compared_SAC.to_excel(results_folder / f'dalys_averted_district_compared_SAC{target_period()}.xlsx')
 
 
 # --- Incremental DALYs averted by district ---
@@ -896,7 +954,7 @@ sum_incremental_dalys_averted_district.to_excel(results_folder / f'sum_increment
 
 # === DALYs averted national =========================================================
 
-dalys_averted_national_compared_noMDA = compute_number_averted_within_wash_strategies(
+dalys_averted_national_compared_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
     dalys_summed_by_year,
     results_path=results_folder,
     filename_prefix='schisto_dalys_averted_by_year_run_national',
@@ -1024,27 +1082,31 @@ fmt = format_summary_for_output(cons_costs_per_year_national_summary, filename='
 
 # === Costs incurred relative to comparators NATIONAL =========================================================
 
-full_costs_relative_noMDA = compute_number_averted_within_wash_strategies(
+full_costs_relative_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
     full_costs_per_year_national,
     results_path=results_folder,
     filename_prefix='full_costs_per_year_national_compared_noMDA',
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
+full_costs_relative_noMDA.to_excel(results_folder / f'full_costs_relative_noMDA{target_period()}.xlsx')
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_full_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_national)
 incremental_full_costs_incurred_per_year_national.to_excel(results_folder / f'incremental_full_costs_incurred_per_year_national{target_period()}.xlsx')
 
+
 # --- Cons costs incurred relative to comparator ---
 
-cons_costs_relative_noMDA = compute_number_averted_within_wash_strategies(
+cons_costs_relative_noMDA = compute_number_averted_vs_noMDA_within_wash_strategies(
     cons_costs_per_year_national,
     results_path=results_folder,
     filename_prefix='cons_costs_per_year_national_compared_noMDA',
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
+cons_costs_relative_noMDA.to_excel(results_folder / f'cons_costs_relative_noMDA{target_period()}.xlsx')
+
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_cons_costs_incurred_per_year_national = compute_stepwise_effects_by_wash_strategy(cons_costs_per_year_national)
@@ -1053,13 +1115,23 @@ incremental_cons_costs_incurred_per_year_national.to_excel(results_folder / f'in
 
 # === Costs incurred relative to comparators DISTRICT =========================================================
 
-full_costs_relative_noMDA_district = compute_number_averted_within_wash_strategies(
+full_costs_relative_noMDA_district = compute_number_averted_vs_noMDA_within_wash_strategies(
     full_costs_per_year_district,
     results_path=results_folder,
     filename_prefix='full_costs_per_year_district_compared_noMDA',
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
+full_costs_relative_noMDA_district.to_excel(results_folder / f'full_costs_relative_noMDA_district{target_period()}.xlsx')
+
+full_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_strategies(
+    full_costs_per_year_district,
+    results_path=results_folder,
+    filename_prefix='full_costs_per_year_district_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+full_costs_relative_SAC_district.to_excel(results_folder / f'full_costs_relative_SAC_district{target_period()}.xlsx')
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_full_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(full_costs_per_year_district)
@@ -1077,13 +1149,24 @@ sum_incremental_full_costs_incurred_district.to_excel(results_folder / f'sum_inc
 
 
 # --- Cons costs incurred relative to comparator ---
-cons_costs_relative_noMDA_district = compute_number_averted_within_wash_strategies(
+cons_costs_relative_noMDA_district = compute_number_averted_vs_noMDA_within_wash_strategies(
     cons_costs_per_year_district,
     results_path=results_folder,
     filename_prefix='cons_costs_per_year_district_compared_noMDA',
     target_period=TARGET_PERIOD,
     averted_or_incurred='incurred',
 )
+cons_costs_relative_noMDA_district.to_excel(results_folder / f'cons_costs_relative_noMDA_district{target_period()}.xlsx')
+
+cons_costs_relative_SAC_district = compute_number_averted_vs_SAC_within_wash_strategies(
+    cons_costs_per_year_district,
+    results_path=results_folder,
+    filename_prefix='cons_costs_per_year_district_compared_noMDA',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='incurred',
+)
+cons_costs_relative_SAC_district.to_excel(results_folder / f'cons_costs_relative_SAC_district{target_period()}.xlsx')
+
 
 # incremental costs incurred - compare each prog in turn to the last one
 incremental_cons_costs_incurred_per_year_district = compute_stepwise_effects_by_wash_strategy(cons_costs_per_year_district)
@@ -1238,7 +1321,7 @@ def compute_nhb(
 
 
 
-nhb_district = compute_nhb(
+nhb_district_vs_noMDA = compute_nhb(
     dalys_averted=dalys_averted_district_compared_noMDA,
     comparison_costs=cons_costs_relative_noMDA_district,
     discount_rate_dalys=0.0,
@@ -1247,8 +1330,100 @@ nhb_district = compute_nhb(
     return_summary=True
 )
 
-nhb_district.to_csv(results_folder / f'nhb_district{target_period()}.csv')
+nhb_district_vs_noMDA.to_csv(results_folder / f'nhb_district_vs_noMDA{target_period()}.csv')
+
+nhb_district_vs_SAC = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_SAC,
+    comparison_costs=cons_costs_relative_SAC_district,
+    discount_rate_dalys=0.0,
+    threshold=120,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_SAC.to_csv(results_folder / f'nhb_district_vs_SAC{target_period()}.csv')
+
+nhb_district_vs_SAC_full_costs = compute_nhb(
+    dalys_averted=dalys_averted_district_compared_SAC,
+    comparison_costs=full_costs_relative_SAC_district,
+    discount_rate_dalys=0.0,
+    threshold=120,
+    discount_rate_costs=0.0,
+    return_summary=True
+)
+
+nhb_district_vs_SAC_full_costs.to_csv(results_folder / f'nhb_district_vs_SAC_full_costs{target_period()}.csv')
+
 
 
 # for each district under each WASH assumption, get the preferred strategy
-# preferred strategy chosen by
+# preferred strategy chosen by maximum NHB
+# if nhb compared to SAC is negative, then return SAC as preferred strategy
+
+
+
+def get_best_draw_per_district(df, keyword):
+    """
+    For each district, return the draw containing the keyword with the highest mean.
+    If this best draw has a negative mean and the fallback draw '{keyword}, MDA SAC' is not present,
+    return a row with draw set to that fallback and mean/lower/upper as NaN.
+
+    Parameters:
+        df (pd.DataFrame): MultiIndex (district, draw) DataFrame with ['mean', 'lower', 'upper'].
+        keyword (str): Draw prefix, e.g., "Continue WASH", "Pause WASH", etc.
+
+    Returns:
+        pd.DataFrame: DataFrame with index=district and columns ['draw', 'mean', 'lower', 'upper'].
+    """
+    df_filtered = df[df.index.get_level_values("draw").str.contains(keyword)]
+    df_reset = df_filtered.reset_index()
+
+    # Get best draw (highest mean) per district
+    best_draws = (
+        df_reset
+        .sort_values("mean", ascending=False)
+        .groupby("district")
+        .first()
+        .loc[:, ["draw", "mean", "lower", "upper"]]
+    )
+
+    fallback_draw = f"{keyword}, MDA SAC"
+
+    # Handle districts where best draw is negative
+    for district in best_draws.index[best_draws["mean"] < 0]:
+        try:
+            # Check if fallback draw exists
+            fallback_row = df.loc[(district, fallback_draw)]
+            best_draws.loc[district] = {
+                "draw": fallback_draw,
+                "mean": fallback_row["mean"],
+                "lower": fallback_row["lower"],
+                "upper": fallback_row["upper"],
+            }
+        except KeyError:
+            # If fallback draw is missing, assign NaNs but retain fallback draw name
+            best_draws.loc[district] = {
+                "draw": fallback_draw,
+                "mean": np.nan,
+                "lower": np.nan,
+                "upper": np.nan,
+            }
+
+    return best_draws
+
+
+
+# Apply to each scenario
+pause_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Pause WASH")
+continue_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Continue WASH")
+scaleup_wash_best_strategy = get_best_draw_per_district(nhb_district_vs_SAC, "Scale-up WASH")
+# todo all districts except 2 return PSAC (1 for pause WASH)
+
+pause_wash_best_strategy.to_csv(results_folder / f'pause_wash_best_strategy{target_period()}.csv')
+continue_wash_best_strategy.to_csv(results_folder / f'continue_wash_best_strategy{target_period()}.csv')
+scaleup_wash_best_strategy.to_csv(results_folder / f'scaleup_wash_best_strategy{target_period()}.csv')
+
+
+pause_wash_best_full_costs = get_best_draw_per_district(nhb_district_vs_SAC_full_costs, "Pause WASH")
+# todo all districts return no MDA with full costs
+
