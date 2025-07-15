@@ -1916,8 +1916,8 @@ class Wasting_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     assert all(length >=
                                (p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2) for
                                length in self.module.wasting_recovery_tracker[age_grp][recov_opt]),\
-                        (f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < duration of "
-                         "(mod + sev wast - 2): "
+                        (f"{self.module.wasting_recovery_tracker[age_grp][recov_opt]=} contains length(s) < duration "
+                         "of (mod + sev wast - 2): "
                          f"{(p['duration_of_untreated_mod_wasting'] + p['duration_of_untreated_sev_wasting'] - 2)=} "
                          f"days; {age_grp=}, {recov_opt=}")
                 elif recov_opt in ['mod_MAM_tx_full_recov', 'mod_SAM_tx_full_recov', 'mod_SAM_tx_recov_to_MAM',
