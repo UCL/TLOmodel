@@ -934,3 +934,42 @@ plt.show()
 # agg_tests.to_excel(writer, sheet_name="numbers_tests")
 # referral_type_proportion.to_excel(writer, sheet_name="proportion_tests")
 # writer.save()
+
+
+# # # ---------------------------------------------------------------------- #
+# plot dispensation schedules by year and group
+
+# Extract unique groups and intervals from columns
+columns = df.columns.drop('date')  # Assuming 'date' is a column, you might want to set it as index
+groups = sorted(set(col.split('|')[0].split('=')[1] for col in columns))
+intervals = ['<3', '3-5', '6+']  # Order to plot stacked bars
+
+# Set index to 'date' if not already
+if 'date' in df.columns:
+    df = df.set_index('date')
+
+for group in groups:
+    # Filter columns for this group
+    group_cols = [col for col in df.columns if col.startswith(f'group={group}|interval=')]
+
+    # Reorder columns by intervals to maintain stack order
+    group_cols_sorted = []
+    for interval in intervals:
+        col_name = f'group={group}|interval={interval}'
+        if col_name in group_cols:
+            group_cols_sorted.append(col_name)
+
+    # Extract data for plotting
+    data_to_plot = df[group_cols_sorted]
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    data_to_plot.plot(kind='bar', stacked=True, ax=ax)
+
+    ax.set_title(f'ARV Dispensing Interval Proportions by Year - Group: {group.replace("_", " ").title()}')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Proportion')
+    ax.legend(title='Interval')
+
+    plt.tight_layout()
+    plt.show()
