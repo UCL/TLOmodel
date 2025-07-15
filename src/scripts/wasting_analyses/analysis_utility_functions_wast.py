@@ -334,6 +334,8 @@ def extract_daly_data_frames_and_outcomes(
     Extracts DALYs by cause for under-5s (age_range '0-4'), summed over both sexes, for the specified years.
     :param folder: the folder from which the DALY data will be extracted
     :param years_of_interest: years for which to extract the data
+    :param intervention_years: List of years during which the intervention was implemented (if any).
+    :param interv: Name or identifier of the intervention.
     :return: DataFrame with index ['year'] and columns for each cause, values are summed DALYs for both sexes
     """
 
