@@ -41,6 +41,7 @@ from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hsi_generic_first_appts import GenericFirstAppointmentsMixin
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup, read_csv_files
+from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
@@ -1549,8 +1550,6 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         Return ART dispensation duration (in months) based on year and person attributes
         """
         # subgroup assignment
-        # todo need to find out if mother is breastfeeding, this is property of newborn
-
         if person["age_years"] < 15:
             sub_group = "child"
         elif person["sex"] == "F":
@@ -3747,95 +3746,86 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # ------------------------------------ Multi-month dispensing ------------------------------------
-        # Define age groups and categories
-        age_bins = [0, 14, 100]
-        age_labels = ['child', 'adult']
-        df['age_group'] = pd.cut(df['age_years'], bins=age_bins, labels=age_labels, right=True)
+        # Filter denominator: alive, HIV-infected, and on ART
+        denominator = df[df.is_alive & df.hv_inf & (df.hv_art != 'not')].copy()
 
-        # Define denominator: on ART (hv_art != 'not') and infected (hv_inf == True)
-        denominator = df[(df.hv_inf) & (df.hv_art != 'not')]
+        # Identify breastfeeding mothers
+        breastfeeding_mother_ids = (
+            df.loc[df['nb_breastfeeding_status'] != 'none', 'mother_id']
+            .dropna()
+            .unique()
+        )
 
-        # Initialise dictionary to hold results
-        prop_by_group = {}
-
-        # Children
-        child_df = denominator[denominator['age_group'] == 'child']
-        prop_by_group['child'] = {
-            '<3': (child_df['hv_arv_dispensing_interval'] < 3).sum() / len(child_df) if len(child_df) else 0,
-            '3-5': ((child_df['hv_arv_dispensing_interval'] >= 3) & (
-                    child_df['hv_arv_dispensing_interval'] < 6)).sum() / len(child_df) if len(child_df) else 0,
-            '6+': (child_df['hv_arv_dispensing_interval'] >= 6).sum() / len(child_df) if len(child_df) else 0,
+        # Define group masks
+        group_masks = {
+            'child': denominator['age_years'] < 15,
+            'pregnant_women': (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) & denominator[
+                'is_pregnant'],
+            'breastfeeding_women': (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) &
+                                   denominator.index.isin(breastfeeding_mother_ids),
         }
 
-        # Pregnant women
-        pregnant_df = denominator[
-            (denominator['age_group'] == 'adult') &
-            (denominator['sex'] == 'F') &
-            (denominator['is_pregnant'])
-            ]
-        prop_by_group['pregnant_women'] = {
-            '<3': (pregnant_df['hv_arv_dispensing_interval'] < 3).sum() / len(pregnant_df) if len(pregnant_df) else 0,
-            '3-5': ((pregnant_df['hv_arv_dispensing_interval'] >= 3) & (
-                    pregnant_df['hv_arv_dispensing_interval'] < 6)).sum() / len(pregnant_df) if len(
-                pregnant_df) else 0,
-            '6+': (pregnant_df['hv_arv_dispensing_interval'] >= 6).sum() / len(pregnant_df) if len(pregnant_df) else 0,
-        }
+        # Exclude pregnant/breastfeeding women for adult_female group
+        excluded_ids = set(
+            denominator.loc[group_masks['pregnant_women'] | group_masks['breastfeeding_women']].index
+        )
+        group_masks['adult_female'] = (
+            (denominator['sex'] == 'F') & (denominator['age_years'] >= 15) &
+            ~denominator.index.isin(excluded_ids)
+        )
+        group_masks['adult_male'] = (denominator['sex'] == 'M') & (denominator['age_years'] >= 15)
 
-        # Breastfeeding women: determine who has a child with nb_breastfeeding_status != 'none'
-        breastfeeding_child_mask = df['nb_breastfeeding_status'] != 'none'
-        breastfeeding_mother_ids = df.loc[breastfeeding_child_mask, 'mother_id'].dropna().unique()
+        # Assign group labels
+        group_labels = pd.Series(index=denominator.index, dtype='object')
+        for group, mask in group_masks.items():
+            group_labels.loc[mask] = group
+        group_labels = group_labels.dropna()
 
-        breastfeeding_df = denominator[
-            (denominator['age_group'] == 'adult') &
-            (denominator['sex'] == 'F') &
-            (denominator.index.isin(breastfeeding_mother_ids))
-            ]
-        prop_by_group['breastfeeding_women'] = {
-            '<3': (breastfeeding_df['hv_arv_dispensing_interval'] < 3).sum() / len(breastfeeding_df) if len(
-                breastfeeding_df) else 0,
-            '3-5': ((breastfeeding_df['hv_arv_dispensing_interval'] >= 3) & (
-                    breastfeeding_df['hv_arv_dispensing_interval'] < 6)).sum() / len(breastfeeding_df) if len(
-                breastfeeding_df) else 0,
-            '6+': (breastfeeding_df['hv_arv_dispensing_interval'] >= 6).sum() / len(breastfeeding_df) if len(
-                breastfeeding_df) else 0,
-        }
+        # Filter and annotate the working dataframe
+        grouped_df = (
+            denominator.loc[group_labels.index]
+            .assign(group=group_labels)
+            .copy()
+        )
 
-        # Adult females excluding pregnant and breastfeeding
-        excluded_ids = set(pregnant_df.index).union(set(breastfeeding_df.index))
-        adult_female_df = denominator[
-            (denominator['age_group'] == 'adult') &
-            (denominator['sex'] == 'F') &
-            (~denominator.index.isin(excluded_ids))
-            ]
-        prop_by_group['adult_female'] = {
-            '<3': (adult_female_df['hv_arv_dispensing_interval'] < 3).sum() / len(adult_female_df) if len(
-                adult_female_df) else 0,
-            '3-5': ((adult_female_df['hv_arv_dispensing_interval'] >= 3) & (
-                    adult_female_df['hv_arv_dispensing_interval'] < 6)).sum() / len(adult_female_df) if len(
-                adult_female_df) else 0,
-            '6+': (adult_female_df['hv_arv_dispensing_interval'] >= 6).sum() / len(adult_female_df) if len(
-                adult_female_df) else 0,
-        }
+        # Define dispensing interval bins and labels
+        dispense_bins = [-float('inf'), 3, 6, float('inf')]
+        dispense_labels = ['<3', '3-5', '6+']
 
-        # Adult males
-        adult_male_df = denominator[
-            (denominator['age_group'] == 'adult') &
-            (denominator['sex'] == 'M')
-            ]
-        prop_by_group['adult_male'] = {
-            '<3': (adult_male_df['hv_arv_dispensing_interval'] < 3).sum() / len(adult_male_df) if len(
-                adult_male_df) else 0,
-            '3-5': ((adult_male_df['hv_arv_dispensing_interval'] >= 3) & (
-                    adult_male_df['hv_arv_dispensing_interval'] < 6)).sum() / len(adult_male_df) if len(
-                adult_male_df) else 0,
-            '6+': (adult_male_df['hv_arv_dispensing_interval'] >= 6).sum() / len(adult_male_df) if len(
-                adult_male_df) else 0,
-        }
+        # Ensure 'interval' is a Categorical with all possible levels
+        grouped_df['interval'] = pd.Categorical(
+            pd.cut(
+                grouped_df['hv_arv_dispensing_interval'],
+                bins=dispense_bins,
+                labels=dispense_labels,
+                right=False
+            ),
+            categories=dispense_labels
+        )
+
+        # Define full group list to ensure consistent logging keys across time
+        all_groups = ['child', 'pregnant_women', 'breastfeeding_women', 'adult_female', 'adult_male']
+        full_index = pd.MultiIndex.from_product(
+            [all_groups, dispense_labels],
+            names=['group', 'interval']
+        )
+
+        # Crosstab with full index reindexing
+        prop_series = (
+            pd.crosstab(
+                grouped_df['group'],
+                grouped_df['interval'],
+                normalize='index'
+            )
+            .reindex(columns=dispense_labels, fill_value=0)
+            .stack()
+            .reindex(full_index, fill_value=0)
+        )
 
         # Log results
         logger.info(
             key="arv_dispensing_intervals",
-            data=prop_by_group,
+            data=flatten_multi_index_series_into_dict_for_logging(prop_series),
             description="Proportion of people by ARV dispensing interval categories (<3, 3-5, 6+ months)"
         )
 
