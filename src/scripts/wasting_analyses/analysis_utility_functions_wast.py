@@ -441,8 +441,8 @@ def plot_mortality_rate__by_interv_multiple_settings(
     outputs_path: Path
 ) -> None:
     """
-    Plots mortality rates (neonatal or under-5) and their confidence intervals over time for multiple intervention settings.
-    For the 'SQ' (Status Quo) intervention, also overlays UNICEF and WPP reference data.
+    Plots mortality rates (neonatal or under-5) and their confidence intervals over time for multiple intervention
+    settings. For the 'SQ' (Status Quo) intervention, also overlays UNICEF and WPP reference data.
 
     :param cohort: 'Neonatal' or 'Under-5'
     :param interv_timestamps_dict: Dictionary mapping intervention names to their timestamp identifiers
@@ -716,8 +716,8 @@ def plot_sum_outcome_and_CIs__intervention_period(
     timestamps_suffix: str
 ) -> None:
     """
-    Plots sum of deaths or DALYs and confidence intervals over the intervention period for the specified cohort for multiple
-    scenarios.
+    Plots sum of deaths or DALYs and confidence intervals over the intervention period for the specified cohort for
+    multiple scenarios.
     :param cohort: 'Neonatal' or 'Under-5'
     :param scenarios_dict: Dictionary mapping interventions to scenarios and their corresponding draw numbers
     :param scenarios_to_compare: List of scenarios to plot
@@ -771,10 +771,11 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 scen_data = outcomes_dict[interv][outcome][draw]
 
                 # Calculate sum and confidence intervals
-                sums, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+                sum_interv_years, ci_lower, ci_upper = zip(*scen_data.values.flatten())
 
                 # Plot the data
-                ax.bar(scenario, sums[0], yerr=[[sums[0] - ci_lower[0]], [ci_upper[0] - sums[0]]],
+                ax.bar(scenario, sum_interv_years[0],
+                       yerr=[[sum_interv_years[0] - ci_lower[0]], [ci_upper[0] - sum_interv_years[0]]],
                        label=scenario, color=get_scen_colour(scenario), capsize=5)
 
                 y_top = ax.get_ylim()[1]
@@ -782,8 +783,8 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 # Add text label for the bar height (sum), above the bar
                 ax.text(
                     scenario,
-                    sums[0] + (y_top * 0.02),  # small offset above the bar
-                    f"{sums[0]:,.0f}",
+                    sum_interv_years[0] + (y_top * 0.02),  # small offset above the bar
+                    f"{sum_interv_years[0]:,.0f}",
                     color='black',
                     ha='center',
                     va='bottom',
@@ -793,10 +794,12 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 # Add text labels for ci_low and ci_upper
                 text_color = 'black' if scenario in ['Status Quo'] else 'white'
                 ax.text(scenario,
-                        ci_upper[0] / 2 + ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
+                        ci_upper[0] / 2 + ci_upper[0] / 4 if \
+                            ci_upper < y_top / 2 + y_top / 15 else y_top / 2 + y_top / 15,
                         f"{ci_upper[0]:,.0f}", color=text_color, ha='center', va='top', fontsize=12.5)
                 ax.text(scenario,
-                        ci_upper[0] / 2 - ci_upper[0] / 4 if ci_upper < y_top / 2 + y_top / 15 else y_top / 2 - y_top / 15,
+                        ci_upper[0] / 2 - ci_upper[0] / 4 if \
+                            ci_upper < y_top / 2 + y_top / 15 else y_top / 2 - y_top / 15,
                         f"{ci_lower[0]:,.0f}", color=text_color, ha='center', va='bottom', fontsize=12.5)
 
                 # Add horizontal lines for Status Quo scenario
