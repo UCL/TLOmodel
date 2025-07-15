@@ -28,7 +28,7 @@ class WastingAnalysis(BaseScenario):
             seed=0,
             start_date=Date(year=2010, month=1, day=1),
             end_date=Date(year=2031, month=1, day=1),
-            initial_population_size=30_000,
+            initial_population_size=4_000,
             number_of_draws=1,
             runs_per_draw=10,
         )
@@ -48,7 +48,7 @@ class WastingAnalysis(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel()
 
     # Scaling up care-seeking (CS) scenarios
     def draw_parameters(self, draw_number, rng):
