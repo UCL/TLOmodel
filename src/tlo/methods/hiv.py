@@ -1544,17 +1544,19 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         self._art_dispensation_lookup = lookup
 
-    def get_art_dispensation_length(self, year, person):
+    def get_art_dispensation_length(self, year, person, currently_breastfeeding):
         """
         Return ART dispensation duration (in months) based on year and person attributes
         """
         # subgroup assignment
+        # todo need to find out if mother is breastfeeding, this is property of newborn
+
         if person["age_years"] < 15:
             sub_group = "child"
         elif person["sex"] == "F":
             if person["is_pregnant"]:
                 sub_group = "pregnant"
-            elif person["nb_breastfeeding_status"] != 'none':
+            elif currently_breastfeeding:
                 sub_group = "breastfeeding"
             else:
                 sub_group = "adult_female"
@@ -3060,10 +3062,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "hv_on_cotrimoxazole"] = False
 
         # look up dispensation length, DSD from 2021 onwards, else stick with default
+        currently_breastfeeding = (
+            (df["mother_id"] == person_id) & (df["nb_breastfeeding_status"] != "none")
+        ).any()
+
         if self.sim.date.year > 2021:
             self.dispensation_interval = self.module.get_art_dispensation_length(
                 year=self.sim.date.year,
-                person=person)
+                person=person,
+            currently_breastfeeding=currently_breastfeeding)
 
         # Check if drugs are available and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"], dispensation_interval=self.dispensation_interval)
@@ -3136,7 +3143,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         p = self.module.parameters
         dispensation_days = 30 * dispensation_interval
-        # todo if don't have dispensation interval amount, could give fewer months
 
         if age_of_person < p["ART_age_cutoff_young_child"]:
             # Formulation for young children
@@ -3738,6 +3744,99 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "HivTreatmentDelayAdults": adult_tx_delays,
                 "HivTreatmentDelayChildren": child_tx_delays,
             },
+        )
+
+        # ------------------------------------ Multi-month dispensing ------------------------------------
+        # Define age groups and categories
+        age_bins = [0, 14, 100]
+        age_labels = ['child', 'adult']
+        df['age_group'] = pd.cut(df['age_years'], bins=age_bins, labels=age_labels, right=True)
+
+        # Define denominator: on ART (hv_art != 'not') and infected (hv_inf == True)
+        denominator = df[(df.hv_inf) & (df.hv_art != 'not')]
+
+        # Initialise dictionary to hold results
+        prop_by_group = {}
+
+        # Children
+        child_df = denominator[denominator['age_group'] == 'child']
+        prop_by_group['child'] = {
+            '<3': (child_df['hv_arv_dispensing_interval'] < 3).sum() / len(child_df) if len(child_df) else 0,
+            '3-5': ((child_df['hv_arv_dispensing_interval'] >= 3) & (
+                    child_df['hv_arv_dispensing_interval'] < 6)).sum() / len(child_df) if len(child_df) else 0,
+            '6+': (child_df['hv_arv_dispensing_interval'] >= 6).sum() / len(child_df) if len(child_df) else 0,
+        }
+
+        # Pregnant women
+        pregnant_df = denominator[
+            (denominator['age_group'] == 'adult') &
+            (denominator['sex'] == 'F') &
+            (denominator['is_pregnant'])
+            ]
+        prop_by_group['pregnant_women'] = {
+            '<3': (pregnant_df['hv_arv_dispensing_interval'] < 3).sum() / len(pregnant_df) if len(pregnant_df) else 0,
+            '3-5': ((pregnant_df['hv_arv_dispensing_interval'] >= 3) & (
+                    pregnant_df['hv_arv_dispensing_interval'] < 6)).sum() / len(pregnant_df) if len(
+                pregnant_df) else 0,
+            '6+': (pregnant_df['hv_arv_dispensing_interval'] >= 6).sum() / len(pregnant_df) if len(pregnant_df) else 0,
+        }
+
+        # Breastfeeding women: determine who has a child with nb_breastfeeding_status != 'none'
+        breastfeeding_child_mask = df['nb_breastfeeding_status'] != 'none'
+        breastfeeding_mother_ids = df.loc[breastfeeding_child_mask, 'mother_id'].dropna().unique()
+
+        breastfeeding_df = denominator[
+            (denominator['age_group'] == 'adult') &
+            (denominator['sex'] == 'F') &
+            (denominator.index.isin(breastfeeding_mother_ids))
+            ]
+        prop_by_group['breastfeeding_women'] = {
+            '<3': (breastfeeding_df['hv_arv_dispensing_interval'] < 3).sum() / len(breastfeeding_df) if len(
+                breastfeeding_df) else 0,
+            '3-5': ((breastfeeding_df['hv_arv_dispensing_interval'] >= 3) & (
+                    breastfeeding_df['hv_arv_dispensing_interval'] < 6)).sum() / len(breastfeeding_df) if len(
+                breastfeeding_df) else 0,
+            '6+': (breastfeeding_df['hv_arv_dispensing_interval'] >= 6).sum() / len(breastfeeding_df) if len(
+                breastfeeding_df) else 0,
+        }
+
+        # Adult females excluding pregnant and breastfeeding
+        excluded_ids = set(pregnant_df.index).union(set(breastfeeding_df.index))
+        adult_female_df = denominator[
+            (denominator['age_group'] == 'adult') &
+            (denominator['sex'] == 'F') &
+            (~denominator.index.isin(excluded_ids))
+            ]
+        prop_by_group['adult_female'] = {
+            '<3': (adult_female_df['hv_arv_dispensing_interval'] < 3).sum() / len(adult_female_df) if len(
+                adult_female_df) else 0,
+            '3-5': ((adult_female_df['hv_arv_dispensing_interval'] >= 3) & (
+                    adult_female_df['hv_arv_dispensing_interval'] < 6)).sum() / len(adult_female_df) if len(
+                adult_female_df) else 0,
+            '6+': (adult_female_df['hv_arv_dispensing_interval'] >= 6).sum() / len(adult_female_df) if len(
+                adult_female_df) else 0,
+        }
+
+        # Adult males
+        adult_male_df = denominator[
+            (denominator['age_group'] == 'adult') &
+            (denominator['sex'] == 'M')
+            ]
+        prop_by_group['adult_male'] = {
+            '<3': (adult_male_df['hv_arv_dispensing_interval'] < 3).sum() / len(adult_male_df) if len(
+                adult_male_df) else 0,
+            '3-5': ((adult_male_df['hv_arv_dispensing_interval'] >= 3) & (
+                    adult_male_df['hv_arv_dispensing_interval'] < 6)).sum() / len(adult_male_df) if len(
+                adult_male_df) else 0,
+            '6+': (adult_male_df['hv_arv_dispensing_interval'] >= 6).sum() / len(adult_male_df) if len(
+                adult_male_df) else 0,
+        }
+
+        # Log results
+        logger.info(
+            key="arv_dispensing_intervals",
+            data=prop_by_group,
+            description="Proportion of people by ARV dispensing interval categories (<3, 3-5, 6+ months)"
         )
 
 
