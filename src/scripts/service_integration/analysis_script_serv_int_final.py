@@ -4,13 +4,10 @@ from collections import Counter, defaultdict
 
 import os
 import scipy.stats as st
-from jinja2 import pass_environment
 from pandas import read_excel
 from scipy.stats import t, norm, shapiro
 
 import pandas as pd
-import tableone
-from tableone import TableOne
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,7 +27,7 @@ plt.style.use('seaborn-darkgrid')
 resourcefilepath = Path("./resources")
 
 outputspath = './outputs/sejjj49@ucl.ac.uk/'
-scenario = 'integration_scenario_max_test_2536972'
+scenario = 'integration_scenario_max_test_2524959'
 results_folder= get_scenario_outputs(scenario, outputspath)[-1]
 
 # Create a dict of {run: 'scenario'} from the updated parameters
@@ -77,18 +74,18 @@ def get_pop_by_agegrp_label(df):
 
     return series_multi
 
-def get_percentage_diff(df):
-    percent_diff = df.copy()
+def get_diff(df):
+    diff = df.copy()
     for col in df.columns:
         if col[0] != 0:
             # Get corresponding (0, col[1]) for comparison
             base_col = (0, col[1])
-            percent_diff[col] = (df[col] - df[base_col]) / df[base_col] * 100
+            diff[col] = df[base_col] - df[col]
         else:
-            percent_diff[col] = 0  # or np.nan if you prefer
+            diff[col] = 0  # or np.nan if you prefer
 
-    pdiff_sum = compute_summary_statistics(percent_diff, use_standard_error=True)
-    return pdiff_sum
+    diff_sum = compute_summary_statistics(diff, use_standard_error=True)
+    return diff_sum
 
 def compute_service_statistics(counters_by_draw_and_run):
     grouped_data = defaultdict(lambda: defaultdict(list))
@@ -107,8 +104,8 @@ def compute_service_statistics(counters_by_draw_and_run):
             return np.nan  # or return [0]*length if you want default
         return [sum(items) for items in zip(*valid_lists)]
 
-    def pct_diff_from_col0(df):
-        def pct_diff_row(row):
+    def diff_from_col0(df):
+        def diff_row(row):
             base = row[0]
             result = {}
             for col in df.columns:
@@ -119,15 +116,15 @@ def compute_service_statistics(counters_by_draw_and_run):
                     if not isinstance(base, list) or not isinstance(val, list):
                         result[col] = np.nan
                     else:
-                        result[col] = [(v - b) / b * 100 if b != 0 else np.nan for v, b in zip(val, base)]
+                        result[col] = [b - v if b != 0 else np.nan for b, v in zip(base, val)]
             return pd.Series(result)
 
-        return df.apply(pct_diff_row, axis=1)
+        return df.apply(diff_row, axis=1)
 
     # Run the function
     # Apply to entire DataFrame grouped by level
     appt_type = data_df.groupby(level=1).agg(safe_sum_lists)
-    pdiff_appt_type = pct_diff_from_col0(appt_type)
+    diff_appt_type = diff_from_col0(appt_type)
 
     width_of_range = 0.95
 
@@ -147,9 +144,9 @@ def compute_service_statistics(counters_by_draw_and_run):
         }
     # Apply to every cell in the DataFrame
     appt_type_summ = appt_type.applymap(summarize_list)
-    pdiff_appt_type_summ = pdiff_appt_type.applymap(summarize_list)
+    diff_appt_type_summ = diff_appt_type.applymap(summarize_list)
 
-    return appt_type_summ, pdiff_appt_type_summ
+    return appt_type_summ, diff_appt_type_summ
 
 def barcharts(data, y_label, title, by_cause, folder):
     # Extract means and errors
@@ -187,10 +184,10 @@ def barcharts(data, y_label, title, by_cause, folder):
     plt.xticks(fontsize=8, rotation=90)
     plt.tight_layout()
     if by_cause and y_label.endswith('(Weighted)'):
-        plt.savefig(f'{folder}/wtd_pdfiff_{scen_draws[k]}.png', bbox_inches='tight')
+        plt.savefig(f'{folder}/wtd_diff_{scen_draws[k]}.png', bbox_inches='tight')
 
     elif by_cause and not y_label.endswith('(Weighted)'):
-        plt.savefig(f'{folder}/wpdfiff_{scen_draws[k]}.png', bbox_inches='tight')
+        plt.savefig(f'{folder}/diff_{scen_draws[k]}.png', bbox_inches='tight')
 
     else:
         plt.savefig(f'{folder}/{title}.png', bbox_inches='tight')
@@ -241,6 +238,9 @@ def grouped_bar_chart(df, draw, title, ylabel, folder):
 
 
 # ==================================================== DALYS ==========================================================
+#  TODO: STACK DALYS BY TIME FRAME...10/20/30 years...
+
+
 # taking the numbers of DALYS by age-group, weighting them by the proportion of the pop in that age-group and
 # summing to get a weighted (and more representative) total number of DALYS. This can be done by condition or overall
 # if you like.
@@ -259,14 +259,14 @@ dalys_by_year_cause = dalys_by_age_date_and_cause.groupby(by=["year", "label"]).
 dalys_by_year_cause_int_period = dalys_by_year_cause.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year]
 total_dalys_by_year_cause =  dalys_by_year_cause_int_period.groupby('label').sum()
 total_dalys_by_year_summ = compute_summary_statistics(total_dalys_by_year_cause, use_standard_error=True)
-pdiff_dalys_by_cause = get_percentage_diff(total_dalys_by_year_cause)
+diff_dalys_by_cause = get_diff(total_dalys_by_year_cause)
 
 # Get total dalys per scenario (unweighted)
 dalys_by_age_date = dalys_by_age_date_and_cause.groupby(by=["year", "age_group"]).sum()
 dalys_unweighted_year = dalys_by_age_date.groupby(by='year').sum()
 total_dalys_unweighted = dalys_unweighted_year.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year].sum().to_frame().T
 total_dalys_unweighted_summ = compute_summary_statistics(total_dalys_unweighted, use_standard_error=True)
-pdiff_total_dalys_unweighted = get_percentage_diff(total_dalys_unweighted)
+diff_total_dalys_unweighted = get_diff(total_dalys_unweighted)
 
 # Get total dalys per scenario (weighted by population size across age groups)
 pop_f = extract_results(
@@ -320,13 +320,13 @@ total_dalys_weighted = age_standardize_dalys(dalys_by_age_date)
 total_dalys_weighted_yr = total_dalys_weighted.groupby(level='year').sum()
 total_dalys_weighted_yr_int = total_dalys_weighted_yr.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year].sum().to_frame().T
 total_weighted_dalys_summ = compute_summary_statistics(total_dalys_weighted_yr_int, use_standard_error=True)
-pdiff_weighted_dalys_sum = get_percentage_diff(total_dalys_weighted_yr_int)
+diff_weighted_dalys_sum = get_diff(total_dalys_weighted_yr_int)
 
 dalys_by_cause_weighted = age_standardize_dalys(dalys_by_age_date_and_cause)
 d_by_cause_int_period = dalys_by_cause_weighted.loc[TARGET_PERIOD[0].year:TARGET_PERIOD[-1].year]
 dalys_by_cause_weighted = d_by_cause_int_period.groupby(level='label').sum()
 dalys_by_cause_weighted_summ = compute_summary_statistics(dalys_by_cause_weighted)
-pdiff_dalys_by_cause_weighted = get_percentage_diff(dalys_by_cause_weighted)
+diff_dalys_by_cause_weighted = get_diff(dalys_by_cause_weighted)
 
 
 # Output and save plots
@@ -334,13 +334,13 @@ pdiff_dalys_by_cause_weighted = get_percentage_diff(dalys_by_cause_weighted)
 barcharts(total_dalys_unweighted_summ, 'Total Population DALYs',
           'Total Population DALYs by Scenario', False, g_path)
 
-barcharts(pdiff_total_dalys_unweighted, 'Percentage Diff. Population DALYs',
-          'Percentage Difference from Status Quo for Total DALYs by Scenario', False,
+barcharts(diff_total_dalys_unweighted, 'DALYs Averted',
+          'Difference from Status Quo for Total DALYs by Scenario', False,
           g_path)
 
 # Weighted DALYs
-barcharts(pdiff_weighted_dalys_sum, 'Percentage Diff. Population Weighted DALYs',
-          'Percentage Difference from Status Quo for Population Weighted DALYs by Scenario', False, g_path)
+barcharts(diff_weighted_dalys_sum, 'Population Weighted DALYs Averted',
+          'Difference from Status Quo for Population Weighted DALYs by Scenario', False, g_path)
 
 barcharts(total_weighted_dalys_summ, 'Total Population Weighted DALYs',
           'Total Population Weighted DALYs by Scenario', False, g_path)
@@ -356,13 +356,13 @@ for k in scen_draws:
                           f'Weighted DALYs by Cause: Status Quo vs {scen_draws[k]}',
                           'Weighted DALYs', dalys_folder)
 
-        barcharts(pdiff_dalys_by_cause_weighted[k],
-                  'Percentage Difference (Weighted)',
+        barcharts(diff_dalys_by_cause_weighted[k],
+                  'Weighted DALYs Averted',
                   f'P.diff Weighted DALYs by cause compared to Status Quo: {scen_draws[k]}',
                   True, dalys_folder)
 
-        barcharts(pdiff_dalys_by_cause[k],
-                  'Percentage Difference',
+        barcharts(diff_dalys_by_cause[k],
+                  'DALYs Averted',
                   f'P.diff DALYs by cause compared to Status Quo: {scen_draws[k]}',
                   True, dalys_folder)
 
@@ -390,7 +390,7 @@ counts_by_treatment_id_and_appt_type =  bin_hsi_event_details(
         )
 apt_data = compute_service_statistics(counts_by_treatment_id_and_appt_type)
 apt_type_summ = apt_data[0]
-pdiff_apt_type_sum = apt_data[1]
+diff_apt_type_sum = apt_data[1]
 
 labels = apt_type_summ.index
 sq_data = [[apt_type_summ.at[appt, 0]['median'] for appt in labels],
@@ -433,9 +433,9 @@ for k in scen_draws:
     plt.show()
 
     # do percentaga diff from SQ
-    median = [pdiff_apt_type_sum.at[appt, k]['median'] for appt in labels]
-    lower_errors = [pdiff_apt_type_sum.at[appt, k]['lower'] for appt in labels]
-    upper_errors = [pdiff_apt_type_sum.at[appt, k]['upper'] for appt in labels]
+    median = [diff_apt_type_sum.at[appt, k]['median'] for appt in labels]
+    lower_errors = [diff_apt_type_sum.at[appt, k]['lower'] for appt in labels]
+    upper_errors = [diff_apt_type_sum.at[appt, k]['upper'] for appt in labels]
 
     yerr_lower = [med - low for med, low in zip(median, lower_errors)]
     yerr_upper = [up - med for med, up in zip(median, upper_errors)]
@@ -444,15 +444,175 @@ for k in scen_draws:
     fig, ax = plt.subplots()
     ax.bar(labels, median, yerr=[yerr_lower, yerr_upper], capsize=5, alpha=0.7, ecolor='black')
     ax.axhline(0, color='gray', linestyle='--', linewidth=1)
-    ax.set_ylabel('Percentage Difference')
+    ax.set_ylabel('Difference from SQ')
     ax.set_title(f'P Diff. from Status Quo of Number of Appointments: {scen_draws[k]}')
 
     # Adjust label size
     plt.xticks(fontsize=8, rotation=90)
     plt.tight_layout()
-    plt.savefig(f'{hsi_folder}/pdiff_appt_{scen_draws[k]}.png', bbox_inches='tight')
+    plt.savefig(f'{hsi_folder}/diff_appt_{scen_draws[k]}.png', bbox_inches='tight')
     plt.show()
 
+
+
+#  ----------------------------------------- HCW time use by cadre ---------------------------------------------------
+appointment_time_table = pd.read_csv(
+    resourcefilepath
+    / 'healthsystem'
+    / 'human_resources'
+    / 'definitions'
+    / 'ResourceFile_Appt_Time_Table.csv',
+    index_col=["Appt_Type_Code", "Facility_Level", "Officer_Category"]
+)
+
+appt_type_facility_level_officer_category_to_appt_time = (
+    appointment_time_table.Time_Taken_Mins.to_dict()
+)
+
+officer_categories = appointment_time_table.index.levels[
+    appointment_time_table.index.names.index("Officer_Category")
+].to_list()
+
+def get_hcw_time_counts(descriptor):
+
+    times_by_officer_category_run = bin_hsi_event_details(
+            results_folder,
+            lambda event_details, count: sum(
+                [
+                    Counter({
+                        (
+                            officer_category,
+                            (event_details["treatment_id"].split("_")[0] if descriptor=='treatment_id' else
+                            event_details['appt_footprint'][0][0])
+                        ):
+                        count
+                        * appt_number
+                        * appt_type_facility_level_officer_category_to_appt_time.get(
+                            (
+                                appt_type,
+                                event_details["facility_level"],
+                                officer_category
+                            ),
+                            0
+                        )
+                        for officer_category in officer_categories
+                    })
+                    for appt_type, appt_number in event_details["appt_footprint"]
+                ],
+                Counter()
+            ),
+            *TARGET_PERIOD,
+            False
+        )
+
+    return times_by_officer_category_run
+
+# difference in total clinica/nmw/pharmacy time from SQ per scenario (in shifts)
+times_by_officer_category_appt_per_run = get_hcw_time_counts('appt_footprint')
+
+total_time_by_cadre_per_run = {}
+for key, counter in times_by_officer_category_appt_per_run.items():
+    new_counter = defaultdict(int)
+    for (first, second), value in counter.items():
+        new_counter[first] += value
+    total_time_by_cadre_per_run[key] = dict(new_counter)
+
+# # Total time by cadre by run
+time_data_df = pd.DataFrame.from_dict(total_time_by_cadre_per_run)
+time_data_df.columns.names = ['draw', 'run']
+
+time_data_df_shift = time_data_df / 480
+# Total time by cadre by run
+time_data_df_shift_summ = compute_summary_statistics(time_data_df_shift)
+
+diff = time_data_df_shift.copy()
+for col in time_data_df_shift.columns:
+    if col[0] != 0:
+        # Get corresponding (0, col[1]) for comparison
+        base_col = (0, col[1])
+        diff[col] = time_data_df_shift[col] - time_data_df_shift[base_col]
+    else:
+        diff[col] = 0  # or np.nan if you prefer
+
+diff_sum = compute_summary_statistics(diff, use_standard_error=True)
+
+def get_hcw_time_data(data, hcw):
+    mean= [data.at[hcw, (k, 'central')] for k in scen_draws]
+    lower_errors = [data.at[hcw, (k, 'lower')] for k in scen_draws]
+    upper_errors = [data.at[hcw, (k, 'upper')] for k in scen_draws]
+
+    yerr_lower = [med - low for med, low in zip(mean, lower_errors)]
+    yerr_upper = [up - med for med, up in zip(mean, upper_errors)]
+
+    return (mean, yerr_lower, yerr_upper)
+
+clin_data= get_hcw_time_data(diff_sum, 'Clinical')
+nm_data = get_hcw_time_data(diff_sum, 'Nursing_and_Midwifery')
+
+pharm_data = get_hcw_time_data(diff_sum, 'Pharmacy')
+dcsa_data= get_hcw_time_data(diff_sum, 'DCSA')
+
+rad_data = get_hcw_time_data(diff_sum, 'Radiography')
+ment_data = get_hcw_time_data(diff_sum, 'Mental')
+
+
+labels = scen_draws.values()
+x = np.arange(len(labels))
+width = 0.35
+
+def do_hcw_time_graphs(hcw1_data, hcw2_data, hcws_lab):
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Plot bars with asymmetric error bars
+    ax.bar(x - width / 2, hcw1_data[0], width,
+           yerr=[hcw1_data[1], hcw1_data[2]],
+           capsize=5, label=hcws_lab[0], alpha=0.8)
+
+    ax.bar(x + width / 2, hcw2_data[0], width,
+           yerr=[hcw2_data[1], hcw2_data[2]],
+           capsize=5, label=hcws_lab[1], alpha=0.8)
+
+    ax.set_title('Difference in HCW time use across scenarios')
+    ax.set_ylabel('Number of 8-hr shifts')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.legend()
+    ax.grid(axis='y', linestyle='--', alpha=0.4)
+    plt.tight_layout()
+    plt.savefig(f'{hsi_folder}/{hcws_lab[0]}_{hcws_lab[1]}_time_use.png', bbox_inches='tight')
+    plt.show()
+
+# todo: we need to exclude HTN data as its such an outlier...
+do_hcw_time_graphs(clin_data, nm_data, ['Clinical', 'Nursing Miwifery'])
+do_hcw_time_graphs(pharm_data, dcsa_data, ['Pharmacy', 'DCSA'])
+do_hcw_time_graphs(rad_data, ment_data, ['Radiography', 'Mental Health'])
+
+times_by_officer_category_treat_id_per_run = get_hcw_time_counts('treatment_id')
+time_treat_id_data_df = pd.DataFrame.from_dict(times_by_officer_category_treat_id_per_run)
+# time_data_df.columns.names = ['draw', 'run']
+# time_data_df_diff = get_diff(time_data_df)
+
+# total_time_by_cadre_per_run = {}
+# for key, counter in times_by_officer_category_appt_per_run.items():
+#     new_counter = defaultdict(int)
+#     for (first, second), value in counter.items():
+#         new_counter[first] += value
+#     total_time_by_cadre_per_run[key] = dict(new_counter)
+#
+# time_data_df = pd.DataFrame.from_dict(total_time_by_cadre_per_run)
+# time_data_df.columns.names = ['draw', 'run']
+# # Total time by cadre by run
+# time_data_df_summ = compute_summary_statistics(time_data_df)
+# time_data_df_diff = get_diff(time_data_df)
+#
+# for k in scen_draws:
+#     if k == 0:
+#         pass
+#     else:
+#         barcharts(time_data_df_diff[k],
+#                   'Difference from SQ (mins)',
+#                   f'Difference in requested time by cadre compared to Status Quo: {scen_draws[k]}',
+#                   True, hsi_folder)
 
 # ================================================== CONSUMABLES ======================================================
 # Wonder if instead of looking at consumables use by category, you could just look at the relative consumables costs
@@ -519,5 +679,23 @@ _scenario_dict = scen_draws)
 
 # ===================================================== OTHERS ========================================================
 
+# 'htn'/'dm'
 
+
+
+# 'dm'
+
+# 'hiv'
+
+#  'tb'
+
+#  'mal'
+
+#  'fp'
+
+# 'anc'
+
+# 'pnc'
+
+# 'epi'
 

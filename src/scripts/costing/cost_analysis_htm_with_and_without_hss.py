@@ -9,7 +9,7 @@ import os
 import textwrap
 
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns
 from matplotlib.ticker import FuncFormatter
 import numpy as np
 import pandas as pd
@@ -30,12 +30,12 @@ from tlo.analysis.utils import (
     unflatten_flattened_multi_index_in_logging
 )
 
-from scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
+from src.scripts.costing.cost_estimation import (estimate_input_cost_of_scenarios,
                                              summarize_cost_data,
                                              apply_discounting_to_cost_data,
                                              do_stacked_bar_plot_of_cost_by_category,
                                              do_line_plot_of_cost,
-                                             generate_roi_plots,
+                                             # generate_roi_plots,
                                              generate_multiple_scenarios_roi_plot)
 
 # Define a timestamp for script outputs
