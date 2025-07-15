@@ -39,8 +39,9 @@ class WastingAnalysis(BaseScenario):
             'directory': './outputs/wasting_analysis',
             "custom_levels": {  # Customise the output of specific loggers
                 "tlo.methods.demography": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
+                'tlo.methods.healthsystem.summary': logging.INFO,
                 "tlo.methods.population": logging.INFO,
-                "tlo.methods.healthburden" :logging.INFO,
                 "tlo.methods.wasting": logging.DEBUG,
                 '*': logging.WARNING
             }
