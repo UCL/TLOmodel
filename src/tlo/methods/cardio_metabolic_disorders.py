@@ -1872,14 +1872,14 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         self.num_of_sessions_had += 1
 
         # Do test and trigger treatment (if necessary) for chronic kidney disease:
-        if set(self.conditions_to_investigate).intersection(
-            ['chronic_kidney_disease']
-        ):
-            self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
+        #if set(self.conditions_to_investigate).intersection(
+            #['chronic_kidney_disease']
+        #):
+        self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
 
         #hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
 
-            if self.num_of_sessions_had < 12:
+        if self.num_of_sessions_had < 12:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=2),
