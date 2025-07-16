@@ -9,6 +9,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 from tlo.analysis.utils import compare_number_of_deaths
 from tlo.util import read_csv_files
@@ -160,6 +161,10 @@ data_hiv_moh_tests = data_hiv_moh_tests.drop(columns=["year"])
 data_hiv_moh_art = xls["MoH_number_art"]
 
 spectrum_tx_cascade = xls["spectrum_treatment_cascade"]
+
+# ART dispensation data
+data_arv_schedule = xls["arv_dispensation_schedule"]
+
 
 # ---------------------------------------------------------------------- #
 # %%: OUTPUTS
@@ -939,37 +944,120 @@ plt.show()
 # # # ---------------------------------------------------------------------- #
 # plot dispensation schedules by year and group
 
-# Extract unique groups and intervals from columns
-columns = df.columns.drop('date')  # Assuming 'date' is a column, you might want to set it as index
-groups = sorted(set(col.split('|')[0].split('=')[1] for col in columns))
-intervals = ['<3', '3-5', '6+']  # Order to plot stacked bars
+# plot the data
+def plot_arv_dispensation_schedule(data: pd.DataFrame):
+    # Prepare data
+    data = data.copy()
+    data['year'] = data['year'].astype(str)
+    data['length_of_dispensation_months'] = data['length_of_dispensation_months'].astype(str)
 
-# Set index to 'date' if not already
-if 'date' in df.columns:
-    df = df.set_index('date')
+    # Get unique values
+    sub_groups = sorted(data['sub_group'].unique())
+    unique_lengths = sorted(data['length_of_dispensation_months'].unique(), key=int)
+    colours = sns.color_palette("Spectral", n_colors=len(unique_lengths))
+    colour_map = dict(zip(unique_lengths, colours))
 
-for group in groups:
-    # Filter columns for this group
-    group_cols = [col for col in df.columns if col.startswith(f'group={group}|interval=')]
+    # Set up subplot grid
+    n_rows, n_cols = 3, 2
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 12), sharey=True)
+    axes = axes.flatten()
 
-    # Reorder columns by intervals to maintain stack order
-    group_cols_sorted = []
-    for interval in intervals:
-        col_name = f'group={group}|interval={interval}'
-        if col_name in group_cols:
-            group_cols_sorted.append(col_name)
+    for i, group in enumerate(sub_groups):
+        subset = data[data['sub_group'] == group]
+        pivot_df = subset.pivot_table(
+            index='year',
+            columns='length_of_dispensation_months',
+            values='probability',
+            aggfunc='sum',
+            fill_value=0
+        ).reindex(columns=unique_lengths)
 
-    # Extract data for plotting
-    data_to_plot = df[group_cols_sorted]
+        pivot_df.plot(
+            kind='bar',
+            stacked=True,
+            color=[colour_map[col] for col in pivot_df.columns],
+            ax=axes[i]
+        )
+        axes[i].set_title(group.capitalize())
+        axes[i].set_xlabel("Year")
+        axes[i].set_ylabel("Probability")
+        axes[i].legend_.remove()
 
-    # Plot
-    fig, ax = plt.subplots(figsize=(10, 6))
-    data_to_plot.plot(kind='bar', stacked=True, ax=ax)
+    # Remove any unused subplots
+    for j in range(i + 1, n_rows * n_cols):
+        fig.delaxes(axes[j])
 
-    ax.set_title(f'ARV Dispensing Interval Proportions by Year - Group: {group.replace("_", " ").title()}')
-    ax.set_xlabel('Year')
-    ax.set_ylabel('Proportion')
-    ax.legend(title='Interval')
+    # Add a single legend
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, title="Dispensation Length (months)", loc='lower right', ncol=len(unique_lengths))
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+
+
+plot_arv_dispensation_schedule(data_arv_schedule)
+
+
+
+# model outputs
+model_arv = output["tlo.methods.hiv"]["arv_dispensing_intervals"]
+
+
+def plot_model_arv_schedule_grid(data: pd.DataFrame):
+    # Melt to long format
+    long_df = data.melt(id_vars='date', var_name='key', value_name='probability')
+
+    # Extract group and interval
+    long_df[['group', 'interval']] = long_df['key'].str.extract(r'group=(.*?)\|interval=(.*)')
+    long_df['year'] = pd.to_datetime(long_df['date']).dt.year.astype(str)
+
+    # Prepare for plotting
+    groups = sorted(long_df['group'].unique())
+    intervals = sorted(long_df['interval'].unique(), key=lambda x: ['<3', '3-5', '6+'].index(x))
+    colours = sns.color_palette("Spectral", n_colors=len(intervals))
+    colour_map = dict(zip(intervals, colours))
+
+    # Set up subplot grid
+    n_rows, n_cols = 3, 2
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 10), sharey=True)
+    axes = axes.flatten()
+
+    for i, group in enumerate(groups):
+        subset = long_df[long_df['group'] == group]
+        pivot_df = subset.pivot_table(
+            index='year',
+            columns='interval',
+            values='probability',
+            aggfunc='sum',
+            fill_value=0
+        ).reindex(columns=intervals)
+
+        pivot_df.plot(
+            kind='bar',
+            stacked=True,
+            color=[colour_map[iv] for iv in pivot_df.columns],
+            ax=axes[i]
+        )
+        axes[i].set_title(group.replace('_', ' ').capitalize())
+        axes[i].set_xlabel("Year")
+        axes[i].set_ylabel("Probability")
+        axes[i].legend_.remove()
+
+    # Remove any unused subplots
+    for j in range(i + 1, n_rows * n_cols):
+        fig.delaxes(axes[j])
+
+    # Shared legend at bottom right
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles, labels,
+        title="Dispensation Interval (months)",
+        loc='lower right',
+        bbox_to_anchor=(0.98, 0.02)
+    )
+
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
+    plt.show()
+
+
+plot_model_arv_schedule_grid(model_arv)

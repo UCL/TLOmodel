@@ -1154,7 +1154,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
 
         # 8) define the start date for viral load testing
         self.vl_testing_available_by_year = {
-            year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year)
+            year: year >= p["viral_load_testing_start_year"] for year in range(2010, sim.end_date.year + 1)
         }
 
     def update_parameters_for_program_scaleup(self):
@@ -1562,8 +1562,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         else:
             sub_group = "adult_male"
 
-        # Fast year clamp
-        if year < 2021:
+        # Restrict to year
+        if year < 2020:
             return self.parameters["initial_dispensation_period_months"]
         year = min(year, 2025)
 
@@ -3065,7 +3065,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             (df["mother_id"] == person_id) & (df["nb_breastfeeding_status"] != "none")
         ).any()
 
-        if self.sim.date.year > 2021:
+        if self.sim.date.year >= 2020:
             self.dispensation_interval = self.module.get_art_dispensation_length(
                 year=self.sim.date.year,
                 person=person,
