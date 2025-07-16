@@ -4,17 +4,12 @@ TODO: add more details
 """
 
 # %% Import statements
-import os
-import pickle
 import textwrap
 import time
 from pathlib import Path
 
-import analysis_utility_functions_wast
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
 
 from src.scripts.costing.cost_estimation import (
@@ -41,7 +36,7 @@ figurespath = Path('./outputs/sejjej5@ucl.ac.uk/wasting/scenarios/_outcomes')
 
 # Load result files
 # ------------------------------------------------------------------------------------------------------------------
-results_folder = get_scenario_outputs('costing-2025-07-08T190254Z.py', outputfilepath)[0] # SQ timestamp
+results_folder = get_scenario_outputs('costing-2025-07-15T223713Z.py', outputfilepath)[0] # SQ timestamp
 
 # Check can read results from draw=0, run=0
 log = load_pickled_dataframes(results_folder, 0, 0)  # look at one log (so can decide what to extract)
@@ -343,13 +338,6 @@ plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'fac_type_tlo', _outputfil
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'district', _outputfilepath = figurespath)
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'item_code', _outputfilepath = figurespath)
 plot_inflow_to_outflow_ratio(inflow_to_outflow_ratio, 'category', _outputfilepath = figurespath)
-
-
-# ---------------- #
-# RUN THE ANALYSIS #
-# ---------------- #
-run_interventions_analysis_wasting(outputs_path, plot_years, intervention_years, intervs_of_interest,
-                                   scenarios_to_compare, intervs_all)
 
 total_time_end = time.time()
 print(f"\ntotal running time (s): {(total_time_end - total_time_start)}")
