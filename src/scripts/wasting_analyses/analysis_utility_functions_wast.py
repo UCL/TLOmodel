@@ -861,10 +861,9 @@ def plot_sum_outcome_and_CIs__intervention_period(
                             yerr=[[averted_sum - averted_ci_lower], [averted_ci_upper - averted_sum]],
                             label=scenario, color=get_scen_colour(scenario), capsize=5)
                     y_top2 = ax2.get_ylim()[1]
-                    print(f"\n{y_top2=}")
                     s1 = y_top2 * 0.02  # space between bar and value of the bar
-                    ax2.text(scenario, averted_ci_upper + s1 if averted_sum > 0 else averted_ci_lower + s1,
-                             f"{averted_sum:,.0f}", color='black', ha='center', va='bottom', fontsize=12.5)
+                    ax2.text(scenario, averted_sum + s1 if averted_sum >= 0 else averted_sum - s1,
+                             f"{averted_sum:,.0f}", color='black', ha='left', va='bottom', fontsize=12.5)
                     ax2.text(scenario, averted_ci_upper / 2 + averted_ci_upper / 4 if \
                         averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 + y_top2 / 15,
                              f"{averted_ci_upper:,.0f}", color='white', ha='center', va='top', fontsize=12.5)
