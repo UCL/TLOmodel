@@ -842,7 +842,8 @@ def plot_sum_outcome_and_CIs__intervention_period(
                     # Only horizontal lines, no bar
                     ax2.axhline(y=sq_sum-sq_ci_lower, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
                     ax2.axhline(y=sq_sum-sq_ci_upper, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
-                    ax2.axhline(y=sq_sum-sq_sum, color=get_scen_colour('Status Quo'), linestyle='-', linewidth=2)
+                    ax2.axhline(y=sq_sum-sq_sum, color=get_scen_colour('Status Quo'), linestyle='-', linewidth=2,
+                                label='SQ')
                 else:
                     # Find the corresponding intervention and draw number
                     interv, draw = next(
@@ -862,14 +863,15 @@ def plot_sum_outcome_and_CIs__intervention_period(
                             label=scenario, color=get_scen_colour(scenario), capsize=5)
                     y_top2 = ax2.get_ylim()[1]
                     s1 = y_top2 * 0.02  # space between bar and value of the bar
-                    ax2.text(scenario, averted_sum + s1 if averted_sum >= 0 else averted_sum - s1,
-                             f"{averted_sum:,.0f}", color='black', ha='left', va='bottom', fontsize=12.5)
-                    ax2.text(scenario, averted_ci_upper / 2 + averted_ci_upper / 4 if \
-                        averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 + y_top2 / 15,
-                             f"{averted_ci_upper:,.0f}", color='white', ha='center', va='top', fontsize=12.5)
-                    ax2.text(scenario, averted_ci_upper / 2 - averted_ci_upper / 4 if \
-                        averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 - y_top2 / 15,
-                             f"{averted_ci_lower:,.0f}", color='white', ha='center', va='bottom', fontsize=12.5)
+                    ax2.text(scenario, averted_sum + s1 if averted_sum >= 0 else 0 + s1,
+                             f"{averted_sum:,.0f}", color=get_scen_colour(scenario), ha='right', va='bottom',
+                             fontsize=12.5, fontweight='bold')
+                    # ax2.text(scenario, averted_ci_upper / 2 + averted_ci_upper / 4 if \
+                    #     averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 + y_top2 / 15,
+                    #          f"{averted_ci_upper:,.0f}", color='white', ha='center', va='top', fontsize=12.5)
+                    # ax2.text(scenario, averted_ci_upper / 2 - averted_ci_upper / 4 if \
+                    #     averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 - y_top2 / 15,
+                    #          f"{averted_ci_lower:,.0f}", color='white', ha='center', va='bottom', fontsize=12.5)
 
             min_interv_year = min(outcomes_dict["SQ"]['interv_years'])
             max_interv_year = max(outcomes_dict["SQ"]['interv_years'])
