@@ -753,7 +753,7 @@ def plot_sum_outcome_and_CIs__intervention_period(
         outcome = neonatal_outcomes[i] if cohort == 'Neonatal' else under5_outcomes[i]
 
         if outcome:
-            # Initialize the plot
+            # Plot comparison of sum of outcome_type over intervention period (absolute numbers of outcome_type)
             fig, ax = plt.subplots()
 
             # Iterate over scenarios to compare
@@ -821,6 +821,71 @@ def plot_sum_outcome_and_CIs__intervention_period(
             plt.savefig(
                 outputs_path / (
                     f"{cohort}_sum_{cause}_{outcome_type}_CI_intervention_period_scenarios_comparison__"
+                    f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                ),
+                bbox_inches='tight'
+            )
+
+            # Plot sum of averted outcome_type compared to SQ over intervention period,
+            # horizontal lines for SQ, bars for interventions
+            fig2, ax2 = plt.subplots()
+
+            # Get SQ values
+            sq_data = outcomes_dict['SQ'][outcome][0]
+            sq_sum, sq_ci_lower, sq_ci_upper = zip(*sq_data.values.flatten())
+            sq_sum = sq_sum[0]
+            sq_ci_lower = sq_ci_lower[0]
+            sq_ci_upper = sq_ci_upper[0]
+
+            for scenario in scenarios_to_compare:
+                if scenario == 'Status Quo':
+                    # Only horizontal lines, no bar
+                    ax2.axhline(y=sq_sum-sq_ci_lower, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+                    ax2.axhline(y=sq_sum-sq_ci_upper, color=get_scen_colour('Status Quo'), linestyle='--', linewidth=1)
+                    ax2.axhline(y=sq_sum-sq_sum, color=get_scen_colour('Status Quo'), linestyle='-', linewidth=2)
+                else:
+                    # Find the corresponding intervention and draw number
+                    interv, draw = next(
+                        (interv, draw)
+                        for interv, scenarios_for_interv_dict in scenarios_dict.items()
+                        if scenario in scenarios_for_interv_dict
+                        for scen_name, draw in scenarios_for_interv_dict.items()
+                        if scen_name == scenario
+                    )
+                    scen_data = outcomes_dict[interv][outcome][draw]
+                    sum_interv_years, ci_lower, ci_upper = zip(*scen_data.values.flatten())
+                    averted_sum = sq_sum - sum_interv_years[0]
+                    averted_ci_lower = sq_sum - ci_upper[0]
+                    averted_ci_upper = sq_sum - ci_lower[0]
+                    ax2.bar(scenario, averted_sum,
+                            yerr=[[averted_sum - averted_ci_lower], [averted_ci_upper - averted_sum]],
+                            label=scenario, color=get_scen_colour(scenario), capsize=5)
+                    y_top2 = ax2.get_ylim()[1]
+                    print(f"\n{y_top2=}")
+                    s1 = y_top2 * 0.02  # space between bar and value of the bar
+                    ax2.text(scenario, averted_ci_upper + s1 if averted_sum > 0 else averted_ci_lower + s1,
+                             f"{averted_sum:,.0f}", color='black', ha='center', va='bottom', fontsize=12.5)
+                    ax2.text(scenario, averted_ci_upper / 2 + averted_ci_upper / 4 if \
+                        averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 + y_top2 / 15,
+                             f"{averted_ci_upper:,.0f}", color='white', ha='center', va='top', fontsize=12.5)
+                    ax2.text(scenario, averted_ci_upper / 2 - averted_ci_upper / 4 if \
+                        averted_ci_upper < y_top2 / 2 + y_top2 / 15 else y_top2 / 2 - y_top2 / 15,
+                             f"{averted_ci_lower:,.0f}", color='white', ha='center', va='bottom', fontsize=12.5)
+
+            min_interv_year = min(outcomes_dict["SQ"]['interv_years'])
+            max_interv_year = max(outcomes_dict["SQ"]['interv_years'])
+            plt.ylabel(f'{cohort}: Averted {outcome_type}, sum over intervention period)')
+            plt.xlabel('Scenario')
+            plt.title(
+                f'{cohort}: Sum of averted {outcome_type.replace("_", " ")} due to {cause} and 95% CI over '
+                f'intervention period ({min_interv_year}--{max_interv_year})'
+            )
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.xticks(rotation=45, fontsize=8)
+
+            plt.savefig(
+                outputs_path / (
+                    f"{cohort}_sum_averted_{cause}_{outcome_type}_CI_intervention_period_scenarios_comparison__"
                     f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
                 ),
                 bbox_inches='tight'
