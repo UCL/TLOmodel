@@ -50,7 +50,7 @@ class WastingAnalysis(BaseScenario):
     def modules(self):
         return fullmodel()
 
-    # Scaling up growth monitoring (GM) attendance scenarios
+    # Scaling up Food Supplements availability (FS) scenarios
     def draw_parameters(self, draw_number, rng):
         avail_prob = [1.0, 1.0]
 
