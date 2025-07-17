@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
     """
     CardioMetabolicDisorders module covers a subset of cardio-metabolic conditions and events. Conditions are binary
@@ -524,7 +525,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         # Hypertension is the only condition for which we assume some community-based testing occurs; build LM based on
         # age / sex
         self.lms_testing['hypertension'] = self.build_linear_model('hypertension', self.parameters[
-                'interval_between_polls'], lm_type='testing')
+            'interval_between_polls'], lm_type='testing')
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
@@ -1656,7 +1657,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
                 'diabetes_second_dose': 5_30,
                 'diabetes_third_dose': 1,
                 'hypertension': 610,
-                'chronic_kidney_disease': 12, # 12 in a month: dialysis three times a week
+                'chronic_kidney_disease': 12,  # 12 in a month: dialysis three times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
@@ -1687,16 +1688,16 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         medication_item_code_c = ensure_list(medication_item_code_c)
         equipment_codes = ensure_list(equipment_codes)
 
-        all_meds = medication_codes+ medication_item_code_b + medication_item_code_c
-        med_item_codes = {int(code): dose[self.condition] for code in all_meds if  code is not None}
+        all_meds = medication_codes + medication_item_code_b + medication_item_code_c
+        med_item_codes = {int(code): dose[self.condition] for code in all_meds if code is not None}
         eq_item_codes = {int(code): dose[self.condition] for code in equipment_codes if code is not None}
 
         if self.get_consumables(item_codes=med_item_codes):
 
-        # Experiment with CKD consumable availability
-        # if (self.condition != "chronic_kidney_disease" and self.get_consumables(item_codes=med_item_codes)) or \
-        #     (self.condition == "chronic_kidney_disease" and random.random() < 0.4 and
-        #     self.get_consumables(item_codes=med_item_codes)):
+            # Experiment with CKD consumable availability
+            # if (self.condition != "chronic_kidney_disease" and self.get_consumables(item_codes=med_item_codes)) or \
+            #     (self.condition == "chronic_kidney_disease" and random.random() < 0.4 and
+            #     self.get_consumables(item_codes=med_item_codes)):
             self.add_equipment(eq_item_codes)
             # If medication is available, flag as being on medication
             df.at[person_id, f'nc_{self.condition}_on_medication'] = True
@@ -1752,7 +1753,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give up coming back to
             # pick up medication.
             if (m.rng.random_sample() <
-                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
@@ -1777,7 +1778,6 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.condition = condition
         self.ACCEPTED_FACILITY_LEVEL = '3' if condition == 'chronic_kidney_disease' else '1b'
-
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1804,7 +1804,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # lower back pain - 2400mg aspirin daily  (2400*30.5), CIHD - 75mg aspirin daily (75*30.5)
         dose = {'diabetes': 30_500,
                 'hypertension': 610,
-                'chronic_kidney_disease': 12, # 12 in a month: dialysis three times a week
+                'chronic_kidney_disease': 12,  # 12 in a month: dialysis three times a week
                 'chronic_lower_back_pain': 73_200,
                 'chronic_ischemic_hd': 2288,
                 'ever_stroke': 2288,
@@ -1831,7 +1831,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
             # pick-up medication.
             if (m.rng.random_sample() <
-                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
@@ -1843,6 +1843,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         # If this HSI event did not run, then the persons ceases to be taking medication
         person_id = self.target
         self.sim.population.props.at[person_id, f'nc_{self.condition}_on_medication'] = False
+
 
 class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event in which a person receives a dialysis session 3 times a week
@@ -1860,7 +1861,6 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         """Set the property `ckd_ever_haemo` to be True and schedule the next session in the course if the person
         has not yet had 12 sessions."""
 
-
         df = self.sim.population.props
 
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
@@ -1873,19 +1873,19 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
 
         # Do test and trigger treatment (if necessary) for chronic kidney disease:
         #if set(self.conditions_to_investigate).intersection(
-            #['chronic_kidney_disease']
+        #['chronic_kidney_disease']
         #):
         self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
 
         #hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
 
         if self.num_of_sessions_had < 12:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=self,
-                    topen=self.sim.date + pd.DateOffset(days=2),
-                    tclose=None,
-                    priority=1
-                )
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=self,
+                topen=self.sim.date + pd.DateOffset(days=2),
+                tclose=None,
+                priority=1
+            )
 
 
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
