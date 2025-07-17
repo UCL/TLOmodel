@@ -16,6 +16,8 @@ from tlo.analysis.utils import (
     get_scenario_outputs,
 )
 
+
+
 # --- Load shapefile of Malawi districts ---
 # Adjust this path to point to your .shp file (the others must be in the same folder)
 shapefile_path = "resources/mapping/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp"
@@ -24,22 +26,28 @@ gdf = gpd.read_file(shapefile_path)
 shapefile_path_national = "resources/mapping/ResourceFile_mwi_admbnda_adm0_nso_20181016.shp"
 gdf_national = gpd.read_file(shapefile_path_national)
 
+shapefile_path_regional = "resources/mapping/ResourceFile_mwi_admbnda_adm1_nso_20181016.shp"
+gdf_regional = gpd.read_file(shapefile_path_regional)
+
+# Load Natural Earth lake polygons (downloaded beforehand)
+# https://www.naturalearthdata.com/downloads/50m-physical-vectors/
+lakes = gpd.read_file("resources/mapping/ne_50m_lakes.shp")  # from Natural Earth 50 m lakes dataset
+# Filter for Lake Malawi
+# Drop rows where 'name' is NaN before filtering
+lake_malawi = lakes[lakes['name'].notna() & lakes['name'].str.contains("Malawi", case=False)]
+
+
+
+
 output_folder = Path("./outputs/t.mangal@imperial.ac.uk")
 results_folder = get_scenario_outputs("schisto_scenarios.py", output_folder)[-1]
 
 
-# --- Create or load data with values per district ---
-# Example: dummy data for 3 districts; you should replace this with your actual data
+# --- load data with values per district ---
 pause_wash_best_strategy = read_csv(results_folder / f'pause_wash_best_strategy2024-2040.csv')
 continue_wash_best_strategy = read_csv(results_folder / f'continue_wash_best_strategy2024-2040.csv')
 scaleup_wash_best_strategy = read_csv(results_folder / f'scaleup_wash_best_strategy2024-2040.csv')
 
-
-
-df = pd.DataFrame({
-    'district': ['Blantyre', 'Lilongwe', 'Mzimba'],
-    'value': [0.8, 0.5, 0.6]
-})
 
 # --- Prepare for merge ---
 # rename admin2 column
@@ -127,3 +135,131 @@ Positive NHB values indicate that the alternative strategy provides greater net
 health gains after considering both its benefits and costs, whereas negative values
 suggest that the costs may outweigh the health benefits compared to the baseline.
 """
+
+####################################################################################
+# %%  MAP: NHB with preferred policy + YEAR REACHING EPHP haem and mansoni
+####################################################################################
+
+
+# match draw names from preferred stratgy to draw name first_years_ephp_df_haem
+first_years_ephp_df_haem = pd.read_excel(results_folder / 'first_years_ephp_df_haem 2024-2040.xlsx')
+first_years_ephp_df_mansoni = pd.read_excel(results_folder / 'first_years_ephp_df_mansoni 2024-2040.xlsx')
+
+# Merge to get year_ephp for the best strategy under Continue WASH
+continue_wash_best_strategy_with_ehph = continue_wash_best_strategy.merge(
+    first_years_ephp_df_haem.rename(columns={"year_ephp": "year_ephp_haem"}),
+    on=["district", "draw"],
+    how="left"
+)
+
+continue_wash_best_strategy_with_ehph = continue_wash_best_strategy_with_ehph.merge(
+    first_years_ephp_df_mansoni.rename(columns={"year_ephp": "year_ephp_mansoni"}),
+    on=["district", "draw"],
+    how="left"
+)
+
+# add these data to the map file
+map_with_nhb_diffs_ephp = map_with_nhb_diffs_continue.merge(
+    continue_wash_best_strategy_with_ehph, on='district', how='left')  # 'left' keeps all districts
+
+
+#---------------- maps for paper
+
+
+fig, axs = plt.subplots(1, 3, figsize=(24, 8))
+
+# Define maps and their respective columns and titles
+maps = [
+    (map_with_nhb_diffs_ephp, 'mean_x', "Net Health Benefit", 'viridis'),
+    (map_with_nhb_diffs_ephp, 'year_ephp_haem', "Elimination Year: S. Haematobium", 'plasma'),
+    (map_with_nhb_diffs_ephp, 'year_ephp_mansoni', "Elimination Year: S. Mansoni", 'plasma'),
+]
+
+for i, (ax, (gdf, column, title, cmap)) in enumerate(zip(axs, maps)):
+    # Set normalisation
+    if i == 0:
+        # Dynamic range for first map
+        vmin = gdf[column].min()
+        vmax = gdf[column].max()
+    else:
+        # Fixed range for years on second and third maps
+        vmin, vmax = 2024, 2040
+
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
+    # Plot lake with hatch and border
+    lake_malawi.plot(
+        ax=ax,
+        facecolor='none',
+        edgecolor='lightblue',
+        linewidth=0.5,
+        hatch='///',
+        zorder=1
+    )
+    lake_malawi.boundary.plot(
+        ax=ax,
+        edgecolor='slategrey',
+        linewidth=1.2,
+        zorder=2
+    )
+
+    # Prepare missing data style for second and third maps
+    if i == 0:
+        missing_kwds = {
+            "color": "white",
+            "edgecolor": "lightgrey",
+            "hatch": "///",
+            "label": "No data"
+        }
+    else:
+        # For maps 2 & 3: no shading, leave white for missing data
+        missing_kwds = {
+            "color": "white",
+            "edgecolor": "lightgrey",
+            "label": "No data"
+        }
+
+    # Plot districts
+    gdf.plot(
+        column=column,
+        cmap=cmap,
+        linewidth=0.8,
+        edgecolor='0.8',
+        ax=ax,
+        legend=False,
+        vmin=vmin,
+        vmax=vmax,
+        norm=norm,
+        zorder=3,
+        missing_kwds=missing_kwds
+    )
+
+    # Plot national boundaries
+    gdf_national.boundary.plot(ax=ax, edgecolor='grey', linewidth=1.5, zorder=4)
+
+    # Add asterisks only on first map
+    if i == 0:
+        for idx, row in gdf.iterrows():
+            if isinstance(row['draw_x'], str) and "MDA All" in row['draw_x']:
+                centroid = row['geometry'].centroid
+                ax.text(centroid.x, centroid.y, '*', fontsize=24, ha='center', va='center', color='red', zorder=5)
+
+    ax.set_title(title, fontsize=14)
+    ax.axis('off')
+
+# Add individual colourbars per map on top of each axis
+for ax, (gdf, column, title, cmap) in zip(axs, maps):
+    if title == "Net Health Benefit":
+        vmin = gdf[column].min()
+        vmax = gdf[column].max()
+    else:
+        vmin, vmax = 2024, 2040
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
+    # cbar.set_label(title, fontsize=12)
+plt.subplots_adjust(wspace=0.1)  # reduce horizontal space between plots (default is ~0.2)
+fig.savefig('maps_nhb_ephp.png', dpi=300, bbox_inches='tight')
+
+plt.show()

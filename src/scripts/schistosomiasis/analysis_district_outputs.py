@@ -19,6 +19,7 @@ import seaborn as sns
 from collections import defaultdict
 import textwrap
 from typing import Tuple
+from scipy.stats import norm
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
@@ -566,7 +567,350 @@ prev_mansoni_H_All_district = extract_results(
     do_scaling=False,
 ).pipe(set_param_names_as_column_index_level_0)
 
-prev_mansoni_H_All_district.to_excel(results_folder / (f'prev_mansoni_H_year_district {target_period()}.xslx'))
+prev_mansoni_H_All_district.to_excel(results_folder / (f'prev_mansoni_H_year_district {target_period()}.xlsx'))
+
+
+# -------------------- prevalence of any infection
+
+
+inf = 'HML'  # define outside function, set before calling
+prev_haem_HML_All_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_haematobium",
+    custom_generate_series=get_prevalence_infection_all_ages_by_district,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+prev_haem_HML_All_district.to_excel(results_folder / (f'prev_haem_HML_year_summary {target_period()}.xlsx'))
+
+prev_mansoni_HML_All_district = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_mansoni",
+    custom_generate_series=get_prevalence_infection_all_ages_by_district,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+prev_mansoni_HML_All_district.to_excel(results_folder / (f'prev_mansoni_HML_All_district {target_period()}.xlsx'))
+
+
+
+
+def calc_mean_and_ci(df, ci=0.95):
+    """
+    Calculate mean and confidence intervals over the 'run' level of columns,
+    grouped by 'year', 'district', and 'draw' (first level of columns).
+
+    Parameters:
+    - df: pd.DataFrame with MultiIndex rows including 'year' and 'district',
+          and MultiIndex columns with levels ['draw', 'run'].
+    - ci: confidence level (default 0.95 for 95% CI).
+
+    Returns:
+    - pd.DataFrame indexed by ['year', 'district', 'draw'] with columns ['mean', 'lower_ci', 'upper_ci'].
+    """
+    # Extract MultiIndex names for columns
+    draw_level = df.columns.names.index('draw')
+    run_level = df.columns.names.index('run')
+
+    # Group by draw (level=0) to aggregate over runs (level=1)
+    mean_df = df.groupby(axis=1, level='draw').mean()
+    std_df = df.groupby(axis=1, level='draw').std()
+    count_df = df.groupby(axis=1, level='draw').count()
+
+    # Standard error across runs
+    se_df = std_df / np.sqrt(count_df)
+
+    # z-score for the two-tailed confidence interval
+    z = norm.ppf(1 - (1 - ci) / 2)
+
+    # Calculate confidence intervals
+    lower_ci = mean_df - z * se_df
+    upper_ci = mean_df + z * se_df
+
+    # Stack the dataframes to long format for merging
+    mean_long = mean_df.stack().rename('mean')
+    lower_long = lower_ci.stack().rename('lower_ci')
+    upper_long = upper_ci.stack().rename('upper_ci')
+
+    # Combine into one DataFrame
+    result = pd.concat([mean_long, lower_long, upper_long], axis=1).reset_index()
+
+    # Rename columns for clarity
+    result = result.rename(columns={'level_3': 'draw'}) if 'level_3' in result.columns else result
+
+    return result
+
+
+prev_haem_HML_All_district_summary = calc_mean_and_ci(prev_haem_HML_All_district)
+prev_haem_HML_All_district_summary.to_excel(results_folder / (f'prev_haem_HML_All_district_summary {target_period()}.xlsx'))
+
+
+prev_mansoni_HML_All_district_summary = calc_mean_and_ci(prev_mansoni_HML_All_district)
+prev_mansoni_HML_All_district_summary.to_excel(results_folder / (f'prev_mansoni_HML_All_district_summary {target_period()}.xlsx'))
+
+
+####################################################################################
+# %%  NATIONAL PREVALENCE - SCALED BY DISTRICT
+####################################################################################
+
+
+def get_national_prevalence_scaled(_df):
+    """
+    Return mean national prevalence per year using district-level scaling.
+
+    _df: DataFrame with columns indexed like 'infection_status=...|district_of_residence=...|age_years=...'
+    Assumes global 'inf' and 'district_scaling_factor' are defined.
+    """
+
+    global inf, district_scaling_factor
+
+    _df = _df.copy()
+    _df.set_index('date', inplace=True)
+
+    def parse_columns(cols):
+        tuples = []
+        for col in cols:
+            parts = col.split('|')
+            values = [p.split('=')[1] for p in parts]
+            tuples.append(tuple(values))
+        return tuples
+
+    # Convert columns to MultiIndex
+    _df.columns = pd.MultiIndex.from_tuples(parse_columns(_df.columns),
+                                            names=['infection_status', 'district_of_residence', 'age_years'])
+
+    # Collapse age groups
+    df = _df.groupby(level=['infection_status', 'district_of_residence'], axis=1).sum()
+
+    # Total population per district
+    total_by_district = df.groupby(level='district_of_residence', axis=1).sum()
+
+    # Select infection categories
+    inf_categories_dict = {
+        'HML': ['High-infection', 'Moderate-infection', 'Low-infection'],
+        'HM': ['High-infection', 'Moderate-infection'],
+        'ML': ['Moderate-infection', 'Low-infection'],
+        'H': ['High-infection'],
+        'M': ['Moderate-infection'],
+        'L': ['Low-infection'],
+    }
+
+    if inf not in inf_categories_dict:
+        raise ValueError(f"Unknown inf='{inf}' — must be one of {list(inf_categories_dict)}")
+
+    inf_categories = inf_categories_dict[inf]
+    infected_by_district = df.loc[:, df.columns.get_level_values('infection_status').isin(inf_categories)]
+    infected_by_district = infected_by_district.groupby(level='district_of_residence', axis=1).sum()
+
+    # Check all districts match scaling factor
+    sf = district_scaling_factor
+    sf = sf['scaling_factor']  # convert to Series indexed by district
+
+    missing = set(infected_by_district.columns) - set(sf.index)
+    if missing:
+        raise ValueError(f"Missing scaling factors for districts: {missing}")
+
+    # Apply scaling
+    sf.index = sf.index.astype(str)
+    infected_by_district.columns = infected_by_district.columns.astype(str)
+
+    # Make sure all required districts are present
+    if not set(infected_by_district.columns).issubset(sf.index):
+        missing = set(infected_by_district.columns) - set(sf.index)
+        raise ValueError(f"Missing scaling factors for districts: {missing}")
+
+    # Apply scaling
+    scaled_infected = infected_by_district.multiply(sf, axis=1)
+    scaled_population = total_by_district.multiply(sf, axis=1)
+
+    # Convert to year index
+    scaled_infected.index = scaled_infected.index.year
+    scaled_population.index = scaled_population.index.year
+
+    # National sums
+    national_infected = scaled_infected.sum(axis=1)
+    national_population = scaled_population.sum(axis=1)
+
+    # Debug: Check for zero population
+    if (national_population == 0).any():
+        print("Warning: Some years have zero national population. Those will return NaN.")
+
+    # Compute prevalence
+    national_prevalence = national_infected / national_population
+
+    return national_prevalence
+
+
+inf = 'HML'  # define outside function, set before calling
+
+
+prev_haem_national = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_haematobium",
+    custom_generate_series=get_national_prevalence_scaled,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+prev_haem_national.to_excel(results_folder / (f'prev_haem_national {target_period()}.xlsx'))
+
+
+prev_mansoni_national = extract_results(
+    results_folder,
+    module="tlo.methods.schisto",
+    key="infection_status_mansoni",
+    custom_generate_series=get_national_prevalence_scaled,
+    do_scaling=False,
+).pipe(set_param_names_as_column_index_level_0)
+
+prev_mansoni_national.to_excel(results_folder / (f'prev_mansoni_national {target_period()}.xlsx'))
+
+
+# todo this returns very small CI
+def calc_mean_and_ci(df, ci=0.95):
+    from scipy.stats import norm
+    import numpy as np
+
+    # z-score for two-tailed CI
+    z = norm.ppf(1 - (1 - ci) / 2)
+
+    # Mean over 'run' (level='run')
+    mean_df = df.groupby(axis=1, level='draw').mean()
+    std_df = df.groupby(axis=1, level='draw').std()
+    count_df = df.groupby(axis=1, level='draw').count()
+
+    se_df = std_df / np.sqrt(count_df)
+
+    lower_ci = mean_df - z * se_df
+    upper_ci = mean_df + z * se_df
+
+    # Convert to long format
+    mean_long = mean_df.stack().rename('mean')
+    lower_long = lower_ci.stack().rename('lower_ci')
+    upper_long = upper_ci.stack().rename('upper_ci')
+
+    result = pd.concat([mean_long, lower_long, upper_long], axis=1).reset_index()
+
+    # Rename columns if needed
+    if 'level_1' in result.columns:
+        result = result.rename(columns={'level_1': 'draw'})
+
+    return result
+
+
+def calc_mean_and_ci_quantiles(df, ci=0.95):
+    """
+    Calculate mean and empirical confidence intervals (based on quantiles) over the 'run' level of columns,
+    grouped by 'draw' (first level of columns).
+
+    Parameters:
+    - df: pd.DataFrame with MultiIndex columns ['draw', 'run'] and rows indexed by at least 'date'.
+    - ci: confidence level, default 0.95 (95% CI).
+
+    Returns:
+    - pd.DataFrame with columns ['date', 'draw', 'mean', 'lower_ci', 'upper_ci'].
+    """
+    lower_q = (1 - ci) / 2
+    upper_q = 1 - lower_q
+
+    # Mean over runs grouped by draw
+    mean_df = df.groupby(axis=1, level='draw').mean()
+
+    # Quantiles over runs grouped by draw
+    lower_ci_df = df.groupby(axis=1, level='draw').quantile(lower_q)
+    upper_ci_df = df.groupby(axis=1, level='draw').quantile(upper_q)
+
+    # Stack to long format
+    mean_long = mean_df.stack().rename('mean')
+    lower_long = lower_ci_df.stack().rename('lower_ci')
+    upper_long = upper_ci_df.stack().rename('upper_ci')
+
+    # Combine into single DataFrame
+    result = pd.concat([mean_long, lower_long, upper_long], axis=1).reset_index()
+
+    # Rename columns for clarity if needed
+    # Expected columns: ['date', 'draw', 'mean', 'lower_ci', 'upper_ci']
+    # If your index names differ, adjust accordingly
+
+    return result
+
+
+def calc_mean_and_range_ci(df):
+    """
+    Calculate mean and empirical confidence intervals as range (min to max)
+    over the 'run' level of columns, grouped by 'draw' (first level of columns).
+
+    Parameters:
+    - df: pd.DataFrame with MultiIndex columns ['draw', 'run'] and rows indexed by at least 'date'.
+
+    Returns:
+    - pd.DataFrame with columns ['date', 'draw', 'mean', 'lower_ci', 'upper_ci'].
+    """
+    # Mean over runs grouped by draw
+    mean_df = df.groupby(axis=1, level='draw').mean()
+
+    # Min and max over runs grouped by draw
+    lower_ci_df = df.groupby(axis=1, level='draw').min()
+    upper_ci_df = df.groupby(axis=1, level='draw').max()
+
+    # Stack to long format
+    mean_long = mean_df.stack().rename('mean')
+    lower_long = lower_ci_df.stack().rename('lower_ci')
+    upper_long = upper_ci_df.stack().rename('upper_ci')
+
+    # Combine into single DataFrame
+    result = pd.concat([mean_long, lower_long, upper_long], axis=1).reset_index()
+
+    return result
+
+
+prev_haem_national_summary = calc_mean_and_range_ci(prev_haem_national)
+prev_haem_national_summary.to_excel(results_folder / (f'prev_haem_national_summary {target_period()}.xlsx'))
+
+
+prev_mansoni_national_summary = calc_mean_and_range_ci(prev_mansoni_national)
+prev_mansoni_national_summary.to_excel(results_folder / (f'prev_mansoni_national_summary {target_period()}.xlsx'))
+
+
+
+
+
+
+
+####################################################################################
+# %%  YEAR REACHING EPHP
+####################################################################################
+
+def get_first_years_below_threshold(
+    df: pd.DataFrame,
+    threshold: float = 0.015,
+    year_range: tuple = (2024, 2040)
+) -> pd.DataFrame:
+    """Return the first year each district drops below the threshold for each strategy."""
+    df = df.loc[df.index.get_level_values("year") >= year_range[0]]
+    df_mean_runs = df.groupby(axis=1, level="draw").mean()
+
+    below = (df_mean_runs < threshold).reset_index()
+    long_format = below.melt(id_vars=["year", "district"], var_name="draw", value_name="below_threshold")
+    below_threshold = long_format[long_format["below_threshold"]]
+
+    first_years = below_threshold.groupby(["district", "draw"])["year"].min().reset_index(name="year_ephp")
+    return first_years
+
+
+first_years_ephp_df_haem = get_first_years_below_threshold(prev_haem_H_All_district)
+first_years_ephp_df_haem.to_excel(results_folder / (f'first_years_ephp_df_haem {target_period()}.xlsx'))
+
+
+
+first_years_ephp_df_mansoni = get_first_years_below_threshold(prev_mansoni_H_All_district)
+first_years_ephp_df_mansoni.to_excel(results_folder / (f'first_years_ephp_df_mansoni {target_period()}.xlsx'))
+
+
+
+
 
 
 #################################################################################
@@ -1311,14 +1655,21 @@ def compute_nhb(
     nhb.columns = ['district', 'run', 'draw', 'nhb']
 
     if return_summary:
-        summary = (
-            nhb.groupby(['district', 'draw'])['nhb']
-            .agg(mean='mean', lower=lambda x: np.quantile(x, 0.025), upper=lambda x: np.quantile(x, 0.975))
-        )
+        def ci_bounds(x):
+            mean = x.mean()
+            se = x.std(ddof=1) / (len(x) ** 0.5)
+            return pd.Series({
+                'mean': mean,
+                'lower': mean - 1.96 * se,
+                'upper': mean + 1.96 * se
+            })
+
+        summary = nhb.groupby(['district', 'draw'])['nhb'].apply(ci_bounds)
+        summary = summary.unstack().reset_index()
+        summary.columns = ['district', 'draw', 'mean', 'lower', 'upper']
         return summary
     else:
         return nhb
-
 
 
 nhb_district_vs_noMDA = compute_nhb(
@@ -1362,6 +1713,56 @@ nhb_district_vs_SAC_full_costs.to_csv(results_folder / f'nhb_district_vs_SAC_ful
 
 
 
+# def get_best_draw_per_district(df, keyword):
+#     """
+#     For each district, return the draw containing the keyword with the highest mean.
+#     If this best draw has a negative mean and the fallback draw '{keyword}, MDA SAC' is not present,
+#     return a row with draw set to that fallback and mean/lower/upper as NaN.
+#
+#     Parameters:
+#         df (pd.DataFrame): MultiIndex (district, draw) DataFrame with ['mean', 'lower', 'upper'].
+#         keyword (str): Draw prefix, e.g., "Continue WASH", "Pause WASH", etc.
+#
+#     Returns:
+#         pd.DataFrame: DataFrame with index=district and columns ['draw', 'mean', 'lower', 'upper'].
+#     """
+#     df_filtered = df[df.index.get_level_values("draw").str.contains(keyword)]
+#     df_reset = df_filtered.reset_index()
+#
+#     # Get best draw (highest mean) per district
+#     best_draws = (
+#         df_reset
+#         .sort_values("mean", ascending=False)
+#         .groupby("district")
+#         .first()
+#         .loc[:, ["draw", "mean", "lower", "upper"]]
+#     )
+#
+#     fallback_draw = f"{keyword}, MDA SAC"
+#
+#     # Handle districts where best draw is negative
+#     for district in best_draws.index[best_draws["mean"] < 0]:
+#         try:
+#             # Check if fallback draw exists
+#             fallback_row = df.loc[(district, fallback_draw)]
+#             best_draws.loc[district] = {
+#                 "draw": fallback_draw,
+#                 "mean": fallback_row["mean"],
+#                 "lower": fallback_row["lower"],
+#                 "upper": fallback_row["upper"],
+#             }
+#         except KeyError:
+#             # If fallback draw is missing, assign NaNs but retain fallback draw name
+#             best_draws.loc[district] = {
+#                 "draw": fallback_draw,
+#                 "mean": np.nan,
+#                 "lower": np.nan,
+#                 "upper": np.nan,
+#             }
+#
+#     return best_draws
+
+
 def get_best_draw_per_district(df, keyword):
     """
     For each district, return the draw containing the keyword with the highest mean.
@@ -1369,48 +1770,36 @@ def get_best_draw_per_district(df, keyword):
     return a row with draw set to that fallback and mean/lower/upper as NaN.
 
     Parameters:
-        df (pd.DataFrame): MultiIndex (district, draw) DataFrame with ['mean', 'lower', 'upper'].
+        df (pd.DataFrame): DataFrame with columns ['district', 'draw', 'mean', 'lower', 'upper'].
         keyword (str): Draw prefix, e.g., "Continue WASH", "Pause WASH", etc.
 
     Returns:
-        pd.DataFrame: DataFrame with index=district and columns ['draw', 'mean', 'lower', 'upper'].
+        pd.DataFrame: DataFrame indexed by district with columns ['draw', 'mean', 'lower', 'upper'].
     """
-    df_filtered = df[df.index.get_level_values("draw").str.contains(keyword)]
-    df_reset = df_filtered.reset_index()
+    # Filter rows where 'draw' contains keyword
+    df_filtered = df[df['draw'].str.contains(keyword, na=False)].copy()
 
     # Get best draw (highest mean) per district
     best_draws = (
-        df_reset
-        .sort_values("mean", ascending=False)
-        .groupby("district")
+        df_filtered
+        .sort_values('mean', ascending=False)
+        .groupby('district')
         .first()
-        .loc[:, ["draw", "mean", "lower", "upper"]]
+        .loc[:, ['draw', 'mean', 'lower', 'upper']]
+        .copy()
     )
 
     fallback_draw = f"{keyword}, MDA SAC"
 
-    # Handle districts where best draw is negative
-    for district in best_draws.index[best_draws["mean"] < 0]:
-        try:
-            # Check if fallback draw exists
-            fallback_row = df.loc[(district, fallback_draw)]
-            best_draws.loc[district] = {
-                "draw": fallback_draw,
-                "mean": fallback_row["mean"],
-                "lower": fallback_row["lower"],
-                "upper": fallback_row["upper"],
-            }
-        except KeyError:
-            # If fallback draw is missing, assign NaNs but retain fallback draw name
-            best_draws.loc[district] = {
-                "draw": fallback_draw,
-                "mean": np.nan,
-                "lower": np.nan,
-                "upper": np.nan,
-            }
+    # For districts where best mean < 0, try to replace with fallback
+    for district in best_draws.index[best_draws['mean'] < 0]:
+        fallback_row = df[(df['district'] == district) & (df['draw'] == fallback_draw)]
+        if not fallback_row.empty:
+            best_draws.loc[district] = fallback_row.iloc[0][['draw', 'mean', 'lower', 'upper']]
+        else:
+            best_draws.loc[district] = [fallback_draw, np.nan, np.nan, np.nan]
 
     return best_draws
-
 
 
 # Apply to each scenario
