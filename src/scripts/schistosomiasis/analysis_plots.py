@@ -71,20 +71,63 @@ prev_mansoni_national_plot = pd.read_excel(results_folder / ('prev_mansoni_natio
 
 
 # todo
-
-def plot_species_prevalence(df, species_name, ax, year=2040, filter_keyword="Continue WASH"):
+def plot_species_prevalence(df, species_name, ax, year=2040):
     """
-    Plot barplot with mean and CI error bars for a given species dataframe.
+    Plot barplot with mean and CI error bars for a given species dataframe,
+    and add a horizontal line showing the 2024 mean prevalence for 'Continue WASH, no MDA'.
 
     Parameters:
     - df: DataFrame with columns ['date', 'draw', 'mean', 'lower_ci', 'upper_ci']
     - species_name: str, used for the plot title
     - ax: matplotlib Axes object to plot on
-    - year: int, year to filter on (default 2040)
-    - filter_keyword: str, substring to filter 'draw' column by (default "Continue WASH")
+    - year: int, year to filter on for the bars (default 2040)
     """
-    # Filter and sort
-    df_filtered = df[(df['date'] == year) & (df['draw'].str.contains(filter_keyword))].sort_values('draw')
+    import numpy as np
+
+    # Colour map for bars
+    colour_map = {
+        'no MDA': '#1b9e77',  # Teal
+        'MDA SAC': '#d95f02',  # Orange
+        'MDA PSAC': '#7570b3',  # Purple
+        'MDA All': '#e7298a',  # Pink
+        'WASH only': '#e6ab02'  # Mustard Yellow
+    }
+
+    # Define the order and labels of bars
+    order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All', 'WASH only']
+
+    # Filter for 'Continue WASH' rows at given year
+    df_filtered = df[(df['date'] == year) & (df['draw'].str.contains('Continue WASH'))].copy()
+
+    # Create simplified category column from 'draw' for known categories
+    def simplify_draw(draw_label):
+        if 'no MDA' in draw_label:
+            return 'no MDA'
+        elif 'MDA SAC' in draw_label:
+            return 'MDA SAC'
+        elif 'MDA PSAC' in draw_label:
+            return 'MDA PSAC'
+        elif 'MDA All' in draw_label:
+            return 'MDA All'
+        else:
+            return None
+
+    df_filtered['category'] = df_filtered['draw'].apply(simplify_draw)
+
+    # Remove rows that don't fit expected categories (just in case)
+    df_filtered = df_filtered.dropna(subset=['category'])
+
+    # Create a new DataFrame row for 'Scale-up WASH, no MDA' for this year
+    df_wash_only = df[(df['date'] == year) & (df['draw'] == 'Scale-up WASH, no MDA')].copy()
+    if not df_wash_only.empty:
+        df_wash_only = df_wash_only.assign(category='WASH only')
+        df_filtered = pd.concat([df_filtered, df_wash_only], ignore_index=True)
+
+    # Convert 'category' to categorical with order for consistent bar placement
+    df_filtered['category'] = pd.Categorical(df_filtered['category'], categories=order, ordered=True)
+
+    # Sort by category order
+    df_filtered = df_filtered.sort_values('category')
 
     x = np.arange(len(df_filtered))
     means = df_filtered['mean'].values
@@ -95,11 +138,24 @@ def plot_species_prevalence(df, species_name, ax, year=2040, filter_keyword="Con
     error_upper = upper - means
     error = np.vstack([error_lower, error_upper])
 
-    ax.bar(x, means, yerr=error, capsize=5, color='skyblue', edgecolor='black')
+    bar_colors = [colour_map[c] for c in df_filtered['category']]
+
+    ax.bar(x, means, yerr=error, capsize=5, color=bar_colors, edgecolor='black')
     ax.set_xticks(x)
-    ax.set_xticklabels(df_filtered['draw'], rotation=45, ha='right')
+    ax.set_xticklabels(df_filtered['category'], rotation=45, ha='right')
+    ax.set_ylim(bottom=0, top=0.3)
     ax.set_title(f'{species_name} Prevalence')
     ax.set_ylabel('Mean Prevalence')
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Add horizontal line for mean at 2024 for 'Continue WASH, no MDA'
+    mean_2024 = df.loc[
+        (df['date'] == 2024) & (df['draw'] == 'Continue WASH, no MDA'), 'mean'
+    ]
+    if not mean_2024.empty:
+        ax.axhline(mean_2024.values[0], color='grey', linestyle='--', linewidth=1.5,
+                   label='')
+
 
 
 fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
