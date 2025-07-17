@@ -128,6 +128,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     param_names = get_parameter_names_from_scenario_file()
     print(param_names)
 
+
+    def get_counts_of_death_by_year(df):
+        """Aggregate the model outputs into five-year periods for age and time"""
+        #_, agegrplookup = make_age_grp_lookup()
+        #_, calperiodlookup = make_calendar_period_lookup()
+        df["year"] = df["date"].dt.year
+        #df["age_grp"] = df["age"].map(agegrplookup).astype(make_age_grp_types())
+        #df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
+        return df.groupby(by=["year", "label"])["person_id"].count()
+
+
+    deaths_by_year_and_cause = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=get_counts_of_death_by_year,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
+    print(deaths_by_year_and_cause)
+    print(list(deaths_by_year_and_cause.index))
+    deaths_by_year_and_cause.to_csv('ConvertedOutputs/Deaths_by_cause_with_time.csv', index=True)
+    exit(-1)
+
     # ================================================================================================
     # TIME EVOLUTION OF TOTAL DALYs
     # Plot DALYs averted compared to the ``No Policy'' policy
