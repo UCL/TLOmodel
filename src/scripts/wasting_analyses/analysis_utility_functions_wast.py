@@ -732,6 +732,8 @@ def plot_sum_outcome_and_CIs__intervention_period(
     assert outcome_type in ['deaths', 'deaths_with_SAM', 'DALYs'], \
         f"Invalid value for 'outcome_type': expected 'deaths' or 'DALYs'. Received {outcome_type} instead."
 
+    averted_DALYs_anycause = dict()
+
     # Outcome to plot
     for i, cause in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea']):
         if outcome_type == "deaths":
@@ -853,11 +855,14 @@ def plot_sum_outcome_and_CIs__intervention_period(
                         for scen_name, draw in scenarios_for_interv_dict.items()
                         if scen_name == scenario
                     )
+
                     scen_data = outcomes_dict[interv][outcome][draw]
                     sum_interv_years, ci_lower, ci_upper = zip(*scen_data.values.flatten())
                     averted_sum = sq_sum - sum_interv_years[0]
                     averted_ci_lower = sq_sum - ci_upper[0]
                     averted_ci_upper = sq_sum - ci_lower[0]
+                    if outcome_type == "DALYs" and cause=='any cause':
+                        averted_DALYs_anycause[scenario] = [averted_sum, averted_ci_lower, averted_ci_upper]
                     ax2.bar(scenario, averted_sum,
                             yerr=[[averted_sum - averted_ci_lower], [averted_ci_upper - averted_sum]],
                             label=scenario, color=get_scen_colour(scenario), capsize=5)
@@ -891,6 +896,60 @@ def plot_sum_outcome_and_CIs__intervention_period(
                 ),
                 bbox_inches='tight'
             )
+
+            def plot_cost_effectiveness(averted_DALYs: dict) -> None:
+                # temporarily not from data, but using the numbers printed with run_costing_analysis_wast.py
+                # 4K pop sim: results_timestamp = '2025-07-15T223713Z'
+                total_costs = dict()
+                total_costs['Status Quo'] = 708.8825723959769 * 10**6
+                total_costs['GM_FullAttend'] = 711.0993266353112 * 10**6
+                total_costs['CS_100'] = 708.9154165225475 * 10**6
+                total_costs['FS_Full'] = 730.9783855137268 * 10**6
+
+                costs_increase = dict()
+                for scen in total_costs.keys():
+                    if scen != 'Status Quo':
+                        costs_increase[scen] = total_costs[scen] - total_costs['Status Quo']
+                print(f"\naverted_DALYs:\n{averted_DALYs}")
+                print(f"\ncosts_increase:\n{costs_increase}")
+
+                # total costs over intervention period, sizes of lower bound and upper bound for the scenarios
+                scen_cons_costs_total_ci = {
+                    'Status Quo': [708882572, 133258484, 153507211],
+                    'GM_FullAttend': [711099327, 123777213, 154057510],
+                    'CS_100': [708915417, 128058833, 158695261],
+                    'FS_Full': [730978386, 127992638, 158323175]
+                }
+
+                # Plot cost-effectiveness scatter plot
+                fig_ce, ax_ce = plt.subplots()
+                for scen in total_costs.keys():
+                    if scen != 'Status Quo':
+                        ax_ce.scatter(averted_DALYs[scen][0], costs_increase[scen])
+                        ax_ce.text(averted_DALYs[scen][0], costs_increase[scen] + 1 * costs_increase[scen], scen,
+                                   fontsize=12, ha='center', va='bottom')
+                ax_ce.set_xlabel('DALYs Averted')
+                ax_ce.set_ylabel('Incremental Costs (2023 USD)')
+                ax_ce.set_title('Cost-Effectiveness: DALYs Averted vs Incremental Costs')
+
+                # Add dashed black line for 1 DALY averted per 80 USD
+                x_vals = np.array(ax_ce.get_xlim())
+                y_vals = x_vals * 80
+                ax_ce.plot(x_vals, y_vals, color='black', linestyle='--')
+                ax_ce.text(x_vals[-1], y_vals[-1], 'ICER = $80/DALY', color='black', fontsize=9, ha='right', va='bottom')
+
+                plt.tight_layout()
+                plt.savefig(
+                    outputs_path / (
+                        f"cost_effectiveness_scatter_DALYsAverted_vs_IncrementalCosts__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_suffix}.png"
+                    ),
+                    bbox_inches='tight'
+                )
+
+            if outcome_type == "DALYs" and cause == 'any cause':
+                plot_cost_effectiveness(averted_DALYs_anycause)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 def plot_availability_heatmaps(outputs_path: Path) -> None:
