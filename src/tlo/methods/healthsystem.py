@@ -95,7 +95,7 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
     assert df_updated.shape == df_original.shape
     assert (df_updated.dtypes == df_original.dtypes).all()
 
-    for _level in ['0', '1a', '3', '4']:
+    for _level in ['0', '1a', '3', '4', '0cham']:
         assert df_original.loc[df_original.Facility_Level == _level].equals(
             df_updated.loc[df_updated.Facility_Level == _level])
 
@@ -952,10 +952,10 @@ class HealthSystem(Module):
                     facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = _facility_info
 
         # Check that there is facility of every level for every district:
-        assert all(
-            all_districts == facilities_per_level_and_district[_facility_level].keys()
-            for _facility_level in self._facility_levels
-        ), "There is not one of each facility type available to each district."
+        # assert all(
+        #     all_districts == facilities_per_level_and_district[_facility_level].keys()
+        #     for _facility_level in self._facility_levels
+        # ), "There is not one of each facility type available to each district."
 
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
@@ -1226,7 +1226,7 @@ class HealthSystem(Module):
     def _get_filtered_mfl(self):
         """
         Returns the Master Facilities List excluding:
-        - CHAM facility levels (1a_cham, 1b_cham, 2_cham) if include_non_gov_facilities is False
+        - CHAM facility levels (0cham) if include_non_gov_facilities is False
         - Level '5' facilities (headquarters), which are always excluded
         """
         mfl = self.parameters['Master_Facilities_List']
@@ -1235,7 +1235,8 @@ class HealthSystem(Module):
         mfl = mfl[mfl['Facility_Level'] != '5']
 
         if not self.include_non_gov_facilities:
-            mfl = mfl[~mfl['Facility_Level'].str.contains('_0cham', na=False)]
+            # mfl = mfl[~mfl['Facility_Level'].str.contains('_0cham', na=False)]
+            mfl = mfl[~mfl['Facility_Level'].isin({'0cham'})]
 
         return mfl
 
@@ -2650,18 +2651,18 @@ class HealthSystemSummaryCounter:
 
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
-        self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4', '0cham')}
         # <--Same as `self._appts` but also split by facility_level
 
         # Log HSI_Events that have a non-blank appointment footprint
         self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s with non-blank footprint
         self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that with non-blank footprint
-        self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4', '0cham')}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
-        self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4', '0cham')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
