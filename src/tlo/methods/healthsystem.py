@@ -359,7 +359,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        include_non_gov_facilities: bool = False,
+        use_non_gov_facilities: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -504,7 +504,7 @@ class HealthSystem(Module):
         self._get_squeeze_factors_store_grow = 500
         self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
 
-        self.include_non_gov_facilities = include_non_gov_facilities
+        self.use_non_gov_facilities = use_non_gov_facilities
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -859,7 +859,7 @@ class HealthSystem(Module):
 
         # mfl = self.parameters['Master_Facilities_List']
         # cham_levels = {'1a_cham', '1b_cham', '2_cham'}
-        # if not self.include_non_gov_facilities:
+        # if not self.use_non_gov_facilities:
         #     mfl = mfl[~mfl['Facility_Level'].isin(cham_levels)]
         # mfl = mfl[mfl['Facility_Level'] != '5']
         mfl = self._get_filtered_mfl()
@@ -1226,7 +1226,7 @@ class HealthSystem(Module):
     def _get_filtered_mfl(self):
         """
         Returns the Master Facilities List excluding:
-        - CHAM facility levels (0cham) if include_non_gov_facilities is False
+        - CHAM facility levels (0cham) if use_non_gov_facilities is False
         - Level '5' facilities (headquarters), which are always excluded
         """
         mfl = self.parameters['Master_Facilities_List']
@@ -1234,7 +1234,7 @@ class HealthSystem(Module):
         # Always exclude level '5'
         mfl = mfl[mfl['Facility_Level'] != '5']
 
-        if not self.include_non_gov_facilities:
+        if not self.use_non_gov_facilities:
             # mfl = mfl[~mfl['Facility_Level'].str.contains('_0cham', na=False)]
             mfl = mfl[~mfl['Facility_Level'].isin({'0cham'})]
 
