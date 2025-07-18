@@ -113,11 +113,13 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
         "hv_on_cotrimoxazole": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
+            "Whether the person is currently taking and receiving a malaria-protective "
+            "effect from cotrimoxazole",
         ),
         "hv_is_on_prep": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis",
+            "Whether the person is currently taking and receiving a protective effect "
+            "from Pre-Exposure Prophylaxis",
         ),
         "hv_behaviour_change": Property(
             Types.BOOL,
@@ -2960,7 +2962,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 item_codes={self.module.item_codes_for_consumables_required[
                                 'First line ART regimen: older child']: dispensation_days * 3},
                 optional_item_codes={self.module.item_codes_for_consumables_required[
-                                         'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
+                                'First line ART regimen: older child: cotrimoxazole']: dispensation_days * 480},
                 return_individual_results=True)
 
         else:
