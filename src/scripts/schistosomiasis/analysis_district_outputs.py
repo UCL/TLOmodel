@@ -294,6 +294,43 @@ def compute_number_averted_vs_SAC_within_wash_strategies(
     return combined_df
 
 
+def compute_number_averted_vs_continueWASH_noMDA(
+        df: pd.DataFrame,
+        results_path: Path = None,
+        filename_prefix: str = 'dalys_averted_by_year_run_district_vs_continueWASH_noMDA',
+        target_period: tuple = None,
+        averted_or_incurred: str = 'averted',
+) -> pd.DataFrame:
+    """
+    Computes value (e.g. DALYs or person-years) averted by comparing all scenarios
+    to the fixed comparator 'Continue WASH, no MDA'.
+    """
+    if averted_or_incurred == 'averted':
+        scale = -1.0
+    else:
+        scale = 1.0
+
+    comparator_draw = 'Continue WASH, no MDA'
+
+    # Identify all draws excluding the comparator
+    all_draws = df.columns.get_level_values(0).unique()
+    relevant_draws = [draw for draw in all_draws if draw != comparator_draw]
+
+    # Subset dataframe to comparator + relevant draws
+    df_subset = df.loc[:, df.columns.get_level_values(0).isin([comparator_draw] + relevant_draws)]
+
+    # Compute differences relative to comparator
+    diff_df = scale * find_difference_relative_to_comparison_dataframe(df_subset, comparison=comparator_draw)
+
+    if results_path:
+        period_str = f"_{target_period[0].year}-{target_period[1].year}" if target_period else ""
+        output_file = results_path / f"{filename_prefix}{period_str}.xlsx"
+        diff_df.to_excel(output_file)
+
+    return diff_df
+
+
+
 def format_summary_for_output(
     df: pd.DataFrame,
     stack_level: str = 'draw',
@@ -1286,6 +1323,18 @@ dalys_averted_district_compared_noMDA = compute_number_averted_vs_noMDA_within_w
     averted_or_incurred='averted'
 )
 dalys_averted_district_compared_noMDA.to_excel(results_folder / f'dalys_averted_district_compared_noMDA{target_period()}.xlsx')
+
+
+dalys_averted_district_compared_ContinueWASHnoMDA = compute_number_averted_vs_continueWASH_noMDA(
+    dalys_schisto_district_scaled,
+    results_path=results_folder,
+    filename_prefix='schisto_dalys_averted_by_year_run_district',
+    target_period=TARGET_PERIOD,
+    averted_or_incurred='averted'
+)
+dalys_averted_district_compared_ContinueWASHnoMDA.to_excel(results_folder / f'dalys_averted_district_compared_continueWASHnoMDA{target_period()}.xlsx')
+
+
 
 
 dalys_averted_district_compared_SAC = compute_number_averted_vs_SAC_within_wash_strategies(

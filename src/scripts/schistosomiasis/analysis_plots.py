@@ -64,14 +64,7 @@ prev_haem_national_plot = pd.read_excel(results_folder / ('prev_haem_national_su
 prev_mansoni_national_plot = pd.read_excel(results_folder / ('prev_mansoni_national_summary 2024-2040.xlsx'))
 
 
-# get mean prevalence haem and SE in 2040
 
-
-# get mean prevalence haem and SE in 2040
-
-
-
-# todo could add min-max prevalence in districts as CI?
 prev_haem_HML_All_district_summary = pd.read_excel(results_folder / 'prev_haem_HML_All_district_summary 2024-2040.xlsx')
 prev_mansoni_HML_All_district_summary = pd.read_excel(results_folder / 'prev_mansoni_HML_All_district_summary 2024-2040.xlsx')
 
@@ -85,7 +78,7 @@ mansoni_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).re
 mansoni_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
 
 
-def plot_species_prevalence(df, extrema_df, species_name, ax, year=2040, show_legend=False):
+def plot_species_prevalence(df, extrema_df, species_name, ax, year=2040, show_legend=False, show_ylabel=False):
     """
     Plot barplot with min/max district-level error bars for a given species,
     and add a horizontal line showing 2024 national mean prevalence.
@@ -165,7 +158,10 @@ def plot_species_prevalence(df, extrema_df, species_name, ax, year=2040, show_le
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha='right')
     ax.set_title(f'{species_name} Prevalence in 2040')
-    ax.set_ylabel('Mean Prevalence')
+    if show_ylabel:
+        ax.set_ylabel('Mean Prevalence')
+    else:
+        ax.set_ylabel('')
     ax.set_ylim(0, 0.3)
     ax.grid(axis='y', linestyle='--', alpha=0.5)
 
@@ -179,9 +175,9 @@ def plot_species_prevalence(df, extrema_df, species_name, ax, year=2040, show_le
         ax.legend(handles=legend_elements, loc='upper right', frameon=False)
 
 
-fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(9, 6), sharey=True)
 
-plot_species_prevalence(prev_haem_national_plot, haem_extrema_by_draw, 'Haematobium', axes[0])
+plot_species_prevalence(prev_haem_national_plot, haem_extrema_by_draw, 'Haematobium', axes[0], show_ylabel=True)
 plot_species_prevalence(prev_mansoni_national_plot, mansoni_extrema_by_draw, 'Mansoni', axes[1], show_legend=True)
 
 plt.tight_layout()
@@ -286,7 +282,125 @@ plt.show()
 
 
 
+#################################################################################
+# %% DALYS AVERTED
+#################################################################################
 
+
+
+
+dalys_averted = pd.read_excel(
+    results_folder / 'dalys_averted_district_compared_noMDA2024-2040.xlsx',
+    index_col=[0, 1],    # First two columns as MultiIndex: year, district
+    header=[0, 1]        # Two-level column MultiIndex: run/draw
+)
+dalys_averted.index.set_names(['year', 'district'], inplace=True)
+
+# add in the dalys averted for Scale-up WASH, no MDA compared with Continue WASH, no MDA
+dalys_averted_compared_ContinueWASHnoMDA = pd.read_excel(
+    results_folder / 'dalys_averted_district_compared_continueWASHnoMDA2024-2040.xlsx',
+    index_col=[0, 1],    # First two columns as MultiIndex: year, district
+    header=[0, 1]        # Two-level column MultiIndex: run/draw
+)
+
+
+
+
+def summarise_dalys_averted(df, start_year=2024, end_year=2040):
+    """
+    Summarise DALYs averted between `start_year` and `end_year` by draw:
+    - Sum DALYs across all districts and years for each (run, draw)
+    - Compute mean and standard error across runs for each draw
+    """
+
+    # Ensure index names are set
+    df.index.set_names(['year', 'district'], inplace=True)
+
+    # Filter years
+    years = df.index.get_level_values('year')
+    df_filtered = df[(years >= start_year) & (years <= end_year)]
+
+    # Sum across years and districts, grouped by (run, draw)
+    summed = df_filtered.sum(axis=0)
+
+    # Convert Series to DataFrame with MultiIndex (run, draw)
+    summed_df = summed.to_frame(name='dalys').reset_index().set_index(['run', 'draw'])
+
+    # Unstack so that each draw is a column, rows = runs
+    matrix = summed_df['dalys'].unstack(level='draw')
+
+    # Calculate summary statistics
+    mean = matrix.mean(axis=0)
+    se = matrix.sem(axis=0)
+
+    # Combine into single DataFrame
+    summary = pd.concat([mean, se], axis=1)
+    summary.columns = ['mean', 'se']
+
+    return summary
+
+
+dalys_summary = summarise_dalys_averted(dalys_averted)
+
+dalys_summary.to_excel(results_folder / "dalys_averted_summary_2024_2040.xlsx")
+
+# add in the row for Scale-up WASH, no MDA
+dalys_averted_compared_ContinueWASHnoMDA_summary = summarise_dalys_averted(dalys_averted_compared_ContinueWASHnoMDA)
+row_to_add = dalys_averted_compared_ContinueWASHnoMDA_summary.loc['Scale-up WASH, no MDA']
+dalys_summary = pd.concat([dalys_summary, row_to_add.to_frame().T])
+
+
+
+
+def plot_dalys_averted_bar(summary_df):
+    # Define the draw order and corresponding labels
+    draw_order = [
+        'Continue WASH, MDA SAC',
+        'Continue WASH, MDA PSAC',
+        'Continue WASH, MDA All',
+        'Scale-up WASH, no MDA'
+    ]
+    label_map = {
+        'Continue WASH, MDA SAC': 'MDA SAC',
+        'Continue WASH, MDA PSAC': 'MDA PSAC',
+        'Continue WASH, MDA All': 'MDA All',
+        'Scale-up WASH, no MDA': 'WASH only'
+    }
+    colour_map = {
+        'no MDA': '#1b9e77',
+        'MDA SAC': '#d95f02',
+        'MDA PSAC': '#7570b3',
+        'MDA All': '#e7298a',
+        'WASH only': '#e6ab02'
+    }
+
+    # Filter and prepare the data
+    summary_plot = summary_df.loc[draw_order].copy()
+    summary_plot['label'] = summary_plot.index.map(label_map)
+    summary_plot['lower'] = summary_plot['mean'] - 1.96 * summary_plot['se']
+    summary_plot['upper'] = summary_plot['mean'] + 1.96 * summary_plot['se']
+    summary_plot['color'] = summary_plot['label'].map(colour_map)
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.bar(
+        summary_plot['label'],
+        summary_plot['mean'],
+        yerr=1.96 * summary_plot['se'],
+        capsize=5,
+        color=summary_plot['color'],
+        edgecolor='black'
+    )
+
+    ax.set_ylabel('DALYs averted')
+    ax.set_title('')
+    ax.axhline(0, color='grey', linewidth=0.8)
+    plt.tight_layout()
+    return fig
+
+
+fig = plot_dalys_averted_bar(dalys_summary)
+plt.show()
 
 
 #################################################################################
@@ -672,7 +786,7 @@ plot_dalys_vs_costs_by_district(
     wash_strategy='Continue WASH',
     comparison='MDA PSAC vs MDA SAC',
     plot_summary=True,
-    threshold=61
+    threshold=120
 )
 
 plot_dalys_vs_costs_by_district(
@@ -697,7 +811,8 @@ def plot_ephp_km_continue(
     threshold: float = 0.015,
     year_range: tuple = (2024, 2040),
     alpha: float = 1.0,
-    figsize: tuple = (10, 6)
+    figsize: tuple = (10, 6),
+    species=None
 ):
     """
     Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
@@ -747,6 +862,8 @@ def plot_ephp_km_continue(
     )
     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
+    ephp_counts.to_excel(
+        results_folder / f'ephp_counts{species}.xlsx')
 
     # Draws to plot
     draw_labels = {
@@ -798,8 +915,8 @@ def plot_ephp_km_continue(
     plt.show()
 
 
-plot_ephp_km_continue(prev_haem_H_All_district)
-plot_ephp_km_continue(prev_mansoni_H_All_district)
+plot_ephp_km_continue(prev_haem_H_All_district, species='haem')
+plot_ephp_km_continue(prev_mansoni_H_All_district, species='mansoni')
 
 
 # get the figures for the SI separately
@@ -808,7 +925,8 @@ def plot_ephp_km_pause(
     threshold: float = 0.015,
     year_range: tuple = (2024, 2040),
     alpha: float = 1.0,
-    figsize: tuple = (10, 6)
+    figsize: tuple = (10, 6),
+        species=None
 ):
     """
     Plot Kaplan-Meier style curves in a single panel showing the proportion of districts
@@ -858,6 +976,8 @@ def plot_ephp_km_pause(
     )
     ephp_counts["prop_districts"] = ephp_counts["num_districts"] / total_districts
     ephp_counts = ephp_counts[ephp_counts["year_ephp"].between(*year_range)]
+    ephp_counts.to_excel(
+        results_folder / f'ephp_counts{species}.xlsx')
 
     # Draws to plot
     draw_labels = {
@@ -909,8 +1029,8 @@ def plot_ephp_km_pause(
     plt.show()
 
 
-plot_ephp_km_pause(prev_haem_H_All_district)
-plot_ephp_km_pause(prev_mansoni_H_All_district)
+plot_ephp_km_pause(prev_haem_H_All_district, species='haem')
+plot_ephp_km_pause(prev_mansoni_H_All_district, species='mansoni')
 
 
 # get the figures for the SI separately
