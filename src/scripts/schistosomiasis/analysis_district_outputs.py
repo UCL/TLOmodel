@@ -1210,6 +1210,25 @@ output_path = results_folder / f'table_summary_py_national_age_{target_period()}
 formatted_df.to_excel(output_path)
 
 
+
+# -------------------------- national PY infected by age
+# todo get the national numbers of py infected by age scaled by district
+
+# Sum across districts for each age_group, for every (draw, run) combination
+df_summed = scaled_py_district_age.groupby(level='age_group').sum()
+# Rearrange so we can group over 'draw' in columns
+# The result will be: index=age_group, columns=draw, values=mean over runs
+mean_by_draw = df_summed.groupby(axis=1, level='draw').mean()
+se_by_draw = df_summed.groupby(axis=1, level='draw').sem()  # standard error of the mean
+
+output_path = results_folder / f'mean_py_age_national{target_period()}.xlsx'
+mean_by_draw.to_excel(output_path)
+
+output_path = results_folder / f'se_py_age_national{target_period()}.xlsx'
+se_by_draw.to_excel(output_path)
+
+
+
 ###########################################################################################################
 # %% get DALYs by district / national
 ###########################################################################################################

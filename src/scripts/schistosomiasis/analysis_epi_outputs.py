@@ -879,7 +879,6 @@ def get_person_years_infected(_df):
     return pd.Series(person_years)
 
 
-# todo this needs to be person-YEARS not days -> divide outputs by 365.25
 def generate_py_averted_by_age(results_folder, comparator_scenario):
 
     def wrap_get_person_years_infected(age_group, inf_level):
@@ -927,7 +926,7 @@ def generate_py_averted_by_age(results_folder, comparator_scenario):
                 comparison=comparator_scenario,
                 scaled=True
             ),
-            central_measure='median'
+            central_measure='mean'
         )
 
         # Append with age-group as row label
@@ -951,6 +950,11 @@ def generate_py_averted_by_age(results_folder, comparator_scenario):
 py_averted_pause = generate_py_averted_by_age(results_folder, comparator_scenario='Pause WASH, no MDA')
 py_averted_continue = generate_py_averted_by_age(results_folder, comparator_scenario='Continue WASH, no MDA')
 py_averted_scaleup = generate_py_averted_by_age(results_folder, comparator_scenario='Scale-up WASH, no MDA')
+
+with pd.ExcelWriter(results_folder / "person_years_averted_summary_national.xlsx") as writer:
+    py_averted_continue[0].to_excel(writer, sheet_name="Number PY averted")
+    py_averted_continue[1].to_excel(writer, sheet_name="Percentage PY averted")
+
 
 
 def plot_grouped_averted_points(data_dict, ylabel=None, ylim=None):

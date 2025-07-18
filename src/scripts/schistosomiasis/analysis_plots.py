@@ -14,6 +14,7 @@ import seaborn as sns
 from collections import defaultdict
 import textwrap
 from typing import Tuple
+from matplotlib.lines import Line2D
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
@@ -70,105 +71,218 @@ prev_mansoni_national_plot = pd.read_excel(results_folder / ('prev_mansoni_natio
 
 
 
-# todo
-def plot_species_prevalence(df, species_name, ax, year=2040):
+# todo could add min-max prevalence in districts as CI?
+prev_haem_HML_All_district_summary = pd.read_excel(results_folder / 'prev_haem_HML_All_district_summary 2024-2040.xlsx')
+prev_mansoni_HML_All_district_summary = pd.read_excel(results_folder / 'prev_mansoni_HML_All_district_summary 2024-2040.xlsx')
+
+# Filter to year 2040
+df_2040 = prev_haem_HML_All_district_summary[prev_haem_HML_All_district_summary['year'] == 2040]
+haem_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
+haem_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
+
+df_2040 = prev_mansoni_HML_All_district_summary[prev_mansoni_HML_All_district_summary['year'] == 2040]
+mansoni_extrema_by_draw = df_2040.groupby('draw')['mean'].agg(['min', 'max']).reset_index()
+mansoni_extrema_by_draw.columns = ['draw', 'min_mean', 'max_mean']
+
+
+def plot_species_prevalence(df, extrema_df, species_name, ax, year=2040, show_legend=False):
     """
-    Plot barplot with mean and CI error bars for a given species dataframe,
-    and add a horizontal line showing the 2024 mean prevalence for 'Continue WASH, no MDA'.
+    Plot barplot with min/max district-level error bars for a given species,
+    and add a horizontal line showing 2024 national mean prevalence.
 
     Parameters:
-    - df: DataFrame with columns ['date', 'draw', 'mean', 'lower_ci', 'upper_ci']
-    - species_name: str, used for the plot title
-    - ax: matplotlib Axes object to plot on
-    - year: int, year to filter on for the bars (default 2040)
+    - df: national prevalence summary with ['date', 'draw', 'mean']
+    - extrema_df: min/max district-level summary with ['draw', 'min_mean', 'max_mean']
+    - species_name: str for title
+    - ax: matplotlib axis
+    - year: year for bar heights
+    - show_legend: whether to include legends
     """
     import numpy as np
+    import matplotlib.lines as mlines
 
-    # Colour map for bars
-    colour_map = {
-        'no MDA': '#1b9e77',  # Teal
-        'MDA SAC': '#d95f02',  # Orange
-        'MDA PSAC': '#7570b3',  # Purple
-        'MDA All': '#e7298a',  # Pink
-        'WASH only': '#e6ab02'  # Mustard Yellow
+    # Define label and colour map
+    label_map = {
+        'no MDA': 'no MDA',
+        'MDA SAC': 'MDA SAC',
+        'MDA PSAC': 'MDA PSAC',
+        'MDA All': 'MDA All',
+        'WASH only': 'WASH only'
     }
-
-    # Define the order and labels of bars
+    colour_map = {
+        'no MDA': '#1b9e77',
+        'MDA SAC': '#d95f02',
+        'MDA PSAC': '#7570b3',
+        'MDA All': '#e7298a',
+        'WASH only': '#e6ab02'
+    }
     order = ['no MDA', 'MDA SAC', 'MDA PSAC', 'MDA All', 'WASH only']
 
-    # Filter for 'Continue WASH' rows at given year
+    # Filter relevant bars
     df_filtered = df[(df['date'] == year) & (df['draw'].str.contains('Continue WASH'))].copy()
+    df_filtered['label'] = df_filtered['draw'].apply(
+        lambda x: next((k for k in label_map if k in x), None)
+    )
+    df_filtered = df_filtered.dropna(subset=['label'])
 
-    # Create simplified category column from 'draw' for known categories
-    def simplify_draw(draw_label):
-        if 'no MDA' in draw_label:
-            return 'no MDA'
-        elif 'MDA SAC' in draw_label:
-            return 'MDA SAC'
-        elif 'MDA PSAC' in draw_label:
-            return 'MDA PSAC'
-        elif 'MDA All' in draw_label:
-            return 'MDA All'
-        else:
-            return None
+    # Add "Scale-up WASH, no MDA"
+    df_extra = df[(df['date'] == year) & (df['draw'] == 'Scale-up WASH, no MDA')].copy()
+    if not df_extra.empty:
+        df_extra['label'] = 'WASH only'
+        df_filtered = pd.concat([df_filtered, df_extra], ignore_index=True)
 
-    df_filtered['category'] = df_filtered['draw'].apply(simplify_draw)
+    # Order bars
+    df_filtered['label'] = pd.Categorical(df_filtered['label'], categories=order, ordered=True)
+    df_filtered = df_filtered.sort_values('label')
 
-    # Remove rows that don't fit expected categories (just in case)
-    df_filtered = df_filtered.dropna(subset=['category'])
+    # Get draw-to-label and lookup extrema
+    category_to_draw = df_filtered.set_index('label')['draw'].to_dict()
+    draw_extrema = extrema_df.set_index('draw').to_dict(orient='index')
 
-    # Create a new DataFrame row for 'Scale-up WASH, no MDA' for this year
-    df_wash_only = df[(df['date'] == year) & (df['draw'] == 'Scale-up WASH, no MDA')].copy()
-    if not df_wash_only.empty:
-        df_wash_only = df_wash_only.assign(category='WASH only')
-        df_filtered = pd.concat([df_filtered, df_wash_only], ignore_index=True)
-
-    # Convert 'category' to categorical with order for consistent bar placement
-    df_filtered['category'] = pd.Categorical(df_filtered['category'], categories=order, ordered=True)
-
-    # Sort by category order
-    df_filtered = df_filtered.sort_values('category')
-
-    x = np.arange(len(df_filtered))
+    # Bar heights and error bars
     means = df_filtered['mean'].values
-    lower = df_filtered['lower_ci'].values
-    upper = df_filtered['upper_ci'].values
+    labels = df_filtered['label'].values
+    x = np.arange(len(labels))
 
-    error_lower = means - lower
-    error_upper = upper - means
-    error = np.vstack([error_lower, error_upper])
+    error = np.array([
+        [means[i] - draw_extrema[category_to_draw[l]]['min_mean'],
+         draw_extrema[category_to_draw[l]]['max_mean'] - means[i]]
+        for i, l in enumerate(labels)
+    ]).T
 
-    bar_colors = [colour_map[c] for c in df_filtered['category']]
-
+    bar_colors = [colour_map[l] for l in labels]
     ax.bar(x, means, yerr=error, capsize=5, color=bar_colors, edgecolor='black')
-    ax.set_xticks(x)
-    ax.set_xticklabels(df_filtered['category'], rotation=45, ha='right')
-    ax.set_ylim(bottom=0, top=0.3)
-    ax.set_title(f'{species_name} Prevalence')
-    ax.set_ylabel('Mean Prevalence')
-    ax.grid(axis='y', linestyle='--', alpha=0.7)
 
-    # Add horizontal line for mean at 2024 for 'Continue WASH, no MDA'
-    mean_2024 = df.loc[
-        (df['date'] == 2024) & (df['draw'] == 'Continue WASH, no MDA'), 'mean'
+    # Add horizontal line for 2024 national prevalence of 'Continue WASH, no MDA'
+    baseline_2024 = df[
+        (df['date'] == 2024) & (df['draw'] == 'Continue WASH, no MDA')
     ]
-    if not mean_2024.empty:
-        ax.axhline(mean_2024.values[0], color='grey', linestyle='--', linewidth=1.5,
-                   label='')
+    if not baseline_2024.empty:
+        yval = baseline_2024['mean'].values[0]
+        ax.axhline(yval, linestyle='--', color='grey', linewidth=1.5,
+                   label='2024 national prevalence' if show_legend else None)
 
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.set_title(f'{species_name} Prevalence in 2040')
+    ax.set_ylabel('Mean Prevalence')
+    ax.set_ylim(0, 0.3)
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
+
+    # Dummy error bar for legend
+    if show_legend:
+        legend_elements = [
+            Line2D([0], [0], linestyle='--', color='grey', label='2024 national prevalence'),
+            Line2D([0], [0], color='black', linewidth=1.5, label='min–max',
+                   marker='|', markersize=15, linestyle='None')
+        ]
+        ax.legend(handles=legend_elements, loc='upper right', frameon=False)
 
 
 fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
 
-plot_species_prevalence(prev_haem_national_plot, 'Haematobium', axes[0])
-plot_species_prevalence(prev_mansoni_national_plot, 'Mansoni', axes[1])
+plot_species_prevalence(prev_haem_national_plot, haem_extrema_by_draw, 'Haematobium', axes[0])
+plot_species_prevalence(prev_mansoni_national_plot, mansoni_extrema_by_draw, 'Mansoni', axes[1], show_legend=True)
 
 plt.tight_layout()
 plt.show()
 
 
+#################################################################################
+# %% Person-years infected
+#################################################################################
 
 
+pc_py_averted = pd.read_excel(results_folder / "person_years_averted_summary_national.xlsx",
+                              sheet_name="Percentage PY averted",
+                              index_col=0,
+                              header=[0, 1])
+
+
+
+def plot_pc_py_averted_ci(df, draw_order, xlabel_labels=None, ylabel=None, ylim=None):
+    """
+    Plot percentage person-years averted with confidence intervals.
+
+    Parameters:
+    - df: pandas DataFrame with multi-index columns (draw, stat),
+          index as age groups.
+    - draw_order: list of draw names in order to plot.
+    - xlabel_labels: list of x-axis labels matching draw_order (optional).
+    - ylabel: y-axis label (optional).
+    - ylim: y-axis limit (optional).
+    """
+
+    age_groups = df.index.tolist()
+    palette = sns.color_palette("Set2", len(age_groups))
+    stagger = np.linspace(-0.2, 0.2, len(age_groups))
+    x_positions = np.arange(len(draw_order))
+
+    fig, ax = plt.subplots(figsize=(1.8 * len(draw_order), 4))
+
+    for i, draw in enumerate(draw_order):
+        for j, age_group in enumerate(age_groups):
+            central = df.loc[age_group, (draw, 'central')]
+            lower = df.loc[age_group, (draw, 'lower')]
+            upper = df.loc[age_group, (draw, 'upper')]
+
+            yerr_lower = central - lower
+            yerr_upper = upper - central
+
+            ax.errorbar(
+                x=i + stagger[j],
+                y=central,
+                yerr=[[yerr_lower], [yerr_upper]],
+                fmt='o',
+                color=palette[j],
+                capsize=5,
+                label=age_group if i == 0 else ""
+            )
+
+    # Vertical dashed lines between draws
+    for boundary in range(1, len(draw_order)):
+        ax.axvline(boundary - 0.5, color='grey', linestyle='--', linewidth=0.8)
+
+    ax.axhline(0, color='grey', linestyle='-', linewidth=0.8)
+    ax.set_xticks(x_positions)
+
+    # Use custom x-axis labels if provided, else use draw_order
+    if xlabel_labels is not None:
+        ax.set_xticklabels(xlabel_labels, rotation=30, ha='right')
+    else:
+        ax.set_xticklabels(draw_order, rotation=45, ha='right')
+
+    ax.set_xlim(-0.5, len(draw_order) - 0.5)
+    ax.set_ylim(0, ylim if ylim is not None else ax.get_ylim()[1])
+    ax.set_ylabel(ylabel if ylabel else "% person-years averted")
+
+    handles = [plt.Line2D([0], [0], marker='o', color=palette[i], linestyle='', label=age)
+               for i, age in enumerate(age_groups)]
+    ax.legend(handles=handles, title='Age Group', loc='upper left')
+
+    plt.tight_layout()
+    return fig
+
+
+# Usage:
+draw_order = [
+    'Continue WASH, MDA SAC',
+    'Continue WASH, MDA PSAC',
+    'Continue WASH, MDA All',
+    'Scale-up WASH, no MDA'
+]
+
+x_labels = ['MDA SAC', 'MDA PSAC', 'MDA All', 'WASH only']
+
+fig = plot_pc_py_averted_ci(
+    df=pc_py_averted,
+    draw_order=draw_order,
+    xlabel_labels=x_labels,
+    ylabel='% person-years averted',
+    ylim=40
+)
+
+plt.show()
 
 
 
