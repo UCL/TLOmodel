@@ -869,7 +869,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             },
             'Xpert': {
                 'prob': 'prob_xpert_screen',
-                'event_class': HSI_CervicalCancer_XpertHPVScreening,
+                'event_class': HSI_CervicalCancer_Screening_Xpert,
             }
         }
         selected_screening_method = 'VIA' if year < p['transition_screening_method_year'] else 'Xpert'
@@ -1008,7 +1008,7 @@ class HSI_CervicalCancer_Screening_VIA(HSI_Event, IndividualScopeEventMixin):
                         tclose=None
                 )
 
-class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_Screening_Xpert(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual in eligible population is selected for screening based on xpert screening
     probability
