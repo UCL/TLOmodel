@@ -1257,7 +1257,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
                 if not in_stage4:
                     # start treatment:
                     hs.schedule_hsi_event(
-                        hsi_event=HSI_CervicalCancer_StartTreatment(
+                        hsi_event=HSI_CervicalCancer_Treatment_Start(
                             module=self.module,
                             person_id=person_id
                         ),
@@ -1278,7 +1278,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
                         tclose=None
                     )
 
-class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_Treatment_Start(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_CervicalCancer_Biopsy following a diagnosis of
     cervical Cancer. It initiates the treatment of cervical Cancer.
@@ -1381,7 +1381,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             # Schedule a post-treatment check for 3 months:
             hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
+                hsi_event=HSI_CervicalCancer_Treatment_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id,
                 ),
@@ -1390,7 +1390,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=0
             )
 
-class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_Treatment_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_CervicalCancer_StartTreatment and itself.
     It is only for those who have undergone treatment for cervical Cancer.
