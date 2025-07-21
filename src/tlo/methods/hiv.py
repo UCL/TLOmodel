@@ -1195,7 +1195,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = 0
 
         if p['type_of_scaleup'] == 'target_IPT':
-            # todo target IPT if other risk factors present
+            # target IPT if other risk factors present
             # this is enacted in HIV treatment appt (do_at_initiation)
             pass
 
