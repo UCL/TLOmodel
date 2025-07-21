@@ -865,7 +865,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         screening_methods = {
             'VIA': {
                 'prob': 'prob_via_screen',
-                'event_class': HSI_CervicalCancer_VIAScreening,
+                'event_class': HSI_CervicalCancer_Screening_VIA,
             },
             'Xpert': {
                 'prob': 'prob_xpert_screen',
@@ -949,7 +949,7 @@ class CervicalCancer_DeathInStage4(Event, IndividualScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_CervicalCancer_VIAScreening(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_Screening_VIA(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual in eligible population is selected for screening based using this method.
 
@@ -1056,7 +1056,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
                 if not df.loc[person_id, 'hv_diagnosed']:
                     if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] != 'none'):
                         hs.schedule_hsi_event(
-                            hsi_event=HSI_CervicalCancer_VIAScreening(
+                            hsi_event=HSI_CervicalCancer_Screening_VIA(
                                 module=self.module,
                                 person_id=person_id
                                    ),
