@@ -1219,6 +1219,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # todo
             pass
 
+        if p['type_of_scaleup'] == 'remove_all':
+            # todo
+            pass
+
+
 
 
         # ------------------- SCALE-UP -----------------------
@@ -2021,7 +2026,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
                 # get probabilities or receiving prep from linear model
                 prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[agyw_idx],
-                                                                   self.module.rng,
                                                                    year=self.sim.date.year,
                 )
 
@@ -2048,27 +2052,6 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 give_prep = high_risk_idx[
                     self.module.rng.random_sample(len(high_risk_idx)) < rescaled_probs
                     ]
-
-                # rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
-                #     df.loc[agyw_idx]
-                # )
-                # # divide by the mean risk then multiply by prob of prep
-                # # highest risk AGYW will have highest probability of getting prep
-                # mean_risk = rr_of_infection_in_agyw.mean()
-                # scaled_risk = rr_of_infection_in_agyw / mean_risk
-                #
-                # prob_prep_for_agyw = self.module.lm["lm_prep_agyw"].predict(
-                #     df.loc[agyw_idx]
-                # )
-                #
-                # overall_risk_and_prob_of_prep = scaled_risk * prob_prep_for_agyw
-                #
-                #
-                #
-                # # give prep
-                # give_prep = agyw_idx[
-                #     self.module.rng.random_sample(len(agyw_idx)) < overall_risk_and_prob_of_prep
-                #     ]
 
                 for person in give_prep:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
