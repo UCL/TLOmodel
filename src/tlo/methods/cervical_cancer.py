@@ -752,8 +752,8 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         hs = self.sim.modules["HealthSystem"]
         treatment_methods = {
-            'Thermoablation': HSI_CervicalCancer_CIN_Thermoablation,
-            'Cryotherapy': HSI_CervicalCancer_CIN_Cryotherapy,
+            'Thermoablation': HSI_CervicalCancer_CINRemoval_Thermoablation,
+            'Cryotherapy': HSI_CervicalCancer_CINRemoval_Cryotherapy,
         }
 
         selected_method = 'Thermoablation' if year >= p['transition_to_thermo_year'] else 'Cryotherapy'
@@ -1079,7 +1079,7 @@ class HSI_CervicalCancer_Presentation_WithVaginalBleeding(HSI_Event, IndividualS
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_TestOnPresentation"
+        self.TREATMENT_ID = "CervicalCancer_Presentation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
@@ -1102,7 +1102,7 @@ class HSI_CervicalCancer_Presentation_WithVaginalBleeding(HSI_Event, IndividualS
                 tclose=None
             )
 
-class HSI_CervicalCancer_CIN_Cryotherapy(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_CINRemoval_Cryotherapy(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual requires CIN Treatment.
 
@@ -1153,7 +1153,7 @@ class HSI_CervicalCancer_CIN_Cryotherapy(HSI_Event, IndividualScopeEventMixin):
                     tclose=None
                 )
 
-class HSI_CervicalCancer_CIN_Thermoablation(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_CINRemoval_Thermoablation(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual requires CIN Treatment and year is 2024 or after
 
