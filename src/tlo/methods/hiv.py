@@ -413,7 +413,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "type_of_scaleup": Parameter(
             Types.STRING, "argument to determine type scale-up of program which will be implemented, "
-                          "can be 'none', 'target' or 'max'",
+                          "can be 'none', 'target' or 'max' or any of the program simplification options",
         ),
         "scaleup_start_year": Parameter(
             Types.INT,
@@ -1178,44 +1178,88 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
         scaled_params_workbook = p["scaleup_parameters"]
 
-        if p['type_of_scaleup'] == 'target':
-            scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
-        else:
-            scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+        if p['type_of_scaleup'] == 'reduce_HIV_test':
+            # todo
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"]["annual_testing_rate_adults"] * 0.75
 
-        # scale-up HIV program
-        # reduce risk of HIV - applies to whole adult population
-        p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
+            # ANC testing - value for mothers and infants testing
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
 
-        # increase PrEP coverage for FSW after HIV test
-        p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
+        if p['type_of_scaleup'] == 'remove_VL':
+            # todo
+            pass
 
-        # prep poll for AGYW - target to the highest risk
-        # increase retention to 75% for FSW and AGYW
-        p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
-        p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
-            "probability_of_being_retained_on_prep_every_3_months"
-        ]
+        if p['type_of_scaleup'] == 'remove_IPT':
+            # todo this is a dataframe - all values need to be updated
+            # this is currently only for high-risk districts
+            self.sim.modules['Tb'].parameters["ipt_coverage"]=0
 
-        # perfect retention on ART
-        p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
-            "probability_of_being_retained_on_art_every_3_months"
-        ]
+        if p['type_of_scaleup'] == 'target_IPT':
+            # todo target IPT if other risk factors present
+            pass
 
-        # increase probability of VMMC after hiv test
-        p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
+        if p['type_of_scaleup'] == 'remove_PrEP_FSW':
+            # todo
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
 
-        # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
-        p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
+        if p['type_of_scaleup'] == 'remove_PrEP_AGYW':
+            # todo
+            p["prob_prep_for_agyw"] = 0
+            p["probability_of_being_retained_on_prep_every_3_months"] = 0
 
-        # ANC testing - value for mothers and infants testing
-        p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
-        p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
+        if p['type_of_scaleup'] == 'remove_VMMC':
+            # todo
+            p["prob_circ_after_hiv_test"] = 0
+            # p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
+            # p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
+            # p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
 
-        # viral suppression rates
-        # adults already at 95% by 2020
-        # change all column values
-        p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
+        if p['type_of_scaleup'] == 'increase_6MMD':
+            # todo
+            pass
+
+
+
+        # ------------------- SCALE-UP -----------------------
+        # if p['type_of_scaleup'] == 'target':
+        #     scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
+        # if p['type_of_scaleup'] == 'max':
+        #     scaled_params = scaled_params_workbook.set_index('parameter')['max_value'].to_dict()
+        #
+        # # scale-up HIV program
+        # # reduce risk of HIV - applies to whole adult population
+        # p["beta"] = p["beta"] * scaled_params["reduction_in_hiv_beta"]
+        #
+        # # increase PrEP coverage for FSW after HIV test
+        # p["prob_prep_for_fsw_after_hiv_test"] = scaled_params["prob_prep_for_fsw_after_hiv_test"]
+        #
+        # # prep poll for AGYW - target to the highest risk
+        # # increase retention to 75% for FSW and AGYW
+        # p["prob_prep_for_agyw"] = scaled_params["prob_prep_for_agyw"]
+        # p["probability_of_being_retained_on_prep_every_3_months"] = scaled_params[
+        #     "probability_of_being_retained_on_prep_every_3_months"
+        # ]
+        #
+        # # perfect retention on ART
+        # p["probability_of_being_retained_on_art_every_3_months"] = scaled_params[
+        #     "probability_of_being_retained_on_art_every_3_months"
+        # ]
+        #
+        # # increase probability of VMMC after hiv test
+        # p["prob_circ_after_hiv_test"] = scaled_params["prob_circ_after_hiv_test"]
+        #
+        # # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
+        # p["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params["annual_testing_rate_adults"]
+        #
+        # # ANC testing - value for mothers and infants testing
+        # p["prob_hiv_test_at_anc_or_delivery"] = scaled_params["prob_hiv_test_at_anc_or_delivery"]
+        # p["prob_hiv_test_for_newborn_infant"] = scaled_params["prob_hiv_test_for_newborn_infant"]
+        #
+        # # viral suppression rates
+        # # adults already at 95% by 2020
+        # # change all column values
+        # p["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params["virally_suppressed_on_art"]
 
         # update exising linear models to use new scaled-up parameters
         self._build_linear_models()
@@ -1579,7 +1623,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             sub_group = "adult_male"
 
         # Restrict to year
-        if year < 2020:
+        if year < 2021:
             return self.parameters["initial_dispensation_period_months"]
         year = min(year, 2025)
 
@@ -1975,8 +2019,11 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 mean_risk = rr_of_infection.mean()
                 scaled_risk = rr_of_infection / mean_risk
 
-                # get probabilities from logistic model
-                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[agyw_idx])
+                # get probabilities or receiving prep from linear model
+                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[agyw_idx],
+                                                                   self.module.rng,
+                                                                   year=self.sim.date.year,
+                )
 
                 # number of AGYW expected to get PrEP = mean(prob_prep) * total AGYW
                 expected_n = int(round(prob_prep.mean() * len(agyw_idx)))
@@ -3123,7 +3170,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             (df["mother_id"] == person_id) & (df["nb_breastfeeding_status"] != "none")
         ).any()
 
-        if self.sim.date.year >= 2020:
+        if self.sim.date.year >= 2021:
             self.dispensation_interval = self.module.get_art_dispensation_length(
                 year=self.sim.date.year,
                 person=person,
