@@ -734,7 +734,7 @@ class CervicalCancer(Module, GenericFirstAppointmentsMixin):
     ) -> None:
         if 'vaginal_bleeding' in symptoms:
             schedule_hsi_event(
-                HSI_CervicalCancerPresentationVaginalBleeding(
+                HSI_CervicalCancer_Presentation_WithVaginalBleeding(
                     person_id=person_id,
                     module=self
                 ),
@@ -1070,7 +1070,7 @@ class HSI_CervicalCancer_Screening_Xpert(HSI_Event, IndividualScopeEventMixin):
                 else:
                     self.module.choose_cin_procedure_and_schedule_it(person_id)
 
-class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_Presentation_WithVaginalBleeding(HSI_Event, IndividualScopeEventMixin):
     """
     This event is triggered if individual presents symptom of vaginal bleeding
 
