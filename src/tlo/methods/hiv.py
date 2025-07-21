@@ -1176,10 +1176,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
     def update_parameters_for_program_scaleup(self):
         """ options for program scale-up are 'target' or 'max' """
         p = self.parameters
-        scaled_params_workbook = p["scaleup_parameters"]
 
         if p['type_of_scaleup'] == 'reduce_HIV_test':
-            # todo
             p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"]["annual_testing_rate_adults"] * 0.75
 
             # ANC testing - value for mothers and infants testing
@@ -1187,46 +1185,102 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
 
         if p['type_of_scaleup'] == 'remove_VL':
-            # todo
-            pass
+            # update consumables availability (item 190 viral load test) to 0
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0})
 
         if p['type_of_scaleup'] == 'remove_IPT':
-            # todo this is a dataframe - all values need to be updated
             # this is currently only for high-risk districts
-            self.sim.modules['Tb'].parameters["ipt_coverage"]=0
+            # leave the coverage for paediatric contacts of TB cases
+            self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = 0
 
         if p['type_of_scaleup'] == 'target_IPT':
             # todo target IPT if other risk factors present
+            # this is enacted in HIV treatment appt (do_at_initiation)
             pass
 
         if p['type_of_scaleup'] == 'remove_PrEP_FSW':
-            # todo
             p["prob_prep_for_fsw_after_hiv_test"] = 0
 
         if p['type_of_scaleup'] == 'remove_PrEP_AGYW':
-            # todo
             p["prob_prep_for_agyw"] = 0
-            p["probability_of_being_retained_on_prep_every_3_months"] = 0
 
         if p['type_of_scaleup'] == 'remove_VMMC':
-            # todo
             p["prob_circ_after_hiv_test"] = 0
-            # p["increase_in_prob_circ_2019"] = updated_params["increase_in_prob_circ_2019"]
-            # p["prob_circ_for_child_before_2020"] = updated_params["prob_circ_for_child_before_2020"]
-            # p["prob_circ_for_child_from_2020"] = updated_params["prob_circ_for_child_from_2020"]
+            p["prob_circ_for_child_from_2020"] = 0
 
         if p['type_of_scaleup'] == 'increase_6MMD':
-            # todo
-            pass
+            # leave those with 1 month dispensations
+            # anyone scheduled for 3 months, now has 6 months
+            for key, (durations, probs) in self._art_dispensation_lookup.items():
+                # Get indices for 3-month and 6-month options
+                idx_4 = list(durations).index(4)
+                idx_6 = list(durations).index(6)
+
+                # Copy probabilities to avoid mutating the original directly
+                new_probs = probs.copy()
+
+                # Reallocate 3-month prob to 6-month, zero out 3-month
+                new_probs[idx_6] += new_probs[idx_4]
+                new_probs[idx_4] = 0.0
+
+                # Normalise so probabilities sum to 1
+                new_probs /= new_probs.sum()
+
+                # Update the dictionary
+                self._art_dispensation_lookup[key] = (durations, new_probs)
 
         if p['type_of_scaleup'] == 'remove_all':
-            # todo
-            pass
+            # testing rates
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
 
+            # ANC testing - value for mothers and infants testing
+            p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
+            p["prob_hiv_test_for_newborn_infant"] = p["prob_hiv_test_for_newborn_infant"] * 0.75
 
+            # remove VL
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0})
+
+            # remove IPT
+            self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = 0
+
+            # remove PrEP for FSW
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+            # remove PrEP for AGYW
+            p["prob_prep_for_agyw"] = 0
+
+            # remove VMMC
+            p["prob_circ_after_hiv_test"] = 0
+            p["prob_circ_for_child_from_2020"] = 0
+
+            # switch to 6MMD
+            # leave those with 1 month dispensations
+            # anyone scheduled for 3 months, now has 6 months
+            for key, (durations, probs) in self._art_dispensation_lookup.items():
+                # Get indices for 3-month and 6-month options
+                idx_4 = list(durations).index(4)
+                idx_6 = list(durations).index(6)
+
+                # Copy probabilities to avoid mutating the original directly
+                new_probs = probs.copy()
+
+                # Reallocate 3-month prob to 6-month, zero out 3-month
+                new_probs[idx_6] += new_probs[idx_4]
+                new_probs[idx_4] = 0.0
+
+                # Normalise so probabilities sum to 1
+                new_probs /= new_probs.sum()
+
+                # Update the dictionary
+                self._art_dispensation_lookup[key] = (durations, new_probs)
 
 
         # ------------------- SCALE-UP -----------------------
+        # scaled_params_workbook = p["scaleup_parameters"]
+
         # if p['type_of_scaleup'] == 'target':
         #     scaled_params = scaled_params_workbook.set_index('parameter')['target_value'].to_dict()
         # if p['type_of_scaleup'] == 'max':
@@ -3135,6 +3189,28 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Consider if TB preventive therapy should start
         self.consider_tb(person_id)
+
+        # Program simplification scenario: targeted IPT
+        if self.sim.modules['Hiv'].parameters['type_of_scaleup'] == 'target_IPT':
+            # Check if CardioMetabolicDisorders module is loaded
+            diabetes = False
+            if "CardioMetabolicDisorders" in self.sim.modules:
+                diabetes = df.at[person_id, "nc_diabetes"] is True
+
+            # Now apply the IPT condition
+            if (
+                (df.at[person_id, "li_ex_alc"] is True) or
+                (df.at[person_id, "li_tob"] is True) or
+                df.at[person_id, "sy_aids_symptoms"] > 0 or
+                diabetes
+            ):
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    self.sim.modules["Tb"].HSI_Tb_Start_or_Continue_Ipt(self, person_id=person_id),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None,
+                )
+
 
         return drugs_available
 
