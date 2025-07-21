@@ -631,6 +631,22 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Predictor("li_is_sexworker").when(True, 1.0).otherwise(0.0),
         )
 
+        # Linear model for starting PrEP (if AGYW), given through regular poll:
+        self.lm["lm_prep_agyw"] = LinearModel.multiplicative(
+            Predictor("sex").when("F", 1.0).otherwise(0.0),
+            Predictor("hv_inf").when(False, 1.0).otherwise(0.0),
+            Predictor("age_years")
+            .when("<15", 0.0)
+            .when(">25", 0.0)
+            .otherwise(1.0),
+            Predictor("year",
+                      external=True,
+                      conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True)
+            .when("<2021", 0)
+            .otherwise(p["prob_prep_for_agyw"])
+        )
+
         # Linear model for circumcision (if M) following when the person has been tested:
         self.lm["lm_circ"] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -1951,19 +1967,61 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & ~df.hv_is_on_prep
                     ].index
 
-                rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
-                    df.loc[agyw_idx]
-                )
-                # divide by the mean risk then multiply by prob of prep
-                # highest risk AGYW will have highest probability of getting prep
-                mean_risk = rr_of_infection_in_agyw.mean()
-                scaled_risk = rr_of_infection_in_agyw / mean_risk
-                overall_risk_and_prob_of_prep = scaled_risk * p["prob_prep_for_agyw"]
+                if len(agyw_idx) == 0:
+                    return  # no eligible AGYW
 
-                # give prep
-                give_prep = agyw_idx[
-                    self.module.rng.random_sample(len(agyw_idx)) < overall_risk_and_prob_of_prep
+                # calculate relative risk of infection
+                rr_of_infection = self.module.lm["rr_of_infection"].predict(df.loc[agyw_idx])
+                mean_risk = rr_of_infection.mean()
+                scaled_risk = rr_of_infection / mean_risk
+
+                # get probabilities from logistic model
+                prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[agyw_idx])
+
+                # number of AGYW expected to get PrEP = mean(prob_prep) * total AGYW
+                expected_n = int(round(prob_prep.mean() * len(agyw_idx)))
+
+                # subset to top 50% by risk
+                top_risk_threshold = np.percentile(scaled_risk, 50)
+                high_risk_mask = scaled_risk >= top_risk_threshold
+
+                high_risk_idx = agyw_idx[high_risk_mask]
+                high_risk_probs = prob_prep[high_risk_mask]
+
+                if len(high_risk_idx) == 0:
+                    return  # no one in top risk group
+
+                # rescale probabilities so total matches expected_n
+                rescaled_probs = high_risk_probs * (expected_n / high_risk_probs.sum())
+
+                # cap at 1
+                rescaled_probs = np.minimum(rescaled_probs, 1.0)
+
+                # assign PrEP probabilistically
+                give_prep = high_risk_idx[
+                    self.module.rng.random_sample(len(high_risk_idx)) < rescaled_probs
                     ]
+
+                # rr_of_infection_in_agyw = self.module.lm["rr_of_infection"].predict(
+                #     df.loc[agyw_idx]
+                # )
+                # # divide by the mean risk then multiply by prob of prep
+                # # highest risk AGYW will have highest probability of getting prep
+                # mean_risk = rr_of_infection_in_agyw.mean()
+                # scaled_risk = rr_of_infection_in_agyw / mean_risk
+                #
+                # prob_prep_for_agyw = self.module.lm["lm_prep_agyw"].predict(
+                #     df.loc[agyw_idx]
+                # )
+                #
+                # overall_risk_and_prob_of_prep = scaled_risk * prob_prep_for_agyw
+                #
+                #
+                #
+                # # give prep
+                # give_prep = agyw_idx[
+                #     self.module.rng.random_sample(len(agyw_idx)) < overall_risk_and_prob_of_prep
+                #     ]
 
                 for person in give_prep:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
