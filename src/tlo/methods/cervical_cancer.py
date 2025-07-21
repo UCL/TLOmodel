@@ -1206,8 +1206,8 @@ class HSI_CervicalCancer_CIN_Thermoablation(HSI_Event, IndividualScopeEventMixin
 
 class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_CervicalCancer_AceticAcidScreening, HSI_CervicalCancerPresentationVaginalBleeding,
-    HSI_CervicalCancer_Cryotherapy_CIN, or HSI_CervicalCancer_Thermoablation_CIN
+    This event is scheduled by HSI_CervicalCancer_Screening_*, HSI_CervicalCancer_Presentation_WithVaginalBleeding,
+    HSI_CervicalCancer_CIN_Cryotherapy, or HSI_CervicalCancer_CIN_Thermoablation
 
     This event begins the investigation that may result in diagnosis of cervical cancer and the scheduling of
     palliative care if diagnosis is stage 4
@@ -1440,7 +1440,6 @@ class HSI_CervicalCancer_Treatment_PostTreatmentCheck(HSI_Event, IndividualScope
                 tclose=None,
                 priority=0
             )
-
 
 
 class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
