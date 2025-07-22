@@ -187,6 +187,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
+            result_data_dalys = result_data_dalys.drop(index='Schistosomiasis')
             all_years_data_dalys_mean[target_year] = result_data_dalys['mean']
             all_years_data_dalys_lower[target_year] = result_data_dalys['lower']
             all_years_data_dalys_upper[target_year] = result_data_dalys['upper']
@@ -418,10 +419,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
         group_2 = [cause for cause in causes if "Cancer" in cause]
         group_3 = ["Depression / Self-harm", "Diabetes", "Epilepsy", "Lower Back Pain", "Heart Disease", "Kidney Disease", "COPD"]
-        group_4 = ["Lower respiratory infections", "Measles", "Schistosomiasis"]
+        group_4 = ["Lower respiratory infections", "Measles"]
         other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3]
         new_order = group_1 + group_2 + group_3 + group_4 + other_causes
         df_daly_per_1000_mean_ordered = df_daly_per_1000_mean.loc[new_order]
+
         df_daly_per_1000_mean_ordered.T.plot.bar(
             stacked=True,
             ax=axes[0],
@@ -432,6 +434,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         label_to_handle = dict(zip(labels, handles))
         ordered_handles = [label_to_handle[label] for label in new_order]
         ordered_handles = reversed(ordered_handles)
+
         axes[0].set_xlabel('Year', fontsize=12)
         axes[0].set_xticks(axes[0].get_xticks()[::10])
         axes[0].tick_params(axis='x', rotation=0)
@@ -442,21 +445,37 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Panel B: Normalized counts
         df_normalized_population = df_all_years_data_population_mean.div(df_all_years_data_population_mean.iloc[:, 0],
                                                                          axis=0)
-        for i, condition in enumerate(df_DALY_normalized_mean.index):
-            axes[1].plot(df_DALY_normalized_mean.columns, df_DALY_normalized_mean.loc[condition], marker='o',
-                         label=condition, color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                                 df_DALY_normalized_mean.index][i])
 
-        axes[1].plot(df_normalized_population.columns,
-                         df_normalized_population.iloc[0],
-                         color='black', linestyle='--', marker='s', linewidth=2, label='Population')
+        line_handles = []
+
+        for condition in df_DALY_normalized_mean.index:
+            color = get_color_cause_of_death_or_daly_label(condition)
+            (line,) = axes[1].plot(
+                df_DALY_normalized_mean.columns,
+                df_DALY_normalized_mean.loc[condition],
+                marker='o',
+                label=condition,
+                color=color
+            )
+            line_handles.append((condition, line))
+
+        (pop_line,) = axes[1].plot(
+            df_normalized_population.columns,
+            df_normalized_population.iloc[0],
+            color='black', linestyle='--', linewidth=4, label='Population'
+        )
+        line_handles.append(("Population", pop_line))
+
+        ordered_names = ["Population"] + new_order
+        name_to_handle = dict(line_handles)
+        ordered_handles = [name_to_handle[name] for name in ordered_names if name in name_to_handle]
 
         axes[1].axhline(1, color='black')
         axes[1].tick_params(axis='both', which='major')
         axes[1].set_ylabel('Fold change in DALYs', fontsize=12)
         axes[1].set_xlabel('Year', fontsize=12)
-        axes[1].legend(ordered_handles, reversed(new_order), title="Cause",  bbox_to_anchor=(1.05, 1), loc='upper left')
-
+        axes[1].legend(ordered_handles, ordered_names, title="Cause", bbox_to_anchor=(1.05, 1),
+                       loc='upper left')
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_DALYs_and_normalized_by_condition_All_Years_Panel_A_and_B_Stacked_Rate'))
 
@@ -675,11 +694,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     group_2 = [cause for cause in causes if "Cancer" in cause]
     group_3 = ["Depression / Self-harm", "Diabetes", "Epilepsy", "Lower Back Pain", "Heart Disease", "Kidney Disease",
                "COPD", "Stroke"]
-    group_4 = ["Lower respiratory infections", "Measles", "Schistosomiasis"]
+    group_4 = ["Lower respiratory infections", "Measles"]
     other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3]
     new_order = group_1 + group_2 + group_3 + group_4 + other_causes
     df_dalys_all_draws_mean_1000_ordered = df_dalys_all_draws_mean_1000.loc[new_order]
-
     df_dalys_all_draws_mean_1000_ordered[['Last']].T.plot.bar(
         stacked=True,
         ax=axes[0],
@@ -697,14 +715,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_xticks(range(len(scenario_names)))
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
-
-    group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
-    group_2 = [cause for cause in causes if "Cancer" in cause]
-    group_3 = ["Depression / Self-harm", "Diabetes", "Epilepsy", "Lower Back Pain", "Heart Disease", "Kidney Disease",
-               "COPD", "Stroke"]
-    group_4 = ["Lower respiratory infections", "Measles", "Schistosomiasis"]
-    other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3]
-    new_order = group_1 + group_2 + group_3 + group_4 + other_causes
 
     for i, cause in enumerate(normalized_DALYs.index):
         axes[1].scatter(
