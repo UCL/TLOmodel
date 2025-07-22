@@ -3205,7 +3205,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 diabetes
             ):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    self.sim.modules["Tb"].HSI_Tb_Start_or_Continue_Ipt(self, person_id=person_id),
+                    tb.HSI_Tb_Start_or_Continue_Ipt(self.sim.modules["Tb"], person_id=person_id),
                     priority=1,
                     topen=self.sim.date,
                     tclose=None,

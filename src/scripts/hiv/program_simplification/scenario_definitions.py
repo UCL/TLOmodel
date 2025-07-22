@@ -2,9 +2,6 @@
 
 from typing import Dict
 
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
-
-
 class ScenarioDefinitions:
 
     def status_quo(self) -> Dict:

@@ -23,10 +23,8 @@ tlo batch-download calibration_script-2022-04-12T190518Z
 
 from pathlib import Path
 from typing import Dict
+from scripts.hiv.program_simplification.scenario_definitions import ScenarioDefinitions
 
-from scripts.hiv.program_simplification import (
-    scenario_definitions as ScenarioDefinitions,
-)
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
@@ -62,7 +60,7 @@ class HIV_Progam_Elements(BaseScenario):
 
     def modules(self):
         return (
-            fullmodel()
+            fullmodel(use_simplified_births=True)
             + [ImprovedHealthSystemAndCareSeekingScenarioSwitcher()]
         )
 
