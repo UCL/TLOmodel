@@ -3269,7 +3269,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # If VL test was done and drugs are available, update suppression status
         if VL_test_done and drugs_available:
             if person["hv_art"] == "on_not_VL_suppressed":
-                person["hv_art"] = self.update_viral_suppression_status()
+                df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
 
         # store new dispensation length for person
         df.at[person_id, 'hv_arv_dispensing_interval'] = self.dispensation_interval
