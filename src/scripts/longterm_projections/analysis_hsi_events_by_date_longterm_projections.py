@@ -31,9 +31,9 @@ PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
 min_year = 2020
-max_year = 2069
+max_year = 2070
 spacing_of_years = 1
-
+number_of_runs = 10
 
 scenario_names = ["Status Quo", "Maximal Healthcare \nProvision", "HTM Scale-up", "Negative Lifestyle Change", "Positive Lifestyle Change"]
 scenario_colours = ['#0081a7', '#00afb9', '#FEB95F', '#fed9b7', '#f07167', '#9A348E']
@@ -66,54 +66,6 @@ rename_dict = {  # For legend labels
 }
 
 
-def table1_description_of_hsi_events(
-    results_folder: Path,
-    output_folder: Path,
-    resourcefilepath: Path, year_range, target_period
-):
-    """ `Table 1`: A summary table of all the HSI Events seen in the simulation.
-    This is similar to that created by `hsi_events.py` but records all the different forms (levels/appt-type) that
-    an HSI Event can take."""
-    for draw in range(len(scenario_names)):
-        log = load_pickled_dataframes(results_folder, draw, 0)
-        h = pd.DataFrame(
-            log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
-        ).T
-
-        # Re-order columns & sort; Remove 'HSI_' prefix from event name
-        h = h[['module_name', 'treatment_id', 'event_name', 'facility_level', 'appt_footprint', 'beddays_footprint']]
-        h = h.sort_values(['module_name', 'treatment_id', 'event_name', 'facility_level']).reset_index(drop=True)
-        h['event_name'] = h['event_name'].str.replace('HSI_', '')
-
-        # Rename columns
-        h = h.rename(columns={
-            "module_name": 'Module',
-            "treatment_id": 'TREATMENT_ID',
-            "event_name": 'HSI Event',
-            "facility_level": 'Facility Level',
-            "appt_footprint": 'Appointment Types',
-            "beddays_footprint": 'Bed-Days',
-        })
-
-        # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows
-        # (otherwise there are many rows with similar number of appointments, especially from Schistosomiasis.)
-        def reformat_col(col):
-            return col.apply(pd.Series) \
-                .applymap(lambda x: x[0], na_action='ignore') \
-                .apply(lambda row: ', '.join(_r for _r in row.sort_values() if not pd.isnull(_r)), axis=1)
-
-        h['Appointment Types'] = h['Appointment Types'].pipe(reformat_col)
-        h["Bed-Days"] = h["Bed-Days"].pipe(reformat_col)
-        h = h.drop_duplicates()
-
-        # Put something in for blanks/nan (helps with imported into Excel/Word)
-        h = h.fillna('-').replace('', '-')
-
-        # Save table as csv
-        h.to_csv(
-            output_folder / f"{PREFIX_ON_FILENAME}_Table1_{year_range}_{draw}.csv",
-            index=False
-        )
 
 def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path, output_folder: Path,
                                                            resourcefilepath: Path, min_year, max_year):
@@ -184,7 +136,9 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         df_all_years = pd.DataFrame(all_years_data)
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
         df_normalized = df_all_years.div(df_all_years.iloc[:, 0], axis=0)
-        df_normalized_population = df_all_years_data_population_mean / df_all_years_data_population_mean.iloc[0]
+        df_normalized_population = df_all_years_data_population_mean / \
+                                   df_all_years_data_population_mean.iloc[:, 0].values[0]
+
         # Plotting
         causes = list(df_normalized.index)
         group_1 = ["Hiv*", "Tb*", "Malaria*"]
@@ -214,22 +168,42 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         axes[0].set_xticklabels(new_labels, rotation=0)
 
         # Panel B: Normalized counts
-        for i, treatment_id in enumerate(df_all_years_ordered.index):
-            axes[1].plot(df_all_years_ordered.columns, df_all_years_ordered.loc[treatment_id], marker='o', label=treatment_id,
-                         color=[get_color_short_treatment_id(_label) for _label in
-                                df_all_years.index][i])
-        axes[1].plot(df_normalized_population.columns,
-                     df_normalized_population.loc['total'],
-                     color='black', linestyle='--', marker='s', linewidth=2, label='Population')
+        line_handles = []
+        for treatment_id in df_all_years_ordered.index:
+            color = get_color_short_treatment_id(treatment_id)
+            (line,) = axes[1].plot(
+                df_all_years_ordered.columns,
+                df_all_years_ordered.loc[treatment_id],
+                marker='o',
+                label=treatment_id,
+                color=color
+            )
+            line_handles.append((treatment_id, line))
 
-        axes[1].set_xlabel('Year', fontsize=12)
-        axes[1].set_ylabel('Fold change in counts of HSI Events', fontsize=12)
-        handles, labels = axes[0].get_legend_handles_labels()
-        label_to_handle = dict(zip(labels, handles))
-        ordered_handles = [label_to_handle[label] for label in new_order]
-        ordered_handles = reversed(ordered_handles)
-        axes[1].legend(ordered_handles, reversed(new_order),title='Treatment ID', bbox_to_anchor=(1, 1), loc='upper left')
+        (pop_line,) = axes[1].plot(
+            df_normalized_population.columns,
+            df_normalized_population.iloc[0],
+            color='black', linestyle='--', linewidth=4, label='Population'
+        )
+        line_handles.append(("Population", pop_line))
+
+        ordered_names = ["Population"] + new_order
+        name_to_handle = dict(line_handles)
+        ordered_handles = [name_to_handle[name] for name in ordered_names if name in name_to_handle]
+
+        axes[1].legend(
+            ordered_handles,
+            ordered_names,
+            title='Treatment ID',
+            bbox_to_anchor=(1, 1),
+            loc='upper left'
+        )
+        axes[1].hlines(y=df_normalized_population.iloc[0, 0], xmin=min(axes[1].get_xlim()),
+                       xmax=max(axes[1].get_xlim()),
+                       color='black')  # just want it to be at 1
         axes[1].tick_params(axis='both', which='major', labelsize=12)
+        axes[1].set_xlabel('Year', fontsize=12)
+        axes[1].set_ylabel('Fold change in demand', fontsize=12)
 
         df_all_years.to_csv(output_folder/f"HSI_events_treatment_ID_2020_2070_{draw}.csv")
 
@@ -443,7 +417,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
         axes[1].plot(df_normalized_population.columns,
                      df_normalized_population.iloc[0],
-                     color='black', linestyle='--', marker='s', linewidth=2, label='Population')
+                     color='black', linestyle='--', linewidth=4, label='Population')
         axes[1].tick_params(axis='both', which='major', labelsize=12)
         axes[1].set_xlabel('Year', fontsize=12)
         axes[1].set_ylabel('Fold change in demand', fontsize=12)
@@ -532,10 +506,9 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         all_draws_cadre_normalised.columns,
         all_draws_population_normalised.iloc[0, :],
         color='black',
-        linewidth=3,
-        linestyle='-',
-        label='Population',
-        zorder=3
+        linewidth=4,
+        linestyle='--',
+        label='Population'
     )
     axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
     axes[1].set_ylabel('Fold change in time spent', fontsize=12)
@@ -615,21 +588,165 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
     plt.show()
 
+def table1_description_of_hsi_events(
+    results_folder: Path,
+    output_folder: Path,
+    min_year: int,
+    max_year: int,
+):
+    """Table 1 extended: Compute mean HSI event counts over time and plot bar and normalized trends"""
+    target_year_sequence = range(min_year, max_year, spacing_of_years)
+    event_counts_by_year = {draw: {} for draw in range(len(scenario_names))}
+    all_draws_population = pd.DataFrame(columns=range(len(scenario_names)))
+    all_draws_population_normalised = pd.DataFrame(columns=range(len(scenario_names)))
+    for draw in range(len(scenario_names)):
+        all_years_data_population_mean = {}
+
+        for target_year in target_year_sequence:
+            target_period = (
+                Date(target_year, 1, 1),
+                Date(target_year + spacing_of_years - 1, 12, 31)
+            )
+
+            def get_population_for_year(_df):
+                """Returns the population in the year of interest"""
+                _df['date'] = pd.to_datetime(_df['date'])
+
+                # Filter the DataFrame based on the target period
+                filtered_df = _df.loc[_df['date'].between(*target_period)]
+                numeric_df = filtered_df.drop(columns=['female', 'male'], errors='ignore')
+                population_sum = numeric_df.sum(numeric_only=True)
+
+                return population_sum
+
+            result_data_population = summarize(extract_results(
+                results_folder,
+                module='tlo.methods.demography',
+                key='population',
+                custom_generate_series=get_population_for_year,
+                do_scaling=True
+            ),
+                only_mean=True,
+                collapse_columns=True,
+            )[draw]
+            all_years_data_population_mean[target_year] = result_data_population['mean']
+
+            per_run_event_counts = []
+            hsi_details = None  # Will be populated once for mapping
+
+            for run in range(number_of_runs):
+
+                real_population_scaling_factor = load_pickled_dataframes(
+                    results_folder, draw, run, 'tlo.methods.population'
+                )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
+                log = load_pickled_dataframes(results_folder, draw, run)
+                if hsi_details is None:
+                    hsi_details = log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
+
+                hsi_event_key_to_counts = log["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
+                hsi_event_key_to_counts = hsi_event_key_to_counts[
+                    hsi_event_key_to_counts['date'].between(target_period[0], target_period[1])
+                ]
+
+                unscaled_counts = {}
+                for event_dict in hsi_event_key_to_counts['hsi_event_key_to_counts']:
+                    for event_key, count in event_dict.items():
+                        unscaled_counts[event_key] = unscaled_counts.get(event_key, 0) + count
+
+                scaled_counts = {k: v * real_population_scaling_factor for k, v in unscaled_counts.items()}
+                per_run_event_counts.append(scaled_counts)
+
+            event_counts_df = pd.DataFrame(per_run_event_counts).fillna(0)
+            event_counts_mean = event_counts_df.mean(axis=0)
+
+            # Map event_key → event_name and group duplicates
+            event_key_to_event_name = {
+                key: val['event_name'].replace('HSI_', '') for key, val in hsi_details.items()
+            }
+            named_event_counts = event_counts_mean.rename(index=event_key_to_event_name)
+            named_event_counts = named_event_counts.groupby(named_event_counts.index).sum()
+
+            event_counts_by_year[draw][target_year] = (named_event_counts/result_data_population['mean'].values) * 1000 # to get per 1000 in population
+            print(event_counts_by_year[draw][target_year])
+
+        df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
+
+
+        df_normalized_population = df_all_years_data_population_mean.div(df_all_years_data_population_mean.iloc[:, 0],
+                                                                         axis=0)
+
+        all_draws_population[draw] = df_all_years_data_population_mean.iloc[:, -1]
+        all_draws_population_normalised[draw] = df_normalized_population.iloc[:, -1]
+        df_event_counts = pd.DataFrame(event_counts_by_year[draw]).fillna(0)
+
+        # Save full CSV
+        df_event_counts.to_csv(output_folder / f"{PREFIX_ON_FILENAME}_EventCountsOverTime_draw{draw}.csv")
+
+        # Select top 10 events in the final year
+        top_events = df_event_counts.iloc[:, -1].sort_values(ascending=False).head(10).index
+        df_top_events = df_event_counts.loc[top_events]
+
+        # Panel A: Raw counts (bar plot)
+        fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+        df_top_events.T.plot.bar(stacked=True, ax=axes[0])
+        axes[0].set_xlabel("Year", fontsize=12)
+        axes[0].set_ylabel("Number of Appointments per 1000", fontsize=12)
+        labels = [label.get_text() for label in axes[0].get_xticklabels()]
+        new_labels = [label if i % 10 == 0 else '' for i, label in enumerate(labels)]
+        new_labels.append('2070')
+        tick_positions = list(range(len(new_labels)))
+        axes[0].tick_params(axis='both', which='major', labelsize=12)
+        axes[0].set_xticks(tick_positions)
+        axes[0].set_xticklabels(new_labels, rotation=0)
+
+        axes[0].tick_params(axis='both', labelsize=11)
+        axes[0].legend().set_visible(False)
+
+        # Panel B: Normalized (line plot)
+        df_top_events_normalized = df_top_events.div(df_top_events.iloc[:, 0], axis=0)
+        for event in df_top_events_normalized.index:
+            axes[1].plot(df_top_events_normalized.columns, df_top_events_normalized.loc[event],
+                         label=event, marker='o')
+        axes[1].plot(
+            df_normalized_population.columns,
+            df_normalized_population.iloc[0],
+            color='black', linestyle='--', linewidth=4, label='Population'
+        )
+        axes[1].hlines(y=1, xmin=min(df_top_events.columns), xmax=max(df_top_events.columns),
+                       color='black', linestyle='--', linewidth=1.5)
+        axes[1].set_xlabel("Year", fontsize=12)
+        axes[1].set_ylabel("Fold Change", fontsize=12)
+        axes[1].legend(title="HSI Event", bbox_to_anchor=(1.05, 1), fontsize=10)
+        axes[1].tick_params(axis='both', labelsize=11)
+
+        fig.tight_layout()
+        fig.savefig(output_folder / f"{PREFIX_ON_FILENAME}_HSI_EventCounts_OverTime_Draw{draw}.png")
+        plt.show()
+
+
+
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
-    figure9_distribution_of_hsi_event_all_years_line_graph(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-        min_year=min_year, max_year=max_year)
-
-    figure10_minutes_per_cadre_and_treatment(
-        results_folder=results_folder,
-        output_folder=output_folder,
-        resourcefilepath=resourcefilepath,
+    #
+    # figure9_distribution_of_hsi_event_all_years_line_graph(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+    #     min_year=min_year, max_year=max_year)
+    #
+    # figure10_minutes_per_cadre_and_treatment(
+    #     results_folder=results_folder,
+    #     output_folder=output_folder,
+    #     resourcefilepath=resourcefilepath,
+    #     min_year=min_year,
+    #     max_year=max_year
+    # ),
+    table1_description_of_hsi_events(
+        results_folder= results_folder,
+        output_folder= output_folder,
         min_year=min_year,
         max_year=max_year
-    )
-
+    ),
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
