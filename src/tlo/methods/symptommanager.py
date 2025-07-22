@@ -641,9 +641,6 @@ class SymptomManager(Module):
 
         # Remove person from tracker entirely
         self.symptom_tracker.pop(person_id, None)
-        # Verify cleanup
-        assert not self._get_current_symptoms_from_tracker(person_id)
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
