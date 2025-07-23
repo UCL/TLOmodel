@@ -186,7 +186,9 @@ class Malaria(Module, GenericFirstAppointmentsMixin):
         "scaleup_parameters": Parameter(
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
-        )
+        ),
+        'iptp_coverage': Parameter(Types.REAL, 'Proportion of eligible pregnant women to receive IPTp this month')
+
     }
 
     PROPERTIES = {
@@ -930,7 +932,10 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
 
         p1 = df.index[p1_condition]
 
-        for person_index in p1:
+        selected_for_iptp = self.module.rng.random_sample(len(p1)) < self.module.parameters['iptp_coverage']
+        p1_selected = p1[selected_for_iptp]
+
+        for person_index in p1_selected:
             logger.debug(key='message',
                          data=f'MalariaIPTp: scheduling HSI_Malaria_IPTp for person {person_index}')
 
