@@ -52,17 +52,17 @@ class SchistoScenarios(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'schisto_scenarios',
+            'filename': 'schisto_scenarios_SI',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 "tlo.methods.schisto": logging.INFO,
                 "tlo.methods.healthsystem.summary": logging.INFO,
                 "tlo.methods.healthburden": logging.INFO,
-                "tlo.methods.hiv": logging.INFO,
-                "tlo.methods.alri": logging.INFO,
-                "tlo.methods.diarrhoea": logging.INFO,
-                "tlo.methods.bladder_cancer": logging.INFO,
+                # "tlo.methods.hiv": logging.INFO,
+                # "tlo.methods.alri": logging.INFO,
+                # "tlo.methods.diarrhoea": logging.INFO,
+                # "tlo.methods.bladder_cancer": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.enhanced_lifestyle": logging.INFO,
             }
@@ -89,17 +89,38 @@ class SchistoScenarios(BaseScenario):
         # default is continued WASH, MDA 0.7 every 12 months in SAC
 
         return {
-            "Pause WASH, no MDA":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.no_MDA(),
-                    scenario_definitions.pause_WASH(),
-                ),
 
             "Continue WASH, no MDA":
                 mix_scenarios(
                     scenario_definitions.baseline(),
                     scenario_definitions.no_MDA(),
+                    scenario_definitions.no_DALYs_light_infection(),
+                ),
+
+            # - - - Modify future MDA schedules with/without WASH activities - - -
+            "Continue WASH, MDA SAC":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.no_DALYs_light_infection(),
+                ),
+
+            # MDA PSAC
+            "Continue WASH, MDA PSAC":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.expand_MDA_to_PSAC(),
+                    scenario_definitions.no_DALYs_light_infection(),
+                ),
+
+            # MDA ALL
+            "Continue WASH, MDA All":
+                mix_scenarios(
+                    scenario_definitions.baseline(),
+                    scenario_definitions.high_coverage_MDA(),
+                    scenario_definitions.expand_MDA_to_All(),
+                    scenario_definitions.no_DALYs_light_infection(),
                 ),
 
             "Scale-up WASH, no MDA":
@@ -107,76 +128,9 @@ class SchistoScenarios(BaseScenario):
                     scenario_definitions.baseline(),
                     scenario_definitions.no_MDA(),
                     scenario_definitions.scaleup_WASH(),
+                    scenario_definitions.no_DALYs_light_infection(),
                 ),
 
-            # - - - Modify future MDA schedules with/without WASH activities - - -
-            "Pause WASH, MDA SAC":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.pause_WASH(),
-                ),
-
-            "Continue WASH, MDA SAC":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                ),
-
-            "Scale-up WASH, MDA SAC":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.scaleup_WASH(),
-                ),
-
-            # MDA PSAC
-            "Pause WASH, MDA PSAC":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_PSAC(),
-                    scenario_definitions.pause_WASH(),
-                ),
-
-            "Continue WASH, MDA PSAC":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_PSAC(),
-                ),
-
-            "Scale-up WASH, MDA PSAC":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_PSAC(),
-                    scenario_definitions.scaleup_WASH(),
-                ),
-
-            # MDA ALL
-            "Pause WASH, MDA All":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_All(),
-                    scenario_definitions.pause_WASH(),
-                ),
-
-            "Continue WASH, MDA All":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_All(),
-                ),
-
-            "Scale-up WASH, MDA All":
-                mix_scenarios(
-                    scenario_definitions.baseline(),
-                    scenario_definitions.high_coverage_MDA(),
-                    scenario_definitions.expand_MDA_to_All(),
-                    scenario_definitions.scaleup_WASH(),
-                )
         }
 
 

@@ -72,3 +72,10 @@ class ScenarioDefinitions:
                 "mda_frequency_months": 12.0,  # default is 12
             }
         }
+
+    def no_DALYs_light_infection(self) -> Dict:
+        return {
+            "Schisto": {
+                "daly_weight_mild_schistosomiasis": 0.0,  # default is 0.006
+            }
+        }
