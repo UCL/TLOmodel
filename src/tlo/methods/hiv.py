@@ -2078,7 +2078,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 mean_risk = rr_of_infection.mean()
                 scaled_risk = rr_of_infection / mean_risk
 
-                # get probabilities or receiving prep from linear model
+                # get probabilities for receiving prep from linear model
                 prob_prep = self.module.lm["lm_prep_agyw"].predict(df.loc[agyw_idx],
                                                                    year=self.sim.date.year,
                 )
@@ -2097,7 +2097,11 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     return  # no one in top risk group
 
                 # rescale probabilities so total matches expected_n
-                rescaled_probs = high_risk_probs * (expected_n / high_risk_probs.sum())
+                rescaled_probs = (
+                    high_risk_probs * (expected_n / high_risk_probs.sum())
+                    if expected_n > 0 and high_risk_probs.sum() > 0
+                    else pd.Series(0.0, index=high_risk_probs.index)
+                )
 
                 # cap at 1
                 rescaled_probs = np.minimum(rescaled_probs, 1.0)

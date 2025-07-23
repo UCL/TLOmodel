@@ -19,6 +19,10 @@ tlo batch-job tlo_q1_demo-123 --tasks
 Download result files for a completed job:
 tlo batch-download calibration_script-2022-04-12T190518Z
 
+if running locally need to parse each folder
+tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/hiv_program_simplification-2025-07-21T154208Z/0/0
+
+
 """
 
 from pathlib import Path
