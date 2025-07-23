@@ -46,8 +46,8 @@ def return_sum_95_CI_across_runs(df: pd.DataFrame) -> pd.DataFrame:
 
     for draw in df.columns.get_level_values('draw').unique():
         draw_data = df.xs(draw, level='draw', axis=1).sum(axis=0)
-        ci = st.t.interval(0.95, len(draw_data) - 1, loc=np.sum(draw_data), scale=st.sem(draw_data))
-        result.at['sum', draw] = [np.sum(draw_data), ci[0], ci[1]]
+        ci = st.t.interval(0.95, len(draw_data) - 1, loc=np.mean(draw_data), scale=st.sem(draw_data))
+        result.at['sum', draw] = [np.mean(draw_data), ci[0], ci[1]]
 
     return result
 
@@ -899,35 +899,52 @@ def plot_sum_outcome_and_CIs__intervention_period(
 
             def plot_cost_effectiveness(averted_DALYs: dict) -> None:
                 # temporarily not from data, but using the numbers printed with run_costing_analysis_wast.py
-                # 4K pop sim: results_timestamp = '2025-07-15T223713Z'
-                total_costs = dict()
-                total_costs['Status Quo'] = 708.8825723959769 * 10**6
-                total_costs['GM_FullAttend'] = 711.0993266353112 * 10**6
-                total_costs['CS_100'] = 708.9154165225475 * 10**6
-                total_costs['FS_Full'] = 730.9783855137268 * 10**6
-
-                costs_increase = dict()
-                for scen in total_costs.keys():
-                    if scen != 'Status Quo':
-                        costs_increase[scen] = total_costs[scen] - total_costs['Status Quo']
-                print(f"\naverted_DALYs:\n{averted_DALYs}")
-                print(f"\ncosts_increase:\n{costs_increase}")
-
                 # total costs over intervention period, sizes of lower bound and upper bound for the scenarios
+                # # 4K pop sim: SQ results_timestamp = '2025-07-15T223713Z'
+                # scen_cons_costs_total_ci = {
+                #     'Status Quo': [708882572, 133258484, 153507211],
+                #     'GM_FullAttend': [711099327, 123777213, 154057510],
+                #     'CS_100': [708915417, 128058833, 158695261],
+                #     'FS_Full': [730978386, 127992638, 158323175]
+                # }
+                # 30 K pop sim (after merge): SQ results_timestamp = '2025-07-15T235608Z'
                 scen_cons_costs_total_ci = {
-                    'Status Quo': [708882572, 133258484, 153507211],
-                    'GM_FullAttend': [711099327, 123777213, 154057510],
-                    'CS_100': [708915417, 128058833, 158695261],
-                    'FS_Full': [730978386, 127992638, 158323175]
+                    'Status Quo': [705047700, 63514713, 57951785],
+                    'GM_FullAttend': [711723711, 62674858, 56606637],
+                    'CS_100': [708560620, 63092643, 59577695],
+                    'FS_Full': [727173360, 64844879, 58676862]
                 }
+
+                incremental_costs = dict()
+                for scen in scen_cons_costs_total_ci.keys():
+                    if scen != 'Status Quo':
+                        incremental_costs[scen] = \
+                            scen_cons_costs_total_ci[scen][0] - scen_cons_costs_total_ci['Status Quo'][0]
+                print(f"\naverted_DALYs:\n{averted_DALYs}")
+                print(f"\nincremental_costs:\n{incremental_costs}")
 
                 # Plot cost-effectiveness scatter plot
                 fig_ce, ax_ce = plt.subplots()
-                for scen in total_costs.keys():
-                    if scen != 'Status Quo':
-                        ax_ce.scatter(averted_DALYs[scen][0], costs_increase[scen])
-                        ax_ce.text(averted_DALYs[scen][0], costs_increase[scen] + 1 * costs_increase[scen], scen,
-                                   fontsize=12, ha='center', va='bottom')
+                ha_scen = ['left', 'right', 'center']
+                ha_i = -1
+                for scen in incremental_costs.keys():
+                    ha_i += 1
+                    scen_cons_cost_per_DALY = incremental_costs[scen]/averted_DALYs[scen][0]
+                    ax_ce.errorbar(
+                        averted_DALYs[scen][0], incremental_costs[scen],
+                        xerr=[[averted_DALYs[scen][0] - averted_DALYs[scen][1]],
+                              [averted_DALYs[scen][2] - averted_DALYs[scen][0]]],
+                        fmt='o', color=get_scen_colour(scen), capsize=5
+                    )
+                    # ax_ce.text(averted_DALYs[scen][0], incremental_costs[scen] + 1 * incremental_costs[scen],
+                    #            scen,
+                    #            fontsize=12, ha='center', va='bottom', color=get_scen_colour(scen))
+                    # Add a legend box with scenario labels instead of text above points
+                    ax_ce.legend([scen for scen in incremental_costs.keys()], loc='best', fontsize=12)
+                    ax_ce.text(averted_DALYs[scen][0], incremental_costs[scen] + 0.5 * incremental_costs['CS_100'],
+                               f"${scen_cons_cost_per_DALY:,.2f}/DALY",
+                               fontsize=12, ha=ha_scen[ha_i % 3], va='bottom', color=get_scen_colour(scen))
+
                 ax_ce.set_xlabel('DALYs Averted')
                 ax_ce.set_ylabel('Incremental Costs (2023 USD)')
                 ax_ce.set_title('Cost-Effectiveness: DALYs Averted vs Incremental Costs')
