@@ -880,7 +880,7 @@ class HealthSystem(Module):
         # (Store data as dict of dicts, with outer-dict indexed by string facility level and
         # inner-dict indexed by string type code with values corresponding to list of (named)
         # tuples of appointment officer type codes and time taken.)
-        appt_time_data = self.parameters['Appt_Time_Table']
+        appt_time_data = self._get_filtered_appt_time_table()
         appt_times_per_level_and_type = {_facility_level: defaultdict(list) for _facility_level in
                                          self._facility_levels}
         for appt_time_tuple in appt_time_data.itertuples():
@@ -985,10 +985,11 @@ class HealthSystem(Module):
         of assumed efficiency.
         """
 
+        # Get filtered capabilities data
+        capabilities = self._get_filtered_daily_capabilities(use_funded_or_actual_staffing)
+
         # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = pool_capabilities_at_levels_1b_and_2(
-                self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
-        )
+        capabilities = pool_capabilities_at_levels_1b_and_2(capabilities)
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create new column where capabilities per staff are computed
@@ -1234,11 +1235,51 @@ class HealthSystem(Module):
         # Always exclude level '5'
         mfl = mfl[mfl['Facility_Level'] != '5']
 
+        # if not self.use_non_gov_facilities:
+        #     # mfl = mfl[~mfl['Facility_Level'].str.contains('_0cham', na=False)]
+        #     mfl = mfl[~mfl['Facility_Level'].isin({'0cham'})]
         if not self.use_non_gov_facilities:
-            # mfl = mfl[~mfl['Facility_Level'].str.contains('_0cham', na=False)]
-            mfl = mfl[~mfl['Facility_Level'].isin({'0cham'})]
+            # Exclude all CHAM facilities
+            mfl = mfl[~mfl['Facility_Level'].str.endswith('cham')]
+        else:
+            # Include only CHAM facilities
+            mfl = mfl[mfl['Facility_Level'].str.endswith('cham')]
 
         return mfl
+
+    def _get_filtered_appt_time_table(self):
+        """
+        Filters Appt_Time_Table to include only rows with valid Facility_Level
+        based on the use_non_gov_facilities flag.
+        """
+        appt_table = self.parameters['Appt_Time_Table']
+
+        if not self.use_non_gov_facilities:
+            # Exclude all CHAM facilities
+            appt_table = appt_table[~appt_table['Facility_Level'].str.endswith('cham')]
+        else:
+            # Include only CHAM facilities
+            appt_table = appt_table[appt_table['Facility_Level'].str.endswith('cham')]
+
+        return appt_table
+
+    def _get_filtered_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.DataFrame:
+        """Filters Daily_Capabilities to include only rows with valid Facility_Level
+        based on the use_non_gov_facilities flag."""
+        capabilities = self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
+
+        if not self.use_non_gov_facilities:
+            # Exclude all CHAM facilities
+            capabilities = capabilities[~capabilities['Facility_Level'].str.endswith('cham')]
+        else:
+            # Include only CHAM facilities
+            capabilities = capabilities[capabilities['Facility_Level'].str.endswith('cham')]
+
+        # Restrict to only those Facility_IDs present in the filtered MFL
+        valid_facility_ids = set(self._get_filtered_mfl()['Facility_ID'])
+        capabilities = capabilities[capabilities['Facility_ID'].isin(valid_facility_ids)]
+
+        return capabilities
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
