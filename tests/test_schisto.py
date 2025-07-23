@@ -121,3 +121,9 @@ def test_diagnosis_and_treatment(seed):
 
     # check worm burden now reduced
     assert df.at[person_id, 'ss_sm_aggregate_worm_burden'] < infecting_worms
+
+
+
+
+
+

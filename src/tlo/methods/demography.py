@@ -308,7 +308,7 @@ class Demography(Module):
         # get the actual numbers in each district in 2010
         district_pop = init_pop.groupby('District')['Count'].sum()
         # get the numbers in new population dataframe by district
-        model_pop = df.loc[df.is_alive].groupby('district_of_residence').size()
+        model_pop = df.district_of_residence[df.is_alive].value_counts()
 
         self.initial_model_to_data_popsize_ratio_district = \
             self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
@@ -552,7 +552,7 @@ class Demography(Module):
         if 'HealthBurden' in self.sim.modules.keys():
             # report the death so that a computation of lost life-years due to this cause to be recorded
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
-                                                                    district_of_residence=person['district_of_residence'],
+                                                                    wealth=person['li_wealth'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
                                                                     cause_of_death=cause,

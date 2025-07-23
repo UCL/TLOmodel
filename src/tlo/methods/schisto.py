@@ -688,8 +688,8 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Clear symptoms for newly non-infected
         newly_non_infected = (correct_status == 'Non-infected') & (original_status != 'Non-infected') & is_alive
-        idx_clear = df.loc[newly_non_infected].index
-        if len(idx_clear) > 0:
+        if sum(newly_non_infected) > 0:
+            idx_clear = df.index[newly_non_infected]
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=idx_clear,
                 symptom_string=symptom_list,
@@ -698,11 +698,11 @@ class Schisto(Module, GenericFirstAppointmentsMixin):
 
         # Filter those with changed infection status and alive, excluding non-infected
         changed_mask = (correct_status != original_status) & (correct_status != 'Non-infected') & is_alive
-        changed_idx = df.loc[changed_mask].index
 
-        if len(changed_idx) > 0:
-            old_statuses = original_status.loc[changed_idx]
-            new_statuses = correct_status.loc[changed_idx]
+        if sum(changed_mask) > 0:
+            changed_idx = df.index[changed_mask]
+            old_statuses = original_status[changed_idx]
+            new_statuses = correct_status[changed_idx]
 
             # Map infection status to symptom string for additions
             new_symptom_map = {
@@ -1062,6 +1062,17 @@ class SchistoSpecies:
 
         for district in districts:
             in_the_district = df.index[df['district_of_residence'] == district]
+
+            # get reservoir in district
+            reservoir = int(len(in_the_district) * params['mean_worm_burden2010'][district])
+
+            # Determine a 'contact rate' for each person
+            # contact_rates = pd.Series(1, index=in_the_district, dtype=float)
+
+            # multiply by susceptibility (0 or 1)
+            # contact_and_susceptibility = contact_rates * df.loc[in_the_district, prop('susceptibility')]
+            contact_and_susceptibility = df.loc[in_the_district, prop('susceptibility')]
+
 
             # get reservoir in district
             # for calibration, over-ride the default params to create multiple starting points
