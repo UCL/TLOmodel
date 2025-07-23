@@ -69,8 +69,7 @@ class SchistoScenarios(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources,
-                         use_simplified_births=True,
+        return fullmodel(use_simplified_births=True,
                          module_kwargs={
                              "Schisto": {"single_district": False},
                              "Demography": {"equal_allocation_by_district": True},

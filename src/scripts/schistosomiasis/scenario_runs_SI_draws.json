@@ -1,0 +1,132 @@
+{
+  "scenario_script_path": "src/scripts/schistosomiasis/scenario_runs_SI.py",
+  "scenario_seed": 10,
+  "arguments": [],
+  "runs_per_draw": 10,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "daly_weight_mild_schistosomiasis": 0.0
+        }
+      },
+      "draw_name": "0"
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_frequency_months": 12.0,
+          "daly_weight_mild_schistosomiasis": 0.0
+        }
+      },
+      "draw_name": "1"
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_frequency_months": 12.0,
+          "mda_target_group": "PSAC_SAC",
+          "daly_weight_mild_schistosomiasis": 0.0
+        }
+      },
+      "draw_name": "2"
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_frequency_months": 12.0,
+          "mda_target_group": "ALL",
+          "daly_weight_mild_schistosomiasis": 0.0
+        }
+      },
+      "draw_name": "3"
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.0,
+          "scaleup_WASH": "scaleup",
+          "scaleup_WASH_start_year": 2024.0,
+          "daly_weight_mild_schistosomiasis": 0.0
+        }
+      },
+      "draw_name": "4"
+    }
+  ],
+  "commit": "ddf74e74f57a1ac6184a5505c932c0b9ebe0be46",
+  "github": "https://github.com/UCL/TLOmodel/tree/ddf74e74f57a1ac6184a5505c932c0b9ebe0be46"
+}

@@ -1,8 +1,8 @@
 {
   "scenario_script_path": "src/scripts/schistosomiasis/scenario_runs.py",
-  "scenario_seed": 25712,
+  "scenario_seed": 10,
   "arguments": [],
-  "runs_per_draw": 5,
+  "runs_per_draw": 10,
   "draws": [
     {
       "draw_number": 0,
@@ -21,7 +21,9 @@
           "equip_availability": "all"
         },
         "Schisto": {
-          "mda_coverage": 0.0
+          "mda_coverage": 0.0,
+          "scaleup_WASH": "pause",
+          "scaleup_WASH_start_year": 2024.0
         }
       },
       "draw_name": "0"
@@ -43,9 +45,7 @@
           "equip_availability": "all"
         },
         "Schisto": {
-          "mda_coverage": 0.0,
-          "scaleup_WASH": 1.0,
-          "scaleup_WASH_start_year": 2024.0
+          "mda_coverage": 0.0
         }
       },
       "draw_name": "1"
@@ -67,8 +67,9 @@
           "equip_availability": "all"
         },
         "Schisto": {
-          "mda_coverage": 0.8,
-          "mda_frequency_months": 12.0
+          "mda_coverage": 0.0,
+          "scaleup_WASH": "scaleup",
+          "scaleup_WASH_start_year": 2024.0
         }
       },
       "draw_name": "2"
@@ -92,7 +93,7 @@
         "Schisto": {
           "mda_coverage": 0.8,
           "mda_frequency_months": 12.0,
-          "scaleup_WASH": 1.0,
+          "scaleup_WASH": "pause",
           "scaleup_WASH_start_year": 2024.0
         }
       },
@@ -116,8 +117,7 @@
         },
         "Schisto": {
           "mda_coverage": 0.8,
-          "mda_frequency_months": 12.0,
-          "mda_target_group": "PSAC_SAC"
+          "mda_frequency_months": 12.0
         }
       },
       "draw_name": "4"
@@ -141,8 +141,7 @@
         "Schisto": {
           "mda_coverage": 0.8,
           "mda_frequency_months": 12.0,
-          "mda_target_group": "PSAC_SAC",
-          "scaleup_WASH": 1.0,
+          "scaleup_WASH": "scaleup",
           "scaleup_WASH_start_year": 2024.0
         }
       },
@@ -167,7 +166,9 @@
         "Schisto": {
           "mda_coverage": 0.8,
           "mda_frequency_months": 12.0,
-          "mda_target_group": "ALL"
+          "mda_target_group": "PSAC_SAC",
+          "scaleup_WASH": "pause",
+          "scaleup_WASH_start_year": 2024.0
         }
       },
       "draw_name": "6"
@@ -191,14 +192,114 @@
         "Schisto": {
           "mda_coverage": 0.8,
           "mda_frequency_months": 12.0,
-          "mda_target_group": "ALL",
-          "scaleup_WASH": 1.0,
-          "scaleup_WASH_start_year": 2024.0
+          "mda_target_group": "PSAC_SAC"
         }
       },
       "draw_name": "7"
+    },
+    {
+      "draw_number": 8,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_frequency_months": 12.0,
+          "mda_target_group": "PSAC_SAC",
+          "scaleup_WASH": "scaleup",
+          "scaleup_WASH_start_year": 2024.0
+        }
+      },
+      "draw_name": "8"
+    },
+    {
+      "draw_number": 9,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_frequency_months": 12.0,
+          "mda_target_group": "ALL",
+          "scaleup_WASH": "pause",
+          "scaleup_WASH_start_year": 2024.0
+        }
+      },
+      "draw_name": "9"
+    },
+    {
+      "draw_number": 10,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_frequency_months": 12.0,
+          "mda_target_group": "ALL"
+        }
+      },
+      "draw_name": "10"
+    },
+    {
+      "draw_number": 11,
+      "parameters": {
+        "SymptomManager": {
+          "spurious_symptoms": true
+        },
+        "HealthSystem": {
+          "Service_Availability": [
+            "*"
+          ],
+          "use_funded_or_actual_staffing": "actual",
+          "mode_appt_constraints": 1,
+          "cons_availability": "default",
+          "beds_availability": "all",
+          "equip_availability": "all"
+        },
+        "Schisto": {
+          "mda_coverage": 0.8,
+          "mda_frequency_months": 12.0,
+          "mda_target_group": "ALL",
+          "scaleup_WASH": "scaleup",
+          "scaleup_WASH_start_year": 2024.0
+        }
+      },
+      "draw_name": "11"
     }
   ],
-  "commit": "725fb66a4e66990e9a8a4a14d900678a291ac203",
-  "github": "https://github.com/UCL/TLOmodel/tree/725fb66a4e66990e9a8a4a14d900678a291ac203"
+  "commit": "ddf74e74f57a1ac6184a5505c932c0b9ebe0be46",
+  "github": "https://github.com/UCL/TLOmodel/tree/ddf74e74f57a1ac6184a5505c932c0b9ebe0be46"
 }
