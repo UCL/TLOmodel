@@ -326,7 +326,7 @@ def run_profiling(
         additional_stats=additional_stats,
     )
     print("done")
-    
+
     # Write out logged profiling statistics
     logged_statistics_file = output_dir / f"{output_name}.logged-stats.csv"
     print(f"Writing {logged_statistics_file}", end="...", flush=True)

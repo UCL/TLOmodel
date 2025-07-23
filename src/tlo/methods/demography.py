@@ -245,10 +245,6 @@ class Demography(Module):
         """Set properties for this module and compute the initial population scaling factor"""
         df = population.props
 
-        # Compute the initial population scaling factor
-        self.initial_model_to_data_popsize_ratio = \
-            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
-
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
@@ -303,6 +299,20 @@ class Demography(Module):
                 logger.warning(key="warning",
                                data="No men found. Direct birth mothers search will exclude woman at person_id=0.")
 
+        # Compute the initial scaling factor
+        self.initial_model_to_data_popsize_ratio = \
+            self.compute_initial_model_to_data_popsize_ratio(population.initial_size)
+
+        # Compute the initial population scaling factor by district
+        # compute the scaling factors by district
+        # get the actual numbers in each district in 2010
+        district_pop = init_pop.groupby('District')['Count'].sum()
+        # get the numbers in new population dataframe by district
+        model_pop = df.district_of_residence[df.is_alive].value_counts()
+
+        self.initial_model_to_data_popsize_ratio_district = \
+            self.compute_initial_model_to_data_popsize_ratio_by_district(district_pop, model_pop)
+
     def initialise_simulation(self, sim):
         """
         * Schedule the AgeUpdateEvent, the OtherDeathPoll and the DemographyLoggingEvent
@@ -325,6 +335,13 @@ class Demography(Module):
                 data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
                 description='The data-to-model scaling factor (based on the initial population size, used to '
                             'multiply-up results so that they correspond to the real population size.'
+            )
+            _logger.warning(
+                key='scaling_factor_district',
+                data={
+                    'scaling_factor_district': (1.0 / self.initial_model_to_data_popsize_ratio_district).to_dict()},
+                description='The data-to-model district_level scaling factor (based on the initial population size,'
+                            'used to multiply-up results so that they correspond to the real population size.'
             )
 
         # Check that the simulation does not run too long
@@ -628,6 +645,15 @@ class Demography(Module):
         :returns: Ratio of ``initial_population`` to 2010 baseline population.
         """
         return initial_population_size / self.parameters['pop_2010']['Count'].sum()
+
+
+    def compute_initial_model_to_data_popsize_ratio_by_district(self, district_pop: pd.Series,
+                                                                model_pop: pd.Series) -> pd.Series:
+        """Compute ratio of initial model population size to estimated population size in 2010 district-wise.
+        :returns: Ratio of ``initial_population`` to 2010 baseline population district-by-district in
+        pd.Series indexed by district name.
+        """
+        return model_pop / district_pop
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
