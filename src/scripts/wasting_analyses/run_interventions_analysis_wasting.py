@@ -482,6 +482,86 @@ def run_interventions_analysis_wasting(outputspath:Path, plotyears:list, interve
             fig5.savefig(fig5_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
         plt.close('all')
 
+        # Outcome 6: figures with averted sum of deaths and CI, scenarios comparison to SQ
+        for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
+            fig6, axes6 = plt.subplots(2, len(cohorts_to_plot), figsize=(12, 12))
+
+            # Ensure `axes` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot) == 1:
+                axes6 = np.expand_dims(axes6, axis=-1)
+
+            # ### Sum of averted deaths over intervention period by cause
+            for i, cause_of_death in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
+                for j, cohort in enumerate(cohorts_to_plot):
+                    sum_deaths_png_file_path = outputs_path / (
+                        f"{cohort}_sum_averted_{cause_of_death}_deaths_CI_intervention_period_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                    )
+                    if sum_deaths_png_file_path.exists():
+                        img = plt.imread(sum_deaths_png_file_path)
+                        axes6[i, j].imshow(img)
+                        axes6[i, j].axis('off')
+            plt.tight_layout()
+            pdf.savefig(fig6)  # Save the current page to the PDF
+            fig6_png_file_path = outputs_path / (
+                f"{cohort_prefix}_averted_sum_deaths_comparison_"
+                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+            )
+            fig6.savefig(fig6_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+        plt.close('all')
+
+        # Outcome 7: figures with averted sum of DALYs and CI, scenarios comparison
+        for page_start in range(0, len(['any cause', 'SAM', 'ALRI', 'Diarrhoea']), 2):
+            cohorts_to_plot_fig7 = [c for c in cohorts_to_plot if c != "Neonatal"]
+            fig7, axes7 = plt.subplots(2, len(cohorts_to_plot_fig7), figsize=(12, 12))
+
+            # Ensure `axes` is always a 2D array for consistent indexing
+            if len(cohorts_to_plot_fig7) == 1:
+                axes7 = np.expand_dims(axes7, axis=-1)
+
+            for i, cause_of_daly in enumerate(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2]):
+                for j, cohort in enumerate(cohorts_to_plot_fig7):
+                    sum_dalys_png_file_path = outputs_path / (
+                        f"{cohort}_sum_averted_{cause_of_daly}_DALYs_CI_intervention_period_scenarios_comparison__"
+                        f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+                    )
+                    if sum_dalys_png_file_path.exists():
+                        img = plt.imread(sum_dalys_png_file_path)
+                        axes7[i, j].imshow(img)
+                        axes7[i, j].axis('off')
+            plt.tight_layout()
+            pdf.savefig(fig7)  # Save the current page to the PDF
+            fig7_png_file_path = outputs_path / (
+                f"{cohort_prefix}_sum_DALYs_comparison_"
+                f"{'_'.join(['any cause', 'SAM', 'ALRI', 'Diarrhoea'][page_start:page_start + 2])}__"
+                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+            )
+            fig7.savefig(fig7_png_file_path, dpi=300, bbox_inches='tight')  # Save as PNG
+        plt.close('all')
+
+        # Outcome 8: cost-effectiveness scatter plot
+        cost_effectiveness_png_path = outputs_path / (
+            f"cost_effectiveness_scatter_DALYsAverted_vs_IncrementalCosts__"
+            f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+        )
+        if cost_effectiveness_png_path.exists():
+            fig_ce, ax_ce = plt.subplots(figsize=(8, 6))
+            img = plt.imread(cost_effectiveness_png_path)
+            ax_ce.imshow(img)
+            ax_ce.axis('off')
+            ax_ce.set_title("Cost-effectiveness: DALYs Averted vs Incremental Costs", fontsize=14)
+            pdf.savefig(fig_ce)
+            fig_ce_png_file_path = outputs_path / (
+                f"{cohort_prefix}_cost_effectiveness_scatter_DALYsAverted_vs_IncrementalCosts__"
+                f"{scenarios_tocompare_prefix}__{timestamps_scenarios_comparison_suffix}.png"
+            )
+            fig_ce.savefig(fig_ce_png_file_path, dpi=300, bbox_inches='tight')
+        plt.close('all')
+
+
+
+
 # ---------------- #
 # RUN THE ANALYSIS #
 # ---------------- #
