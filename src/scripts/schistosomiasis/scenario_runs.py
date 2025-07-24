@@ -44,12 +44,11 @@ class SchistoScenarios(BaseScenario):
 
         # todo reset
         self.end_date = Date(2041, 1, 1)  # todo 2041 = 15 years of projections
-        self.pop_size = 5000 #96_000  # todo if equal_allocation_by_district, 64,000=2k per district
-        self.runs_per_draw = 1 #10
+        self.pop_size = 96_000  # todo if equal_allocation_by_district, 64,000=2k per district
+        self.runs_per_draw = 10
 
         self._scenarios = self._get_scenarios()
-        self.number_of_draws = 1
-        # self.number_of_draws = len(self._scenarios)
+        self.number_of_draws = len(self._scenarios)
 
     def log_configuration(self):
         return {
