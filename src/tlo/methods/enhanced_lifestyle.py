@@ -3,7 +3,7 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -25,12 +25,12 @@ class Lifestyle(Module):
     by urban/rural, wealth, tobacco usage etc.
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
+        self.resourcefilepath: Path = resourcefilepath
 
         # a pointer to the linear models class
         self.models = None
-        self.population_ratio = None
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -276,11 +276,11 @@ class Lifestyle(Module):
             Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
                         'simulation.'
         ),
+        "proportion_female_sex_workers": Parameter(
+            Types.REAL, "proportion of women aged 15-49 years who are sex workers"
+        ),
         "fsw_transition": Parameter(
             Types.REAL, "proportion of sex workers that stop being a sex worker each year"
-        ),
-        "fsw_population": Parameter(
-            Types.REAL, "number of fsw in any given year"
         )
     }
 
@@ -341,9 +341,10 @@ class Lifestyle(Module):
         "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
     }
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         p = self.parameters
-        dataframes = read_csv_files(resourcefilepath / 'ResourceFile_Lifestyle_Enhanced',
+        dataframes = read_csv_files(
+            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced',
             files=["parameter_values", "urban_rural_by_district"],
         )
         self.load_parameters_from_dataframe(dataframes["parameter_values"])
@@ -371,8 +372,6 @@ class Lifestyle(Module):
         # todo: express all rates per year and divide by 4 inside program
 
         # initialise all properties using linear models
-        self.population_ratio = 1 / self.sim.modules['Demography'].initial_model_to_data_popsize_ratio
-
         self.models.initialise_all_properties(df)
 
     def initialise_simulation(self, sim):
@@ -651,10 +650,12 @@ class LifestyleModels:
 
         :param df: The population dataframe """
         # loop through linear models dictionary and initialise each property in the population dataframe
+        # todo update this init lm with scaling factor
+        scaling_factor = 14539609 / self.module.sim.population.initial_size
         for _property_name, _model in self._models.items():
             df.loc[df.is_alive, _property_name] = _model['init'].predict(
                 df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date, months_since_last_poll=0,
-                population_ratio=self.module.population_ratio)
+            scaling_factor=scaling_factor)
 
     def update_all_properties(self, df):
         """update population properties using linear models defined in LifestyleModels class. This function is to be
@@ -663,16 +664,16 @@ class LifestyleModels:
         :param df: The population dataframe """
         # get months since last poll
         now = self.module.sim.date
-        months_since_last_poll = round((now - self.date_last_run) / np.timedelta64(1, "M"))
-
+        # todo lowercase 'm' means minutes not months - this is fine is master - 'M" doesn't work for me
+        months_since_last_poll = int((now - self.date_last_run).days / 30.5)
+        scaling_factor = 14539609 / self.module.sim.population.initial_size
         # loop through linear models dictionary and initialise each property in the population dataframe
         for _property_name, _model in self._models.items():
             if _model['update'] is not None:
                 df.loc[df.is_alive, _property_name] = _model['update'].predict(
                     df.loc[df.is_alive], rng=self.rng, other=self.module.sim.date,
                     months_since_last_poll=months_since_last_poll,
-                    population_ratio=self.module.population_ratio)
-
+                scaling_factor=scaling_factor)
         # update date last event run
         self.date_last_run = now
 
@@ -1123,9 +1124,13 @@ class LifestyleModels:
                                   & (df.li_mar_stat != 2)].index
 
             n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
-
-            target_n_sw = int(p['fsw_population'] / externals['population_ratio'])
-
+            # todo remove this
+            # target_n_sw = int(np.round(len(df.loc[df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)].index)
+            #                            * p["proportion_female_sex_workers"]
+            #                            )
+            #                   )
+            # todo need to cap this number around 39,000
+            target_n_sw = int(39_000 / externals['scaling_factor'])
             deficit = target_n_sw - n_sw
             if deficit > 0:
                 if deficit < len(eligible_idx):
@@ -1985,47 +1990,3 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 key=_property,
                 data=flatten_multi_index_series_into_dict_for_logging(data)
             )
-
-        # ---------------------- log properties associated with WASH
-        under_5 = df.is_alive & (df.age_years < 5)
-        between_5_and_15 = df.is_alive & (df.age_years.between(5, 15))
-
-        # unimproved sanitation (True = no sanitation)
-        no_sanitation_ALL = no_sanitation_PSAC = no_sanitation_SAC = 0
-
-        # no access hand-washing
-        no_handwashing_ALL = no_handwashing_PSAC = no_handwashing_SAC = 0
-
-        # no clean drinking water
-        no_drinkingwater_ALL = no_drinkingwater_PSAC = no_drinkingwater_SAC = 0
-
-        if sum(df.is_alive):
-            no_sanitation_ALL = sum(df.li_unimproved_sanitation & df.is_alive) / sum(df.is_alive)
-            no_handwashing_ALL = sum(df.li_no_access_handwashing & df.is_alive) / sum(df.is_alive)
-            no_drinkingwater_ALL = sum(df.li_no_clean_drinking_water & df.is_alive) / sum(df.is_alive)
-
-        if sum(under_5):
-            no_sanitation_PSAC = sum(df.li_unimproved_sanitation & under_5) / sum(under_5)
-            no_handwashing_PSAC = sum(df.li_no_access_handwashing & under_5) / sum(under_5)
-            no_drinkingwater_PSAC = sum(df.li_no_clean_drinking_water & under_5) / sum(under_5)
-
-        if sum(between_5_and_15):
-            no_sanitation_SAC = sum(df.li_unimproved_sanitation & between_5_and_15) / sum(between_5_and_15)
-            no_handwashing_SAC = sum(df.li_no_access_handwashing & between_5_and_15) / sum(between_5_and_15)
-            no_drinkingwater_SAC = sum(df.li_no_clean_drinking_water & between_5_and_15) / sum(between_5_and_15)
-
-        logger.info(
-            key="summary_WASH_properties",
-            description="Summary of current status of WASH properties",
-            data={
-                "no_sanitation_PSAC": no_sanitation_PSAC,
-                "no_sanitation_SAC": no_sanitation_SAC,
-                "no_sanitation_ALL": no_sanitation_ALL,
-                "no_handwashing_PSAC": no_handwashing_PSAC,
-                "no_handwashing_SAC": no_handwashing_SAC,
-                "no_handwashing_ALL": no_handwashing_ALL,
-                "no_drinkingwater_PSAC": no_drinkingwater_PSAC,
-                "no_drinkingwater_SAC": no_drinkingwater_SAC,
-                "no_drinkingwater_ALL": no_drinkingwater_ALL,
-            },
-        )
