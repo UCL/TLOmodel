@@ -41,9 +41,10 @@ class HIV_Progam_Elements(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2035, 1, 1)
-        self.pop_size = 5_000
+        self.pop_size = 25_000
         self._scenarios = self._get_scenarios()
-        self.number_of_draws = len(self._scenarios)
+        self.number_of_draws = 1
+        # self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
 
     def log_configuration(self):
