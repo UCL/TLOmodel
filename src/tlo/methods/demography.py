@@ -527,7 +527,7 @@ class Demography(Module):
             'cause': str(cause),
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
-            'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
+            'district_of_residence': person['district_of_residence'] if 'district_of_residence' in person else -99,
         }
 
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
@@ -552,7 +552,7 @@ class Demography(Module):
         if 'HealthBurden' in self.sim.modules.keys():
             # report the death so that a computation of lost life-years due to this cause to be recorded
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
-                                                                    wealth=person['li_wealth'],
+                                                                    district=person['district_of_residence'],
                                                                     date_of_birth=person['date_of_birth'],
                                                                     age_range=person['age_range'],
                                                                     cause_of_death=cause,
