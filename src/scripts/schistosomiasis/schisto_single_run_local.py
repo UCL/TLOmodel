@@ -94,7 +94,7 @@ def run_simulation(popsize,
     return sim, output
 
 # update these parameters
-sim, output = run_simulation(popsize=2000,
+sim, output = run_simulation(popsize=8000,
                              equal_allocation_by_district=True,
                              hs_disable_and_reject_all=False,  # if True, no HSIs run
                              mda_execute=True,
