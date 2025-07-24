@@ -284,7 +284,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         labels = [label.get_text() for label in axes[0].get_xticklabels()]
         new_labels = [label if i % 5 == 0 else '' for i, label in enumerate(labels)]
-        new_labels.append('2070')
         axes[0].set_xticks(range(len(new_labels)))
         axes[0].set_xticklabels(new_labels, rotation=0)
         axes[0].tick_params(axis='both', which='major', labelsize=12)
@@ -329,7 +328,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 final_x = df_all_years_prevalence_normalized.columns[-1] + 0.5
                 final_y = df_all_years_prevalence_normalized.loc[condition].iloc[-1]
 
-                # Check for nearby labels and offset if necessary
                 while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
                     final_y += y_offset
 
