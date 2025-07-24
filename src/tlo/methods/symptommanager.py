@@ -435,7 +435,7 @@ class SymptomManager(Module):
     def who_has(self, list_of_symptoms):
         """
         This is a helper function to look up who has a particular symptom or set of symptoms.
-        It returns a list of indicies for person that have all of the symptoms specified
+        It returns a list of indices for person that has all of the symptoms specified
 
         :param: list_of_symptoms : string or list of strings for the symptoms of interest
         :return: list of person_ids for those with all of the symptoms in list_of_symptoms who are alive
@@ -635,12 +635,10 @@ class SymptomManager(Module):
         return self.symptom_tracker.get(person_id, set())
 
     def clear_symptoms_for_deceased_person(self, person_id: int):
-        """
-        Clears symptoms by deleting the dead person's ID in the tracker
-        """
-
+        """Clears symptoms by deleting the dead person's ID in the tracker"""
         # Remove person from tracker entirely
         self.symptom_tracker.pop(person_id, None)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
