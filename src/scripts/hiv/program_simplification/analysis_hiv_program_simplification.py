@@ -31,7 +31,18 @@ from scripts.hiv.program_simplification.scenario_definitions import ScenarioDefi
 
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.scenario_switcher import ImprovedHealthSystemAndCareSeekingScenarioSwitcher
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    simplified_births,
+    symptommanager,
+    tb,
+)
 from tlo.scenario import BaseScenario
 
 
@@ -43,8 +54,7 @@ class HIV_Progam_Elements(BaseScenario):
         self.end_date = Date(2035, 1, 1)
         self.pop_size = 25_000
         self._scenarios = self._get_scenarios()
-        self.number_of_draws = 1
-        # self.number_of_draws = len(self._scenarios)
+        self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
 
     def log_configuration(self):
@@ -64,9 +74,29 @@ class HIV_Progam_Elements(BaseScenario):
         }
 
     def modules(self):
-        return (
-            fullmodel(use_simplified_births=True)
-        )
+        return [
+            demography.Demography(),
+            simplified_births.SimplifiedBirths(),
+            enhanced_lifestyle.Lifestyle(),
+            healthsystem.HealthSystem(
+                service_availability=["*"],  # all treatment allowed
+                mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
+                cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+                ignore_priority=False,  # do not use the priority information in HSI event to schedule
+                capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+            ),
+            symptommanager.SymptomManager(),
+            healthseekingbehaviour.HealthSeekingBehaviour(),
+            healthburden.HealthBurden(),
+            epi.Epi(),
+            hiv.Hiv(),
+            tb.Tb(),
+        ]
+
+    # def modules(self):
+    #     return (
+    #         fullmodel(use_simplified_births=True)
+    #     )
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
