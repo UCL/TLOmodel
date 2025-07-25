@@ -637,7 +637,8 @@ class SymptomManager(Module):
     def clear_symptoms_for_deceased_person(self, person_id: int):
         """Clears symptoms by deleting the dead person's ID in the tracker"""
         # Remove person from tracker entirely
-        self.symptom_tracker.pop(person_id, None)
+        if person_id in self.symptom_tracker:
+            del self.symptom_tracker[person_id]
 
 
 # ---------------------------------------------------------------------------------------------------------
