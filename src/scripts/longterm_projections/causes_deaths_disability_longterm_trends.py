@@ -432,8 +432,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         handles, labels = axes[0].get_legend_handles_labels()
         label_to_handle = dict(zip(labels, handles))
-        ordered_handles = [label_to_handle[label] for label in new_order]
-        ordered_handles = reversed(ordered_handles)
+        # ordered_handles = [label_to_handle[label] for label in new_order]
+        # ordered_handles = reversed(ordered_handles)
 
         axes[0].set_xlabel('Year', fontsize=12)
         axes[0].set_xticks(axes[0].get_xticks()[::10])
@@ -445,7 +445,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # Panel B: Normalized counts
         df_normalized_population = df_all_years_data_population_mean.div(df_all_years_data_population_mean.iloc[:, 0],
                                                                          axis=0)
-
         line_handles = []
 
         for condition in df_DALY_normalized_mean.index:
@@ -470,12 +469,39 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         name_to_handle = dict(line_handles)
         ordered_handles = [name_to_handle[name] for name in ordered_names if name in name_to_handle]
 
+        # Add labels to the right of the last point of each line
+        for condition in df_DALY_normalized_mean.index:
+            y = df_DALY_normalized_mean.loc[condition].iloc[-1]
+            x = df_DALY_normalized_mean.columns[-1]
+            color = get_color_cause_of_death_or_daly_label(condition)
+            axes[1].text(
+                x + 0.1,
+                y,
+                condition,
+                color=color,
+                fontsize=9,
+                va='center'
+            )
+
+        # Add label for population line
+        pop_y = df_normalized_population.iloc[0, -1]
+        pop_x = df_normalized_population.columns[-1]
+        axes[1].text(
+            pop_x + 0.1,
+            pop_y,
+            "Population",
+            color='black',
+            fontsize=9,
+            va='center'
+        )
+
         axes[1].axhline(1, color='black')
         axes[1].tick_params(axis='both', which='major')
         axes[1].set_ylabel('Fold change in DALYs', fontsize=12)
         axes[1].set_xlabel('Year', fontsize=12)
-        axes[1].legend(ordered_handles, ordered_names, title="Cause", bbox_to_anchor=(1.05, 1),
-                       loc='upper left')
+        #axes[1].legend(ordered_handles, ordered_names, title="Cause", bbox_to_anchor=(1.05, 1), loc='upper left')
+        axes[1].legend().set_visible(False)
+
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_DALYs_and_normalized_by_condition_All_Years_Panel_A_and_B_Stacked_Rate'))
 
@@ -658,10 +684,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     df_dalys_all_draws_mean_1000.drop(df_dalys_all_draws_mean_1000.columns[-1], axis=1, inplace=True)
     # Panel A: DALYs per 1,000 in 2070
-    df_dalys_all_draws_mean_1000.T.plot.bar(stacked=True, ax=axes[0],
-                                            color=[get_color_cause_of_death_or_daly_label(_label) for _label in
-                                                   df_dalys_all_draws_mean_1000.index],
-                                            label=[label for label in df_all_years_DALYS_mean.index])
+    df_dalys_all_draws_mean_1000.T.plot.bar(
+        stacked=True,
+        ax=axes[0],
+        color=[get_color_cause_of_death_or_daly_label(_label) for _label in df_dalys_all_draws_mean_1000.index],
+        label=[label for label in df_all_years_DALYS_mean.index]
+    )
 
     axes[0].set_title('Panel A: DALYs per 1,000 (2070)')
     axes[0].set_xlabel('Scenario')
@@ -669,25 +697,50 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_xticks(range(len(scenario_names)))
     axes[0].set_xticklabels(scenario_names, rotation=45)
     axes[0].legend()
+
     # Panel B: Fold change in DALYs compared to 2020
+    label_positions = []
+    y_offset = 0.05
+
     for i, condition in enumerate(df_DALY_normalized_mean.index):
-        axes[1].scatter(df_DALY_normalized_mean.columns, df_DALY_normalized_mean.loc[condition],
-                        marker='o',
-                        label=condition,
-                        color=[get_color_cause_of_death_or_daly_label(_label) for _label in normalized_DALYs.index][i])
+        color = get_color_cause_of_death_or_daly_label(condition)
+        y_values = df_DALY_normalized_mean.loc[condition]
+        x_values = df_DALY_normalized_mean.columns
+
+        axes[1].scatter(x_values, y_values, marker='o', label=condition, color=color)
+        axes[1].plot(x_values, y_values, color=color, alpha=0.7)
+
+        final_x = x_values[-1] + 5
+        final_y = y_values.iloc[-1]
+
+        # Adjust label y position to avoid overlap
+        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+            final_y += y_offset
+            final_x += 4
+
+        label_positions.append(final_y)
+
+        axes[1].text(
+            x=final_x,
+            y=final_y,
+            s=condition,
+            color=color,
+            fontsize=8,
+            va='center'
+        )
 
     axes[1].set_ylabel('Fold change in DALYs compared to 2020')
     axes[1].set_xlabel('Scenario')
     axes[1].set_xticks(range(len(scenario_names)))
     axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
+    #axes[1].legend(title='Cause', bbox_to_anchor=(1., 1), loc='upper left')
+    axes[1].legend().set_visible(False)
     axes[1].grid(False)
     axes[1].set_title('Panel B: Relative DALYs (2070 vs 2020)')
 
     fig.savefig(make_graph_file_name(
         f'dalys_by_cause_and_total_dalys_all_cause_all_draws_relative_2070_2020'))
     plt.close(fig)
-
     fig, axes = plt.subplots(1, 2, figsize=(18, 8))
     causes = list(df_daly_per_1000_mean.index)
     group_1 = ["AIDS", "TB (non-AIDS)", "Malaria"]
@@ -706,8 +759,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     handles, labels = axes[0].get_legend_handles_labels()
     label_to_handle = dict(zip(labels, handles))
-    ordered_handles = [label_to_handle[label] for label in new_order]
-    ordered_handles = reversed(ordered_handles)
     axes[0].legend().set_visible(False)
     axes[0].tick_params(axis='both', which='major', labelsize=12)
     axes[0].set_ylabel('DALYs per 1,000 population')
@@ -715,31 +766,58 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     axes[0].set_xticks(range(len(scenario_names)))
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
+    label_positions = []
+    y_offset = 0.2
 
     for i, cause in enumerate(normalized_DALYs.index):
+        y_values = normalized_DALYs.loc[cause]
+        x_values = normalized_DALYs.columns
+
         axes[1].scatter(
-            normalized_DALYs.columns,
-            normalized_DALYs.loc[cause],
+            x_values,
+            y_values,
             marker='o',
             label=cause
         )
         axes[1].plot(
-            normalized_DALYs.columns,
-            normalized_DALYs.loc[cause],
+            x_values,
+            y_values,
             alpha=0.5
         )
-    axes[1].hlines(y=normalized_DALYs.loc['TB (non-AIDS)'][0], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black') # just want it to be at 1
+
+        final_x =x_values[-1]   # place label just to the right of last point
+        final_y = y_values.iloc[-1]
+
+        # adjust y to avoid label overlap
+        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+            final_y += y_offset
+        label_positions.append(final_y)
+
+        axes[1].text(
+            x=final_x,
+            y=final_y,
+            s=cause,
+            fontsize=6,
+            va='center'
+        )
+
+    axes[1].hlines(
+        y=normalized_DALYs.loc['TB (non-AIDS)'][0],
+        xmin=min(axes[1].get_xlim()),
+        xmax=max(axes[1].get_xlim()),
+        color='black'
+    )
 
     axes[1].set_ylabel('Fold Change in DALYs per 1,000 Compared to 2020')
     axes[1].set_xlabel('Scenario')
     axes[1].set_xticks(range(len(scenario_names)))
     axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].legend(ordered_handles, reversed(new_order), title="Cause", bbox_to_anchor=(1.05, 1), loc='upper left')
+    #axes[1].legend(ordered_handles, reversed(new_order), title="Cause", bbox_to_anchor=(1.05, 1), loc='upper left')
+    axes[1].legend().set_visible(False)
 
     fig.tight_layout()
     fig.savefig(output_folder / "DALYs_combined_plot.png")
     normalized_DALYs.to_csv(output_folder / f"relative_of_dalys_normalized_2020_2070.csv")
-
     # List of selected causes
     selected_causes = [
         'Cancer (Bladder)',
