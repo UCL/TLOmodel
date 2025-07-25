@@ -7,6 +7,7 @@ from tlo.methods import (
     breast_cancer,
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
+    cervical_cancer,
     contraception,
     copd,
     demography,
@@ -103,6 +104,7 @@ def fullmodel(
         #  - Cancers
         bladder_cancer.BladderCancer,
         breast_cancer.BreastCancer,
+        cervical_cancer.CervicalCancer,
         oesophagealcancer.OesophagealCancer,
         other_adult_cancers.OtherAdultCancer,
         prostate_cancer.ProstateCancer,
