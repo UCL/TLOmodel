@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -26,10 +26,13 @@ from tlo.methods import Metadata
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:
+    from typing import Union
+
     from tlo.population import IndividualProperties
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -218,6 +221,7 @@ class SymptomManager(Module):
 
         self.recognised_module_names = None
         self.spurious_symptom_resolve_event = None
+        self.symptom_tracker = defaultdict(set)
 
     def get_column_name_for_symptom(self, symptom_name):
         """get the column name that corresponds to the symptom_name"""
@@ -395,6 +399,10 @@ class SymptomManager(Module):
             self.bsh.set(person_id, disease_module.name, columns=sy_columns)
             self._persons_with_newly_onset_symptoms = self._persons_with_newly_onset_symptoms.union(person_id)
 
+            # Update symptom tracker
+            for pid in person_id:
+                self.symptom_tracker[pid] |= set(symptom_string)
+
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
                 auto_resolve_event = SymptomManager_AutoResolveEvent(self,
@@ -417,10 +425,17 @@ class SymptomManager(Module):
             # Do the remove:
             self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
 
+            # Update symptom tracker. Remove if no other module is causing this symptom.
+            for pid in person_id:
+                for sym in symptom_string:
+                    symptom_col = self.get_column_name_for_symptom(sym)
+                    if self.bsh.is_empty(pid, columns=symptom_col):
+                        self.symptom_tracker[pid].discard(sym)
+
     def who_has(self, list_of_symptoms):
         """
         This is a helper function to look up who has a particular symptom or set of symptoms.
-        It returns a list of indicies for person that have all of the symptoms specified
+        It returns a list of indices for person that has all of the symptoms specified
 
         :param: list_of_symptoms : string or list of strings for the symptoms of interest
         :return: list of person_ids for those with all of the symptoms in list_of_symptoms who are alive
@@ -462,7 +477,7 @@ class SymptomManager(Module):
             & self.bsh.is_empty(
                 slice(None), columns=self.get_column_name_for_symptom(symptom_string)
             )
-        ]
+            ]
 
     def has_what(
         self,
@@ -492,6 +507,10 @@ class SymptomManager(Module):
             else True
         ), "Disease Module Name is not recognised"
 
+        # Faster to get current symptoms using tracker when no disease is specified
+        if disease_module is None and person_id is not None:
+            return list(self._get_current_symptoms_from_tracker(person_id))
+
         if individual_details is not None:
             # We are working in an IndividualDetails context, avoid lookups to the
             # population DataFrame as we have this context stored already.
@@ -503,10 +522,10 @@ class SymptomManager(Module):
                     symptom
                     for symptom in self.symptom_names
                     if individual_details[
-                        self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
-                    ]
-                    & int_repr
-                    != 0
+                           self.bsh._get_columns(self.get_column_name_for_symptom(symptom))
+                       ]
+                       & int_repr
+                       != 0
                 ]
             else:
                 return [
@@ -582,6 +601,17 @@ class SymptomManager(Module):
         sy_columns = [self.get_column_name_for_symptom(sym) for sym in self.symptom_names]
         self.bsh.unset(person_id, disease_module.name, columns=sy_columns)
 
+        # Update bookkeeping
+        for pid in person_id:
+            for sym in self.symptom_names:
+                symptom_col = self.get_column_name_for_symptom(sym)
+                if self.bsh.is_empty(pid, columns=symptom_col):
+                    self.symptom_tracker[pid].discard(sym)
+
+            # Remove the person's entry from the tracker is the symptom set is empty
+            if pid in self.symptom_tracker and not self.symptom_tracker[pid]:
+                del self.symptom_tracker[pid]
+
     def caused_by(self, disease_module: Module):
         """Find the persons experiencing symptoms due to a particular module.
         Returns a dict of the form {<<person_id>>, <<list_of_symptoms>>}."""
@@ -599,6 +629,17 @@ class SymptomManager(Module):
 
     def reset_persons_with_newly_onset_symptoms(self):
         self._persons_with_newly_onset_symptoms.clear()
+
+    def _get_current_symptoms_from_tracker(self, person_id: int) -> Set[str]:
+        """Get the current symptoms for a person. Works with bookkeeping dictionary"""
+        return self.symptom_tracker.get(person_id, set())
+
+    def clear_symptoms_for_deceased_person(self, person_id: int):
+        """Clears symptoms by deleting the dead person's ID in the tracker"""
+        # Remove person from tracker entirely
+        if person_id in self.symptom_tracker:
+            del self.symptom_tracker[person_id]
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
@@ -696,7 +737,6 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
             do_not_have_symptom = self.module.who_not_have(symptom_string=symp)
 
             for group in ['children', 'adults']:
-
                 p = self.generic_symptoms['prob_per_day'][group][symp]
                 dur = self.generic_symptoms['duration_in_days'][group][symp]
                 persons_eligible_to_get_symptom = group_indices[group][
@@ -704,14 +744,14 @@ class SymptomManager_SpuriousSymptomOnset(RegularEvent, PopulationScopeEventMixi
                 ]
                 persons_to_onset_with_this_symptom = persons_eligible_to_get_symptom[
                     self.rand(len(persons_eligible_to_get_symptom)) < p
-                ]
+                    ]
 
                 # Do onset
                 self.sim.modules['SymptomManager'].change_symptom(
                     symptom_string=symp,
                     add_or_remove='+',
                     person_id=persons_to_onset_with_this_symptom,
-                    duration_in_days=None,   # <- resolution for these is handled by the SpuriousSymptomsResolve Event
+                    duration_in_days=None,  # <- resolution for these is handled by the SpuriousSymptomsResolve Event
                     disease_module=self.module,
                 )
 
