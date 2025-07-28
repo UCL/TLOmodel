@@ -380,12 +380,33 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             color=[get_color_cause_of_prevalence_label(_label) for _label in all_draws_prevalence_normalized.index][i],
             alpha=0.5
         )
+        label_positions = []
+        y_offset = 0.02
+
+        color = get_color_cause_of_prevalence_label(condition)
+
+        final_x = all_draws_prevalence_normalized.columns[-1] + 0.5
+        final_y = all_draws_prevalence_normalized.loc[condition].iloc[-1]
+
+        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+                    final_y += y_offset
+
+        label_positions.append(final_y)
+
+        axes.text(
+                    x=final_x,
+                    y=final_y,
+                    s=condition,
+                    color=color,
+                    fontsize=8,
+                    va='center')
 
     axes.hlines(y=1, xmin=min(axes.get_xlim()), xmax=max(axes.get_xlim()), color='black')
     # axes[1].scatter(all_draws_population.columns,
     #                 all_draws_population,
     #                 color='black', marker='s', label='Population')
-    axes.legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
+    #axes.legend(title='Condition', bbox_to_anchor=(1., 1), loc='upper left')
+    axes.legend().set_visible(False)
     axes.set_ylabel('Fold change in prevalence', fontsize=12)
     axes.set_xlabel('Scenario', fontsize=12)
     axes.set_xticks(range(len(scenario_names)))

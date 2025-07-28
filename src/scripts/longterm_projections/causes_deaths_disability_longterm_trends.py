@@ -431,9 +431,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
 
         handles, labels = axes[0].get_legend_handles_labels()
-        label_to_handle = dict(zip(labels, handles))
-        # ordered_handles = [label_to_handle[label] for label in new_order]
-        # ordered_handles = reversed(ordered_handles)
 
         axes[0].set_xlabel('Year', fontsize=12)
         axes[0].set_xticks(axes[0].get_xticks()[::10])
@@ -443,8 +440,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         axes[0].tick_params(axis='both', which='major', labelsize=12)
 
         # Panel B: Normalized counts
-        df_normalized_population = df_all_years_data_population_mean.div(df_all_years_data_population_mean.iloc[:, 0],
-                                                                         axis=0)
+
         line_handles = []
 
         for condition in df_DALY_normalized_mean.index:
@@ -457,43 +453,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 color=color
             )
             line_handles.append((condition, line))
-
-        (pop_line,) = axes[1].plot(
-            df_normalized_population.columns,
-            df_normalized_population.iloc[0],
-            color='black', linestyle='--', linewidth=4, label='Population'
-        )
-        line_handles.append(("Population", pop_line))
-
-        ordered_names = ["Population"] + new_order
-        name_to_handle = dict(line_handles)
-        ordered_handles = [name_to_handle[name] for name in ordered_names if name in name_to_handle]
-
+        label_positions = []
+        y_offset = 0.5
         # Add labels to the right of the last point of each line
         for condition in df_DALY_normalized_mean.index:
             y = df_DALY_normalized_mean.loc[condition].iloc[-1]
             x = df_DALY_normalized_mean.columns[-1]
             color = get_color_cause_of_death_or_daly_label(condition)
+
+            while any(abs(y - existing_y) < y_offset for existing_y in label_positions):
+                y += y_offset
             axes[1].text(
-                x + 0.1,
+                x +4,
                 y,
                 condition,
                 color=color,
                 fontsize=9,
                 va='center'
             )
-
-        # Add label for population line
-        pop_y = df_normalized_population.iloc[0, -1]
-        pop_x = df_normalized_population.columns[-1]
-        axes[1].text(
-            pop_x + 0.1,
-            pop_y,
-            "Population",
-            color='black',
-            fontsize=9,
-            va='center'
-        )
 
         axes[1].axhline(1, color='black')
         axes[1].tick_params(axis='both', which='major')
@@ -777,15 +754,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             x_values,
             y_values,
             marker='o',
-            label=cause
+            label=cause,
+            color=get_color_cause_of_death_or_daly_label(cause),
         )
         axes[1].plot(
             x_values,
             y_values,
             alpha=0.5
         )
-
-        final_x =x_values[-1]   # place label just to the right of last point
+        x_values_numeric = list(range(len(x_values)))
+        final_x =x_values_numeric[-1]   + 0.2 # place label just to the right of last point
         final_y = y_values.iloc[-1]
 
         # adjust y to avoid label overlap
@@ -798,7 +776,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             y=final_y,
             s=cause,
             fontsize=6,
-            va='center'
+            va='center',
+            color=get_color_cause_of_death_or_daly_label(cause),
         )
 
     axes[1].hlines(

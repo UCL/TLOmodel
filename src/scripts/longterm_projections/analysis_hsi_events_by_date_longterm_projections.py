@@ -1,30 +1,20 @@
 import argparse
-from collections import Counter, defaultdict
 from pathlib import Path
+import difflib
 
 import numpy as np
 import pandas as pd
 import scipy.stats as st
-import squarify
 from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
-    COARSE_APPT_TYPE_TO_COLOR_MAP,
-    SHORT_TREATMENT_ID_TO_COLOR_MAP,
-    _standardize_short_treatment_id,
-    bin_hsi_event_details,
-    compute_mean_across_runs,
     extract_results,
-    get_coarse_appt_type,
     get_color_short_treatment_id,
     get_scenario_info,
     load_pickled_dataframes,
-    order_of_short_treatment_ids,
-    plot_stacked_bar_chart,
-    squarify_neat,
+    get_filtered_treatment_ids,
     summarize,
-    unflatten_flattened_multi_index_in_logging,
 )
 
 PREFIX_ON_FILENAME = '3'
@@ -109,6 +99,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
                 only_mean=True,
                 collapse_columns=True,
             )[draw]
+
             all_years_data[target_year] = result_data['mean']
             def get_population_for_year(_df):
                 """Returns the population in the year of interest"""
@@ -149,65 +140,89 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
         other_causes = [cause for cause in causes if cause not in group_1 + group_2 + group_3 + group_4 + group_5]
         new_order = group_1 + group_2 + group_3 + group_4 + group_5 + other_causes
         df_all_years_ordered = df_normalized.loc[new_order]
-
+        df_all_years_ordered = df_all_years_ordered.drop(index = "Schisto*")
         fig, axes = plt.subplots(1, 2, figsize=(15, 7))
 
         # Panel A: Raw counts = stacked
-        df_all_years_ordered.T.plot.bar(stacked=True, ax=axes[0],
-                                color=[get_color_short_treatment_id(_label) for _label in
-                                       df_all_years_ordered.index])
+        treatments = list(df_all_years_ordered.index)
+
+        df_all_years_ordered.T.plot.bar(
+            stacked=True,
+            ax=axes[0],
+            color=[get_color_short_treatment_id(_label) for _label in df_all_years_ordered.index]
+        )
+
         axes[0].set_xlabel('Year', fontsize=12)
         axes[0].set_ylabel('Counts of HSI Events', fontsize=12)
         axes[0].legend().set_visible(False)
+
         labels = [label.get_text() for label in axes[0].get_xticklabels()]
         new_labels = [label if i % 10 == 0 else '' for i, label in enumerate(labels)]
         new_labels.append('2070')
         tick_positions = list(range(len(new_labels)))
+
         axes[0].tick_params(axis='both', which='major', labelsize=12)
         axes[0].set_xticks(tick_positions)
         axes[0].set_xticklabels(new_labels, rotation=0)
 
-        # Panel B: Normalized counts
-        line_handles = []
-        for treatment_id in df_all_years_ordered.index:
-            color = get_color_short_treatment_id(treatment_id)
-            (line,) = axes[1].plot(
-                df_all_years_ordered.columns,
-                df_all_years_ordered.loc[treatment_id],
-                marker='o',
-                label=treatment_id,
-                color=color
-            )
-            line_handles.append((treatment_id, line))
+        label_positions = []
+        y_offset = 0.05
 
-        (pop_line,) = axes[1].plot(
+        for treatment in treatments:
+            color = get_color_short_treatment_id(treatment)
+            y_values = df_all_years_ordered.loc[treatment]
+            x_values = df_all_years_ordered.columns
+
+            axes[1].plot(x_values, y_values, marker='o', color=color)
+
+            final_x = x_values[-1] + 0.5
+            final_y = y_values.iloc[-1]
+
+            while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+                final_y += y_offset
+
+            label_positions.append(final_y)
+
+            axes[1].text(
+                x=final_x,
+                y=final_y,
+                s=treatment,
+                color=color,
+                fontsize=8,
+                va='center'
+            )
+
+        axes[1].plot(
             df_normalized_population.columns,
             df_normalized_population.iloc[0],
-            color='black', linestyle='--', linewidth=4, label='Population'
+            color='black',
+            linestyle='--',
+            linewidth=4,
         )
-        line_handles.append(("Population", pop_line))
 
-        ordered_names = ["Population"] + new_order
-        name_to_handle = dict(line_handles)
-        ordered_handles = [name_to_handle[name] for name in ordered_names if name in name_to_handle]
-
-        axes[1].legend(
-            ordered_handles,
-            ordered_names,
-            title='Treatment ID',
-            bbox_to_anchor=(1, 1),
-            loc='upper left'
+        axes[1].text(
+            x=df_normalized_population.columns[-1] + 0.5,
+            y=df_normalized_population.iloc[0, -1],
+            s='Population',
+            color='black',
+            fontsize=8,
+            va='center'
         )
-        axes[1].hlines(y=df_normalized_population.iloc[0, 0], xmin=min(axes[1].get_xlim()),
-                       xmax=max(axes[1].get_xlim()),
-                       color='black')  # just want it to be at 1
+
+        axes[1].hlines(
+            y=df_normalized_population.iloc[0, 0],
+            xmin=min(axes[1].get_xlim()),
+            xmax=max(axes[1].get_xlim()),
+            color='black'
+        )
+
         axes[1].tick_params(axis='both', which='major', labelsize=12)
         axes[1].set_xlabel('Year', fontsize=12)
         axes[1].set_ylabel('Fold change in demand', fontsize=12)
 
-        df_all_years.to_csv(output_folder/f"HSI_events_treatment_ID_2020_2070_{draw}.csv")
+        df_all_years.to_csv(output_folder / f"HSI_events_treatment_ID_2020_2070_{draw}.csv")
+        df_normalized.to_csv(output_folder / f"HSI_events_treatment_ID_normalized_2020_2070_{draw}.csv")
 
-        df_normalized.to_csv(output_folder/f"HSI_events_treatment_ID_normalized_2020_2070_{draw}.csv")
         fig.tight_layout()
         fig.savefig(make_graph_file_name('Trend_HSI_Events_by_TREATMENT_ID_All_Years_Panel_A_and_B'))
         plt.close(fig)
@@ -215,7 +230,7 @@ def figure9_distribution_of_hsi_event_all_years_line_graph(results_folder: Path,
 
 def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder: Path,
                                              resourcefilepath: Path, min_year, max_year):
-    """ 'Figure 3': The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
+    """ ' The Fraction of the time of each HCW used by each TREATMENT_ID (Short)"""
     target_year_sequence = range(min_year, max_year, spacing_of_years)
     all_draws_cadre = pd.DataFrame(columns=range(len(scenario_names)))
     all_draws_cadre_normalised = pd.DataFrame(columns=range(len(scenario_names)))
@@ -410,66 +425,126 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         axes[0].set_xticks(tick_positions)
         axes[0].set_xticklabels(new_labels, rotation=0)
         axes[0].tick_params(axis='both', which='major', labelsize=12)
+        label_positions = []
 
-        for i, treatment_id in enumerate(df_normalized_cadre.index):
-            axes[1].plot(df_normalized_cadre.columns, df_normalized_cadre.loc[treatment_id],
-                         marker='o', label=treatment_id)
+        for i, cadre in enumerate(df_normalized_cadre.index):
+            axes[1].plot(
+                df_normalized_cadre.columns,
+                df_normalized_cadre.loc[cadre],
+                marker='o',
+                label=treatment_id,
+            )
+            # Add label at the end of the line
+            y_offset = 0.1
 
-        axes[1].plot(df_normalized_population.columns,
-                     df_normalized_population.iloc[0],
-                     color='black', linestyle='--', linewidth=4, label='Population')
+            final_x = df_normalized_cadre.columns[-1]
+            final_y = df_normalized_cadre.loc[cadre].iloc[-1]
+
+            while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+                final_y += y_offset
+                final_x += 0.5
+            label_positions.append(final_y)
+
+            axes[1].text(
+                final_x + 2,
+                final_y,
+                cadre,
+                fontsize=9,
+                va='center'
+            )
+
+        # Plot and label population line
+        axes[1].plot(
+            df_normalized_population.columns,
+            df_normalized_population.iloc[0],
+            color='black',
+            linestyle='--',
+            linewidth=4,
+            label='Population'
+        )
+
+        pop_final_x = df_normalized_population.columns[-1]
+        pop_final_y = df_normalized_population.iloc[0, -1]
+        axes[1].text(
+            pop_final_x + 0.1,
+            pop_final_y,
+            "Population",
+            color='black',
+            fontsize=9,
+            va='center'
+        )
+
         axes[1].tick_params(axis='both', which='major', labelsize=12)
         axes[1].set_xlabel('Year', fontsize=12)
         axes[1].set_ylabel('Fold change in demand', fontsize=12)
-        axes[1].legend(title='Cadre', ncol=1, bbox_to_anchor=(1.05, 1))
+        #axes[1].legend(title='Cadre', ncol=1, bbox_to_anchor=(1.05, 1))
+        axes[1].legend().set_visible(False)
         axes[1].grid(False)
-
         df_all_years_cadre.to_csv(output_folder / f"HSI_time_per_cadre_2020_2070_{draw}.csv")
         df_normalized_cadre.to_csv(output_folder / f"HSI_time_per_cadre_normalized_2020_2070_{draw}.csv")
         fig.tight_layout()
         fig.savefig(make_graph_file_name(f"Time_HSI_Events_by_Cadre_All_Years_Panel_A_and_B_{draw}"))
         plt.show()
     # Plotting - treatments
-
     fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+
     all_draws_treatment_per_1000 = all_draws_treatment.div(all_draws_population.loc['total'], axis=1) * 1000
 
+    treatments = list(all_draws_treatment_per_1000.index)
+    cmap = plt.get_cmap("tab20")
+    colors = {treatment: cmap(i % cmap.N) for i, treatment in enumerate(treatments)}
+
     all_draws_treatment_per_1000.T.plot.bar(
-        stacked=True, ax=axes[0], legend=False,  color=[get_color_short_treatment_id(_label) for _label in
-                                       all_draws_treatment_per_1000.index]
+        stacked=True, ax=axes[0], legend=False,
+        color=[colors[treatment] for treatment in treatments]
     )
     axes[0].set_ylabel('Time spent (Minutes) per 1,000 population', fontsize=12)
     axes[0].set_xlabel('Scenario', fontsize=12)
     axes[0].set_xticklabels(scenario_names, rotation=45)
     axes[0].tick_params(axis='both', which='major', labelsize=12)
 
-    for i, treatment_id in enumerate(all_draws_treatment_normalised.index):
-        axes[1].scatter(all_draws_treatment_normalised.columns, all_draws_treatment_normalised.loc[treatment_id],
-                        marker='o',
-                        label=treatment_id, color=[get_color_short_treatment_id(_label) for _label in
-                                       all_draws_treatment_normalised.index][i])
-        axes[1].plot(
-            all_draws_treatment_normalised.columns,
-            all_draws_treatment_normalised.loc[treatment_id],
-            color=[get_color_short_treatment_id(_label) for _label in all_draws_treatment_normalised.index][i],
-            alpha=0.5
+    label_positions = []
+
+    for treatment in all_draws_treatment_normalised.index:
+        color = colors[treatment]
+        axes[1].scatter(all_draws_treatment_normalised.columns, all_draws_treatment_normalised.loc[treatment],
+                        marker='o', color=color, label=treatment)
+        axes[1].plot(all_draws_treatment_normalised.columns,
+                     all_draws_treatment_normalised.loc[treatment],
+                     color=color, alpha=0.5)
+
+        final_x = all_draws_treatment_normalised.columns[-1] + 0.2
+        final_y = all_draws_treatment_normalised.loc[treatment].iloc[-1]
+
+        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+            final_y += y_offset
+
+        label_positions.append(final_y)
+
+        axes[1].text(
+            x=final_x,
+            y=final_y,
+            s=treatment,
+            color=color,
+            fontsize=8,
+            va='center'
         )
-    axes[1].scatter(all_draws_population_normalised.columns,
-                 all_draws_population_normalised.iloc[0,:],
-                 color='black', marker='s', label='Population')
+
     axes[1].plot(
-        all_draws_cadre_normalised.columns,
-        all_draws_population_normalised.iloc[0,:],
-        alpha=0.5
+        all_draws_population_normalised.columns,
+        all_draws_population_normalised.iloc[0, :],
+        color='black',
+        linewidth=4,
+        linestyle='--',
+        label='Population'
     )
-    axes[1].hlines(y=df_normalized_population.iloc[0,0], xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()),
-                        color='black')  # just want it to be at 1
-    axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
+
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='black')
+
     axes[1].set_ylabel('Fold change in time spent', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(all_draws_treatment_normalised.columns)
     axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='black')
     axes[1].tick_params(axis='both', which='major', labelsize=12)
 
     fig.tight_layout()
@@ -481,26 +556,40 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
     all_draws_cadre_per_1000 = all_draws_cadre.div(all_draws_population.loc['total'], axis=1) * 1000
 
-    all_draws_cadre_per_1000.T.plot.bar(
-            stacked=True, ax=axes[0], legend=False
-        )
+    all_draws_cadre_per_1000.T.plot.bar(stacked=True, ax=axes[0], legend=False)
     axes[0].set_ylabel('Time Spent (Minutes) per 1,000 population', fontsize=12)
     axes[0].set_xlabel('Scenario', fontsize=12)
     axes[0].set_xticklabels(scenario_names, rotation=45)
 
-    y_err = [
-        all_draws_cadre_normalised - all_draws_cadre_normalised_lower,
-        all_draws_cadre_normalised_upper - all_draws_cadre_normalised
-    ]
-    for i, cadre in enumerate(all_draws_cadre_normalised.index):
-            axes[1].scatter(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
-                            marker='o',
-                            label=cadre)
-            axes[1].plot(
-                all_draws_cadre_normalised.columns,
-                all_draws_cadre_normalised.loc[cadre],
-                alpha=0.5
-            )
+    cadres = list(all_draws_cadre_normalised.index)
+    cmap = plt.get_cmap("tab10")
+    colors = {cadre: cmap(i % cmap.N) for i, cadre in enumerate(cadres)}
+    label_positions = []
+    y_offset = 0.15
+
+    for cadre in cadres:
+        color = colors[cadre]
+        axes[1].scatter(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
+                        marker='o', color=color, label=cadre)
+        axes[1].plot(all_draws_cadre_normalised.columns, all_draws_cadre_normalised.loc[cadre],
+                     alpha=0.5, color=color)
+
+        final_x = all_draws_cadre_normalised.columns[-1] + 0.5
+        final_y = all_draws_cadre_normalised.loc[cadre].iloc[-1]
+
+        while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+            final_y += y_offset
+
+        label_positions.append(final_y)
+
+        axes[1].text(
+            x=final_x,
+            y=final_y,
+            s=cadre,
+            color=color,
+            fontsize=8,
+            va='center'
+        )
 
     axes[1].plot(
         all_draws_cadre_normalised.columns,
@@ -510,12 +599,13 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
         linestyle='--',
         label='Population'
     )
-    axes[1].legend(ncol=1, bbox_to_anchor=(1.05, 1))
+
     axes[1].set_ylabel('Fold change in time spent', fontsize=12)
     axes[1].set_xlabel('Scenario', fontsize=12)
     axes[1].set_xticks(all_draws_cadre_normalised.columns)
     axes[1].set_xticklabels(scenario_names, rotation=45)
-    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color = 'black')
+    axes[1].hlines(y=1, xmin=min(axes[1].get_xlim()), xmax=max(axes[1].get_xlim()), color='black')
+    axes[1].legend().set_visible(False)
 
     fig.tight_layout()
     fig.savefig(output_folder / "Time_HSI_Events_by_Cadre_combined.png")
@@ -565,12 +655,12 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
     ax2.spines.top.set_visible(False)
     d = 0.01
     kwargs = dict(transform=ax1.transAxes, color='black', clip_on=False)
-    ax1.plot((-d, d), (-d, d), **kwargs)  # Upper left diagonal
-    ax1.plot((1 - d, 1 + d), (-d, d), **kwargs)  # Upper right diagonal
+    ax1.plot((-d, d), (-d, d), **kwargs)
+    ax1.plot((1 - d, 1 + d), (-d, d), **kwargs)
     ax1.xaxis.set_visible(False)
     kwargs.update(transform=ax2.transAxes)
-    ax2.plot((-d, d), (1 - d, 1 + d), **kwargs)  # Lower left diagonal
-    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # Lower right diagonal
+    ax2.plot((-d, d), (1 - d, 1 + d), **kwargs)
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
 
     ax2.set_xlabel("Scenario")
     ax2.set_ylabel("Fold change in time spent")
@@ -588,7 +678,7 @@ def figure10_minutes_per_cadre_and_treatment(results_folder: Path, output_folder
 
     plt.show()
 
-def table1_description_of_hsi_events(
+def table2_description_of_coarse_hsi_events(
     results_folder: Path,
     output_folder: Path,
     min_year: int,
@@ -630,19 +720,19 @@ def table1_description_of_hsi_events(
                 collapse_columns=True,
             )[draw]
             all_years_data_population_mean[target_year] = result_data_population['mean']
-
+            coarser_IDs = get_filtered_treatment_ids(depth=2)
             per_run_event_counts = []
-            hsi_details = None  # Will be populated once for mapping
+            hsi_details = None
 
             for run in range(number_of_runs):
-
                 real_population_scaling_factor = load_pickled_dataframes(
                     results_folder, draw, run, 'tlo.methods.population'
                 )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
                 log = load_pickled_dataframes(results_folder, draw, run)
                 if hsi_details is None:
-                    hsi_details = log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
+                    hsi_details = log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0][
+                        'hsi_event_key_to_event_details']
 
                 hsi_event_key_to_counts = log["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
                 hsi_event_key_to_counts = hsi_event_key_to_counts[
@@ -660,16 +750,22 @@ def table1_description_of_hsi_events(
             event_counts_df = pd.DataFrame(per_run_event_counts).fillna(0)
             event_counts_mean = event_counts_df.mean(axis=0)
 
-            # Map event_key → event_name and group duplicates
             event_key_to_event_name = {
                 key: val['event_name'].replace('HSI_', '') for key, val in hsi_details.items()
             }
             named_event_counts = event_counts_mean.rename(index=event_key_to_event_name)
-            named_event_counts = named_event_counts.groupby(named_event_counts.index).sum()
 
-            event_counts_by_year[draw][target_year] = (named_event_counts/result_data_population['mean'].values) * 1000 # to get per 1000 in population
-            print(event_counts_by_year[draw][target_year])
+            coarser_id_to_total_counts = {cid: 0.0 for cid in coarser_IDs}
+            for event_name, count in named_event_counts.items():
+                for cid in coarser_IDs:
+                    match_ratio = difflib.SequenceMatcher(None, cid.lower(), event_name.lower()).ratio()
+                    if match_ratio > 0.4:  # adjust threshold as needed
+                        coarser_id_to_total_counts[cid] += count
 
+            named_event_counts = pd.Series(coarser_id_to_total_counts)
+
+            event_counts_by_year[draw][target_year] = (named_event_counts / result_data_population[
+                'mean'].values) * 1000
         df_all_years_data_population_mean = pd.DataFrame(all_years_data_population_mean)
 
 
@@ -705,19 +801,43 @@ def table1_description_of_hsi_events(
 
         # Panel B: Normalized (line plot)
         df_top_events_normalized = df_top_events.div(df_top_events.iloc[:, 0], axis=0)
+        label_positions = []
+        y_offset = 0.01
+        event_list = list(df_top_events_normalized.index)
+        cmap = plt.get_cmap("tab10")
+        colors = {event: cmap(i % cmap.N) for i, event in enumerate(event_list)}
+
         for event in df_top_events_normalized.index:
+            color =colors[event]
             axes[1].plot(df_top_events_normalized.columns, df_top_events_normalized.loc[event],
-                         label=event, marker='o')
-        axes[1].plot(
-            df_normalized_population.columns,
-            df_normalized_population.iloc[0],
-            color='black', linestyle='--', linewidth=4, label='Population'
+                         marker='o', color=color)
+
+            final_x = df_top_events_normalized.columns[-1] + 0.5
+            final_y = df_top_events_normalized.loc[event].iloc[-1]
+
+            while any(abs(final_y - existing_y) < y_offset for existing_y in label_positions):
+                final_y += y_offset
+
+            label_positions.append(final_y)
+
+            axes[1].text(
+                x=final_x,
+                y=final_y,
+                s=event,
+                color=color,
+                fontsize=8,
+                va='center'
+            )
+
+        axes[1].hlines(
+            y=1,
+            xmin=min(axes[1].get_xlim()),
+            xmax=max(axes[1].get_xlim()),
+            color='black'
         )
-        axes[1].hlines(y=1, xmin=min(df_top_events.columns), xmax=max(df_top_events.columns),
-                       color='black', linestyle='--', linewidth=1.5)
         axes[1].set_xlabel("Year", fontsize=12)
         axes[1].set_ylabel("Fold Change", fontsize=12)
-        axes[1].legend(title="HSI Event", bbox_to_anchor=(1.05, 1), fontsize=10)
+        axes[1].legend().set_visible(False)
         axes[1].tick_params(axis='both', labelsize=11)
 
         fig.tight_layout()
@@ -729,11 +849,11 @@ def table1_description_of_hsi_events(
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
-    #
+
     # figure9_distribution_of_hsi_event_all_years_line_graph(
     #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
     #     min_year=min_year, max_year=max_year)
-    #
+
     # figure10_minutes_per_cadre_and_treatment(
     #     results_folder=results_folder,
     #     output_folder=output_folder,
@@ -741,9 +861,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #     min_year=min_year,
     #     max_year=max_year
     # ),
-    table1_description_of_hsi_events(
-        results_folder= results_folder,
-        output_folder= output_folder,
+    # table1_description_of_hsi_events(
+    #     results_folder= results_folder,
+    #     output_folder= output_folder,
+    #     min_year=min_year,
+    #     max_year=max_year
+    # ),
+    table2_description_of_coarse_hsi_events(
+        results_folder=results_folder,
+        output_folder=output_folder,
         min_year=min_year,
         max_year=max_year
     ),
