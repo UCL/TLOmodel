@@ -850,17 +850,17 @@ def table2_description_of_coarse_hsi_events(
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
-    # figure9_distribution_of_hsi_event_all_years_line_graph(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
-    #     min_year=min_year, max_year=max_year)
+    figure9_distribution_of_hsi_event_all_years_line_graph(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath,
+        min_year=min_year, max_year=max_year)
 
-    # figure10_minutes_per_cadre_and_treatment(
-    #     results_folder=results_folder,
-    #     output_folder=output_folder,
-    #     resourcefilepath=resourcefilepath,
-    #     min_year=min_year,
-    #     max_year=max_year
-    # ),
+    figure10_minutes_per_cadre_and_treatment(
+        results_folder=results_folder,
+        output_folder=output_folder,
+        resourcefilepath=resourcefilepath,
+        min_year=min_year,
+        max_year=max_year
+    ),
     # table1_description_of_hsi_events(
     #     results_folder= results_folder,
     #     output_folder= output_folder,
