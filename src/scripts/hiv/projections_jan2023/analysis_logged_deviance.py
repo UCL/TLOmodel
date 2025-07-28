@@ -34,8 +34,8 @@ resourcefilepath = './resources'
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 15000
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 # scenario = 1
 
@@ -86,8 +86,8 @@ sim.register(
 )
 
 # set the scenario
-# sim.modules["Hiv"].parameters["do_scaleup"] = True
-# sim.modules["Hiv"].parameters["scaleup_start_year"] = 2019
+sim.modules["Hiv"].parameters["type_of_scaleup"] = "switch_vl_test_to_tdf"
+sim.modules["Hiv"].parameters["scaleup_start_year"] = 2011
 # sim.modules["Tb"].parameters["first_line_test"] = 'xpert'
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 1, 1)
 # sim.modules["Tb"].parameters["scenario_SI"] = "z"

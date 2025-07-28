@@ -114,6 +114,8 @@ class HIV_Progam_Elements(BaseScenario):
 
             "Remove Viral Load Testing": scenario_definitions.remove_VL(),
 
+            "Replace Viral Load Testing": scenario_definitions.replace_VL_with_TDF(),
+
             "Remove IPT for PLHIV": scenario_definitions.remove_IPT(),
 
             "Targeted IPT": scenario_definitions.target_IPT(),

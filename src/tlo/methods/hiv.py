@@ -62,7 +62,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.run_with_checks = run_with_checks
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
-        self.stored_tdf_numbers = []  # create empty list for storing TDF test numbers
+        self.stored_tdf_numbers = 0
 
         # hiv outputs needed for calibration
         keys = ["date",
@@ -452,7 +452,11 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         "p_tdf_positive_given_not_suppressed": Parameter(
             Types.REAL,
             "probability of a urine TDF test returning positive if person not virally suppressed"
-        )
+        ),
+        "switch_vl_test_to_tdf": Parameter(
+            Types.BOOL,
+            "whether TDF urine test is being used in place of VL testing"
+        ),
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
@@ -1188,7 +1192,8 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         p = self.parameters
 
         if p['type_of_scaleup'] == 'reduce_HIV_test':
-            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"]["annual_testing_rate_adults"] * 0.75
+            p["hiv_testing_rates"]["annual_testing_rate_adults"] = p["hiv_testing_rates"][
+                                                                       "annual_testing_rate_adults"] * 0.75
 
             # ANC testing - value for mothers and infants testing
             p["prob_hiv_test_at_anc_or_delivery"] = p["prob_hiv_test_at_anc_or_delivery"] * 0.75
@@ -1198,6 +1203,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # update consumables availability (item 190 viral load test) to 0
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0})
+
+        if p['type_of_scaleup'] == 'replace_VL_with_TDF':
+            # update consumables availability (item 190 viral load test) to 0
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {190: 0})
+            p["switch_vl_test_to_tdf"] = True
 
         if p['type_of_scaleup'] == 'remove_IPT':
             # this is currently only for high-risk districts
@@ -1252,6 +1263,9 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # remove VL
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {190: 0})
+
+            # replace VL with TDF urine test
+            p["switch_vl_test_to_tdf"] = True
 
             # remove IPT
             self.sim.modules['Tb'].parameters['ipt_coverage']['coverage_plhiv'] = 0
@@ -1813,6 +1827,23 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 tclose=None,
                 priority=0
             )
+
+    def perform_tdf_test(self, is_suppressed: bool) -> str:
+        """
+        Simulate TDF urine test result based on known viral suppression status.
+
+        Parameters:
+        - is_suppressed (bool): True if the person is virally suppressed, False if not.
+
+        Returns:
+        - 'positive' or 'negative' based on test result
+        """
+        if is_suppressed:
+            prob_positive = self.parameters["p_tdf_positive_given_suppressed"]
+        else:
+            prob_positive = self.parameters["p_tdf_positive_given_not_suppressed"]
+
+        return 'positive' if self.rng.random_sample() < prob_positive else 'negative'
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
@@ -3234,6 +3265,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
         p = self.module.parameters
+        is_suppressed = person["hv_art"] == "on_VL_suppressed"  # returns true if suppressed
 
         # default to person stopping cotrimoxazole
         df.at[person_id, "hv_on_cotrimoxazole"] = False
@@ -3262,16 +3294,31 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if drugs_available.get('cotrim', False):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
-        # Viral Load Monitoring
-        # Attempt viral load test only at appropriate interval
-        VL_test_done = False
+        # Viral Load Monitoring (or TDF test if switching)
+        if drugs_available.get('art', False) and self.module.vl_testing_available_by_year[self.sim.date.year]:
+            # Attempt viral load test only at appropriate interval
+            test_probability = df.at[person_id, 'hv_arv_dispensing_interval'] / p[
+                'interval_for_viral_load_measurement_months']
 
-        if self.module.vl_testing_available_by_year[self.sim.date.year]:
-            if self.module.rng.random_sample() < (
-                df.at[person_id, 'hv_arv_dispensing_interval'] / p['interval_for_viral_load_measurement_months']):
-                if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
-                    # VL test performed
-                    VL_test_done = True
+            if self.module.rng.random_sample() < test_probability:
+
+                # If using TDF test instead of VL
+                if p["switch_vl_test_to_tdf"]:
+                    tdf_result = self.perform_tdf_test(is_suppressed=is_suppressed)
+
+                    if tdf_result == 'negative':
+                        # intervention triggered to increase chance of suppression
+                        df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
+                        self.stored_tdf_numbers += 1
+
+                # Else, use VL test
+                elif not p["switch_vl_test_to_tdf"] and self.get_consumables(
+                    item_codes=self.module.item_codes_for_consumables_required['vl_measurement']):
+
+                    if person["hv_art"] == "on_not_VL_suppressed":
+                        # intervention triggered to increase chance of suppression
+                        df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
+
                     logger.info(
                         key='hiv_VLtest',
                         data={
@@ -3279,11 +3326,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                             'person_id': person_id
                         }
                     )
-
-        # If VL test was done and drugs are available, update suppression status
-        if VL_test_done and drugs_available:
-            if person["hv_art"] == "on_not_VL_suppressed":
-                df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
 
         # store new dispensation length for person
         df.at[person_id, 'hv_arv_dispensing_interval'] = self.dispensation_interval
@@ -3886,6 +3928,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "n_on_art_male_15plus": n_on_art_male_15plus,
                 "n_on_art_female_15plus": n_on_art_female_15plus,
                 "n_on_art_children": n_on_art_children,
+                "n_tdf_tests_performed": self.module.stored_tdf_numbers,
                 "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
                 "prop_fsw_on_prep": prop_fsw_on_prep,
                 "PY_PREP_ORAL_AGYW": PY_PREP_ORAL_AGYW,
@@ -3898,6 +3941,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df["hv_VMMC_in_last_year"] = False
         df["hv_days_on_prep_AGYW"] = 0
         df["hv_days_on_prep_FSW"] = 0
+        self.module.stored_tdf_numbers = 0
 
         # ------------------------------------ TREATMENT DELAYS ------------------------------------
         # for every person initiated on treatment, record time from onset to treatment

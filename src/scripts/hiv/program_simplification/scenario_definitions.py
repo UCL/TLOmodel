@@ -26,6 +26,13 @@ class ScenarioDefinitions:
             }
         }
 
+    def replace_VL_with_TDF(self) -> Dict:
+        return {
+            'Hiv': {
+                'type_of_scaleup': 'replace_VL_with_TDF',
+            }
+        }
+
     def remove_IPT(self) -> Dict:
         return {
             'Hiv': {
