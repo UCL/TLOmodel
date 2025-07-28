@@ -3304,12 +3304,13 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
                 # If using TDF test instead of VL
                 if p["switch_vl_test_to_tdf"]:
-                    tdf_result = self.perform_tdf_test(is_suppressed=is_suppressed)
+                    tdf_result = self.module.perform_tdf_test(is_suppressed=is_suppressed)
 
                     if tdf_result == 'negative':
                         # intervention triggered to increase chance of suppression
-                        df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
-                        self.stored_tdf_numbers += 1
+                        if person["hv_art"] == "on_not_VL_suppressed":
+                            df.at[person_id, "hv_art"] = self.update_viral_suppression_status()
+                        self.module.stored_tdf_numbers += 1
 
                 # Else, use VL test
                 elif not p["switch_vl_test_to_tdf"] and self.get_consumables(
