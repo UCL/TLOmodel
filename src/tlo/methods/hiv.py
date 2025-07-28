@@ -62,6 +62,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         self.run_with_checks = run_with_checks
 
         self.stored_test_numbers = []  # create empty list for storing hiv test numbers
+        self.stored_tdf_numbers = []  # create empty list for storing TDF test numbers
 
         # hiv outputs needed for calibration
         keys = ["date",
@@ -423,6 +424,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             Types.DATA_FRAME,
             "the parameters and values changed in scenario analysis"
         ),
+        # ------------------ program-related parameters ------------------ #
         "interval_for_viral_load_measurement_months": Parameter(
             Types.REAL,
             " the interval for viral load monitoring in months"
@@ -441,8 +443,16 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
         ),
         "viral_load_testing_start_year": Parameter(
             Types.INT,
-            "the year when the viral load testing starts (it will occur on 1st January of that year)"
+            "the year when the viral load testing starts (it will occur on 1st January of that year"
         ),
+        "p_tdf_positive_given_suppressed": Parameter(
+            Types.REAL,
+            "probability of a urine TDF test returning positive if person virally suppressed"
+        ),
+        "p_tdf_positive_given_not_suppressed": Parameter(
+            Types.REAL,
+            "probability of a urine TDF test returning positive if person not virally suppressed"
+        )
     }
 
     def read_parameters(self, resourcefilepath: Optional[Path] = None):
