@@ -195,24 +195,70 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                 raise ValueError("subgroup and care_seeking_odds_ratios must both be specified")
 
             result = pd.Series(data=p[f'baseline_odds_of_healthcareseeking_{subgroup}'], index=df.index)
+            age = df['age_years'] if isinstance(df, pd.DataFrame) else df.age_years
+
+            # Helper function to handle scalar or Series masks
+            def apply_mask(result, mask, multiplier):
+                if isinstance(mask, pd.Series):
+                    result[mask] *= multiplier
+                else:
+                    if mask:
+                        result *= multiplier
+
             # Predict behaviour due to the 'average symptom'
             if subgroup == 'children':
-                result[df.age_years >= 5] *= p['odds_ratio_children_age_5to14']
+                if isinstance(age, pd.Series):
+                    apply_mask(result, age >= 5, p['odds_ratio_children_age_5to14'])
+                else:
+                    if age >= 5:
+                        result *= p['odds_ratio_children_age_5to14']
+
             if subgroup == 'adults':
-                result[df.age_years.between(35, 59)] *= p['odds_ratio_adults_age_35to59']
-                result[df.age_years >= 60] *= p['odds_ratio_adults_age_60plus']
-            result[df.li_urban] *= p[f'odds_ratio_{subgroup}_setting_urban']
-            result[df.sex == 'F'] *= p[f'odds_ratio_{subgroup}_sex_Female']
-            result[df.region_of_residence == 'Central'] *= p[f'odds_ratio_{subgroup}_region_Central']
-            result[df.region_of_residence == 'Southern'] *= p[f'odds_ratio_{subgroup}_region_Southern']
-            result[(df.li_wealth == 4) | (df.li_wealth == 5)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
+                if isinstance(age, pd.Series):
+                    apply_mask(result, (age >= 35) & (age <= 59), p['odds_ratio_adults_age_35to59'])
+                    apply_mask(result, age >= 60, p['odds_ratio_adults_age_60plus'])
+                else:
+                    if 35 <= age <= 59:
+                        result *= p['odds_ratio_adults_age_35to59']
+                    if age >= 60:
+                        result *= p['odds_ratio_adults_age_60plus']
+
+            # Urban setting
+            urban_mask = df.li_urban
+            apply_mask(result, urban_mask, p[f'odds_ratio_{subgroup}_setting_urban'])
+
+            # Sex Female
+            sex_mask = (df.sex == 'F')
+            apply_mask(result, sex_mask, p[f'odds_ratio_{subgroup}_sex_Female'])
+
+            # Region of residence Central
+            region_central_mask = (df.region_of_residence == 'Central')
+            apply_mask(result, region_central_mask, p[f'odds_ratio_{subgroup}_region_Central'])
+
+            # Region of residence Southern
+            region_southern_mask = (df.region_of_residence == 'Southern')
+            apply_mask(result, region_southern_mask, p[f'odds_ratio_{subgroup}_region_Southern'])
+
+            # Wealth higher (4 or 5)
+            wealth_mask = (df.li_wealth == 4) | (df.li_wealth == 5)
+            apply_mask(result, wealth_mask, p[f'odds_ratio_{subgroup}_wealth_higher'])
             # Predict for symptom-specific odd ratios
             for symptom, odds in care_seeking_odds_ratios.items():
-                result[df[f'sy_{symptom}'] > 0] *= odds
+                mask = df[f'sy_{symptom}'] > 0
+                apply_mask(result, mask, odds)
             result = (1 / (1 + 1 / result))
             # If a random number generator is supplied provide boolean outcomes, not probabilities
+
             if rng:
-                outcome = rng.random_sample(len(result)) < result
+                # if rng is a class, instantiate it
+                if isinstance(rng, type) and issubclass(rng, np.random.RandomState):
+                    rng = rng()
+
+                rand_vals = rng.random_sample(size=len(result))
+                if len(df) > 1:
+                    outcome = rand_vals < result
+                else:
+                    outcome = rand_vals
                 return outcome
             else:
                 return result
