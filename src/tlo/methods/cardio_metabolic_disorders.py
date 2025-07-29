@@ -214,8 +214,8 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                   'nc_weight_loss_worked': Property(Types.BOOL,
                                                     'whether or not weight loss treatment worked'),
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
-                  'ckd_ever_haemo': Property(Types.BOOL,
-                                             'whether or not person has had haemo'),
+                  'ckd_total_dialysis_sessions': Property(Types.BOOL,
+                                            'total number of dialysis sessions the person has ever had'),
                   'ckd_dialysis_sessions_this_month': Property(Types.INT,
                                         'number of dialysis sessions the person has had in the current month')
                   }
@@ -472,6 +472,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
         df.loc[df.is_alive, 'nc_weight_loss_worked'] = False
 
         df.loc[df.is_alive, 'ckd_dialysis_sessions_this_month'] = 0
+        df.loc[df.is_alive, 'ckd_total_dialysis_sessions'] = 0
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -1792,16 +1793,14 @@ class HSI_CardioMetabolicDisorders_Dialysis_Refill(HSI_Event, IndividualScopeEve
         self.num_of_sessions_had = 0  # A counter for the number of sessions had
 
     def apply(self, person_id, squeeze_factor):
-        """Set the property `ckd_ever_haemo` to be True and schedule the next session in the course if the person
-        has not yet had 12 sessions."""
 
         df = self.sim.population.props
 
         if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'nc_chronic_kidney_disease']:
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
-        if not df.at[person_id, 'ckd_ever_haemo']:
-            df.at[person_id, 'ckd_ever_haemo'] = True
+        # Increment total number of dialysis sessions the person has ever had in their lifetime
+        df.at[person_id, 'ckd_total_dialysis_sessions'] += 1
 
         # Increment the session counter for the month
         df.at[person_id, 'ckd_dialysis_sessions_this_month'] += 1
