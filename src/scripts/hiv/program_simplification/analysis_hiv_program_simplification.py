@@ -51,11 +51,11 @@ class HIV_Progam_Elements(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2035, 1, 1)
-        self.pop_size = 25_000
+        self.end_date = Date(2046, 1, 1)
+        self.pop_size = 120_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -73,30 +73,30 @@ class HIV_Progam_Elements(BaseScenario):
             }
         }
 
-    def modules(self):
-        return [
-            demography.Demography(),
-            simplified_births.SimplifiedBirths(),
-            enhanced_lifestyle.Lifestyle(),
-            healthsystem.HealthSystem(
-                service_availability=["*"],  # all treatment allowed
-                mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
-                cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
-                ignore_priority=False,  # do not use the priority information in HSI event to schedule
-                capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-            ),
-            symptommanager.SymptomManager(),
-            healthseekingbehaviour.HealthSeekingBehaviour(),
-            healthburden.HealthBurden(),
-            epi.Epi(),
-            hiv.Hiv(),
-            tb.Tb(),
-        ]
-
     # def modules(self):
-    #     return (
-    #         fullmodel(use_simplified_births=True)
-    #     )
+    #     return [
+    #         demography.Demography(),
+    #         simplified_births.SimplifiedBirths(),
+    #         enhanced_lifestyle.Lifestyle(),
+    #         healthsystem.HealthSystem(
+    #             service_availability=["*"],  # all treatment allowed
+    #             mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
+    #             cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+    #             ignore_priority=False,  # do not use the priority information in HSI event to schedule
+    #             capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+    #         ),
+    #         symptommanager.SymptomManager(),
+    #         healthseekingbehaviour.HealthSeekingBehaviour(),
+    #         healthburden.HealthBurden(),
+    #         epi.Epi(),
+    #         hiv.Hiv(),
+    #         tb.Tb(),
+    #     ]
+
+    def modules(self):
+        return (
+            fullmodel(use_simplified_births=True)
+        )
 
     def draw_parameters(self, draw_number, rng):
         if draw_number < len(self._scenarios):
@@ -107,7 +107,6 @@ class HIV_Progam_Elements(BaseScenario):
 
         scenario_definitions = ScenarioDefinitions()
 
-        # todo remove prep for fsw and agyw, remove vmmc
         return {
             "Status Quo": scenario_definitions.status_quo(),
 
