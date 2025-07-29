@@ -33,6 +33,20 @@ class ScenarioDefinitions:
             }
         }
 
+    def remove_prep_fsw(self) -> Dict:
+        return {
+            'Hiv': {
+                'type_of_scaleup': 'remove_prep_fsw',
+            }
+        }
+
+    def remove_prep_agyw(self) -> Dict:
+        return {
+            'Hiv': {
+                'type_of_scaleup': 'remove_prep_agyw',
+            }
+        }
+
     def remove_IPT(self) -> Dict:
         return {
             'Hiv': {
@@ -44,6 +58,13 @@ class ScenarioDefinitions:
         return {
             'Hiv': {
                 'type_of_scaleup': 'target_IPT',
+            }
+        }
+
+    def remove_vmmc(self) -> Dict:
+        return {
+            'Hiv': {
+                'type_of_scaleup': 'remove_vmmc',
             }
         }
 

@@ -20,7 +20,7 @@ Download result files for a completed job:
 tlo batch-download calibration_script-2022-04-12T190518Z
 
 if running locally need to parse each folder
-tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/hiv_program_simplification-2025-07-21T154208Z/0/0
+tlo parse-log /Users/tmangal/PycharmProjects/TLOmodel/outputs/hiv_program_simplification-2025-07-24T160218Z/0/0
 
 
 """
@@ -107,6 +107,7 @@ class HIV_Progam_Elements(BaseScenario):
 
         scenario_definitions = ScenarioDefinitions()
 
+        # todo remove prep for fsw and agyw, remove vmmc
         return {
             "Status Quo": scenario_definitions.status_quo(),
 
@@ -116,9 +117,15 @@ class HIV_Progam_Elements(BaseScenario):
 
             "Replace Viral Load Testing": scenario_definitions.replace_VL_with_TDF(),
 
+            "Remove PrEP for FSW": scenario_definitions.remove_prep_fsw(),
+
+            "Remove PrEP for AGYW": scenario_definitions.remove_prep_agyw(),
+
             "Remove IPT for PLHIV": scenario_definitions.remove_IPT(),
 
             "Targeted IPT": scenario_definitions.target_IPT(),
+
+            "Remove VMMC": scenario_definitions.remove_vmmc(),
 
             "Increase 6-monthly Dispensing": scenario_definitions.increase_6MMD(),
 

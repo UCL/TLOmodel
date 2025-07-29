@@ -1210,6 +1210,12 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
                 {190: 0})
             p["switch_vl_test_to_tdf"] = True
 
+        if p['type_of_scaleup'] == 'remove_prep_fsw':
+            p["prob_prep_for_fsw_after_hiv_test"] = 0
+
+        if p['type_of_scaleup'] == 'remove_prep_agyw':
+            p["prob_prep_for_agyw"] = 0
+
         if p['type_of_scaleup'] == 'remove_IPT':
             # this is currently only for high-risk districts
             # leave the coverage for paediatric contacts of TB cases
@@ -1220,13 +1226,7 @@ class Hiv(Module, GenericFirstAppointmentsMixin):
             # this is enacted in HIV treatment appt (do_at_initiation)
             pass
 
-        if p['type_of_scaleup'] == 'remove_PrEP_FSW':
-            p["prob_prep_for_fsw_after_hiv_test"] = 0
-
-        if p['type_of_scaleup'] == 'remove_PrEP_AGYW':
-            p["prob_prep_for_agyw"] = 0
-
-        if p['type_of_scaleup'] == 'remove_VMMC':
+        if p['type_of_scaleup'] == 'remove_vmmc':
             p["prob_circ_after_hiv_test"] = 0
             p["prob_circ_for_child_from_2020"] = 0
 
@@ -3255,7 +3255,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     topen=self.sim.date,
                     tclose=None,
                 )
-
 
         return drugs_available
 
