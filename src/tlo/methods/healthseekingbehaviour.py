@@ -8,7 +8,7 @@ The write-up of these estimates is: Health-seeking behaviour estimates for adult
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -102,10 +102,8 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
     # No properties to declare
     PROPERTIES = {}
 
-    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=None):
+    def __init__(self, name=None, force_any_symptom_to_lead_to_healthcareseeking=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-
         self.odds_ratio_health_seeking_in_children = dict()
         self.odds_ratio_health_seeking_in_adults = dict()
         self.prob_seeks_emergency_appt_in_children = dict()
@@ -122,10 +120,10 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
             assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
         self.arg_force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
         """Read in ResourceFile"""
         # Load parameters from resource file:
-        wb = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
+        wb = pd.read_csv(resourcefilepath / 'ResourceFile_HealthSeekingBehaviour.csv')
         wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'] = \
             wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'].apply(pd.eval)
         # <-- Needed to prevent the contents being stored as strings
@@ -195,70 +193,24 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                 raise ValueError("subgroup and care_seeking_odds_ratios must both be specified")
 
             result = pd.Series(data=p[f'baseline_odds_of_healthcareseeking_{subgroup}'], index=df.index)
-            age = df['age_years'] if isinstance(df, pd.DataFrame) else df.age_years
-
-            # Helper function to handle scalar or Series masks
-            def apply_mask(result, mask, multiplier):
-                if isinstance(mask, pd.Series):
-                    result[mask] *= multiplier
-                else:
-                    if mask:
-                        result *= multiplier
-
             # Predict behaviour due to the 'average symptom'
             if subgroup == 'children':
-                if isinstance(age, pd.Series):
-                    apply_mask(result, age >= 5, p['odds_ratio_children_age_5to14'])
-                else:
-                    if age >= 5:
-                        result *= p['odds_ratio_children_age_5to14']
-
+                result[df.age_years >= 5] *= p['odds_ratio_children_age_5to14']
             if subgroup == 'adults':
-                if isinstance(age, pd.Series):
-                    apply_mask(result, (age >= 35) & (age <= 59), p['odds_ratio_adults_age_35to59'])
-                    apply_mask(result, age >= 60, p['odds_ratio_adults_age_60plus'])
-                else:
-                    if 35 <= age <= 59:
-                        result *= p['odds_ratio_adults_age_35to59']
-                    if age >= 60:
-                        result *= p['odds_ratio_adults_age_60plus']
-
-            # Urban setting
-            urban_mask = df.li_urban
-            apply_mask(result, urban_mask, p[f'odds_ratio_{subgroup}_setting_urban'])
-
-            # Sex Female
-            sex_mask = (df.sex == 'F')
-            apply_mask(result, sex_mask, p[f'odds_ratio_{subgroup}_sex_Female'])
-
-            # Region of residence Central
-            region_central_mask = (df.region_of_residence == 'Central')
-            apply_mask(result, region_central_mask, p[f'odds_ratio_{subgroup}_region_Central'])
-
-            # Region of residence Southern
-            region_southern_mask = (df.region_of_residence == 'Southern')
-            apply_mask(result, region_southern_mask, p[f'odds_ratio_{subgroup}_region_Southern'])
-
-            # Wealth higher (4 or 5)
-            wealth_mask = (df.li_wealth == 4) | (df.li_wealth == 5)
-            apply_mask(result, wealth_mask, p[f'odds_ratio_{subgroup}_wealth_higher'])
+                result[df.age_years.between(35, 59)] *= p['odds_ratio_adults_age_35to59']
+                result[df.age_years >= 60] *= p['odds_ratio_adults_age_60plus']
+            result[df.li_urban] *= p[f'odds_ratio_{subgroup}_setting_urban']
+            result[df.sex == 'F'] *= p[f'odds_ratio_{subgroup}_sex_Female']
+            result[df.region_of_residence == 'Central'] *= p[f'odds_ratio_{subgroup}_region_Central']
+            result[df.region_of_residence == 'Southern'] *= p[f'odds_ratio_{subgroup}_region_Southern']
+            result[(df.li_wealth == 4) | (df.li_wealth == 5)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
             # Predict for symptom-specific odd ratios
             for symptom, odds in care_seeking_odds_ratios.items():
-                mask = df[f'sy_{symptom}'] > 0
-                apply_mask(result, mask, odds)
+                result[df[f'sy_{symptom}'] > 0] *= odds
             result = (1 / (1 + 1 / result))
             # If a random number generator is supplied provide boolean outcomes, not probabilities
-
             if rng:
-                # if rng is a class, instantiate it
-                if isinstance(rng, type) and issubclass(rng, np.random.RandomState):
-                    rng = rng()
-
-                rand_vals = rng.random_sample(size=len(result))
-                if len(df) > 1:
-                    outcome = rand_vals < result
-                else:
-                    outcome = rand_vals
+                outcome = rng.random_sample(len(result)) < result
                 return outcome
             else:
                 return result
