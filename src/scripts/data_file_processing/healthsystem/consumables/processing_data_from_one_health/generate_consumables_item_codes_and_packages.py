@@ -21,22 +21,20 @@ import pandas as pd
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-   # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
+    # '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE'
     '/Users/sm2511/Dropbox/Thanzi La Onse')
 
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
-
 # EHP Consumables list
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
 
 workingfile_ehp_consumables = path_to_dropbox / \
-              "05 - Resources/Module-healthsystem/From Matthias Arnold/ORIGINAL_Intervention input.xlsx"
+                              "05 - Resources/Module-healthsystem/From Matthias Arnold/ORIGINAL_Intervention input.xlsx"
 
 workingfile_one_health = path_to_dropbox / \
                          "07 - Data/OneHealth projection files/OneHealth commodities.xlsx"
-
 
 # ----------
 # ----------
@@ -178,7 +176,6 @@ wb = wb[['Intervention_Cat',
 
 assert not pd.isnull(wb).any().any()
 
-
 # ----------
 # Now looking at the OneHealth file (29-5-19 Slack Msg from Tara: this comes from Palladium Grp originally)
 # This file should be essentially the same as the file that has been imported already but with some
@@ -244,11 +241,11 @@ Added by TM,Misc,-99,Pre-exposure prophlaxis for HIV,2674,1.0,0.0,0.85,0.9,0.95,
 
 """
 
+
 def add_record(df: pd.DataFrame, record: Dict):
     """Add a row to the bottom of the dataframe, where the row is specified by a dict keyed by the target columns."""
     assert set(df.columns) == set(record.keys())
     return pd.concat([df, pd.DataFrame.from_records([record])], ignore_index=True)
-
 
 
 cons = add_record(
@@ -261,7 +258,7 @@ cons = add_record(
         'Item_Code': 2669,
         'Expected_Units_Per_Case': 1.0,
         'Unit_Cost': 1.0
-        }
+    }
 )
 
 cons = add_record(
@@ -345,48 +342,47 @@ cons = add_record(
 cons = add_record(
     cons,
     {
-    'Intervention_Cat': "Added by SM (Recommended by EJ)",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Cystoscope",
-    'Item_Code': 285,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': np.nan},
+        'Intervention_Cat': "Added by SM (Recommended by EJ)",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Cystoscope",
+        'Item_Code': 285,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': np.nan},
 )
 
 cons = add_record(
-    cons,{
-    'Intervention_Cat': "Added by SM (Recommended by EJ)",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Endoscope",
-    'Item_Code': 280,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': np.nan},
+    cons, {
+        'Intervention_Cat': "Added by SM (Recommended by EJ)",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Endoscope",
+        'Item_Code': 280,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': np.nan},
 )
 
 cons = add_record(
-    cons,{
-    'Intervention_Cat': "Added by SM (Recommended by EJ)",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Prostate specific antigen test",
-    'Item_Code': 281,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': np.nan},
+    cons, {
+        'Intervention_Cat': "Added by SM (Recommended by EJ)",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Prostate specific antigen test",
+        'Item_Code': 281,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': np.nan},
 )
 
 cons = add_record(
-    cons,{
-    'Intervention_Cat': "Added by Upile Napolo (KUHES)",
-    'Intervention_Pkg': "Misc",
-    'Intervention_Pkg_Code': -99,
-    'Items': "Haemodialysis dialysate flow of 500 ml/min",
-    'Item_Code': 282,
-    'Expected_Units_Per_Case': 1.0,
-    'Unit_Cost': 200},
+    cons, {
+        'Intervention_Cat': "Added by Upile Napolo (KUHES)",
+        'Intervention_Pkg': "Misc",
+        'Intervention_Pkg_Code': -99,
+        'Items': "Haemodialysis dialysate flow of 500 ml/min",
+        'Item_Code': 282,
+        'Expected_Units_Per_Case': 1.0,
+        'Unit_Cost': 200},
 )
-
 
 # --------------
 # --------------
