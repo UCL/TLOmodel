@@ -14,8 +14,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 
-import tlo
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
 )
@@ -95,7 +94,7 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
     assert df_updated.shape == df_original.shape
     assert (df_updated.dtypes == df_original.dtypes).all()
 
-    for _level in ['0', '1a', '3', '4']:
+    for _level in ['0', '1a', '3', '4', '0cham']:
         assert df_original.loc[df_original.Facility_Level == _level].equals(
             df_updated.loc[df_updated.Facility_Level == _level])
 
@@ -193,6 +192,14 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
+        'cons_override_treatment_ids': Parameter(
+            Types.LIST,
+            "Consumable availability within any treatment ids listed in this parameter will be set at to a "
+            "given probabilty stored in override_treatment_ids_avail. By default this list is empty"),
+        'cons_override_treatment_ids_prob_avail': Parameter(
+            Types.REAL,
+            "Probability that consumables for treatment ids listed in cons_override_treatment_ids will be "
+            "available"),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -359,7 +366,7 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        include_non_gov_facilities: bool = False,
+        use_non_gov_facilities: bool = False,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -504,7 +511,7 @@ class HealthSystem(Module):
         self._get_squeeze_factors_store_grow = 500
         self._get_squeeze_factors_store = np.zeros(self._get_squeeze_factors_store_grow)
 
-        self.include_non_gov_facilities = include_non_gov_facilities
+        self.use_non_gov_facilities = use_non_gov_facilities
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -541,7 +548,7 @@ class HealthSystem(Module):
 
         # Load basic information about the organization of the HealthSystem
         self.parameters['Master_Facilities_List'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
+            path_to_resourcefiles_for_healthsystem / 'organisation' / 'ResourceFile_Master_Facilities_List.csv') #####
 
         # Load ResourceFiles that define appointment and officer types
         self.parameters['Officer_Types_Table'] = pd.read_csv(
@@ -552,16 +559,16 @@ class HealthSystem(Module):
             'ResourceFile_Appt_Types_Table.csv')
         self.parameters['Appt_Offered_By_Facility_Level'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
-            'ResourceFile_ApptType_By_FacLevel.csv')
+            'ResourceFile_ApptType_By_FacLevel.csv') #####
         self.parameters['Appt_Time_Table'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'human_resources' / 'definitions' /
-            'ResourceFile_Appt_Time_Table.csv')
+            'ResourceFile_Appt_Time_Table.csv') ######
 
         # Load 'Daily_Capabilities' (for both actual and funded)
         for _i in ['actual', 'funded', 'funded_plus']:
             self.parameters[f'Daily_Capabilities_{_i}'] = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' /
-                'ResourceFile_Daily_Capabilities.csv')
+                'ResourceFile_Daily_Capabilities.csv') #####
 
         # Read in ResourceFile_Consumables
         self.parameters['item_and_package_code_lookups'] = pd.read_csv(
@@ -675,7 +682,9 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability()
+            availability=self.get_cons_availability(),
+            treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
+            treatment_ids_overridden_avail=self.parameters['cons_override_treatment_ids_prob_avail'],
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']
@@ -685,7 +694,7 @@ class HealthSystem(Module):
             catalogue=self.parameters['EquipmentCatalogue'],
             data_availability=self.parameters['equipment_availability_estimates'],
             rng=rng_for_equipment,
-            master_facilities_list=self.parameters['Master_Facilities_List'],
+            master_facilities_list=self._get_filtered_mfl(),
             availability=self.get_equip_availability(),
         )
 
@@ -859,7 +868,7 @@ class HealthSystem(Module):
 
         # mfl = self.parameters['Master_Facilities_List']
         # cham_levels = {'1a_cham', '1b_cham', '2_cham'}
-        # if not self.include_non_gov_facilities:
+        # if not self.use_non_gov_facilities:
         #     mfl = mfl[~mfl['Facility_Level'].isin(cham_levels)]
         # mfl = mfl[mfl['Facility_Level'] != '5']
         mfl = self._get_filtered_mfl()
@@ -880,7 +889,7 @@ class HealthSystem(Module):
         # (Store data as dict of dicts, with outer-dict indexed by string facility level and
         # inner-dict indexed by string type code with values corresponding to list of (named)
         # tuples of appointment officer type codes and time taken.)
-        appt_time_data = self.parameters['Appt_Time_Table']
+        appt_time_data = self._get_filtered_appt_time_table()
         appt_times_per_level_and_type = {_facility_level: defaultdict(list) for _facility_level in
                                          self._facility_levels}
         for appt_time_tuple in appt_time_data.itertuples():
@@ -923,7 +932,7 @@ class HealthSystem(Module):
 
         facilities_per_level_and_district = {_facility_level: {} for _facility_level in self._facility_levels}
         facilities_by_facility_id = dict()
-        for facility_tuple in self.parameters['Master_Facilities_List'].itertuples():
+        for facility_tuple in mfl.itertuples():
             _facility_info = FacilityInfo(id=facility_tuple.Facility_ID,
                                           name=facility_tuple.Facility_Name,
                                           level=facility_tuple.Facility_Level,
@@ -952,10 +961,10 @@ class HealthSystem(Module):
                     facilities_per_level_and_district[facility_tuple.Facility_Level][_district] = _facility_info
 
         # Check that there is facility of every level for every district:
-        assert all(
-            all_districts == facilities_per_level_and_district[_facility_level].keys()
-            for _facility_level in self._facility_levels
-        ), "There is not one of each facility type available to each district."
+        # assert all(
+        #     all_districts == facilities_per_level_and_district[_facility_level].keys()
+        #     for _facility_level in self._facility_levels
+        # ), "There is not one of each facility type available to each district."
 
         self._facility_by_facility_id = facilities_by_facility_id
         self._facilities_for_each_district = facilities_per_level_and_district
@@ -985,17 +994,20 @@ class HealthSystem(Module):
         of assumed efficiency.
         """
 
+        # Get filtered capabilities data
+        capabilities = self._get_filtered_daily_capabilities(use_funded_or_actual_staffing)
+
         # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = pool_capabilities_at_levels_1b_and_2(
-                self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
-        )
+        capabilities = pool_capabilities_at_levels_1b_and_2(capabilities)
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
 
+
+        mfl = self._get_filtered_mfl()
         # Create dataframe containing background information about facility and officer types
-        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        facility_ids = mfl['Facility_ID'].values
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
         # todo - <-- avoid use of the file or define differently?
 
@@ -1010,7 +1022,7 @@ class HealthSystem(Module):
         capabilities_ex = pd.DataFrame(data={'Facility_ID': facs, 'Officer_Type_Code': officers})
 
         # Merge in information about facility from Master Facilities List
-        mfl = self.parameters['Master_Facilities_List']
+        # mfl = self.parameters['Master_Facilities_List']
         capabilities_ex = capabilities_ex.merge(mfl, on='Facility_ID', how='left')
 
         # Create a copy of this to store staff counts
@@ -1094,7 +1106,7 @@ class HealthSystem(Module):
         availability of consumables at level 2 with new values."""
 
         # get master facilities list
-        mfl = self.parameters['Master_Facilities_List']
+        mfl = self._get_filtered_mfl()
 
         # merge in facility level
         dfx = df_original.merge(
@@ -1104,10 +1116,12 @@ class HealthSystem(Module):
             how='left'
         )
 
+        availability_columns = list(filter(lambda x: x.startswith('available_prop'), dfx.columns))
+
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1136,7 +1150,9 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(
+                    df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated
+                ).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
@@ -1224,19 +1240,59 @@ class HealthSystem(Module):
     def _get_filtered_mfl(self):
         """
         Returns the Master Facilities List excluding:
-        - CHAM facility levels (1a_cham, 1b_cham, 2_cham) if include_non_gov_facilities is False
+        - CHAM facility levels (0cham) if use_non_gov_facilities is False
         - Level '5' facilities (headquarters), which are always excluded
         """
         mfl = self.parameters['Master_Facilities_List']
-        cham_levels = {'1a_cham', '1b_cham', '2_cham'}
 
         # Always exclude level '5'
         mfl = mfl[mfl['Facility_Level'] != '5']
 
-        if not self.include_non_gov_facilities:
-            mfl = mfl[~mfl['Facility_Level'].isin(cham_levels)]
+        # if not self.use_non_gov_facilities:
+        #     # mfl = mfl[~mfl['Facility_Level'].str.contains('_0cham', na=False)]
+        #     mfl = mfl[~mfl['Facility_Level'].isin({'0cham'})]
+        if not self.use_non_gov_facilities:
+            # Exclude all CHAM facilities
+            mfl = mfl[~mfl['Facility_Level'].str.endswith('cham')]
+        else:
+            # Include only CHAM facilities
+            mfl = mfl[mfl['Facility_Level'].str.endswith('cham')]
 
         return mfl
+
+    def _get_filtered_appt_time_table(self):
+        """
+        Filters Appt_Time_Table to include only rows with valid Facility_Level
+        based on the use_non_gov_facilities flag.
+        """
+        appt_table = self.parameters['Appt_Time_Table']
+
+        if not self.use_non_gov_facilities:
+            # Exclude all CHAM facilities
+            appt_table = appt_table[~appt_table['Facility_Level'].str.endswith('cham')]
+        else:
+            # Include only CHAM facilities
+            appt_table = appt_table[appt_table['Facility_Level'].str.endswith('cham')]
+
+        return appt_table
+
+    def _get_filtered_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.DataFrame:
+        """Filters Daily_Capabilities to include only rows with valid Facility_Level
+        based on the use_non_gov_facilities flag."""
+        capabilities = self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
+
+        if not self.use_non_gov_facilities:
+            # Exclude all CHAM facilities
+            capabilities = capabilities[~capabilities['Facility_Level'].str.endswith('cham')]
+        else:
+            # Include only CHAM facilities
+            capabilities = capabilities[capabilities['Facility_Level'].str.endswith('cham')]
+
+        # Restrict to only those Facility_IDs present in the filtered MFL
+        valid_facility_ids = set(self._get_filtered_mfl()['Facility_ID'])
+        capabilities = capabilities[capabilities['Facility_ID'].isin(valid_facility_ids)]
+
+        return capabilities
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
@@ -1435,7 +1491,7 @@ class HealthSystem(Module):
         assert hsi_event.TREATMENT_ID != ''
 
         # Check that the target of the HSI is not the entire population
-        assert not isinstance(hsi_event.target, tlo.population.Population)
+        assert not isinstance(hsi_event.target, Population)
 
         # This is an individual-scoped HSI event.
         # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
@@ -1965,6 +2021,26 @@ class HealthSystem(Module):
         :return: None
         """
         self.consumables.override_availability(item_codes)
+
+    def override_cons_availability_for_treatment_ids(self,
+                                                     treatment_ids: list = None,
+                                                     prob_available: float = None) -> None:
+        """
+        This function can be called by any module to update the treatment ids for which consumable availability should
+        be overridden and to provide a probability of availability.
+
+        :param treatment_ids: The treatment ids which should have availability overridden (list)
+        :param prob_available: The probability of availability in those treatment_ids (float)
+        :return: None
+        """
+
+        # Update internal cons function to update the cons 'owned' lists in which this information is stored
+        self.consumables.treatment_ids_overridden = treatment_ids if treatment_ids is not None else []
+
+        if (treatment_ids is not None) and (len(treatment_ids) > 0):
+            assert prob_available is not None, "If treatment_ids is provided, prob_available must be provided"
+
+        self.consumables.treatment_ids_overridden_avail = prob_available if prob_available is not None else 0.0
 
     def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(
@@ -2649,18 +2725,18 @@ class HealthSystemSummaryCounter:
 
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
-        self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4', '0cham')}
         # <--Same as `self._appts` but also split by facility_level
 
         # Log HSI_Events that have a non-blank appointment footprint
         self._no_blank_appt_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s with non-blank footprint
         self._no_blank_appt_appts = defaultdict(int)  # As above, but for `HSI_Event`s that with non-blank footprint
-        self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._no_blank_appt_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4', '0cham')}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
-        self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4', '0cham')}
 
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._sum_of_daily_frac_time_used_by_officer_type_and_level = Counter()
