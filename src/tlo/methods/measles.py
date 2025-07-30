@@ -70,8 +70,28 @@ class Measles(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "Risk of scheduled death occurring if on treatment for measles complications"),
         "symptom_prob": Parameter(
             Types.DATA_FRAME, "Probability of each symptom with measles infection"),
-        "case_fatality_rate": Parameter(
-            Types.DICT, "Probability that case of measles will result in death if not treated")
+        "sequlae_code_rash": Parameter(
+            Types.REAL, "SEQULAE code rash"),
+        "sequlae_code_fever": Parameter(
+            Types.REAL, "SEQULAE code fever"),
+        "sequlae_code_encephalitis": Parameter(
+            Types.REAL, "SEQULAE code encephalitis"),
+        "sequlae_code_diarrhoea": Parameter(
+            Types.REAL, "SEQULAE code diarrhoea"),
+        "sequlae_code_otitis_media": Parameter(
+            Types.REAL, "SEQULAE code otitis_media"),
+        "sequlae_code_respiratory_symptoms": Parameter(
+            Types.REAL, "SEQULAE code respiratory symptoms"),
+        "sequlae_code_eye_complaint": Parameter(
+            Types.REAL, "SEQULAE code eye complaint"),
+        "odds_ratio_health_seeking_in_children_rash": Parameter(
+            Types.REAL, "Odds ratio seeking care in children rash"),
+        "odds_ratio_health_seeking_in_adults_rash": Parameter(
+            Types.REAL, "Odds ratio seeking care in adults rash"),
+        "odds_ratio_health_seeking_in_children_otitis_media": Parameter(
+            Types.REAL, "Odds ratio seeking care in children otitis media"),
+        "odds_ratio_health_seeking_in_adults_otitis_media": Parameter(
+            Types.REAL, "Odds ratio seeking care in adults otitis media"),
     }
 
     PROPERTIES = {
@@ -108,31 +128,6 @@ class Measles(Module, GenericFirstAppointmentsMixin):
         self.parameters["case_fatality_rate"] = workbook["cfr"].set_index('age')["probability"].to_dict()
 
         # moderate symptoms all mapped to moderate_measles, pneumonia/encephalitis mapped to severe_measles
-        if "HealthBurden" in self.sim.modules.keys():
-            self.parameters["daly_wts"] = {
-                "rash": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-                "fever": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-                "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-                "encephalitis": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
-                "otitis_media": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
-                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
-            }
-
-        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='rash',
-                    odds_ratio_health_seeking_in_children=2.5,
-                    odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
-        )
-
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='otitis_media',
-                    odds_ratio_health_seeking_in_children=2.5,
-                    odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
-        )
-
-        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
 
     def pre_initialise_population(self):
         self.process_parameters()
@@ -149,6 +144,8 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
     def initialise_simulation(self, sim):
         """Schedule measles event to start straight away. Each month it will assign new infections"""
+        p = self.parameters
+
         sim.schedule_event(MeaslesEvent(self), sim.date)
         sim.schedule_event(MeaslesLoggingEvent(self), sim.date)
         sim.schedule_event(MeaslesLoggingFortnightEvent(self), sim.date)
@@ -164,6 +161,32 @@ class Measles(Module, GenericFirstAppointmentsMixin):
                 self.sim.modules['HealthSystem'].get_item_code_from_item_name("Oxygen, 1000 liters, primarily with "
                                                                               "oxygen cylinders")
         }
+
+        if "HealthBurden" in self.sim.modules.keys():
+            self.parameters["daly_wts"] = {
+                "rash": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_rash']),
+                "fever": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_fever']),
+                "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_diarrhoea']),
+                "encephalitis": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_encephalitis']),
+                "otitis_media": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_otitis_media']),
+                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_respiratory_symptoms']),
+                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_eye_complaint']),
+            }
+
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='rash',
+                    odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_rash'],
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_rash'])  # non-emergencies
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='otitis_media',
+                    odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_otitis_media'],
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_otitis_media'])  # non-emergencies
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
