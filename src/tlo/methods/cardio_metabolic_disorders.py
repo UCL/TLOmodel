@@ -214,7 +214,7 @@ class CardioMetabolicDisorders(Module, GenericFirstAppointmentsMixin):
                   'nc_weight_loss_worked': Property(Types.BOOL,
                                                     'whether or not weight loss treatment worked'),
                   'nc_risk_score': Property(Types.INT, 'score to represent number of risk conditions the person has'),
-                  'ckd_total_dialysis_sessions': Property(Types.BOOL,
+                  'ckd_total_dialysis_sessions': Property(Types.INT,
                                             'total number of dialysis sessions the person has ever had'),
                   'ckd_dialysis_sessions_this_month': Property(Types.INT,
                                         'number of dialysis sessions the person has had in the current month')
