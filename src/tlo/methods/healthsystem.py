@@ -2330,12 +2330,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                     subgroup = item.hsi_event.target
                                     if self.sim.population.props.loc[subgroup, 'age_years'] < 15:
                                         subgroup_name = 'children'
-                                        care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_children
-                                        hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['children']
+                                        care_seeking_odds_ratios = self.sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_children
+                                        hsb_model = self.sim.modules['HealthSeekingBehaviour'].hsb_linear_models['children']
                                     else:
                                         subgroup_name = 'adults'
-                                        care_seeking_odds_ratios = self.sim.modules['HealthcareSeekingBehaviour'].odds_ratio_health_seeking_in_adults
-                                        hsb_model = self.sim.modules['HealthcareSeekingBehaviour'].hsb_linear_models['adults']
+                                        care_seeking_odds_ratios = self.sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_adults
+                                        hsb_model = self.sim.modules['HealthSeekingBehaviour'].hsb_linear_models['adults']
 
                                     will_seek_care = hsb_model.predict(
                                         subgroup, self.sim.module.rng,
