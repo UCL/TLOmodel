@@ -92,6 +92,9 @@ class Measles(Module, GenericFirstAppointmentsMixin):
             Types.REAL, "Odds ratio seeking care in children otitis media"),
         "odds_ratio_health_seeking_in_adults_otitis_media": Parameter(
             Types.REAL, "Odds ratio seeking care in adults otitis media"),
+        "reduction_in_death_risk_measle_treated": Parameter(
+            Types.REAL, "Reduction in death risk when measles are treated"
+        )
     }
 
     PROPERTIES = {
@@ -129,6 +132,33 @@ class Measles(Module, GenericFirstAppointmentsMixin):
 
         # moderate symptoms all mapped to moderate_measles, pneumonia/encephalitis mapped to severe_measles
 
+        p = self.parameters
+        if "HealthBurden" in self.sim.modules.keys():
+            self.parameters["daly_wts"] = {
+                "rash": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_rash']),
+                "fever": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_fever']),
+                "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_diarrhoea']),
+                "encephalitis": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_encephalitis']),
+                "otitis_media": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_otitis_media']),
+                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_respiratory_symptoms']),
+                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_eye_complaint']),
+            }
+
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='rash',
+                    odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_rash'],
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_rash'])  # non-emergencies
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='otitis_media',
+                    odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_otitis_media'],
+                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_otitis_media'])  # non-emergencies
+        )
+
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
+
     def pre_initialise_population(self):
         self.process_parameters()
 
@@ -162,31 +192,6 @@ class Measles(Module, GenericFirstAppointmentsMixin):
                                                                               "oxygen cylinders")
         }
 
-        if "HealthBurden" in self.sim.modules.keys():
-            self.parameters["daly_wts"] = {
-                "rash": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_rash']),
-                "fever": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_fever']),
-                "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_diarrhoea']),
-                "encephalitis": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_encephalitis']),
-                "otitis_media": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_otitis_media']),
-                "respiratory_symptoms": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_respiratory_symptoms']),
-                "eye_complaint": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=p['sequlae_code_eye_complaint']),
-            }
-
-        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='rash',
-                    odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_rash'],
-                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_rash'])  # non-emergencies
-        )
-
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='otitis_media',
-                    odds_ratio_health_seeking_in_children=p['odds_ratio_health_seeking_in_children_otitis_media'],
-                    odds_ratio_health_seeking_in_adults=p['odds_ratio_health_seeking_in_adults_otitis_media'])  # non-emergencies
-        )
-
-        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -402,6 +407,7 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        p = self.sim.parameters
 
         if not df.at[person_id, "is_alive"]:
             return
@@ -412,10 +418,8 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
 
             if df.at[person_id, "me_on_treatment"]:
 
-                reduction_in_death_risk = 0.6
-
                 # Certain death (100%) is reduced by specified amount
-                p_death_with_treatment = 1. - reduction_in_death_risk
+                p_death_with_treatment = 1. - p['reduction_in_death_risk_measle_treated']
 
                 # If below that probability, death goes ahead
                 if self.module.rng.random_sample() < p_death_with_treatment:
