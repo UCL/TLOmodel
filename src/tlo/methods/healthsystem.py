@@ -2327,8 +2327,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         hsi_event=item
                                     )
                                 else:
-                                    subgroup = item.hsi_event.target
-                                    if self.sim.population.props.loc[subgroup, 'age_years'] < 15:
+                                    patient =  self.sim.population.props.loc[[item.hsi_event.target]]
+                                    if patient.age_years.iloc[0] < 15:
                                         subgroup_name = 'children'
                                         care_seeking_odds_ratios = self.sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_children
                                         hsb_model = self.sim.modules['HealthSeekingBehaviour'].hsb_linear_models['children']
@@ -2338,22 +2338,21 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                         hsb_model = self.sim.modules['HealthSeekingBehaviour'].hsb_linear_models['adults']
 
                                     will_seek_care = hsb_model.predict(
-                                        subgroup, self.sim.module.rng,
+                                        df = patient,
                                         subgroup=subgroup_name,
                                         care_seeking_odds_ratios=care_seeking_odds_ratios
                                     )
-
-                                    if will_seek_care:
+                                    if will_seek_care.iloc[0]:
                                         self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                             priority=item.priority,
                                             topen=self.sim.date + DateOffset(month=1),
                                             tclose=self.sim.date + DateOffset(month=1) + DateOffset((item.topen - item.tclose).days),
-                                            hsi_event=item
+                                            hsi_event=item.hsi_event
                                         )
                                     else:
                                         response_to_disruption = 'cancel'
                             if response_to_disruption == 'cancel':
-                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                                self.modules.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
 
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
