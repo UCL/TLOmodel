@@ -557,6 +557,12 @@ class HealthSystem(Module):
             df = pd.read_csv(
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / 'clinics' / 'ResourceFile_Clinics.csv'
             )
+            ## Raise an error if any of the facilities is level 2.
+            all_level2_facilities = self.parameters['Master_Facilities_List'][self.parameters['Master_Facilities_List']['Facility_Level'] == '2']
+            cl_level2_facilities = df[df['Facility_ID'].isin(level2_facilities['Facility_ID'])]
+            if not cl_level2_facilities.empty:
+                raise ValueError('Level 2 facilities should not be present in the resource file for clinics. ')
+
             ## Check that the fractions add to 1 for each row.
             id_cols = ['Facility_ID', 'Officer_Type_Code']
             data = df.drop(columns=id_cols)
@@ -3039,6 +3045,15 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
             officer_type = matches.group(2)
             level = self.module._facility_by_facility_id[facility_id].level
             self.module._daily_capabilities[officer] *= \
+                HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+
+        for officer in self.module._clinics_capabilities_per_staff.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            officer_type = matches.group(2)
+            level = self.module._facility_by_facility_id[facility_id].level
+            self.module._clinics_capabilities_per_staff[officer] *= \
                 HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
 
 
