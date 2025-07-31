@@ -993,6 +993,7 @@ class HealthSystem(Module):
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_fungible_capabilities.index[self._daily_fungible_capabilities > 0])
+
         # If include_clinics is True, then redefine daily_capabilities
         if include_clinics:
             ## Get the module column names before formatting as the dataframe will gain additional non-module columns
@@ -1004,10 +1005,18 @@ class HealthSystem(Module):
             ## Module specific capabilities are total time * non-fungible
             updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
             ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
-            self._clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
+            self._daily_clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
             self._daily_fungible_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
+
+            ## Do the split for _daily_fungible_capabilities
+            updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities)
+            updated_capabilities['Total_Minutes_Per_Day'] = updated_capabilities['Fungible'] * updated_capabilities['Total_Minutes_Per_Day']
+            updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Total_Minutes_Per_Day'], axis =  0)
+            self._daily_clinics_capabilities = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
+            self._daily_fungible_capabilities = updated_capabilities['Total_Minutes_Per_Day']
         else:
-            self._clinics_capabilities_per_staff = {}
+            self._daily_clinics_capabilities = {}
+            self._daily_clinics_capabilities_per_staff = {}
 
 
 
@@ -1199,7 +1208,7 @@ class HealthSystem(Module):
                 # daily patient facing time per day than contracted (or equivalently performing appts more
                 # efficiently).
                 self._daily_capabilities_per_staff[officer] *= rescaling_factor
-                self._clinics_capabilities_per_staff[officer] *= rescaling_factor
+                self._daily_clinics_capabilities_per_staff[officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -1676,7 +1685,7 @@ class HealthSystem(Module):
         For now this method only multiplies the estimated minutes available by the `capabilities_coefficient` scale
         factor.
         """
-        return self._daily_capabilities * self.capabilities_coefficient
+        return self._daily_fungible_capabilities * self.capabilities_coefficient
 
     def get_blank_appt_footprint(self):
         """
@@ -2408,7 +2417,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
-        clinic_capabilities_monitor = {k: Counter(v) for k, v in self.module._clinics_capabilities_per_staff.items()}
+        clinic_capabilities_monitor = {k: Counter(v) for k, v in self.module._daily_clinics_capabilities_per_staff.items()}
         set_cl_capabilities_still_available = defaultdict(set)
         for outer_key, outer_val in clinic_capabilities_monitor.items():
             for inner_key, inner_val in outer_val.items():
@@ -3012,12 +3021,15 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
 
         # ... Do the rescaling specified for this year by the specified factor
         self.module._daily_fungible_capabilities *= config['dynamic_HR_scaling_factor']
-        self.module._clinic_capabilities *= config['dynamic_HR_scaling_factor']
+        ## {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
+        for k, v in self.module._daily_clinics_capabilities.items():
+            v.update({inner_k: inner_v * config['dynamic_HR_scaling_factor'] for inner_k, inner_v in v.items()})
 
         # ... If requested, also do the scaling for the population growth that has occurred since the last year
         if config['scale_HR_by_popsize']:
             self.module._daily_fungible_capabilities *= this_year_pop_size / self.last_year_pop_size
-            self.module._clinic_capabilities *= this_year_pop_size / self.last_year_pop_size
+            for k, v in self.module._daily_clinics_capabilities.items():
+                v.update({inner_k: inner_v * this_year_pop_size / self.last_year_pop_size for inner_k, inner_v in v.items()})
 
         # Save current population size as that for 'last year'.
         self.last_year_pop_size = this_year_pop_size
@@ -3041,23 +3053,15 @@ class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module._daily_capabilities.keys():
+        for officer in self.module._daily_fungible_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             officer_type = matches.group(2)
             level = self.module._facility_by_facility_id[facility_id].level
-            self.module._daily_capabilities[officer] *= \
+            self.module._daily_fungible_capabilities[officer] *= \
                 HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
 
-        for officer in self.module._clinics_capabilities_per_staff.keys():
-            matches = re.match(pattern, officer)
-            # Extract ID and officer type from
-            facility_id = int(matches.group(1))
-            officer_type = matches.group(2)
-            level = self.module._facility_by_facility_id[facility_id].level
-            self.module._clinics_capabilities_per_staff[officer] *= \
-                HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
 
 
 class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
@@ -3074,13 +3078,13 @@ class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for officer in self.module._daily_capabilities.keys():
+        for officer in self.module._daily_fungible_capabilities.keys():
             matches = re.match(pattern, officer)
             # Extract ID and officer type from
             facility_id = int(matches.group(1))
             district = self.module._facility_by_facility_id[facility_id].district
             if district in HR_scaling_factor_by_district:
-                self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
+                self.module._daily_fungible_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
@@ -3154,7 +3158,7 @@ class HealthSystemLogger(RegularEvent, PopulationScopeEventMixin):
         # Compute staff counts from available capabilities (hs.capabilities_today) and daily capabilities per staff,
         # both of which would have been rescaled to current efficiency levels if scale_to_effective_capabilities=True
         # This returns the number of staff counts normalised by the self.capabilities_coefficient parameter
-        current_staff_count = dict((hs.capabilities_today/hs._daily_capabilities_per_staff).sort_index())
+        current_staff_count = dict((hs.capabilities_today/hs._daily_fungible_capabilities_per_staff).sort_index())
 
         logger_summary.info(
             key="number_of_hcw_staff",

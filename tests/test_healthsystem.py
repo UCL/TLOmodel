@@ -2165,7 +2165,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
     tot_population = 100
     sim = create_simulation(tmpdir, tot_population)
-    breakpoint()
+
     # Test that capabilities are split according the proportion.
     ## 50% of capabilities are fungible and 50% non-fungible.
     module_cols = sim.modules['HealthSystem'].parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
@@ -2178,8 +2178,8 @@ def test_mode_2_clinics(seed, tmpdir):
     sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['DummyModuleNonFungible'] = 0.5
     sim.modules['HealthSystem'].parameters['Clinics_Capabilities']['Fungible'] = 0.5
     sim.modules['HealthSystem'].setup_daily_capabilities('funded_plus', True)
-    fungible = sim.modules['HealthSystem']._daily_capabilities_per_staff.to_dict()
-    nonfungible = sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible']
+    fungible = sim.modules['HealthSystem']._daily_fungible_capabilities_per_staff.to_dict()
+    nonfungible = sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible']
     nonzero = {k: v for k, v in fungible.items() if v > 0.0}
     ratio = np.array([nonfungible[k] / v for k,v in nonzero.items()])
     assert all(abs(ratio - [0.5] < 1e-7)), "Fungible capabilities are not split correctly"
@@ -2195,8 +2195,7 @@ def test_mode_2_clinics(seed, tmpdir):
     # Now adjust capabilities available.
     # We first want to make sure there is enough capabilities available to run all events
     for k, v in hsi1.expected_time_requests.items():
-        print(k, sim.modules['HealthSystem']._daily_capabilities[k])
-        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_fungible_capabilities[k] = v*(tot_population/2)
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
                          person_id=0,
@@ -2204,9 +2203,9 @@ def test_mode_2_clinics(seed, tmpdir):
                          level='1a')
     hsi2.initialise()
 
-    sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
 
     # Schedule 50 fungible and 50 non-fungible events
     sim = schedule_hsi_events(50, 50, sim)
@@ -2227,16 +2226,16 @@ def test_mode_2_clinics(seed, tmpdir):
     sim = create_simulation(tmpdir, tot_population)
     sim = schedule_hsi_events(tot_population // 2, tot_population // 2, sim)
 
-    sim.modules['HealthSystem']._daily_capabilities[:] = 0
+    sim.modules['HealthSystem']._daily_fungible_capabilities[:] = 0
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
                          person_id=0,
                          appt_type='MinorSurg',
                          level='1a')
     hsi2.initialise()
 
-    sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = v*(tot_population/2)
 
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
@@ -2249,8 +2248,6 @@ def test_mode_2_clinics(seed, tmpdir):
     ## No fungible events should have run, but all non-fungible ones should have
     assert Nevents.loc[('DummyModuleNonFungible', True)] == tot_population // 2 , "Another half were NonFungible"
     assert Nevents.loc[('Fungible', False)] == tot_population // 2, "No additional Fungible events ran"
-
-
 
     ## Test 3: Events requiring non-fungible capabilities do not run if those capabilities are available
     ## Mirror of test 2 above
@@ -2265,8 +2262,7 @@ def test_mode_2_clinics(seed, tmpdir):
     # Now adjust capabilities available.
     # We first want to make sure there is enough capabilities available to run all events
     for k, v in hsi1.expected_time_requests.items():
-        print(k, sim.modules['HealthSystem']._daily_capabilities[k])
-        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_fungible_capabilities[k] = v*(tot_population/2)
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
                          person_id=0,
@@ -2274,9 +2270,9 @@ def test_mode_2_clinics(seed, tmpdir):
                          level='1a')
     hsi2.initialise()
 
-    sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
     for k, v in hsi2.expected_time_requests.items():
-        sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
+        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 
@@ -2306,11 +2302,10 @@ def test_mode_2_clinics(seed, tmpdir):
 
     # Now adjust capabilities available.
     # We first want to make sure there is enough capabilities available to run all fungible events
-    sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
+    sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'] = {}
     for k, v in hsi1.expected_time_requests.items():
-        print(k, sim.modules['HealthSystem']._daily_capabilities[k])
-        sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
-        sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
+        sim.modules['HealthSystem']._daily_fungible_capabilities[k] = v*(tot_population/2)
+        sim.modules['HealthSystem']._daily_clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
 
     sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 
