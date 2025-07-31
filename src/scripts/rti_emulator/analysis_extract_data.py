@@ -30,7 +30,19 @@ from tlo.analysis.utils import (
     plot_clustered_stacked,
     summarize,
 )
-tag = 'emulated_with_conditionality_Nothing'
+tag = 'new_emulated_with_conditionality_All'
+#outputs/test_rti_emulator-2025-02-20T092114Z
+
+#tag = 'new_normal_All'
+#outputs/test_rti_emulator-2025-02-10T095938Z
+
+#tag = 'new_emulated_with_conditionality_All_x250_other'
+#outputs/test_rti_emulator-2025-02-19T153503Z
+
+#tag = 'new_normal_All_x250_other'
+#outputs/test_rti_emulator-2025-02-10T171625Z
+"""
+"""
 #tag = 'normal_Nothing'
 #tag = 'normal'
 
@@ -178,17 +190,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 .groupby(level=[0, 1], axis=1).sum() \
                 .mean(axis=0)  # mean over each year (row)
 
-        return summarize(
-            extract_results(
+        return extract_results(
                     results_folder,
                     module='tlo.methods.healthsystem.summary',
                     key='HSI_Event',
                     custom_generate_series=get_counts_of_appts,
                     do_scaling=True
-                ),
-            only_mean=False,
-            collapse_columns=True,
-            ).unstack().astype(int)
+                )
+                
  
     def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
         """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level,
@@ -227,7 +236,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
  
  
     model = get_annual_num_appts_by_level(results_folder=results_folder)
+    model_summarised = summarize(model,only_mean=False,collapse_columns=True).unstack().astype(int)
     model.to_csv('ConvertedOutputs/Emulator_Files/Total_Appt_Footprint_' + tag + '.csv', index=True)
+    model_summarised.to_csv('ConvertedOutputs/Emulator_Files/Total_Appt_Footprint_summarised_' + tag + '.csv', index=True)
     #exit(-1)
     # Obtain parameter names for this scenario file
     param_names = get_parameter_names_from_scenario_file()
@@ -468,8 +479,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # divide by five to give the average number of deaths per year within the five year period:
     results = results.div(5.0)
-    results_to_store = summarize((results.loc['2010-2014'] + results.loc['2015-2019'])/2)
+    results_to_store = (results.loc['2010-2014'] + results.loc['2015-2019'])/2
     results_to_store.to_csv('ConvertedOutputs/Emulator_Files/DALYs_by_sex_age_' + tag + '.csv', index=True)
+    results_to_store = summarize(results_to_store)
+    results_to_store.to_csv('ConvertedOutputs/Emulator_Files/DALYs_by_sex_age_summarised_' + tag + '.csv', index=True)
 
     
     def get_total_num_dalys_by_wealth_and_label(_df):
@@ -487,21 +500,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
              .groupby(by=['li_wealth', 'label'])['value'] \
              .sum()
 
-    total_num_dalys_by_wealth_and_label = summarize(extract_results(
+    total_num_dalys_by_wealth_and_label = extract_results(
             results_folder,
             module="tlo.methods.healthburden",
             key="dalys_by_wealth_stacked_by_age_and_time",
             custom_generate_series=get_total_num_dalys_by_wealth_and_label,
             do_scaling=True,
-        ),
-
+        )
+        
+    total_num_dalys_by_wealth_and_label.to_csv('ConvertedOutputs/Emulator_Files/DALYs_by_wealth_' + tag + '.csv', index=True)
+    
+    total_num_dalys_by_wealth_and_label = summarize(total_num_dalys_by_wealth_and_label,
         collapse_columns=True,
         only_mean=False,
     ).unstack()
-    print(total_num_dalys_by_wealth_and_label)
- 
-    total_num_dalys_by_wealth_and_label.to_csv('ConvertedOutputs/Emulator_Files/DALYs_by_wealth_' + tag + '.csv', index=True)
-    print(total_num_dalys_by_wealth_and_label)
+    
+    total_num_dalys_by_wealth_and_label.to_csv('ConvertedOutputs/Emulator_Files/DALYs_by_wealth_summarised_' + tag + '.csv', index=True)
+
+
  
     
 if __name__ == "__main__":
