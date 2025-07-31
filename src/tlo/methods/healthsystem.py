@@ -2299,7 +2299,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 climate_disrupted = False
 
                 # First, check for climate disruption
-                if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
+                if year > 2010: #and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
                     assert self.module.parameters['services_affected_precip'] == 'all'
                     fac_level = item.hsi_event.facility_info.level
                     facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_level}']
@@ -2316,14 +2316,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         if np.random.binomial(1, prob_disruption) == 1:
                             climate_disrupted = True
                             response_to_disruption = 'delay'
-                            #if self.module.parameters['response_to_disruption'] == 'delay':
                             if response_to_disruption == 'delay':
                                 if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
                                     self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
                                         priority=item.priority,
-                                        topen=self.sim.date + DateOffset(week=self.module.parameters['delay_in_seeking_care_weather']),
-                                        tclose=self.sim.date + DateOffset(week=self.module.parameters['delay_in_seeking_care_weather']) + DateOffset((item.topen - item.tclose).days),
-                                        hsi_event=item
+                                        topen=self.sim.date + DateOffset(weeks=self.module.parameters['delay_in_seeking_care_weather']),
+                                        tclose=self.sim.date + DateOffset(weeks=self.module.parameters['delay_in_seeking_care_weather']) + DateOffset((item.topen - item.tclose).days),
+                                        hsi_event=item.hsi_event
                                     )
                                 else:
                                     patient =  self.sim.population.props.loc[[item.hsi_event.target]]
@@ -2348,10 +2347,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                             tclose=self.sim.date + DateOffset(month=1) + DateOffset((item.topen - item.tclose).days),
                                             hsi_event=item.hsi_event
                                         )
+                                        print("care sought")
                                     else:
                                         response_to_disruption = 'cancel'
                             if response_to_disruption == 'cancel':
-                                self.modules.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
 
                 # If not climate disrupted, check equipment
                 if not climate_disrupted:
