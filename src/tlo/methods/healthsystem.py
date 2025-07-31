@@ -983,7 +983,8 @@ class HealthSystem(Module):
 
 
     def setup_daily_capabilities(self, use_funded_or_actual_staffing, include_clinics):
-        """Set up `self._daily_capabilities` and `self._officers_with_availability`.
+        """Set up `self._daily_fungible_capabilities` and `self._officers_with_availability`.
+        If include_clinics is True, split the capabilities into fungible and non-fungible and set up `self._daily_clinics_capabilities` and
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
