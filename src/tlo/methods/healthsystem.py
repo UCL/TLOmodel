@@ -559,7 +559,7 @@ class HealthSystem(Module):
             )
             ## Raise an error if any of the facilities is level 2.
             all_level2_facilities = self.parameters['Master_Facilities_List'][self.parameters['Master_Facilities_List']['Facility_Level'] == '2']
-            cl_level2_facilities = df[df['Facility_ID'].isin(level2_facilities['Facility_ID'])]
+            cl_level2_facilities = df[df['Facility_ID'].isin(all_level2_facilities['Facility_ID'])]
             if not cl_level2_facilities.empty:
                 raise ValueError('Level 2 facilities should not be present in the resource file for clinics. ')
 
@@ -987,25 +987,25 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities, self._daily_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
+        self._daily_fungible_capabilities, self._daily_fungible_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
-        self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
+        self._officers_with_availability = set(self._daily_fungible_capabilities.index[self._daily_fungible_capabilities > 0])
         # If include_clinics is True, then redefine daily_capabilities
         if include_clinics:
             ## Get the module column names before formatting as the dataframe will gain additional non-module columns
             module_cols = self.parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
             self.parameters['Clinics_Capabilities'] = self.format_clinic_capabilities()
-            updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_capabilities_per_staff)
+            updated_capabilities = self.parameters['Clinics_Capabilities'].join(self._daily_fungible_capabilities_per_staff)
             ## New capabilities are old_capabilities * fungible
             updated_capabilities['Mins_Per_Day_Per_Staff'] = updated_capabilities['Fungible'] * updated_capabilities['Mins_Per_Day_Per_Staff']
             ## Module specific capabilities are total time * non-fungible
             updated_capabilities[module_cols] = updated_capabilities[module_cols].multiply(updated_capabilities['Mins_Per_Day_Per_Staff'], axis =  0)
             ## Store the non-fungible capabilities structured as follows: clinics = {module_name: {facility_id: non-fungible capability}}}
             self._clinics_capabilities_per_staff = {col: updated_capabilities[col].to_dict() for col in updated_capabilities[module_cols]}
-            self._daily_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
+            self._daily_fungible_capabilities_per_staff = updated_capabilities['Mins_Per_Day_Per_Staff']
         else:
             self._clinics_capabilities_per_staff = {}
 
@@ -1128,7 +1128,7 @@ class HealthSystem(Module):
 
     def format_clinic_capabilities(self) -> pd.DataFrame:
         """
-        The breakdown of capabilities between non-fungible and fungible clinics is done in the Clinics_Capabilities
+        The breakdown of capabilities between non-fungible and fungible clinics is available in the Clinics_Capabilities
         read in from the ResourceFile_Clinics.csv file. This function will fill out the capabilities dataframe
         so that for facility, officer type combinations that are not present in the file, the proportion of fungible
         is set to 1, and the non-fungible capabilities are set to 0.
@@ -1199,6 +1199,7 @@ class HealthSystem(Module):
                 # daily patient facing time per day than contracted (or equivalently performing appts more
                 # efficiently).
                 self._daily_capabilities_per_staff[officer] *= rescaling_factor
+                self._clinics_capabilities_per_staff[officer] *= rescaling_factor
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
@@ -3010,11 +3011,13 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         config = self.scaling_values.get(self._get_most_recent_year_specified_for_a_change_in_configuration())
 
         # ... Do the rescaling specified for this year by the specified factor
-        self.module._daily_capabilities *= config['dynamic_HR_scaling_factor']
+        self.module._daily_fungible_capabilities *= config['dynamic_HR_scaling_factor']
+        self.module._clinic_capabilities *= config['dynamic_HR_scaling_factor']
 
         # ... If requested, also do the scaling for the population growth that has occurred since the last year
         if config['scale_HR_by_popsize']:
-            self.module._daily_capabilities *= this_year_pop_size / self.last_year_pop_size
+            self.module._daily_fungible_capabilities *= this_year_pop_size / self.last_year_pop_size
+            self.module._clinic_capabilities *= this_year_pop_size / self.last_year_pop_size
 
         # Save current population size as that for 'last year'.
         self.last_year_pop_size = this_year_pop_size

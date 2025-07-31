@@ -2165,7 +2165,7 @@ def test_mode_2_clinics(seed, tmpdir):
 
     tot_population = 100
     sim = create_simulation(tmpdir, tot_population)
-
+    breakpoint()
     # Test that capabilities are split according the proportion.
     ## 50% of capabilities are fungible and 50% non-fungible.
     module_cols = sim.modules['HealthSystem'].parameters['Clinics_Capabilities'].columns.difference(['Facility_ID', 'Officer_Type_Code','Fungible'])
