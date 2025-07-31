@@ -2289,40 +2289,14 @@ def test_mode_2_clinics(seed, tmpdir):
     assert Nevents.loc[('DummyModuleNonFungible', False)] == tot_population // 2, "No additional NonFungible events ran"
     assert Nevents.loc[('Fungible', True)] == tot_population // 2, "Scheduled fungible events ran"
 
-    breakpoint()
+
     ## Test 4: Queue up fungible/non-fungible/fungible; have non-fungible capabilities run out
     ## and ensure fungible events still run.
-    for i in range(0, tot_population):
-        fungible_hsi = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
-                            person_id=i,
-                            appt_type='MinorSurg',
-                            level='1a')
-
-        nonfungible_hsi = DummyHSIEvent(module=sim.modules['DummyModuleNonFungible'],
-                            person_id=i,
-                            appt_type='MinorSurg',
-                            level='1a')
-        if 0 <= i < tot_population // 4:
-            sim.modules['HealthSystem'].schedule_hsi_event(
-               fungible_hsi,
-               topen=sim.date,
-               tclose=sim.date + pd.DateOffset(days=1),
-               priority=1
-            )
-        elif tot_population // 4 <= i < 3 * (tot_population // 4):
-            sim.modules['HealthSystem'].schedule_hsi_event(
-                nonfungible_hsi,
-                topen=sim.date,
-                tclose=sim.date + pd.DateOffset(days=1),
-                priority=1
-            )
-        elif 3 * tot_population // 4 <= i < tot_population:
-            sim.modules['HealthSystem'].schedule_hsi_event(
-               fungible_hsi,
-               topen=sim.date,
-               tclose=sim.date + pd.DateOffset(days=1),
-               priority=1
-            )
+    sim = create_simulation(tmpdir, tot_population)
+    sim = schedule_hsi_events(25, 0, sim)
+    sim = schedule_hsi_events(0, 25, sim)
+    sim = schedule_hsi_events(25, 0, sim)
+    sim = schedule_hsi_events(0, 25, sim)
 
     hsi1 = DummyHSIEvent(module=sim.modules['DummyModuleFungible'],
                          person_id=0,  # Ensures call is on officers in first district
@@ -2338,20 +2312,16 @@ def test_mode_2_clinics(seed, tmpdir):
         sim.modules['HealthSystem']._daily_capabilities[k] = v*(tot_population/2)
         sim.modules['HealthSystem']._clinics_capabilities_per_staff['DummyModuleNonFungible'][k] = 0
 
-    healthsystemscheduler.apply(sim.population)
+    sim.modules['HealthSystem'].healthsystemscheduler.apply(sim.population)
 
     output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
     hs_output = output['tlo.methods.healthsystem']['HSI_Event']
 
-    ## Additional pop/2 events should have run; but log file already has pop_size events, so we check that
-    ## pop_size + <additional expected events>
-    ## Writing it out to be explcit about what is being counted.
-    assert hs_output['did_run'].sum() == tot_population + tot_population // 2 + tot_population // 2 + tot_population // 2, "Half of the events ran"
+    assert hs_output['did_run'].sum() == tot_population // 2, "Unexpected number of events"
     Nevents = hs_output.groupby('Clinic')['did_run'].value_counts()
     ## No more non-fungible events should have run, but all fungible ones should have
-    assert Nevents.loc[('DummyModuleNonFungible', True)] == tot_population // 2 + tot_population // 2, "No additional NonFungible events ran"
-    assert Nevents.loc[('Fungible', True)] == + tot_population // 2 + tot_population // 2 + tot_population // 2, "Scheduled fungible events ran"
-
+    assert Nevents.loc[('DummyModuleNonFungible', False)] == tot_population // 2, "No additional NonFungible events ran"
+    assert Nevents.loc[('Fungible', True)] == tot_population // 2, "Scheduled fungible events ran"
 
 
 @pytest.mark.slow
