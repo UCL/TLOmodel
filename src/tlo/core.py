@@ -332,7 +332,7 @@ class Module:
 
         resource.set_index('parameter_name', inplace=True)
         skipped_data_types = ('DATA_FRAME', 'SERIES')
-        acceptable_labels = ['unassigned', 'undetermined', 'universal', 'local', 'scenario']
+        acceptable_labels = ['unassigned', 'undetermined', 'universal', 'local', 'scenario','design feature']
         param_defaults = {'param_label': 'unassigned', 'prior_min': None, 'prior_max': None }
 
         for _col in param_defaults.keys():
