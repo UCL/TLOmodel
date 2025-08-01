@@ -46,21 +46,20 @@ def check_dtypes(simulation):
 def register_all_modules(seed):
     """Register all modules that are required for ANC to run"""
 
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 healthsystem.HealthSystem(service_availability=['*'],
                                            cons_availability='all'),  # went set disable=true, cant check HSI queue,
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 symptommanager.SymptomManager(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
 
                  hiv.DummyHivModule())
 
@@ -120,26 +119,25 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     """
 
     # Register the modules called within ANC and run the simulation for one day
-    sim = Simulation(start_date=start_date, seed=seed)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
+    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim.register(demography.Demography(),
+                 contraception.Contraception(),
+                 enhanced_lifestyle.Lifestyle(),
+                 healthburden.HealthBurden(),
+                 healthsystem.HealthSystem(service_availability=['*'],
                                            cons_availability='all'),  # went set disable=true, cant check HSI queue,
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
-                 malaria.Malaria(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath))
+                 newborn_outcomes.NewbornOutcomes(),
+                 pregnancy_supervisor.PregnancySupervisor(),
+                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
+                 symptommanager.SymptomManager(),
+                 labour.Labour(),
+                 postnatal_supervisor.PostnatalSupervisor(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 depression.Depression(),
+                 malaria.Malaria(),
+                 epi.Epi(),
+                 tb.Tb(),
+                 hiv.Hiv())
 
     sim.make_initial_population(n=100)
 
@@ -593,7 +591,7 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # and override quality parameters
     lparams = sim.modules['Labour'].current_parameters
     lparams['prob_hcw_avail_blood_tran'] = 1.0
-    lparams['mean_hcw_competence_hp'] = [1.0, 1.0]
+    lparams['mean_hcw_competence_hp'] = 1.0
 
     # Set anaemia status
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'severe'
@@ -655,8 +653,8 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = [1, 1]
-    params['mean_hcw_competence_hp'] = [1, 1]
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
     params['prob_hcw_avail_anticonvulsant'] = 1
 
     # set key pregnancy characteristics
@@ -791,8 +789,8 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = [1, 1]
-    params['mean_hcw_competence_hp'] = [1, 1]
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
     params['prob_hcw_avail_iv_abx'] = 1
 
     # set key pregnancy characteristics
@@ -933,8 +931,8 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = [1, 1]
-    params['mean_hcw_competence_hp'] = [1, 1]
+    params['mean_hcw_competence_hc'] = 1
+    params['mean_hcw_competence_hp'] = 1
     params['prob_hcw_avail_retained_prod'] = 1
 
     # set complications
@@ -1000,7 +998,11 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 8
 
     # set prob care seeking to 1
-    sim.modules['PregnancySupervisor'].current_parameters['prob_care_seeking_ectopic_pre_rupture'] = 1
+    params = sim.modules['PregnancySupervisor'].current_parameters
+    l_params = sim.modules['Labour'].current_parameters
+    params['prob_care_seeking_ectopic_pre_rupture'] = 1
+    l_params['prob_hcw_avail_surg'] = 1
+    l_params['mean_hcw_competence_hp'] = 1
 
     # define and run ectopic event
     ectopic_event = pregnancy_supervisor.EctopicPregnancyEvent(individual_id=mother_id,
@@ -1022,6 +1024,13 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy in hsi_list
 
     # Define and run treatment events
+    updated_cons = \
+        {k: 1.0 for (k, v) in
+         sim.modules['CareOfWomenDuringPregnancy'].item_codes_preg_consumables['ectopic_pregnancy_core'].items()}
+
+    sim.modules['HealthSystem'].override_availability_of_consumables(updated_cons)
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
+
     ectopic_treatment = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     ectopic_treatment.apply(person_id=updated_mother_id, squeeze_factor=0.0)

@@ -122,6 +122,11 @@ markers = ["group2", "slow"]
 [tool.ruff]
 target-version = "py311"
 line-length = 120
+exclude = ['src/tlo/_version.py']
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+per-file-ignores = {"src/scripts/**" = ["E501", "W"]}
 
 [tool.setuptools.packages.find]
 where = ["src"]

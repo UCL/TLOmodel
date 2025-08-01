@@ -15,8 +15,7 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 
-import tlo
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
 )
@@ -192,6 +191,14 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
+        'cons_override_treatment_ids': Parameter(
+            Types.LIST,
+            "Consumable availability within any treatment ids listed in this parameter will be set at to a "
+            "given probabilty stored in override_treatment_ids_avail. By default this list is empty"),
+        'cons_override_treatment_ids_prob_avail': Parameter(
+            Types.REAL,
+            "Probability that consumables for treatment ids listed in cons_override_treatment_ids will be "
+            "available"),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -348,7 +355,6 @@ class HealthSystem(Module):
     def __init__(
         self,
         name: Optional[str] = None,
-        resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
@@ -367,7 +373,6 @@ class HealthSystem(Module):
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
-        :param resourcefilepath: Path to directory containing resource files.
         :param service_availability: A list of treatment IDs to allow.
         :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 0: no constraints,
@@ -410,7 +415,6 @@ class HealthSystem(Module):
         """
 
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
 
         assert isinstance(disable, bool)
         assert isinstance(disable_and_reject_all, bool)
@@ -539,9 +543,9 @@ class HealthSystem(Module):
             )
         self.include_clinics = include_clinics
 
-    def read_parameters(self, data_folder):
+    def read_parameters(self, resourcefilepath: Optional[Path] = None):
 
-        path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
+        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
@@ -708,7 +712,9 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability()
+            availability=self.get_cons_availability(),
+            treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
+            treatment_ids_overridden_avail=self.parameters['cons_override_treatment_ids_prob_avail'],
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']
@@ -988,6 +994,7 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
+
         self._daily_fungible_capabilities, self._daily_fungible_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
         # Also, store the set of officers with non-zero daily availability
@@ -1049,11 +1056,12 @@ class HealthSystem(Module):
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to:
-        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
-        is available.
+        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no
+        capacity is available.
         2. Give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
         (This is so that its easier to track where demands are being placed where there is no capacity)
-        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent of assumed efficiency.
+        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent
+        of assumed efficiency.
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
@@ -1064,7 +1072,6 @@ class HealthSystem(Module):
 
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
-
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
@@ -1228,10 +1235,12 @@ class HealthSystem(Module):
             how='left'
         )
 
+        availability_columns = list(filter(lambda x: x.startswith('available_prop'), dfx.columns))
+
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1260,7 +1269,9 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(df_original == df_updated).all(axis=1),
+                ~(
+                    df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated
+                ).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
@@ -1543,7 +1554,7 @@ class HealthSystem(Module):
         assert hsi_event.TREATMENT_ID != ''
 
         # Check that the target of the HSI is not the entire population
-        assert not isinstance(hsi_event.target, tlo.population.Population)
+        assert not isinstance(hsi_event.target, Population)
 
         # This is an individual-scoped HSI event.
         # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
@@ -1829,7 +1840,9 @@ class HealthSystem(Module):
         # If the current store is too small, replace it
         if len(footprints_per_event) > len(self._get_squeeze_factors_store):
             # The new array size is a multiple of `grow`
-            new_size = math.ceil(len(footprints_per_event) / self._get_squeeze_factors_store_grow) * self._get_squeeze_factors_store_grow
+            new_size = math.ceil(
+                len(footprints_per_event) / self._get_squeeze_factors_store_grow
+            ) * self._get_squeeze_factors_store_grow
             self._get_squeeze_factors_store = np.zeros(new_size)
 
         for i, footprint in enumerate(footprints_per_event):
@@ -2077,6 +2090,26 @@ class HealthSystem(Module):
         :return: None
         """
         self.consumables.override_availability(item_codes)
+
+    def override_cons_availability_for_treatment_ids(self,
+                                                     treatment_ids: list = None,
+                                                     prob_available: float = None) -> None:
+        """
+        This function can be called by any module to update the treatment ids for which consumable availability should
+        be overridden and to provide a probability of availability.
+
+        :param treatment_ids: The treatment ids which should have availability overridden (list)
+        :param prob_available: The probability of availability in those treatment_ids (float)
+        :return: None
+        """
+
+        # Update internal cons function to update the cons 'owned' lists in which this information is stored
+        self.consumables.treatment_ids_overridden = treatment_ids if treatment_ids is not None else []
+
+        if (treatment_ids is not None) and (len(treatment_ids) > 0):
+            assert prob_available is not None, "If treatment_ids is provided, prob_available must be provided"
+
+        self.consumables.treatment_ids_overridden_avail = prob_available if prob_available is not None else 0.0
 
     def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(
@@ -3120,7 +3153,14 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 # If it's different
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
-                    event = HSIEventQueueItem(enforced_priority, event.topen, event.rand_queue_counter, event.queue_counter, event.tclose, event.hsi_event)
+                    event = HSIEventQueueItem(
+                        enforced_priority,
+                        event.topen,
+                        event.rand_queue_counter,
+                        event.queue_counter,
+                        event.tclose,
+                        event.hsi_event
+                    )
 
                 # Save it
                 updated_events[offset] = event
