@@ -1,14 +1,12 @@
 """
 Health Seeking Behaviour Module
 This module determines if care is sought once a symptom is developed.
-
 The write-up of these estimates is: Health-seeking behaviour estimates for adults and children.docx
-
 """
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import pandas as pd
@@ -23,32 +21,23 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstAppt,
     HSI_GenericNonEmergencyFirstAppt,
 )
-
 if TYPE_CHECKING:
     from tlo.methods.hsi_generic_first_appts import HSIEventScheduler
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
-
 HIGH_ODDS_RATIO = 1e5
-
-
 class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
     """
     This modules determines if the onset of symptoms will lead to that person presenting at the health
     facility for a HSI_GenericFirstAppointment.
-
     An equation gives the probability of seeking care in response to the "average" symptom. This is modified according
     to if the symptom is associated with a particular effect.
     """
-
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
     ADDITIONAL_DEPENDENCIES = {'Lifestyle'}
-
     # Declare Metadata
     METADATA = {Metadata.USES_HEALTHSYSTEM}
-
     # No parameters to declare
     PARAMETERS = {
         'force_any_symptom_to_lead_to_healthcareseeking': Parameter(
@@ -98,20 +87,19 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                                                                   'generic HSI. Actual delay is sample between 0 and '
                                                                   'this value.')
     }
-
     # No properties to declare
     PROPERTIES = {}
 
-    def __init__(self, name=None, force_any_symptom_to_lead_to_healthcareseeking=None):
+    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=None):
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
         self.odds_ratio_health_seeking_in_children = dict()
         self.odds_ratio_health_seeking_in_adults = dict()
         self.prob_seeks_emergency_appt_in_children = dict()
         self.prob_seeks_emergency_appt_in_adults = dict()
-
         self.hsb_linear_models = dict()
         self.emergency_appt_linear_models = dict()
-
         # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
         # for anyone with newly onset symptoms (excepting symptoms explicitly declared to have no healthcareseeking
         # behaviour) and the care is sought on the same day.
@@ -120,35 +108,30 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
             assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
         self.arg_force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         """Read in ResourceFile"""
         # Load parameters from resource file:
-        wb = pd.read_csv(resourcefilepath / 'ResourceFile_HealthSeekingBehaviour.csv')
+        wb = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
         wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'] = \
             wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'].apply(pd.eval)
         # <-- Needed to prevent the contents being stored as strings
         self.load_parameters_from_dataframe(wb)
-
         # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
         # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
         assert isinstance(self.parameters['force_any_symptom_to_lead_to_healthcareseeking'], bool)
-
     def initialise_population(self, population):
         """Nothing to initialise in the population
         """
         pass
-
     def initialise_simulation(self, sim):
         """
         * define the linear models that govern healthcare seeking
         * set the first occurrence of the repeating HealthSeekingBehaviourPoll
         * assemble the health-care seeking information from the registered symptoms
         """
-
         # Schedule the HealthSeekingBehaviourPoll
         self.theHealthSeekingBehaviourPoll = HealthSeekingBehaviourPoll(self)
         sim.schedule_event(self.theHealthSeekingBehaviourPoll, sim.date)
-
         # Assemble the health-care seeking information from the registered symptoms
         for symptom in self.sim.modules['SymptomManager'].all_registered_symptoms:
             # Children:
@@ -159,7 +142,6 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                 self.prob_seeks_emergency_appt_in_children[symptom.name] = (
                     symptom.prob_seeks_emergency_appt_in_children
                 )
-
             # Adults:
             if not symptom.no_healthcareseeking_in_adults:
                 self.odds_ratio_health_seeking_in_adults[symptom.name] = (
@@ -168,30 +150,24 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                 self.prob_seeks_emergency_appt_in_adults[symptom.name] = (
                     symptom.prob_seeks_emergency_appt_in_adults
                 )
-
         # Define the linear models that govern healthcare seeking
         self.define_linear_models()
-
         # Check that the parameters for 'prob_non_emergency_care_seeking_by_level' make sense
         probs = self.parameters['prob_non_emergency_care_seeking_by_level']
         assert all(np.isfinite(probs)) and np.isclose(sum(probs), 1.0)
-
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
         """
         pass
-
     def define_linear_models(self):
         """Define linear models for health seeking behaviour for children and adults"""
         p = self.parameters
-
         # Use a custom function to represent the linear model for healthcare seeking
         def predict_healthcareseeking(
             self, df, rng=None, subgroup=None, care_seeking_odds_ratios=None
         ):
             if subgroup is None or care_seeking_odds_ratios is None:
                 raise ValueError("subgroup and care_seeking_odds_ratios must both be specified")
-
             result = pd.Series(data=p[f'baseline_odds_of_healthcareseeking_{subgroup}'], index=df.index)
             # Predict behaviour due to the 'average symptom'
             if subgroup == 'children':
@@ -214,13 +190,11 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                 return outcome
             else:
                 return result
-
         for subgroup in (
             'children',
             'adults'
         ):
             self.hsb_linear_models[subgroup] = LinearModel.custom(predict_function=predict_healthcareseeking)
-
         # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment:
         def custom_predict(self, df, rng=None, **externals) -> pd.Series:
             """Custom predict function for LinearModel. This finds the probability that a person seeks emergency care
@@ -233,7 +207,6 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                 df.index
             )
             return prob > rng.random_sample(len(prob))
-
         for subgroup, prob_emergency_appt in zip(
             (
                 'children',
@@ -246,7 +219,6 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
         ):
             self.emergency_appt_linear_models[subgroup] = LinearModel.custom(predict_function=custom_predict,
                                                                              prob_emergency_appt=prob_emergency_appt)
-
     @property
     def force_any_symptom_to_lead_to_healthcareseeking(self):
         """Returns the parameter value stored for `force_any_symptom_to_lead_to_healthcareseeking` unless this has
@@ -255,7 +227,6 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
             return self.parameters['force_any_symptom_to_lead_to_healthcareseeking']
         else:
             return self.arg_force_any_symptom_to_lead_to_healthcareseeking
-
     def do_at_generic_first_appt_emergency(
         self,
         person_id: int,
@@ -269,35 +240,28 @@ class HealthSeekingBehaviour(Module, GenericFirstAppointmentsMixin):
                 person_id=person_id,
             )
             schedule_hsi_event(event, priority=0, topen=self.sim.date)
-
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
 # ---------------------------------------------------------------------------------------------------------
-
-
 class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
     """This event occurs every day and determines if persons with newly onset symptoms will seek care.
     """
-
     def __init__(self, module):
         """Initialise the HealthSeekingBehaviourPoll
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(days=1), priority=Priority.LAST_HALF_OF_DAY)
         assert isinstance(module, HealthSeekingBehaviour)
-
     @staticmethod
     def _has_any_symptoms(persons, symptoms):
         """Which rows in `persons` have non-zero values for columns in `symptoms`."""
         if len(symptoms) == 0:
             raise ValueError('At least one symptom must be specified')
         return (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
-
     def apply(self, population):
         """Determine if persons with newly onset acute generic symptoms will seek care. This event runs second-to-last
         every day (i.e., just before the `HealthSystemScheduler`) in order that symptoms arising this day can lead to
         FirstAttendance on the same day.
-
         :param population: the current population
         """
         # Define some shorter aliases
@@ -307,23 +271,18 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
         routine_hsi_event_class = HSI_GenericNonEmergencyFirstAppt
         emergency_hsi_event_class = HSI_GenericEmergencyFirstAppt
-
         # Get IDs of alive persons with new symptoms
         person_ids_with_newly_onset_symptoms = sorted(
             symptom_manager.get_persons_with_newly_onset_symptoms())
         newly_symptomatic_persons = population.props.loc[person_ids_with_newly_onset_symptoms]
         alive_newly_symptomatic_persons = newly_symptomatic_persons[newly_symptomatic_persons.is_alive]
-
         # Clear the list of persons with newly onset symptoms
         symptom_manager.reset_persons_with_newly_onset_symptoms()
-
         # Split alive newly symptomatic persons into child and adult subgroups
         are_under_15 = alive_newly_symptomatic_persons.age_years < 15
         alive_newly_symptomatic_children = alive_newly_symptomatic_persons[are_under_15]
         alive_newly_symptomatic_adults = alive_newly_symptomatic_persons[~are_under_15]
-
         idx_where_true = lambda series: series.loc[series].index  # noqa: E731
-
         # Separately schedule HSI events for child and adult subgroups
         for subgroup, subgroup_name, care_seeking_odds_ratios, hsb_model, emergency_appt_model in zip(
             (
@@ -363,18 +322,14 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                         module.rng,
                         subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
                 )
-
                 # Force the addition to this set those who are already in-patient. (In-patients will always get the
                 # notional "FirstAppointment" for a new symptom.)
                 will_seek_care = will_seek_care.union(idx_where_true(subgroup.hs_is_inpatient))
-
             # Determine if the care sought will be emergency care (for those that seek care):
             will_seek_emergency_care = idx_where_true(
                 emergency_appt_model.predict(subgroup.loc[will_seek_care], module.rng, squeeze_single_row_output=False))
-
             # Determine who will seek non-emergency care (those that did not seek emergency care):
             will_seek_non_emergency_care = will_seek_care.difference(will_seek_emergency_care)
-
             # Schedule Emergency Care for same day
             health_system.schedule_batch_of_individual_hsi_events(
                 hsi_event_class=emergency_hsi_event_class,
@@ -384,7 +339,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 tclose=None,
                 module=module
             )
-
             # Schedule Non-Emergency Care for "soon" (after a random delay), or the same day if using
             # `force_any_symptom_to_lead_to_healthcareseeking`.
             if not module.force_any_symptom_to_lead_to_healthcareseeking:
@@ -397,14 +351,12 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 )
             else:
                 care_seeking_dates = np.full(len(will_seek_non_emergency_care), self.sim.date)
-
             # Determine the level at which care is sought
             fac_levels = ('0', '1a', '1b', '2')
             level_assigned = self.module.rng.choice(
                 fac_levels,
                 p=self.module.parameters['prob_non_emergency_care_seeking_by_level'],
                 size=len(will_seek_non_emergency_care))
-
             for level in fac_levels:
                 mask_to_this_level = np.where(level_assigned == level)
                 health_system.schedule_batch_of_individual_hsi_events(
@@ -414,5 +366,4 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                     priority=0,
                     topen=map(Date, care_seeking_dates[mask_to_this_level]),
                     tclose=None,
-                    module=module
-                )
+                    module=module)

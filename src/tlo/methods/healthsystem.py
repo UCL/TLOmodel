@@ -14,7 +14,8 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_series_equal
 
-from tlo import Date, DateOffset, Module, Parameter, Population, Property, Types, logging
+import tlo
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
 )
@@ -190,14 +191,6 @@ class HealthSystem(Module):
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."
             "Note that other options are also available: see the `Consumables` class."),
-        'cons_override_treatment_ids': Parameter(
-            Types.LIST,
-            "Consumable availability within any treatment ids listed in this parameter will be set at to a "
-            "given probabilty stored in override_treatment_ids_avail. By default this list is empty"),
-        'cons_override_treatment_ids_prob_avail': Parameter(
-            Types.REAL,
-            "Probability that consumables for treatment ids listed in cons_override_treatment_ids will be "
-            "available"),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -339,6 +332,26 @@ class HealthSystem(Module):
         'use_funded_or_actual_staffing_postSwitch': Parameter(
             Types.STRING, 'Staffing availability after switch in `year_use_funded_or_actual_staffing_switch`. '
                           'Acceptable values are the same as those for Parameter `use_funded_or_actual_staffing`.'),
+
+        # Climate disruptions
+        'projected_precip_disruptions': Parameter(Types.REAL, 'Probabilities of precipitation-mediated '
+                                                              'disruptions to services by month, year, and clinic.'),
+        'climate_ssp': Parameter(Types.STRING, 'Which future shared socioeconomic pathway (determines degree of '
+                                               'warming) is under consideration.'
+                                               'Options are ssp126, ssp245, and ssp585, in terms of increasing '
+                                               'severity.'),
+
+        'climate_model_ensemble_model': Parameter(Types.STRING,
+                                                  'Which model from the model ensemble for each climate ssp is under consideration.'
+                                                  'Options are lowest, mean, and highest, based on total precipitation between 2025 and 2070.'),
+
+        'delay_in_seeking_care_weather': Parameter(Types.INT,
+                                                   'If faced with a climate disruption, and it is determined the individual will '
+                                                   'reseek healthcare, the number of weeks of delay in seeking healthcare again.'),
+
+        'services_affected_precip': Parameter(Types.STRING,
+                                              'Which modelled services can be affected by weather. Options are all, none'),
+
     }
 
     PROPERTIES = {
@@ -350,6 +363,7 @@ class HealthSystem(Module):
     def __init__(
         self,
         name: Optional[str] = None,
+        resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
@@ -364,9 +378,16 @@ class HealthSystem(Module):
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
+        projected_precip_disruptions: Optional[List[str]] = None,
+        climate_ssp: Optional[str] = 'ssp245',
+        climate_model_ensemble_model: Optional[str] = 'mean',
+        services_affected_precip: Optional[str] = 'none',
+        response_to_disruption: Optional[str] = 'delay',
+        delay_in_seeking_care_weather: Optional[int] = 4
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
+        :param resourcefilepath: Path to directory containing resource files.
         :param service_availability: A list of treatment IDs to allow.
         :param mode_appt_constraints: Integer code in ``{0, 1, 2}`` determining mode of
             constraints with regards to officer numbers and time - 0: no constraints,
@@ -404,10 +425,16 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
+        :param climate_ssp: Which future shared socioeconomic pathway (determines degree of warming) is under consideration.
+                Options are ssp126, ssp245, and ssp585, in terms of increasing severity.
+        :param climate_model_ensemble_model: Which model from the model ensemble for each climate ssp is under consideratin.
+                Options are 'lowest', 'mean', and 'highest', based on total precipitation between 2025 and 2070.
+        :param services_affected_precip: Which modelled services can be affected by weather. Options are 'all', 'none'.
+        :param response_to_disruption: How an appointment that is determined to be affected by weather will be handled. Options are 'delay', 'cancel'.
+        :param delay_in_seeking_care_weather: The number of weeks delay in reseeking healthcare after an appointmnet has been delayed by weather. Unit is week.
         """
-
         super().__init__(name)
-
+        self.resourcefilepath = resourcefilepath
         assert isinstance(disable, bool)
         assert isinstance(disable_and_reject_all, bool)
         assert not (disable and disable_and_reject_all), (
@@ -476,7 +503,6 @@ class HealthSystem(Module):
 
         assert beds_availability in (None, 'default', 'all', 'none')
         self.arg_beds_availability = beds_availability
-
         assert equip_availability in (None, 'default', 'all', 'none')
         self.arg_equip_availability = equip_availability
 
@@ -532,9 +558,8 @@ class HealthSystem(Module):
                 "'year', 'simulation' or None."
             )
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
-
-        path_to_resourcefiles_for_healthsystem = resourcefilepath / 'healthsystem'
+    def read_parameters(self, data_folder):
+        path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
 
         # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
@@ -659,6 +684,7 @@ class HealthSystem(Module):
         # Process health system organisation files (Facilities, Appointment Types, Time Taken etc.)
         self.process_healthsystem_organisation_files()
 
+
         # Set value for `use_funded_or_actual_staffing` and process Human Resources Files
         # (Initially set value should be equal to what is specified by the parameter, but overwritten with what was
         # provided in argument if an argument was specified -- provided for backward compatibility/debugging.)
@@ -677,9 +703,7 @@ class HealthSystem(Module):
                 self.parameters['availability_estimates']),
             item_code_designations=self.parameters['consumables_item_designations'],
             rng=rng_for_consumables,
-            availability=self.get_cons_availability(),
-            treatment_ids_overridden=self.parameters['cons_override_treatment_ids'],
-            treatment_ids_overridden_avail=self.parameters['cons_override_treatment_ids_prob_avail'],
+            availability=self.get_cons_availability()
         )
         # We don't need to hold onto this large dataframe
         del self.parameters['availability_estimates']
@@ -702,6 +726,12 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
+        # Read in climate disruption files
+        # Parameters for climate-mediated disruptions
+        path_to_resourcefiles_for_climate = Path(self.resourcefilepath) / 'climate_change_impacts'
+        self.parameters['projected_precip_disruptions'] = pd.read_csv(
+            path_to_resourcefiles_for_climate / f'ResourceFile_Precipitation_Disruptions_{self.parameters["climate_ssp"]}_{self.parameters["climate_model_ensemble_model"]}.csv')
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -957,9 +987,7 @@ class HealthSystem(Module):
         This is called when the value for `use_funded_or_actual_staffing` is set - at the beginning of the simulation
          and when the assumption when the underlying assumption for `use_funded_or_actual_staffing` is updated"""
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities, self._daily_capabilities_per_staff = (
-            self.format_daily_capabilities(use_funded_or_actual_staffing)
-        )
+        self._daily_capabilities, self._daily_capabilities_per_staff = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
@@ -969,12 +997,11 @@ class HealthSystem(Module):
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> tuple[pd.Series,pd.Series]:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to:
-        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no
-        capacity is available.
+        1. include every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
+        is available.
         2. Give the dataframe an index that is useful for merging on (based on Facility_ID and Officer Type)
         (This is so that its easier to track where demands are being placed where there is no capacity)
-        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent
-        of assumed efficiency.
+        3. Compute daily capabilities per staff. This will be used to compute staff count in a way that is independent of assumed efficiency.
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
@@ -985,6 +1012,7 @@ class HealthSystem(Module):
 
         # Create new column where capabilities per staff are computed
         capabilities['Mins_Per_Day_Per_Staff'] = capabilities['Total_Mins_Per_Day']/capabilities['Staff_Count']
+
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
@@ -1096,12 +1124,10 @@ class HealthSystem(Module):
             how='left'
         )
 
-        availability_columns = list(filter(lambda x: x.startswith('available_prop'), dfx.columns))
-
         # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
             dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
-               .groupby(by=['District', 'month', 'item_code'])[availability_columns] \
+               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
                .mean() \
                .reset_index()\
                .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
@@ -1130,9 +1156,7 @@ class HealthSystem(Module):
         # check values the same for everything apart from the facility level '2' facilities
         facilities_with_any_differences = set(
             df_updated.loc[
-                ~(
-                    df_original.sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True) == df_updated
-                ).all(axis=1),
+                ~(df_original == df_updated).all(axis=1),
                 'Facility_ID']
         )
         level2_facilities = set(
@@ -1414,7 +1438,7 @@ class HealthSystem(Module):
         assert hsi_event.TREATMENT_ID != ''
 
         # Check that the target of the HSI is not the entire population
-        assert not isinstance(hsi_event.target, Population)
+        assert not isinstance(hsi_event.target, tlo.population.Population)
 
         # This is an individual-scoped HSI event.
         # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
@@ -1700,9 +1724,7 @@ class HealthSystem(Module):
         # If the current store is too small, replace it
         if len(footprints_per_event) > len(self._get_squeeze_factors_store):
             # The new array size is a multiple of `grow`
-            new_size = math.ceil(
-                len(footprints_per_event) / self._get_squeeze_factors_store_grow
-            ) * self._get_squeeze_factors_store_grow
+            new_size = math.ceil(len(footprints_per_event) / self._get_squeeze_factors_store_grow) * self._get_squeeze_factors_store_grow
             self._get_squeeze_factors_store = np.zeros(new_size)
 
         for i, footprint in enumerate(footprints_per_event):
@@ -1943,26 +1965,6 @@ class HealthSystem(Module):
         :return: None
         """
         self.consumables.override_availability(item_codes)
-
-    def override_cons_availability_for_treatment_ids(self,
-                                                     treatment_ids: list = None,
-                                                     prob_available: float = None) -> None:
-        """
-        This function can be called by any module to update the treatment ids for which consumable availability should
-        be overridden and to provide a probability of availability.
-
-        :param treatment_ids: The treatment ids which should have availability overridden (list)
-        :param prob_available: The probability of availability in those treatment_ids (float)
-        :return: None
-        """
-
-        # Update internal cons function to update the cons 'owned' lists in which this information is stored
-        self.consumables.treatment_ids_overridden = treatment_ids if treatment_ids is not None else []
-
-        if (treatment_ids is not None) and (len(treatment_ids) > 0):
-            assert prob_available is not None, "If treatment_ids is provided, prob_available must be provided"
-
-        self.consumables.treatment_ids_overridden_avail = prob_available if prob_available is not None else 0.0
 
     def _write_hsi_event_counts_to_log_and_reset(self):
         logger_summary.info(
@@ -2279,6 +2281,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_0_and_1(self, hold_over: List[HSIEventQueueItem]) -> None:
         while True:
+            year = self.sim.date.year
+            month = self.sim.date.month
             # Get the events that are due today:
             list_of_individual_hsi_event_tuples_due_today = self._get_events_due_today()
 
@@ -2288,16 +2292,80 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # For each individual level event, check whether the equipment it has already declared is available. If it
             # is not, then call the HSI's never_run function, and do not take it forward for running; if it is then
             # add it to the list of events to run.
-            list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment = list()
-            for item in list_of_individual_hsi_event_tuples_due_today:
-                if not item.hsi_event.is_all_declared_equipment_available:
-                    self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
-                else:
-                    list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment.append(item)
 
-            # Try to run the list of individual-level events that have their essential equipment
+            list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions = []
+
+            for item in list_of_individual_hsi_event_tuples_due_today:
+                climate_disrupted = False
+
+                # First, check for climate disruption
+                if year > 2025 and self.module.parameters['services_affected_precip'] != 'none' and self.module.parameters['services_affected_precip'] is not None:
+                    assert self.module.parameters['services_affected_precip'] == 'all'
+                    fac_level = item.hsi_event.facility_info.level
+                    facility_used = self.sim.population.props.at[item.hsi_event.target, f'level_{fac_level}']
+                    if facility_used in self.module.parameters['projected_precip_disruptions']['RealFacility_ID'].values:
+                        prob_disruption = self.module.parameters['projected_precip_disruptions'].loc[
+                            (self.module.parameters['projected_precip_disruptions']['RealFacility_ID'] == facility_used) &
+                            (self.module.parameters['projected_precip_disruptions']['year'] == year) &
+                            (self.module.parameters['projected_precip_disruptions']['month'] == month) &
+                            (self.module.parameters['projected_precip_disruptions']['service'] == self.module.parameters['services_affected_precip']),
+                            'disruption'
+                        ]
+                        prob_disruption = pd.DataFrame(prob_disruption)
+                        prob_disruption = float(prob_disruption.iloc[0])
+                        if np.random.binomial(1, prob_disruption) == 1:
+                            climate_disrupted = True
+                            response_to_disruption = 'delay'
+                            if response_to_disruption == 'delay':
+                                if self.sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking:
+                                    self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
+                                        priority=item.priority,
+                                        topen=self.sim.date + DateOffset(weeks=self.module.parameters['delay_in_seeking_care_weather']),
+                                        tclose=self.sim.date + DateOffset(weeks=self.module.parameters['delay_in_seeking_care_weather']) + DateOffset((item.topen - item.tclose).days),
+                                        hsi_event=item.hsi_event
+                                    )
+                                else:
+                                    patient =  self.sim.population.props.loc[[item.hsi_event.target]]
+                                    if patient.age_years.iloc[0] < 15:
+                                        subgroup_name = 'children'
+                                        care_seeking_odds_ratios = self.sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_children
+                                        hsb_model = self.sim.modules['HealthSeekingBehaviour'].hsb_linear_models['children']
+                                    else:
+                                        subgroup_name = 'adults'
+                                        care_seeking_odds_ratios = self.sim.modules['HealthSeekingBehaviour'].odds_ratio_health_seeking_in_adults
+                                        hsb_model = self.sim.modules['HealthSeekingBehaviour'].hsb_linear_models['adults']
+
+                                    will_seek_care = hsb_model.predict(
+                                        df = patient,
+                                        subgroup=subgroup_name,
+                                        care_seeking_odds_ratios=care_seeking_odds_ratios
+                                    )
+                                    if will_seek_care.iloc[0]:
+                                        self.sim.modules['HealthSystem']._add_hsi_event_queue_item_to_hsi_event_queue(
+                                            priority=item.priority,
+                                            topen=self.sim.date + DateOffset(month=1),
+                                            tclose=self.sim.date + DateOffset(month=1) + DateOffset((item.topen - item.tclose).days),
+                                            hsi_event=item.hsi_event
+                                        )
+                                        print("care sought")
+                                    else:
+                                        response_to_disruption = 'cancel'
+                            if response_to_disruption == 'cancel':
+                                self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+
+                # If not climate disrupted, check equipment
+                if not climate_disrupted:
+                    equipment_available = True
+                    if not item.hsi_event.is_all_declared_equipment_available:
+                        self.module.call_and_record_never_ran_hsi_event(hsi_event=item.hsi_event, priority=item.priority)
+                        equipment_available = False
+
+                    if equipment_available:
+                        list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions.append(item)
+
+            # Run events that meet all conditions
             _to_be_held_over = self.module.run_individual_level_events_in_mode_0_or_1(
-                list_of_individual_hsi_event_tuples_due_today_that_have_essential_equipment,
+                list_of_individual_hsi_event_tuples_due_today_that_meet_all_conditions,
             )
             hold_over.extend(_to_be_held_over)
 
@@ -2855,6 +2923,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         if 'use_funded_or_actual_staffing' in self._parameters:
             self.module.use_funded_or_actual_staffing = self._parameters['use_funded_or_actual_staffing']
 
+
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
     def __init__(self, module):
@@ -2978,14 +3047,7 @@ class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
                 # If it's different
                 if event.priority != enforced_priority:
                     # Wrap it up with the new priority - everything else is the same
-                    event = HSIEventQueueItem(
-                        enforced_priority,
-                        event.topen,
-                        event.rand_queue_counter,
-                        event.queue_counter,
-                        event.tclose,
-                        event.hsi_event
-                    )
+                    event = HSIEventQueueItem(enforced_priority, event.topen, event.rand_queue_counter, event.queue_counter, event.tclose, event.hsi_event)
 
                 # Save it
                 updated_events[offset] = event

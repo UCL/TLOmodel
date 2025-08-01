@@ -273,16 +273,18 @@ def get_simulation(popsize):
                 'tlo.methods.demography.detail': logging.INFO,
                 'tlo.methods.copd': logging.INFO,
             }
-        }, resourcefilepath=resourcefilepath
+        },
     )
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=False, cons_availability='all'),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 copd.Copd(),
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=False,
+                                           cons_availability='all'),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 copd.Copd(resourcefilepath=resourcefilepath),
                  )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)

@@ -241,10 +241,7 @@ def extract_draw_names(results_folder: Path) -> dict[int, str]:
     draws = [f for f in os.scandir(results_folder) if f.is_dir()]
     return {
         int(d.name):
-            load_pickled_dataframes(results_folder,
-                                    d.name,
-                                    0,
-                                    name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
+            load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")["tlo.scenario"]["draw_name"]["draw_name"].values[0]
         for d in draws
     }
 
@@ -391,8 +388,7 @@ def compute_summary_statistics(
 
     if use_standard_error:
         if not central_measure == 'mean':
-            warnings.warn(
-                "When using 'standard-error' the central measure in the summary statistics is always the mean.")
+            warnings.warn("When using 'standard-error' the central measure in the summary statistics is always the mean.")
             central_measure = 'mean'
     elif central_measure is None:
         # If no argument is provided for 'central_measure' (and not using standard-error), default to using 'median'
@@ -895,7 +891,6 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 
     'BladderCancer*': 'orchid',
     'BreastCancer*': 'mediumvioletred',
-    'CervicalCancer*': 'mediumturquoise',
     'OesophagealCancer*': 'deeppink',
     'ProstateCancer*': 'hotpink',
     'OtherAdultCancer*': 'palevioletred',
@@ -958,8 +953,6 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Stroke': 'burlywood',
 
     'Cancer (Bladder)': 'deeppink',
-    'Cancer (Cervix)': 'mediumturquoise',
-
     'Cancer (Breast)': 'darkmagenta',
     'Cancer (Oesophagus)': 'mediumvioletred',
     'Cancer (Other)': 'crimson',
@@ -1214,11 +1207,10 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
     fullmodel."""
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0,
-                     log_config={'filename': 'test_log', 'directory': outputpath}, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': outputpath})
 
     from tlo.methods.fullmodel import fullmodel
-    sim.register(*fullmodel())
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
 
     sim.make_initial_population(n=10_000)
     sim.simulate(end_date=start_date)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 import pandas as pd
 
@@ -85,12 +84,13 @@ class Mockitis(Module, GenericFirstAppointmentsMixin):
             Types.DATE, 'Date an infected individual was cured')
     }
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         """Read in parameters and do the registration of this module and its symptoms"""
 
         p = self.parameters

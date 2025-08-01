@@ -61,21 +61,24 @@ class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
 
 @pytest.fixture
 def sim(seed):
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(disable=True),
-        simplified_births.SimplifiedBirths(),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        healthburden.HealthBurden(),
-        enhanced_lifestyle.Lifestyle(),
-        malaria.Malaria(),
-        tb.Tb(),
-        hiv.Hiv(),
-        epi.Epi(),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            disable=True,
+        ),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
     return sim
 
@@ -133,27 +136,29 @@ def test_remove_malaria_test(seed):
     service_availability = list([" "])  # no treatments available
 
     end_date = Date(2018, 12, 31)
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(service_availability=service_availability,
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=service_availability,
             mode_appt_constraints=0,
             cons_availability='all',
             ignore_priority=True,
             capabilities_coefficient=0.0,
             disable=False,  # disables the health system constraints so all HSI events run
         ),
-        simplified_births.SimplifiedBirths(),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        healthburden.HealthBurden(),
-        enhanced_lifestyle.Lifestyle(),
-        malaria.Malaria(),
-        tb.Tb(),
-        hiv.Hiv(),
-        epi.Epi(),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
     # Run the simulation and flush the logger
     sim.make_initial_population(n=2000)
@@ -287,29 +292,31 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
     def make_blank_simulation():
         popsize = 200  # smallest population size that works
 
-        sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+        sim = Simulation(start_date=start_date, seed=seed)
 
         # Register the appropriate modules
-        sim.register(demography.Demography(),
-                     simplified_births.SimplifiedBirths(),
-                     enhanced_lifestyle.Lifestyle(),
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
                          disable=True,  # disables the health system constraints so all HSI events run
                      ),
-                     malaria.Malaria(),
-                     symptommanager.SymptomManager(),
+                     malaria.Malaria(resourcefilepath=resourcefilepath),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(
+                         resourcefilepath=resourcefilepath,
                          force_any_symptom_to_lead_to_healthcareseeking=True
                          # every symptom leads to health-care seeking
                      ),
-                     healthburden.HealthBurden(),
-                     diarrhoea.Diarrhoea(),
+                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
                      # Supporting modules:
                      diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
-                     tb.Tb(),
-                     hiv.Hiv(),
-                     epi.Epi(),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
                      ),
 
         sim.make_initial_population(n=popsize)
@@ -455,21 +462,25 @@ def get_sim(seed):
     """
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(
-        demography.Demography(),
-        healthsystem.HealthSystem(cons_availability="all", disable=False),
-        simplified_births.SimplifiedBirths(),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        healthburden.HealthBurden(),
-        enhanced_lifestyle.Lifestyle(),
-        malaria.Malaria(),
-        tb.Tb(),
-        hiv.Hiv(),
-        epi.Epi(),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            cons_availability="all",
+            disable=False,
+        ),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
 
     return sim
@@ -506,12 +517,7 @@ def test_individual_testing_and_treatment(sim):
     pollevent.run()
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
-    assert set(sim.modules["SymptomManager"].has_what(person_id=person_id)) == {
-        "fever",
-        "headache",
-        "vomiting",
-        "stomachache",
-    }
+    assert set(sim.modules['SymptomManager'].has_what(person_id=person_id)) == {"fever", "headache", "vomiting", "stomachache"}
 
     # check rdt is scheduled
     date_event, event = [

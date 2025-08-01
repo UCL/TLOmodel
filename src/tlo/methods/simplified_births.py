@@ -5,7 +5,6 @@
 
 import json
 from pathlib import Path
-from typing import List, Optional
 
 import pandas as pd
 
@@ -85,10 +84,9 @@ class SimplifiedBirths(Module):
                                             categories=['none', 'non_exclusive', 'exclusive']),
     }
 
-    def __init__(self, name=None, force_one_birth_for_one_death: bool = False):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        # Whether to use the _really_ simplified mode, whereby number of births is just equal to number of deaths
-        self.force_one_birth_for_one_death = force_one_birth_for_one_death
+        self.resourcefilepath = resourcefilepath
         self.asfr = dict()
 
         # Define defaults for properties:
@@ -104,16 +102,16 @@ class SimplifiedBirths(Module):
             'nb_breastfeeding_status': 'none',
         }
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         """Load parameters for probability of pregnancy/birth and breastfeeding status for newborns"""
 
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(Path(resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         self.parameters['months_between_pregnancy_and_delivery'] = 9
 
         # Breastfeeding status for newborns (importing from the Newborn resourcefile)
-        rf = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_NewbornOutcomes/parameter_values.csv')
+        rf = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes/parameter_values.csv')
         param_as_string = rf.loc[rf.parameter_name == 'prob_breastfeeding_type']['value'].iloc[0]
         parameter = json.loads(param_as_string)[0]
         self.parameters['prob_breastfeeding_type'] = parameter
@@ -164,10 +162,8 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.months_between_polls))
         self.asfr = get_medium_variant_asfr_from_wpp_resourcefile(
             dat=self.module.parameters['age_specific_fertility_rates'], months_exposure=self.months_between_polls)
-        self.date_of_last_poll = self.sim.date
 
     def apply(self, population):
-
         # Set new pregnancies:
         self.set_new_pregnancies()
 
@@ -178,54 +174,26 @@ class SimplifiedBirthsPoll(RegularEvent, PopulationScopeEventMixin):
         self.update_breastfed_status()
 
     def set_new_pregnancies(self):
-        """Making women pregnant."""
-
-        def _make_pregnant(ids: List[int], df: pd.DataFrame, months_between_pregnancy_and_delivery: int) -> None:
-            """Enact the change to make the women pregnant"""
-            # updating properties for women who will get pregnant
-            df.loc[ids, 'is_pregnant'] = True
-            df.loc[ids, 'date_of_last_pregnancy'] = self.sim.date
-            df.loc[ids, 'si_date_of_last_delivery'] = \
-                self.sim.date + pd.DateOffset(months=months_between_pregnancy_and_delivery)
-
-        def _choose_women_to_make_pregnant(one_birth_for_one_death: bool, df: pd.DataFrame) -> List[int]:
-            """Choose women to make pregnant, depending on mode."""
-
-            if one_birth_for_one_death:
-                # Rate of pregnancy matches number of deaths: simple assumption and induces stable population size
-                # Non-pregnant women aged [15, 35) are selected randomly for pregnancy:
-
-                eligible_for_pregnancy = df.loc[
-                    (df.sex == 'F') & df.is_alive & ~df.is_pregnant & df.age_years.between(15, 35, inclusive='left')
-                    ]
-
-                num_of_deaths_since_last_poll = len(
-                    df.loc[df.date_of_death.between(self.date_of_last_poll, self.sim.date, inclusive='left')])
-
-                return self.module.rng.choice(
-                    eligible_for_pregnancy.index, size=num_of_deaths_since_last_poll, replace=False, p=None)
-
-            else:
-                # Rate of pregnancy is based on age-specific fertility rates under
-                # assumption that every pregnancy results in a birth.
-
-                # find probability of becoming pregnant
-                # (using asfr for the year, limiting to alive, non-pregnant females)
-                prob_preg = df.loc[
-                    (df.sex == 'F') & df.is_alive & ~df.is_pregnant
-                    ]['age_range'].map(self.asfr[self.sim.date.year]).fillna(0)
-
-                # determine which woman will get pregnant:
-                return prob_preg.index[
-                    (self.module.rng.random_sample(size=len(prob_preg)) < prob_preg)
-                ]
+        """Making women pregnant. Rate of doing so is based on age-specific fertility rates under assumption that every
+        pregnancy results in a birth."""
 
         df = self.sim.population.props  # get the population dataframe
-        women_to_make_pregnant = _choose_women_to_make_pregnant(self.module.force_one_birth_for_one_death, df)
-        _make_pregnant(ids=women_to_make_pregnant,
-                       df=df,
-                       months_between_pregnancy_and_delivery=self.module.parameters['months_between_pregnancy_and_delivery'])
-        self.date_of_last_poll = self.sim.date
+
+        # find probability of becoming pregnant (using asfr for the year, limiting to alive, non-pregnant females)
+        prob_preg = df.loc[
+            (df.sex == 'F') & df.is_alive & ~df.is_pregnant
+            ]['age_range'].map(self.asfr[self.sim.date.year]).fillna(0)
+
+        # determine which woman will get pregnant
+        pregnant_women_ids = prob_preg.index[
+            (self.module.rng.random_sample(size=len(prob_preg)) < prob_preg)
+        ]
+
+        # updating properties for women who will get pregnant
+        df.loc[pregnant_women_ids, 'is_pregnant'] = True
+        df.loc[pregnant_women_ids, 'date_of_last_pregnancy'] = self.sim.date
+        df.loc[pregnant_women_ids, 'si_date_of_last_delivery'] = \
+            self.sim.date + pd.DateOffset(months=self.module.parameters['months_between_pregnancy_and_delivery'])
 
     def do_deliveries(self):
         """Checks to see if the date-of-delivery for pregnant women has been reached and implement births where

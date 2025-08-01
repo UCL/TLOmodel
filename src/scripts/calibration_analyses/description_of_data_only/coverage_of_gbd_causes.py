@@ -54,46 +54,46 @@ codis = pd.Series(
 # %% Get all modules that have been completed in Master:
 complete = [
     # Core Modules
-    demography.Demography(),
-    enhanced_lifestyle.Lifestyle(),
-    symptommanager.SymptomManager(),
-    healthseekingbehaviour.HealthSeekingBehaviour(),
-    healthburden.HealthBurden(),
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
 
     # Representations of the Healthcare System
-    healthsystem.HealthSystem(),
-    epi.Epi(),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    epi.Epi(resourcefilepath=resourcefilepath),
 
     # - Contraception, Pregnancy and Labour
-    contraception.Contraception(),
-    pregnancy_supervisor.PregnancySupervisor(),
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
-    labour.Labour(),
-    newborn_outcomes.NewbornOutcomes(),
-    postnatal_supervisor.PostnatalSupervisor(),
+    contraception.Contraception(resourcefilepath=resourcefilepath),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    labour.Labour(resourcefilepath=resourcefilepath),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
 
     # - Conditions of Early Childhood
-    diarrhoea.Diarrhoea(),
+    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
     # - Communicable Diseases
-    hiv.Hiv(),
-    malaria.Malaria(),
-    measles.Measles(),
+    hiv.Hiv(resourcefilepath=resourcefilepath),
+    malaria.Malaria(resourcefilepath=resourcefilepath),
+    measles.Measles(resourcefilepath=resourcefilepath),
 
     # - Non-Communicable Conditions
     # -- Cancers
-    bladder_cancer.BladderCancer(),
-    breast_cancer.BreastCancer(),
-    oesophagealcancer.OesophagealCancer(),
-    other_adult_cancers.OtherAdultCancer(),
-    prostate_cancer.ProstateCancer(),
+    bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+    breast_cancer.BreastCancer(resourcefilepath=resourcefilepath),
+    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
+    prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
 
     # -- Caridometabolic Diorders
-    cardio_metabolic_disorders.CardioMetabolicDisorders(),
+    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
 
     # -- Other Non-Communicable Conditions
-    depression.Depression(),
-    epilepsy.Epilepsy()
+    depression.Depression(resourcefilepath=resourcefilepath),
+    epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
 ]
 
 # %% Make Dummy modules for causes of death/disability in forthcoming modules
@@ -306,7 +306,7 @@ dummies = [
 ]
 
 # %% Create simulation, run simulation and get the mappers from the log files:
-sim = Simulation(start_date=Date(2010, 1, 1), resourcefilepath=resourcefilepath)
+sim = Simulation(start_date=Date(2010, 1, 1))
 sim.register(*complete)
 sim.register(*dummies)
 

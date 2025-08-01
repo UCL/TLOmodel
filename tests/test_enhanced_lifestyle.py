@@ -21,9 +21,9 @@ popsize = 10000
 @pytest.fixture
 def simulation(seed):
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle()
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
                  )
     return sim
 
@@ -95,7 +95,7 @@ def test_check_properties_daily_event():
     runs daily to ensure properties what they are expected """
     class DummyModule(Module):
         """ a dummy module for testing lifestyle properties """
-        def read_parameters(self, resourcefilepath=None):
+        def read_parameters(self, data_folder):
             pass
 
         def initialise_population(self, population):
@@ -126,10 +126,10 @@ def test_check_properties_daily_event():
             check_properties(population.props)
 
     # Create simulation:
-    sim = Simulation(start_date=start_date, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date)
     sim.register(
-        demography.Demography(),
-        enhanced_lifestyle.Lifestyle(),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         DummyModule()
     )
     sim.make_initial_population(n=2000)

@@ -30,7 +30,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = './resources'
+resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
@@ -61,13 +61,14 @@ log_config = {
 # need to call epi before tb to get bcg vax
 seed = random.randint(0, 50000)
 # seed = 41728  # set seed for reproducibility
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config,
-                 show_progress_bar=True, resourcefilepath=resourcefilepath)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
-    demography.Demography(),
-    simplified_births.SimplifiedBirths(),
-    enhanced_lifestyle.Lifestyle(),
-    healthsystem.HealthSystem(service_availability=["*"],  # all treatment allowed
+    demography.Demography(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        service_availability=["*"],  # all treatment allowed
         mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
         cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
@@ -76,12 +77,12 @@ sim.register(
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
     ),
-    symptommanager.SymptomManager(),
-    healthseekingbehaviour.HealthSeekingBehaviour(),
-    healthburden.HealthBurden(),
-    epi.Epi(),
-    hiv.Hiv(run_with_checks=False),
-    tb.Tb(),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    epi.Epi(resourcefilepath=resourcefilepath),
+    hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+    tb.Tb(resourcefilepath=resourcefilepath),
     # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 

@@ -1,4 +1,4 @@
-"""This file has been created to allow a check
+"""This file is an edited and updated version of the file `schisto_analysis.py` and has been created to allow a check
 that the model is working as originally intended."""
 
 import os
@@ -21,19 +21,17 @@ from tlo.methods import (
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-start_date = Date(2010, 1, 1)
-
 
 def get_simulation(seed, start_date, mda_execute=True):
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 healthsystem.HealthSystem(cons_availability='all'),
-                 simplified_births.SimplifiedBirths(),
-                 schisto.Schisto(mda_execute=mda_execute),
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
                  )
     return sim
 
@@ -48,6 +46,7 @@ def check_dtypes(simulation):
 def test_run_without_mda(seed):
     """Run the Schisto module with default parameters for one year on a population of 10_000, with no MDA"""
 
+    start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=1)
     popsize = 10_000
 
@@ -61,6 +60,7 @@ def test_run_without_mda(seed):
 def test_run_with_mda(seed):
     """Run the Schisto module with default parameters for 20 years on a population of 1_000, with MDA"""
 
+    start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=20)
     popsize = 5_000
 
@@ -68,62 +68,3 @@ def test_run_with_mda(seed):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
-
-
-def test_diagnosis_and_treatment(seed):
-    """ infect person with high worm burden (mansoni) and test whether
-    diagnosed correctly, referred for treatment, and treatment effectively reduces
-    worm burden in individual """
-
-    sim = get_simulation(seed=seed, start_date=start_date, mda_execute=True)
-    sim.make_initial_population(n=1)
-
-    df = sim.population.props
-    person_id = 0
-
-    # give person high juvenile S. mansoni worm burden
-    infecting_worms = 500
-    df.at[person_id, "ss_sm_juvenile_worm_burden"] = infecting_worms
-    df.at[person_id, "ss_sm_juvenile_worm_infection_date"] = sim.date
-
-    df.at[person_id, "ss_sm_infection_status"] = 'Non-infected'  # this is their initial status
-    df.at[person_id, "ss_sm_aggregate_worm_burden"] = 0
-    df.at[person_id, "ss_sm_susceptibility"] = 1
-    df.at[person_id, "ss_sm_harbouring_rate"] = 0.5
-
-    # schedule the event to mature the worms and assign symptoms
-    sim.simulate(end_date=start_date + pd.DateOffset(months=1))
-    mature_worms = schisto.SchistoMatureJuvenileWormsEvent(module=sim.modules['Schisto'])
-    mature_worms.apply(sim.population)
-
-    assert df.at[person_id, "ss_sm_infection_status"] == 'Heavy-infection'
-    assert df.at[person_id, "ss_sm_aggregate_worm_burden"] == infecting_worms
-
-    # check symptoms assigned
-    assert 'ss_sm_heavy' in sim.modules['SymptomManager'].has_what(person_id)
-
-    # refer for test
-    test_appt = schisto.HSI_Schisto_TestingFollowingSymptoms(person_id=person_id,
-                                                 module=sim.modules['Schisto'])
-    test_appt.apply(person_id=person_id, squeeze_factor=0.0)
-
-    # check referral for treatment is scheduled
-    date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], schisto.HSI_Schisto_TreatmentFollowingDiagnosis)
-    ][0]
-    assert date_event >= sim.date
-
-    # check tx administered
-    tx_appt = schisto.HSI_Schisto_TreatmentFollowingDiagnosis(person_id=person_id,
-                                                 module=sim.modules['Schisto'])
-    tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
-
-    # check worm burden now reduced
-    assert df.at[person_id, 'ss_sm_aggregate_worm_burden'] < infecting_worms
-
-
-
-
-
-

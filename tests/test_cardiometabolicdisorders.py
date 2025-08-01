@@ -77,18 +77,18 @@ def routine_checks(sim):
 def test_basic_run(seed):
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=True),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 simplified_births.SimplifiedBirths(),
-                 depression.Depression(),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders()
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
 
     # Set incidence/death rates of conditions to high values to decrease run time
@@ -121,18 +121,18 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     death"""
 
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=True),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 simplified_births.SimplifiedBirths(),
-                 depression.Depression(),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders()
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
     p = sim.modules['CardioMetabolicDisorders'].parameters
 
@@ -241,17 +241,19 @@ def test_if_health_system_cannot_run(seed):
 
     start_date = Date(2010, 1, 1)
     popsize = 1000
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 simplified_births.SimplifiedBirths(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(capabilities_coefficient=0.0, mode_appt_constraints=2),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders(),
-                 depression.Depression()
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=0.0,
+                                           mode_appt_constraints=2),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath)
                  )
 
     # Make the population
@@ -306,18 +308,18 @@ def test_if_health_system_cannot_run(seed):
 def make_simulation_health_system_disabled(seed):
     """Make the simulation with the healthcare system disabled
     """
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable_and_reject_all=True),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 simplified_births.SimplifiedBirths(),
-                 depression.Depression(),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders()
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
     return sim
 
@@ -326,19 +328,22 @@ def make_simulation_health_system_disabled(seed):
 def make_simulation_health_system_functional(seed, cons_availability='all'):
     """Make the simulation with the healthcare system enabled and no cons constraints
     """
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=False, mode_appt_constraints=0,
-                                           cons_availability=cons_availability),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 simplified_births.SimplifiedBirths(),
-                 depression.Depression(),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders()
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=False,
+                                           mode_appt_constraints=0,
+                                           cons_availability=cons_availability
+                                           ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
     return sim
 
@@ -509,18 +514,18 @@ def test_symptoms(seed):
     """
 
     # Create and run a short simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(),
-                 enhanced_lifestyle.Lifestyle(),
-                 healthsystem.HealthSystem(disable=True),
-                 symptommanager.SymptomManager(),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
-                 healthburden.HealthBurden(),
-                 simplified_births.SimplifiedBirths(),
-                 depression.Depression(),
-                 cardio_metabolic_disorders.CardioMetabolicDisorders()
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath)
                  )
     p = sim.modules['CardioMetabolicDisorders'].parameters
 

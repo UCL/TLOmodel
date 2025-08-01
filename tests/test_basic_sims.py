@@ -1,5 +1,3 @@
-import os
-from pathlib import Path
 
 import pandas as pd
 
@@ -7,11 +5,10 @@ from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.test import random_birth, random_death
 
-resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 
 def test_individual_death():
     # Create a new simulation to orchestrate matters
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=1, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1)
 
     # Register just a test module with random death
     # Note: this approach would allow us to give a different name if desired,
@@ -64,7 +61,7 @@ def test_single_step_death():
     # This demonstrates how to test the implementation of a single event in isolation
 
     # Set up minimal simulation
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=1, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1)
     rd = random_death.RandomDeath(name='rd')
     rd.parameters['death_probability'] = 0.1
     sim.register(rd)
@@ -87,7 +84,7 @@ def test_single_step_death():
 
 def test_make_test_property(seed):
     # This tests the Population.make_test_property method
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.make_initial_population(n=3)
     # There should be no properties
     pop = sim.population
@@ -107,7 +104,7 @@ def test_birth_and_death():
     # This combines both population-scope and individual-scope events,
     # with more complex logic.
     # Create a new simulation to orchestrate matters
-    sim = Simulation(start_date=Date(1950, 1, 1), seed=2, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(1950, 1, 1), seed=2)
 
     # Register modules
     rb = random_birth.RandomBirth(name='rb')
@@ -197,7 +194,7 @@ def test_regular_event_with_end(seed):
         def apply(self, population):
             pass
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
 
     my_module = MyModule()
     sim.register(my_module)
@@ -219,7 +216,7 @@ def test_regular_event_with_end(seed):
 def test_show_progress_bar(capfd, seed):
     start_date = Date(2010, 1, 1)
     end_date = Date(2010, 2, 1)
-    sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True)
     logger = logging.getLogger('tlo')
     assert len(logger.handlers) == 0
     rd = random_death.RandomDeath(name='rd')

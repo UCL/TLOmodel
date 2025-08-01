@@ -69,8 +69,6 @@ Non-Communicable Conditions
 
     * **Breast Cancer**: Cancer of the breast and its treatment. :download:`.docx <./write-ups/BreastCancer.docx>`
 
-    * **Cervical Cancer**: Cancer of the breast and its treatment. :download:`.docx <./write-ups/CervicalCancer.docx>`
-
     * **Oesophageal Cancer**: Cancer of the oesophagus and its treatment. :download:`.docx <./write-ups/OesophagealCancer.docx>`
 
     * **Other Adult Cancer**: Summary representation of any type of cancer other those listed and their treatment. :download:`.docx <./write-ups/OtherAdultCancer.docx>`

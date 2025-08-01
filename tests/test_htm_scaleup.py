@@ -33,21 +33,21 @@ def get_sim(seed):
     register all necessary modules for the tests to run
     """
 
-    sim = Simulation(start_date=start_date, seed=seed, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
     sim.register(
-        demography.Demography(),
-        simplified_births.SimplifiedBirths(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        healthburden.HealthBurden(),
-        epi.Epi(),
-        hiv.Hiv(),
-        tb.Tb(),
-        malaria.Malaria(),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        malaria.Malaria(resourcefilepath=resourcefilepath),
     )
 
     return sim

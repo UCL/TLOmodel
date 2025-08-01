@@ -49,23 +49,27 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
     :return: logfile name
     """
     log_config = {"filename": "depression"}
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
-        demography.Demography(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(service_availability=service_availability, disable=healthsystemdisable),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        healthburden.HealthBurden(),
-        contraception.Contraception(),
-        labour.Labour(),
-        newborn_outcomes.NewbornOutcomes(),
-        postnatal_supervisor.PostnatalSupervisor(),
-        pregnancy_supervisor.PregnancySupervisor(),
-        depression.Depression(),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=service_availability,
+            disable=healthsystemdisable
+        ),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        depression.Depression(resourcefilepath=resourcefilepath),
     )
 
     # Run the simulation
@@ -123,23 +127,27 @@ def run_simulation_with_intvs_maximised():
     """
     log_config = {"filename": "depression"}
 
-    sim = Simulation(start_date=start_date, seed=0, log_config=log_config, resourcefilepath=resourcefilepath)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(),
-        demography.Demography(),
-        enhanced_lifestyle.Lifestyle(),
-        healthsystem.HealthSystem(service_availability=['*'], disable=True),
-        symptommanager.SymptomManager(),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
-        healthburden.HealthBurden(),
-        contraception.Contraception(),
-        labour.Labour(),
-        pregnancy_supervisor.PregnancySupervisor(),
-        postnatal_supervisor.PostnatalSupervisor(),
-        newborn_outcomes.NewbornOutcomes(),
-        depression.Depression(),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=['*'],
+            disable=True
+        ),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        depression.Depression(resourcefilepath=resourcefilepath),
         mockitis.Mockitis(),
         chronicsyndrome.ChronicSyndrome(),
     )

@@ -1,6 +1,5 @@
 import warnings
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -136,8 +135,9 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, use_healthsystem=True, run_update_contraceptive=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_update_contraceptive=True):
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
@@ -160,11 +160,11 @@ class Contraception(Module):
         self._women_ids_sterilized_below30 = set()  # The ids of women who had female sterilization initiated when they
         #                                             were less than 30 years old.
 
-    def read_parameters(self, resourcefilepath: Optional[Path]=None):
+    def read_parameters(self, data_folder):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = read_csv_files(resourcefilepath / 'contraception' / 'ResourceFile_Contraception',
+        workbook = read_csv_files(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception',
                                   files=None)
 
         # Import selected sheets from the workbook as the parameters
@@ -189,12 +189,12 @@ class Contraception(Module):
 
         # Declare values for other parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            resourcefilepath / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
+            Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
         ))
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
         pop_2010 = self.sim.modules["Demography"].parameters["pop_2010"]
@@ -1171,8 +1171,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                 stacklevel=3,
             )
             return self.make_appt_footprint({})
-            warnings.warn(UserWarning("Assumed empty footprint for Contraception Routine appt because couldn't find"
-                                      "actual case."))
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
@@ -1352,8 +1350,8 @@ class SimplifiedPregnancyAndLabour(Module):
     def __init__(self, *args):
         super().__init__(name='Labour')
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
-        parameter_dataframe = read_csv_files(resourcefilepath /
+    def read_parameters(self, *args):
+        parameter_dataframe = read_csv_files(self.sim.modules['Contraception'].resourcefilepath /
                                             'contraception' /
                                             'ResourceFile_Contraception',
                                             files='simplified_labour_parameters')

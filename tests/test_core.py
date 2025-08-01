@@ -166,43 +166,6 @@ class TestLoadParametersFromDataframe:
         assert self.module.parameters['bool_true'] is True
         assert self.module.parameters['bool_false'] is False
 
-    def test_unacceptable_labels(self):
-        """ label not acceptable for parameter label
-
-        should raise an assertion error """
-        resource = self.resource.copy()
-        resource['param_label'] = 'free'
-        with pytest.raises(AssertionError, match="unrecognised parameter label"):
-            self.module.load_parameters_from_dataframe(resource)
-
-    def test_unacceptable_lower_value(self):
-        """ check unacceptable for lower value
-
-        should raise a value error """
-        resource = self.resource.copy()
-        resource['prior_min'] = 'a'
-        with pytest.raises(ValueError):
-            self.module.load_parameters_from_dataframe(resource)
-
-    def test_unacceptable_upper_value(self):
-        """ check unacceptable for upper value
-
-        should raise a value error """
-        resource = self.resource.copy()
-        resource['prior_max'] = 'b'
-        with pytest.raises(ValueError):
-            self.module.load_parameters_from_dataframe(resource)
-
-    def test_list_type_parameter_value_has_list_type_lower_upper_value(self):
-        """ assign integer and float values to lower and upper values respectively.
-
-        should raise a value error for parameter values of type list """
-        resource = self.resource.copy()
-        resource['prior_min'] = 1
-        resource['prior_max'] = 2.0
-        with pytest.raises(ValueError, match='some values are not of type LIST'):
-            self.module.load_parameters_from_dataframe(resource)
-
 
 class TestLoadParametersFromDataframe_Bools_From_Csv:
     """Tests for the load_parameters_from_dataframe method, including handling of bools when loading from csv"""

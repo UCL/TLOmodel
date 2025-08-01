@@ -2,9 +2,6 @@
 A skeleton template for disease methods.
 
 """
-from pathlib import Path
-from typing import Optional
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
@@ -93,13 +90,14 @@ class Skeleton(Module):
     # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
     SYMPTOMS = {}
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
         self.store = {'Proportion_infected': []}
 
-    def read_parameters(self, resourcefilepath: Optional[Path] = None):
+    def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         To access files use: Path(self.resourcefilepath) / file_name
         """
